@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: star-whale-controller
+logging:
+  level:
+    root: info
+sw:
+  jwt:
+    secret: wdxlG3UK66m6uTUgxXFjizli
