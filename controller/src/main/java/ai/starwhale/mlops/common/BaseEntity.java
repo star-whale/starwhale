@@ -7,8 +7,11 @@
 
 package ai.starwhale.mlops.common;
 
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
+@Data
 public class BaseEntity {
 
     private String modifyUser;
