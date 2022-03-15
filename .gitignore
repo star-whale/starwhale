@@ -1,9 +1,13 @@
 # Compiled class file
 *.class
 **.iml
+*.pyc
+*.pb.go
+*.pb.gw.go
 
 # Log file
 *.log
+pylint.out
 
 # Package Files #
 *.jar
@@ -13,7 +17,18 @@
 *.zip
 *.tar.gz
 *.rar
+/dist/
+*.swo
+*.swp
+*.orig
 
 # IDE file
 /.idea/
 /controller/target/
+.history
+/.vscode/*
+
+# Env
+*venv/
+/env-build
+.DS_Store
