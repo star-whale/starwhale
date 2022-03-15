@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.domain.user.param;
+package ai.starwhale.mlops.api.protocol.user;
 
 import lombok.Data;
 

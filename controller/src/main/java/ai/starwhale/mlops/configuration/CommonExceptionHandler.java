@@ -7,8 +7,8 @@
 
 package ai.starwhale.mlops.configuration;
 
-import ai.starwhale.mlops.common.ResponseMessage;
-import ai.starwhale.mlops.constants.Code;
+import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.Code;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;

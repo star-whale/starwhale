@@ -7,13 +7,12 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.configuration.security.JwtTokenUtil;
-import cn.hutool.json.JSONUtil;
-import ai.starwhale.mlops.common.ResponseMessage;
 import ai.starwhale.mlops.domain.user.Role;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
-import ai.starwhale.mlops.domain.user.param.LoginRequest;
+import ai.starwhale.mlops.api.protocol.user.LoginRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
