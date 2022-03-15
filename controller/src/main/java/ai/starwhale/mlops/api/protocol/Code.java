@@ -5,9 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.constants;
+package ai.starwhale.mlops.api.protocol;
 
-import ai.starwhale.mlops.common.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.ResponseMessage;
 
 public enum Code {
     success("Success"),
