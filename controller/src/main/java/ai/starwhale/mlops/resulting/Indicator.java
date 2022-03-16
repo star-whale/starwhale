@@ -5,21 +5,23 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.domain.swmp;
+package ai.starwhale.mlops.resulting;
 
 import lombok.Data;
 
 /**
- * Star Whale Model Package
+ * an indicator of the result such as: (TF,1) (LOSS,1.678) (Accuracy,0.96)
  */
 @Data
-public class SWModelPackage {
-
-    Long id;
+public class Indicator {
 
     /**
-     * The storage path of the swmp, it could be a directory or a single file
+     * the indicator name
      */
-    String path;
+    String key;
 
+    /**
+     * the value of this indicator
+     */
+    Double value;
 }

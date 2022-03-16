@@ -18,12 +18,12 @@ public class Task {
     /**
      * unique id for the task
      */
-    String id;
+    Long id;
 
     /**
      * id of the job where the task is derived from
      */
-    String jobId;
+    Long jobId;
 
     /**
      * status of the task
@@ -58,7 +58,7 @@ public class Task {
         /**
          * garbage is cleared
          */
-        CLOSED,
+        FINISHED,
 
         /**
          * canceled by the controller

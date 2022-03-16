@@ -5,8 +5,16 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.common;
+package ai.starwhale.mlops.domain.job;
 
-public class Throw {
+import ai.starwhale.mlops.domain.task.Task;
 
+import java.util.List;
+
+/**
+ * split job to tasks. One job shall not to be split multiple times
+ */
+public interface JobSpliter {
+
+    List<Task> split(Job job);
 }

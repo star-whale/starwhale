@@ -16,6 +16,11 @@ import lombok.Data;
 public class SWDataSet {
 
     /**
+     * unique id of the swds
+     */
+    Long id;
+
+    /**
      * The total amount data pairs of the DS
      * One data pair contains a piece of Raw Data and a piece of Label Data
      */
