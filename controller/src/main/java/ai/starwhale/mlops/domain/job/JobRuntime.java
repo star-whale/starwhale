@@ -5,28 +5,29 @@
  * in accordance with the terms of the license agreement you entered into with  starwhale.ai.
  */
 
-package ai.starwhale.mlops.domain.swds;
+package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.domain.node.Device;
 import lombok.Data;
 
 /**
- * a slice of an SWDS
+ *
  */
 @Data
-public class SWDataSetSlice {
+public class JobRuntime {
 
     /**
-     * the swds
+     * specify the job to run on whether CPU or GPU
      */
-    SWDataSet swDataSet;
+    Device.Clazz deviceClass;
 
     /**
-     * from 0 to this.swDataSet.size
+     * how many devices does this job need to run on ie. how many tasks shall be split from the job
      */
-    Integer start;
+    Integer deviceAmount;
 
     /**
-     * from this.start to this.swDataSet.size
+     * what is the running container's image
      */
-    Integer end;
+    String baseImage;
 }

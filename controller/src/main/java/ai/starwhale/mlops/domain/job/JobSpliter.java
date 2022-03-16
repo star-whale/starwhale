@@ -5,15 +5,16 @@
  * in accordance with the terms of the license agreement you entered into with  starwhale.ai.
  */
 
-package ai.starwhale.mlops.api.protocol.agent;
+package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.domain.node.Node;
-import lombok.Data;
+import ai.starwhale.mlops.domain.task.Task;
+
+import java.util.List;
 
 /**
- * Agent report the info of it's node to Controller.
+ * split job to tasks. One job shall not to be split multiple times
  */
-@Data
-public class ReportingRequest {
-    Node nodeInfo;
+public interface JobSpliter {
+
+    List<Task> split(Job job);
 }

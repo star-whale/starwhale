@@ -1,8 +1,8 @@
 /*
  * Copyright 2022.1-2022
- * StarWhale.com All right reserved. This software is the confidential and proprietary information of
- * StarWhale.com ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ *  starwhale.ai All right reserved. This software is the confidential and proprietary information of
+ *  starwhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+ * in accordance with the terms of the license agreement you entered into with  starwhale.ai.
  */
 
 package ai.starwhale.mlops.domain.task;
@@ -18,12 +18,12 @@ public class Task {
     /**
      * unique id for the task
      */
-    String id;
+    Long id;
 
     /**
      * id of the job where the task is derived from
      */
-    String jobId;
+    Long jobId;
 
     /**
      * status of the task
@@ -58,7 +58,7 @@ public class Task {
         /**
          * garbage is cleared
          */
-        CLOSED,
+        FINISHED,
 
         /**
          * canceled by the controller

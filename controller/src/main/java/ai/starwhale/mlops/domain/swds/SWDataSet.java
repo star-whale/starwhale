@@ -1,8 +1,8 @@
 /*
  * Copyright 2022.1-2022
- * StarWhale.com All right reserved. This software is the confidential and proprietary information of
- * StarWhale.com ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ *  starwhale.ai All right reserved. This software is the confidential and proprietary information of
+ *  starwhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+ * in accordance with the terms of the license agreement you entered into with  starwhale.ai.
  */
 
 package ai.starwhale.mlops.domain.swds;
@@ -14,6 +14,11 @@ import lombok.Data;
  */
 @Data
 public class SWDataSet {
+
+    /**
+     * unique id of the swds
+     */
+    Long id;
 
     /**
      * The total amount data pairs of the DS

@@ -5,15 +5,23 @@
  * in accordance with the terms of the license agreement you entered into with  starwhale.ai.
  */
 
-package ai.starwhale.mlops.api.protocol.agent;
+package ai.starwhale.mlops.resulting;
 
-import ai.starwhale.mlops.domain.node.Node;
 import lombok.Data;
 
 /**
- * Agent report the info of it's node to Controller.
+ * an indicator of the result such as: (TF,1) (LOSS,1.678) (Accuracy,0.96)
  */
 @Data
-public class ReportingRequest {
-    Node nodeInfo;
+public class Indicator {
+
+    /**
+     * the indicator name
+     */
+    String key;
+
+    /**
+     * the value of this indicator
+     */
+    Double value;
 }
