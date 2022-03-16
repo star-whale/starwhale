@@ -19,6 +19,7 @@
         <jwt-version>0.9.1</jwt-version>
         <hutool-version>5.7.22</hutool-version>
         <sleuth-version>3.1.1</sleuth-version>
+        <pagehelper-version>5.3.0</pagehelper-version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -67,6 +68,16 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.github.pagehelper/pagehelper -->
+        <dependency>
+            <groupId>com.github.pagehelper</groupId>
+            <artifactId>pagehelper</artifactId>
+            <version>${pagehelper-version}</version>
+        </dependency>
+
+
+
         <!-- jdbc -->
         <!--<dependency>
             <groupId>org.springframework.boot</groupId>
