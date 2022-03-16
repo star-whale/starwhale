@@ -7,8 +7,6 @@
 
 package ai.starwhale.mlops.api.protocol;
 
-import ai.starwhale.mlops.api.protocol.ResponseMessage;
-
 public enum Code {
     success("Success"),
     validationException("ValidationException"),

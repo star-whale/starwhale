@@ -3,27 +3,14 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>ai.starwhale</groupId>
-    <artifactId>starwhale-controller</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.6.4</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <artifactId>server</artifactId>
+        <groupId>ai.starwhale</groupId>
+        <version>1.0-SNAPSHOT</version>
     </parent>
-    <properties>
-        <openapi-version>1.6.6</openapi-version>
-        <jwt-version>0.9.1</jwt-version>
-        <hutool-version>5.7.22</hutool-version>
-        <sleuth-version>3.1.1</sleuth-version>
-    </properties>
-    <dependencyManagement>
-        <dependencies>
-        </dependencies>
-    </dependencyManagement>
+    <artifactId>starwhale-controller</artifactId>
+    <packaging>jar</packaging>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -38,7 +25,6 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
-            <version>${openapi-version}</version>
         </dependency>
         <!-- security -->
         <dependency>
@@ -49,19 +35,16 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
-            <version>${jwt-version}</version>
         </dependency>
         <!-- log trace -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-sleuth</artifactId>
-            <version>${sleuth-version}</version>
         </dependency>
         <!-- other utils -->
         <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
-            <version>${hutool-version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -106,4 +89,6 @@
             </plugin>
         </plugins>
     </build>
+
+
 </project>
