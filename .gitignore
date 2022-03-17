@@ -24,7 +24,7 @@ pylint.out
 
 # IDE file
 /.idea/
-/controller/target/
+/server/**/target/**
 .history
 /.vscode/*
 

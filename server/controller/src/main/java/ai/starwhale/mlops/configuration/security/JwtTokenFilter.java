@@ -26,7 +26,6 @@ import java.io.IOException;
 import static java.util.List.of;
 import static java.util.Optional.ofNullable;
 import static org.springframework.util.StringUtils.hasText;
-import static org.springframework.util.StringUtils.isEmpty;
 
 @Component
 @RequiredArgsConstructor
