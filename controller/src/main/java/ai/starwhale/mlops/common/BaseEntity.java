@@ -14,10 +14,10 @@ import java.time.LocalDateTime;
 @Data
 public class BaseEntity {
 
-    private String modifyUser;
-    private String createUser;
+    protected String modifyUser;
+    protected String createUser;
 
-    private LocalDateTime createdTime;
+    protected LocalDateTime createdTime;
 
-    private LocalDateTime modifiedTime;
+    protected LocalDateTime modifiedTime;
 }
