@@ -30,45 +30,50 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Validated
 public interface ProjectApi {
 
-    @Operation(summary = "获取项目列表")
+    @Operation(summary = "Get the list of projects")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
             description = "ok",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class))) })
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
     @GetMapping(value = "/project")
-    ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(@Valid @RequestParam(value = "projectName", required = false) String projectName,
+    ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(
+        @Valid @RequestParam(value = "projectName", required = false) String projectName,
         @Valid @RequestParam(value = "pageNum", required = false) Integer pageNum,
         @Valid @RequestParam(value = "pageSize", required = false) Integer pageSize);
 
 
-    @Operation(summary = "新建项目")
+    @Operation(summary = "Create a new project")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
+        @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project")
-    ResponseEntity<ResponseMessage<String>> createProject(@Valid @RequestParam(value = "projectName") String projectName);
+    ResponseEntity<ResponseMessage<String>> createProject(
+        @Valid @RequestParam(value = "projectName") String projectName);
 
 
-    @Operation(summary = "删除项目")
+    @Operation(summary = "Delete a project by ID")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/project/{projectId}")
-    ResponseEntity<ResponseMessage<String>> deleteProjectById(@Valid @PathVariable("projectId") String projectId);
+    ResponseEntity<ResponseMessage<String>> deleteProjectById(
+        @Valid @PathVariable("projectId") String projectId);
 
 
-    @Operation(summary = "根据projectId获取项目", description = "Returns a single project object.")
+    @Operation(summary = "Get a project by ID", description = "Returns a single project object.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
             description = "ok.",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectVO.class)))})
-    @GetMapping (value = "/project/{projectId}")
-    ResponseEntity<ResponseMessage<ProjectVO>> getProjectById(@PathVariable("projectId") String projectId);
+    @GetMapping(value = "/project/{projectId}")
+    ResponseEntity<ResponseMessage<ProjectVO>> getProjectById(
+        @PathVariable("projectId") String projectId);
 
 
-    @Operation(summary = "修改项目属性")
+    @Operation(summary = "Modify project information")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
+        @ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectId}")
-    ResponseEntity<ResponseMessage<String>> updateProject(@PathVariable("projectId") String projectId,
+    ResponseEntity<ResponseMessage<String>> updateProject(
+        @PathVariable("projectId") String projectId,
         @Valid @RequestParam(value = "projectName", required = false) String projectName);
 
 

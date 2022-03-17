@@ -31,42 +31,87 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Tag(name = "System")
 @Validated
 public interface SystemApi {
-    @Operation(summary = "获取系统节点列表")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class))) })
+
+    @Operation(summary = "Get the list of agents")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = PageInfo.class)))
+        })
     @GetMapping(value = "/system/agent")
-    ResponseEntity<ResponseMessage<PageInfo<AgentVO>>> listAgent(@Parameter(in = ParameterIn.QUERY, description = "要查询的节点ip地址，可模糊匹配" ,schema=@Schema()) @Valid @RequestParam(value = "ip", required = false) String ip,
-        @Parameter(in = ParameterIn.QUERY, description = "分页页码" ,schema=@Schema()) @Valid @RequestParam(value = "pageNum", required = false) Integer pageNum,
-        @Parameter(in = ParameterIn.QUERY, description = "每页记录数" ,schema=@Schema()) @Valid @RequestParam(value = "pageSize", required = false) Integer pageSize);
+    ResponseEntity<ResponseMessage<PageInfo<AgentVO>>> listAgent(
+        @Parameter(in = ParameterIn.QUERY, description = "Agent ip to search for", schema = @Schema())
+        @Valid
+        @RequestParam(value = "ip", required = false)
+            String ip,
+        @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageNum", required = false)
+            Integer pageNum,
+        @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageSize", required = false)
+            Integer pageSize);
 
-
-    @Operation(summary = "升级或取消升级系统版本")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+    @Operation(summary = "Upgrade system version or cancel upgrade")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/system/version/{action}")
-    ResponseEntity<ResponseMessage<String>> systemVersionAction(@Parameter(in = ParameterIn.PATH,
-                                                        description = "要进行的操作： upgrade：升级系统到最新版本 cancel：取消升级 ",
-                                                        required=true,
-                                                        schema=@Schema(allowableValues={ "upgrade", "cancel" })) @PathVariable("action") String action);
+    ResponseEntity<ResponseMessage<String>> systemVersionAction(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Action: upgrade or cancel",
+            required = true,
+            schema = @Schema(allowableValues = {"upgrade", "cancel"}))
+        @PathVariable("action")
+            String action);
 
-
-    @Operation(summary = "获取系统当前版本")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = SystemVersionVO.class))) })
+    @Operation(summary = "Get current version of the system")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = SystemVersionVO.class)))
+        })
     @GetMapping(value = "/system/version")
     ResponseEntity<ResponseMessage<SystemVersionVO>> getCurrentVersion();
 
-
-    @Operation(summary = "获取系统最新版本号")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = SystemVersionVO.class)))})
-    @GetMapping(value = "/system/version/lastest")
+    @Operation(summary = "Get latest version of the system")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = SystemVersionVO.class)))
+        })
+    @GetMapping(value = "/system/version/latest")
     ResponseEntity<ResponseMessage<SystemVersionVO>> getLatestVersion();
 
-
-    @Operation(summary = "获取当前升级进度", description = "获取当前服务端升级的进程。如在下载中则返回下载进度")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = UpgradeProgressVO.class)))})
+    @Operation(
+        summary = "Get the current upgrade progress",
+        description =
+            "Get the current server upgrade process. If downloading, return the download progress")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = UpgradeProgressVO.class)))
+        })
     @GetMapping(value = "/system/version/progress")
     ResponseEntity<ResponseMessage<UpgradeProgressVO>> getUpgradeProgress();
 }

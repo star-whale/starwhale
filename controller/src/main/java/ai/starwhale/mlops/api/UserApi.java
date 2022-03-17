@@ -31,45 +31,119 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Tag(name = "User")
 @Validated
 public interface UserApi {
-    @Operation(summary = "获取用户列表")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200",
-            description = "ok",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class))) })
+
+    @Operation(summary = "Get the list of users")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = PageInfo.class)))
+        })
     @GetMapping(value = "/user")
-    ResponseEntity<ResponseMessage<PageInfo<User>>> listUser(@Parameter(in = ParameterIn.QUERY, description = "要查询的用户名，可模糊匹配" ,schema=@Schema()) @Valid @RequestParam(value = "userName", required = false) String userName,
-        @Parameter(in = ParameterIn.QUERY, description = "分页页码" ,schema=@Schema()) @Valid @RequestParam(value = "pageNum", required = false) Integer pageNum,
-        @Parameter(in = ParameterIn.QUERY, description = "每页记录数" ,schema=@Schema()) @Valid @RequestParam(value = "pageSize", required = false) Integer pageSize);
+    ResponseEntity<ResponseMessage<PageInfo<User>>> listUser(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "User name prefix to search for",
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "userName", required = false)
+            String userName,
+        @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageNum", required = false)
+            Integer pageNum,
+        @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageSize", required = false)
+            Integer pageSize);
 
-
-    @Operation(summary = "新建用户")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
+    @Operation(summary = "Create a new user")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/user")
-    ResponseEntity<ResponseMessage<String>> createUser(@NotNull @Parameter(in = ParameterIn.QUERY, description = "用户名" ,required=true,schema=@Schema()) @Valid @RequestParam(value = "userName") String userName,
-        @NotNull @Parameter(in = ParameterIn.QUERY, description = "用户密码" ,required=true,schema=@Schema()) @Valid @RequestParam(value = "userPwd") String userPwd);
+    ResponseEntity<ResponseMessage<String>> createUser(
+        @NotNull
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "User name",
+            required = true,
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "userName")
+            String userName,
+        @NotNull
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "User password",
+            required = true,
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "userPwd")
+            String userPwd);
 
-
-    @Operation(summary = "根据userId获取用户")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok.", content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))) })
+    @Operation(summary = "Get a user by user ID")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok.",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = User.class)))
+        })
     @GetMapping(value = "/user/{userId}")
-    ResponseEntity<ResponseMessage<User>> getUserById(@Parameter(in = ParameterIn.PATH, description = "用户id", required=true, schema=@Schema()) @PathVariable("userId") String userId);
+    ResponseEntity<ResponseMessage<User>> getUserById(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "User ID",
+            required = true,
+            schema = @Schema())
+        @PathVariable("userId")
+            String userId);
 
+    @Operation(summary = "Change user password")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/user/{userId}/pwd")
+    ResponseEntity<ResponseMessage<String>> updateUserPwd(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "User id to change password",
+            required = true,
+            schema = @Schema())
+        @PathVariable("userId")
+            String userId,
+        @NotNull
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "New password",
+            required = true,
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "userPwd")
+            String userPwd);
 
-    @Operation(summary = "修改用户密码")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
-    @PutMapping (value = "/user/{userId}/pwd")
-    ResponseEntity<ResponseMessage<String>> updateUserPwd(@Parameter(in = ParameterIn.PATH, description = "要修改密码的用户id", required=true, schema=@Schema()) @PathVariable("userId") String userId,
-        @NotNull @Parameter(in = ParameterIn.QUERY, description = "修改后的用户密码" ,required=true,schema=@Schema()) @Valid @RequestParam(value = "userPwd") String userPwd);
-
-
-    @Operation(summary = "启用或禁用用户")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
+    @Operation(summary = "Enable or disable a user")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/user/{userId}/state")
-    ResponseEntity<ResponseMessage<String>> updateUserState(@Parameter(in = ParameterIn.PATH, description = "要启用/禁用的用户", required=true, schema=@Schema()) @PathVariable("userId") String userId,
-        @NotNull @Parameter(in = ParameterIn.QUERY, description = "是否启用。true为启用，false为禁用" ,required=true,schema=@Schema()) @Valid @RequestParam(value = "isEnabled") Boolean isEnabled);
-
+    ResponseEntity<ResponseMessage<String>> updateUserState(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "User ID to enable or disable",
+            required = true,
+            schema = @Schema())
+        @PathVariable("userId")
+            String userId,
+        @NotNull
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Is enabled: ture or false",
+            required = true,
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "isEnabled")
+            Boolean isEnabled);
 }

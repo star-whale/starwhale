@@ -35,73 +35,159 @@ import org.springframework.web.multipart.MultipartFile;
 @Tag(name = "Dataset")
 @Validated
 public interface DatasetApi {
-    @Operation(summary = "恢复数据集版本", description = "指定一个数据集历史版本，并将当前数据集的最新版本回复至此版本")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+
+    @Operation(
+        summary = "Revert Dataset version",
+        description =
+            "Select a historical version of the dataset and revert the latest version of the current dataset to this version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/dataset/{datasetId}/revert")
-    ResponseEntity<ResponseMessage<String>> revertDatasetVersion(@Parameter(in = ParameterIn.PATH, description = "数据集id", required=true, schema=@Schema()) @PathVariable("datasetId") String datasetId,
-        @NotNull @Parameter(in = ParameterIn.QUERY, description = "要回复至的数据集版本id" ,required=true,schema=@Schema()) @Valid @RequestParam(value = "versionId") String versionId);
+    ResponseEntity<ResponseMessage<String>> revertDatasetVersion(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Dataset id",
+            required = true,
+            schema = @Schema())
+        @PathVariable("datasetId")
+            String datasetId,
+        @NotNull
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "The dataset version ID to revert",
+            required = true,
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "versionId")
+            String versionId);
 
-
-    @Operation(summary = "删除数据集")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+    @Operation(summary = "Delete a dataset")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/dataset/{datasetId}")
-    ResponseEntity<ResponseMessage<String>> deleteDatasetById(@Parameter(in = ParameterIn.PATH, required=true, schema=@Schema()) @PathVariable("datasetId") Integer datasetId);
+    ResponseEntity<ResponseMessage<String>> deleteDatasetById(
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("datasetId")
+            Integer datasetId);
 
-
-    @Operation(summary = "数据集详情（需求待细化）", description = "这里返回的是当前数据集最新版本的信息")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "OK", content = @Content(mediaType = "application/json", schema = @Schema(implementation = DatasetVersionVO.class))) })
+    @Operation(summary = "Get the information of a dataset",
+        description = "Return the information of the latest version of the current dataset")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "OK",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = DatasetVersionVO.class)))
+        })
     @GetMapping(value = "/dataset/{datasetId}")
-    ResponseEntity<ResponseMessage<DatasetVersionVO>> getDatasetInfo(@Parameter(in = ParameterIn.PATH, required=true, schema=@Schema()) @PathVariable("datasetId") Integer datasetId);
+    ResponseEntity<ResponseMessage<DatasetVersionVO>> getDatasetInfo(
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("datasetId")
+            Integer datasetId);
 
-
-    @Operation(summary = "获取数据集版本列表")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class))) })
+    @Operation(summary = "Get the list of the dataset versions")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = PageInfo.class)))
+        })
     @GetMapping(value = "/dataset/{datasetId}/version")
-    ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVO>>> listDatasetVersion(@Parameter(in = ParameterIn.PATH, description = "要获取版本列表的数据集id", required=true, schema=@Schema()) @PathVariable("datasetId") Integer datasetId,
-        @Parameter(in = ParameterIn.QUERY, description = "分页页码" ,schema=@Schema()) @Valid @RequestParam(value = "pageNum", required = false) Integer pageNum,
-        @Parameter(in = ParameterIn.QUERY, description = "每页记录数" ,schema=@Schema()) @Valid @RequestParam(value = "pageSize", required = false) Integer pageSize);
+    ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVO>>> listDatasetVersion(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Dataset ID",
+            required = true,
+            schema = @Schema())
+        @PathVariable("datasetId")
+            Integer datasetId,
+        @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageNum", required = false)
+            Integer pageNum,
+        @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageSize", required = false)
+            Integer pageSize);
 
-
-    @Operation(summary = "新建数据集版本", description = "创建新数据集版本，数据资源采用上传文件包或输入服务端路径二选一的方式。")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
-    @PostMapping(value = "/dataset/{datasetId}/version",
-        produces = { "application/json" },
-        consumes = { "multipart/form-data" })
-    ResponseEntity<Void> createDatasetVersion(@Parameter(in = ParameterIn.PATH, description = "版本所属的数据集id", required=true, schema=@Schema()) @PathVariable("datasetId") String datasetId,
+    @Operation(summary = "Create a new dataset version",
+        description = "Create a new version of the dataset. "
+            + "The data resources can be selected by uploading the file package or entering the server path.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+        value = "/dataset/{datasetId}/version",
+        produces = {"application/json"},
+        consumes = {"multipart/form-data"})
+    ResponseEntity<Void> createDatasetVersion(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Dataset ID",
+            required = true,
+            schema = @Schema())
+        @PathVariable("datasetId")
+            String datasetId,
         @Parameter(description = "file detail") @Valid @RequestPart("file") MultipartFile zipFile,
-        @Parameter(in = ParameterIn.DEFAULT,schema=@Schema()) @RequestParam(value="importPath", required=false)  String importPath);
+        @Parameter(in = ParameterIn.DEFAULT, schema = @Schema())
+        @RequestParam(value = "importPath", required = false)
+            String importPath);
 
-
-    @Operation(summary = "设置数据集版本标签属性")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
+    @Operation(summary = "Set the tag of the dataset version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/dataset/{datasetId}/version/{versionId}")
-    ResponseEntity<Void> modifyDatasetVersionInfo(@Parameter(in = ParameterIn.PATH, required=true, schema=@Schema()) @PathVariable("datasetId") String datasetId,
-        @Parameter(in = ParameterIn.PATH, required=true, schema=@Schema()) @PathVariable("versionId") String versionId,
-        @NotNull @Parameter(in = ParameterIn.QUERY ,required=true,schema=@Schema()) @Valid @RequestParam(value = "tag") String tag);
+    ResponseEntity<Void> modifyDatasetVersionInfo(
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("datasetId")
+            String datasetId,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionId")
+            String versionId,
+        @NotNull
+        @Parameter(in = ParameterIn.QUERY, required = true, schema = @Schema())
+        @Valid
+        @RequestParam(value = "tag")
+            String tag);
 
-
-    @Operation(summary = "获取数据集列表")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class))) })
+    @Operation(summary = "Get the list of the datasets")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = PageInfo.class)))
+        })
     @GetMapping(value = "/dataset")
-    ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(@Parameter(in = ParameterIn.QUERY, description = "分页页码" ,schema=@Schema()) @Valid @RequestParam(value = "pageNum", required = false) Integer pageNum,
-        @Parameter(in = ParameterIn.QUERY, description = "每页记录数" ,schema=@Schema()) @Valid @RequestParam(value = "pageSize", required = false) Integer pageSize);
+    ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(
+        @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageNum", required = false)
+            Integer pageNum,
+        @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageSize", required = false)
+            Integer pageSize);
 
-
-    @Operation(summary = "新建数据集", description = "创建新数据集并创建初始版本，数据资源采用上传文件包或输入服务端路径二选一的方式。")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
-    @PostMapping(value = "/dataset",
-        produces = { "application/json" },
-        consumes = { "multipart/form-data" })
-    ResponseEntity<ResponseMessage<String>> createDataset(@Parameter(in = ParameterIn.DEFAULT, required=true,schema=@Schema()) @RequestParam(value="datasetName")  String datasetName,
+    @Operation(summary = "Create a new dataset",
+        description = "Create a new data set and create an initial version. "
+            + "The data resources are selected by uploading a file package or entering a server path.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+        value = "/dataset",
+        produces = {"application/json"},
+        consumes = {"multipart/form-data"})
+    ResponseEntity<ResponseMessage<String>> createDataset(
+        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
+        @RequestParam(value = "datasetName")
+            String datasetName,
         @Parameter(description = "file detail") @Valid @RequestPart("file") MultipartFile zipFile,
-        @Parameter(in = ParameterIn.DEFAULT, required=true,schema=@Schema()) @RequestParam(value="importPath")  String importPath);
-
+        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
+        @RequestParam(value = "importPath")
+            String importPath);
 }

@@ -28,16 +28,39 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Tag(name = "Env")
 @Validated
 public interface EnvApi {
-    @Operation(summary = "获取基础镜像列表")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class))) })
+
+    @Operation(summary = "Get the list of base images")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = List.class)))
+        })
     @GetMapping(value = "/env/baseImage")
-    ResponseEntity<ResponseMessage<List<BaseImageVO>>> listBaseImage(@Parameter(in = ParameterIn.QUERY, description = "要搜索的镜像名称前缀" ,schema=@Schema()) @Valid @RequestParam(value = "imageName", required = false) String imageName);
+    ResponseEntity<ResponseMessage<List<BaseImageVO>>> listBaseImage(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Image name prefix to search for",
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "imageName", required = false)
+            String imageName);
 
-
-    @Operation(summary = "获取设备类型列表")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = List.class))) })
+    @Operation(summary = "Get the list of device types")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = List.class)))
+        })
     @GetMapping(value = "/env/device")
     ResponseEntity<ResponseMessage<List<DeviceVO>>> listDevice();
 }

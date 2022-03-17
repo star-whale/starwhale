@@ -37,74 +37,160 @@ import org.springframework.web.multipart.MultipartFile;
 @Validated
 public interface SWModelPackageApi {
 
-    @Operation(summary = "获取模型列表")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class))) })
+    @Operation(summary = "Get the list of models")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = PageInfo.class)))
+        })
     @GetMapping(value = "/model")
-    ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(@Parameter(in = ParameterIn.QUERY, description = "要查询的模型名称前缀" ,schema=@Schema()) @Valid @RequestParam(value = "modelName", required = false) String modelName,
-        @Parameter(in = ParameterIn.QUERY, description = "分页页码" ,schema=@Schema()) @Valid @RequestParam(value = "pageNum", required = false) Integer pageNum,
-        @Parameter(in = ParameterIn.QUERY, description = "每页记录数" ,schema=@Schema()) @Valid @RequestParam(value = "pageSize", required = false) Integer pageSize);
+    ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Model name prefix to search for",
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "modelName", required = false)
+            String modelName,
+        @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageNum", required = false)
+            Integer pageNum,
+        @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageSize", required = false)
+            Integer pageSize);
 
-
-    @Operation(summary = "恢复模型版本", description = "指定一个模型历史版本，并将当前模型的最新版本回复至此版本")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+    @Operation(
+        summary = "Revert model version",
+        description =
+            "Select a historical version of the model and revert the latest version of the current model to this version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/model/{modelId}/revert")
-    ResponseEntity<ResponseMessage<String>> revertModelVersion(@Parameter(in = ParameterIn.PATH, description = "模型id", required=true, schema=@Schema()) @PathVariable("modelId") String modelId,
-        @NotNull @Parameter(in = ParameterIn.QUERY, description = "要回复至的模型版本id" ,required=true,schema=@Schema()) @Valid @RequestParam(value = "versionId") String versionId);
+    ResponseEntity<ResponseMessage<String>> revertModelVersion(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Model ID",
+            required = true,
+            schema = @Schema())
+        @PathVariable("modelId")
+            String modelId,
+        @NotNull
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "The model version ID to revert",
+            required = true,
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "versionId")
+            String versionId);
 
-
-    @Operation(summary = "删除模型")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+    @Operation(summary = "Delete a model")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/model/{modelId}")
-    ResponseEntity<ResponseMessage<String>> deleteModelById(@Parameter(in = ParameterIn.PATH, required=true, schema=@Schema()) @PathVariable("modelId") Integer modelId);
+    ResponseEntity<ResponseMessage<String>> deleteModelById(
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("modelId")
+            Integer modelId);
 
-
-    @Operation(summary = "模型详情", description = "这里返回的是当前模型最新版本的模型包中的文件信息")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "OK", content = @Content(mediaType = "application/json", schema = @Schema(implementation = SWModelPackageInfoVO.class))) })
+    @Operation(summary = "Model information",
+        description = "Return the file information in the model package of the latest version of the current model")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "OK",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = SWModelPackageInfoVO.class)))
+        })
     @GetMapping(value = "/model/{modelId}")
-    ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(@Parameter(in = ParameterIn.PATH, required=true, schema=@Schema()) @PathVariable("modelId") Integer modelId);
+    ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("modelId")
+            Integer modelId);
 
-
-    @Operation(summary = "获取模型版本列表")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok", content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
+    @Operation(summary = "Get the list of model versions")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = PageInfo.class)))
+        })
     @GetMapping(value = "/model/{modelId}/version")
-    ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(@Parameter(in = ParameterIn.PATH, description = "模型id", required=true, schema=@Schema()) @PathVariable("modelId") Integer modelId, @Parameter(in = ParameterIn.QUERY, description = "要查询的模型版本名称前缀" ,schema=@Schema()) @Valid @RequestParam(value = "modelVersionName", required = false) String modelVersionName,
-        @Parameter(in = ParameterIn.QUERY, description = "分页页码" ,schema=@Schema()) @Valid @RequestParam(value = "pageNum", required = false) Integer pageNum,
-        @Parameter(in = ParameterIn.QUERY, description = "每页记录数" ,schema=@Schema()) @Valid @RequestParam(value = "pageSize", required = false) Integer pageSize);
+    ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(
+        @Parameter(in = ParameterIn.PATH, description = "Model ID", required = true, schema = @Schema())
+        @PathVariable("modelId")
+            Integer modelId,
+        @Parameter(in = ParameterIn.QUERY, description = "Model version name prefix to search for", schema = @Schema())
+        @Valid
+        @RequestParam(value = "modelVersionName", required = false)
+            String modelVersionName,
+        @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageNum", required = false)
+            Integer pageNum,
+        @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
+        @Valid
+        @RequestParam(value = "pageSize", required = false)
+            Integer pageSize);
 
-
-    @Operation(summary = "新建模型版本", description = "创建新模型版本，模型文件采用上传文件包或输入服务端路径二选一的方式。")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
-    @PostMapping(value = "/model/{modelId}/version",
-        produces = { "application/json" },
-        consumes = { "multipart/form-data" })
-    ResponseEntity<ResponseMessage<String>> createModelVersion(@Parameter(in = ParameterIn.PATH, description = "模型id", required=true, schema=@Schema()) @PathVariable("modelId") String modelId,
+    @Operation(summary = "Create a new dataset version",
+        description = "Create a new model version. "
+            + "The model file can be selected by uploading the file package or entering the server path")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+        value = "/model/{modelId}/version",
+        produces = {"application/json"},
+        consumes = {"multipart/form-data"})
+    ResponseEntity<ResponseMessage<String>> createModelVersion(
+        @Parameter(in = ParameterIn.PATH, description = "Model ID", required = true, schema = @Schema())
+        @PathVariable("modelId")
+            String modelId,
         @Parameter(description = "file detail") @Valid @RequestPart("file") MultipartFile zipFile,
-        @Parameter(in = ParameterIn.DEFAULT,schema=@Schema()) @RequestParam(value="importPath", required=false)  String importPath);
+        @Parameter(in = ParameterIn.DEFAULT, schema = @Schema())
+        @RequestParam(value = "importPath", required = false)
+            String importPath);
 
-
-    @Operation(summary = "设置模型版本属性（此版本仅支持修改标签）")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
+    @Operation(summary = "Set tag of the model version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/model/{modelId}/version/{versionId}")
-    ResponseEntity<ResponseMessage<String>> modifyModel(@Parameter(in = ParameterIn.PATH, required=true, schema=@Schema()) @PathVariable("modelId") String modelId,
-        @Parameter(in = ParameterIn.PATH, required=true, schema=@Schema()) @PathVariable("versionId") String versionId,
-        @Parameter(in = ParameterIn.QUERY ,schema=@Schema()) @Valid @RequestParam(value = "tag", required = false) String tag);
+    ResponseEntity<ResponseMessage<String>> modifyModel(
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("modelId")
+            String modelId,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionId")
+            String versionId,
+        @Parameter(in = ParameterIn.QUERY, schema = @Schema())
+        @Valid
+        @RequestParam(value = "tag", required = false)
+            String tag);
 
-
-    @Operation(summary = "新建模型", description = "创建新模型并创建初始版本，模型文件采用上传文件包或输入服务端路径二选一的方式。")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok") })
-    @PostMapping(value = "/model",
-        produces = { "application/json" },
-        consumes = { "multipart/form-data" })
-    ResponseEntity<ResponseMessage<String>> createModel(@Parameter(in = ParameterIn.DEFAULT, required=true,schema=@Schema()) @RequestParam(value="modelName")  String modelName,
+    @Operation(summary = "Create a new model",
+        description = "Create a new model and create an initial version. "
+            + "The model file is selected by uploading a file package or entering a server path.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+        value = "/model",
+        produces = {"application/json"},
+        consumes = {"multipart/form-data"})
+    ResponseEntity<ResponseMessage<String>> createModel(
+        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
+        @RequestParam(value = "modelName")
+            String modelName,
         @Parameter(description = "file detail") @Valid @RequestPart("file") MultipartFile zipFile,
-        @Parameter(in = ParameterIn.DEFAULT, required=true,schema=@Schema()) @RequestParam(value="importPath")  String importPath);
-
+        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
+        @RequestParam(value = "importPath")
+            String importPath);
 }
