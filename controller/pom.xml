@@ -19,7 +19,8 @@
         <jwt-version>0.9.1</jwt-version>
         <hutool-version>5.7.22</hutool-version>
         <sleuth-version>3.1.1</sleuth-version>
-        <pagehelper-version>5.3.0</pagehelper-version>
+        <mybatis.starter.version>2.2.2</mybatis.starter.version>
+        <pagehelper.starter.version>1.4.1</pagehelper.starter.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -69,20 +70,37 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/com.github.pagehelper/pagehelper -->
-        <dependency>
-            <groupId>com.github.pagehelper</groupId>
-            <artifactId>pagehelper</artifactId>
-            <version>${pagehelper-version}</version>
-        </dependency>
-
 
 
         <!-- jdbc -->
-        <!--<dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jdbc</artifactId>
-        </dependency>-->
+        </dependency>
+
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>${mybatis.starter.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.pagehelper</groupId>
+            <artifactId>pagehelper-spring-boot-starter</artifactId>
+            <version>${pagehelper.starter.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.mybatis.spring.boot</groupId>
+                    <artifactId>mybatis-spring-boot-starter</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <!-- unit test -->
         <dependency>
