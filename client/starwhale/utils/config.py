@@ -5,17 +5,20 @@ from loguru import logger
 
 from starwhale.consts import (
     SW_CLI_CONFIG, DEFAULT_LOCAL_SW_CONTROLLER_ADDR,
-    SW_LOCAL_STORAGE,
+    SW_LOCAL_STORAGE, ENV_SW_CLI_CONFIG,
 )
 
 _config = {}
 
 
-def load_swcli_config(fpath: str) -> dict:
+def load_swcli_config(fpath: str="") -> dict:
     global _config
 
     if _config:
         return _config
+
+    #TODO: add set_global_env func in cli startup
+    fpath = os.environ.get(ENV_SW_CLI_CONFIG, "")
 
     if not os.path.exists(fpath):
         fpath = str(SW_CLI_CONFIG)

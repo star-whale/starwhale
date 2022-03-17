@@ -1,5 +1,9 @@
+from email.policy import default
+from typing_extensions import Required
 from loguru import logger
 import click
+from starwhale.consts import DEFAULT_MODEL_YAML_NAME
+from starwhale.swmp.model import ModelPackage
 
 
 @click.group("model")
@@ -8,8 +12,13 @@ def model_cmd():
 
 
 @model_cmd.command("build", help="build starwhale model package(swmp)")
-def _build():
-    pass
+@click.argument("workdir", type=click.Path(exists=True, file_okay=False),
+                help="swmp build workdir")
+@click.option("-f", "--model-yaml", type=click.Path(exists=True), default=DEFAULT_MODEL_YAML_NAME,
+              help="mode yaml path, default use current dir model.yaml file")
+@click.option()
+def _build(workdir, model_yaml):
+    ModelPackage.build(workdir, model_yaml)
 
 
 @model_cmd.command("delete", help="delete swmp from local storage")
@@ -37,6 +46,7 @@ def _list():
     pass
 
 
-@model_cmd.command("smoketest", help="run smoketest for predictor with swmp and swds")
+@model_cmd.command("smoketest",
+                   help="run smoketest for predictor with swmp and swds")
 def _smoketest():
     pass

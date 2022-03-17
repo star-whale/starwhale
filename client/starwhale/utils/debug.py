@@ -6,7 +6,7 @@ from loguru import logger
 from starwhale.consts import ENV_DEBUG_MODE
 
 
-def set_debug_mode(is_debug):
+def set_debug_mode(is_debug: bool) -> None:
 	if is_debug:
 		logger.debug("set debug mode.")
 
@@ -16,5 +16,5 @@ def set_debug_mode(is_debug):
 	logging.basicConfig(level=lvl)
 
 
-def get_debug_mode():
+def get_debug_mode() -> bool:
 	return os.environ.get(ENV_DEBUG_MODE, "") == "true"

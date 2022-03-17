@@ -1,9 +1,10 @@
 import os
+import typing as t
 import errno
 from pathlib import Path
 
 
-def ensure_file(path: str, content: str, mode: int = 0o644) -> None:
+def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> None:
     p = Path(path)
     try:
         _saved = p.open().read()
@@ -23,7 +24,7 @@ def ensure_file(path: str, content: str, mode: int = 0o644) -> None:
     os.chmod(path, mode)
 
 
-def ensure_dir(path: str, mode: int=0o755, recursion: bool=False) ->None:
+def ensure_dir(path: t.Union[str, Path], mode: int=0o755, recursion: bool=False) ->None:
     p = Path(path)
     if p.exists() and p.is_dir():
         return
