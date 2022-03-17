@@ -6,7 +6,7 @@
     <parent>
         <artifactId>server</artifactId>
         <groupId>ai.starwhale</groupId>
-        <version>1.0-SNAPSHOT</version>
+        <version>0.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>starwhale-agent</artifactId>
     <packaging>jar</packaging>
