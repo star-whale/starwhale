@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022.1-2022
+  ~ StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="ai.starwhale.mlops.domain.project.ProjectMapper">
+    <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity" useGeneratedKeys="true" keyProperty="id">
+        insert into project_info(project_name, owner_id)
+        values (#{projectName}, #{ownerId})
+    </insert>
+
+    <delete id="deleteProject" parameterType="java.lang.Long">
+        delete from project_info
+        where id = #{id}
+    </delete>
+
+    <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity">
+        update project_info
+        set project_name = #{projectName}
+        where project_id = #{id}
+    </update>
+
+    <select id="listProjects" parameterType="java.lang.String" resultType="ai.starwhale.mlops.domain.project.ProjectEntity" >
+        select p.id,
+               p.project_name,
+               p.owner_id,
+               p.is_deleted,
+               p.create_time,
+               p.modified_time,
+               u.user_name as owner_name
+        from project_info as p,
+             user_info as u
+        where u.id = p.owner_id
+        <if test="projectName != null">
+            and project_name like #{projectName}%
+        </if>
+    </select>
+
+    <select id="findProject" parameterType="java.lang.Long" resultType="ai.starwhale.mlops.domain.project.ProjectEntity">
+        select p.id,
+               p.project_name,
+               p.owner_id,
+               p.is_deleted,
+               p.create_time,
+               p.modified_time,
+               u.user_name as owner_name
+        from project_info as p,
+             user_info as u
+        where id = #{id}
+          and u.id = p.owner_id
+    </select>
+</mapper>
