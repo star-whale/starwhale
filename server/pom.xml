@@ -17,8 +17,8 @@
     </modules>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <openapi-version>1.6.6</openapi-version>
         <hutool-version>5.7.22</hutool-version>
         <sleuth-version>3.1.1</sleuth-version>
