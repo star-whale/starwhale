@@ -7,7 +7,6 @@
 
 package ai.starwhale.mlops.domain.user;
 
-import java.util.HashSet;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -17,6 +16,6 @@ import java.util.Set;
 public class UserService {
     public Optional<User> findByUsername(String username) {
         // todo example, but you need confirm set value for the property:active
-        return Optional.of(User.builder().name(username).password("$2a$10$USw2j1KtbjM2tQZtZY44tuOOrhE56IhhP/.1wVQzskJG6t0aRlBLe").roles(new HashSet<Role>(){{add(new Role(Role.USER));}}).active(true).build());
+        return Optional.of(User.builder().name(username).password("$2a$10$USw2j1KtbjM2tQZtZY44tuOOrhE56IhhP/.1wVQzskJG6t0aRlBLe").roles(Set.of(new Role(Role.USER))).active(true).build());
     }
 }
