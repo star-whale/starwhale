@@ -12,6 +12,18 @@ package ai.starwhale.mlops.exception;
  */
 public abstract class StarWhaleException extends RuntimeException {
 
+    protected StarWhaleException(String message) {
+        super(message);
+    }
+
+    protected StarWhaleException(Throwable e) {
+        super(e);
+    }
+
+    protected StarWhaleException(String message, Throwable e) {
+        super(message, e);
+    }
+
     /**
      * every exception should has a code to be exposed to user. the code shall be unique among all StarWhaleExceptions
      * @return user oriented error code
