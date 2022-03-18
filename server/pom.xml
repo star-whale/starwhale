@@ -23,6 +23,8 @@
         <hutool-version>5.7.22</hutool-version>
         <sleuth-version>3.1.1</sleuth-version>
         <jwt-version>0.9.1</jwt-version>
+        <mybatis.starter.version>2.2.2</mybatis.starter.version>
+        <pagehelper.starter.version>1.4.1</pagehelper.starter.version>
     </properties>
 
     <dependencyManagement>
@@ -57,6 +59,24 @@
                 <groupId>cn.hutool</groupId>
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool-version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis.starter.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.pagehelper</groupId>
+                <artifactId>pagehelper-spring-boot-starter</artifactId>
+                <version>${pagehelper.starter.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.mybatis.spring.boot</groupId>
+                        <artifactId>mybatis-spring-boot-starter</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
