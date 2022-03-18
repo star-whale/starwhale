@@ -7,10 +7,12 @@
 
 package ai.starwhale.mlops;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 @SpringBootApplication
+@MapperScan("ai.starwhale.mlops.domain")
 public class StarWhaleControllerApplication {
     public static void main(String[] args) {
         new SpringApplicationBuilder(StarWhaleControllerApplication.class).run(args);

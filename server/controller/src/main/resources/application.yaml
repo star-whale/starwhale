@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: star-whale-controller
 logging:
@@ -7,3 +9,27 @@ logging:
 sw:
   jwt:
     secret: wdxlG3UK66m6uTUgxXFjizli
+server:
+  port: 80
+---
+#Development
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    name: mysql
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/starwhale?useUnicode=true&characterEncoding=UTF-8
+    username: starwhale
+    password: sw1234
+    schema: classpath:sql/schema.sql
+    initialization-mode: always
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath*:mapper/**/*.xml
+
+server:
+  port: 8082
