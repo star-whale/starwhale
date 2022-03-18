@@ -23,7 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static java.util.List.of;
+import static cn.hutool.core.collection.ListUtil.of;
 import static java.util.Optional.ofNullable;
 import static org.springframework.util.StringUtils.hasText;
 
