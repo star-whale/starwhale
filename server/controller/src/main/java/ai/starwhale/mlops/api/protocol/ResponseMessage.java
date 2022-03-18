@@ -20,17 +20,22 @@ public class ResponseMessage<T> {
      */
     public static final Code CODE_SUCCESS = Code.success;
 
-    private Code code;
+    private String code;
     private String message;
     private T data;
 
     public ResponseMessage(Code code, String message, T data) {
-        setCode(code);
+        setCode(code.getType());
         setMessage(message);
         setData(data);
     }
 
     public ResponseMessage(Code code, String message) {
+        setCode(code.getType());
+        setMessage(message);
+    }
+
+    public ResponseMessage(String code, String message) {
         setCode(code);
         setMessage(message);
     }

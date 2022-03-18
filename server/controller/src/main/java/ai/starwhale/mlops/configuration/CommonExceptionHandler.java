@@ -9,6 +9,8 @@ package ai.starwhale.mlops.configuration;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.Code;
+import ai.starwhale.mlops.exception.StarWhaleApiException;
+import ai.starwhale.mlops.exception.StarWhaleException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
@@ -51,6 +53,15 @@ public class CommonExceptionHandler {
         return ResponseEntity
                 .internalServerError()
                 .body(new ResponseMessage<>(Code.internalServerError, ex.getMessage()));
+    }
+
+    @ExceptionHandler(StarWhaleApiException.class)
+    public ResponseEntity<ResponseMessage<String>> handleStarWhaleException(HttpServletRequest request, StarWhaleApiException ex) {
+        logger.error("handleInternalServerError {}\n", request.getRequestURI(), ex);
+
+        return ResponseEntity
+            .status(ex.getHttpStatus())
+            .body(new ResponseMessage<>(ex.getCode(), ex.getTip()));
     }
 
 }

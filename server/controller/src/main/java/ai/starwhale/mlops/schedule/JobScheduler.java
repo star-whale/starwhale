@@ -11,6 +11,7 @@ import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.task.Task;
 
+import ai.starwhale.mlops.domain.task.TaskTrigger;
 import java.util.List;
 
 /**
@@ -29,5 +30,5 @@ public interface JobScheduler {
      * @param node the node load info
      * @return tasks to be assigned to the node
      */
-    List<Task> schedule(Node node);
+    List<TaskTrigger> schedule(Node node);
 }

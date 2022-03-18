@@ -9,12 +9,17 @@ package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.domain.swds.SWDataSetSlice;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * sufficient information for an Agent to run a Task
  */
 @Data
+@Builder
 public class TaskTrigger {
 
     /**
@@ -30,5 +35,5 @@ public class TaskTrigger {
     /**
      * swds slice meta info
      */
-    SWDataSetSlice swDataSetSlice;
+    List<SWDataSetSlice> swDataSetSlice;
 }
