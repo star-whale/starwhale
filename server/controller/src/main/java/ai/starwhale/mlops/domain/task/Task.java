@@ -7,12 +7,14 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
  * Tasks are derived from a Job. Tasks are the executing units of a Job.
  */
 @Data
+@Builder
 public class Task {
 
     /**

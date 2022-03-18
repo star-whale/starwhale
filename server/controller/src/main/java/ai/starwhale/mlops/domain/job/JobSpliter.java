@@ -9,6 +9,7 @@ package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.domain.task.Task;
 
+import ai.starwhale.mlops.domain.task.TaskTrigger;
 import java.util.List;
 
 /**
@@ -16,5 +17,5 @@ import java.util.List;
  */
 public interface JobSpliter {
 
-    List<Task> split(Job job);
+    List<TaskTrigger> split(Job job);
 }

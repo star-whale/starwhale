@@ -9,6 +9,7 @@ package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.List;
  *
  */
 @Data
+@Builder
 public class Job {
 
     Long id;

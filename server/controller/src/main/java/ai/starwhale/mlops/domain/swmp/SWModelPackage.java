@@ -7,12 +7,14 @@
 
 package ai.starwhale.mlops.domain.swmp;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
  * Star Whale Model Package
  */
 @Data
+@Builder
 public class SWModelPackage {
 
     Long id;

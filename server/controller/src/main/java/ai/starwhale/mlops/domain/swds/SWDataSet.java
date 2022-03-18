@@ -7,12 +7,14 @@
 
 package ai.starwhale.mlops.domain.swds;
 
+import lombok.Builder;
 import lombok.Data;
 
 /**
  * Star Whale Data Set
  */
 @Data
+@Builder
 public class SWDataSet {
 
     /**
