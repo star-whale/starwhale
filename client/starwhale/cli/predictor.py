@@ -2,7 +2,7 @@ import click
 from loguru import logger
 
 
-@click.group("predictor")
+@click.group("predictor", help="Manage remote StarWhale Controller Job/Task/Predictor...")
 def predictor_cmd():
     pass
 

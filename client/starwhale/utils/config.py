@@ -7,6 +7,7 @@ from starwhale.consts import (
     SW_CLI_CONFIG, DEFAULT_LOCAL_SW_CONTROLLER_ADDR,
     SW_LOCAL_STORAGE, ENV_SW_CLI_CONFIG,
 )
+from starwhale.utils.fs import ensure_dir
 
 _config = {}
 
@@ -20,7 +21,7 @@ def load_swcli_config(fpath: str="") -> dict:
     #TODO: add set_global_env func in cli startup
     fpath = os.environ.get(ENV_SW_CLI_CONFIG, "")
 
-    if not os.path.exists(fpath):
+    if not fpath or not os.path.exists(fpath):
         fpath = str(SW_CLI_CONFIG)
 
     if not os.path.exists(fpath):
@@ -39,13 +40,13 @@ def render_default_swcli_config(fpath: str) -> dict:
             sw_token="",
         ),
         storage=dict(
-            root=SW_LOCAL_STORAGE
+            root=str(SW_LOCAL_STORAGE.resolve())
         )
     )
 
-    #TODO: use sw_cli_config class
-
+    ensure_dir(os.path.dirname(fpath), recursion=True)
     with open(fpath, "w") as f:
+        #TODO: use sw_cli_config class
         yaml.dump(c, f, default_flow_style=False)
 
     return c

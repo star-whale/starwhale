@@ -11,3 +11,9 @@ class FileFormatError(Exception):
 
     def __str__(self) -> str:
         return "file format error"
+
+
+class NoSupportError(Exception):
+
+    def __str__(self) -> str:
+        return "no support"

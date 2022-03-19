@@ -15,8 +15,8 @@ setup(name='starwhale',
       zip_safe=False,
       entry_points="""
       [console_scripts]
-      starwhale = starwhale.cli:cli
-      sw = starwhale.cli:cli
+      swcli = starwhale.cli:cli
+      starwhale = starwhale.cli:clip
       """,
       python_requires = ">=3.7.0",
       scripts=[

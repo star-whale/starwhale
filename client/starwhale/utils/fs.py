@@ -7,9 +7,9 @@ from pathlib import Path
 def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> None:
     p = Path(path)
     try:
-        _saved = p.open().read()
+        _saved = p.open("r").read()
     except IOError as e:
-        if e.errno == errno.ENONET:
+        if e.errno == errno.ENOENT:
             # no such file or directory
             _saved = ""
         else:
@@ -24,7 +24,7 @@ def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> No
     os.chmod(path, mode)
 
 
-def ensure_dir(path: t.Union[str, Path], mode: int=0o755, recursion: bool=False) ->None:
+def ensure_dir(path: t.Union[str, Path], mode: int=0o755, recursion: bool=True) ->None:
     p = Path(path)
     if p.exists() and p.is_dir():
         return
@@ -40,7 +40,8 @@ def ensure_dir(path: t.Union[str, Path], mode: int=0o755, recursion: bool=False)
             raise
 
 
-def ensure_link(src: str, dest: str) -> None:
+def ensure_link(src: t.Union[str, Path], dest: t.Union[str, Path]) -> None:
+    src, dest = str(src), str(dest)
     dirname = os.path.dirname(dest)
     if dirname and not os.path.exists(dirname):
         os.makedirs(dirname)

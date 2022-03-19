@@ -5,3 +5,7 @@ pyyaml==6.0
 cattrs==1.7.1
 requests>=2.27.0
 loguru==0.6.0
+conda-pack==0.6.0
+virtualenv>=13.0.0
+fs>=2.4.0
+typing-extensions>=4.1.1
