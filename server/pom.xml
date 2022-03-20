@@ -36,6 +36,25 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>2021.0.1</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <!-- star whale -->
+            <dependency>
+                <groupId>ai.starwhale</groupId>
+                <artifactId>starwhale-agent-sdk</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ai.starwhale</groupId>
+                <artifactId>starwhale-controller-sdk</artifactId>
+                <version>0.1.0-SNAPSHOT</version>
+            </dependency>
+
             <!-- swagger-ui -->
             <dependency>
                 <groupId>org.springdoc</groupId>

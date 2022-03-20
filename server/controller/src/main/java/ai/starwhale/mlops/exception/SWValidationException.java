@@ -17,6 +17,7 @@ public class SWValidationException extends StarWhaleException {
     private String tip;
 
     public SWValidationException(ValidSubject validSubject){
+        super(PREFIX_TIP + validSubject.tipSubject);
         this.code = PREFIX_CODE + validSubject.code;
         this.tip = PREFIX_TIP + validSubject.tipSubject;
     }

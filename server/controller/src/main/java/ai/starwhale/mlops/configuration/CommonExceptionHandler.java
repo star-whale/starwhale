@@ -33,7 +33,7 @@ public class CommonExceptionHandler {
 
         return ResponseEntity
                 .badRequest()
-                .body(new ResponseMessage<>(Code.validationException, ex.getMessage()));
+                .body(new ResponseMessage<>(Code.validationException.name(), ex.getMessage()));
     }
 
 
@@ -43,7 +43,7 @@ public class CommonExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(new ResponseMessage<>(Code.accessDenied, ex.getMessage()));
+                .body(new ResponseMessage<>(Code.accessDenied.name(), ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
@@ -52,7 +52,7 @@ public class CommonExceptionHandler {
 
         return ResponseEntity
                 .internalServerError()
-                .body(new ResponseMessage<>(Code.internalServerError, ex.getMessage()));
+                .body(new ResponseMessage<>(Code.internalServerError.name(), ex.getMessage()));
     }
 
     @ExceptionHandler(StarWhaleApiException.class)
