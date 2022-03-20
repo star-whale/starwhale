@@ -1,7 +1,7 @@
 # Compiled class file
 *.class
 **.iml
-*.pyc
+*.py[c|o]
 *.pb.go
 *.pb.gw.go
 
@@ -18,8 +18,10 @@ pylint.out
 *.tar.gz
 *.rar
 /dist/
-*.swo
-*.swp
+*.egg
+*.egg/
+*.egg-info/
+*.sw[p|o]
 *.orig
 
 # IDE file
