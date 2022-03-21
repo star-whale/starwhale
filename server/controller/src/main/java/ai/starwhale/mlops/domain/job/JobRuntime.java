@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.api.protocol.node.Device;
+import ai.starwhale.mlops.domain.node.Device;
 import lombok.Builder;
 import lombok.Data;
 

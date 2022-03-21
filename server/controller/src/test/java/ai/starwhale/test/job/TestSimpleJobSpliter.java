@@ -11,7 +11,7 @@ import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.SimpleJobSpliter;
-import ai.starwhale.mlops.api.protocol.node.Device.Clazz;
+import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskTrigger;

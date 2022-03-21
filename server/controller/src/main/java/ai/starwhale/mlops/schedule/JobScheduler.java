@@ -8,7 +8,7 @@
 package ai.starwhale.mlops.schedule;
 
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.api.protocol.node.Node;
+import ai.starwhale.mlops.domain.node.Node;
 
 import ai.starwhale.mlops.domain.task.TaskTrigger;
 import java.util.List;

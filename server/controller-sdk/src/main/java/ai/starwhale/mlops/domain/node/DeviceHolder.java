@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.api.protocol.node;
+package ai.starwhale.mlops.domain.node;
 
 import ai.starwhale.mlops.domain.task.Task;
 import lombok.Data;

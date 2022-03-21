@@ -5,42 +5,36 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.api.protocol.node;
+package ai.starwhale.mlops.domain.node;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
- * Device is a computational unit such as GPU/ CPU or TPU which is the core resource for a Node to schedule
+ * Node is a machine/ a virtual machine or even a K8S pod in the cluster
  */
 @Data
-public class Device {
+public class Node {
 
     /**
-     * gpu number or cpu number
+     * unique name in the cluster
      */
-    String id;
+    String name;
 
     /**
-     * device class
+     * the ip address of this node
      */
-    Clazz clazz;
-
-
-    /**
-     * P4 / 1070Ti etc.
-     */
-    String type;
+    String ipAddr;
 
     /**
-     * CUDA 10.1 or something alike
+     * memory size in GB unit
      */
-    String driver;
+    Long memorySizeGB;
 
     /**
-     * the device class CPU or GPU
+     * the device holding information
      */
-    public enum Clazz{
-        CPU,GPU
-    }
+    List<DeviceHolder> deviceHolders;
 
 }
