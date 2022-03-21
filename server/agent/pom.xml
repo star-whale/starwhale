@@ -11,6 +11,11 @@
     <artifactId>starwhale-agent</artifactId>
     <packaging>jar</packaging>
     <dependencies>
+        <!-- star whale package -->
+        <dependency>
+            <groupId>ai.starwhale</groupId>
+            <artifactId>starwhale-controller-sdk</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -20,6 +25,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- open-feign -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
         <!-- swagger-ui -->
         <dependency>
             <groupId>org.springdoc</groupId>

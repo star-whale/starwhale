@@ -11,6 +11,18 @@ import org.springframework.http.HttpStatus;
 
 public abstract class StarWhaleApiException extends StarWhaleException {
 
+    protected StarWhaleApiException(String message) {
+        super(message);
+    }
+
+    protected StarWhaleApiException(Throwable e) {
+        super(e);
+    }
+
+    protected StarWhaleApiException(String message, Throwable e) {
+        super(message, e);
+    }
+
     /**
      * every api exception should has a HttpStatus to be exposed to user.
      * @return user oriented error code

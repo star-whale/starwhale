@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.common.ResponseFactory;
 import ai.starwhale.mlops.configuration.security.JwtTokenUtil;
 import ai.starwhale.mlops.domain.user.Role;
 import ai.starwhale.mlops.domain.user.User;
@@ -58,7 +59,7 @@ public class LoginController {
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", jwtTokenUtil.generateAccessToken(user)))
-                    .body(ResponseMessage.asSuccess("success"));
+                    .body(ResponseFactory.asSuccess("success"));
         } catch (BadCredentialsException ex) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -77,6 +78,6 @@ public class LoginController {
     @RolesAllowed(Role.USER)
     public ResponseMessage<User> testAuth() {
         log.info("success");
-        return ResponseMessage.asSuccess((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+        return ResponseFactory.asSuccess((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal());
     }
 }

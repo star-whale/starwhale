@@ -22,13 +22,6 @@ public enum Code {
     }
 
     public <T> ResponseMessage<T> asResponse(T data) {
-        return new ResponseMessage<>(this, this.type, data);
-    }
-
-    public void exception() {
-
-    }
-    class BaseException {
-
+        return new ResponseMessage<>(this.name(), this.type, data);
     }
 }
