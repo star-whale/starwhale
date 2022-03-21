@@ -5,15 +5,19 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.api.protocol.report;
+package ai.starwhale.mlops.domain.storage;
 
-import ai.starwhale.mlops.domain.node.Node;
-import lombok.Data;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.stream.Stream;
 
 /**
- * Agent report the info of it's node to Controller.
+ * provides file upload/ download /list services
  */
-@Data
-public class ReportRequest {
-    Node nodeInfo;
+public interface StorageAccessService {
+
+    OutputStream put(String path);
+    InputStream get(String path);
+    Stream<String> list(String path);
+
 }

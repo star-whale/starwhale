@@ -7,6 +7,8 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.common.util.ArrayHelper;
+import ai.starwhale.mlops.common.util.ArrayHelper.Segment;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.SWDataSetSlice;
 import ai.starwhale.mlops.domain.task.Task;
@@ -29,21 +31,20 @@ public class SimpleJobSpliter implements JobSpliter {
         List<Task> allocatedTasks = allocateTasks(job.getId(), deviceAmount);
         List<SWDataSet> swDataSets = job.getSwDataSets();
         //slicePointsPerDS.size() == swDataSets.size()
-        List<List<Integer>> slicePointsPerDS = swDataSets.stream()
-            .map(ds -> slicePoints(ds.getSize(), deviceAmount))
+        List<List<Segment>> slicePointsPerDS = swDataSets.stream()
+            .map(ds -> ArrayHelper.INSTANCE.sliceSegments(ds.getSize(), deviceAmount))
             .collect(Collectors.toList());
-        List<TaskTrigger> taskTriggers = new ArrayList<>(getInitialCapacity(deviceAmount));
+        List<TaskTrigger> taskTriggers = new ArrayList<>(ArrayHelper.INSTANCE.getInitialCapacity(deviceAmount));
         for (int i = 0; i < deviceAmount; i++) {
             int swdsSize = swDataSets.size();
-            List<SWDataSetSlice> swDataSetSlices = new ArrayList<>(getInitialCapacity(
+            List<SWDataSetSlice> swDataSetSlices = new ArrayList<>(ArrayHelper.INSTANCE.getInitialCapacity(
                 swdsSize));
             for (int j = 0; j < swdsSize; j++) {
-                List<Integer> slicePoints = slicePointsPerDS.get(j);
-                boolean lastSlice = i == deviceAmount - 1;
+                List<Segment> sliceSegments = slicePointsPerDS.get(j);
                 SWDataSetSlice swdsSlice = SWDataSetSlice.builder()
                     .swDataSet(swDataSets.get(j))
-                    .start(slicePoints.get(i))
-                    .end(lastSlice ? slicePoints.get(i + 1) : slicePoints.get(i + 1) - 1)
+                    .start(sliceSegments.get(i).getStartInclusive())
+                    .end(sliceSegments.get(i).getEndInclusive())
                     .build();
                 swDataSetSlices.add(swdsSlice);
             }
@@ -56,9 +57,6 @@ public class SimpleJobSpliter implements JobSpliter {
         return taskTriggers;
     }
 
-    private int getInitialCapacity(Integer expectedSize) {
-        return Double.valueOf(Math.ceil((expectedSize) * 1.4)).intValue();
-    }
 
     private List<Task> allocateTasks(Long id, Integer deviceAmount) {
         //TODO tasks should be saved into DB in this step, here is a mock
@@ -69,28 +67,5 @@ public class SimpleJobSpliter implements JobSpliter {
         }
         return tasks;
     }
-
-    /**
-     * (8,3) -> (0 3 6 7); (8,4) -> (0 2 4 6 7); (3,4) -> (0 1 2); slicePoints.size() == sliceAmount +
-     * 1  || slicePoints.size() == total + 1
-     */
-    private List<Integer> slicePoints(final Integer total, final Integer sliceAmount) {
-        if (sliceAmount <= 0) {
-            log.error("invalid slice amount expected greater than 0");
-            throw new SWValidationException(ValidSubject.JOB);
-        }
-        //if sliceAmount > total ,sliceSize is 1 and eventually we got (total + 1) slicePoints instead of (sliceAmount + 1)
-        final int sliceSizeRound = total / sliceAmount;
-        final int sliceSize = total % sliceAmount == 0 ? sliceSizeRound : sliceSizeRound + 1;
-        int slicePoint = 0;
-        List<Integer> slicePoints = new ArrayList<>(getInitialCapacity(sliceAmount + 1));
-        do {
-            slicePoints.add(slicePoint);
-            slicePoint += sliceSize;
-        } while (slicePoint < total - 1);
-        slicePoints.add(total - 1);
-        return slicePoints;
-    }
-
 
 }
