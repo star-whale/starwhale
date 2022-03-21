@@ -1,4 +1,3 @@
-from email.mime import base
 import yaml
 import os
 import typing as t
@@ -13,13 +12,13 @@ from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
 from fs import open_fs
 
+from starwhale import __version__
 from starwhale.utils.error import FileTypeError, FileFormatError, NoSupportError
 from starwhale.utils import (
     gen_uniq_version, get_conda_env, is_windows, is_linux, is_darwin,
     is_venv, is_conda, get_python_run_env,
     pip_freeze, conda_export, get_python_version,
 )
-from starwhale.utils.config import load_swcli_config
 from starwhale.utils.fs import ensure_dir, ensure_file, ensure_link
 from starwhale.utils.venv import setup_venv, install_req
 from starwhale.consts import (
@@ -27,7 +26,7 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME, SUPPORTED_PIP_REQ, DUMP_USER_PIP_REQ_FNAME,
     DUMP_CONDA_ENV_FNAME, DUMP_PIP_REQ_FNAME, DEFAULT_COPY_WORKERS,
 )
-from starwhale import __version__
+from .store import ModelPackageLocalStore
 
 
 class ModelRunConfig(object):
@@ -104,26 +103,6 @@ class ModelConfig(object):
         return f"Model Config: name -> {self.name}, model-> {self.model}"
 
 
-
-class ModelPackageLocalStore(object):
-
-    def __init__(self) -> None:
-        pass
-
-    @classmethod
-    def list(cls):
-        #TODO: add filter for list
-        pass
-
-    @classmethod
-    def push(cls):
-        pass
-
-    @classmethod
-    def pull(cls):
-        pass
-
-
 class ModelPackage(object):
 
     def __init__(self, workdir: str, model_yaml_fname: str, skip_gen_env: bool) -> None:
@@ -132,11 +111,7 @@ class ModelPackage(object):
         self._skip_gen_env = skip_gen_env
         self._model_yaml_fname = model_yaml_fname
         self._swmp_config = self.load_model_config(os.path.join(workdir, model_yaml_fname))
-        self._swcli_config = load_swcli_config()
-        #TODO: move to other class or module
-        self._swcli_root = Path(self._swcli_config["storage"]["root"])
-        self._swcli_workdir = self._swcli_root / "workdir"
-        self._swcli_pkg = self._swcli_root / "pkg"
+        self._store = ModelPackageLocalStore()
 
         self._swmp_store = Path()
         self._snapshot_workdir = Path()
@@ -175,6 +150,7 @@ class ModelPackage(object):
 
     @logger.catch
     def _do_build(self):
+        #TODO: add progress bar
         self._gen_version()
         self._prepare_snapshot()
         self._copy_src()
@@ -190,15 +166,14 @@ class ModelPackage(object):
             self._version = gen_uniq_version(self._swmp_config.name)
 
         self._manifest["version"] = self._version
-        self._manifest["created_at"] = datetime.utcnow().strftime(FMT_DATETIME)
+        self._manifest["created_at"] = datetime.now().astimezone().strftime(FMT_DATETIME)
         logger.info(f"[step:version]swmp version is {self._version}")
 
     def _prepare_snapshot(self):
         logger.info("[step:prepare-snapshot]prepare swmp snapshot dirs...")
-        ensure_dir(self._swcli_pkg)
 
-        self._swmp_store = self._swcli_pkg / self._name
-        self._snapshot_workdir = self._swcli_workdir / self._name / self._version
+        self._swmp_store = self._store.pkgdir / self._name
+        self._snapshot_workdir = self._store.workdir / self._name / self._version
         #TODO: graceful clear?
         if self._snapshot_workdir.exists():
             raise Exception(f"{self._snapshot_workdir} has already existed, will abort")
@@ -251,11 +226,12 @@ class ModelPackage(object):
         py_ver = get_python_version()
 
         #TODO: add python version into manifest
+        #TODO: add size into manifest
         self._manifest["dep"] = dict(
             env=pr_env,
             system=sys_name,
             python=py_ver,
-            local_generate=False,
+            local_gen_env=False,
             venv=dict(use=not is_conda()),
             conda=dict(use=is_conda())
         )
@@ -266,6 +242,7 @@ class ModelPackage(object):
         #TODO: use model.yaml run-env field
         logger.info(f"[info:dep]python env({pr_env}), os({sys_name}, python({py_ver}))")
         if is_conda():
+            #TODO: environment.yaml prefix removed?
             logger.info(f"[info:dep]dump conda environment yaml: {conda_lock_env}")
             conda_export(conda_lock_env)
         elif is_venv():
@@ -280,6 +257,7 @@ class ModelPackage(object):
             logger.info(f"[info:dep]{sys_name} will skip conda/venv dump or generate")
         elif is_linux():
             #TODO: more design local or remote build venv
+            #TODO: ignore some pkg when dump, like notebook?
             self._manifest["dep"]["local_gen_env"] = True  # type: ignore
 
             if is_conda():
@@ -336,7 +314,7 @@ class ModelPackage(object):
         out = self._swmp_store / f"{self._version}.swmp"
         logger.info(f"[step:tar]try to tar for swmp {out} ...")
         with tarfile.open(out, "w:") as tar:
-            tar.add(str(self._snapshot_workdir), arcname=self._snapshot_workdir.name)
+            tar.add(str(self._snapshot_workdir), arcname="")
 
         ensure_link(out, self._swmp_store / "latest")
         logger.info(f"[step:tar]finish to make swmp")
