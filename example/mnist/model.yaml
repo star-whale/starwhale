@@ -1,0 +1,19 @@
+version: 1.0
+name: mnist
+
+model:
+  - mnist.pkl
+
+config:
+  - hyperparam.json
+
+run:
+  runtime: python3.8
+  ppl: ppl.py
+  pip_req: requirements.txt
+  args: --predictor
+
+desc: mnist by ptorch
+
+tag:
+  - classify
