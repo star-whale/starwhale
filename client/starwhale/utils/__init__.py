@@ -30,7 +30,11 @@ def random_str(cnt: int = 8) -> str:
 
 
 def is_venv() -> bool:
-    return get_base_prefix() != sys.prefix
+    #TODO: refactor for get external venv attr
+    output = subprocess.check_output(["python3", "-c",
+         "import sys; print(sys.prefix == (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))"
+        ],stderr=sys.stdout)
+    return "True" in str(output)
 
 
 def is_conda() -> bool:
@@ -38,20 +42,12 @@ def is_conda() -> bool:
 
 
 def get_python_run_env() -> str:
-    #TODO: check user ppl environment or starwhale-cli env? need test
     if is_venv():
         return "venv"
     elif is_conda():
         return "conda"
     else:
         return "system"
-
-
-def get_base_prefix() -> str:
-    #TODO: check user ppl environment or starwhale-cli env? need test
-    return (getattr(sys, "base_prefix", None) or
-            getattr(sys, "real_prefix", None) or
-            sys.prefix)
 
 
 def get_conda_env() -> str:
