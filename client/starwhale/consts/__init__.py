@@ -22,7 +22,7 @@ ENV_CONDA = "CONDA_DEFAULT_ENV"
 ENV_CONDA_PREFIX = "CONDA_PREFIX"
 CONDA_ENV_TAR = "env.tar"
 
-FMT_DATETIME = "%Y-%m-%d %H:%M:%S.%f"
+FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 
 DUMP_CONDA_ENV_FNAME = "env-lock.yaml"
 DUMP_PIP_REQ_FNAME = "pip-req-lock.txt"
