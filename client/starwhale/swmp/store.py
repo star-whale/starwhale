@@ -1,23 +1,31 @@
 from pathlib import Path
 from collections import namedtuple
 import yaml
+import sys
 
+import requests
 from loguru import logger
 from rich.table import Table
 from rich.console import Console
 from rich import box
 from rich.panel import Panel
 from rich.pretty import Pretty
+from rich import print as rprint
 from fs import open_fs
 from fs.tarfs import TarFS
 
+from starwhale.utils import fmt_http_server
 from starwhale.utils.config import load_swcli_config
-from starwhale.consts import DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME
+from starwhale.consts import (
+    DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME, SW_API_VERSION
+)
 
 SwmpMeta = namedtuple("SwmpMeta", ["model", "version", "tag", "environment", "created"])
 
 
 LATEST_TAG = "latest"
+TMP_FILE_BUFSIZE = 8192
+
 
 class ModelPackageLocalStore(object):
 
@@ -77,10 +85,60 @@ class ModelPackageLocalStore(object):
             return yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
 
     def push(self, swmp: str) -> None:
-        pass
+        server= fmt_http_server(self.sw_remote_addr)
+        url = f"{server}/{SW_API_VERSION}/model/push"
 
-    def pull(self, swmp: str) -> None:
-        pass
+        _spath = self.swmp_path(swmp)
+        if not _spath.exists():
+            rprint(f"[red]failed to push {swmp}[/], because of {_spath} not found")
+            sys.exit(1)
+
+        #TODO: add progress bar and rich live
+        #TODO: add multi-part upload
+        #TODO: add more push log
+        rprint("try to push swmp...")
+        r = requests.post(url, data={"swmp": swmp},
+                          files={"file": _spath.open("rb")})
+        r.raise_for_status()
+        rprint(" :clap: push done.")
+
+    def pull(self, swmp: str, server: str, force: bool) -> None:
+        server = server.strip() or self.sw_remote_addr
+        server = fmt_http_server(server)
+        url = f"{server}/{SW_API_VERSION}/model/pull"
+
+        _spath = self.swmp_path(swmp)
+        if _spath.exists() and not force:
+            rprint(f":ghost: {swmp} is already existed, skip pull")
+            return
+
+        #TODO: add progress bar and rich live
+        #TODO: multi phase for pull swmp
+        #TODO: get size in advance
+        rprint(f"try to pull {swmp}")
+        with requests.get(url, stream=True,
+                         parmas={"swmp": swmp}, # type: ignore
+                         headers={"Authorization": self._sw_token}) as r:
+            r.raise_for_exception()
+            with _spath.open("wb") as f:
+                for chunk in r.iter_content(chunk_size=TMP_FILE_BUFSIZE):
+                    f.write(chunk)
+        rprint(f" :clap: pull completed")
+
+    def swmp_path(self, swmp: str) -> Path:
+        _model, _version = swmp.split(":", 1)
+        #TODO: add swmp validator
+        if ":" not in swmp:
+            raise Exception(f"{swmp} format wrong, use [model]:[version]")
+        return (self.pkgdir / _model / f"{_version}.swmp")
+
+    @property
+    def sw_remote_addr(self) -> str:
+        return self._swcli_config.get("controller", {}).get("remote_addr", "")
+
+    @property
+    def _sw_token(self) -> str:
+        return self._swcli_config.get("controller", {}).get("token", "")
 
     def info(self, swmp: str) -> None:
         if ":" not in swmp:

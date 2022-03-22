@@ -1,3 +1,4 @@
+from email.policy import default
 from typing_extensions import Required
 from loguru import logger
 import click
@@ -37,8 +38,10 @@ def _push(swmp):
 
 @model_cmd.command("pull", help="Pull swmp from starwhale controller or hub.starwhale.ai")
 @click.argument("swmp")
-def _pull(swmp):
-    ModelPackageLocalStore().pull(swmp)
+@click.option("-s", "--starwhale", help="starwhale controller server, default is swcli config remote_addr")
+@click.option("--force", default=False, help="force pull swmp")
+def _pull(swmp, starwhale, force):
+    ModelPackageLocalStore().pull(swmp, starwhale, force)
 
 
 @model_cmd.command("info", help="Get more info abort local swmp")

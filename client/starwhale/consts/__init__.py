@@ -32,3 +32,5 @@ DUMP_USER_PIP_REQ_FNAME = "pip-req.txt"
 DEFAULT_COPY_WORKERS = 4
 
 SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
+
+SW_API_VERSION = "v0.1"
