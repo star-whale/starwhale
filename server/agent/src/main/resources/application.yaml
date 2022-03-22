@@ -1,0 +1,7 @@
+server:
+  port: 8088
+sw:
+  agent:
+    task:
+      infoPath: ${SW_TASK_INFO_PATH:/opt/starwhale/tasks/}
+      resultPath: ${SW_TASK_RESULT_PATH:/opt/starwhale/taskResults/}

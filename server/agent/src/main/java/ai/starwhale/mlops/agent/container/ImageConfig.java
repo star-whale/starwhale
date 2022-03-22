@@ -7,6 +7,9 @@
 
 package ai.starwhale.mlops.agent.container;
 
+import lombok.Builder;
+
+@Builder
 public class ImageConfig {
     private String image;
     private String[] env;

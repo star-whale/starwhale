@@ -55,14 +55,19 @@ public class Task {
         RUNNING,
 
         /**
-         * after task exit normally before closed. garbage clearing
+         * after task exit normally(container is stopped)
          */
-        CLOSING,
+        RESULTING,
 
         /**
-         * garbage is cleared
+         * result has been uploaded to the storage
          */
         FINISHED,
+
+        /**
+         * when report successfully to the controller,it should be archived
+         */
+        ARCHIVED,
 
         /**
          * canceled by the controller

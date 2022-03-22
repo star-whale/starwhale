@@ -12,7 +12,7 @@ public interface ContainerClient {
      * @param args
      * @return container id
      */
-    Optional<String> startContainer(String imageId, String[] args);
+    Optional<String> startContainer(String imageId, ImageConfig config);
     Optional<Boolean> stopContainer(String containerId);
     Optional<ContainerStatus> status(String containerId);
 
