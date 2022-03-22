@@ -87,3 +87,12 @@ def get_python_version():
     #TODO: check user ppl environment or starwhale-cli env? need test
     _v = sys.version_info
     return f"{_v.major}.{_v.minor}.{_v.micro}"
+
+
+def fmt_http_server(server: str, https: bool=False) -> str:
+    server = server.strip().strip("/")
+    if server.startswith(("http://", "https://")):
+        return server
+    else:
+        prefix = "https" if https else "http"
+        return f"{prefix}://{server}"
