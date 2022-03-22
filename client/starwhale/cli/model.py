@@ -1,9 +1,10 @@
-from email.policy import default
 from typing_extensions import Required
 from loguru import logger
 import click
+
 from starwhale.consts import DEFAULT_MODEL_YAML_NAME
 from starwhale.swmp.model import ModelPackage
+from starwhale.swmp.store import ModelPackageLocalStore
 
 
 
@@ -23,28 +24,32 @@ def _build(workdir, model_yaml, skip_gen_env):
 
 
 @model_cmd.command("delete", help="Delete swmp from local storage")
-def _delete():
-    pass
+@click.argument("swmp")
+def _delete(swmp):
+    ModelPackageLocalStore().delete(swmp)
 
 
 @model_cmd.command("push", help="Push swmp into starwhale controller or hub.starwhale.ai")
-def _push():
-    pass
+@click.argument("swmp")
+def _push(swmp):
+    ModelPackageLocalStore().push(swmp)
 
 
 @model_cmd.command("pull", help="Pull swmp from starwhale controller or hub.starwhale.ai")
-def _pull():
-    pass
+@click.argument("swmp")
+def _pull(swmp):
+    ModelPackageLocalStore().pull(swmp)
 
 
 @model_cmd.command("info", help="Get more info abort local swmp")
-def _info():
-    pass
+@click.argument("swmp")
+def _info(swmp):
+    ModelPackageLocalStore().info(swmp)
 
 
 @model_cmd.command("list", help="List swmp from local storage")
 def _list():
-    pass
+    ModelPackageLocalStore().list()
 
 
 @model_cmd.command("smoketest", help="Run smoketest for predictor with swmp and swds")
@@ -58,5 +63,7 @@ def _gendep():
 
 
 @model_cmd.command("gc", help="GC useless model package files")
-def _gc():
-    pass
+@click.option("--dry-run", is_flag=True,
+              help="Dry-run swmp gc")
+def _gc(dry_run):
+    ModelPackageLocalStore().gc(dry_run)

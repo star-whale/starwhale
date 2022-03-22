@@ -9,3 +9,5 @@ conda-pack==0.6.0
 virtualenv>=13.0.0
 fs>=2.4.0
 typing-extensions>=4.1.1
+commonmark>=0.9.1
+rich==12.0.0

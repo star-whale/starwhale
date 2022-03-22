@@ -32,7 +32,7 @@ def random_str(cnt: int = 8) -> str:
 def is_venv() -> bool:
     #TODO: refactor for get external venv attr
     output = subprocess.check_output(["python3", "-c",
-         "import sys; print(sys.prefix == (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))"
+         "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))"
         ],stderr=sys.stdout)
     return "True" in str(output)
 
@@ -42,10 +42,10 @@ def is_conda() -> bool:
 
 
 def get_python_run_env() -> str:
-    if is_venv():
-        return "venv"
-    elif is_conda():
+    if is_conda():
         return "conda"
+    elif is_venv():
+        return "venv"
     else:
         return "system"
 
