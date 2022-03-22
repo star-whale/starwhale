@@ -18,6 +18,6 @@ public class ResponseFactory {
 
     public static <T> ResponseMessage<T> asSuccess(T data) {
         // todo 待确定如何国际化
-        return new ResponseMessage<T>(CODE_SUCCESS.name(), "", data);
+        return new ResponseMessage<>(CODE_SUCCESS, "", data);
     }
 }
