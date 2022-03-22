@@ -1,4 +1,3 @@
-from email.policy import default
 from typing_extensions import Required
 from loguru import logger
 import click

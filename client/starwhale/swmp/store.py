@@ -2,6 +2,7 @@ from pathlib import Path
 from collections import namedtuple
 import yaml
 import sys
+import typing as t
 
 import requests
 from loguru import logger
@@ -125,11 +126,18 @@ class ModelPackageLocalStore(object):
                     f.write(chunk)
         rprint(f" :clap: pull completed")
 
-    def swmp_path(self, swmp: str) -> Path:
-        _model, _version = swmp.split(":", 1)
-        #TODO: add swmp validator
+    def _parse_swmp(self, swmp: str) -> t.Tuple[str, str]:
         if ":" not in swmp:
-            raise Exception(f"{swmp} format wrong, use [model]:[version]")
+            _name, _version = swmp, LATEST_TAG
+        else:
+            if swmp.count(":") > 1:
+                raise Exception(f"{swmp} format wrong, use [model]:[version]")
+
+            _name, _version = swmp.split(":")
+        return _name, _version
+
+    def swmp_path(self, swmp: str) -> Path:
+        _model, _version = self._parse_swmp(swmp)
         return (self.pkgdir / _model / f"{_version}.swmp")
 
     @property
@@ -141,15 +149,9 @@ class ModelPackageLocalStore(object):
         return self._swcli_config.get("controller", {}).get("token", "")
 
     def info(self, swmp: str) -> None:
-        if ":" not in swmp:
-            _name, _version = swmp, LATEST_TAG
-        else:
-            _name, _version = swmp.split(":", 1)
-
-        _manifest = self.get_swmp_info(_name, _version)
+        _manifest = self.get_swmp_info(*self._parse_swmp(swmp))
         _config_panel = Panel(Pretty(_manifest, expand_all=True), title="inspect _manifest.yaml / model.yaml info")
         Console().print(_config_panel)
-
         #TODO: add workdir tree
 
     def get_swmp_info(self, _name: str, _version: str) -> dict:
@@ -171,4 +173,34 @@ class ModelPackageLocalStore(object):
         pass
 
     def delete(self, swmp) -> None:
-        pass
+        _model, _version = self._parse_swmp(swmp)
+
+        pkg_fpath = self.pkgdir / _model / _version
+        if pkg_fpath.exists():
+            if _version == LATEST_TAG:
+                try:
+                    pkg_fpath.unlink()
+                    pkg_fpath.resolve().unlink()
+                except Exception as e:
+                    rprint(Pretty(e))
+                finally:
+                    rprint(f" :collision: delete swmp {pkg_fpath}")
+                    rprint(f" :bomb: delete swmp {pkg_fpath.resolve()}")
+            else:
+                latest = self.pkgdir / _model / LATEST_TAG
+                if latest.exists() and latest.resolve() == pkg_fpath.resolve():
+                    rprint(f" :collision: delete swmp {latest}")
+                rprint(f" :bomb: delete swmp {pkg_fpath}")
+
+        workdir_fpath = self.workdir / _model / _version
+        if workdir_fpath.exists() and workdir_fpath.is_dir():
+            open_fs(str(workdir_fpath.resolve())).removetree("/")
+            workdir_fpath.rmdir()
+            rprint(f" :bomb: delete workdir {workdir_fpath}")
+
+
+        pkg_fpath = self.pkgdir / _model / (_version if _version == LATEST_TAG else f"{_version}.swmp")
+        if pkg_fpath.exists():
+            latest = self.pkgdir / _model
+
+            pkg_fpath.unlink()

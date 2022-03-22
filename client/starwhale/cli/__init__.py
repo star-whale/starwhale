@@ -2,8 +2,6 @@ import click
 import random
 import time
 
-from loguru import logger
-
 from starwhale import __version__
 from starwhale.consts import SW_CLI_CONFIG, ENV_SW_CLI_CONFIG
 from starwhale.utils.config import load_swcli_config, load_swcli_config
@@ -26,6 +24,7 @@ def create_sw_cli():
     )
     def cli(debug):
         """StarWhale Platform Cli"""
+
         load_swcli_config()
         set_debug_mode(debug)
 
