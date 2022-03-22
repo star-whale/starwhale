@@ -5,27 +5,26 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.api.protocol.project;
+package ai.starwhale.mlops.api.protocol.user;
 
-import ai.starwhale.mlops.api.protocol.user.UserVO;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@Schema(description = "Project object", title = "Project")
+@Schema(description = "User object", title = "User")
 @Validated
-public class ProjectVO implements Serializable {
+public class UserVO {
 
     private String id;
 
     private String name;
 
-    private String createTime;
+    private String createdTime;
 
-    private UserVO owner;
+    private RoleVO role;
 
+    private Boolean isEnabled;
 }

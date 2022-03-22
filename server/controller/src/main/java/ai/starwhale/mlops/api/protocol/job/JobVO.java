@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.api.protocol.job;
 
+import ai.starwhale.mlops.api.protocol.user.UserVO;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -48,8 +49,8 @@ public class JobVO implements Serializable {
     @JsonProperty("deviceCount")
     private Integer deviceCount;
 
-    @JsonProperty("ownerName")
-    private String ownerName;
+    @JsonProperty("owner")
+    private UserVO owner;
 
     @JsonProperty("createTime")
     private String createTime;
