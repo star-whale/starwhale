@@ -84,6 +84,20 @@ public interface UserApi {
         @RequestParam(value = "userPwd")
             String userPwd);
 
+    @Operation(summary = "Get the current logged in user.")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok.",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = User.class)))
+        })
+    @GetMapping(value = "/user/current")
+    ResponseEntity<ResponseMessage<User>> getCurrentUser();
+
     @Operation(summary = "Get a user by user ID")
     @ApiResponses(
         value = {

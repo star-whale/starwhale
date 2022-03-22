@@ -1,0 +1,86 @@
+/*
+ * Copyright 2022.1-2022
+ * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+ * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+ * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+ */
+
+package ai.starwhale.mlops.api;
+
+import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.api.protocol.user.UserVO;
+import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.exception.ApiOperationException;
+import cn.hutool.core.lang.Assert;
+import com.github.pagehelper.PageInfo;
+import java.util.List;
+import java.util.Optional;
+import javax.annotation.Resource;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class ProjectController implements ProjectApi{
+
+    @Resource
+    private ProjectService projectService;
+
+    @Resource
+    private UserService userService;
+
+    @Override
+    public ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(String projectName,
+        Integer pageNum, Integer pageSize) {
+
+        List<ProjectVO> projects = projectService.listProject(
+            ProjectVO.builder().name(projectName).build(),
+            PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
+
+        PageInfo<ProjectVO> pageInfo = new PageInfo<>(projects);
+
+        return ResponseEntity.ok(ResponseMessage.asSuccess(pageInfo));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> createProject(String projectName) {
+        User user = userService.currentUser();
+
+        Long projectId = projectService.createProject(ProjectVO.builder()
+                                                .name(projectName)
+                                                .owner(UserVO.builder().id(user.getId()).build())
+                                                .build());
+        return ResponseEntity.ok(ResponseMessage
+                    .asSuccess(String.valueOf(Optional.of(projectId).orElseThrow(ApiOperationException::new))));
+
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> deleteProjectById(String projectId) {
+        Boolean res = projectService.deleteProject(ProjectVO.builder().id(projectId).build());
+        Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
+        return ResponseEntity.ok(ResponseMessage.asSuccess("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<ProjectVO>> getProjectById(String projectId) {
+        ProjectVO project = projectService.findProject(ProjectVO.builder().id(projectId).build());
+        return ResponseEntity.ok(ResponseMessage.asSuccess(project));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> updateProject(String projectId,
+        String projectName) {
+        Boolean res = projectService.modifyProject(
+                    ProjectVO.builder()
+                            .id(projectId)
+                            .name(projectName)
+                            .build());
+        Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
+        return ResponseEntity.ok(ResponseMessage.asSuccess("success"));
+    }
+}

@@ -8,19 +8,9 @@
 package ai.starwhale.mlops.domain.user;
 
 import java.util.List;
-import javax.validation.constraints.NotNull;
 
-public interface UserMapper {
+public interface RoleMapper {
 
-    Long createUser(@NotNull UserEntity user);
+    List<RoleEntity> listRoles();
 
-    UserEntity findUser(@NotNull Long id);
-
-    UserEntity findUserByName(@NotNull String userName);
-
-    List<UserEntity> listUsers(String userNamePrefix);
-
-    int changePassword(@NotNull Long id, @NotNull String password);
-
-    int enableUser(@NotNull Long id, @NotNull Integer isEnabled);
 }

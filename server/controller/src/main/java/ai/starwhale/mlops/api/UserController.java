@@ -9,12 +9,17 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageInfo;
+import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class UserController implements UserApi{
+
+    @Resource
+    private UserService userService;
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<User>>> listUser(String userName,
@@ -24,6 +29,11 @@ public class UserController implements UserApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> createUser(String userName, String userPwd) {
+        return null;
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<User>> getCurrentUser() {
         return null;
     }
 

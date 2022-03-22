@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.domain.user;
 
 import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.common.IDConvertor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,15 +21,15 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class User extends BaseEntity implements UserDetails, Serializable {
+public class User implements UserDetails, Serializable {
     private String id;
     private String name;
     private String password;
+    private String salt;
     private boolean active;
     private Set<Role> roles;
 
@@ -60,5 +61,16 @@ public class User extends BaseEntity implements UserDetails, Serializable {
     @Override
     public boolean isEnabled() {
         return active;
+    }
+
+    public static User fromEntity(UserEntity entity) {
+        return User.builder()
+            .id(new IDConvertor().convert(entity.getId()))
+            .name(entity.getUserName())
+            .password(entity.getUserPwd())
+            .salt(entity.getUserPwdSalt())
+            .active(entity.getUserEnabled() > 1)
+            .roles(Set.of(new Role(entity.getRole().getRoleName())))
+            .build();
     }
 }
