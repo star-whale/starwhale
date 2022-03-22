@@ -13,37 +13,56 @@
         values (#{userName}, #{userPwd}, #{userPwdSalt}, #{roleId}, #{userEnabled})
     </insert>
 
-    <select id="findUser" resultType="ai.starwhale.mlops.domain.user.UserEntity">
-        select u.id,
+    <select id="findUser" resultMap="userResultMap">
+        select u.id as user_id,
                u.user_name,
                u.user_pwd,
                u.user_pwd_salt,
                u.role_id,
                u.user_enabled,
-               u.created_time,
-               u.modified_time,
-               r.role_name
+               u.created_time as user_created_time,
+               u.modified_time as user_modified_time,
+               r.role_name,
+               r.role_name_en
         from user_info as u,
              user_role as r
         where u.id = #{id}
           and u.role_id = r.id
     </select>
 
-    <select id="listUsers" resultType="ai.starwhale.mlops.domain.user.UserEntity">
-        select u.id,
+    <select id="findUserByName" resultMap="userResultMap">
+        select u.id as user_id,
                u.user_name,
                u.user_pwd,
                u.user_pwd_salt,
                u.role_id,
                u.user_enabled,
-               u.created_time,
-               u.modified_time,
-               r.role_name
+               u.created_time as user_created_time,
+               u.modified_time as user_modified_time,
+               r.role_name,
+               r.role_name_en
+        from user_info as u,
+             user_role as r
+        where u.user_name = #{userName}
+          and u.role_id = r.id
+    </select>
+
+    <select id="listUsers" resultMap="userResultMap">
+        select u.id as user_id,
+               u.user_name,
+               u.user_pwd,
+               u.user_pwd_salt,
+               u.role_id,
+               u.user_enabled,
+               u.created_time as user_created_time,
+               u.modified_time as user_modified_time,
+               r.role_name,
+               r.role_name_en
         from user_info as u,
              user_role as r
         where u.role_id = r.id
-        <if test = "userName != null">
-            u.user_name like #{userName}%
+        <if test = "userNamePrefix != null">
+            u.user_name like #{userNamePrefix}%
         </if>
     </select>
 
@@ -55,7 +74,18 @@
 
     <update id="enableUser" >
         update user_info
-        set is_enabled = #{isEnabled}
+        set user_enabled = #{isEnabled}
         where id = #{id}
     </update>
+
+    <resultMap id="userResultMap" type="ai.starwhale.mlops.domain.user.UserEntity" >
+        <id property="id" column="user_id" />
+        <result property="userName" column="user_name"/>
+        <result property="userPwd" column="user_pwd"/>
+        <result property="userPwdSalt" column="user_pwd_salt"/>
+        <result property="userEnabled" column="user_enabled"/>
+        <result property="createdTime" column="user_created_time"/>
+        <result property="modifiedTime" column="user_modified_time"/>
+        <association property="role" resultMap="ai.starwhale.mlops.domain.user.RoleMapper.roleResultMap" />
+    </resultMap>
 </mapper>
