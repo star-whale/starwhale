@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.configuration.security;
 
+import ai.starwhale.mlops.common.util.Md5Util;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 public class SWPasswordEncoder implements PasswordEncoder {
@@ -22,13 +23,12 @@ public class SWPasswordEncoder implements PasswordEncoder {
 
     @Override
     public String encode(CharSequence rawPassword) {
-        //TODO encryption
-        return rawPassword.toString();
+        return Md5Util.md5(rawPassword.toString(), salt);
     }
 
     @Override
     public boolean matches(CharSequence rawPassword, String encodedPassword) {
-        //TODO encryption
-        return rawPassword.toString().equals(encodedPassword);
+        return encode(rawPassword).equals(encodedPassword);
     }
+
 }
