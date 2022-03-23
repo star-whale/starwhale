@@ -10,6 +10,7 @@ package ai.starwhale.mlops.domain.project;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -22,12 +23,16 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
     @Resource
     private IDConvertor idConvertor;
 
+    @Resource
+    private UserConvertor userConvertor;
+
     @Override
     public ProjectVO convert(ProjectEntity entity) throws ConvertException {
         return ProjectVO.builder()
             .id(idConvertor.convert(entity.getId()))
             .name(entity.getProjectName())
             //.ownerName(entity.getOwnerName())
+            .owner(userConvertor.convert(entity.getOwner()))
             .createTime(entity.getCreatedTime().toString())
             .build();
     }

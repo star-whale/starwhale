@@ -26,6 +26,8 @@ public class ProjectEntity extends BaseEntity {
 
     private String projectName;
 
+    private Long ownerId;
+
     private UserEntity owner;
 
     private Integer isDeleted;

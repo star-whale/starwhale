@@ -33,23 +33,23 @@ public class ProjectService {
 
     /**
      * Find a project by parameters.
-     * @param projectVO Project ID must be set.
+     * @param project Project ID must be set.
      * @return Optional of a ProjectVO object.
      */
-    public ProjectVO findProject(ProjectVO projectVO) {
-        ProjectEntity projectEntity = projectMapper.findProject(idConvertor.revert(projectVO.getId()));
+    public ProjectVO findProject(Project project) {
+        ProjectEntity projectEntity = projectMapper.findProject(idConvertor.revert(project.getId()));
         return projectConvertor.convert(projectEntity);
     }
 
     /**
      * Get the list of projects.
-     * @param projectVO Search by project name prefix if the project name is set.
+     * @param project Search by project name prefix if the project name is set.
      * @param pageParams Paging parameters.
      * @return A list of ProjectVO objects
      */
-    public List<ProjectVO> listProject(ProjectVO projectVO, PageParams pageParams) {
+    public List<ProjectVO> listProject(Project project, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ProjectEntity> entities = projectMapper.listProjects(projectVO.getName());
+        List<ProjectEntity> entities = projectMapper.listProjects(project.getName());
         return entities.stream()
             .map(entity -> projectConvertor.convert(entity))
             .collect(Collectors.toList());
@@ -57,31 +57,39 @@ public class ProjectService {
 
     /**
      * Create a new project
-     * @param projectVO Object of the project to create.
+     * @param project Object of the project to create.
      * @return ID of the project was created.
      */
-    public Long createProject(ProjectVO projectVO) {
-        Long newId = projectMapper.createProject(projectConvertor.revert(projectVO));
-        return newId;
+    public Long createProject(Project project) {
+        ProjectEntity entity = ProjectEntity.builder()
+            .projectName(project.getName())
+            .ownerId(idConvertor.revert(project.getOwnerId()))
+            .build();
+        return projectMapper.createProject(entity);
     }
 
     /**
      * Delete a project
-     * @param projectVO Project ID must be set.
+     * @param project Project ID must be set.
      * @return Is the operation successful.
      */
-    public Boolean deleteProject(ProjectVO projectVO) {
-        int res = projectMapper.deleteProject(idConvertor.revert(projectVO.getId()));
+    public Boolean deleteProject(Project project) {
+        int res = projectMapper.deleteProject(idConvertor.revert(project.getId()));
         return res > 0;
     }
 
     /**
      * Modify a project. Now only project name can be modified
-     * @param projectVO Project object.
+     * @param project Project object.
      * @return Is the operation successful.
      */
-    public Boolean modifyProject(ProjectVO projectVO) {
-        int res = projectMapper.modifyProject(projectConvertor.revert(projectVO));
+    public Boolean modifyProject(Project project) {
+        ProjectEntity entity = ProjectEntity.builder()
+            .id(idConvertor.revert(project.getId()))
+            .projectName(project.getName())
+            .ownerId(idConvertor.revert(project.getOwnerId()))
+            .build();
+        int res = projectMapper.modifyProject(entity);
         return res > 0;
     }
 

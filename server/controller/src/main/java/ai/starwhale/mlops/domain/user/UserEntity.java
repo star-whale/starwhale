@@ -34,6 +34,8 @@ public class UserEntity extends BaseEntity implements Serializable {
 
     private String userPwdSalt;
 
+    private Long roleId;
+
     private RoleEntity role;
 
     private Integer userEnabled;

@@ -8,19 +8,19 @@
 package ai.starwhale.mlops.domain.user;
 
 import java.util.List;
-import javax.validation.constraints.NotNull;
+import org.apache.ibatis.annotations.Param;
 
 public interface UserMapper {
 
-    Long createUser(@NotNull UserEntity user);
+    Long createUser(UserEntity user);
 
-    UserEntity findUser(@NotNull Long id);
+    UserEntity findUser(@Param("id") Long id);
 
-    UserEntity findUserByName(@NotNull String userName);
+    UserEntity findUserByName(@Param("userName") String userName);
 
-    List<UserEntity> listUsers(String userNamePrefix);
+    List<UserEntity> listUsers(@Param("userNamePrefix") String userNamePrefix);
 
-    int changePassword(@NotNull Long id, @NotNull String password);
+    int changePassword(UserEntity user);
 
-    int enableUser(@NotNull Long id, @NotNull Integer isEnabled);
+    int enableUser(UserEntity user);
 }

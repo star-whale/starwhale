@@ -26,6 +26,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class User implements UserDetails, Serializable {
+
     private String id;
     private String name;
     private String password;
@@ -63,14 +64,22 @@ public class User implements UserDetails, Serializable {
         return active;
     }
 
-    public static User fromEntity(UserEntity entity) {
-        return User.builder()
-            .id(new IDConvertor().convert(entity.getId()))
-            .name(entity.getUserName())
-            .password(entity.getUserPwd())
-            .salt(entity.getUserPwdSalt())
-            .active(entity.getUserEnabled() > 1)
-            .roles(Set.of(new Role(entity.getRole().getRoleName())))
-            .build();
+    public User fromEntity(UserEntity entity) {
+        return fromEntity(entity, null);
     }
+    public User fromEntity(UserEntity entity, IDConvertor idConvertor) {
+        if(entity == null) {
+            return this;
+        }
+        if (idConvertor != null) {
+          setId(idConvertor.convert(entity.getId()));
+        }
+        setName(entity.getUserName());
+        setPassword(entity.getUserPwd());
+        setSalt(entity.getUserPwdSalt());
+        setActive(entity.getUserEnabled() == 1);
+        setRoles(Set.of(new Role().fromEntity(entity.getRole(), idConvertor)));
+        return this;
+    }
+
 }

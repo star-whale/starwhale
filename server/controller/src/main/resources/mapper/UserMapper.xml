@@ -61,20 +61,21 @@
         from user_info as u,
              user_role as r
         where u.role_id = r.id
-        <if test = "userNamePrefix != null">
-            u.user_name like #{userNamePrefix}%
+        <if test = "userNamePrefix != null and userNamePrefix != ''">
+            u.user_name like concat(#{userNamePrefix}, '%')
         </if>
     </select>
 
-    <update id="changePassword" >
+    <update id="changePassword" parameterType="ai.starwhale.mlops.domain.user.UserEntity">
         update user_info
-        set user_pwd = #{password}
+        set user_pwd = #{userPwd},
+            user_pwd_salt = #{userPwdSalt}
         where id = #{id}
     </update>
 
-    <update id="enableUser" >
+    <update id="enableUser" parameterType="ai.starwhale.mlops.domain.user.UserEntity">
         update user_info
-        set user_enabled = #{isEnabled}
+        set user_enabled = #{userEnabled}
         where id = #{id}
     </update>
 
@@ -86,6 +87,7 @@
         <result property="userEnabled" column="user_enabled"/>
         <result property="createdTime" column="user_created_time"/>
         <result property="modifiedTime" column="user_modified_time"/>
+        <result property="roleId" column="role_id"/>
         <association property="role" resultMap="ai.starwhale.mlops.domain.user.RoleMapper.roleResultMap" />
     </resultMap>
 </mapper>

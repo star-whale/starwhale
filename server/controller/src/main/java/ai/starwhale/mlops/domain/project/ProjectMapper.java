@@ -8,17 +8,17 @@
 package ai.starwhale.mlops.domain.project;
 
 import java.util.List;
-import javax.validation.constraints.NotNull;
+import org.apache.ibatis.annotations.Param;
 
 public interface ProjectMapper {
 
-    Long createProject(@NotNull ProjectEntity project);
+    Long createProject(ProjectEntity project);
 
-    int deleteProject(@NotNull Long id);
+    int deleteProject(@Param("id") Long id);
 
-    List<ProjectEntity> listProjects(String projectName);
+    List<ProjectEntity> listProjects(@Param("projectName") String projectName);
 
-    ProjectEntity findProject(@NotNull Long id);
+    ProjectEntity findProject(@Param("id") Long id);
 
-    int modifyProject(@NotNull ProjectEntity project);
+    int modifyProject(ProjectEntity project);
 }

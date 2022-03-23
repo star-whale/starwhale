@@ -12,8 +12,8 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.project.Project;
 import ai.starwhale.mlops.domain.project.ProjectService;
-import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.ApiOperationException;
 import cn.hutool.core.lang.Assert;
@@ -38,7 +38,7 @@ public class ProjectController implements ProjectApi{
         Integer pageNum, Integer pageSize) {
 
         List<ProjectVO> projects = projectService.listProject(
-            ProjectVO.builder().name(projectName).build(),
+            Project.builder().name(projectName).build(),
             PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
 
         PageInfo<ProjectVO> pageInfo = new PageInfo<>(projects);
@@ -48,37 +48,38 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> createProject(String projectName) {
-        User user = userService.currentUser();
+        UserVO user = userService.currentUser();
 
-        Long projectId = projectService.createProject(ProjectVO.builder()
-                                                .name(projectName)
-                                                .owner(UserVO.builder().id(user.getId()).build())
-                                                .build());
+        Long projectId = projectService
+            .createProject(Project.builder()
+                .name(projectName)
+                .ownerId(user.getId())
+                .build());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(Optional.of(projectId).orElseThrow(ApiOperationException::new))));
 
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> deleteProjectById(String projectId) {
-        Boolean res = projectService.deleteProject(ProjectVO.builder().id(projectId).build());
+        Boolean res = projectService.deleteProject(Project.builder().id(projectId).build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<ProjectVO>> getProjectById(String projectId) {
-        ProjectVO project = projectService.findProject(ProjectVO.builder().id(projectId).build());
+        ProjectVO project = projectService.findProject(Project.builder().id(projectId).build());
         return ResponseEntity.ok(Code.success.asResponse(project));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> updateProject(String projectId,
         String projectName) {
-        Boolean res = projectService.modifyProject(
-                    ProjectVO.builder()
-                            .id(projectId)
-                            .name(projectName)
-                            .build());
+        Boolean res = projectService
+            .modifyProject(Project.builder()
+                .id(projectId)
+                .name(projectName)
+                .build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
