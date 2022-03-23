@@ -12,6 +12,7 @@ import static ai.starwhale.mlops.common.util.HttpUtil.error;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.UserService;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.bean.copier.CopyOptions;
 import io.jsonwebtoken.Claims;
@@ -29,17 +30,21 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 
-@RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
 
-    @Resource
-    private JwtTokenUtil jwtTokenUtil;
+    private final JwtTokenUtil jwtTokenUtil;
+    private final UserService userService;
+
+    public JwtTokenFilter(JwtTokenUtil jwtTokenUtil, UserService userService) {
+        this.jwtTokenUtil = jwtTokenUtil;
+        this.userService = userService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest,
                                     HttpServletResponse httpServletResponse,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String header = httpServletRequest.getHeader("Authentication");
+        String header = httpServletRequest.getHeader("Authorization");
 
         if (!StringUtils.hasText(header) || !header.startsWith("Bearer ")) {
             error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied, "Not logged in.");
@@ -55,7 +60,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         Claims claims = jwtTokenUtil.parseJWT(token);
 
-        User user = BeanUtil.mapToBean(claims, User.class, true, CopyOptions.create());
+        User user = User.builder()
+            .id(jwtTokenUtil.getUserId(claims))
+            .name(jwtTokenUtil.getUsername(claims))
+            .build();
+        user = userService.loadUserByUsername(user.getName());
         JwtLoginToken jwtLoginToken = new JwtLoginToken(user, "", user.getAuthorities());
         jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
         SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
