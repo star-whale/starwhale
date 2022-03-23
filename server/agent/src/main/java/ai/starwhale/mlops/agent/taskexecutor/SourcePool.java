@@ -10,7 +10,6 @@ package ai.starwhale.mlops.agent.taskexecutor;
 import ai.starwhale.mlops.domain.node.Device;
 import java.util.ArrayDeque;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
 import javax.annotation.PostConstruct;
@@ -20,10 +19,10 @@ public class SourcePool {
     /**
      * ready to work
      */
-    private static volatile boolean canRun = false;
+    private static volatile boolean ready = false;
 
     private static final Queue<Device> idleDevices = new ArrayDeque<>();
-    private static final Set<Device> usingDevices = new HashSet<>();
+    private static final Queue<Device> usingDevices = new ArrayDeque<>();
 
     @PostConstruct
     public static void init() {
@@ -31,8 +30,19 @@ public class SourcePool {
 
     }
 
-    public static synchronized Set<Device> apply(int num) {
-        if (canRun) {
+    public static Queue<Device> getIdleDevices() {
+        return idleDevices;
+    }
+
+    /**
+     * whether init successfully
+     */
+    public static boolean isReady() {
+        return ready;
+    }
+
+    public static synchronized Set<Device> allocate(int num) {
+        if (ready) {
             if (idleDevices.size() >= num) {
                 Set<Device> res = new HashSet<>();
                 while (num > 0) {
@@ -48,7 +58,7 @@ public class SourcePool {
     }
 
     public static synchronized void free(Set<Device> devices) {
-        if (canRun) {
+        if (ready) {
             for (Device device : devices) {
                 usingDevices.remove(device);
                 idleDevices.add(device);

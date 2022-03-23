@@ -7,23 +7,33 @@
 
 package ai.starwhale.mlops.agent.taskexecutor;
 
+import ai.starwhale.mlops.domain.task.TaskTrigger;
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 import java.util.Vector;
+import lombok.Data;
 
 public class TaskPool {
 
-    private Queue<AgentTask> preparingTasks = new ArrayDeque<>(4);
-    private List<AgentTask> runningTasks = new Vector<>();
-    private Queue<AgentTask> resultingTasks = new ArrayDeque<>(4);
-    private Queue<AgentTask> finishedTasks = new ArrayDeque<>(4);
-    private Queue<AgentTask> archivedTasks = new ArrayDeque<>(4);
+    public static final List<TaskTrigger> newTasks = new Vector<>();
+    public static final Queue<AgentTask> preparingTasks = new ArrayDeque<>(4);
+    public static final List<AgentTask> runningTasks = new Vector<>();
+    public static final Queue<AgentTask> resultingTasks = new ArrayDeque<>(4);
+    public static final Queue<AgentTask> finishedTasks = new ArrayDeque<>(4);
+    public static final Queue<AgentTask> archivedTasks = new ArrayDeque<>(4);
 
-    private List<String> needToCancel = new Vector<>();
 
     /**
-     * 是否初始化完成
+     * whether init successfully
      */
-    private volatile boolean canRun = false;
+    private static volatile boolean ready = false;
+
+    public static boolean isReady() {
+        return ready;
+    }
+
+    public void setToReady() {
+        this.ready = true;
+    }
 }
