@@ -59,11 +59,11 @@ public interface SWModelPackageApi {
             String modelName,
         @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageNum", required = false)
+        @RequestParam(value = "pageNum", required = false, defaultValue = "1")
             Integer pageNum,
         @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageSize", required = false)
+        @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
     @Operation(
@@ -138,11 +138,11 @@ public interface SWModelPackageApi {
             String modelVersionName,
         @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageNum", required = false)
+        @RequestParam(value = "pageNum", required = false, defaultValue = "1")
             Integer pageNum,
         @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageSize", required = false)
+        @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
     @Operation(summary = "Create a new dataset version",
