@@ -1,23 +1,32 @@
 from pathlib import Path
 from collections import namedtuple
 import yaml
+import sys
+import typing as t
 
+import requests
 from loguru import logger
 from rich.table import Table
 from rich.console import Console
 from rich import box
 from rich.panel import Panel
 from rich.pretty import Pretty
+from rich import print as rprint
 from fs import open_fs
 from fs.tarfs import TarFS
 
+from starwhale.utils import fmt_http_server
 from starwhale.utils.config import load_swcli_config
-from starwhale.consts import DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME
+from starwhale.consts import (
+    DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME, SW_API_VERSION
+)
 
 SwmpMeta = namedtuple("SwmpMeta", ["model", "version", "tag", "environment", "created"])
 
 
 LATEST_TAG = "latest"
+TMP_FILE_BUFSIZE = 8192
+
 
 class ModelPackageLocalStore(object):
 
@@ -77,21 +86,72 @@ class ModelPackageLocalStore(object):
             return yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
 
     def push(self, swmp: str) -> None:
-        pass
+        server= fmt_http_server(self.sw_remote_addr)
+        url = f"{server}/{SW_API_VERSION}/model/push"
 
-    def pull(self, swmp: str) -> None:
-        pass
+        _spath = self.swmp_path(swmp)
+        if not _spath.exists():
+            rprint(f"[red]failed to push {swmp}[/], because of {_spath} not found")
+            sys.exit(1)
 
-    def info(self, swmp: str) -> None:
+        #TODO: add progress bar and rich live
+        #TODO: add multi-part upload
+        #TODO: add more push log
+        rprint("try to push swmp...")
+        r = requests.post(url, data={"swmp": swmp},
+                          files={"file": _spath.open("rb")})
+        r.raise_for_status()
+        rprint(" :clap: push done.")
+
+    def pull(self, swmp: str, server: str, force: bool) -> None:
+        server = server.strip() or self.sw_remote_addr
+        server = fmt_http_server(server)
+        url = f"{server}/{SW_API_VERSION}/model/pull"
+
+        _spath = self.swmp_path(swmp)
+        if _spath.exists() and not force:
+            rprint(f":ghost: {swmp} is already existed, skip pull")
+            return
+
+        #TODO: add progress bar and rich live
+        #TODO: multi phase for pull swmp
+        #TODO: get size in advance
+        rprint(f"try to pull {swmp}")
+        with requests.get(url, stream=True,
+                         parmas={"swmp": swmp}, # type: ignore
+                         headers={"Authorization": self._sw_token}) as r:
+            r.raise_for_exception()
+            with _spath.open("wb") as f:
+                for chunk in r.iter_content(chunk_size=TMP_FILE_BUFSIZE):
+                    f.write(chunk)
+        rprint(f" :clap: pull completed")
+
+    def _parse_swmp(self, swmp: str) -> t.Tuple[str, str]:
         if ":" not in swmp:
             _name, _version = swmp, LATEST_TAG
         else:
-            _name, _version = swmp.split(":", 1)
+            if swmp.count(":") > 1:
+                raise Exception(f"{swmp} format wrong, use [model]:[version]")
 
-        _manifest = self.get_swmp_info(_name, _version)
+            _name, _version = swmp.split(":")
+        return _name, _version
+
+    def swmp_path(self, swmp: str) -> Path:
+        _model, _version = self._parse_swmp(swmp)
+        return (self.pkgdir / _model / f"{_version}.swmp")
+
+    @property
+    def sw_remote_addr(self) -> str:
+        return self._swcli_config.get("controller", {}).get("remote_addr", "")
+
+    @property
+    def _sw_token(self) -> str:
+        return self._swcli_config.get("controller", {}).get("token", "")
+
+    def info(self, swmp: str) -> None:
+        _manifest = self.get_swmp_info(*self._parse_swmp(swmp))
         _config_panel = Panel(Pretty(_manifest, expand_all=True), title="inspect _manifest.yaml / model.yaml info")
         Console().print(_config_panel)
-
         #TODO: add workdir tree
 
     def get_swmp_info(self, _name: str, _version: str) -> dict:
@@ -113,4 +173,34 @@ class ModelPackageLocalStore(object):
         pass
 
     def delete(self, swmp) -> None:
-        pass
+        _model, _version = self._parse_swmp(swmp)
+
+        pkg_fpath = self.pkgdir / _model / _version
+        if pkg_fpath.exists():
+            if _version == LATEST_TAG:
+                try:
+                    pkg_fpath.unlink()
+                    pkg_fpath.resolve().unlink()
+                except Exception as e:
+                    rprint(Pretty(e))
+                finally:
+                    rprint(f" :collision: delete swmp {pkg_fpath}")
+                    rprint(f" :bomb: delete swmp {pkg_fpath.resolve()}")
+            else:
+                latest = self.pkgdir / _model / LATEST_TAG
+                if latest.exists() and latest.resolve() == pkg_fpath.resolve():
+                    rprint(f" :collision: delete swmp {latest}")
+                rprint(f" :bomb: delete swmp {pkg_fpath}")
+
+        workdir_fpath = self.workdir / _model / _version
+        if workdir_fpath.exists() and workdir_fpath.is_dir():
+            open_fs(str(workdir_fpath.resolve())).removetree("/")
+            workdir_fpath.rmdir()
+            rprint(f" :bomb: delete workdir {workdir_fpath}")
+
+
+        pkg_fpath = self.pkgdir / _model / (_version if _version == LATEST_TAG else f"{_version}.swmp")
+        if pkg_fpath.exists():
+            latest = self.pkgdir / _model
+
+            pkg_fpath.unlink()
