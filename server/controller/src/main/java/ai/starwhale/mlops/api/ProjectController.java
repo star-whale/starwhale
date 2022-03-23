@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
@@ -21,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -43,7 +43,7 @@ public class ProjectController implements ProjectApi{
 
         PageInfo<ProjectVO> pageInfo = new PageInfo<>(projects);
 
-        return ResponseEntity.ok(ResponseMessage.asSuccess(pageInfo));
+        return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
@@ -54,8 +54,7 @@ public class ProjectController implements ProjectApi{
                                                 .name(projectName)
                                                 .owner(UserVO.builder().id(user.getId()).build())
                                                 .build());
-        return ResponseEntity.ok(ResponseMessage
-                    .asSuccess(String.valueOf(Optional.of(projectId).orElseThrow(ApiOperationException::new))));
+        return ResponseEntity.ok(Code.success.asResponse(String.valueOf(Optional.of(projectId).orElseThrow(ApiOperationException::new))));
 
     }
 
@@ -63,13 +62,13 @@ public class ProjectController implements ProjectApi{
     public ResponseEntity<ResponseMessage<String>> deleteProjectById(String projectId) {
         Boolean res = projectService.deleteProject(ProjectVO.builder().id(projectId).build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
-        return ResponseEntity.ok(ResponseMessage.asSuccess("success"));
+        return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<ProjectVO>> getProjectById(String projectId) {
         ProjectVO project = projectService.findProject(ProjectVO.builder().id(projectId).build());
-        return ResponseEntity.ok(ResponseMessage.asSuccess(project));
+        return ResponseEntity.ok(Code.success.asResponse(project));
     }
 
     @Override
@@ -81,6 +80,6 @@ public class ProjectController implements ProjectApi{
                             .name(projectName)
                             .build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
-        return ResponseEntity.ok(ResponseMessage.asSuccess("success"));
+        return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 }
