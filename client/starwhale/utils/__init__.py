@@ -91,6 +91,9 @@ def get_python_version():
 
 def fmt_http_server(server: str, https: bool=False) -> str:
     server = server.strip().strip("/")
+    if not server:
+        raise Exception(f"no server addr")
+
     if server.startswith(("http://", "https://")):
         return server
     else:
