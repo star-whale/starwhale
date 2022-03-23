@@ -19,11 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Vector;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
 
-@Service
 public class TaskExecutor {
 
     private Queue<AgentTask> preparingTasks = new ArrayDeque<>(4);
@@ -34,11 +31,6 @@ public class TaskExecutor {
 
     private List<String> needToCancel = new Vector<>();
 
-    /**
-     * 是否初始化完成
-     */
-    private volatile boolean canRun = false;
-
     private final ContainerClient containerClient;
 
     public TaskExecutor(
@@ -47,12 +39,16 @@ public class TaskExecutor {
         this.agentProperties = agentProperties;
     }
 
+    private boolean valid() {
+        // valid whether the source pool and the task pool init success
+        return true;
+    }
     /**
      * blocking schedule
      */
     @Scheduled()
     public void dealPreparingTasks() {
-        if (canRun) {
+        if (valid()) {
             if (preparingTasks.isEmpty()) {
                 return;
             }
@@ -83,18 +79,22 @@ public class TaskExecutor {
      */
     @Scheduled
     public void monitorRunningTasks() {
-        if(canRun) {
+        if(valid()) {
             if(runningTasks.isEmpty()) return;
             runningTasks.forEach(runningTask -> {
                 try {
-                    String json = Files.readString(
-                        Path.of(agentProperties.getTask().getInfoPath() + "/" + runningTask.getId())
-                    );
+                    Path taskPath = Path.of(agentProperties.getTask().getInfoPath() + "/" + runningTask.getId());
+                    String json = Files.readString(taskPath);
                     AgentTask newTask = JSONUtil.toBean(json, AgentTask.class);
                     if(newTask.getStatus() == TaskStatus.RESULTING) {
+                        // release device to available device pool todo:is there anything else to do?
+                        SourcePool.free(newTask.getDevices());
+                        // newTask.setDevices(null);
                         runningTasks.remove(runningTask);
                         resultingTasks.add(newTask);
-                        // todo: update info to the task file
+
+                    } else if (newTask.getStatus() == TaskStatus.EXIT_ERROR) {
+                        // todo
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -106,20 +106,27 @@ public class TaskExecutor {
      */
     @Scheduled
     public void uploadResultingTasks() {
-        if(canRun) {
+        if(valid()) {
             if(resultingTasks.isEmpty()) return;
             resultingTasks.forEach(resultingTask -> {
+                Path taskPath = Path.of(agentProperties.getTask().getInfoPath() + "/" + resultingTask.getId());
                 // todo: upload result file to the storage
+                resultingTask.setResultPaths(List.of(""));
                 resultingTasks.remove(resultingTask);
                 finishedTasks.add(resultingTask);
-                // todo: update info to the task file
+                try {
+                    // update info to the task file
+                    Files.writeString(taskPath, JSONUtil.toJsonStr(resultingTask));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             });
         }
     }
 
     @Scheduled
     public void reportTasks() {
-        if(canRun) {
+        if(valid()) {
             // all tasks should be report to the controller
             // when success,archived the finished task,and rm to the archive dir
         }

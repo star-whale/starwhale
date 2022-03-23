@@ -5,10 +5,10 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.taskexecutor;
+package ai.starwhale.mlops.agent.taskexecutor.initializer;
 
+import ai.starwhale.mlops.agent.taskexecutor.AgentProperties;
 import cn.hutool.json.JSONUtil;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,25 +27,26 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-public class TaskInitializer implements CommandLineRunner {
+public class TaskPoolInitializer implements CommandLineRunner {
 
     private final AgentProperties agentProperties;
 
-    public TaskInitializer(AgentProperties agentProperties) {
+    public TaskPoolInitializer(AgentProperties agentProperties) {
         this.agentProperties = agentProperties;
     }
 
     @Override
     public void run(String... args) throws Exception {
         log.info("come in!");
+
+        // rebuild taskQueue
         Stream<Path> taskInfos = Files.find(Path.of(agentProperties.getTask().getInfoPath()), 1,
             (path, basicFileAttributes) -> true);
         List<TaskContainer> tasks = taskInfos
             .filter(path -> path.getFileName().toString().endsWith(".taskinfo"))
             .map(path -> {
-                try (BufferedReader reader = Files.newBufferedReader(path)) {
-                    Stream<String> lines = reader.lines();
-                    String json = lines.collect(Collectors.joining());
+                try {
+                    String json = Files.readString(path);
                     return JSONUtil.toBean(json, TaskContainer.class);
                 } catch (IOException e) {
                     e.printStackTrace();

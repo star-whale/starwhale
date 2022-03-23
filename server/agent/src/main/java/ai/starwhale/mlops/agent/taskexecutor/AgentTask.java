@@ -9,7 +9,7 @@ package ai.starwhale.mlops.agent.taskexecutor;
 
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.Task;
-import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,5 +19,5 @@ import lombok.EqualsAndHashCode;
 @Builder
 public class AgentTask extends Task {
     private String containerId;
-    private List<Device> devices;
+    private Set<Device> devices;
 }

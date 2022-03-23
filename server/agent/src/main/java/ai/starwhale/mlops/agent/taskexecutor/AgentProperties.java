@@ -16,7 +16,7 @@ public class AgentProperties {
     private Task task;
 
     @Data
-    static class Task {
+    public static class Task {
         /**
          * taskInfo file path
          */

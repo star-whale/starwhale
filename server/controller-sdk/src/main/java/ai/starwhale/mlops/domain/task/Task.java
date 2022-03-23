@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -32,7 +33,10 @@ public class Task {
      */
     TaskStatus status;
 
-    // List<String> resultPaths; todo
+    /**
+     * storage path of results
+     */
+    List<String> resultPaths;
 
     /**
      * possible statuses of a task
