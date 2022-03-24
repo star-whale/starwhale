@@ -7,21 +7,26 @@
 
 package ai.starwhale.mlops.resulting;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * an indicator of the result such as: (TF,1) (LOSS,1.678) (Accuracy,0.96)
  */
 @Data
-public class Indicator {
+@AllArgsConstructor
+@NoArgsConstructor
+public class Indicator<T> {
 
     /**
      * the indicator name
      */
-    String key;
+    protected String key;
 
     /**
      * the value of this indicator
      */
-    Double value;
+    protected T value;
+
 }

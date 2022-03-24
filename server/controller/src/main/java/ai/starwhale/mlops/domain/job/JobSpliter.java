@@ -7,8 +7,6 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.domain.task.Task;
-
 import ai.starwhale.mlops.domain.task.TaskTrigger;
 import java.util.List;
 

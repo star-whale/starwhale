@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.resulting;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -16,17 +17,32 @@ import java.util.List;
 public interface ResultCollector {
 
     /**
-     * one pair of label and inferenceResult should have one indicator
+     * feed the collector with one pair of label and inferenceResult
      * @param label label of the raw data
      * @param inferenceResult inference result of the raw data
-     * @return indicator of the inference result
      */
-    Indicator compare(InputStream label,InputStream inferenceResult);
+    void feed(InputStream label,InputStream inferenceResult);
 
     /**
-     * reduce indicators to more meaningful ones such as [(TP,1),(TP,1),(TN,1)] to (Accuracy,0.67)
-     * @param indicators low level indicators
-     * @return more meaningful indicators
+     * feed the collector with one pair of label and inferenceResult
+     * @param labelResult label & inference result
      */
-    List<Indicator> reduce(List<Indicator> indicators);
+    void feed(InputStream labelResult);
+
+    /**
+     * collect the results
+     * @return meaningful indicators
+     */
+    List<Indicator> collect();
+
+    /**
+     * reload result from storage
+     */
+    void load() throws IOException;
+
+    /**
+     * dump result to storage
+     */
+    void dump() throws IOException;
+
 }

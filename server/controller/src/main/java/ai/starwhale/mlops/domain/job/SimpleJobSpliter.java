@@ -13,8 +13,6 @@ import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.SWDataSetSlice;
 import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.TaskTrigger;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;

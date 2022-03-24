@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SimpleJobScheduler implements JobScheduler {
 
-    JobSpliter jobSpliter;
+    final JobSpliter jobSpliter;
 
     final Map<Device.Clazz, ConcurrentLinkedQueue<TaskTrigger>> taskQueueTable;
 

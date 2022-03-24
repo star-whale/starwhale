@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 public class TestSimpleJobSpliter {
 
-    SimpleJobSpliter simpleJobSpliter = new SimpleJobSpliter();
+    final SimpleJobSpliter simpleJobSpliter = new SimpleJobSpliter();
 
     public void testOneDataSet(final int deviceAmount,final int dataSetSize){
         Job job = mockOneDSJob(deviceAmount, dataSetSize);

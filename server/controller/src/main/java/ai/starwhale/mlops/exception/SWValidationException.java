@@ -13,8 +13,8 @@ public class SWValidationException extends StarWhaleException {
 
     static final String PREFIX_TIP="invalid request on subject ";
 
-    private String code;
-    private String tip;
+    private final String code;
+    private final String tip;
 
     public SWValidationException(ValidSubject validSubject){
         super(PREFIX_TIP + validSubject.tipSubject);
@@ -39,8 +39,8 @@ public class SWValidationException extends StarWhaleException {
         NODE("004","NODE"),
         SWDS("005","Star Whale Data Set"),
         SDMP("006","Star Whale Model Package");
-        String code;
-        String tipSubject;
+        final String code;
+        final String tipSubject;
         ValidSubject(String code,String tipSubject){
             this.code = code;
             this.tipSubject = tipSubject;
