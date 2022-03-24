@@ -8,6 +8,8 @@
 package ai.starwhale.mlops.agent.taskexecutor.initializer;
 
 import ai.starwhale.mlops.agent.taskexecutor.AgentProperties;
+import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskPool;
+import ai.starwhale.mlops.domain.task.EvaluationTask;
 import cn.hutool.json.JSONUtil;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,17 +39,16 @@ public class TaskPoolInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        log.info("come in!");
-
+        log.info("start to rebuild task pool");
         // rebuild taskQueue
         Stream<Path> taskInfos = Files.find(Path.of(agentProperties.getTask().getInfoPath()), 1,
             (path, basicFileAttributes) -> true);
-        List<TaskContainer> tasks = taskInfos
+        List<EvaluationTask> tasks = taskInfos
             .filter(path -> path.getFileName().toString().endsWith(".taskinfo"))
             .map(path -> {
                 try {
                     String json = Files.readString(path);
-                    return JSONUtil.toBean(json, TaskContainer.class);
+                    return JSONUtil.toBean(json, EvaluationTask.class);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -56,21 +57,8 @@ public class TaskPoolInitializer implements CommandLineRunner {
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
-        tasks.forEach(task -> log.info(JSONUtil.toJsonStr(task)));
-    }
-
-    @Builder
-    @Data
-    static class TaskContainer {
-
-        private Long taskId; // 8byte
-        private Long containerId;// 8byte
-        private Status status;// 1byte
-        private String version;// 10byte
-
-        enum Status {
-            running, finished;
-        }
-
+        tasks.forEach(TaskPool::fill);
+        TaskPool.setToReady();
+        log.info("end of rebuild task pool, size:{}", tasks.size());
     }
 }

@@ -7,8 +7,6 @@
 
 package ai.starwhale.mlops.common.util;
 
-import ai.starwhale.mlops.domain.swds.SWDataSetSlice;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import java.util.ArrayList;

@@ -41,6 +41,7 @@ public class SourcePool {
         return ready;
     }
 
+    // todo with function and middle state
     public static synchronized Set<Device> allocate(int num) {
         if (ready) {
             if (idleDevices.size() >= num) {
@@ -56,7 +57,7 @@ public class SourcePool {
         }
         throw new RuntimeException();
     }
-
+    // todo with function and middle state
     public static synchronized void free(Set<Device> devices) {
         if (ready) {
             for (Device device : devices) {

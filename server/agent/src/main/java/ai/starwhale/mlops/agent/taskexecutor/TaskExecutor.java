@@ -8,46 +8,49 @@
 package ai.starwhale.mlops.agent.taskexecutor;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
-import ai.starwhale.mlops.agent.container.ImageConfig;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
-import cn.hutool.json.JSONUtil;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
-import java.util.Vector;
+import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction;
+import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction.Context;
+import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction.SelectOneToExecute;
+import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskPool;
+import ai.starwhale.mlops.api.ReportApi;
+import ai.starwhale.mlops.domain.task.EvaluationTask;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
+/**
+ * created -> preparing -> running -> resulting -> finished -> archived \          \
+ * \----> error ---------------------------> canceled
+ */
+@Slf4j
+@Component
 public class TaskExecutor {
 
-    private List<String> needToCancel = new Vector<>();
-
     private final ContainerClient containerClient;
+
+    private final ReportApi reportApi;
 
     private final AgentProperties agentProperties;
 
     public TaskExecutor(
-        ContainerClient containerClient, AgentProperties agentProperties) {
+        ContainerClient containerClient, ReportApi reportApi,
+        AgentProperties agentProperties) {
         this.containerClient = containerClient;
+        this.reportApi = reportApi;
         this.agentProperties = agentProperties;
     }
 
-    public void allocationDeviceForTask() {
+    SelectOneToExecute<EvaluationTask, EvaluationTask> execute = new SelectOneToExecute<>() {};
+
+    public void allocateDeviceForPreparingTasks() {
         while (SourcePool.isReady() && TaskPool.isReady() && !TaskPool.newTasks.isEmpty()) {
-            for (TaskTrigger taskTrigger : TaskPool.newTasks) {
-                AgentTask agentTask = AgentTask.builder()
-                    .id(taskTrigger.getTask().getId())
-                    .jobId(taskTrigger.getTask().getJobId())
-                    .status(TaskStatus.PREPARING)// now is preparing
-                    .swModelPackage(taskTrigger.getSwModelPackage())
-                    .swDataSetSlice(taskTrigger.getSwDataSetSlice())
-                    .devices(SourcePool.allocate(1)) //
-                    .build();
-                // add the new task to the tail
-                TaskPool.preparingTasks.offer(agentTask);
-            }
+            // deal with the preparing task with FIFO sort
+            Context context = Context.instance();
+            context.set("taskInfoPath", agentProperties.getTask().getInfoPath());
+
+            execute.apply(TaskPool.newTasks.peek(), context,
+                task -> TaskPool.needToCancel.contains(task.getTask().getId()),
+                TaskAction.init2Preparing, TaskAction.init2Canceled);
         }
     }
 
@@ -56,35 +59,13 @@ public class TaskExecutor {
      */
     public void dealPreparingTasks() {
         while (SourcePool.isReady() && TaskPool.isReady() && !TaskPool.preparingTasks.isEmpty()) {
-            AgentTask task;
             // deal with the preparing task with FIFO sort
-            while ((task = TaskPool.preparingTasks.peek()) != null) {
-                // todo fill with task info
-                Optional<String> containerId = containerClient.startContainer("", ImageConfig.builder().build());
-                // whether the container create and start success
-                if (containerId.isPresent()) {
-                    // remove it from head
-                    task = TaskPool.preparingTasks.poll();
-                    assert task != null;
-                    task.setContainerId(containerId.get());
-                    task.setStatus(TaskStatus.RUNNING);
-                    // tail it to the running list
-                    TaskPool.runningTasks.add(task);
-                    try {
-                        Path taskPath = Path.of(
-                            agentProperties.getTask().getInfoPath() + "/" + task.getId());
-                        if (!Files.exists(taskPath)) {
-                            Files.createFile(taskPath);
-                        }
-                        // update info to the task file
-                        Files.writeString(taskPath, JSONUtil.toJsonStr(task));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    // todo: retry or take it to the tail of queue
-                }
-            }
+            Context context = Context.instance();
+            context.set("taskInfoPath", agentProperties.getTask().getInfoPath());
+            TaskAction.preparing2Running.apply(TaskPool.preparingTasks.peek(), context);
+            execute.apply(TaskPool.preparingTasks.peek(), context,
+                task -> TaskPool.needToCancel.contains(task.getTask().getId()),
+                TaskAction.preparing2Running, TaskAction.preparing2Canceled);
         }
     }
 
@@ -93,28 +74,12 @@ public class TaskExecutor {
      */
     public void monitorRunningTasks() {
         while (TaskPool.isReady() && !TaskPool.runningTasks.isEmpty()) {
-            TaskPool.runningTasks.forEach(runningTask -> {
-                try {
-                    // get the newest task info
-                    Path taskPath = Path.of(
-                        agentProperties.getTask().getInfoPath() + "/" + runningTask.getId());
-                    String json = Files.readString(taskPath);
-                    AgentTask newTask = JSONUtil.toBean(json, AgentTask.class);
-                    // if run success
-                    if (newTask.getStatus() == TaskStatus.RESULTING) {
-                        // release device to available device pool todo:is there anything else to do?
-                        SourcePool.free(newTask.getDevices());
-                        // newTask.setDevices(null);
-                        TaskPool.runningTasks.remove(runningTask);
-                        TaskPool.resultingTasks.add(newTask);
+            Context context = Context.instance();
+            context.set("taskInfoPath", agentProperties.getTask().getInfoPath());
 
-                    } else if (newTask.getStatus() == TaskStatus.EXIT_ERROR) {
-                        // todo
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+            execute.apply(TaskPool.runningTasks.get(0), context,
+                task -> TaskPool.needToCancel.contains(task.getTask().getId()),
+                TaskAction.running2Uploading, TaskAction.running2Canceled);
         }
     }
 
@@ -123,28 +88,22 @@ public class TaskExecutor {
      */
     public void uploadResultingTasks() {
         while (TaskPool.isReady() && !TaskPool.resultingTasks.isEmpty()) {
-            TaskPool.resultingTasks.forEach(resultingTask -> {
-                Path taskPath = Path.of(
-                    agentProperties.getTask().getInfoPath() + "/" + resultingTask.getId());
-                // todo: upload result file to the storage
-                resultingTask.setResultPaths(List.of(""));
-                TaskPool.resultingTasks.remove(resultingTask);
-                TaskPool.finishedTasks.add(resultingTask);
-                try {
-                    // update info to the task file
-                    Files.writeString(taskPath, JSONUtil.toJsonStr(resultingTask));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+            Context context = Context.instance();
+            context.set("taskInfoPath", agentProperties.getTask().getInfoPath());
+            context.set("containerClient", containerClient);
+
+            execute.apply(TaskPool.resultingTasks.get(0), context,
+                task -> TaskPool.needToCancel.contains(task.getTask().getId()),
+                TaskAction.uploading2Finished, TaskAction.uploading2Canceled);
         }
     }
 
     @Scheduled
     public void reportTasks() {
         if (SourcePool.isReady() && TaskPool.isReady()) {
-            // all tasks should be report to the controller
+            // todo: all tasks should be report to the controller
             // when success,archived the finished task,and rm to the archive dir
         }
     }
 }
+
