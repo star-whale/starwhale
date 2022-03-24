@@ -35,10 +35,10 @@ class DataSetProcessExecutor(object):
     _DATA_ALIGNMENT_SIZE = 4 * 1024      # 4K for pagecache?
 
     def __init__(self, workdir=".", data_filter="*", label_filter="*",
-                 data_sort_key=None, label_sort_key=None, group_batch=50) -> None:
+                 data_sort_key=None, label_sort_key=None, batch=50) -> None:
 
         #TODO: validate group upper and lower?
-        self._group_batch = max(group_batch, 1)
+        self._batch = max(batch, 1)
         self.workdir = Path(workdir)
         self.data_filter = data_filter
         self.label_filter = label_filter
@@ -80,6 +80,7 @@ class DataSetProcessExecutor(object):
         self._index_writer.write(
             dict(
                 id=idx,
+                batch=self._batch,
                 data=dict(
                     file=self._DATA_FMT.format(index=fno),
                     offset=data_pos,
@@ -140,10 +141,10 @@ class DataSetProcessExecutor(object):
         for p in self.iter_data_files():
             with p.open("rb") as f:
                 _, number, hight, width = struct.unpack(">IIII", f.read(16))
-                print(f">data({p.name}) split {math.ceil(number / self._group_batch)} group")
+                print(f">data({p.name}) split {math.ceil(number / self._batch)} group")
 
                 while True:
-                    content = f.read(self._group_batch * hight * width)
+                    content = f.read(self._batch * hight * width)
                     if not content:
                         break
                     yield content
@@ -152,10 +153,10 @@ class DataSetProcessExecutor(object):
         for p in self.iter_label_files():
             with p.open("rb") as f:
                 _, number = struct.unpack(">II", f.read(8))
-                print(f">label({p.name}) split {math.ceil(number / self._group_batch)} group")
+                print(f">label({p.name}) split {math.ceil(number / self._batch)} group")
 
                 while True:
-                    content = f.read(self._group_batch)
+                    content = f.read(self._batch)
                     if not content:
                         break
                     yield content
