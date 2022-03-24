@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.agent.taskexecutor;
 
+import ai.starwhale.mlops.agent.exception.AllocationException;
 import ai.starwhale.mlops.domain.node.Device;
 import java.util.ArrayDeque;
 import java.util.HashSet;
@@ -41,6 +42,10 @@ public class SourcePool {
         return ready;
     }
 
+    public static void setToReady() {
+        ready = true;
+    }
+
     // todo with function and middle state
     public static synchronized Set<Device> allocate(int num) {
         if (ready) {
@@ -55,17 +60,17 @@ public class SourcePool {
                 return res;
             }
         }
-        throw new RuntimeException();
+        throw new AllocationException("allocate device error");
     }
     // todo with function and middle state
-    public static synchronized void free(Set<Device> devices) {
+    public static synchronized void release(Set<Device> devices) {
         if (ready) {
             for (Device device : devices) {
                 usingDevices.remove(device);
                 idleDevices.add(device);
             }
         }
-        throw new RuntimeException();
+        throw new AllocationException("release device error");
     }
 
 }

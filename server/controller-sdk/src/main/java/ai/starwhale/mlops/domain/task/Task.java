@@ -8,7 +8,6 @@
 package ai.starwhale.mlops.domain.task;
 
 import java.util.List;
-import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.SuperBuilder;
 
@@ -62,7 +61,7 @@ public class Task {
         /**
          * after task exit normally(container is stopped)
          */
-        RESULTING,
+        UPLOADING,
 
         /**
          * result has been uploaded to the storage
