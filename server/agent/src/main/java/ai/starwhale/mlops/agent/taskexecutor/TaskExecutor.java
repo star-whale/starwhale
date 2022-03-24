@@ -33,12 +33,21 @@ public class TaskExecutor {
 
     private final AgentProperties agentProperties;
 
+    private final SourcePool sourcePool;
+
+    private final TaskPool taskPool;
+
+    private final Context context;
+
     public TaskExecutor(
-        ContainerClient containerClient, ReportApi reportApi,
-        AgentProperties agentProperties) {
+            ContainerClient containerClient, ReportApi reportApi,
+            AgentProperties agentProperties, SourcePool sourcePool, TaskPool taskPool) {
         this.containerClient = containerClient;
         this.reportApi = reportApi;
         this.agentProperties = agentProperties;
+        this.sourcePool = sourcePool;
+        this.taskPool = taskPool;
+        this.context = Context.instance(sourcePool, taskPool, reportApi, containerClient, agentProperties);
     }
 
     SelectOneToExecute<EvaluationTask, EvaluationTask> execute = new SelectOneToExecute<>() {};
@@ -48,15 +57,12 @@ public class TaskExecutor {
      */
     @Scheduled
     public void allocateDeviceForPreparingTasks() {
-        while (SourcePool.isReady() && TaskPool.isReady() && !TaskPool.newTasks.isEmpty()) {
+        while (sourcePool.isReady() && taskPool.isReady() && !taskPool.newTasks.isEmpty()) {
             // deal with the preparing task with FIFO sort
-            Context context = Context.instance();
-            context.set("taskInfoPath", agentProperties.getTask().getInfoPath());
-
             execute.apply(
-                TaskPool.newTasks.peek(),
+                taskPool.newTasks.peek(),
                 context,
-                task -> TaskPool.needToCancel.contains(task.getTask().getId()),
+                task -> taskPool.needToCancel.contains(task.getTask().getId()),
                 TaskAction.init2Preparing,
                 TaskAction.init2Canceled
             );
@@ -68,15 +74,13 @@ public class TaskExecutor {
      */
     @Scheduled
     public void dealPreparingTasks() {
-        while (SourcePool.isReady() && TaskPool.isReady() && !TaskPool.preparingTasks.isEmpty()) {
+        while (sourcePool.isReady() && taskPool.isReady() && !taskPool.preparingTasks.isEmpty()) {
             // deal with the preparing task with FIFO sort
-            Context context = Context.instance();
-            context.set("taskInfoPath", agentProperties.getTask().getInfoPath());
-            TaskAction.preparing2Running.apply(TaskPool.preparingTasks.peek(), context);
+            TaskAction.preparing2Running.apply(taskPool.preparingTasks.peek(), context);
             execute.apply(
-                TaskPool.preparingTasks.peek(),
+                taskPool.preparingTasks.peek(),
                 context,
-                task -> TaskPool.needToCancel.contains(task.getTask().getId()),
+                task -> taskPool.needToCancel.contains(task.getTask().getId()),
                 TaskAction.preparing2Running,
                 TaskAction.preparing2Canceled
             );
@@ -88,14 +92,12 @@ public class TaskExecutor {
      */
     @Scheduled
     public void monitorRunningTasks() {
-        while (TaskPool.isReady() && !TaskPool.runningTasks.isEmpty()) {
-            Context context = Context.instance();
-            context.set("taskInfoPath", agentProperties.getTask().getInfoPath());
-            for (EvaluationTask runningTask : TaskPool.runningTasks) {
+        while (taskPool.isReady() && !taskPool.runningTasks.isEmpty()) {
+            for (EvaluationTask runningTask : taskPool.runningTasks) {
                 execute.apply(
                     runningTask,
                     context,
-                    task -> TaskPool.needToCancel.contains(task.getTask().getId()),
+                    task -> taskPool.needToCancel.contains(task.getTask().getId()),
                     TaskAction.running2Uploading,
                     TaskAction.running2Canceled
                 );
@@ -109,20 +111,16 @@ public class TaskExecutor {
      */
     @Scheduled
     public void uploadResultingTasks() {
-        while (TaskPool.isReady() && !TaskPool.uploadingTasks.isEmpty()) {
-            Context context = Context.instance();
-            context.set("taskInfoPath", agentProperties.getTask().getInfoPath());
-            context.set("containerClient", containerClient);
-
-            execute.apply(TaskPool.uploadingTasks.get(0), context,
-                task -> TaskPool.needToCancel.contains(task.getTask().getId()),
+        while (taskPool.isReady() && !taskPool.uploadingTasks.isEmpty()) {
+            execute.apply(taskPool.uploadingTasks.get(0), context,
+                task -> taskPool.needToCancel.contains(task.getTask().getId()),
                 TaskAction.uploading2Finished, TaskAction.uploading2Canceled);
         }
     }
 
     @Scheduled
     public void reportTasks() {
-        if (SourcePool.isReady() && TaskPool.isReady()) {
+        if (sourcePool.isReady() && taskPool.isReady()) {
             // todo: all tasks should be report to the controller
             // when success,archived the finished task,and rm to the archive dir
         }

@@ -9,45 +9,48 @@ package ai.starwhale.mlops.agent.taskexecutor;
 
 import ai.starwhale.mlops.agent.exception.AllocationException;
 import ai.starwhale.mlops.domain.node.Device;
+import org.springframework.stereotype.Component;
+
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
 import javax.annotation.PostConstruct;
 
+@Component
 public class SourcePool {
 
     /**
      * ready to work
      */
-    private static volatile boolean ready = false;
+    private volatile boolean ready = false;
 
-    private static final Queue<Device> idleDevices = new ArrayDeque<>();
-    private static final Queue<Device> usingDevices = new ArrayDeque<>();
+    private final Queue<Device> idleDevices = new ArrayDeque<>();
+    private final Queue<Device> usingDevices = new ArrayDeque<>();
 
     @PostConstruct
-    public static void init() {
+    public void init() {
         // todo: detect current machine devices
 
     }
 
-    public static Queue<Device> getIdleDevices() {
+    public Queue<Device> getIdleDevices() {
         return idleDevices;
     }
 
     /**
      * whether init successfully
      */
-    public static boolean isReady() {
+    public boolean isReady() {
         return ready;
     }
 
-    public static void setToReady() {
+    public void setToReady() {
         ready = true;
     }
 
     // todo with function and middle state
-    public static synchronized Set<Device> allocate(int num) {
+    public synchronized Set<Device> allocate(int num) {
         if (ready) {
             if (idleDevices.size() >= num) {
                 Set<Device> res = new HashSet<>();
@@ -63,7 +66,7 @@ public class SourcePool {
         throw new AllocationException("allocate device error");
     }
     // todo with function and middle state
-    public static synchronized void release(Set<Device> devices) {
+    public synchronized void release(Set<Device> devices) {
         if (ready) {
             for (Device device : devices) {
                 usingDevices.remove(device);

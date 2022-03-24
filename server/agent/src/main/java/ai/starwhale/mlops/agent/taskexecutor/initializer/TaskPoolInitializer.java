@@ -18,8 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.Builder;
-import lombok.Data;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -32,9 +31,11 @@ import org.springframework.stereotype.Component;
 public class TaskPoolInitializer implements CommandLineRunner {
 
     private final AgentProperties agentProperties;
+    private final TaskPool taskPool;
 
-    public TaskPoolInitializer(AgentProperties agentProperties) {
+    public TaskPoolInitializer(AgentProperties agentProperties, TaskPool taskPool) {
         this.agentProperties = agentProperties;
+        this.taskPool = taskPool;
     }
 
     @Override
@@ -57,8 +58,8 @@ public class TaskPoolInitializer implements CommandLineRunner {
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
-        tasks.forEach(TaskPool::fill);
-        TaskPool.setToReady();
+        tasks.forEach(taskPool::fill);
+        taskPool.setToReady();
         log.info("end of rebuild task pool, size:{}", tasks.size());
     }
 }

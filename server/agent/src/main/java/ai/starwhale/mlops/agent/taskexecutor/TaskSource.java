@@ -9,6 +9,7 @@ package ai.starwhale.mlops.agent.taskexecutor;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.container.ImageConfig;
+import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import ai.starwhale.mlops.domain.task.EvaluationTask;
 import cn.hutool.core.bean.BeanUtil;
@@ -24,22 +25,23 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Vector;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 public interface TaskSource {
-
+    @Component
     class TaskPool {
+        public final Queue<EvaluationTask> newTasks = new ArrayDeque<>();
+        public final Queue<EvaluationTask> preparingTasks = new ArrayDeque<>();
+        public final List<EvaluationTask> runningTasks = new Vector<>();
+        public final List<EvaluationTask> uploadingTasks = new Vector<>();
+        public final List<EvaluationTask> finishedTasks = new Vector<>();
+        public final List<EvaluationTask> archivedTasks = new Vector<>();
+        public final List<EvaluationTask> canceledTasks = new Vector<>();
+        public final List<EvaluationTask> errorTasks = new Vector<>();
+        public final List<Long> needToCancel = new Vector<>();
 
-        public static final Queue<EvaluationTask> newTasks = new ArrayDeque<>();
-        public static final Queue<EvaluationTask> preparingTasks = new ArrayDeque<>();
-        public static final List<EvaluationTask> runningTasks = new Vector<>();
-        public static final List<EvaluationTask> uploadingTasks = new Vector<>();
-        public static final List<EvaluationTask> finishedTasks = new Vector<>();
-        public static final List<EvaluationTask> archivedTasks = new Vector<>();
-        public static final List<EvaluationTask> canceledTasks = new Vector<>();
-        public static final List<EvaluationTask> errorTasks = new Vector<>();
-        public static final List<Long> needToCancel = new Vector<>();
-
-        public static void fill(EvaluationTask task) {
+        public void fill(EvaluationTask task) {
             switch (task.getTask().getStatus()) {
                 case CREATED:
                     newTasks.add(task);
@@ -70,13 +72,13 @@ public interface TaskSource {
         /**
          * whether init successfully
          */
-        private static volatile boolean ready = false;
+        private volatile boolean ready = false;
 
-        public static boolean isReady() {
+        public boolean isReady() {
             return ready;
         }
 
-        public static void setToReady() {
+        public void setToReady() {
             ready = true;
         }
     }
@@ -86,8 +88,23 @@ public interface TaskSource {
 
         public static class Context {
 
-            private Context() {
+            private Context(SourcePool sourcePool, TaskPool taskPool, ReportApi reportApi,
+                            ContainerClient containerClient, AgentProperties agentProperties) {
+                this.sourcePool = sourcePool;
+                this.taskPool = taskPool;
+                this.reportApi = reportApi;
+                this.containerClient = containerClient;
+                this.agentProperties = agentProperties;
             }
+            private SourcePool sourcePool;
+
+            private TaskPool taskPool;
+
+            private ContainerClient containerClient;
+
+            private ReportApi reportApi;
+
+            private AgentProperties agentProperties;
 
             private Map<String, Object> values = new HashMap<>();
 
@@ -99,8 +116,9 @@ public interface TaskSource {
                 return clazz.cast(values.get(key));
             }
 
-            public static Context instance() {
-                return new Context();
+            public static Context instance(SourcePool sourcePool, TaskPool taskPool, ReportApi reportApi,
+                                           ContainerClient containerClient, AgentProperties agentProperties) {
+                return new Context(sourcePool, taskPool, reportApi, containerClient, agentProperties);
             }
         }
 
@@ -114,7 +132,7 @@ public interface TaskSource {
                 return null;
             }
 
-            default void success(Old old, New n, Context c) {
+            default void success(Old old, New n, Context context) {
             }
 
             /**
@@ -122,17 +140,17 @@ public interface TaskSource {
              *
              * @param old old param
              */
-            default void fail(Old old, Context c) {
+            default void fail(Old old, Context context) {
             }
 
-            default void apply(Old old, Context c) {
-                if (condition(old, c)) {
+            default void apply(Old old, Context context) {
+                if (condition(old, context)) {
                     try {
-                        New o = processing(old, c);
-                        success(old, o, c);
+                        New o = processing(old, context);
+                        success(old, o, context);
                     } catch (Exception e) {
                         log.error(e.getMessage());
-                        fail(old, c);
+                        fail(old, context);
                     }
                 }
             }
@@ -141,9 +159,9 @@ public interface TaskSource {
         public interface BaseTransition extends DoTransition<EvaluationTask, EvaluationTask> {
 
             @Override
-            default void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
+            default void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
                 try {
-                    String path = c.get("taskInfoPath", String.class);
+                    String path = context.agentProperties.getTask().getInfoPath();
                     Path taskPath = Path.of(path + "/" + newTask.getTask().getId());
                     if (!Files.exists(taskPath)) {
                         Files.createFile(taskPath);
@@ -160,7 +178,7 @@ public interface TaskSource {
 
             @Override
             default boolean condition(EvaluationTask evaluationTask, Context context) {
-                return TaskPool.needToCancel.contains(evaluationTask.getTask().getId());
+                return context.taskPool.needToCancel.contains(evaluationTask.getTask().getId());
             }
 
             @Override
@@ -171,40 +189,40 @@ public interface TaskSource {
             }
 
             @Override
-            default void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
-                TaskPool.canceledTasks.add(newTask);
+            default void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+                context.taskPool.canceledTasks.add(newTask);
                 // cancel success
-                TaskPool.needToCancel.remove(newTask.getTask().getId());
-                BaseTransition.super.success(oldTask, newTask, c);
+                context.taskPool.needToCancel.remove(newTask.getTask().getId());
+                BaseTransition.super.success(oldTask, newTask, context);
             }
         }
 
         public static DoTransition<EvaluationTask, EvaluationTask> init2Preparing = new BaseTransition() {
             @Override
-            public boolean condition(EvaluationTask obj, Context c) {
+            public boolean condition(EvaluationTask obj, Context context) {
                 return obj.getTask().getStatus() == TaskStatus.CREATED;
             }
 
             @Override
-            public EvaluationTask processing(EvaluationTask oldTask, Context c) {
+            public EvaluationTask processing(EvaluationTask oldTask, Context context) {
                 EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
                 newTask.getTask().setStatus(TaskStatus.PREPARING);
-                newTask.setDevices(SourcePool.allocate(
+                newTask.setDevices(context.sourcePool.allocate(
                     1)); // pre allocate device to this task,if fail will throw exception
                 return newTask;
             }
 
             @Override
-            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
-                TaskPool.newTasks.remove(oldTask);
+            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+                context.taskPool.newTasks.remove(oldTask);
                 // add the new task to the tail
-                TaskPool.preparingTasks.offer(newTask);
+                context.taskPool.preparingTasks.offer(newTask);
                 // update info to the task file
-                BaseTransition.super.success(oldTask, newTask, c);
+                BaseTransition.super.success(oldTask, newTask, context);
             }
 
             @Override
-            public void fail(EvaluationTask taskTrigger, Context c) {
+            public void fail(EvaluationTask taskTrigger, Context context) {
                 // nothing to do
             }
 
@@ -212,16 +230,16 @@ public interface TaskSource {
 
         public static DoTransition<EvaluationTask, EvaluationTask> init2Canceled = new BaseCancelTransition() {
             @Override
-            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
-                TaskPool.newTasks.remove(oldTask);
-                BaseCancelTransition.super.success(oldTask, newTask, c);
+            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+                context.taskPool.newTasks.remove(oldTask);
+                BaseCancelTransition.super.success(oldTask, newTask, context);
             }
         };
 
         public static DoTransition<EvaluationTask, EvaluationTask> preparing2Running = new BaseTransition() {
             @Override
-            public EvaluationTask processing(EvaluationTask oldTask, Context c) {
-                ContainerClient containerClient = c.get("containerClient", ContainerClient.class);
+            public EvaluationTask processing(EvaluationTask oldTask, Context context) {
+                ContainerClient containerClient = context.containerClient;
                 // todo fill with task info
                 Optional<String> containerId = containerClient.startContainer("",
                     ImageConfig.builder().build());
@@ -238,34 +256,34 @@ public interface TaskSource {
             }
 
             @Override
-            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
+            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
                 // rm from current
-                TaskPool.preparingTasks.remove(oldTask);
+                context.taskPool.preparingTasks.remove(oldTask);
                 // tail it to the running list
-                TaskPool.runningTasks.add(newTask);
+                context.taskPool.runningTasks.add(newTask);
                 // update info to the task file
-                BaseTransition.super.success(oldTask, newTask, c);
+                BaseTransition.super.success(oldTask, newTask, context);
             }
 
             @Override
-            public void fail(EvaluationTask i, Context c) {
+            public void fail(EvaluationTask i, Context context) {
                 // nothing to do
             }
         };
 
         public static DoTransition<EvaluationTask, EvaluationTask> preparing2Canceled = new BaseCancelTransition() {
             @Override
-            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
-                TaskPool.preparingTasks.remove(oldTask);
-                BaseCancelTransition.super.success(oldTask, newTask, c);
+            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+                context.taskPool.preparingTasks.remove(oldTask);
+                BaseCancelTransition.super.success(oldTask, newTask, context);
             }
         };
 
         public static DoTransition<EvaluationTask, EvaluationTask> running2Uploading = new BaseTransition() {
             @Override
-            public EvaluationTask processing(EvaluationTask runningTask, Context c) {
+            public EvaluationTask processing(EvaluationTask runningTask, Context context) {
                 try {
-                    String path = c.get("taskInfoPath", String.class);
+                    String path = context.agentProperties.getTask().getInfoPath();
                     // get the newest task info
                     Path taskPath = Path.of(path + "/" + runningTask.getTask().getId());
                     String json = Files.readString(taskPath);
@@ -277,25 +295,25 @@ public interface TaskSource {
             }
 
             @Override
-            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
+            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
                 // if run success, release device to available device pool todo:is there anything else to do?
-                SourcePool.release(newTask.getDevices());
+                context.sourcePool.release(newTask.getDevices());
                 // only update memory list,there is no need to update the disk file(already update by taskContainer)
-                TaskPool.runningTasks.remove(oldTask);
+                context.taskPool.runningTasks.remove(oldTask);
                 if (newTask.getTask().getStatus() == TaskStatus.UPLOADING) {
-                    TaskPool.uploadingTasks.add(newTask);
+                    context.taskPool.uploadingTasks.add(newTask);
 
                 } else if (newTask.getTask().getStatus() == TaskStatus.EXIT_ERROR) {
-                    TaskPool.errorTasks.add(newTask);
+                    context.taskPool.errorTasks.add(newTask);
                 } else {
                     // seem like no other status
                 }
                 // update info to the task file
-                BaseTransition.super.success(oldTask, newTask, c);
+                BaseTransition.super.success(oldTask, newTask, context);
             }
 
             @Override
-            public void fail(EvaluationTask oldTask, Context c) {
+            public void fail(EvaluationTask oldTask, Context context) {
                 // nothing
             }
         };
@@ -308,16 +326,16 @@ public interface TaskSource {
             }
 
             @Override
-            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
-                TaskPool.runningTasks.remove(oldTask);
-                BaseCancelTransition.super.success(oldTask, newTask, c);
+            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+                context.taskPool.runningTasks.remove(oldTask);
+                BaseCancelTransition.super.success(oldTask, newTask, context);
             }
         };
 
 
         public static DoTransition<EvaluationTask, EvaluationTask> uploading2Finished = new BaseTransition() {
             @Override
-            public EvaluationTask processing(EvaluationTask oldTask, Context c) {
+            public EvaluationTask processing(EvaluationTask oldTask, Context context) {
                 EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
                 // todo: upload result file to the storage
                 newTask.getTask().setResultPaths(List.of(""));
@@ -326,21 +344,21 @@ public interface TaskSource {
             }
 
             @Override
-            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
-                TaskPool.uploadingTasks.remove(oldTask);
-                TaskPool.finishedTasks.add(newTask);
+            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+                context.taskPool.uploadingTasks.remove(oldTask);
+                context.taskPool.finishedTasks.add(newTask);
 
                 // update info to the task file
-                BaseTransition.super.success(oldTask, newTask, c);
+                BaseTransition.super.success(oldTask, newTask, context);
             }
         };
 
 
         public static DoTransition<EvaluationTask, EvaluationTask> uploading2Canceled = new BaseCancelTransition() {
             @Override
-            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context c) {
-                TaskPool.uploadingTasks.remove(oldTask);
-                BaseCancelTransition.super.success(oldTask, newTask, c);
+            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+                context.taskPool.uploadingTasks.remove(oldTask);
+                BaseCancelTransition.super.success(oldTask, newTask, context);
             }
         };
 
