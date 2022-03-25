@@ -12,7 +12,7 @@ import ai.starwhale.mlops.common.util.ArrayHelper.Segment;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.SWDataSetSlice;
 import ai.starwhale.mlops.domain.task.Task;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.domain.task.EvaluationTask;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SimpleJobSpliter implements JobSpliter {
 
     @Override
-    public List<TaskTrigger> split(Job job) {
+    public List<EvaluationTask> split(Job job) {
         Integer deviceAmount = job.getJobRuntime().getDeviceAmount();
         //allocatedTasks.size() == deviceAmount
         List<Task> allocatedTasks = allocateTasks(job.getId(), deviceAmount);
@@ -32,7 +32,7 @@ public class SimpleJobSpliter implements JobSpliter {
         List<List<Segment>> slicePointsPerDS = swDataSets.stream()
             .map(ds -> ArrayHelper.INSTANCE.sliceSegments(ds.getSize(), deviceAmount))
             .collect(Collectors.toList());
-        List<TaskTrigger> taskTriggers = new ArrayList<>(ArrayHelper.INSTANCE.getInitialCapacity(deviceAmount));
+        List<EvaluationTask> taskTriggers = new ArrayList<>(ArrayHelper.INSTANCE.getInitialCapacity(deviceAmount));
         for (int i = 0; i < deviceAmount; i++) {
             int swdsSize = swDataSets.size();
             List<SWDataSetSlice> swDataSetSlices = new ArrayList<>(ArrayHelper.INSTANCE.getInitialCapacity(
@@ -46,11 +46,11 @@ public class SimpleJobSpliter implements JobSpliter {
                     .build();
                 swDataSetSlices.add(swdsSlice);
             }
-            TaskTrigger taskTrigger = TaskTrigger.builder().task(allocatedTasks.get(i))
+            EvaluationTask evaluationTask = EvaluationTask.builder().task(allocatedTasks.get(i))
                 .swModelPackage(job.getSwmp())
                 .swDataSetSlice(swDataSetSlices)
                 .build();
-            taskTriggers.add(taskTrigger);
+            taskTriggers.add(evaluationTask);
         }
         return taskTriggers;
     }

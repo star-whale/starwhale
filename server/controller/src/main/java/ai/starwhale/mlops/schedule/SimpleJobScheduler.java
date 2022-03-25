@@ -15,7 +15,7 @@ import ai.starwhale.mlops.domain.job.JobSpliter;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.domain.task.EvaluationTask;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import java.util.Collections;
@@ -35,11 +35,11 @@ public class SimpleJobScheduler implements JobScheduler {
 
     final JobSpliter jobSpliter;
 
-    final Map<Device.Clazz, ConcurrentLinkedQueue<TaskTrigger>> taskQueueTable;
+    final Map<Device.Clazz, ConcurrentLinkedQueue<EvaluationTask>> taskQueueTable;
 
     public SimpleJobScheduler(JobSpliter jobSpliter) {
         this.jobSpliter = jobSpliter;
-        Map<Device.Clazz, ConcurrentLinkedQueue<TaskTrigger>> taskQueueTableInitialization = new HashMap<>();
+        Map<Device.Clazz, ConcurrentLinkedQueue<EvaluationTask>> taskQueueTableInitialization = new HashMap<>();
         taskQueueTableInitialization.put(Clazz.CPU, new ConcurrentLinkedQueue<>());
         taskQueueTableInitialization.put(Clazz.GPU, new ConcurrentLinkedQueue<>());
         this.taskQueueTable = Collections.unmodifiableMap(taskQueueTableInitialization);
@@ -48,14 +48,14 @@ public class SimpleJobScheduler implements JobScheduler {
     @Override
     public void takeJob(Job job) {
         validJob(job);
-        List<TaskTrigger> splitTasks = jobSpliter.split(job);
+        List<EvaluationTask> splitTasks = jobSpliter.split(job);
         taskQueueTable.get(job.getJobRuntime().getDeviceClass()).addAll(splitTasks);
         job.setStatus(JobStatus.SPLIT);
         //save job status TODO
     }
 
     @Override
-    public List<TaskTrigger> schedule(Node node) {
+    public List<EvaluationTask> schedule(Node node) {
         validNode(node);
         return node.getDeviceHolders()
             .stream()
