@@ -34,3 +34,7 @@ pylint.out
 *venv/
 /env-build
 .DS_Store
+
+# User Test Data
+example/mnist/data
+example/mnist/sw_output
