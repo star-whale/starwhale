@@ -108,11 +108,11 @@ public interface DatasetApi {
             Integer datasetId,
         @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageNum", required = false)
+        @RequestParam(value = "pageNum", required = false, defaultValue = "1")
             Integer pageNum,
         @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageSize", required = false)
+        @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
     @Operation(summary = "Create a new dataset version",
@@ -167,11 +167,11 @@ public interface DatasetApi {
     ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(
         @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageNum", required = false)
+        @RequestParam(value = "pageNum", required = false, defaultValue = "1")
             Integer pageNum,
         @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageSize", required = false)
+        @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
     @Operation(summary = "Create a new dataset",

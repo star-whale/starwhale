@@ -8,19 +8,9 @@
 package ai.starwhale.mlops.domain.user;
 
 import java.util.List;
-import org.apache.ibatis.annotations.Param;
 
-public interface UserMapper {
+public interface RoleMapper {
 
-    Long createUser(UserEntity user);
+    List<RoleEntity> listRoles();
 
-    UserEntity findUser(@Param("id") Long id);
-
-    UserEntity findUserByName(@Param("userName") String userName);
-
-    List<UserEntity> listUsers(@Param("userNamePrefix") String userNamePrefix);
-
-    int changePassword(UserEntity user);
-
-    int enableUser(UserEntity user);
 }

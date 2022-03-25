@@ -7,65 +7,70 @@
 
 package ai.starwhale.mlops.configuration.security;
 
-import ai.starwhale.mlops.domain.user.UserService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import static ai.starwhale.mlops.common.util.HttpUtil.error;
 
+import ai.starwhale.mlops.api.protocol.Code;
+import ai.starwhale.mlops.common.util.JwtTokenUtil;
+import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.UserService;
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
+import io.jsonwebtoken.Claims;
+import java.io.IOException;
+import javax.annotation.Resource;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
+import org.springframework.util.StringUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
 
-import static java.util.List.of;
-import static java.util.Optional.ofNullable;
-import static org.springframework.util.StringUtils.hasText;
 
-@Component
-@RequiredArgsConstructor
 public class JwtTokenFilter extends OncePerRequestFilter {
 
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService userService;
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
-        // Get authorization header and validate
-        final String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (!hasText(header) || !header.startsWith("Bearer ")) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // Get jwt token and validate
-        final String token = header.split(" ")[1].trim();
-        if (!jwtTokenUtil.validate(token)) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        // Get user identity and set it on the spring security context
-        UserDetails userDetails = userService
-                .findByUsername(jwtTokenUtil.getUsername(token))
-                .orElse(null);
-
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                userDetails, null,
-                ofNullable(userDetails).map(UserDetails::getAuthorities).orElse(of())
-        );
-
-        authentication
-                .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        chain.doFilter(request, response);
+    public JwtTokenFilter(JwtTokenUtil jwtTokenUtil, UserService userService) {
+        this.jwtTokenUtil = jwtTokenUtil;
+        this.userService = userService;
     }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest httpServletRequest,
+                                    HttpServletResponse httpServletResponse,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        String header = httpServletRequest.getHeader("Authorization");
+
+        if (!StringUtils.hasText(header) || !header.startsWith("Bearer ")) {
+            error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied, "Not logged in.");
+            return;
+        }
+
+        String token = header.split(" ")[1].trim();
+
+        if(!jwtTokenUtil.validate(token)) {
+            error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied, "JWT token is expired or invalid.");
+            return;
+        }
+
+        Claims claims = jwtTokenUtil.parseJWT(token);
+
+        User user = User.builder()
+            .id(jwtTokenUtil.getUserId(claims))
+            .name(jwtTokenUtil.getUsername(claims))
+            .build();
+        user = userService.loadUserByUsername(user.getName());
+        JwtLoginToken jwtLoginToken = new JwtLoginToken(user, "", user.getAuthorities());
+        jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
+        SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);
+        filterChain.doFilter(httpServletRequest, httpServletResponse);
+
+    }
+
+
 }

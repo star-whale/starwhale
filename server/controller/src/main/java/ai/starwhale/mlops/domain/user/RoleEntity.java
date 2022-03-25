@@ -8,36 +8,23 @@
 package ai.starwhale.mlops.domain.user;
 
 import ai.starwhale.mlops.common.BaseEntity;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class UserEntity extends BaseEntity implements Serializable {
+public class RoleEntity extends BaseEntity {
 
     private Long id;
 
-    private String userName;
+    private String roleName;
 
-    private String userPwd;
-
-    private String userPwdSalt;
-
-    private Long roleId;
-
-    private RoleEntity role;
-
-    private Integer userEnabled;
-
+    private String roleNameEn;
 }

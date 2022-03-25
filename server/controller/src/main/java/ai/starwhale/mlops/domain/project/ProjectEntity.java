@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.domain.user.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,7 +28,7 @@ public class ProjectEntity extends BaseEntity {
 
     private Long ownerId;
 
-    private String ownerName;
+    private UserEntity owner;
 
     private Integer isDeleted;
 

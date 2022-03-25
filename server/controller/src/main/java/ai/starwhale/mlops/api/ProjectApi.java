@@ -37,9 +37,9 @@ public interface ProjectApi {
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
     @GetMapping(value = "/project")
     ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(
-        @Valid @RequestParam(value = "projectName", required = false) String projectName,
-        @Valid @RequestParam(value = "pageNum", required = false) Integer pageNum,
-        @Valid @RequestParam(value = "pageSize", required = false) Integer pageSize);
+        @Valid @RequestParam(value = "projectName", required = false, defaultValue = "") String projectName,
+        @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+        @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
 
     @Operation(summary = "Create a new project")

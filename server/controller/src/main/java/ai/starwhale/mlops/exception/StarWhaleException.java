@@ -12,6 +12,10 @@ package ai.starwhale.mlops.exception;
  */
 public abstract class StarWhaleException extends RuntimeException {
 
+    protected StarWhaleException() {
+        super();
+    }
+
     protected StarWhaleException(String message) {
         super(message);
     }

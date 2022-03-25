@@ -1,14 +1,16 @@
 /*
  * Copyright 2022.1-2022
- *  starwhale.ai All right reserved. This software is the confidential and proprietary information of
- *  starwhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with  starwhale.ai.
+ * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+ * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+ * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.configuration.security;
+package ai.starwhale.mlops.common.util;
 
+import ai.starwhale.mlops.configuration.security.JwtProperties;
 import ai.starwhale.mlops.domain.user.User;
 import io.jsonwebtoken.*;
+import javax.xml.bind.DatatypeConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -34,30 +36,23 @@ public class JwtTokenUtil {
                 .compact();
     }
 
-    public String getUserId(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(jwtProperties.getSecret())
-                .parseClaimsJws(token)
-                .getBody();
+    // Sample method to validate and read the JWT
+    public Claims parseJWT(String token) {
+        // This line will throw an exception if it is not a signed JWS (as expected)
+        return Jwts.parser()
+            .setSigningKey(jwtProperties.getSecret())
+            .parseClaimsJws(token).getBody();
+    }
 
+    public String getUserId(Claims claims) {
         return claims.getSubject().split(",")[0];
     }
 
-    public String getUsername(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(jwtProperties.getSecret())
-                .parseClaimsJws(token)
-                .getBody();
-
+    public String getUsername(Claims claims) {
         return claims.getSubject().split(",")[1];
     }
 
-    public Date getExpirationDate(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(jwtProperties.getSecret())
-                .parseClaimsJws(token)
-                .getBody();
-
+    public Date getExpirationDate(Claims claims) {
         return claims.getExpiration();
     }
 

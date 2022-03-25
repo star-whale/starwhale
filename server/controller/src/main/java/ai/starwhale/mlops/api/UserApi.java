@@ -8,7 +8,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.api.protocol.user.UserVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,7 +44,7 @@ public interface UserApi {
                     schema = @Schema(implementation = PageInfo.class)))
         })
     @GetMapping(value = "/user")
-    ResponseEntity<ResponseMessage<PageInfo<User>>> listUser(
+    ResponseEntity<ResponseMessage<PageInfo<UserVO>>> listUser(
         @Parameter(
             in = ParameterIn.QUERY,
             description = "User name prefix to search for",
@@ -54,11 +54,11 @@ public interface UserApi {
             String userName,
         @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageNum", required = false)
+        @RequestParam(value = "pageNum", required = false, defaultValue = "1")
             Integer pageNum,
         @Parameter(in = ParameterIn.QUERY, description = "Rows per page", schema = @Schema())
         @Valid
-        @RequestParam(value = "pageSize", required = false)
+        @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
     @Operation(summary = "Create a new user")
@@ -84,6 +84,20 @@ public interface UserApi {
         @RequestParam(value = "userPwd")
             String userPwd);
 
+    @Operation(summary = "Get the current logged in user.")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok.",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = UserVO.class)))
+        })
+    @GetMapping(value = "/user/current")
+    ResponseEntity<ResponseMessage<UserVO>> getCurrentUser();
+
     @Operation(summary = "Get a user by user ID")
     @ApiResponses(
         value = {
@@ -93,10 +107,10 @@ public interface UserApi {
                 content =
                 @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = User.class)))
+                    schema = @Schema(implementation = UserVO.class)))
         })
     @GetMapping(value = "/user/{userId}")
-    ResponseEntity<ResponseMessage<User>> getUserById(
+    ResponseEntity<ResponseMessage<UserVO>> getUserById(
         @Parameter(
             in = ParameterIn.PATH,
             description = "User ID",

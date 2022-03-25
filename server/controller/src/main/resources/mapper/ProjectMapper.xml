@@ -21,36 +21,60 @@
     <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity">
         update project_info
         set project_name = #{projectName}
-        where project_id = #{id}
+        where id = #{id}
     </update>
 
-    <select id="listProjects" parameterType="java.lang.String" resultType="ai.starwhale.mlops.domain.project.ProjectEntity" >
-        select p.id,
+    <select id="listProjects" parameterType="java.lang.String" resultMap="projectResultMap" >
+        select p.id as project_id,
                p.project_name,
                p.owner_id,
-               p.is_deleted,
-               p.create_time,
-               p.modified_time,
-               u.user_name as owner_name
+               p.is_deleted as project_is_deleted,
+               p.created_time as project_created_time,
+               p.modified_time as project_modified_time,
+               u.id as user_id,
+               u.user_name,
+               u.created_time as user_created_time,
+               u.user_enabled,
+               r.id as role_id,
+               r.role_name,
+               r.role_name_en
         from project_info as p,
-             user_info as u
+             user_info as u,
+             user_role as r
         where u.id = p.owner_id
-        <if test="projectName != null">
-            and project_name like #{projectName}%
+          and r.id = u.role_id
+        <if test="projectName != null and projectName != ''">
+            and p.project_name like concat(#{projectName}, '%')
         </if>
     </select>
 
-    <select id="findProject" parameterType="java.lang.Long" resultType="ai.starwhale.mlops.domain.project.ProjectEntity">
-        select p.id,
+    <select id="findProject" parameterType="java.lang.Long" resultMap="projectResultMap">
+        select p.id as project_id,
                p.project_name,
                p.owner_id,
-               p.is_deleted,
-               p.create_time,
-               p.modified_time,
-               u.user_name as owner_name
+               p.is_deleted as project_is_deleted,
+               p.created_time as project_created_time,
+               p.modified_time as project_modified_time,
+               u.id as user_id,
+               u.user_name,
+               u.created_time as user_created_time,
+               u.user_enabled,
+               r.id as role_id,
+               r.role_name,
+               r.role_name_en
         from project_info as p,
-             user_info as u
-        where id = #{id}
+             user_info as u,
+             user_role as r
+        where p.id = #{id}
           and u.id = p.owner_id
     </select>
+
+    <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.ProjectEntity">
+        <id property="id" column="project_id" />
+        <result property="projectName" column="project_name"/>
+        <result property="isDeleted" column="project_is_deleted"/>
+        <result property="createdTime" column="project_created_time"/>
+        <result property="modifiedTime" column="project_modified_time"/>
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
+    </resultMap>
 </mapper>
