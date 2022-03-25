@@ -7,12 +7,14 @@
 
 package ai.starwhale.mlops.domain.node;
 
-import lombok.Data;
+import lombok.Builder;
+import lombok.Getter;
 
 /**
  * Device is a computational unit such as GPU/ CPU or TPU which is the core resource for a Node to schedule
  */
-@Data
+@Getter
+@Builder
 public class Device {
 
     /**

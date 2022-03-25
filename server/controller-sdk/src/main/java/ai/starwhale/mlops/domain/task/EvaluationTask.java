@@ -7,25 +7,35 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.SWDataSetSlice;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
-import lombok.AllArgsConstructor;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * sufficient information for an Agent to run a Task
  */
 @Data
 @Builder
-public class TaskTrigger {
+public class EvaluationTask {
 
     /**
      * task meta info
      */
     Task task;
+
+    /**
+     * the container id
+     */
+    String containerId;
+
+    /**
+     * the devices list which the task hold
+     */
+    Set<Device> devices;
 
     /**
      * swmp meta info

@@ -7,14 +7,15 @@
 
 package ai.starwhale.mlops.domain.task;
 
-import lombok.Builder;
+import java.util.List;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Tasks are derived from a Job. Tasks are the executing units of a Job.
  */
 @Data
-@Builder
+@SuperBuilder
 public class Task {
 
     /**
@@ -32,7 +33,10 @@ public class Task {
      */
     TaskStatus status;
 
-    // List<String> resultPaths; todo
+    /**
+     * storage path of results
+     */
+    List<String> resultPaths;
 
     /**
      * possible statuses of a task
@@ -55,14 +59,19 @@ public class Task {
         RUNNING,
 
         /**
-         * after task exit normally before closed. garbage clearing
+         * after task exit normally(container is stopped)
          */
-        CLOSING,
+        UPLOADING,
 
         /**
-         * garbage is cleared
+         * result has been uploaded to the storage
          */
         FINISHED,
+
+        /**
+         * when report successfully to the controller,it should be archived
+         */
+        ARCHIVED,
 
         /**
          * canceled by the controller

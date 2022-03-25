@@ -2,6 +2,7 @@ package ai.starwhale.mlops.agent.container.impl;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
 
+import ai.starwhale.mlops.agent.container.ImageConfig;
 import java.util.Optional;
 
 /**
@@ -10,7 +11,7 @@ import java.util.Optional;
 public class DockerClient implements ContainerClient {
 
     @Override
-    public Optional<String> startContainer(String imageId, String[] args) {
+    public Optional<String> startContainer(String imageId, ImageConfig imageConfig) {
         return Optional.empty();
     }
 
