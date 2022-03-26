@@ -20,17 +20,10 @@ SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
 
 ENV_CONDA = "CONDA_DEFAULT_ENV"
 ENV_CONDA_PREFIX = "CONDA_PREFIX"
-CONDA_ENV_TAR = "env.tar"
 
 FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 
-DUMP_CONDA_ENV_FNAME = "env-lock.yaml"
-DUMP_PIP_REQ_FNAME = "pip-req-lock.txt"
-DUMP_USER_PIP_REQ_FNAME = "pip-req.txt"
-
 #TODO: use better DEFAULT words?
 DEFAULT_COPY_WORKERS = 4
-
-SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
 
 SW_API_VERSION = "v0.1"

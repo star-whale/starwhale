@@ -2,6 +2,9 @@ import os
 import typing as t
 import errno
 from pathlib import Path
+import hashlib
+
+BLAKE2B_SIGNATURE_ALGO = "blake2b"
 
 
 def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> None:
@@ -51,3 +54,17 @@ def ensure_link(src: t.Union[str, Path], dest: t.Union[str, Path]) -> None:
             return
         os.unlink(dest)
     os.symlink(src, dest)
+
+
+def blake2b_file(fpath: t.Union[str, Path]) -> str:
+    fpath = Path(fpath)
+    # blake2b is more faster and better than md5,sha1,sha2
+    _hash = hashlib.blake2b()
+
+    with fpath.open("rb") as f:
+        _chunk = f.read(8192)
+        while _chunk:
+            _hash.update(_chunk)
+            _chunk = f.read(8192)
+
+    return _hash.hexdigest()

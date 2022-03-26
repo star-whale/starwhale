@@ -7,11 +7,15 @@ import platform
 
 from loguru import logger
 
-from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.fs import (
+    ensure_dir, ensure_file, blake2b_file,
+    BLAKE2B_SIGNATURE_ALGO
+)
 from starwhale import __version__
 from starwhale.utils import (
-    convert_to_bytes, gen_uniq_version, get_python_version
+    convert_to_bytes, gen_uniq_version
 )
+from starwhale.utils.venv import dump_python_dep_env, detect_pip_req
 from starwhale.utils.error import FileTypeError, NoSupportError
 from starwhale.consts import (
     DEFAULT_STARWHALE_API_VERSION, FMT_DATETIME,
@@ -126,24 +130,45 @@ class DataSet(object):
         self._gen_version()
         self._prepare_snapshot()
         self._call_build_swds()
-        self._cal_signature()
+        self._calculate_signature()
         self._dump_dep()
         self._render_manifest()
 
-    def _cal_signature(self):
-        pass
+    def _calculate_signature(self):
+        logger.info(f"[step:signature]try to calculate signature with {_algo} @ {self._data_dir}")
+        _algo = BLAKE2B_SIGNATURE_ALGO
+        _sign = dict()
+
+        for c in self._data_dir.iterdir():
+            if not c.is_file():
+                continue
+            _sign[c.name] = f"{_algo}:{blake2b_file(c)}"
+
+        self._manifest["signature"] = _sign
+
+        logger.info(f"[step:signature]finish calculate signature with {_algo} @ {_sign}")
 
     def _dump_dep(self):
-        pass
+        logger.info("[step:dump]dump conda or venv environment...")
+
+        _manifest = dump_python_dep_env(
+            dep_dir=self._snapshot_workdir / "dep",
+            pip_req_fpath=detect_pip_req(self.workdir, self._swds_config.pip_req),
+            skip_gen_env=True,  #TODO: add venv dump?
+        )
+
+        self._manifest["dep"] = _manifest
+
+        logger.info("[step:dump]finish dump dep")
 
     def _call_build_swds(self):
-        pass
+        self._manifest["dataset_attr"] = self._swds_config.attr.__dict__
+        self._manifest["mode"] = self._swds_config.mode
 
     def _render_manifest(self):
         self._manifest["build"] = dict(
             os=platform.system(),
             sw_version=__version__,
-            python=get_python_version,
         )
         _f = self._snapshot_workdir / DEFAULT_MANIFEST_NAME
         ensure_file(_f, yaml.dump(self._manifest, default_flow_style=False))
@@ -166,8 +191,6 @@ class DataSet(object):
 
         ensure_dir(self._data_dir)
         ensure_dir(self._src_dir)
-        ensure_dir(self._conda_dir)
-        ensure_dir(self._venv_dir)
         ensure_dir(self._docker_dir)
 
         logger.info(f"[step:prepare-snapshot]swds snapshot workdir: {self._snapshot_workdir}")
@@ -179,14 +202,6 @@ class DataSet(object):
     @property
     def _src_dir(self):
         return self._snapshot_workdir / "src"
-
-    @property
-    def _conda_dir(self):
-        return self._snapshot_workdir / "dep" / "conda"
-
-    @property
-    def _venv_dir(self):
-        return self._snapshot_workdir / "dep" / "venv"
 
     @property
     def _docker_dir(self):

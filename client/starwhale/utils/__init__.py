@@ -79,17 +79,6 @@ def is_linux() -> bool:
     return platform.system() in ("Linux", "Unix")
 
 
-def pip_freeze(path: t.Union[str, Path]) -> bytes:
-    #TODO: add cmd timeout and error log
-    return subprocess.check_output(f"pip freeze > {path}", shell=True, stderr=subprocess.STDOUT)
-
-
-def conda_export(path: t.Union[str, Path], env:str="") -> bytes:
-    #TODO: add cmd timeout
-    cmd = "conda env export"
-    env = f"-n {env}" if env else ""
-    return subprocess.check_output(f"{cmd} {env} > {path}", shell=True, stderr=subprocess.STDOUT)
-
 def get_python_version():
     #TODO: check user ppl environment or starwhale-cli env? need test
     _v = sys.version_info

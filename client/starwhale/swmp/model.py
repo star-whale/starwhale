@@ -6,25 +6,22 @@ import platform
 from datetime import datetime
 import tarfile
 
-import conda_pack
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
 from fs import open_fs
 
 from starwhale import __version__
-from starwhale.utils.error import FileTypeError, FileFormatError, NoSupportError
-from starwhale.utils import (
-    gen_uniq_version, get_conda_env, is_windows, is_linux, is_darwin,
-    is_venv, is_conda, get_python_run_env,
-    pip_freeze, conda_export, get_python_version,
-)
+from starwhale.utils.error import FileTypeError, FileFormatError
+from starwhale.utils import gen_uniq_version
 from starwhale.utils.fs import ensure_dir, ensure_file, ensure_link
-from starwhale.utils.venv import setup_venv, install_req
+from starwhale.utils.venv import (
+    detect_pip_req, dump_python_dep_env, SUPPORTED_PIP_REQ
+)
 from starwhale.consts import (
-    CONDA_ENV_TAR, DEFAULT_STARWHALE_API_VERSION, DUMP_CONDA_ENV_FNAME, DUMP_PIP_REQ_FNAME, FMT_DATETIME,
-    DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME, SUPPORTED_PIP_REQ, DUMP_USER_PIP_REQ_FNAME,
-    DUMP_CONDA_ENV_FNAME, DUMP_PIP_REQ_FNAME, DEFAULT_COPY_WORKERS,
+    DEFAULT_STARWHALE_API_VERSION, FMT_DATETIME,
+    DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME,
+    DEFAULT_COPY_WORKERS,
 )
 from .store import ModelPackageLocalStore
 
@@ -192,15 +189,7 @@ class ModelPackage(object):
     @property
     def _model_pip_req(self) -> str:
         _run = self._swmp_config.run
-
-        if _run.pip_req and (self.workdir / _run.pip_req).exists():
-            return str(self.workdir / _run.pip_req)
-        else:
-            for p in SUPPORTED_PIP_REQ:
-                if (self.workdir / p).exists():
-                    return str(self.workdir / p)
-            else:
-                return ""
+        return detect_pip_req(self.workdir, _run.pip_req)
 
     @property
     def _conda_dir(self) -> Path:
@@ -219,69 +208,14 @@ class ModelPackage(object):
         return self._snapshot_workdir / "src"
 
     def _dump_dep(self) -> None:
-        logger.info(f"[step:dep]dump conda or venv environment...")
+        logger.info(f"[step:dep]start dump python dep...")
 
-        pr_env = get_python_run_env()
-        sys_name = platform.system()
-        py_ver = get_python_version()
-
-        #TODO: add python version into manifest
-        #TODO: add size into manifest
-        self._manifest["dep"] = dict(
-            env=pr_env,
-            system=sys_name,
-            python=py_ver,
-            local_gen_env=False,
-            venv=dict(use=not is_conda()),
-            conda=dict(use=is_conda())
+        _manifest = dump_python_dep_env(
+            dep_dir=self._snapshot_workdir / "dep",
+            pip_req_fpath=self._model_pip_req,
+            skip_gen_env=self._skip_gen_env,
         )
-
-        pip_lock_req = self._python_dir / DUMP_PIP_REQ_FNAME
-        conda_lock_env = self._conda_dir / DUMP_CONDA_ENV_FNAME
-
-        #TODO: use model.yaml run-env field
-        logger.info(f"[info:dep]python env({pr_env}), os({sys_name}, python({py_ver}))")
-        if is_conda():
-            #TODO: environment.yaml prefix removed?
-            logger.info(f"[info:dep]dump conda environment yaml: {conda_lock_env}")
-            conda_export(conda_lock_env)
-        elif is_venv():
-            logger.info(f"[info:dep]dump pip-req with freeze: {pip_lock_req}")
-            pip_freeze(pip_lock_req)
-        else:
-            # TODO: add other env tools
-            logger.warning("detect use system python, swcli does not pip freeze, only use custom pip-req")
-
-        if is_windows() or is_darwin() or self._skip_gen_env:
-            #TODO: win/osx will produce env in controller agent with task
-            logger.info(f"[info:dep]{sys_name} will skip conda/venv dump or generate")
-        elif is_linux():
-            #TODO: more design local or remote build venv
-            #TODO: ignore some pkg when dump, like notebook?
-            self._manifest["dep"]["local_gen_env"] = True  # type: ignore
-
-            if is_conda():
-                cenv = get_conda_env()
-                dest = str(self._conda_dir / CONDA_ENV_TAR)
-                if not cenv:
-                    raise Exception(f"cannot get conda env value")
-
-                #TODO: add env/env-name into model.yaml, user can set custom vars.
-                logger.info("[info:dep]try to pack conda...")
-                conda_pack.pack(name=cenv, force=True, output=dest, ignore_editable_packages=True)
-                logger.info(f"[info:dep]finish conda pack {dest})")
-            else:
-                #TODO: tune venv create performance, use clone?
-                logger.info(f"[info:dep]build venv dir: {self._venv_dir}")
-                setup_venv(self._venv_dir)
-                logger.info(f"[info:dep]install pip freeze({pip_lock_req}) to venv: {self._venv_dir}")
-                install_req(self._venv_dir, pip_lock_req)
-                if self._model_pip_req:
-                    logger.info(f"[info:dep]install custom pip({self._model_pip_req}) to venv: {self._venv_dir}")
-                    install_req(self._venv_dir, self._model_pip_req)
-                    copy_fs(self._model_pip_req, str(self._python_dir / DUMP_USER_PIP_REQ_FNAME))
-        else:
-            raise NoSupportError(f"no support {sys_name} system")
+        self._manifest["dep"] = _manifest
 
         logger.info(f"[step:dep]finish dump dep")
 
