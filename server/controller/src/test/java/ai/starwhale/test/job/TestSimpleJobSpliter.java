@@ -26,19 +26,19 @@ public class TestSimpleJobSpliter {
 
     public void testOneDataSet(final int deviceAmount,final int dataSetSize){
         Job job = mockOneDSJob(deviceAmount, dataSetSize);
-        List<EvaluationTask> taskTriggers = simpleJobSpliter.split(job);
-        Assertions.assertEquals(taskTriggers.size(),deviceAmount);
+        List<EvaluationTask> evaluationTasks = simpleJobSpliter.split(job);
+        Assertions.assertEquals(evaluationTasks.size(),deviceAmount);
         final int sliceSizeRound = dataSetSize / deviceAmount;
         int sliceSize = dataSetSize % deviceAmount == 0? sliceSizeRound : sliceSizeRound + 1;
         int dataRemaining = dataSetSize;
         for(int i=0;i<deviceAmount;i++){
             System.out.println(dataRemaining);
-            EvaluationTask taskTrigger = taskTriggers.get(i);
-            Assertions.assertEquals(taskTrigger.getSwDataSetSlice().size(),1);
+            EvaluationTask evaluationTask = evaluationTasks.get(i);
+            Assertions.assertEquals(evaluationTask.getSwDataSetSlice().size(),1);
             if(i == deviceAmount -1){
-                Assertions.assertEquals(taskTrigger.getSwDataSetSlice().get(0).getEnd() - taskTrigger.getSwDataSetSlice().get(0).getStart() ,dataRemaining -1 );
+                Assertions.assertEquals(evaluationTask.getSwDataSetSlice().get(0).getEnd() - evaluationTask.getSwDataSetSlice().get(0).getStart() ,dataRemaining -1 );
             }else {
-                Assertions.assertEquals(taskTrigger.getSwDataSetSlice().get(0).getEnd() - taskTrigger.getSwDataSetSlice().get(0).getStart()  ,sliceSize - 1);
+                Assertions.assertEquals(evaluationTask.getSwDataSetSlice().get(0).getEnd() - evaluationTask.getSwDataSetSlice().get(0).getStart()  ,sliceSize - 1);
             }
             dataRemaining -= sliceSize;
         }

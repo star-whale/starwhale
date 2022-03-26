@@ -71,7 +71,7 @@ public class MBCConfusionMetrics extends Indicator<Map<String, BCConfusionMetric
             final String label = mcIndicator.getLabel();
             final String prediction = mcIndicator.getPrediction();
             final int sampleAmount = mcIndicator.getValue().intValue();
-            log.info("updateMetrics label {} prediction {}",label,prediction);
+            log.debug("updateMetrics label {} prediction {}",label,prediction);
             labelSet.forEach(lbl -> {
                 final BCConfusionMetrics bcConfusionMetrics = confusionMetrics.get(lbl);
                 if(mcIndicator.right()){
@@ -108,13 +108,13 @@ public class MBCConfusionMetrics extends Indicator<Map<String, BCConfusionMetric
 
     private void checkLabel(String label) {
         if(labelSet.contains(label)){
-            log.info("checking label {} exists",label);
+            log.debug("checking label {} exists",label);
            return;
         }
-        log.info("checking label {} NOT exists 1",label);
+        log.debug("checking label {} NOT exists 1",label);
         synchronized (labelSet){
             if(!labelSet.contains(label)){
-                log.info("checking label {} NOT exists 2",label);
+                log.debug("checking label {} NOT exists 2",label);
 
                 if(confusionMetrics.isEmpty()){
                     confusionMetrics.put(label, new BCConfusionMetrics());
@@ -127,7 +127,7 @@ public class MBCConfusionMetrics extends Indicator<Map<String, BCConfusionMetric
                         final BCConfusionMetrics metricsValue = firstMetrics.getValue();
                         final int totalSamples = metricsValue.getTn() + metricsValue.getTp() + metricsValue.getFp()
                             + metricsValue.getFn();
-                        log.info("make up for {} is {}",label,totalSamples);
+                        log.debug("make up for {} is {}",label,totalSamples);
                         confusionMetrics.put(label, new BCConfusionMetrics(0,totalSamples,0,0));
                     }catch (Throwable e){
                         throw e;

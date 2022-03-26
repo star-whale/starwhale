@@ -38,4 +38,12 @@ public class Node {
      */
     List<DeviceHolder> deviceHolders;
 
+    public boolean equals(Object obj){
+        if(!(obj instanceof Node)){
+            return false;
+        }
+        Node node = (Node)obj;
+        return this.ipAddr.equals(node.getIpAddr());
+    }
+
 }

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -24,9 +25,9 @@ public class CohenKappa extends Indicator<Double> {
     final AtomicInteger totalSamples = new AtomicInteger(0);
     final AtomicInteger rightSamples = new AtomicInteger(0);
     //hold the amount of samples for each label
-    final Map<String, AtomicInteger> labelAmountReal = new HashMap<>();
+    final Map<String, AtomicInteger> labelAmountReal = new ConcurrentHashMap<>();
     //hold the amount of samples for each prediction
-    final Map<String, AtomicInteger> labelAmountPrediction = new HashMap<>();
+    final Map<String, AtomicInteger> labelAmountPrediction = new ConcurrentHashMap<>();
 
     public CohenKappa(MCConfusionMetrics confusionMetrics) {
         this.key = NAME;
@@ -55,26 +56,10 @@ public class CohenKappa extends Indicator<Double> {
         }
         final String label = indicator.getLabel();
         final String prediction = indicator.getPrediction();
-        addValue(label, labelAmountReal, indicator.getValue().intValue());
-        addValue(prediction, labelAmountPrediction, indicator.getValue().intValue());
-    }
-
-    /**
-     * @param map only map in the fields of the class could be passed, so that it could be synchronized
-     */
-    private void addValue(String key, Map<String, AtomicInteger> map, Integer value) {
-        AtomicInteger labelRealAmount = map.get(key);
-        if (null == labelRealAmount) {
-            synchronized (map){
-                labelRealAmount = map.get(key);
-                if(null == labelRealAmount){
-                    labelRealAmount = new AtomicInteger(0);
-                    map.put(key, labelRealAmount);
-                }
-            }
-
-        }
-        labelRealAmount.addAndGet(value);
+        labelAmountReal.computeIfAbsent(label, l -> new AtomicInteger(0))
+            .addAndGet(indicator.getValue().intValue());
+        labelAmountPrediction.computeIfAbsent(prediction, l -> new AtomicInteger(0))
+            .addAndGet(indicator.getValue().intValue());
     }
 
     public void feed(MCIndicator indicator){

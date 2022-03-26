@@ -32,7 +32,7 @@ public class SimpleJobSpliter implements JobSpliter {
         List<List<Segment>> slicePointsPerDS = swDataSets.stream()
             .map(ds -> ArrayHelper.INSTANCE.sliceSegments(ds.getSize(), deviceAmount))
             .collect(Collectors.toList());
-        List<EvaluationTask> taskTriggers = new ArrayList<>(ArrayHelper.INSTANCE.getInitialCapacity(deviceAmount));
+        List<EvaluationTask> evaluationTasks = new ArrayList<>(ArrayHelper.INSTANCE.getInitialCapacity(deviceAmount));
         for (int i = 0; i < deviceAmount; i++) {
             int swdsSize = swDataSets.size();
             List<SWDataSetSlice> swDataSetSlices = new ArrayList<>(ArrayHelper.INSTANCE.getInitialCapacity(
@@ -50,9 +50,9 @@ public class SimpleJobSpliter implements JobSpliter {
                 .swModelPackage(job.getSwmp())
                 .swDataSetSlice(swDataSetSlices)
                 .build();
-            taskTriggers.add(evaluationTask);
+            evaluationTasks.add(evaluationTask);
         }
-        return taskTriggers;
+        return evaluationTasks;
     }
 
 
