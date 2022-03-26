@@ -12,7 +12,6 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +50,7 @@ public class ProjectService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<ProjectEntity> entities = projectMapper.listProjects(project.getName());
         return entities.stream()
-            .map(entity -> projectConvertor.convert(entity))
+            .map(projectConvertor :: convert)
             .collect(Collectors.toList());
     }
 
@@ -60,12 +59,13 @@ public class ProjectService {
      * @param project Object of the project to create.
      * @return ID of the project was created.
      */
-    public Long createProject(Project project) {
+    public String createProject(Project project) {
         ProjectEntity entity = ProjectEntity.builder()
             .projectName(project.getName())
             .ownerId(idConvertor.revert(project.getOwnerId()))
             .build();
-        return projectMapper.createProject(entity);
+        projectMapper.createProject(entity);
+        return idConvertor.convert(entity.getId());
     }
 
     /**
@@ -87,7 +87,6 @@ public class ProjectService {
         ProjectEntity entity = ProjectEntity.builder()
             .id(idConvertor.revert(project.getId()))
             .projectName(project.getName())
-            .ownerId(idConvertor.revert(project.getOwnerId()))
             .build();
         int res = projectMapper.modifyProject(entity);
         return res > 0;

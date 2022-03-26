@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Param;
 
 public interface ProjectMapper {
 
-    Long createProject(ProjectEntity project);
+    int createProject(ProjectEntity project);
 
     int deleteProject(@Param("id") Long id);
 
