@@ -96,17 +96,17 @@ public interface TaskSource {
                 this.containerClient = containerClient;
                 this.agentProperties = agentProperties;
             }
-            private SourcePool sourcePool;
+            private final SourcePool sourcePool;
 
-            private TaskPool taskPool;
+            private final TaskPool taskPool;
 
-            private ContainerClient containerClient;
+            private final ContainerClient containerClient;
 
-            private ReportApi reportApi;
+            private final ReportApi reportApi;
 
-            private AgentProperties agentProperties;
+            private final AgentProperties agentProperties;
 
-            private Map<String, Object> values = new HashMap<>();
+            private final Map<String, Object> values = new HashMap<>();
 
             public void set(String key, Object obj) {
                 values.put(key, obj);
@@ -128,7 +128,7 @@ public interface TaskSource {
                 return true;
             }
 
-            default New processing(Old old, Context context) {
+            default New processing(Old old, Context context) throws Exception {
                 return null;
             }
 
@@ -281,17 +281,18 @@ public interface TaskSource {
 
         public static DoTransition<EvaluationTask, EvaluationTask> running2Uploading = new BaseTransition() {
             @Override
-            public EvaluationTask processing(EvaluationTask runningTask, Context context) {
-                try {
+            public EvaluationTask processing(EvaluationTask runningTask, Context context)
+                throws IOException {
+                /*try {*/
                     String path = context.agentProperties.getTask().getInfoPath();
                     // get the newest task info
                     Path taskPath = Path.of(path + "/" + runningTask.getTask().getId());
                     String json = Files.readString(taskPath);
                     return JSONUtil.toBean(json, EvaluationTask.class);
-                } catch (IOException e) {
+                /*} catch (IOException e) {
                     log.error(e.getMessage());
                 }
-                return null;
+                return null;*/
             }
 
             @Override
@@ -359,6 +360,21 @@ public interface TaskSource {
             public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
                 context.taskPool.uploadingTasks.remove(oldTask);
                 BaseCancelTransition.super.success(oldTask, newTask, context);
+            }
+        };
+
+        public static DoTransition<EvaluationTask, EvaluationTask> finished2Archived = new BaseTransition() {
+            @Override
+            public EvaluationTask processing(EvaluationTask oldTask, Context context)
+                throws Exception {
+                EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
+                newTask.getTask().setStatus(TaskStatus.ARCHIVED);
+                return newTask;
+            }
+
+            @Override
+            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+                BaseTransition.super.success(oldTask, newTask, context);
             }
         };
 
