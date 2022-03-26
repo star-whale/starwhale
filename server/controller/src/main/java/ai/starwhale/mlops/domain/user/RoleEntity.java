@@ -13,7 +13,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
 
 @EqualsAndHashCode(callSuper = true)
 @Data

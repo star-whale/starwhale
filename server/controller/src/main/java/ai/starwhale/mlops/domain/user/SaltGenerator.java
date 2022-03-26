@@ -7,29 +7,15 @@
 
 package ai.starwhale.mlops.domain.user;
 
-import java.security.SecureRandom;
+import ai.starwhale.mlops.common.util.RandomUtil;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SaltGenerator {
 
     public String salt() {
-        byte[] bytes = new byte[12];
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(bytes);
-
-        StringBuilder builder = new StringBuilder();
-
-        for (byte aByte : bytes) {
-            int val = ((int) aByte) & 0xff;
-            if (val < 16) {
-
-                builder.append(Integer.toHexString(val + 16));
-            } else {
-                builder.append(Integer.toHexString(val));
-            }
-        }
-
-        return builder.toString();
+        return RandomUtil.randomHexString(12);
     }
+
+
 }

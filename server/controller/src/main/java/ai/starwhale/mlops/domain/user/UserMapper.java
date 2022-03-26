@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Param;
 
 public interface UserMapper {
 
-    Long createUser(UserEntity user);
+    int createUser(UserEntity user);
 
     UserEntity findUser(@Param("id") Long id);
 

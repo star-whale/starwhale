@@ -80,8 +80,8 @@ public class UserService implements UserDetailsService {
             .roleId(1L)
             .userEnabled(1)
             .build();
-        Long id = userMapper.createUser(userEntity);
-        return idConvertor.convert(id);
+        userMapper.createUser(userEntity);
+        return idConvertor.convert(userEntity.getId());
     }
 
     public Boolean changePassword(User user, String newPassword) {
@@ -94,7 +94,7 @@ public class UserService implements UserDetailsService {
             .userPwd(SWPasswordEncoder.getEncoder(salt).encode(newPassword))
             .userPwdSalt(salt)
             .build();
-        return userMapper.changePassword(userEntity) > 1;
+        return userMapper.changePassword(userEntity) > 0;
     }
 
     public Boolean updateUserState(User user, Boolean isEnabled) {
@@ -102,7 +102,7 @@ public class UserService implements UserDetailsService {
             .id(idConvertor.revert(user.getId()))
             .userEnabled(Optional.of(isEnabled).orElse(false) ? 1 : 0)
             .build();
-        return userMapper.enableUser(userEntity) > 1;
+        return userMapper.enableUser(userEntity) > 0;
     }
 
 }

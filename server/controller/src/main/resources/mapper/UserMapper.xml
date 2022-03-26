@@ -62,7 +62,7 @@
              user_role as r
         where u.role_id = r.id
         <if test = "userNamePrefix != null and userNamePrefix != ''">
-            u.user_name like concat(#{userNamePrefix}, '%')
+            and u.user_name like concat(#{userNamePrefix}, '%')
         </if>
     </select>
 

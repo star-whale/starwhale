@@ -98,6 +98,7 @@ public interface UserApi {
     @GetMapping(value = "/user/current")
     ResponseEntity<ResponseMessage<UserVO>> getCurrentUser();
 
+
     @Operation(summary = "Get a user by user ID")
     @ApiResponses(
         value = {
