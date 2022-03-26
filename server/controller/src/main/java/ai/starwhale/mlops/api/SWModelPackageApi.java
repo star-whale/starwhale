@@ -48,10 +48,16 @@ public interface SWModelPackageApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = PageInfo.class)))
         })
-    @GetMapping(value = "/model")
+    @GetMapping(value = "/project/{projectId}/model")
     ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(
         @Parameter(
             in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
+        @Parameter(
+            in = ParameterIn.PATH,
             description = "Model name prefix to search for",
             schema = @Schema())
         @Valid
@@ -71,8 +77,14 @@ public interface SWModelPackageApi {
         description =
             "Select a historical version of the model and revert the latest version of the current model to this version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/model/{modelId}/revert")
+    @PostMapping(value = "/project/{projectId}/model/{modelId}/revert")
     ResponseEntity<ResponseMessage<String>> revertModelVersion(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(
             in = ParameterIn.PATH,
             description = "Model ID",
@@ -92,11 +104,17 @@ public interface SWModelPackageApi {
 
     @Operation(summary = "Delete a model")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/model/{modelId}")
+    @DeleteMapping(value = "/project/{projectId}/model/{modelId}")
     ResponseEntity<ResponseMessage<String>> deleteModelById(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("modelId")
-            Integer modelId);
+            String modelId);
 
     @Operation(summary = "Model information",
         description = "Return the file information in the model package of the latest version of the current model")
@@ -110,11 +128,17 @@ public interface SWModelPackageApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = SWModelPackageInfoVO.class)))
         })
-    @GetMapping(value = "/model/{modelId}")
+    @GetMapping(value = "/project/{projectId}/model/{modelId}")
     ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("modelId")
-            Integer modelId);
+            String modelId);
 
     @Operation(summary = "Get the list of model versions")
     @ApiResponses(
@@ -127,11 +151,17 @@ public interface SWModelPackageApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = PageInfo.class)))
         })
-    @GetMapping(value = "/model/{modelId}/version")
+    @GetMapping(value = "/project/{projectId}/model/{modelId}/version")
     ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.PATH, description = "Model ID", required = true, schema = @Schema())
         @PathVariable("modelId")
-            Integer modelId,
+            String modelId,
         @Parameter(in = ParameterIn.QUERY, description = "Model version name prefix to search for", schema = @Schema())
         @Valid
         @RequestParam(value = "modelVersionName", required = false)
@@ -150,10 +180,16 @@ public interface SWModelPackageApi {
             + "The model file can be selected by uploading the file package or entering the server path")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-        value = "/model/{modelId}/version",
+        value = "/project/{projectId}/model/{modelId}/version",
         produces = {"application/json"},
         consumes = {"multipart/form-data"})
     ResponseEntity<ResponseMessage<String>> createModelVersion(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.PATH, description = "Model ID", required = true, schema = @Schema())
         @PathVariable("modelId")
             String modelId,
@@ -164,8 +200,14 @@ public interface SWModelPackageApi {
 
     @Operation(summary = "Set tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/model/{modelId}/version/{versionId}")
+    @PutMapping(value = "/project/{projectId}/model/{modelId}/version/{versionId}")
     ResponseEntity<ResponseMessage<String>> modifyModel(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("modelId")
             String modelId,
@@ -182,10 +224,16 @@ public interface SWModelPackageApi {
             + "The model file is selected by uploading a file package or entering a server path.")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-        value = "/model",
+        value = "/project/{projectId}/model",
         produces = {"application/json"},
         consumes = {"multipart/form-data"})
     ResponseEntity<ResponseMessage<String>> createModel(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
         @RequestParam(value = "modelName")
             String modelName,
