@@ -7,9 +7,10 @@
 
 package ai.starwhale.mlops.configuration.security;
 
+import static ai.starwhale.mlops.common.util.HttpUtil.error;
+
 import ai.starwhale.mlops.api.protocol.Code;
 import java.io.IOException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -22,7 +23,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
-import static ai.starwhale.mlops.common.util.HttpUtil.error;
 
 @Component
 public class JwtLoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {

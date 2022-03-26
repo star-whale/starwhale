@@ -10,7 +10,6 @@ package ai.starwhale.mlops.configuration.security;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.user.User;
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
 import java.io.IOException;
 import javax.annotation.Resource;
@@ -34,6 +33,7 @@ public class JwtLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandle
         String jwtToken = jwtTokenUtil.generateAccessToken(user);
         response.setContentType("application/json;charset=UTF-8");
         response.setHeader(HttpHeaders.AUTHORIZATION, String.format("Bearer %s", jwtToken));
+        response.addHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS, HttpHeaders.AUTHORIZATION);
         response.setStatus(HttpStatus.OK.value());
         response.getWriter().write(JSONUtil.toJsonStr(Code.success.asResponse("Login successful.")));
     }
