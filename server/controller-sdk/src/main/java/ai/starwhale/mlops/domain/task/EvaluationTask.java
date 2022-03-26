@@ -46,4 +46,16 @@ public class EvaluationTask {
      * swds slice meta info
      */
     List<SWDataSetSlice> swDataSetSlice;
+
+    public boolean equals(Object obj){
+
+        if(!(obj instanceof EvaluationTask)){
+            return false;
+        }
+        EvaluationTask tt = (EvaluationTask)obj;
+        if(null == tt.getTask() || null == tt.getTask().getId()){
+            return false;
+        }
+        return this.task.getId().equals(tt.getTask().getId());
+    }
 }

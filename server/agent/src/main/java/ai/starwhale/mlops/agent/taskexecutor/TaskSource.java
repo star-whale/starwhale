@@ -222,7 +222,7 @@ public interface TaskSource {
             }
 
             @Override
-            public void fail(EvaluationTask taskTrigger, Context context) {
+            public void fail(EvaluationTask evaluationTask, Context context) {
                 // nothing to do
             }
 

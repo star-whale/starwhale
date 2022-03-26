@@ -109,16 +109,9 @@ public class MCResultCollector implements ResultCollector {
             final MCIndicator mcIndicator = new MCIndicator(
                 label, inferenceResult);
             final String indicatorKey = mcIndicator.getKey();
-            if (!rawResultHolder.containsKey(indicatorKey)) {
-                synchronized (rawResultHolder) {
-                    if (!rawResultHolder.containsKey(indicatorKey)) {
-                        rawResultHolder
-                            .put(indicatorKey, Collections.synchronizedList(new LinkedList<>()));
-                    }
-                }
-
-            }
-            rawResultHolder.get(indicatorKey).add(mcIndicator);
+            rawResultHolder.computeIfAbsent(indicatorKey,
+                k -> Collections.synchronizedList(new LinkedList<>()))
+                .add(mcIndicator);
             mcConfusionMetrics.feed(mcIndicator);
             cohenKappa.feed(mcIndicator);
             mbcConfusionMetrics.feed(mcIndicator);
@@ -168,7 +161,7 @@ public class MCResultCollector implements ResultCollector {
             return;
         }
         TypeReference<HashMap<String, List<MCIndicator>>> typeRef
-            = new TypeReference<>() {};
+            = new TypeReference<HashMap<String, List<MCIndicator>>>() {};
         final HashMap<String, List<MCIndicator>> stringListHashMap = objectMapper
             .readValue(inputStream, typeRef);
         stringListHashMap.forEach((key,value)-> rawResultHolder.put(key,Collections.synchronizedList(value)));

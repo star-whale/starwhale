@@ -11,11 +11,15 @@ import ai.starwhale.mlops.domain.task.EvaluationTask;
 import lombok.Data;
 
 import java.util.List;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 /**
  * Return Task commands to Agent
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ReportResponse {
 
     List<String> taskIdsToCancel;
