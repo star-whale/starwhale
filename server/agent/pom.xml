@@ -10,6 +10,9 @@
     </parent>
     <artifactId>starwhale-agent</artifactId>
     <packaging>jar</packaging>
+    <properties>
+        <docker-client-version>3.2.13</docker-client-version>
+    </properties>
     <dependencies>
         <!-- star whale package -->
         <dependency>
@@ -49,6 +52,17 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+        <!-- docker-client -->
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-core</artifactId>
+            <version>${docker-client-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.docker-java</groupId>
+            <artifactId>docker-java-transport-httpclient5</artifactId>
+            <version>${docker-client-version}</version>
         </dependency>
     </dependencies>
     <build>
