@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022.1-2022
+  ~ StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="ai.starwhale.mlops.domain.system.AgentMapper">
+
+    <select id="listAgents" resultMap="agentResultMap">
+        select id as agent_id,
+               inet_ntoa(agent_ip) as agent_ip,
+               connect_time,
+               agent_version,
+               device_info,
+               created_time as agent_created_time,
+               modified_time as agent_modified_time
+        from agent_info
+    </select>
+
+    <insert id="addAgent" parameterType="ai.starwhale.mlops.domain.system.AgentEntity" >
+        insert into agent_info(agent_ip, connect_time, agent_version, device_info)
+        values (#{agentIp}, #{connectTime}, #{agentVersion}, #{deviceInfo})
+        on duplicate key update connect_time = #{connectTime},
+                                agent_version = #{agentVersion},
+                                device_info = #{deviceInfo}
+    </insert>
+
+    <resultMap id="agentResultMap" type="ai.starwhale.mlops.domain.system.AgentEntity" >
+        <id property="id" column="agent_id" />
+        <result property="agentIp" column="agent_ip" />
+        <result property="connectTime" column="connect_time" />
+        <result property="agentVersion" column="agent_version" />
+        <result property="createdTime" column="agent_created_time" />
+        <result property="modifiedTime" column="agent_modified_time" />
+    </resultMap>
+</mapper>

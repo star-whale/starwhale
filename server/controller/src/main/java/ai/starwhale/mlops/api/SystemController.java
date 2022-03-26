@@ -7,40 +7,64 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.agent.AgentVO;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVO;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO;
+import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO.PhaseEnum;
+import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.system.SystemService;
 import com.github.pagehelper.PageInfo;
+import java.util.List;
+import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class SystemController implements SystemApi{
 
+    @Resource
+    private SystemService systemService;
+
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<AgentVO>>> listAgent(String ip, Integer pageNum,
         Integer pageSize) {
-        return null;
+        PageParams pageParams = PageParams.builder().pageNum(pageNum).pageSize(pageSize).build();
+        List<AgentVO> voList = systemService.listAgents(ip, pageParams);
+        PageInfo<AgentVO> pageInfo = new PageInfo<>(voList);
+        return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> systemVersionAction(String action) {
-        return null;
+        return ResponseEntity.ok(Code.success.asResponse("Unknown action"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<SystemVersionVO>> getCurrentVersion() {
-        return null;
+        SystemVersionVO version = SystemVersionVO.builder()
+            .version("mvp")
+            .id("")
+            .build();
+        return ResponseEntity.ok(Code.success.asResponse(version));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<SystemVersionVO>> getLatestVersion() {
-        return null;
+        SystemVersionVO version = SystemVersionVO.builder()
+            .version("mvp")
+            .id("")
+            .build();
+        return ResponseEntity.ok(Code.success.asResponse(version));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<UpgradeProgressVO>> getUpgradeProgress() {
-        return null;
+        UpgradeProgressVO progress = UpgradeProgressVO.builder()
+            .phase(PhaseEnum.DOWNLOADING)
+            .progress(99)
+            .build();
+        return ResponseEntity.ok(Code.success.asResponse(progress));
     }
 }
