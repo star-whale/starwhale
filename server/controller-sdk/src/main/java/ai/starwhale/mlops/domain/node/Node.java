@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.node;
 
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
  * Node is a machine/ a virtual machine or even a K8S pod in the cluster
  */
 @Data
+@Builder
 public class Node {
 
     /**

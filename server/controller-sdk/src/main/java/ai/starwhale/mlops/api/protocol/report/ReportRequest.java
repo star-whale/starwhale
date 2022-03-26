@@ -8,12 +8,17 @@
 package ai.starwhale.mlops.api.protocol.report;
 
 import ai.starwhale.mlops.domain.node.Node;
+import ai.starwhale.mlops.domain.task.EvaluationTask;
+import java.util.List;
+import lombok.Builder;
 import lombok.Data;
 
 /**
  * Agent report the info of it's node to Controller.
  */
 @Data
+@Builder
 public class ReportRequest {
     Node nodeInfo;
+    List<EvaluationTask> tasks;
 }
