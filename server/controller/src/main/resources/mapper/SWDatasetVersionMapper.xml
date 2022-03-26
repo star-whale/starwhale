@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022.1-2022
+  ~ StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+  -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="ai.starwhale.mlops.domain.swds.SWDatasetVersionMapper">
+    <sql id="select_swds_version">
+        select dsv.id as dsv_id,
+               dataset_id,
+               owner_id,
+               version_name,
+               version_tag,
+               version_meta,
+               storage_path,
+               dsv.created_time as dsv_created_time,
+               dsv.modified_time as dsv_modified_time,
+               u.id as user_id,
+               u.user_name,
+               u.created_time as user_created_time,
+               u.user_enabled,
+               r.id as role_id,
+               r.role_name,
+               r.role_name_en
+        from dataset_version as dsv,
+             user_info as u,
+             user_role as r
+        where owner_id = u.id
+          and r.id = u.role_id
+    </sql>
+
+    <select id="listVersions" resultMap="dsVersionResultMap" >
+        <include refid="select_swds_version" />
+        and dataset_id = #{datasetId}
+        <if test="namePrefix != null and namePrefix != ''">
+            and version_name like concat(#{namePrefix}, '%')
+        </if>
+        order by dsv.id desc
+    </select>
+
+    <select id="getLatestVersion" resultMap="dsVersionResultMap" >
+        <include refid="select_swds_version" />
+        and dataset_id = #{datasetId}
+        order by dsv.id desc
+        limit 1
+    </select>
+
+    <insert id="revertTo">
+        insert into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, storage_path)
+        select dataset_id, owner_id, version_name, version_tag, version_meta, storage_path
+        from dataset_version
+        where id = #{dsVersionId}
+    </insert>
+
+    <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity" useGeneratedKeys="true" keyProperty="id">
+        insert into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, storage_path)
+        values(#{datasetId}, #{ownerId}, #{versionName}, #{versionTag}, #{versionMeta}, #{storagePath})
+    </insert>
+
+    <update id="update" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity">
+        update dataset_version set version_tag = #{versionTag} where id = #{id}
+    </update>
+
+    <resultMap id="dsVersionResultMap" type="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity" >
+        <id property="id" column="dsv_id" />
+        <result property="datasetId" column="dsv_id" />
+        <result property="versionName" column="version_name" />
+        <result property="versionTag" column="version_tag" />
+        <result property="versionMeta" column="version_meta" />
+        <result property="storagePath" column="storage_path" />
+        <result property="createdTime" column="dsv_created_time"/>
+        <result property="modifiedTime" column="dsv_modified_time"/>
+        <result property="ownerId" column="owner_id" />
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
+    </resultMap>
+</mapper>

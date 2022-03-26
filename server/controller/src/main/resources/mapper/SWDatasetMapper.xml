@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022.1-2022
+  ~ StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="ai.starwhale.mlops.domain.swds.SWDatasetMapper">
+    <sql id="select_swds">
+        select s.id as swds_id,
+               s.dataset_name,
+               s.project_id,
+               s.owner_id,
+               s.is_deleted,
+               s.created_time as swds_created_time,
+               s.modified_time as swds_modified_time,
+               u.id as user_id,
+               u.user_name,
+               u.role_id,
+               u.created_time as user_created_time,
+               u.user_enabled,
+               r.role_name,
+               r.role_name_en
+        from dataset_info as s,
+             user_info as u,
+             user_role as r
+        where s.is_deleted = 0
+          and u.id = s.owner_id
+          and r.id = u.role_id
+    </sql>
+
+    <select id="listDatasets" resultMap="swdsResultMap">
+        <include refid="select_swds"/>
+        and project_id = #{projectId}
+        <if test="namePrefix != null and namePrefix != ''">
+            and s.dataset_name like concat(#{namePrefix}, '%')
+        </if>
+    </select>
+
+    <select id="findDatasetById" resultMap="swdsResultMap" >
+        <include refid="select_swds"/>
+        and s.id = #{id}
+    </select>
+
+    <insert id="addDataset" useGeneratedKeys="true" keyProperty="id">
+        insert into dataset_info(dataset_name, project_id, owner_id)
+        values(#{datasetName}, #{projectId}, #{ownerId})
+    </insert>
+
+    <delete id="deleteDataset" >
+        update dataset_info
+        set is_deleted = 1
+        where id = #{id}
+    </delete>
+
+    <resultMap id="swdsResultMap" type="ai.starwhale.mlops.domain.swds.SWDatasetEntity" >
+        <id property="id" column="swds_id" />
+        <result property="datasetName" column="dataset_name" />
+        <result property="projectId" column="project_id" />
+        <result property="ownerId" column="owner_id" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="createdTime" column="swds_created_time" />
+        <result property="modifiedTime" column="swds_modified_time" />
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
+    </resultMap>
+</mapper>
