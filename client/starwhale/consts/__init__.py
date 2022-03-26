@@ -13,7 +13,7 @@ DEFAULT_STARWHALE_API_VERSION = "1.0"
 DEFAULT_MODEL_YAML_NAME = "model.yaml"
 DEFAULT_MANIFEST_NAME = "_manifest.yaml"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:6543"
-
+DEFAULT_DATASET_YAML_NAME = "dataset.yaml"
 
 #TODO: use ~/.starwhale or ~/.cache/starwhale?
 SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"

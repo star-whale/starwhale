@@ -94,7 +94,7 @@ class ModelConfig(object):
         with open(fpath) as f:
              c = yaml.safe_load(f)
 
-        return ModelConfig(**c)
+        return cls(**c)
 
     def __str__(self) -> str:
         return f"Model Config: {self.name}"
@@ -140,10 +140,10 @@ class ModelPackage(object):
 
         for path in sw.model:
             if not (self.workdir / path).exists():
-                raise FileFormatError(f"model - {path} not existed")
+                raise FileFormatError(f"model - {path} is not existed")
 
         if not (self.workdir / sw.run.ppl).exists():
-            raise FileExistsError(f"run ppl - {sw.run.ppl} not existed")
+            raise FileExistsError(f"run ppl - {sw.run.ppl} is not existed")
 
         #TODO: add more model.yaml section validation
         #TODO: add 'swcli model check' cmd
@@ -303,12 +303,12 @@ class ModelPackage(object):
         self._manifest["tag"] = self._swmp_config.tag or []
         self._manifest["build"] = dict(
             os=platform.system(),
-            swctl_version=__version__,
+            sw_version=__version__,
         )
         #TODO: add signature for import files: model, config
-        _manifest = self._snapshot_workdir / DEFAULT_MANIFEST_NAME
-        ensure_file(_manifest, yaml.dump(self._manifest, default_flow_style=False))
-        logger.info(f"[step:manifest]render manifest: {_manifest}")
+        _f = self._snapshot_workdir / DEFAULT_MANIFEST_NAME
+        ensure_file(_f, yaml.dump(self._manifest, default_flow_style=False))
+        logger.info(f"[step:manifest]render manifest: {_f}")
 
     def _make_swmp_tar(self):
         out = self._swmp_store / f"{self._version}.swmp"
@@ -325,7 +325,7 @@ class ModelPackage(object):
 
     def load_model_config(self, fpath: str) -> ModelConfig:
         if not os.path.exists(fpath):
-            raise Exception(f"model.yaml {fpath} is not existed")
+            raise FileExistsError(f"model yaml {fpath} is not existed")
 
         if not fpath.endswith((".yaml", ".yml")):
             raise FileTypeError(f"{fpath} file type is not yaml|yml")

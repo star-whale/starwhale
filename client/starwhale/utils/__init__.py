@@ -29,6 +29,13 @@ def random_str(cnt: int = 8) -> str:
     return "".join(random.sample(string.ascii_lowercase + string.digits, cnt))
 
 
+def get_external_python_version():
+    return subprocess.check_output(["python3", "-c",
+        "import sys; _v = sys.version_info; print(f'{_v,major}.{_v.minor}.{_v.micro}')"
+        ], stderr=sys.stderr
+    )
+
+
 def is_venv() -> bool:
     #TODO: refactor for get external venv attr
     output = subprocess.check_output(["python3", "-c",
@@ -99,3 +106,24 @@ def fmt_http_server(server: str, https: bool=False) -> str:
     else:
         prefix = "https" if https else "http"
         return f"{prefix}://{server}"
+
+
+_bytes_map = {
+    "k": 1024,
+    "kb": 1024,
+    "m": 1024 * 1024,
+    "mb": 1024 * 1024,
+    "g": 1024 * 1024 * 1024,
+    "gb": 1024 * 1024 * 1024,
+}
+
+def convert_to_bytes(s: t.Union[str, int]) -> int:
+    if isinstance(s, int):
+        return s
+
+    s = s.strip().lower()
+    for f in ("k", "m", "g"):
+        if s.endswith((f, f"{f}b")):
+            return _bytes_map[f] * int(s.split(f)[0])
+    else:
+        return int(s)
