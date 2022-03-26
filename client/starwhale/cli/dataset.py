@@ -14,10 +14,10 @@ def dataset_cmd():
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
 @click.option("-f", "--dataset-yaml", default=DEFAULT_DATASET_YAML_NAME,
               help="dataset yaml filename, default use ${workdir}/dataset.yaml file")
-@click.option("--dry-run", is_flag=True, help="Dry-run swds build")
-def _build(workdir, dataset_yaml, dry_run):
+def _build(workdir, dataset_yaml):
     #TODO: add cmd options for dataset build, another choice for dataset.yaml
-    DataSet.build(workdir, dataset_yaml, dry_run)
+    #TODO: add dryrun
+    DataSet.build(workdir, dataset_yaml)
 
 
 @dataset_cmd.command("list", help="List local dataset")

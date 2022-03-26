@@ -1,5 +1,5 @@
 import os
-from platform import platform
+import platform
 import typing as t
 from pathlib import Path
 import subprocess
@@ -70,6 +70,7 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
     py_ver = get_python_version()
 
     _manifest = dict(
+        dep=dict(local_gen_env=False),
         env=pr_env,
         system=sys_name,
         python=py_ver,
