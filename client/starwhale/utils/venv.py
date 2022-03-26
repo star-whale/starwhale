@@ -62,6 +62,7 @@ def conda_export(path: t.Union[str, Path], env:str="") -> bytes:
 def dump_python_dep_env(dep_dir: t.Union[str, Path],
                         pip_req_fpath: str,
                         skip_gen_env: bool = False) -> dict:
+    #TODO: smart dump python dep by starwhale sdk-api
     dep_dir = Path(dep_dir)
 
     pr_env = get_python_run_env()

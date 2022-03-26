@@ -4,6 +4,7 @@ from pathlib import Path
 from collections import namedtuple
 from datetime import datetime
 import platform
+import importlib
 
 from loguru import logger
 
@@ -129,7 +130,7 @@ class DataSet(object):
         #TODO: design uniq build steps for model build, swmp build
         self._gen_version()
         self._prepare_snapshot()
-        self._call_build_swds()
+        self._call_make_swds()
         self._calculate_signature()
         self._dump_dep()
         self._render_manifest()
@@ -161,9 +162,18 @@ class DataSet(object):
 
         logger.info("[step:dump]finish dump dep")
 
-    def _call_build_swds(self):
+    def _call_make_swds(self):
+        logger.info("[step:swds]try to gen swds...")
         self._manifest["dataset_attr"] = self._swds_config.attr.__dict__
         self._manifest["mode"] = self._swds_config.mode
+        self._manifest["process"] = self._swds_config.process
+
+        #TODO: add more import format support, current is module:class
+        logger.info(f"[info:swds]try to import {self._swds_config.process} @ {self.workdir}")
+        _cls = importlib.import_module(self._swds_config.process, package=str(self.workdir.absolute()))
+        _cls.make_swds()
+
+        logger.info(f"[step:swds]finish gen swds @ {self._data_dir}")
 
     def _render_manifest(self):
         self._manifest["build"] = dict(
