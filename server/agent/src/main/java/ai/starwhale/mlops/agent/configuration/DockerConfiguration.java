@@ -7,6 +7,8 @@
 
 package ai.starwhale.mlops.agent.configuration;
 
+import ai.starwhale.mlops.agent.container.ContainerClient;
+import ai.starwhale.mlops.agent.container.impl.DockerContainerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
@@ -38,5 +40,10 @@ public class DockerConfiguration {
             .connectionTimeout(Duration.ofSeconds(30))
             .responseTimeout(Duration.ofSeconds(45))
             .build();
+    }
+
+    @Bean
+    public ContainerClient containerClient(DockerHttpClient dockerHttpClient) {
+        return new DockerContainerClient(dockerHttpClient);
     }
 }

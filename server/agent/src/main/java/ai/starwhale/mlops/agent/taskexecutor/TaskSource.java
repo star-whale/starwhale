@@ -11,27 +11,38 @@ import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.container.ImageConfig;
 import ai.starwhale.mlops.api.ReportApi;
+import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.report.ReportRequest;
+import ai.starwhale.mlops.api.protocol.report.ReportResponse;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import ai.starwhale.mlops.domain.task.EvaluationTask;
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Vector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 public interface TaskSource {
-    @Component
+
     class TaskPool {
-        public final Queue<EvaluationTask> newTasks = new ArrayDeque<>();
+
         public final Queue<EvaluationTask> preparingTasks = new ArrayDeque<>();
         public final List<EvaluationTask> runningTasks = new Vector<>();
         public final List<EvaluationTask> uploadingTasks = new Vector<>();
@@ -44,7 +55,7 @@ public interface TaskSource {
         public void fill(EvaluationTask task) {
             switch (task.getTask().getStatus()) {
                 case CREATED:
-                    newTasks.add(task);
+                case ASSIGNING:
                     break;
                 case PREPARING:
                     preparingTasks.add(task);
@@ -86,25 +97,20 @@ public interface TaskSource {
     @Slf4j
     class TaskAction {
 
+        @Builder
+        @AllArgsConstructor
+        @Data
         public static class Context {
 
-            private Context(SourcePool sourcePool, TaskPool taskPool, ReportApi reportApi,
-                            ContainerClient containerClient, AgentProperties agentProperties) {
-                this.sourcePool = sourcePool;
-                this.taskPool = taskPool;
-                this.reportApi = reportApi;
-                this.containerClient = containerClient;
-                this.agentProperties = agentProperties;
-            }
-            private final SourcePool sourcePool;
+            private SourcePool sourcePool;
 
-            private final TaskPool taskPool;
+            private TaskPool taskPool;
 
-            private final ContainerClient containerClient;
+            private ContainerClient containerClient;
 
-            private final ReportApi reportApi;
+            private ReportApi reportApi;
 
-            private final AgentProperties agentProperties;
+            private AgentProperties agentProperties;
 
             private final Map<String, Object> values = new HashMap<>();
 
@@ -116,9 +122,11 @@ public interface TaskSource {
                 return clazz.cast(values.get(key));
             }
 
-            public static Context instance(SourcePool sourcePool, TaskPool taskPool, ReportApi reportApi,
-                                           ContainerClient containerClient, AgentProperties agentProperties) {
-                return new Context(sourcePool, taskPool, reportApi, containerClient, agentProperties);
+            public static Context instance(SourcePool sourcePool, TaskPool taskPool,
+                ReportApi reportApi,
+                ContainerClient containerClient, AgentProperties agentProperties) {
+                return new Context(sourcePool, taskPool, containerClient, reportApi,
+                    agentProperties);
             }
         }
 
@@ -140,7 +148,7 @@ public interface TaskSource {
              *
              * @param old old param
              */
-            default void fail(Old old, Context context) {
+            default void fail(Old old, Context context, Exception e) {
             }
 
             default void apply(Old old, Context context) {
@@ -150,7 +158,7 @@ public interface TaskSource {
                         success(old, o, context);
                     } catch (Exception e) {
                         log.error(e.getMessage());
-                        fail(old, context);
+                        fail(old, context, e);
                     }
                 }
             }
@@ -197,24 +205,72 @@ public interface TaskSource {
             }
         }
 
+        public static DoTransition<String, Boolean> rebuildTasks = new DoTransition<>() {
+            @Override
+            public boolean condition(String basePath, Context context) {
+                return StringUtils.hasText(basePath) && !context.taskPool.isReady();
+            }
+
+            @Override
+            public Boolean processing(String basePath, Context context) throws Exception {
+                log.info("start to rebuild task pool");
+                Path tasksPath = Path.of(basePath);
+                if (!Files.exists(tasksPath)) {
+                    Files.createDirectories(tasksPath);
+                    log.info("init tasks dir, path:{}", tasksPath);
+                } else {
+                    // rebuild taskQueue
+                    Stream<Path> taskInfos = Files.find(tasksPath, 1,
+                        (path, basicFileAttributes) -> true);
+                    List<EvaluationTask> tasks = taskInfos
+                        .filter(path -> path.getFileName().toString().endsWith(".taskinfo"))
+                        .map(path -> {
+                            try {
+                                String json = Files.readString(path);
+                                return JSONUtil.toBean(json, EvaluationTask.class);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            return null;
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+
+                    tasks.forEach(context.taskPool::fill);
+                    log.info("end of rebuild task pool, size:{}", tasks.size());
+                }
+                return true;
+            }
+
+            @Override
+            public void success(String basePath, Boolean result, Context context) {
+                if (result) {
+                    context.taskPool.setToReady();
+                    log.info("rebuild task pool success");
+                }
+            }
+
+            @Override
+            public void fail(String basePath, Context context, Exception e) {
+                log.info("rebuild task pool from:{} error", basePath);
+            }
+        };
+
         public static DoTransition<EvaluationTask, EvaluationTask> init2Preparing = new BaseTransition() {
             @Override
             public boolean condition(EvaluationTask obj, Context context) {
-                return obj.getTask().getStatus() == TaskStatus.CREATED;
+                return obj.getTask().getStatus() == TaskStatus.CREATED || obj.getTask().getStatus() == TaskStatus.ASSIGNING;
             }
 
             @Override
             public EvaluationTask processing(EvaluationTask oldTask, Context context) {
                 EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
                 newTask.getTask().setStatus(TaskStatus.PREPARING);
-                newTask.setDevices(context.sourcePool.allocate(
-                    1)); // pre allocate device to this task,if fail will throw exception
                 return newTask;
             }
 
             @Override
             public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
-                context.taskPool.newTasks.remove(oldTask);
                 // add the new task to the tail
                 context.taskPool.preparingTasks.offer(newTask);
                 // update info to the task file
@@ -222,7 +278,7 @@ public interface TaskSource {
             }
 
             @Override
-            public void fail(EvaluationTask evaluationTask, Context context) {
+            public void fail(EvaluationTask evaluationTask, Context context, Exception e) {
                 // nothing to do
             }
 
@@ -231,7 +287,6 @@ public interface TaskSource {
         public static DoTransition<EvaluationTask, EvaluationTask> init2Canceled = new BaseCancelTransition() {
             @Override
             public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
-                context.taskPool.newTasks.remove(oldTask);
                 BaseCancelTransition.super.success(oldTask, newTask, context);
             }
         };
@@ -240,6 +295,8 @@ public interface TaskSource {
             @Override
             public EvaluationTask processing(EvaluationTask oldTask, Context context) {
                 ContainerClient containerClient = context.containerClient;
+                oldTask.setDevices(context.sourcePool.allocate(
+                    1)); // pre allocate device to this task,if fail will throw exception
                 // todo fill with task info
                 Optional<String> containerId = containerClient.startContainer("",
                     ImageConfig.builder().build());
@@ -266,7 +323,7 @@ public interface TaskSource {
             }
 
             @Override
-            public void fail(EvaluationTask i, Context context) {
+            public void fail(EvaluationTask i, Context context, Exception e) {
                 // nothing to do
             }
         };
@@ -284,11 +341,11 @@ public interface TaskSource {
             public EvaluationTask processing(EvaluationTask runningTask, Context context)
                 throws IOException {
                 /*try {*/
-                    String path = context.agentProperties.getTask().getInfoPath();
-                    // get the newest task info
-                    Path taskPath = Path.of(path + "/" + runningTask.getTask().getId());
-                    String json = Files.readString(taskPath);
-                    return JSONUtil.toBean(json, EvaluationTask.class);
+                String path = context.agentProperties.getTask().getInfoPath();
+                // get the newest task info
+                Path taskPath = Path.of(path + "/" + runningTask.getTask().getId());
+                String json = Files.readString(taskPath);
+                return JSONUtil.toBean(json, EvaluationTask.class);
                 /*} catch (IOException e) {
                     log.error(e.getMessage());
                 }
@@ -314,7 +371,7 @@ public interface TaskSource {
             }
 
             @Override
-            public void fail(EvaluationTask oldTask, Context context) {
+            public void fail(EvaluationTask oldTask, Context context, Exception e) {
                 // nothing
             }
         };
@@ -363,7 +420,80 @@ public interface TaskSource {
             }
         };
 
-        public static DoTransition<EvaluationTask, EvaluationTask> finished2Archived = new BaseTransition() {
+        public static DoTransition<ReportRequest, ReportResponse> report = new DoTransition<ReportRequest, ReportResponse>() {
+            @Override
+            public boolean condition(ReportRequest reportRequest, Context context) {
+                // valid params
+                return reportRequest.getNodeInfo() != null || CollectionUtil.isNotEmpty(
+                    reportRequest.getTasks());
+            }
+
+            @Override
+            public ReportResponse processing(ReportRequest reportRequest, Context context)
+                throws Exception {
+                // all tasks(exclude archived) should be report to the controller
+                // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
+                List<EvaluationTask> finishedTasks = List.copyOf(context.taskPool.finishedTasks);
+                List<EvaluationTask> canceledTasks = List.copyOf(context.taskPool.canceledTasks);
+                ReportRequest request = ReportRequest.builder().build();
+
+                List<EvaluationTask> all = new ArrayList<>();
+                // without stop the world
+                all.addAll(new ArrayList<>(context.taskPool.preparingTasks));
+                all.addAll(new ArrayList<>(context.taskPool.runningTasks));
+                all.addAll(new ArrayList<>(context.taskPool.uploadingTasks));
+                all.addAll(finishedTasks);
+                all.addAll(new ArrayList<>(context.taskPool.errorTasks));
+                all.addAll(canceledTasks);
+                request.setTasks(all);
+
+                context.set("finished", finishedTasks);
+                context.set("canceled", finishedTasks);
+
+                ResponseMessage<ReportResponse> response = context.reportApi.report(reportRequest);
+                if (Objects.equals(response.getCode(),
+                    "success")) { // todo: when coding completed, change protocol:Code to sdk
+                    return response.getData();
+                } else {
+                    return null;
+                }
+            }
+
+            @Override
+            public void success(ReportRequest reportRequest, ReportResponse response,
+                Context context) {
+                if (response != null) {
+                    @SuppressWarnings("unchecked") List<EvaluationTask> finishedTasks = context.get(
+                        "finished", List.class);
+                    @SuppressWarnings("unchecked") List<EvaluationTask> canceledTasks = context.get(
+                        "canceled", List.class);
+                    // when success,archived the finished/canceled task,and rm to the archive dir
+                    for (EvaluationTask finishedTask : finishedTasks) {
+                        TaskAction.finishedOrCanceled2Archived.apply(finishedTask, context);
+                    }
+                    for (EvaluationTask canceledTask : canceledTasks) {
+                        TaskAction.finishedOrCanceled2Archived.apply(canceledTask, context);
+                    }
+                    // add controller's new tasks to current queue
+                    if (CollectionUtil.isNotEmpty(response.getTasksToRun())) {
+                        for (EvaluationTask newTask : response.getTasksToRun()) {
+                            TaskAction.init2Preparing.apply(newTask, context);
+                        }
+                    }
+                    // add controller's wait to cancel tasks to current list
+                    if (CollectionUtil.isNotEmpty(response.getTaskIdsToCancel())) {
+                        context.taskPool.needToCancel.addAll(response.getTaskIdsToCancel());
+                    }
+                }
+            }
+
+            @Override
+            public void fail(ReportRequest reportRequest, Context context, Exception e) {
+                // do nothing
+            }
+        };
+
+        public static DoTransition<EvaluationTask, EvaluationTask> finishedOrCanceled2Archived = new BaseTransition() {
             @Override
             public EvaluationTask processing(EvaluationTask oldTask, Context context)
                 throws Exception {

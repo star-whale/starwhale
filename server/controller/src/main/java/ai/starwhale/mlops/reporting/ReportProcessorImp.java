@@ -58,7 +58,7 @@ public class ReportProcessorImp implements ReportProcessor{
 
     public ReportResponse buidResponse(List<EvaluationTask> toAssignTasks,
         Collection<Task> toCancelTasks) {
-        final List<String> taskIdsToCancel = toCancelTasks.stream().map(task -> task.getId().toString())
+        final List<Long> taskIdsToCancel = toCancelTasks.stream().map(Task::getId)
             .collect(
                 Collectors.toList());
         return new ReportResponse(
@@ -96,13 +96,13 @@ public class ReportProcessorImp implements ReportProcessor{
     }
 
     ReportResponse rebuildReportResponse(List<TaskCommand> evaluationTasks){
-        List<String> taskIdsToCancel = new LinkedList<>();
+        List<Long> taskIdsToCancel = new LinkedList<>();
 
         List<EvaluationTask> tasksToRun = new LinkedList<>();
 
         evaluationTasks.forEach(taskCommand -> {
             if(taskCommand.getCommandType() == CommandType.CANCEL){
-                taskIdsToCancel.add(taskCommand.getTask().getId().toString());
+                taskIdsToCancel.add(taskCommand.getTask().getId());
             }else{
                 tasksToRun.add(buildEvaluationTaskFromTask(taskCommand.getTask()));
             }

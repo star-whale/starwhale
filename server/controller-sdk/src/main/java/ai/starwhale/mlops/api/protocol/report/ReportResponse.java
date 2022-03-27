@@ -22,7 +22,7 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 public class ReportResponse {
 
-    List<String> taskIdsToCancel;
+    List<Long> taskIdsToCancel;
 
     List<EvaluationTask> tasksToRun;
 

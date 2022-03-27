@@ -17,7 +17,6 @@ import java.util.Queue;
 import java.util.Set;
 import javax.annotation.PostConstruct;
 
-@Component
 public class SourcePool {
 
     /**

@@ -10,12 +10,11 @@ import org.springframework.stereotype.Service;
 /**
  * Docker client
  */
-@Service
-public class DockerClient implements ContainerClient {
+public class DockerContainerClient implements ContainerClient {
 
     private final DockerHttpClient client;
 
-    public DockerClient(DockerHttpClient client) {
+    public DockerContainerClient(DockerHttpClient client) {
         this.client = client;
     }
 
