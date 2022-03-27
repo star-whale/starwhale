@@ -1,6 +1,6 @@
 package ai.starwhale.mlops.agent;
 
-import ai.starwhale.mlops.agent.taskexecutor.AgentProperties;
+import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

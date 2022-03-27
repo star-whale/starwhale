@@ -11,18 +11,28 @@ import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 @Configuration
 public class DockerConfiguration {
 
     @Bean
-    public DockerHttpClient dockerClient() {
+    public DockerHttpClient dockerClient(AgentProperties agentProperties)
+        throws URISyntaxException {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+        URI dockerHost;
+        if (agentProperties.getContainer() != null && StringUtils.hasText(agentProperties.getContainer().getHost())) {
+            dockerHost = new URI(agentProperties.getContainer().getHost());
+        } else {
+            dockerHost = config.getDockerHost();
+        }
         return new ApacheDockerHttpClient.Builder()
-            .dockerHost(config.getDockerHost())
+            .dockerHost(dockerHost)
             .sslConfig(config.getSSLConfig())
             .maxConnections(100)
             .connectionTimeout(Duration.ofSeconds(30))
