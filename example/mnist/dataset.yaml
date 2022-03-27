@@ -1,0 +1,19 @@
+name: mnist
+
+mode: generate
+
+data_dir: data
+data_filter: "*image*"
+label_filter: "*label*"
+
+process: process:DataSetProcessExecutor
+pip_req: requirements.txt
+
+desc: MNIST data and label test dataset
+tag:
+ - bin
+
+attr:
+  batch_size: 50
+  alignment_size: 4k
+  volume_size: 8M

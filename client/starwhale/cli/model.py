@@ -1,5 +1,3 @@
-from typing_extensions import Required
-from loguru import logger
 import click
 
 from starwhale.consts import DEFAULT_MODEL_YAML_NAME
