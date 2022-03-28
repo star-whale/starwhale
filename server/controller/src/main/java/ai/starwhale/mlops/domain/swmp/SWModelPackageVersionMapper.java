@@ -8,14 +8,15 @@
 package ai.starwhale.mlops.domain.swmp;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 public interface SWModelPackageVersionMapper {
 
-    List<SWModelPackageVersionEntity> listVersions(Long swmpId, String namePrefix);
+    List<SWModelPackageVersionEntity> listVersions(@Param("swmpId") Long swmpId, @Param("namePrefix")String namePrefix);
 
-    SWModelPackageVersionEntity getLatestVersion(Long swmpId);
+    SWModelPackageVersionEntity getLatestVersion(@Param("swmpId")Long swmpId);
 
-    int revertTo(Long swmpId, Long swmpVersionId);
+    int revertTo(@Param("swmpVersionId")Long swmpVersionId);
 
     int addNewVersion(SWModelPackageVersionEntity entity);
 

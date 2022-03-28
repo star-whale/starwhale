@@ -8,15 +8,16 @@
 package ai.starwhale.mlops.domain.swds;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 public interface SWDatasetMapper {
 
-    List<SWDatasetEntity> listDatasets(Long projectId, String namePrefix);
+    List<SWDatasetEntity> listDatasets(@Param("projectId") Long projectId, @Param("namePrefix")String namePrefix);
 
     int addDataset(SWDatasetEntity entity);
 
-    int deleteDataset(Long id);
+    int deleteDataset(@Param("id")Long id);
 
-    SWDatasetEntity findDatasetById(Long id);
+    SWDatasetEntity findDatasetById(@Param("id")Long id);
 
 }

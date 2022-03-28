@@ -36,7 +36,7 @@
         <if test="namePrefix != null and namePrefix != ''">
             and version_name like concat(#{namePrefix}, '%')
         </if>
-        order by sv.id desc
+        order by mv.id desc
     </select>
 
     <select id="getLatestVersion" resultMap="swmpVersionResultMap" >

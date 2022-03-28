@@ -9,6 +9,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.project.ProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.PageParams;
@@ -47,12 +48,12 @@ public class ProjectController implements ProjectApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> createProject(String projectName) {
+    public ResponseEntity<ResponseMessage<String>> createProject(ProjectRequest projectRequest) {
         UserVO user = userService.currentUser();
 
         String projectId = projectService
             .createProject(Project.builder()
-                .name(projectName)
+                .name(projectRequest.getProjectName())
                 .ownerId(user.getId())
                 .build());
         return ResponseEntity.ok(Code.success.asResponse(projectId));

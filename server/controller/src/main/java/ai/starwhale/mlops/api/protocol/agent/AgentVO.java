@@ -25,7 +25,7 @@ public class AgentVO implements Serializable {
 
     private String ip;
 
-    private String connectedTime;
+    private Long connectedTime;
 
     private StatusEnum status;
 

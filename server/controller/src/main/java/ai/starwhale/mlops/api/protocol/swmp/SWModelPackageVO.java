@@ -28,7 +28,7 @@ public class SWModelPackageVO implements Serializable {
     private String name;
 
     @JsonProperty("createTime")
-    private String createTime;
+    private Long createTime;
 
     @JsonProperty("owner")
     private UserVO owner;

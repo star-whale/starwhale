@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.project.ProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Project")
@@ -47,7 +49,7 @@ public interface ProjectApi {
         @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project")
     ResponseEntity<ResponseMessage<String>> createProject(
-        @Valid @RequestParam(value = "projectName") String projectName);
+        @Valid @RequestBody ProjectRequest projectRequest);
 
 
     @Operation(summary = "Delete a project by ID")

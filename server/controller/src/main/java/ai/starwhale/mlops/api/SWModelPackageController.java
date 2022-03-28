@@ -9,6 +9,9 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
+import ai.starwhale.mlops.api.protocol.swmp.SWMPRequest;
+import ai.starwhale.mlops.api.protocol.swmp.SWMPVersionRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
@@ -54,11 +57,11 @@ public class SWModelPackageController implements SWModelPackageApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> revertModelVersion(String projectId,String modelId,
-        String versionId) {
+        RevertSWMPVersionRequest revertRequest) {
         SWMPObject swmp = SWMPObject.builder()
             .id(modelId)
             .projectId(projectId)
-            .latestVersion(Version.builder().id(versionId).build())
+            .latestVersion(Version.builder().id(revertRequest.getVersionId()).build())
             .build();
         Boolean res = swmpService.revertVersionTo(swmp);
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
@@ -99,9 +102,9 @@ public class SWModelPackageController implements SWModelPackageApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> createModelVersion(String projectId, String modelId,
-        MultipartFile zipFile, String importPath) {
+        MultipartFile zipFile, SWMPVersionRequest request) {
         UserVO user = userService.currentUser();
-        String versionId = createVersion(projectId, modelId, zipFile, importPath, user.getId());
+        String versionId = createVersion(projectId, modelId, zipFile, request.getImportPath(), user.getId());
         return ResponseEntity.ok(Code.success
             .asResponse(String.valueOf(Optional.of(versionId).orElseThrow(ApiOperationException::new))));
     }
@@ -116,13 +119,12 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> createModel(String projectId, String modelName,
-        MultipartFile zipFile, @RequestParam(value = "importPath") String importPath) {
+    public ResponseEntity<ResponseMessage<String>> createModel(String projectId, MultipartFile zipFile, SWMPRequest swmpRequest) {
         UserVO user = userService.currentUser();
         String modelId = swmpService.addSWMP(
-            SWMPObject.builder().projectId(projectId).name(modelName).ownerId(user.getId())
+            SWMPObject.builder().projectId(projectId).name(swmpRequest.getModelName()).ownerId(user.getId())
                 .build());
-        String versionId = createVersion(projectId, modelId, zipFile, importPath, user.getId());
+        String versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(Optional.of(versionId).orElseThrow(ApiOperationException::new))));
     }
 

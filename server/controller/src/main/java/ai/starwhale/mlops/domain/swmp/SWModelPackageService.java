@@ -74,8 +74,7 @@ public class SWModelPackageService {
     }
 
     public Boolean revertVersionTo(SWMPObject swmp) {
-        int res = swmpVersionMapper.revertTo(idConvertor.revert(swmp.getId()),
-            idConvertor.revert(swmp.getLatestVersion().getId()));
+        int res = swmpVersionMapper.revertTo(idConvertor.revert(swmp.getLatestVersion().getId()));
 
         return res > 0;
     }

@@ -10,6 +10,9 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
+import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
+import ai.starwhale.mlops.api.protocol.swds.SWDSRequest;
+import ai.starwhale.mlops.api.protocol.swds.SWDSVersionRequest;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,7 +48,7 @@ public interface DatasetApi {
     @PostMapping(value = "/project/{projectId}/dataset/{datasetId}/revert")
     ResponseEntity<ResponseMessage<String>> revertDatasetVersion(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -56,22 +60,14 @@ public interface DatasetApi {
             schema = @Schema())
         @PathVariable("datasetId")
             String datasetId,
-        @NotNull
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "The dataset version ID to revert",
-            required = true,
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "versionId")
-            String versionId);
+        @Valid @RequestBody RevertSWDSRequest revertRequest);
 
     @Operation(summary = "Delete a dataset")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/project/{projectId}/dataset/{datasetId}")
     ResponseEntity<ResponseMessage<String>> deleteDatasetById(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -95,7 +91,7 @@ public interface DatasetApi {
     @GetMapping(value = "/project/{projectId}/dataset/{datasetId}")
     ResponseEntity<ResponseMessage<DatasetVersionVO>> getDatasetInfo(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -118,7 +114,7 @@ public interface DatasetApi {
     @GetMapping(value = "/project/{projectId}/dataset/{datasetId}/version")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVO>>> listDatasetVersion(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -155,7 +151,7 @@ public interface DatasetApi {
         consumes = {"multipart/form-data"})
     ResponseEntity<ResponseMessage<String>> createDatasetVersion(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -168,16 +164,14 @@ public interface DatasetApi {
         @PathVariable("datasetId")
             String datasetId,
         @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
-        @Parameter(in = ParameterIn.DEFAULT, schema = @Schema())
-        @RequestParam(value = "importPath", required = false)
-            String importPath);
+        SWDSVersionRequest swdsVersionRequest);
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectId}/dataset/{datasetId}/version/{versionId}")
     ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -208,7 +202,7 @@ public interface DatasetApi {
     @GetMapping(value = "/project/{projectId}/dataset")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -232,7 +226,7 @@ public interface DatasetApi {
         consumes = {"multipart/form-data"})
     ResponseEntity<ResponseMessage<String>> createDataset(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -241,7 +235,5 @@ public interface DatasetApi {
         @RequestParam(value = "datasetName")
             String datasetName,
         @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
-        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
-        @RequestParam(value = "importPath")
-            String importPath);
+        SWDSRequest swdsRequest);
 }

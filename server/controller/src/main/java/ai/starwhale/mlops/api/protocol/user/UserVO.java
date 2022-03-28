@@ -22,7 +22,7 @@ public class UserVO {
 
     private String name;
 
-    private String createdTime;
+    private Long createdTime;
 
     private RoleVO role;
 

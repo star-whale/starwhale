@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "User")
@@ -64,25 +66,7 @@ public interface UserApi {
     @Operation(summary = "Create a new user")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/user")
-    ResponseEntity<ResponseMessage<String>> createUser(
-        @NotNull
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "User name",
-            required = true,
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "userName")
-            String userName,
-        @NotNull
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "User password",
-            required = true,
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "userPwd")
-            String userPwd);
+    ResponseEntity<ResponseMessage<String>> createUser(@Valid @RequestBody UserRequest request);
 
     @Operation(summary = "Get the current logged in user.")
     @ApiResponses(
