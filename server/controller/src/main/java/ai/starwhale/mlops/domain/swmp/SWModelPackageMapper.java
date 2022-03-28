@@ -8,15 +8,16 @@
 package ai.starwhale.mlops.domain.swmp;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 public interface SWModelPackageMapper {
 
-    List<SWModelPackageEntity> listSWModelPackages(Long projectId, String namePrefix);
+    List<SWModelPackageEntity> listSWModelPackages(@Param("projectId")Long projectId, @Param("namePrefix")String namePrefix);
 
     int addSWModelPackage(SWModelPackageEntity entity);
 
-    int deleteSWModelPackage(Long id);
+    int deleteSWModelPackage(@Param("id")Long id);
 
-    SWModelPackageEntity findSWModelPackageById(Long id);
+    SWModelPackageEntity findSWModelPackageById(@Param("id")Long id);
 
 }

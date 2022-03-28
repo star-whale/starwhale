@@ -8,6 +8,9 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
+import ai.starwhale.mlops.api.protocol.swmp.SWMPRequest;
+import ai.starwhale.mlops.api.protocol.swmp.SWMPVersionRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
@@ -29,6 +32,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
@@ -51,7 +55,7 @@ public interface SWModelPackageApi {
     @GetMapping(value = "/project/{projectId}/model")
     ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -80,7 +84,7 @@ public interface SWModelPackageApi {
     @PostMapping(value = "/project/{projectId}/model/{modelId}/revert")
     ResponseEntity<ResponseMessage<String>> revertModelVersion(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -92,22 +96,15 @@ public interface SWModelPackageApi {
             schema = @Schema())
         @PathVariable("modelId")
             String modelId,
-        @NotNull
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "The model version ID to revert",
-            required = true,
-            schema = @Schema())
         @Valid
-        @RequestParam(value = "versionId")
-            String versionId);
+        @RequestBody RevertSWMPVersionRequest revertRequest);
 
     @Operation(summary = "Delete a model")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/project/{projectId}/model/{modelId}")
     ResponseEntity<ResponseMessage<String>> deleteModelById(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -131,7 +128,7 @@ public interface SWModelPackageApi {
     @GetMapping(value = "/project/{projectId}/model/{modelId}")
     ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -154,7 +151,7 @@ public interface SWModelPackageApi {
     @GetMapping(value = "/project/{projectId}/model/{modelId}/version")
     ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -185,25 +182,26 @@ public interface SWModelPackageApi {
         consumes = {"multipart/form-data"})
     ResponseEntity<ResponseMessage<String>> createModelVersion(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
             String projectId,
-        @Parameter(in = ParameterIn.PATH, description = "Model ID", required = true, schema = @Schema())
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Model id",
+            schema = @Schema())
         @PathVariable("modelId")
             String modelId,
-        @Parameter(description = "file detail") @Valid @RequestPart("file") MultipartFile zipFile,
-        @Parameter(in = ParameterIn.DEFAULT, schema = @Schema())
-        @RequestParam(value = "importPath", required = false)
-            String importPath);
+        @Parameter(description = "file detail") @Valid @RequestPart("zipFile") MultipartFile zipFile,
+        SWMPVersionRequest swmpVersionRequest);
 
     @Operation(summary = "Set tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectId}/model/{modelId}/version/{versionId}")
     ResponseEntity<ResponseMessage<String>> modifyModel(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
@@ -229,16 +227,11 @@ public interface SWModelPackageApi {
         consumes = {"multipart/form-data"})
     ResponseEntity<ResponseMessage<String>> createModel(
         @Parameter(
-            in = ParameterIn.QUERY,
+            in = ParameterIn.PATH,
             description = "Project id",
             schema = @Schema())
         @PathVariable("projectId")
             String projectId,
-        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
-        @RequestParam(value = "modelName")
-            String modelName,
-        @Parameter(description = "file detail") @Valid @RequestPart("file") MultipartFile zipFile,
-        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
-        @RequestParam(value = "importPath")
-            String importPath);
+        @Parameter(description = "file detail") @RequestPart("zipFile") MultipartFile zipFile,
+        SWMPRequest swmpRequest);
 }

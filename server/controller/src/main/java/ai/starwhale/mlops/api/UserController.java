@@ -9,6 +9,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.user.User;
@@ -35,8 +36,9 @@ public class UserController implements UserApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> createUser(String userName, String userPwd) {
-        String id = userService.createUser(User.builder().name(userName).build(), userPwd);
+    public ResponseEntity<ResponseMessage<String>> createUser(UserRequest request) {
+        String id = userService.createUser(User.builder().name(request.getUserName()).build(),
+            request.getUserPwd());
         return ResponseEntity.ok(Code.success.asResponse(id));
     }
 

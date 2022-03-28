@@ -8,14 +8,15 @@
 package ai.starwhale.mlops.domain.swds;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 public interface SWDatasetVersionMapper {
 
-    List<SWDatasetVersionEntity> listVersions(Long datasetId, String namePrefix);
+    List<SWDatasetVersionEntity> listVersions(@Param("datasetId")Long datasetId, @Param("namePrefix")String namePrefix);
 
-    SWDatasetVersionEntity getLatestVersion(Long datasetId);
+    SWDatasetVersionEntity getLatestVersion(@Param("datasetId")Long datasetId);
 
-    int revertTo(Long dsId, Long dsVersionId);
+    int revertTo(@Param("dsId")Long dsId, @Param("dsVersionId")Long dsVersionId);
 
     int addNewVersion(SWDatasetVersionEntity entity);
 
