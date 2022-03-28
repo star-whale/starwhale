@@ -33,7 +33,7 @@ public class DatasetVersionVO implements Serializable {
     private Object meta;
 
     @JsonProperty("createTime")
-    private String createTime;
+    private Long createTime;
 
     @JsonProperty("owner")
     private UserVO owner;
