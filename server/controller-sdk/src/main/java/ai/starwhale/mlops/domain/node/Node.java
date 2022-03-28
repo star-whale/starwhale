@@ -36,9 +36,8 @@ public class Node {
 
     /**
      * the device holding information
-     * todo by gxx: is it will be better if there coding with map which key is device and value is task?
      */
-    List<DeviceHolder> deviceHolders;
+    List<Device> devices;
 
     public boolean equals(Object obj){
         if(!(obj instanceof Node)){

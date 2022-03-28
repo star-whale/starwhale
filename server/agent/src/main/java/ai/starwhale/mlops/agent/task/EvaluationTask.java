@@ -8,7 +8,7 @@
 package ai.starwhale.mlops.agent.task;
 
 import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.swds.SWDataSetSlice;
+import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.Task;
 import java.util.List;
@@ -45,9 +45,9 @@ public class EvaluationTask {
     SWModelPackage swModelPackage;
 
     /**
-     * swds slice meta info
+     * blocks may come from different SWDS
      */
-    List<SWDataSetSlice> swDataSetSlice;
+    List<SWDSBlock> swdsBlocks;
 
     public boolean equals(Object obj){
 

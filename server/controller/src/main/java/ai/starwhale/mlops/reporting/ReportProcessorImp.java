@@ -43,11 +43,11 @@ public class ReportProcessorImp implements ReportProcessor{
      public ReportResponse receive(ReportRequest report){
          final Node nodeInfo = report.getNodeInfo();
          final List<TaskCommand> unProperTasks = commandingTasksChecker
-             .onNodeReporting(nodeInfo);
+             .onNodeReporting(nodeInfo,report.getTasks());
          if(!CollectionUtils.isEmpty(unProperTasks)){
              return rebuildReportResponse(unProperTasks);
          }
-         taskStatusChange(nodeInfo);
+         taskStatusChange(report.getTasks());
          final List<TaskTrigger> toAssignTasks = taskScheduler.schedule(nodeInfo);
          final Collection<Task> toCancelTasks = taskStatusMachine.ofStatus(TaskStatus.TO_CANCEL);
          scheduledTaskStatusChange(toAssignTasks);
@@ -75,10 +75,9 @@ public class ReportProcessorImp implements ReportProcessor{
 
     }
 
-    private void taskStatusChange(Node nodeInfo) {
+    private void taskStatusChange(List<Task> reportedTasks) {
         Map<TaskStatus,List<Task>> taskUpdateMap = new HashMap<>();
-        nodeInfo.getDeviceHolders().stream()
-            .map(DeviceHolder::getHolder).forEach(task->{
+        reportedTasks.forEach(task->{
             final List<Task> tasks = taskUpdateMap
                 .computeIfAbsent(task.getStatus(), status -> new LinkedList<>());
             tasks.add(task);

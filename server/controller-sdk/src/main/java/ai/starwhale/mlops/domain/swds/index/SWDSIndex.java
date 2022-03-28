@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.swds;
+package ai.starwhale.mlops.domain.swds.index;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -27,36 +27,12 @@ public class SWDSIndex {
     /**
      * block items described by this index
      */
-    List<SWDSBlock> SWDSBlockList = new LinkedList<>();
+    List<SWDSBlock> SWDSBlockList;
 
     public SWDSIndex add(SWDSBlock swdsBlock){
         this.SWDSBlockList.add(swdsBlock);
         return this;
     }
 
-    @Data
-    @Builder
-    public static class SWDSBlock {
-
-        /**
-         * the offset to the original SWDS
-         */
-        int offset;
-
-        /**
-         * how many data pairs does this block contains
-         */
-        int size;
-
-        /**
-         * corresponding to pathImage
-         */
-        String pathLabel;
-
-        /**
-         * corresponding to pathLabel
-         */
-        String pathImage;
-    }
 
 }

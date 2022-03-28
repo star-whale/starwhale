@@ -65,10 +65,10 @@ public class CommandingTasksChecker {
      * @param node reporting node
      * @return not properly present tasks that are commanding to this node.
      */
-    public List<TaskCommand> onNodeReporting(Node node){
+    public List<TaskCommand> onNodeReporting(Node node,List<Task> reportedTasks){
         final Set<TaskCommand> taskCommands = commandingTasks.get(node);
-        final Map<Long, Task> nodeTasks = node.getDeviceHolders().stream()
-            .map(DeviceHolder::getHolder).collect(Collectors.toMap(Task::getId,
+        final Map<Long, Task> nodeTasks = reportedTasks.stream()
+            .collect(Collectors.toMap(Task::getId,
                 Function.identity()));
         final List<TaskCommand> unProperTasks = new LinkedList<>();
         taskCommands.forEach(taskCommand -> {
