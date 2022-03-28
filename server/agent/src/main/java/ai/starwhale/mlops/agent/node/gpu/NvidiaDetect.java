@@ -72,7 +72,7 @@ public class NvidiaDetect implements DeviceDetect {
      * @throws DocumentException xml parse error
      */
     public List<GPUInfo> convertXml(String xmlText) throws DocumentException {
-        //忽略dtd
+        // ignore dtd
         xmlText = xmlText.replaceAll(REG, "");
         Document document = DocumentHelper.parseText(xmlText);
         Element driverVersion = document.getRootElement().element("driver_version");
