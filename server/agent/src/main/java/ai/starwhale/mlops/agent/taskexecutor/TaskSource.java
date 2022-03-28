@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.task.TaskTrigger;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONUtil;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,6 +42,7 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -131,10 +133,10 @@ public interface TaskSource {
             }
 
             public static Context instance(SourcePool sourcePool, TaskPool taskPool,
-                ReportApi reportApi,
-                ContainerClient containerClient, AgentProperties agentProperties) {
+                                           ReportApi reportApi,
+                                           ContainerClient containerClient, AgentProperties agentProperties) {
                 return new Context(sourcePool, taskPool, containerClient, reportApi,
-                    agentProperties);
+                        agentProperties);
             }
         }
 
@@ -178,14 +180,14 @@ public interface TaskSource {
             default void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
                 try {
                     String path = context.agentProperties.getTask().getInfoPath();
-                    Path taskPath = Path.of(path + "/" + newTask.getTask().getId());
+                    Path taskPath = Path.of(path + "/" + newTask.getTask().getId() + ".taskinfo");
                     if (!Files.exists(taskPath)) {
                         Files.createFile(taskPath);
                     }
                     // update info to the task file
                     Files.writeString(taskPath, JSONUtil.toJsonStr(newTask));
                 } catch (IOException e) {
-                    log.error(e.getMessage());
+                    log.error(e.getMessage(), e);
                 }
             }
         }
@@ -221,7 +223,7 @@ public interface TaskSource {
 
             @Override
             public List<EvaluationTask> processing(String basePath, Context context)
-                throws Exception {
+                    throws Exception {
                 log.info("start to rebuild task pool");
                 Path tasksPath = Path.of(basePath);
                 if (!Files.exists(tasksPath)) {
@@ -231,20 +233,20 @@ public interface TaskSource {
                 } else {
                     // rebuild taskQueue
                     Stream<Path> taskInfos = Files.find(tasksPath, 1,
-                        (path, basicFileAttributes) -> true);
+                            (path, basicFileAttributes) -> true);
                     return taskInfos
-                        .filter(path -> path.getFileName().toString().endsWith(".taskinfo"))
-                        .map(path -> {
-                            try {
-                                String json = Files.readString(path);
-                                return JSONUtil.toBean(json, EvaluationTask.class);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                            return null;
-                        })
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
+                            .filter(path -> path.getFileName().toString().endsWith(".taskinfo"))
+                            .map(path -> {
+                                try {
+                                    String json = Files.readString(path);
+                                    return JSONUtil.toBean(json, EvaluationTask.class);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                return null;
+                            })
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
                 }
             }
 
@@ -267,7 +269,7 @@ public interface TaskSource {
             @Override
             public boolean condition(EvaluationTask obj, Context context) {
                 return obj.getTask().getStatus() == TaskStatus.CREATED
-                    || obj.getTask().getStatus() == TaskStatus.ASSIGNING;
+                        || obj.getTask().getStatus() == TaskStatus.ASSIGNING;
             }
 
             @Override
@@ -297,14 +299,14 @@ public interface TaskSource {
             public EvaluationTask processing(EvaluationTask oldTask, Context context) {
                 // allocate device(GPU or todo CPU) for task
                 Set<Device> allocated = context.sourcePool.allocate(
-                    AllocateRequest.builder().gpuNum(1).build());
+                        AllocateRequest.builder().gpuNum(1).build());
                 if (CollectionUtil.isNotEmpty(allocated)) {
                     // allocate device to this task,if fail will throw exception, now it is blocked
                     oldTask.setDevices(allocated);
                     // todo fill with task info
                     ContainerClient containerClient = context.containerClient;
                     Optional<String> containerId = containerClient.startContainer("",
-                        ImageConfig.builder().build());
+                            ImageConfig.builder().build());
                     // whether the container create and start success
                     if (containerId.isPresent()) {
                         EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
@@ -350,7 +352,7 @@ public interface TaskSource {
         public static DoTransition<EvaluationTask, EvaluationTask> running2Uploading = new BaseTransition() {
             @Override
             public EvaluationTask processing(EvaluationTask runningTask, Context context)
-                throws IOException {
+                    throws IOException {
                 /*try {*/
                 String path = context.agentProperties.getTask().getInfoPath();
                 // get the newest task info
@@ -368,13 +370,13 @@ public interface TaskSource {
                 if (newTask.getTask().getStatus() == TaskStatus.UPLOADING) {
                     context.taskPool.uploadingTasks.add(newTask);
                     // if run success, release device to available device pool todo:is there anything else to do?
-                    //context.sourcePool.release(newTask.getDevices());
+                    context.sourcePool.release(newTask.getDevices());
                     // only update memory list,there is no need to update the disk file(already update by taskContainer)
                     context.taskPool.runningTasks.remove(oldTask);
                 } else if (newTask.getTask().getStatus() == TaskStatus.EXIT_ERROR) {
                     context.taskPool.errorTasks.add(newTask);
                     // if run success, release device to available device pool todo:is there anything else to do?
-                    //context.sourcePool.release(newTask.getDevices());
+                    context.sourcePool.release(newTask.getDevices());
                     // only update memory list,there is no need to update the disk file(already update by taskContainer)
                     context.taskPool.runningTasks.remove(oldTask);
                 } else {
@@ -440,47 +442,47 @@ public interface TaskSource {
             public boolean condition(ReportRequest reportRequest, Context context) {
                 // valid params
                 return reportRequest.getNodeInfo() != null || CollectionUtil.isNotEmpty(
-                    reportRequest.getTasks());
+                        reportRequest.getTasks());
             }
 
             @Override
             public ReportResponse processing(ReportRequest reportRequest, Context context)
-                throws Exception {
+                    throws Exception {
                 // all tasks(exclude archived) should be report to the controller
                 // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
                 List<Task> finishedTasks = context.taskPool.finishedTasks.stream()
-                    .map(EvaluationTask::getTask).collect(Collectors.toList());
+                        .map(EvaluationTask::getTask).collect(Collectors.toList());
                 List<Task> canceledTasks = context.taskPool.canceledTasks.stream()
-                    .map(EvaluationTask::getTask).collect(Collectors.toList());
+                        .map(EvaluationTask::getTask).collect(Collectors.toList());
 
                 List<Task> all = new ArrayList<>();
                 // without stop the world
                 all.addAll(new ArrayList<>(
-                    context.taskPool.preparingTasks.stream().map(EvaluationTask::getTask)
-                        .collect(Collectors.toList())));
+                        context.taskPool.preparingTasks.stream().map(EvaluationTask::getTask)
+                                .collect(Collectors.toList())));
                 all.addAll(new ArrayList<>(
-                    context.taskPool.runningTasks.stream().map(EvaluationTask::getTask)
-                        .collect(Collectors.toList())));
+                        context.taskPool.runningTasks.stream().map(EvaluationTask::getTask)
+                                .collect(Collectors.toList())));
                 all.addAll(new ArrayList<>(
-                    context.taskPool.uploadingTasks.stream().map(EvaluationTask::getTask)
-                        .collect(Collectors.toList())));
+                        context.taskPool.uploadingTasks.stream().map(EvaluationTask::getTask)
+                                .collect(Collectors.toList())));
                 all.addAll(finishedTasks);
                 all.addAll(new ArrayList<>(
-                    context.taskPool.errorTasks.stream().map(EvaluationTask::getTask)
-                        .collect(Collectors.toList())));
+                        context.taskPool.errorTasks.stream().map(EvaluationTask::getTask)
+                                .collect(Collectors.toList())));
                 all.addAll(canceledTasks);
                 reportRequest.setTasks(all);
 
                 // todo
                 Node node = Node.builder().ipAddr("").name("").memorySizeGB(0l).devices(null)
-                    .build();
+                        .build();
 
                 context.set("finished", finishedTasks);
                 context.set("canceled", finishedTasks);
 
                 ResponseMessage<ReportResponse> response = context.reportApi.report(reportRequest);
                 if (Objects.equals(response.getCode(),
-                    "success")) { // todo: when coding completed, change protocol:Code to sdk
+                        "success")) { // todo: when coding completed, change protocol:Code to sdk
                     return response.getData();
                 } else {
                     return null;
@@ -489,12 +491,12 @@ public interface TaskSource {
 
             @Override
             public void success(ReportRequest reportRequest, ReportResponse response,
-                Context context) {
+                                Context context) {
                 if (response != null) {
                     @SuppressWarnings("unchecked") List<EvaluationTask> finishedTasks = context.get(
-                        "finished", List.class);
+                            "finished", List.class);
                     @SuppressWarnings("unchecked") List<EvaluationTask> canceledTasks = context.get(
-                        "canceled", List.class);
+                            "canceled", List.class);
                     // when success,archived the finished/canceled task,and rm to the archive dir
                     for (EvaluationTask finishedTask : finishedTasks) {
                         TaskAction.finishedOrCanceled2Archived.apply(finishedTask, context);
@@ -506,10 +508,10 @@ public interface TaskSource {
                     if (CollectionUtil.isNotEmpty(response.getTasksToRun())) {
                         for (TaskTrigger newTask : response.getTasksToRun()) {
                             TaskAction.init2Preparing.apply(EvaluationTask.builder()
-                                .task(newTask.getTask())
-                                .swdsBlocks(newTask.getSwdsBlocks())
-                                .swModelPackage(newTask.getSwModelPackage())
-                                .build(), context);
+                                    .task(newTask.getTask())
+                                    .swdsBlocks(newTask.getSwdsBlocks())
+                                    .swModelPackage(newTask.getSwModelPackage())
+                                    .build(), context);
                         }
                     }
                     // add controller's wait to cancel tasks to current list
@@ -528,7 +530,7 @@ public interface TaskSource {
         public static DoTransition<EvaluationTask, EvaluationTask> finishedOrCanceled2Archived = new BaseTransition() {
             @Override
             public EvaluationTask processing(EvaluationTask oldTask, Context context)
-                throws Exception {
+                    throws Exception {
                 EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
                 newTask.getTask().setStatus(TaskStatus.ARCHIVED);
                 return newTask;
@@ -548,7 +550,7 @@ public interface TaskSource {
         public interface SelectOneToExecute<Input, Output> {
 
             default void apply(Input input, Context context, Condition<Input> condition,
-                DoTransition<Input, Output> one, DoTransition<Input, Output> another) {
+                               DoTransition<Input, Output> one, DoTransition<Input, Output> another) {
                 if (condition.judge(input)) {
                     one.apply(input, context);
                 } else {

@@ -14,98 +14,79 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.node.Device.Status;
 import cn.hutool.core.collection.CollectionUtil;
-import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import java.util.ArrayDeque;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.annotation.PostConstruct;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.threads.ThreadPoolExecutor;
+
+import javax.annotation.PostConstruct;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class SourcePool {
 
-    /**
-     * ready to work
-     */
-    private AtomicBoolean ready = new AtomicBoolean(false);
+    private final Object lock = new Object();
 
-    private final Map<String, DeviceDetect> gpuDetectImpls;
+    private final Map<String, DeviceDetect> gpuDetectImpl;
 
     private final Set<Device> devices = new CopyOnWriteArraySet<>();
 
     public SourcePool(
-        Map<String, DeviceDetect> gpuDetectImpls) {
-        this.gpuDetectImpls = gpuDetectImpls;
-    }
-
-    @PostConstruct
-    public void init() {
-        // todo: detect current machine devices
-
+        Map<String, DeviceDetect> gpuDetectImpl) {
+        this.gpuDetectImpl = gpuDetectImpl;
     }
 
     public void refresh() {
-        devices.clear();
-        devices.addAll(this.detectDevices());
+        synchronized (lock) {
+            devices.clear();
+            devices.addAll(this.detectDevices());
+        }
     }
 
     /**
      * whether init successfully
      */
+    private volatile boolean ready = false;
+
     public boolean isReady() {
-        return ready.get();
+        return ready;
     }
 
     public void setToReady() {
-        ready.compareAndSet(false, true);
+        ready = true;
     }
 
 
-    public synchronized Set<Device> allocate(AllocateRequest request) {
-        if (CollectionUtil.isNotEmpty(devices)) {
+    public Set<Device> allocate(AllocateRequest request) {
+        synchronized (lock) {
+            if (CollectionUtil.isNotEmpty(devices)) {
+                // determine whether the conditions are met
+                long idleGpuNum = devices.stream().filter(
+                        device -> device.getStatus().equals(Status.idle) && device.getClazz()
+                                .equals(Clazz.GPU)).count();
+                if (idleGpuNum >= request.getGpuNum()) {
+                    int tmp = request.getGpuNum();
+                    Set<Device> results = new HashSet<>();
 
-            // determine whether the conditions are met
-            long idleGpuNum = devices.stream().filter(
-                device -> device.getStatus().equals(Status.idle) && device.getClazz()
-                    .equals(Clazz.GPU)).count();
-            if (idleGpuNum >= request.getGpuNum()) {
-                int tmp = request.getGpuNum();
-                Set<Device> results = new HashSet<>();
-
-                for (Device device : devices) {
-                    if (device.getStatus().equals(Status.idle) && device.getClazz()
-                        .equals(Clazz.GPU) && tmp > 0) {
-                        device.setStatus(Status.busy);
-                        results.add(device);
-                        tmp--;
+                    for (Device device : devices) {
+                        if (device.getStatus().equals(Status.idle) && device.getClazz()
+                                .equals(Clazz.GPU) && tmp > 0) {
+                            device.setStatus(Status.busy);
+                            results.add(device);
+                            tmp--;
+                        }
                     }
+                    return results;
                 }
-                return results;
             }
+            throw new AllocationException("allocate device error");
         }
-        throw new AllocationException("allocate device error");
+
     }
 
     // todo with function and middle state
     public void release(Set<Device> devices) {
-        // todo
         refresh();
     }
 
@@ -119,7 +100,7 @@ public class SourcePool {
     }
 
     private Set<Device> detectDevices() {
-        List<GPUInfo> gpuInfos = gpuDetectImpls.values().stream()
+        List<GPUInfo> gpuInfos = gpuDetectImpl.values().stream()
             // realtime detect
             .map(DeviceDetect::detect)
             // filter the empty result
@@ -143,60 +124,5 @@ public class SourcePool {
                         : Status.idle)
                     .build())
             .collect(Collectors.toSet());
-    }
-
-
-    static AtomicBoolean a = new AtomicBoolean(false);
-
-    public static void main(String[] args) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(3);
-        Runnable r1 = () -> {
-            log.info("i am r1");
-            while (!test("r1", 10000)) {
-
-            }
-            latch.countDown();
-        };
-        Runnable r2 = () -> {
-            log.info("i am r2");
-
-            while (!test("r2", 6000)) {
-
-            }
-
-            latch.countDown();
-        };
-        Runnable r3 = () -> {
-            log.info("i am r3");
-            while (!test("r3", 2000)) {
-
-            }
-
-            latch.countDown();
-        };
-
-        Thread t1 = new Thread(r1);
-        Thread t2 = new Thread(r2);
-        Thread t3 = new Thread(r3);
-        t1.start();
-        t2.start();
-        t3.start();
-
-        latch.await(); // Wait for countdown
-    }
-
-    public static boolean test(String name, int sleep) {
-        if (a.compareAndSet(false, true)) {
-            log.info("{} come in!", name);
-            try {
-                Thread.sleep(sleep);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            log.info("i am {},exit", name);
-            a.compareAndSet(true, false);
-            return true;
-        }
-        return false;
     }
 }

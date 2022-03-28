@@ -38,13 +38,14 @@ public class GPUInfo {
      * the processors which using current gpu
      */
     private List<ProcessInfo> processInfos;
+    @Data
+    @Builder
+    public static class ProcessInfo {
 
+        private String pid;
+        private String name;
+        private String usedMemory;
+
+    }
 }
-@Data
-class ProcessInfo {
 
-    private String pid;
-    private String name;
-    private String usedMemory;
-
-}

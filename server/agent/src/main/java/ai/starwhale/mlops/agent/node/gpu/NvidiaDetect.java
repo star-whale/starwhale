@@ -91,16 +91,14 @@ public class NvidiaDetect implements DeviceDetect {
 
             Element processes = element.element("processes");
             List<Element> infos = processes.elements("process_info");
-            List<ProcessInfo> processInfos = new ArrayList<>();
+            List<GPUInfo.ProcessInfo> processInfos = new ArrayList<>();
             infos.forEach(info -> {
-                ProcessInfo processInfo = new ProcessInfo();
                 String pid = info.element("pid").getText();
                 String name = info.element("process_name").getText();
                 String usedMemory = info.element("used_memory").getText();
-                processInfo.setPid(pid);
-                processInfo.setName(name);
-                processInfo.setUsedMemory(usedMemory);
-                processInfos.add(processInfo);
+                processInfos.add(
+                        GPUInfo.ProcessInfo.builder().pid(pid).name(name).usedMemory(usedMemory).build()
+                );
             });
             int intTotal = Integer.parseInt(total.split(" ")[0]);
             int intUsed = Integer.parseInt(used.split(" ")[0]);
