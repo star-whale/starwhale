@@ -39,10 +39,22 @@ public class Device {
     String driver;
 
     /**
+     * use status
+     */
+    Status status;
+
+    /**
      * the device class CPU or GPU
      */
     public enum Clazz{
         CPU,GPU
+    }
+
+    /**
+     * status of device
+     */
+    public enum Status{
+        idle,busy
     }
 
 }

@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.api.protocol.report;
 
-import ai.starwhale.mlops.domain.task.EvaluationTask;
+import ai.starwhale.mlops.domain.task.TaskTrigger;
 import lombok.Data;
 
 import java.util.List;
@@ -24,6 +24,6 @@ public class ReportResponse {
 
     List<Long> taskIdsToCancel;
 
-    List<EvaluationTask> tasksToRun;
+    List<TaskTrigger> tasksToRun;
 
 }

@@ -14,7 +14,7 @@ import ai.starwhale.mlops.domain.job.SimpleJobSpliter;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.EvaluationTask;
+import ai.starwhale.mlops.domain.task.TaskTrigger;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -26,19 +26,19 @@ public class TestSimpleJobSpliter {
 
     public void testOneDataSet(final int deviceAmount,final int dataSetSize){
         Job job = mockOneDSJob(deviceAmount, dataSetSize);
-        List<EvaluationTask> evaluationTasks = simpleJobSpliter.split(job);
-        Assertions.assertEquals(evaluationTasks.size(),deviceAmount);
+        List<TaskTrigger> TaskTriggers = simpleJobSpliter.split(job);
+        Assertions.assertEquals(TaskTriggers.size(),deviceAmount);
         final int sliceSizeRound = dataSetSize / deviceAmount;
         int sliceSize = dataSetSize % deviceAmount == 0? sliceSizeRound : sliceSizeRound + 1;
         int dataRemaining = dataSetSize;
         for(int i=0;i<deviceAmount;i++){
             System.out.println(dataRemaining);
-            EvaluationTask evaluationTask = evaluationTasks.get(i);
-            Assertions.assertEquals(evaluationTask.getSwDataSetSlice().size(),1);
+            TaskTrigger TaskTrigger = TaskTriggers.get(i);
+            Assertions.assertEquals(TaskTrigger.getSwDataSetSlice().size(),1);
             if(i == deviceAmount -1){
-                Assertions.assertEquals(evaluationTask.getSwDataSetSlice().get(0).getEnd() - evaluationTask.getSwDataSetSlice().get(0).getStart() ,dataRemaining -1 );
+                Assertions.assertEquals(TaskTrigger.getSwDataSetSlice().get(0).getEnd() - TaskTrigger.getSwDataSetSlice().get(0).getStart() ,dataRemaining -1 );
             }else {
-                Assertions.assertEquals(evaluationTask.getSwDataSetSlice().get(0).getEnd() - evaluationTask.getSwDataSetSlice().get(0).getStart()  ,sliceSize - 1);
+                Assertions.assertEquals(TaskTrigger.getSwDataSetSlice().get(0).getEnd() - TaskTrigger.getSwDataSetSlice().get(0).getStart()  ,sliceSize - 1);
             }
             dataRemaining -= sliceSize;
         }

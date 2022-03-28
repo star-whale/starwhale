@@ -15,10 +15,9 @@ import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction.SelectOneToEx
 import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskPool;
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.report.ReportRequest;
-import ai.starwhale.mlops.domain.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.EvaluationTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 /**
  * created -> preparing -> running -> resulting -> finished -> archived

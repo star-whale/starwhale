@@ -8,7 +8,7 @@
 package ai.starwhale.mlops.api.protocol.report;
 
 import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.task.EvaluationTask;
+import ai.starwhale.mlops.domain.task.Task;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -20,5 +20,5 @@ import lombok.Data;
 @Builder
 public class ReportRequest {
     Node nodeInfo;
-    List<EvaluationTask> tasks;
+    List<Task> tasks;
 }

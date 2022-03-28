@@ -14,8 +14,10 @@ import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.ReportResponse;
+import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
-import ai.starwhale.mlops.domain.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.domain.task.TaskTrigger;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONUtil;
@@ -259,7 +261,8 @@ public interface TaskSource {
         public static DoTransition<EvaluationTask, EvaluationTask> init2Preparing = new BaseTransition() {
             @Override
             public boolean condition(EvaluationTask obj, Context context) {
-                return obj.getTask().getStatus() == TaskStatus.CREATED || obj.getTask().getStatus() == TaskStatus.ASSIGNING;
+                return obj.getTask().getStatus() == TaskStatus.CREATED
+                    || obj.getTask().getStatus() == TaskStatus.ASSIGNING;
             }
 
             @Override
@@ -433,17 +436,27 @@ public interface TaskSource {
                 throws Exception {
                 // all tasks(exclude archived) should be report to the controller
                 // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
-                List<EvaluationTask> finishedTasks = List.copyOf(context.taskPool.finishedTasks);
-                List<EvaluationTask> canceledTasks = List.copyOf(context.taskPool.canceledTasks);
+                List<Task> finishedTasks = context.taskPool.finishedTasks.stream()
+                    .map(EvaluationTask::getTask).collect(Collectors.toList());
+                List<Task> canceledTasks = context.taskPool.canceledTasks.stream()
+                    .map(EvaluationTask::getTask).collect(Collectors.toList());
                 ReportRequest request = ReportRequest.builder().build();
 
-                List<EvaluationTask> all = new ArrayList<>();
+                List<Task> all = new ArrayList<>();
                 // without stop the world
-                all.addAll(new ArrayList<>(context.taskPool.preparingTasks));
-                all.addAll(new ArrayList<>(context.taskPool.runningTasks));
-                all.addAll(new ArrayList<>(context.taskPool.uploadingTasks));
+                all.addAll(new ArrayList<>(
+                    context.taskPool.preparingTasks.stream().map(EvaluationTask::getTask)
+                        .collect(Collectors.toList())));
+                all.addAll(new ArrayList<>(
+                    context.taskPool.runningTasks.stream().map(EvaluationTask::getTask)
+                        .collect(Collectors.toList())));
+                all.addAll(new ArrayList<>(
+                    context.taskPool.uploadingTasks.stream().map(EvaluationTask::getTask)
+                        .collect(Collectors.toList())));
                 all.addAll(finishedTasks);
-                all.addAll(new ArrayList<>(context.taskPool.errorTasks));
+                all.addAll(new ArrayList<>(
+                    context.taskPool.errorTasks.stream().map(EvaluationTask::getTask)
+                        .collect(Collectors.toList())));
                 all.addAll(canceledTasks);
                 request.setTasks(all);
 
@@ -476,8 +489,12 @@ public interface TaskSource {
                     }
                     // add controller's new tasks to current queue
                     if (CollectionUtil.isNotEmpty(response.getTasksToRun())) {
-                        for (EvaluationTask newTask : response.getTasksToRun()) {
-                            TaskAction.init2Preparing.apply(newTask, context);
+                        for (TaskTrigger newTask : response.getTasksToRun()) {
+                            TaskAction.init2Preparing.apply(EvaluationTask.builder()
+                                .task(newTask.getTask())
+                                .swDataSetSlice(newTask.getSwDataSetSlice())
+                                .swModelPackage(newTask.getSwModelPackage())
+                                .build(), context);
                         }
                     }
                     // add controller's wait to cancel tasks to current list

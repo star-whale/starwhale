@@ -109,9 +109,13 @@ public class TaskExecutorTest {
         Mockito.when(containerClient.startContainer(any(), any())).thenReturn(Optional.of("2222222"));
         // todo how to deal with file write
         //Mockito.when(Files.writeString(Path.of(anyString()), anyString())).then(Answers.valueOf("test"));
-        // do test
+
+        // do preparing test
         taskExecutor.dealPreparingTasks();
 
         assertEquals(2, taskPool.preparingTasks.size());
+
+        taskExecutor.monitorRunningTasks();
+
     }
 }
