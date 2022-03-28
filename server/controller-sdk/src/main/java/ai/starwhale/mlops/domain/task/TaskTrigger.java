@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.domain.swds.SWDataSetSlice;
+import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
 import lombok.Builder;
@@ -26,14 +27,25 @@ public class TaskTrigger {
     private Task task;
 
     /**
+     * the proper image to get swmp run
+     */
+    private String imageId;
+
+    /**
      * swmp meta info
      */
     private SWModelPackage swModelPackage;
 
     /**
+     * @deprecated
      * swds slice meta info
      */
     private List<SWDataSetSlice> swDataSetSlice;
+
+    /**
+     * blocks may come from different SWDS
+     */
+    private List<SWDSBlock> swdsBlocks;
 
     public boolean equals(Object obj){
 

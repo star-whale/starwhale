@@ -9,6 +9,7 @@ package ai.starwhale.mlops.schedule;
 
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
+import ai.starwhale.mlops.domain.node.Device.Status;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.task.TaskTrigger;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -47,17 +48,17 @@ public class SimpleTaskScheduler implements TaskScheduler {
     @Override
     public List<TaskTrigger> schedule(Node node) {
         validNode(node);
-        return node.getDeviceHolders()
+        return node.getDevices()
             .stream()
-            .filter(deviceHolder -> null == deviceHolder.getHolder()) //only schedule devices that is free
-            .map(deviceHolder -> taskQueueTable.get(deviceHolder.getDevice().getClazz()).poll())// pull task from the device corresponding queue
+            .filter(device -> Status.idle == device.getStatus()) //only schedule devices that is free
+            .map(device -> taskQueueTable.get(device.getClazz()).poll())// pull task from the device corresponding queue
             .filter(Objects::nonNull)//remove null tasks got from empty queue
             .collect(Collectors.toList());
     }
 
     private void validNode(Node node) {
         //assuming that all DeviceHolders are valid
-        if (null == node || null == node.getDeviceHolders()) {
+        if (null == node || null == node.getDevices()) {
             log.error("bad node scheduled, null or null field");
             throw new SWValidationException(ValidSubject.NODE);
         }
