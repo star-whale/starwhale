@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * split job to tasks. One job shall not to be split multiple times
  */
-public interface JobSpliter {
+public interface JobSpliterator {
 
     List<TaskTrigger> split(Job job);
 }
