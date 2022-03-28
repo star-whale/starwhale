@@ -41,8 +41,14 @@ public interface DatasetApi {
         description =
             "Select a historical version of the dataset and revert the latest version of the current dataset to this version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/dataset/{datasetId}/revert")
+    @PostMapping(value = "/project/{projectId}/dataset/{datasetId}/revert")
     ResponseEntity<ResponseMessage<String>> revertDatasetVersion(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(
             in = ParameterIn.PATH,
             description = "Dataset id",
@@ -62,11 +68,17 @@ public interface DatasetApi {
 
     @Operation(summary = "Delete a dataset")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/dataset/{datasetId}")
+    @DeleteMapping(value = "/project/{projectId}/dataset/{datasetId}")
     ResponseEntity<ResponseMessage<String>> deleteDatasetById(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("datasetId")
-            Integer datasetId);
+            String datasetId);
 
     @Operation(summary = "Get the information of a dataset",
         description = "Return the information of the latest version of the current dataset")
@@ -80,11 +92,17 @@ public interface DatasetApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = DatasetVersionVO.class)))
         })
-    @GetMapping(value = "/dataset/{datasetId}")
+    @GetMapping(value = "/project/{projectId}/dataset/{datasetId}")
     ResponseEntity<ResponseMessage<DatasetVersionVO>> getDatasetInfo(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("datasetId")
-            Integer datasetId);
+            String datasetId);
 
     @Operation(summary = "Get the list of the dataset versions")
     @ApiResponses(
@@ -97,15 +115,27 @@ public interface DatasetApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = PageInfo.class)))
         })
-    @GetMapping(value = "/dataset/{datasetId}/version")
+    @GetMapping(value = "/project/{projectId}/dataset/{datasetId}/version")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVO>>> listDatasetVersion(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(
             in = ParameterIn.PATH,
             description = "Dataset ID",
             required = true,
             schema = @Schema())
         @PathVariable("datasetId")
-            Integer datasetId,
+            String datasetId,
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Dataset version name prefix",
+            schema = @Schema())
+        @RequestParam(value = "dsVersionName", required = false)
+            String dsVersionName,
         @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
         @Valid
         @RequestParam(value = "pageNum", required = false, defaultValue = "1")
@@ -120,10 +150,16 @@ public interface DatasetApi {
             + "The data resources can be selected by uploading the file package or entering the server path.")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-        value = "/dataset/{datasetId}/version",
+        value = "/project/{projectId}/dataset/{datasetId}/version",
         produces = {"application/json"},
         consumes = {"multipart/form-data"})
-    ResponseEntity<Void> createDatasetVersion(
+    ResponseEntity<ResponseMessage<String>> createDatasetVersion(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(
             in = ParameterIn.PATH,
             description = "Dataset ID",
@@ -131,15 +167,21 @@ public interface DatasetApi {
             schema = @Schema())
         @PathVariable("datasetId")
             String datasetId,
-        @Parameter(description = "file detail") @Valid @RequestPart("file") MultipartFile zipFile,
+        @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
         @Parameter(in = ParameterIn.DEFAULT, schema = @Schema())
         @RequestParam(value = "importPath", required = false)
             String importPath);
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/dataset/{datasetId}/version/{versionId}")
-    ResponseEntity<Void> modifyDatasetVersionInfo(
+    @PutMapping(value = "/project/{projectId}/dataset/{datasetId}/version/{versionId}")
+    ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("datasetId")
             String datasetId,
@@ -163,8 +205,14 @@ public interface DatasetApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = PageInfo.class)))
         })
-    @GetMapping(value = "/dataset")
+    @GetMapping(value = "/project/{projectId}/dataset")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
         @Valid
         @RequestParam(value = "pageNum", required = false, defaultValue = "1")
@@ -179,14 +227,20 @@ public interface DatasetApi {
             + "The data resources are selected by uploading a file package or entering a server path.")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-        value = "/dataset",
+        value = "/project/{projectId}/dataset",
         produces = {"application/json"},
         consumes = {"multipart/form-data"})
     ResponseEntity<ResponseMessage<String>> createDataset(
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+            String projectId,
         @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
         @RequestParam(value = "datasetName")
             String datasetName,
-        @Parameter(description = "file detail") @Valid @RequestPart("file") MultipartFile zipFile,
+        @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
         @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
         @RequestParam(value = "importPath")
             String importPath);

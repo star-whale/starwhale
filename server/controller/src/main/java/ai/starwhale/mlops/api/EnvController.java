@@ -7,19 +7,27 @@
 
 package ai.starwhale.mlops.api;
 
+import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.job.BaseImageVO;
 import ai.starwhale.mlops.api.protocol.agent.DeviceVO;
+import ai.starwhale.mlops.api.protocol.job.BaseImageVO;
+import ai.starwhale.mlops.domain.enviroment.EnvService;
 import java.util.List;
+import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-public class EvnController implements EnvApi{
+public class EnvController implements EnvApi{
+
+    @Resource
+    private EnvService envService;
 
     @Override
     public ResponseEntity<ResponseMessage<List<BaseImageVO>>> listBaseImage(String imageName) {
-        return null;
+        List<BaseImageVO> baseImageVOS = envService.listImages(imageName);
+
+        return ResponseEntity.ok(Code.success.asResponse(baseImageVOS));
     }
 
     @Override

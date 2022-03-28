@@ -8,13 +8,10 @@
 package ai.starwhale.mlops.domain.user;
 
 import ai.starwhale.mlops.common.IDConvertor;
-import com.google.common.base.Preconditions;
-import javax.annotation.Resource;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.FieldNameConstants.Exclude;
 import org.springframework.security.core.GrantedAuthority;
 
 @Data

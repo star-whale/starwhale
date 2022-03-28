@@ -1,0 +1,105 @@
+/*
+ * Copyright 2022.1-2022
+ * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+ * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+ * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+ */
+
+package ai.starwhale.mlops.domain.swds;
+
+import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
+import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
+import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
+import com.github.pagehelper.PageHelper;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.annotation.Resource;
+import org.springframework.stereotype.Service;
+
+@Service
+public class SWDatasetService {
+
+    @Resource
+    private SWDatasetMapper swdsMapper;
+
+    @Resource
+    private SWDatasetVersionMapper swdsVersionMapper;
+
+    @Resource
+    private IDConvertor idConvertor;
+
+    @Resource
+    private SWDSConvertor swdsConvertor;
+
+    @Resource
+    private SWDSVersionConvertor versionConvertor;
+
+    public List<DatasetVO> listSWMP(SWDSObject swmp, PageParams pageParams) {
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        List<SWDatasetEntity> entities = swdsMapper.listDatasets(
+            idConvertor.revert(swmp.getProjectId()), swmp.getName());
+
+        return entities.stream()
+            .map(swdsConvertor::convert)
+            .collect(Collectors.toList());
+    }
+
+    public Boolean deleteSWDS(SWDSObject swmp) {
+        int res = swdsMapper.deleteDataset(idConvertor.revert(swmp.getId()));
+        return res > 0;
+    }
+
+
+    public Boolean modifySWMPVersion(Version version) {
+        int update = swdsVersionMapper.update(
+            SWDatasetVersionEntity.builder()
+                .id(idConvertor.revert(version.getId()))
+                .versionTag(version.getTag())
+                .storagePath(version.getStoragePath())
+                .build());
+        return update > 0;
+    }
+
+    public Boolean revertVersionTo(SWDSObject swds) {
+        int res = swdsVersionMapper.revertTo(idConvertor.revert(swds.getId()),
+            idConvertor.revert(swds.getLatestVersion().getId()));
+
+        return res > 0;
+    }
+
+    public List<DatasetVersionVO> listDatasetVersionHistory(SWDSObject swmp, PageParams pageParams) {
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        List<SWDatasetVersionEntity> entities = swdsVersionMapper.listVersions(
+            idConvertor.revert(swmp.getId()), swmp.getLatestVersion().getName());
+
+        return entities.stream()
+            .map(versionConvertor::convert)
+            .collect(Collectors.toList());
+    }
+
+    public String addDataset(SWDSObject swds) {
+        SWDatasetEntity entity = SWDatasetEntity.builder()
+            .datasetName(swds.getName())
+            .ownerId(idConvertor.revert(swds.getOwnerId()))
+            .projectId(idConvertor.revert(swds.getProjectId()))
+            .build();
+        swdsMapper.addDataset(entity);
+        return idConvertor.convert(entity.getId());
+    }
+
+    public String addVersion(SWDSObject swds) {
+        SWDatasetVersionEntity entity = SWDatasetVersionEntity.builder()
+            .datasetId(idConvertor.revert(swds.getId()))
+            .ownerId(idConvertor.revert(swds.getLatestVersion().getOwnerId()))
+            .versionTag(swds.getLatestVersion().getTag())
+            .versionName(swds.getLatestVersion().getName())
+            .versionMeta(swds.getLatestVersion().getMeta())
+            .storagePath(swds.getLatestVersion().getStoragePath())
+            .build();
+        swdsVersionMapper.addNewVersion(entity);
+        return idConvertor.convert(entity.getId());
+    }
+
+}

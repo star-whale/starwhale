@@ -50,12 +50,12 @@ public class ProjectController implements ProjectApi{
     public ResponseEntity<ResponseMessage<String>> createProject(String projectName) {
         UserVO user = userService.currentUser();
 
-        Long projectId = projectService
+        String projectId = projectService
             .createProject(Project.builder()
                 .name(projectName)
                 .ownerId(user.getId())
                 .build());
-        return ResponseEntity.ok(Code.success.asResponse(String.valueOf(Optional.of(projectId).orElseThrow(ApiOperationException::new))));
+        return ResponseEntity.ok(Code.success.asResponse(projectId));
 
     }
 

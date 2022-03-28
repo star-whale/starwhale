@@ -14,7 +14,8 @@
     </insert>
 
     <delete id="deleteProject" parameterType="java.lang.Long">
-        delete from project_info
+        update project_info
+        set is_deleted = 1
         where id = #{id}
     </delete>
 
@@ -41,7 +42,8 @@
         from project_info as p,
              user_info as u,
              user_role as r
-        where u.id = p.owner_id
+        where p.is_deleted = 0
+          and u.id = p.owner_id
           and r.id = u.role_id
         <if test="projectName != null and projectName != ''">
             and p.project_name like concat(#{projectName}, '%')
@@ -75,6 +77,7 @@
         <result property="isDeleted" column="project_is_deleted"/>
         <result property="createdTime" column="project_created_time"/>
         <result property="modifiedTime" column="project_modified_time"/>
+        <result property="ownerId" column="owner_id" />
         <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
     </resultMap>
 </mapper>

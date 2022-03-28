@@ -8,7 +8,6 @@
 package ai.starwhale.mlops.configuration.security;
 
 import ai.starwhale.mlops.domain.user.User;
-import ai.starwhale.mlops.domain.user.UserEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AccountExpiredException;
@@ -19,7 +18,6 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**

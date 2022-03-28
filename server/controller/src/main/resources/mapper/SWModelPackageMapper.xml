@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022.1-2022
+  ~ StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="ai.starwhale.mlops.domain.swmp.SWModelPackageMapper">
+    <sql id="select_swmp">
+        select s.id as swmp_id,
+               s.swmp_name,
+               s.project_id,
+               s.owner_id,
+               s.is_deleted,
+               s.created_time as swmp_created_time,
+               s.modified_time as swmp_modified_time,
+               u.id as user_id,
+               u.user_name,
+               u.role_id,
+               u.created_time as user_created_time,
+               u.user_enabled,
+               r.role_name,
+               r.role_name_en
+        from swmp_info as s,
+             user_info as u,
+             user_role as r
+        where s.is_deleted = 0
+        and u.id = s.owner_id
+        and r.id = u.role_id
+    </sql>
+    <select id="listSWModelPackages" resultMap="swmpResultMap">
+        <include refid="select_swmp"/>
+        and project_id = #{projectId}
+        <if test="namePrefix != null and namePrefix != ''">
+            and s.swmp_name like concat(#{namePrefix}, '%')
+        </if>
+    </select>
+
+    <select id="findSWModelPackageById" resultMap="swmpResultMap" >
+        <include refid="select_swmp"/>
+        and s.id = #{id}
+    </select>
+
+    <insert id="addSWModelPackage" useGeneratedKeys="true" keyProperty="id">
+        insert into swmp_info(swmp_name, project_id, owner_id)
+        values(#{swmpName}, #{projectId}, #{ownerId})
+    </insert>
+
+    <delete id="deleteSWModelPackage" >
+        update swmp_info
+        set is_deleted = 1
+        where id = #{id}
+    </delete>
+
+    <resultMap id="swmpResultMap" type="ai.starwhale.mlops.domain.swmp.SWModelPackageEntity" >
+        <id property="id" column="swmp_id" />
+        <result property="swmpName" column="swmp_name" />
+        <result property="projectId" column="project_id" />
+        <result property="ownerId" column="owner_id" />
+        <result property="isDeleted" column="is_deleted" />
+        <result property="createdTime" column="swmp_created_time" />
+        <result property="modifiedTime" column="swmp_modified_time" />
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
+    </resultMap>
+</mapper>

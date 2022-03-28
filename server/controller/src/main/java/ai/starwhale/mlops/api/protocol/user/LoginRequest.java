@@ -7,9 +7,8 @@
 
 package ai.starwhale.mlops.api.protocol.user;
 
-import lombok.Data;
-
 import javax.validation.constraints.NotNull;
+import lombok.Data;
 
 @Data
 public class LoginRequest {

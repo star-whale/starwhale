@@ -10,6 +10,7 @@ package ai.starwhale.mlops.domain.project;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import javax.annotation.Resource;
@@ -26,6 +27,9 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
     @Resource
     private UserConvertor userConvertor;
 
+    @Resource
+    private LocalDateTimeConvertor localDateTimeConvertor;
+
     @Override
     public ProjectVO convert(ProjectEntity entity) throws ConvertException {
         return ProjectVO.builder()
@@ -33,7 +37,7 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
             .name(entity.getProjectName())
             //.ownerName(entity.getOwnerName())
             .owner(userConvertor.convert(entity.getOwner()))
-            .createTime(entity.getCreatedTime().toString())
+            .createTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
             .build();
     }
 
