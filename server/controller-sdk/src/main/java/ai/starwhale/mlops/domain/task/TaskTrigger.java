@@ -7,18 +7,21 @@
 
 package ai.starwhale.mlops.domain.task;
 
-import ai.starwhale.mlops.domain.swds.SWDataSetSlice;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * sufficient information for an Agent to run a Task
  */
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class TaskTrigger {
 
     /**
@@ -35,12 +38,6 @@ public class TaskTrigger {
      * swmp meta info
      */
     private SWModelPackage swModelPackage;
-
-    /**
-     * @deprecated
-     * swds slice meta info
-     */
-    private List<SWDataSetSlice> swDataSetSlice;
 
     /**
      * blocks may come from different SWDS
