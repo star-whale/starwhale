@@ -16,7 +16,7 @@ import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import ai.starwhale.mlops.domain.task.TaskCommand;
 import ai.starwhale.mlops.domain.task.TaskCommand.CommandType;
 import ai.starwhale.mlops.domain.task.TaskStatusMachine;
-import ai.starwhale.mlops.domain.task.EvaluationTask;
+import ai.starwhale.mlops.domain.task.TaskTrigger;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.TaskScheduler;
 import java.util.Collection;
@@ -48,7 +48,7 @@ public class ReportProcessorImp implements ReportProcessor{
              return rebuildReportResponse(unProperTasks);
          }
          taskStatusChange(nodeInfo);
-         final List<EvaluationTask> toAssignTasks = taskScheduler.schedule(nodeInfo);
+         final List<TaskTrigger> toAssignTasks = taskScheduler.schedule(nodeInfo);
          final Collection<Task> toCancelTasks = taskStatusMachine.ofStatus(TaskStatus.TO_CANCEL);
          scheduledTaskStatusChange(toAssignTasks);
          canceledTaskStatusChange(toCancelTasks);
@@ -56,9 +56,9 @@ public class ReportProcessorImp implements ReportProcessor{
          return buidResponse(toAssignTasks, toCancelTasks);
      }
 
-    public ReportResponse buidResponse(List<EvaluationTask> toAssignTasks,
+    public ReportResponse buidResponse(List<TaskTrigger> toAssignTasks,
         Collection<Task> toCancelTasks) {
-        final List<String> taskIdsToCancel = toCancelTasks.stream().map(task -> task.getId().toString())
+        final List<Long> taskIdsToCancel = toCancelTasks.stream().map(Task::getId)
             .collect(
                 Collectors.toList());
         return new ReportResponse(
@@ -69,8 +69,8 @@ public class ReportProcessorImp implements ReportProcessor{
         taskStatusMachine.statusChange(tasks,TaskStatus.CANCEL_COMMANDING);
     }
 
-    private void scheduledTaskStatusChange(List<EvaluationTask> toAssignTasks) {
-        taskStatusMachine.statusChange(toAssignTasks.stream().map(EvaluationTask::getTask).collect(
+    private void scheduledTaskStatusChange(List<TaskTrigger> toAssignTasks) {
+        taskStatusMachine.statusChange(toAssignTasks.stream().map(TaskTrigger::getTask).collect(
             Collectors.toList()), TaskStatus.ASSIGNING);
 
     }
@@ -87,24 +87,24 @@ public class ReportProcessorImp implements ReportProcessor{
 
     }
 
-    List<TaskCommand> buildTaskCommands(List<EvaluationTask> toAssignTasks,Collection<Task> toCancelTasks){
-        final Stream<TaskCommand> evaluationTaskStream = toAssignTasks.stream()
+    List<TaskCommand> buildTaskCommands(List<TaskTrigger> toAssignTasks,Collection<Task> toCancelTasks){
+        final Stream<TaskCommand> TaskTriggerStream = toAssignTasks.stream()
             .map(tk -> new TaskCommand(CommandType.TRIGGER, tk.getTask()));
         final Stream<TaskCommand> taskCancelStream = toCancelTasks.stream()
             .map(ct -> new TaskCommand(CommandType.CANCEL, ct));
-        return Stream.concat(evaluationTaskStream,taskCancelStream).collect(Collectors.toList());
+        return Stream.concat(TaskTriggerStream,taskCancelStream).collect(Collectors.toList());
     }
 
-    ReportResponse rebuildReportResponse(List<TaskCommand> evaluationTasks){
-        List<String> taskIdsToCancel = new LinkedList<>();
+    ReportResponse rebuildReportResponse(List<TaskCommand> TaskTriggers){
+        List<Long> taskIdsToCancel = new LinkedList<>();
 
-        List<EvaluationTask> tasksToRun = new LinkedList<>();
+        List<TaskTrigger> tasksToRun = new LinkedList<>();
 
-        evaluationTasks.forEach(taskCommand -> {
+        TaskTriggers.forEach(taskCommand -> {
             if(taskCommand.getCommandType() == CommandType.CANCEL){
-                taskIdsToCancel.add(taskCommand.getTask().getId().toString());
+                taskIdsToCancel.add(taskCommand.getTask().getId());
             }else{
-                tasksToRun.add(buildEvaluationTaskFromTask(taskCommand.getTask()));
+                tasksToRun.add(buildTaskTriggerFromTask(taskCommand.getTask()));
             }
         });
 
@@ -112,9 +112,9 @@ public class ReportProcessorImp implements ReportProcessor{
 
     }
 
-    EvaluationTask buildEvaluationTaskFromTask(Task task){
+    TaskTrigger buildTaskTriggerFromTask(Task task){
          //TODO find swmp & swds
-         return EvaluationTask.builder().task(task).build();
+         return TaskTrigger.builder().task(task).build();
     }
 
 

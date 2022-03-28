@@ -1,4 +1,4 @@
-package ai.starwhale.mlops.agent;
+package ai.starwhale.mlops.agent.test;
 
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import org.springframework.boot.SpringApplication;
@@ -9,9 +9,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @SpringBootApplication
 @EnableFeignClients
 @EnableConfigurationProperties(AgentProperties.class)
-public class StarWhaleAgentApplication {
+public class StarWhaleAgentTestApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(StarWhaleAgentApplication.class, args);
+        SpringApplication.run(StarWhaleAgentTestApplication.class, args);
     }
 }
