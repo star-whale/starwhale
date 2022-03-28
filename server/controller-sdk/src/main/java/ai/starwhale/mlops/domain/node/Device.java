@@ -7,13 +7,14 @@
 
 package ai.starwhale.mlops.domain.node;
 
+import java.util.Objects;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 
 /**
  * Device is a computational unit such as GPU/ CPU or TPU which is the core resource for a Node to schedule
  */
-@Getter
+@Data
 @Builder
 public class Device {
 
@@ -57,4 +58,20 @@ public class Device {
         idle,busy
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Device device = (Device) o;
+        return id.equals(device.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

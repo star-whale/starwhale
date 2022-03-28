@@ -18,7 +18,6 @@ import lombok.Data;
 
 /**
  * sufficient information for an Agent to run a Task
- * todo by gxx:remove to agent domain
  */
 @Data
 @Builder
