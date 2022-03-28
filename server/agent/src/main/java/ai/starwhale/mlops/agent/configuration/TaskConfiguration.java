@@ -8,16 +8,12 @@
 package ai.starwhale.mlops.agent.configuration;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
-import ai.starwhale.mlops.agent.container.impl.DockerContainerClient;
 import ai.starwhale.mlops.agent.taskexecutor.Scheduler;
-import ai.starwhale.mlops.agent.taskexecutor.SourcePool;
+import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.taskexecutor.TaskExecutor;
-import ai.starwhale.mlops.agent.taskexecutor.TaskSource;
-import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction.Context;
 import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskPool;
 import ai.starwhale.mlops.agent.taskexecutor.initializer.TaskPoolInitializer;
 import ai.starwhale.mlops.api.ReportApi;
-import com.github.dockerjava.transport.DockerHttpClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,11 +24,6 @@ public class TaskConfiguration {
     @Bean
     public TaskPool taskPool() {
         return new TaskPool();
-    }
-
-    @Bean
-    public SourcePool sourcePool() {
-        return new SourcePool();
     }
 
     @Bean

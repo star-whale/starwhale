@@ -9,6 +9,7 @@ package ai.starwhale.mlops.agent.taskexecutor;
 
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.container.ContainerClient;
+import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction;
 import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction.Context;
 import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction.SelectOneToExecute;

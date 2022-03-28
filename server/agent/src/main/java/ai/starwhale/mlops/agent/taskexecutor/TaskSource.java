@@ -10,10 +10,15 @@ package ai.starwhale.mlops.agent.taskexecutor;
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.container.ImageConfig;
+import ai.starwhale.mlops.agent.exception.AllocationException;
+import ai.starwhale.mlops.agent.node.SourcePool;
+import ai.starwhale.mlops.agent.node.SourcePool.AllocateRequest;
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.ReportResponse;
+import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
@@ -32,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -207,24 +213,26 @@ public interface TaskSource {
             }
         }
 
-        public static DoTransition<String, Boolean> rebuildTasks = new DoTransition<>() {
+        public static DoTransition<String, List<EvaluationTask>> rebuildTasks = new DoTransition<>() {
             @Override
             public boolean condition(String basePath, Context context) {
                 return StringUtils.hasText(basePath) && !context.taskPool.isReady();
             }
 
             @Override
-            public Boolean processing(String basePath, Context context) throws Exception {
+            public List<EvaluationTask> processing(String basePath, Context context)
+                throws Exception {
                 log.info("start to rebuild task pool");
                 Path tasksPath = Path.of(basePath);
                 if (!Files.exists(tasksPath)) {
                     Files.createDirectories(tasksPath);
-                    log.info("init tasks dir, path:{}", tasksPath);
+                    log.info("init tasks dir, nothing to rebuild, path:{}", tasksPath);
+                    return List.of();
                 } else {
                     // rebuild taskQueue
                     Stream<Path> taskInfos = Files.find(tasksPath, 1,
                         (path, basicFileAttributes) -> true);
-                    List<EvaluationTask> tasks = taskInfos
+                    return taskInfos
                         .filter(path -> path.getFileName().toString().endsWith(".taskinfo"))
                         .map(path -> {
                             try {
@@ -237,18 +245,15 @@ public interface TaskSource {
                         })
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
-
-                    tasks.forEach(context.taskPool::fill);
-                    log.info("end of rebuild task pool, size:{}", tasks.size());
                 }
-                return true;
             }
 
             @Override
-            public void success(String basePath, Boolean result, Context context) {
-                if (result) {
+            public void success(String basePath, List<EvaluationTask> tasks, Context context) {
+                if (CollectionUtil.isNotEmpty(tasks)) {
+                    tasks.forEach(context.taskPool::fill);
                     context.taskPool.setToReady();
-                    log.info("rebuild task pool success");
+                    log.info("rebuild task pool success, size:{}", tasks.size());
                 }
             }
 
@@ -287,31 +292,34 @@ public interface TaskSource {
 
         };
 
-        public static DoTransition<EvaluationTask, EvaluationTask> init2Canceled = new BaseCancelTransition() {
-            @Override
-            public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
-                BaseCancelTransition.super.success(oldTask, newTask, context);
-            }
-        };
-
         public static DoTransition<EvaluationTask, EvaluationTask> preparing2Running = new BaseTransition() {
             @Override
             public EvaluationTask processing(EvaluationTask oldTask, Context context) {
-                ContainerClient containerClient = context.containerClient;
-                oldTask.setDevices(context.sourcePool.allocate(
-                    1)); // pre allocate device to this task,if fail will throw exception
-                // todo fill with task info
-                Optional<String> containerId = containerClient.startContainer("",
-                    ImageConfig.builder().build());
-                // whether the container create and start success
-                if (containerId.isPresent()) {
-                    EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
-                    newTask.setContainerId(containerId.get());
-                    newTask.getTask().setStatus(TaskStatus.RUNNING);
-                    return newTask;
+                // allocate device(GPU or todo CPU) for task
+                Set<Device> allocated = context.sourcePool.allocate(
+                    AllocateRequest.builder().gpuNum(1).build());
+                if (CollectionUtil.isNotEmpty(allocated)) {
+                    // allocate device to this task,if fail will throw exception, now it is blocked
+                    oldTask.setDevices(allocated);
+                    // todo fill with task info
+                    ContainerClient containerClient = context.containerClient;
+                    Optional<String> containerId = containerClient.startContainer("",
+                        ImageConfig.builder().build());
+                    // whether the container create and start success
+                    if (containerId.isPresent()) {
+                        EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
+                        newTask.setContainerId(containerId.get());
+                        newTask.getTask().setStatus(TaskStatus.RUNNING);
+                        return newTask;
+                    } else {
+                        // todo: retry or take it to the tail of queue
+                        // should release, but we only detect realtime(this mean allocate is only assign to the task without stateful)
+                        // so there is no necessary to release
+                        throw new RuntimeException();
+                    }
                 } else {
-                    // todo: retry or take it to the tail of queue
-                    throw new RuntimeException();
+                    // todo: 由allocate 时抛出，只要没抛出异常，就算成功了， next time again
+                    throw new AllocationException("");
                 }
             }
 
@@ -327,7 +335,7 @@ public interface TaskSource {
 
             @Override
             public void fail(EvaluationTask i, Context context, Exception e) {
-                // nothing to do
+                // nothing to do, again next time
             }
         };
 
@@ -357,17 +365,21 @@ public interface TaskSource {
 
             @Override
             public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
-                // if run success, release device to available device pool todo:is there anything else to do?
-                context.sourcePool.release(newTask.getDevices());
-                // only update memory list,there is no need to update the disk file(already update by taskContainer)
-                context.taskPool.runningTasks.remove(oldTask);
                 if (newTask.getTask().getStatus() == TaskStatus.UPLOADING) {
                     context.taskPool.uploadingTasks.add(newTask);
-
+                    // if run success, release device to available device pool todo:is there anything else to do?
+                    //context.sourcePool.release(newTask.getDevices());
+                    // only update memory list,there is no need to update the disk file(already update by taskContainer)
+                    context.taskPool.runningTasks.remove(oldTask);
                 } else if (newTask.getTask().getStatus() == TaskStatus.EXIT_ERROR) {
                     context.taskPool.errorTasks.add(newTask);
+                    // if run success, release device to available device pool todo:is there anything else to do?
+                    //context.sourcePool.release(newTask.getDevices());
+                    // only update memory list,there is no need to update the disk file(already update by taskContainer)
+                    context.taskPool.runningTasks.remove(oldTask);
                 } else {
                     // seem like no other status
+                    return;
                 }
                 // update info to the task file
                 BaseTransition.super.success(oldTask, newTask, context);
@@ -440,7 +452,6 @@ public interface TaskSource {
                     .map(EvaluationTask::getTask).collect(Collectors.toList());
                 List<Task> canceledTasks = context.taskPool.canceledTasks.stream()
                     .map(EvaluationTask::getTask).collect(Collectors.toList());
-                ReportRequest request = ReportRequest.builder().build();
 
                 List<Task> all = new ArrayList<>();
                 // without stop the world
@@ -458,7 +469,11 @@ public interface TaskSource {
                     context.taskPool.errorTasks.stream().map(EvaluationTask::getTask)
                         .collect(Collectors.toList())));
                 all.addAll(canceledTasks);
-                request.setTasks(all);
+                reportRequest.setTasks(all);
+
+                // todo
+                Node node = Node.builder().ipAddr("").name("").memorySizeGB(0l).devices(null)
+                    .build();
 
                 context.set("finished", finishedTasks);
                 context.set("canceled", finishedTasks);
@@ -492,7 +507,7 @@ public interface TaskSource {
                         for (TaskTrigger newTask : response.getTasksToRun()) {
                             TaskAction.init2Preparing.apply(EvaluationTask.builder()
                                 .task(newTask.getTask())
-                                .swDataSetSlice(newTask.getSwDataSetSlice())
+                                .swdsBlocks(newTask.getSwdsBlocks())
                                 .swModelPackage(newTask.getSwModelPackage())
                                 .build(), context);
                         }
@@ -527,17 +542,18 @@ public interface TaskSource {
 
         public interface Condition<Input> {
 
-            boolean apply(Input input);
+            boolean judge(Input input);
         }
 
         public interface SelectOneToExecute<Input, Output> {
 
             default void apply(Input input, Context context, Condition<Input> condition,
                 DoTransition<Input, Output> one, DoTransition<Input, Output> another) {
-                if (condition.apply(input)) {
+                if (condition.judge(input)) {
                     one.apply(input, context);
+                } else {
+                    another.apply(input, context);
                 }
-                another.apply(input, context);
             }
         }
 
