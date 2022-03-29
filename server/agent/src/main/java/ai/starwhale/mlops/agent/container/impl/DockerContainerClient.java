@@ -1,20 +1,18 @@
 package ai.starwhale.mlops.agent.container.impl;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
-
 import ai.starwhale.mlops.agent.container.ImageConfig;
-import com.github.dockerjava.transport.DockerHttpClient;
+import com.github.dockerjava.api.DockerClient;
 import java.util.Optional;
-import org.springframework.stereotype.Service;
 
 /**
  * Docker client
  */
 public class DockerContainerClient implements ContainerClient {
 
-    private final DockerHttpClient client;
+    private final DockerClient client;
 
-    public DockerContainerClient(DockerHttpClient client) {
+    public DockerContainerClient(DockerClient client) {
         this.client = client;
     }
 

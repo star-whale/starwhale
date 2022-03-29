@@ -5,10 +5,15 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.taskexecutor;
+package ai.starwhale.mlops.agent.task;
 
+import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
+@Service
+@ConditionalOnProperty(name = "sw.task.scheduler.enabled", havingValue = "true", matchIfMissing = true)
 public class Scheduler {
     private final TaskExecutor executor;
 

@@ -48,6 +48,15 @@ public class EvaluationTask {
      */
     List<SWDSBlock> swdsBlocks;
 
+    /**
+     * every stage will have a status which represents completion
+     */
+    Stage stage;
+
+    public enum Stage {
+        inProgress, completed
+    }
+
     public boolean equals(Object obj){
 
         if(!(obj instanceof EvaluationTask)){

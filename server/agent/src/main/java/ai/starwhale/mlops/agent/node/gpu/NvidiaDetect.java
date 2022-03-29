@@ -75,8 +75,8 @@ public class NvidiaDetect implements DeviceDetect {
         // ignore dtd
         xmlText = xmlText.replaceAll(REG, "");
         Document document = DocumentHelper.parseText(xmlText);
-        Element driverVersion = document.getRootElement().element("driver_version");
-        Element cudaVersion = document.getRootElement().element("cuda_version");
+        String driverVersion = document.getRootElement().element("driver_version").getText();
+        String cudaVersion = document.getRootElement().element("cuda_version").getText();
         List<Element> gpu = document.getRootElement().elements("gpu");
         List<GPUInfo> gpuInfoList = new ArrayList<>();
         gpu.forEach(element -> {

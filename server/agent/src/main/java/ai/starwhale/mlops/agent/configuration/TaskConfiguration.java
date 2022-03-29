@@ -7,13 +7,11 @@
 
 package ai.starwhale.mlops.agent.configuration;
 
-import ai.starwhale.mlops.agent.container.ContainerClient;
-import ai.starwhale.mlops.agent.taskexecutor.Scheduler;
-import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.taskexecutor.TaskExecutor;
-import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskPool;
-import ai.starwhale.mlops.agent.taskexecutor.initializer.TaskPoolInitializer;
-import ai.starwhale.mlops.api.ReportApi;
+import ai.starwhale.mlops.agent.task.Scheduler;
+import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.initializer.TaskPoolInitializer;
+import ai.starwhale.mlops.agent.task.persistence.FileSystemTaskPersistence;
+import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,18 +19,19 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class TaskConfiguration {
 
-    @Bean
+   /* @Bean
     public TaskPool taskPool() {
         return new TaskPool();
     }
 
     @Bean
-    public TaskExecutor agentTaskExecutor(
-        AgentProperties agentProperties,
-        ReportApi reportApi,
-        ContainerClient containerClient, SourcePool sourcePool,
-        TaskPool taskPool) {
-        return new TaskExecutor(agentProperties, reportApi, containerClient, sourcePool, taskPool);
+    public TaskExecutor agentTaskExecutor() {
+        return new TaskExecutor();
+    }
+
+    @Bean
+    public TaskPersistence fileSystemTaskPersistence(AgentProperties agentProperties) {
+        return new FileSystemTaskPersistence(agentProperties);
     }
 
     @Bean
@@ -43,7 +42,7 @@ public class TaskConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "sw.task.rebuild.enabled", havingValue = "true", matchIfMissing = true)
-    public TaskPoolInitializer taskPoolInitializer(AgentProperties agentProperties, TaskPool taskPool) {
-        return new TaskPoolInitializer(agentProperties, taskPool);
-    }
+    public TaskPoolInitializer taskPoolInitializer() {
+        return new TaskPoolInitializer();
+    }*/
 }

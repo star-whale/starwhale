@@ -10,11 +10,8 @@ package ai.starwhale.mlops.agent.configuration;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.DeviceDetect;
 import ai.starwhale.mlops.agent.node.gpu.NvidiaDetect;
-import java.util.Map;
-
 import ai.starwhale.mlops.agent.node.initializer.SourcePoolInitializer;
-import ai.starwhale.mlops.agent.taskexecutor.TaskSource;
-import ai.starwhale.mlops.agent.taskexecutor.initializer.TaskPoolInitializer;
+import java.util.Map;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

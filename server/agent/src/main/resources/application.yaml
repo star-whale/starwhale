@@ -4,4 +4,5 @@ sw:
   agent:
     task:
       infoPath: ${SW_TASK_INFO_PATH:/opt/starwhale/tasks/}
+      archivedInfoPath: ${SW_TASK_INFO_PATH:/opt/starwhale/archived-tasks/}
       resultPath: ${SW_TASK_RESULT_PATH:/opt/starwhale/taskResults/}

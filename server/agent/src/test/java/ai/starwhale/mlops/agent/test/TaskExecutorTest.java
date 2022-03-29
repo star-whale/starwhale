@@ -20,13 +20,16 @@ import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
 import ai.starwhale.mlops.agent.node.gpu.NvidiaDetect;
 import ai.starwhale.mlops.agent.report.ReportHttpClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.taskexecutor.TaskExecutor;
-import ai.starwhale.mlops.agent.taskexecutor.TaskSource;
-import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction;
-import ai.starwhale.mlops.agent.taskexecutor.TaskSource.TaskAction.Context;
+import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.TaskPool;
+import ai.starwhale.mlops.agent.task.action.Context;
+import ai.starwhale.mlops.agent.task.action.DoTransition;
+import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
+import ai.starwhale.mlops.domain.task.Task;
+import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import com.google.common.jimfs.Jimfs;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
@@ -40,7 +43,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
@@ -48,7 +50,6 @@ import org.springframework.util.ResourceUtils;
 
 @SpringBootTest(
         classes = StarWhaleAgentTestApplication.class)
-@ImportAutoConfiguration({DockerConfiguration.class, TaskConfiguration.class, NodeConfiguration.class})
 @TestPropertySource(
         properties = {"sw.task.rebuild.enabled=false", "sw.task.scheduler.enabled=false", "sw.node.sourcePool.init.enabled=false"},
         locations = "classpath:application-integrationtest.yaml")
@@ -62,42 +63,41 @@ public class TaskExecutorTest {
     @MockBean
     private ContainerClient containerClient;
 
+    // todo Have some problem:mock not effect
     @MockBean
     private NvidiaDetect nvidiaDetect;
+
+    @MockBean
+    private TaskPersistence taskPersistence;
 
     @Autowired
     private TaskExecutor taskExecutor;
 
     @Autowired
-    private TaskSource.TaskPool taskPool;
+    DoTransition<String, List<EvaluationTask>> rebuildTasksAction;
+
+    @Autowired
+    private TaskPool taskPool;
 
     @Autowired
     private SourcePool sourcePool;
 
-    @Test
-    @DisplayName("Should create a file on a file system")
-    void givenUnixSystem_whenCreatingFile_thenCreatedInPath() throws IOException {
-        FileSystem fileSystem = Jimfs.newFileSystem();
-        String fileName = "newFile.txt";
-        // important!
-        // Path pathToStore = fileSystem.getPath(agentProperties.getTask().getInfoPath());
-        Path pathToStore = fileSystem.getPath("/opt/starwhale/tasks/");
-        Files.createDirectories(pathToStore);
-        Path filePath = pathToStore.resolve(fileName);
-
-        try {
-            Files.createFile(filePath);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-
-        assertTrue(Files.exists(pathToStore.resolve(fileName)));
-    }
-
-    void init() throws FileNotFoundException {
+    void mockConfig() throws IOException {
         Mockito.when(containerClient.startContainer(any(), any())).thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
+        Mockito.when(taskPersistence.getAll()).thenReturn(List.of(
+            EvaluationTask.builder()
+                .task(
+                    Task.builder().id(1234567890L).jobId(222222L).status(TaskStatus.PREPARING).build()
+                )
+                .build(),
+            EvaluationTask.builder()
+                .task(
+                    Task.builder().id(2234567890L).jobId(222222L).status(TaskStatus.PREPARING).build()
+                )
+                .build()
+        ));
         // todo how to deal with file write
-        //Mockito.when(Files.writeString(Path.of(anyString()), anyString())).then(Answers.valueOf("test"));
+        Mockito.when(taskPersistence.save(any())).thenReturn(true);
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(
                 List.of(
                         GPUInfo.builder()
@@ -116,18 +116,20 @@ public class TaskExecutorTest {
                                 .build()
                 )
         ));
-        URL taskPathUrl = ResourceUtils.getURL("classpath:tasks");
-        TaskAction.rebuildTasks.apply(taskPathUrl.getPath().substring(1), Context.builder().taskPool(taskPool).build());
-        sourcePool.refresh();
-        sourcePool.setToReady();
+
     }
 
     @Test
     public void toPreparingTest() throws IOException {
-        init();
+        mockConfig();
+
+        URL taskPathUrl = ResourceUtils.getURL("classpath:tasks");
+        rebuildTasksAction.apply(taskPathUrl.getPath().substring(1), Context.builder().build());
+        sourcePool.refresh();
+        sourcePool.setToReady();
 
         assertEquals(2, taskPool.preparingTasks.size());
-        // do preparing test
+        // do prepare test
         taskExecutor.dealPreparingTasks();
 
         assertEquals(1, taskPool.preparingTasks.size());

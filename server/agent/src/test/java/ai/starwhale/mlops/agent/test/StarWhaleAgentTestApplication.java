@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "ai.starwhale.mlops.agent.**")
 @EnableFeignClients
 @EnableConfigurationProperties(AgentProperties.class)
 public class StarWhaleAgentTestApplication {

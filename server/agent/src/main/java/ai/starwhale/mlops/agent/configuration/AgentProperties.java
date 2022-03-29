@@ -24,6 +24,12 @@ public class AgentProperties {
          * taskInfo file path
          */
         private String infoPath;
+
+        /**
+         * archived taskInfo file path
+         */
+        private String archivedInfoPath;
+
         /**
          * task result file path
          */
