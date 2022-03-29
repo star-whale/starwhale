@@ -1,4 +1,6 @@
+from collections import namedtuple
 from pathlib import Path
+import sys
 import yaml
 
 import click
@@ -14,11 +16,18 @@ from fs import open_fs
 
 from .dataset import ARCHIVE_SWDS_META
 from starwhale.base.store import LocalStorage
-from starwhale.consts import DEFAULT_DATASET_YAML_NAME, DEFAULT_MANIFEST_NAME
-from starwhale.utils import pretty_bytes
+from starwhale.consts import (
+    DEFAULT_DATASET_YAML_NAME, DEFAULT_MANIFEST_NAME, SW_API_VERSION
+)
+from starwhale.utils import fmt_http_server, pretty_bytes
 from starwhale.utils.error import NotFoundError
 
 #TODO: refactor Dataset and ModelPackage LocalStorage
+
+_UPLOAD_PHASE = namedtuple("_UPLOAD_PHASE", ["MANIFEST", "BLOB", "END", "CANCEL"])(
+    "manifest", "blob", "end", "cancel"
+)
+
 
 class DataSetLocalStore(LocalStorage):
 
@@ -59,7 +68,61 @@ class DataSetLocalStore(LocalStorage):
 
 
     def push(self, sw_name: str) -> None:
-        ...
+        server = fmt_http_server(self.sw_remote_addr)
+        url = f"{server}/{SW_API_VERSION}/dataset/push"
+
+        _name, _version = self._parse_swobj(sw_name)
+        _dir = self._guess(self.dataset_dir / _name, _version)
+        if not _dir.exists():
+            rprint(f"[red]failed to push {sw_name}[/], because of {_dir} not found")
+            sys.exit(1)
+
+        #TODO: refer to docker push
+        rprint("try to push swds...")
+        _manifest_path = _dir / DEFAULT_MANIFEST_NAME
+        _swds = f"{_name}:{_dir.name}"
+        _headers = {"Authorization": self._sw_token}
+
+        #TODO: use rich progress
+        r = requests.post(
+            url,
+            data={"swds": _swds, "phase": _UPLOAD_PHASE.MANIFEST},
+            files={"file": _manifest_path.open("rb")},
+            headers=_headers,
+        )
+        r.raise_for_status()
+        rprint(f" :climbing: {_UPLOAD_PHASE.MANIFEST}:{_manifest_path} uploaded")
+        upload_id = r.json().get("upload_id")
+        if not upload_id:
+            raise Exception("get invalid upload_id")
+        _headers["X-SW-UPLOAD-ID"] = upload_id
+
+        _manifest = yaml.safe_load(_manifest_path.open())
+
+        #TODO: add retry deco
+        def _upload_blob(_fp: Path):
+            if not _fp.exists():
+                raise NotFoundError(f"{_fp} not found")
+
+            r = requests.post(
+                url,
+                data={"swds": _swds, "phase": _UPLOAD_PHASE.BLOB},
+                files={"file": _fp.open("rb")},
+                headers=_headers
+            )
+            r.raise_for_status()
+            rprint(f" :clap: {_fp.name} uploaded")
+
+        #TODO: parallel upload
+        try:
+            for p in [_dir / "data" / n for n in _manifest["signature"]] + [_dir / ARCHIVE_SWDS_META]:
+                _upload_blob(p)
+        except Exception as e:
+            rprint(f"when upload blobs, we meet Exception{e}, will cancel upload")
+            requests.post(url, data={"swds": _swds, "phase": _UPLOAD_PHASE.CANCEL}, headers=_headers).raise_for_status()
+        else:
+            print(" :clap: :clap: all uploaded.")
+            requests.post(url, data={"swds": _swds, "phase": _UPLOAD_PHASE.END}, headers=_headers).raise_for_status()
 
     def pull(self, sw_name: str) -> None:
         ...
