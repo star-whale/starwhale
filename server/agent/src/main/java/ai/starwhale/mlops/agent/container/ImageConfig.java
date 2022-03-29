@@ -7,12 +7,16 @@
 
 package ai.starwhale.mlops.agent.container;
 
+import java.util.Map;
 import lombok.Builder;
+import lombok.Data;
 
+@Data
 @Builder
 public class ImageConfig {
     private String image;
     private String[] env;
+    private Map<String, String> labels;
     private Boolean autoRemove;
     /**
      * Set the Network mode for the container
