@@ -8,38 +8,26 @@
 package ai.starwhale.mlops.agent.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
-import ai.starwhale.mlops.agent.configuration.DockerConfiguration;
-import ai.starwhale.mlops.agent.configuration.NodeConfiguration;
-import ai.starwhale.mlops.agent.configuration.TaskConfiguration;
 import ai.starwhale.mlops.agent.container.ContainerClient;
+import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
 import ai.starwhale.mlops.agent.node.gpu.NvidiaDetect;
 import ai.starwhale.mlops.agent.report.ReportHttpClient;
-import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
-import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
 import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
 import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
-import com.google.common.jimfs.Jimfs;
-
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URL;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -7,22 +7,17 @@
 
 package ai.starwhale.mlops.agent.task.executor;
 
-import ai.starwhale.mlops.agent.configuration.AgentProperties;
-import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.action.SelectOneToExecute;
-import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
-import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.report.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.ReportResponse;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**

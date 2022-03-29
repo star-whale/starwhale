@@ -7,13 +7,6 @@
 
 package ai.starwhale.mlops.agent.configuration;
 
-import ai.starwhale.mlops.agent.task.Scheduler;
-import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
-import ai.starwhale.mlops.agent.task.initializer.TaskPoolInitializer;
-import ai.starwhale.mlops.agent.task.persistence.FileSystemTaskPersistence;
-import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
