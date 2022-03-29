@@ -40,7 +40,7 @@ D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024            # 4k for page cache
 D_USER_BATCH_SIZE = 1
 
-_ARCHIVE_SWDS_META = "archive.swds_meta"
+ARCHIVE_SWDS_META = "archive.swds_meta"
 
 #TODO: use attr to tune code
 class DataSetAttr(object):
@@ -141,6 +141,7 @@ class DataSet(object):
     @logger.catch
     def _do_build(self):
         #TODO: design dataset layer mechanism
+        #TODO: design append some new data into existed dataset
         #TODO: design uniq build steps for model build, swmp build
         #TODO: tune output log
         self._gen_version()
@@ -170,7 +171,7 @@ class DataSet(object):
 
     def _make_swds_meta_tar(self) -> None:
         _w = self._snapshot_workdir
-        out = _w / _ARCHIVE_SWDS_META
+        out = _w / ARCHIVE_SWDS_META
         logger.info(f"[step:tar]try to tar for swmp meta(NOT INCLUDE DATASET){out}")
         with tarfile.open(out, "w:") as tar:
             tar.add(str(self._src_dir), arcname="src")
@@ -183,17 +184,20 @@ class DataSet(object):
     def _calculate_signature(self) -> None:
         _algo = BLAKE2B_SIGNATURE_ALGO
         _sign = dict()
+        total_size = 0
 
         logger.info(f"[step:signature]try to calculate signature with {_algo} @ {self._data_dir}")
 
-        def _cal(f: Path):
-            if f.is_file():
-                _sign[f.name] = f"{_algo}:{blake2b_file(f)}"
-
-        #TODO: _cal(self._snapshot_workdir / _ARCHIVE_SWDS_META) # add meta sign into _manifest.yaml
+        #TODO: _cal(self._snapshot_workdir / ARCHIVE_SWDS_META) # add meta sign into _manifest.yaml
         for f in self._data_dir.iterdir():
-            _cal(f)
+            if not f.is_file():
+                continue
 
+            _size = f.stat().st_size
+            total_size += _size
+            _sign[f.name] = f"{_size}:{_algo}:{blake2b_file(f)}"
+
+        self._manifest["dataset_byte_size"] = total_size
         self._manifest["signature"] = _sign
         logger.info(f"[step:signature]finish calculate signature with {_algo} for {len(_sign)} files")
 
@@ -262,6 +266,10 @@ class DataSet(object):
         logger.info(f"[step:swds]finish gen swds @ {self._data_dir}")
 
     def _render_manifest(self) -> None:
+        self._manifest["extra"] = dict(
+            desc=self._swds_config.desc,
+            tag=self._swds_config.tag or [self._version[:7]]
+        )
         self._manifest["build"] = dict(
             os=platform.system(),
             sw_version=__version__,
@@ -311,22 +319,10 @@ class DataSet(object):
 
     @classmethod
     def build(cls, workdir: str, ds_yaml_name: str, dry_run: bool=False) -> None:
+        #TODO: add
         ds = DataSet(workdir, ds_yaml_name, dry_run)
         ds._do_validate()
         ds._do_build()
-
-    @classmethod
-    def push(cls, swds: str):
-        pass
-
-    @classmethod
-    def info(cls, swds: str):
-        pass
-
-    @classmethod
-    def list(cls):
-        #TODO: add filter
-        pass
 
     def load_dataset_config(self, fpath: t.Union[str, Path]) -> DataSetConfig:
         fpath = Path(fpath)

@@ -3,6 +3,7 @@ from loguru import logger
 
 from starwhale.consts import DEFAULT_DATASET_YAML_NAME
 from starwhale.swds.dataset import DataSet
+from starwhale.swds.store import DataSetLocalStore
 
 
 @click.group("dataset", help="StarWhale DataSet(swds) build/push/convert...")
@@ -22,14 +23,22 @@ def _build(workdir, dataset_yaml):
 
 @dataset_cmd.command("list", help="List local dataset")
 def _list():
-    DataSet.list()
+    DataSetLocalStore().list()
+
 
 @dataset_cmd.command("push", help="Push swds into starwhale controller")
 @click.argument("swds")
 def _push(swds):
-    DataSet.push(swds)
+    DataSetLocalStore().push(swds)
+
 
 @dataset_cmd.command("info", help="Show dataset details")
 @click.argument("swds")
 def _info(swds):
-    DataSet.info(swds)
+    DataSetLocalStore().info(swds)
+
+
+@dataset_cmd.command("delete", help="Delete dataset in local environment")
+@click.argument("swds")
+def _delete(swds):
+    DataSetLocalStore().delete(swds)
