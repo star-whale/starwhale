@@ -7,13 +7,12 @@
 
 package ai.starwhale.mlops.agent.task.action.normal;
 
-import ai.starwhale.mlops.agent.container.ContainerClient.ContainerStatus;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
-import java.io.IOException;
-import java.util.Optional;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 public class MonitorRunningTaskAction extends AbsBaseTaskTransition {

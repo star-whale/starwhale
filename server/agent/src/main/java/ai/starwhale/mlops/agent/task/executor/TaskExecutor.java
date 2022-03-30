@@ -15,10 +15,13 @@ import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.action.SelectOneToExecute;
 import ai.starwhale.mlops.api.protocol.report.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.ReportResponse;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * created -> preparing -> running -> resulting -> finished -> archived
@@ -68,21 +71,22 @@ public class TaskExecutor {
     /**
      * multiple choices operator
      */
-    SelectOneToExecute<EvaluationTask, EvaluationTask> execute = new SelectOneToExecute<>() {};
+    SelectOneToExecute<EvaluationTask, EvaluationTask> execute = new SelectOneToExecute<>() {
+    };
 
     public TaskExecutor(
-        SourcePool sourcePool,
-        TaskPool taskPool,
-        DoTransition<String, List<EvaluationTask>> rebuildTasksAction,
-        DoTransition<EvaluationTask, EvaluationTask> init2PreparingAction,
-        DoTransition<EvaluationTask, EvaluationTask> preparing2RunningAction,
-        DoTransition<EvaluationTask, EvaluationTask> preparing2CanceledAction,
-        DoTransition<EvaluationTask, EvaluationTask> finishedOrCanceled2ArchivedAction,
-        DoTransition<EvaluationTask, EvaluationTask> monitorRunningTaskAction,
-        DoTransition<EvaluationTask, EvaluationTask> running2CanceledAction,
-        DoTransition<EvaluationTask, EvaluationTask> uploading2FinishedAction,
-        DoTransition<EvaluationTask, EvaluationTask> uploading2CanceledAction,
-        DoTransition<ReportRequest, ReportResponse> reportAction) {
+            SourcePool sourcePool,
+            TaskPool taskPool,
+            DoTransition<String, List<EvaluationTask>> rebuildTasksAction,
+            DoTransition<EvaluationTask, EvaluationTask> init2PreparingAction,
+            DoTransition<EvaluationTask, EvaluationTask> preparing2RunningAction,
+            DoTransition<EvaluationTask, EvaluationTask> preparing2CanceledAction,
+            DoTransition<EvaluationTask, EvaluationTask> finishedOrCanceled2ArchivedAction,
+            DoTransition<EvaluationTask, EvaluationTask> monitorRunningTaskAction,
+            DoTransition<EvaluationTask, EvaluationTask> running2CanceledAction,
+            DoTransition<EvaluationTask, EvaluationTask> uploading2FinishedAction,
+            DoTransition<EvaluationTask, EvaluationTask> uploading2CanceledAction,
+            DoTransition<ReportRequest, ReportResponse> reportAction) {
         this.rebuildTasksAction = rebuildTasksAction;
         this.sourcePool = sourcePool;
         this.taskPool = taskPool;
@@ -104,11 +108,11 @@ public class TaskExecutor {
         if (sourcePool.isReady() && taskPool.isReady() && !taskPool.preparingTasks.isEmpty()) {
             // deal with the preparing task with FIFO sort
             execute.apply(
-                taskPool.preparingTasks.peek(),
-                Context.instance(),
-                task -> !taskPool.needToCancel.contains(task.getTask().getId()),
-                preparing2RunningAction,
-                preparing2CanceledAction
+                    taskPool.preparingTasks.peek(),
+                    Context.instance(),
+                    task -> !taskPool.needToCancel.contains(task.getTask().getId()),
+                    preparing2RunningAction,
+                    preparing2CanceledAction
             );
         }
     }
@@ -118,29 +122,33 @@ public class TaskExecutor {
      */
     public void monitorRunningTasks() {
         if (taskPool.isReady() && !taskPool.runningTasks.isEmpty()) {
-            for (EvaluationTask runningTask : taskPool.runningTasks) {
+            for (EvaluationTask runningTask : new ArrayList<>(taskPool.runningTasks)) {
                 // could be async
                 execute.apply(
-                    runningTask,
-                    Context.instance(),
-                    task -> !taskPool.needToCancel.contains(task.getTask().getId()),
-                    monitorRunningTaskAction,
-                    running2CanceledAction
+                        runningTask,
+                        Context.instance(),
+                        task -> !taskPool.needToCancel.contains(task.getTask().getId()),
+                        monitorRunningTaskAction,
+                        running2CanceledAction
                 );
             }
-
         }
     }
 
     /**
      * do upload
      */
-    public void uploadResultingTasks() {
+    public void uploadTaskResults() {
         if (taskPool.isReady() && !taskPool.uploadingTasks.isEmpty()) {
-            execute.apply(taskPool.uploadingTasks.get(0),
-                Context.instance(),
-                task -> !taskPool.needToCancel.contains(task.getTask().getId()),
-                uploading2FinishedAction, uploading2CanceledAction);
+            for (EvaluationTask uploadingTask : new ArrayList<>(taskPool.uploadingTasks)) {
+                execute.apply(uploadingTask,
+                        Context.instance(),
+                        task -> !taskPool.needToCancel.contains(task.getTask().getId()),
+                        uploading2FinishedAction,
+                        uploading2CanceledAction);
+
+            }
+
         }
     }
 
@@ -161,7 +169,7 @@ public class TaskExecutor {
                 Context context = Context.instance();
                 // report it to controller
                 reportAction.apply(request, context);
-            } catch (Exception e){
+            } catch (Exception e) {
                 log.error("report error:{}", e.getMessage());
             } finally {
                 // release sync lock

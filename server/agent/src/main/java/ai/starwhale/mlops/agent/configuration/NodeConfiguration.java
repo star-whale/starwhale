@@ -11,12 +11,12 @@ import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.DeviceDetect;
 import ai.starwhale.mlops.agent.node.gpu.NvidiaDetect;
 import ai.starwhale.mlops.agent.node.initializer.SourcePoolInitializer;
-import java.util.Map;
-
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 @Configuration
 public class NodeConfiguration {

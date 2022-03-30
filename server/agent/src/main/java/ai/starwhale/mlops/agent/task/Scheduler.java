@@ -51,7 +51,7 @@ public class Scheduler {
      */
     @Scheduled(fixedDelay = 10000)
     public void uploadResultingTasks() {
-        this.executor.uploadResultingTasks();
+        this.executor.uploadTaskResults();
     }
 
     @Scheduled(fixedDelay = 10000)

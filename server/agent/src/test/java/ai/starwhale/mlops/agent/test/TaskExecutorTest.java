@@ -22,12 +22,20 @@ import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
+import ai.starwhale.mlops.api.ReportApi;
+import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.report.ReportResponse;
+import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
+
+import ai.starwhale.mlops.domain.task.TaskTrigger;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +54,7 @@ public class TaskExecutorTest {
     private AgentProperties agentProperties;
 
     @MockBean
-    private ReportHttpClient reportHttpClient;
+    private ReportApi reportApi;
 
     @MockBean
     private ContainerClient containerClient;
@@ -73,16 +81,16 @@ public class TaskExecutorTest {
     void mockConfig() throws IOException {
         Mockito.when(containerClient.startContainer(any(), any())).thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(taskPersistence.getAll()).thenReturn(List.of(
-            EvaluationTask.builder()
-                .task(
-                    Task.builder().id(1234567890L).jobId(222222L).status(TaskStatus.PREPARING).build()
-                )
-                .build(),
-            EvaluationTask.builder()
-                .task(
-                    Task.builder().id(2234567890L).jobId(222222L).status(TaskStatus.PREPARING).build()
-                )
-                .build()
+                EvaluationTask.builder()
+                        .task(
+                                Task.builder().id(1234567890L).jobId(222222L).status(TaskStatus.PREPARING).build()
+                        )
+                        .build(),
+                EvaluationTask.builder()
+                        .task(
+                                Task.builder().id(2234567890L).jobId(222222L).status(TaskStatus.PREPARING).build()
+                        )
+                        .build()
         ));
         Mockito.when(taskPersistence.save(any())).thenReturn(true);
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(
@@ -118,15 +126,61 @@ public class TaskExecutorTest {
         assertEquals(2, taskPool.preparingTasks.size());
         // do prepare test
         taskExecutor.dealPreparingTasks();
-        // check execute result
+        // check execute result todo swmp downloaded and uncompress it to the dir
         assertEquals(1, taskPool.preparingTasks.size());
         assertEquals(1, taskPool.runningTasks.size());
 
 
         // mockConfig
-        Mockito.when(taskPersistence.getTaskById(any())).thenReturn();
+        EvaluationTask runningTask = taskPool.runningTasks.get(0);
+        Long id = runningTask.getTask().getId();
+        // mock taskContainer already change status to uploading todo:or other status
+        runningTask.getTask().setStatus(TaskStatus.UPLOADING);
+        Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);
+        // do monitor test
         taskExecutor.monitorRunningTasks();
 
+        // check execute result
+        assertEquals(0, taskPool.runningTasks.size());
+        assertEquals(1, taskPool.uploadingTasks.size());
+        int idleNum = 0;
+        for (Device device : sourcePool.getDevices()) {
+            if (device.getClazz() == Device.Clazz.GPU && device.getStatus() == Device.Status.idle) {
+                idleNum++;
+            }
+        }
+        assertEquals(1, idleNum);
+
+        // mockConfig
+        // todo upload mock
+
+        taskExecutor.uploadTaskResults();
+        // check execute result
+        assertEquals(0, taskPool.uploadingTasks.size());
+        assertEquals(1, taskPool.finishedTasks.size());
+
+        // mockConfig
+        Mockito.when(reportApi.report(any()))
+                .thenReturn(
+                        ResponseMessage.<ReportResponse>builder()
+                                .code("success")
+                                .data(ReportResponse.builder().tasksToRun(List.of(
+                                        TaskTrigger.builder()
+                                                .imageId("test-image")
+                                                .swdsBlocks(List.of())
+                                                .swModelPackage(SWModelPackage.builder().build())
+                                                .task(Task.builder().id(666666L).status(TaskStatus.ASSIGNING).build())
+                                                .build()
+                                )).build())
+                                .build()
+                );
+
+        // do report test
+        taskExecutor.reportTasks();
+        // check execute result
+        assertEquals(0, taskPool.finishedTasks.size());
+        assertEquals(1, taskPool.archivedTasks.size());
+        assertEquals(2, taskPool.preparingTasks.size());
 
     }
 }

@@ -17,9 +17,10 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import org.springframework.stereotype.Service;
+
 import java.util.Optional;
 import java.util.Set;
-import org.springframework.stereotype.Service;
 
 @Service
 public class Preparing2RunningAction extends AbsBaseTaskTransition {
