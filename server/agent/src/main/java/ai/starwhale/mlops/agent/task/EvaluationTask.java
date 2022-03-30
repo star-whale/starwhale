@@ -39,6 +39,11 @@ public class EvaluationTask {
     Set<Device> devices;
 
     /**
+     * the proper image to get swmp run
+     */
+    private String imageId;
+
+    /**
      * swmp meta info
      */
     SWModelPackage swModelPackage;

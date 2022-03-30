@@ -84,7 +84,6 @@ public class TaskExecutorTest {
                 )
                 .build()
         ));
-        // todo how to deal with file write
         Mockito.when(taskPersistence.save(any())).thenReturn(true);
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(
                 List.of(
@@ -108,22 +107,26 @@ public class TaskExecutorTest {
     }
 
     @Test
-    public void toPreparingTest() throws IOException {
+    public void rebuild_preparing2RunningTest() throws IOException {
         mockConfig();
 
         URL taskPathUrl = ResourceUtils.getURL("classpath:tasks");
         rebuildTasksAction.apply(taskPathUrl.getPath().substring(1), Context.builder().build());
         sourcePool.refresh();
         sourcePool.setToReady();
-
+        // check rebuild state
         assertEquals(2, taskPool.preparingTasks.size());
         // do prepare test
         taskExecutor.dealPreparingTasks();
-
+        // check execute result
         assertEquals(1, taskPool.preparingTasks.size());
         assertEquals(1, taskPool.runningTasks.size());
 
-        // taskExecutor.monitorRunningTasks();
+
+        // mockConfig
+        Mockito.when(taskPersistence.getTaskById(any())).thenReturn();
+        taskExecutor.monitorRunningTasks();
+
 
     }
 }

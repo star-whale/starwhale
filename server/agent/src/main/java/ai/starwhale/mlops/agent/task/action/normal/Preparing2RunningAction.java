@@ -37,6 +37,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
 
     @Override
     public EvaluationTask processing(EvaluationTask oldTask, Context context) {
+        //
         // allocate device(GPU or todo CPU) for task
         Set<Device> allocated = sourcePool.allocate(
             AllocateRequest.builder().gpuNum(1).build());

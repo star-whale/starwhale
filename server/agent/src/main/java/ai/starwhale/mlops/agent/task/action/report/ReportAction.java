@@ -115,6 +115,7 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
                 for (TaskTrigger newTask : response.getTasksToRun()) {
                     init2PreparingAction.apply(EvaluationTask.builder()
                         .task(newTask.getTask())
+                        .imageId(newTask.getImageId())
                         .swdsBlocks(newTask.getSwdsBlocks())
                         .swModelPackage(newTask.getSwModelPackage())
                         .build(), context);
