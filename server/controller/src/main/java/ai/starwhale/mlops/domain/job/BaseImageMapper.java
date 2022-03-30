@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.enviroment;
+package ai.starwhale.mlops.domain.job;
 
 import java.util.List;
 
