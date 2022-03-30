@@ -4,8 +4,8 @@ import yaml
 import sys
 import typing as t
 
+import click
 import requests
-from loguru import logger
 from rich.table import Table
 from rich.console import Console
 from rich import box
@@ -15,55 +15,26 @@ from rich import print as rprint
 from fs import open_fs
 from fs.tarfs import TarFS
 
-from starwhale.utils import fmt_http_server
-from starwhale.utils.config import load_swcli_config
+from starwhale.utils import fmt_http_server, pretty_bytes
 from starwhale.consts import (
     DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME, SW_API_VERSION
 )
+from starwhale.base.store import LocalStorage
+from starwhale.utils.error import NotFoundError
 
-SwmpMeta = namedtuple("SwmpMeta", ["model", "version", "tag", "environment", "created"])
-
-
-LATEST_TAG = "latest"
 TMP_FILE_BUFSIZE = 8192
 
 
-class ModelPackageLocalStore(object):
+class ModelPackageLocalStore(LocalStorage):
 
-    def __init__(self, swcli_config=None) -> None:
-        self._swcli_config = swcli_config or load_swcli_config()
+    def list(self, filter: str = "") -> None:
+        super().list(
+            filter=filter,
+            title="List swmp in local storage",
+            caption=f"@{self.pkgdir}"
+        )
 
-    @property
-    def rootdir(self) -> Path:
-        return Path(self._swcli_config["storage"]["root"])
-
-    @property
-    def workdir(self) -> Path:
-        return self.rootdir / "workdir"
-
-    @property
-    def pkgdir(self) -> Path:
-        return self.rootdir / "pkg"
-
-    def list(self, filter=None) -> None:
-        #TODO: add filter for list
-        #TODO: add expand option for list
-        #TODO: workdir list
-
-        table = Table(title="List swmp in local storage", caption=f"@{self.pkgdir}",
-                      box=box.SIMPLE)
-        table.add_column("Model", justify="right", style="cyan" ,no_wrap=False)
-        table.add_column("Version", style="magenta")
-        table.add_column("Tag", style="magenta")
-        table.add_column("Environment", style="magenta")
-        table.add_column("Created", justify="right",)
-
-        for s in self._iter_local_swmp():
-            table.add_row(s.model, s.version, s.tag, s.environment, s.created)
-
-        Console().print(table)
-
-    def _iter_local_swmp(self) -> SwmpMeta:  # type: ignore
+    def iter_local_swobj(self) -> LocalStorage.SWobjMeta:  # type: ignore
         pkg_fs = open_fs(str(self.pkgdir.resolve()))
 
         for mdir in pkg_fs.scandir("."):
@@ -71,15 +42,19 @@ class ModelPackageLocalStore(object):
                 continue
 
             for _fname in pkg_fs.opendir(mdir.name).listdir("."):
-                if _fname != LATEST_TAG and not _fname.endswith(".swmp"):
+                if _fname != self.LATEST_TAG and not _fname.endswith(".swmp"):
                     continue
 
                 _path = self.pkgdir / mdir.name / _fname
                 _manifest = self._load_swmp_manifest(str(_path.resolve()))
-                _tag = _fname if _fname == LATEST_TAG else ""
+                _tag = _fname if _fname == self.LATEST_TAG else ""
 
-                yield SwmpMeta(model=mdir.name, version=_manifest["version"], tag=_tag,
-                               environment=_manifest["dep"]["env"], created=_manifest["created_at"])
+                yield LocalStorage.SWobjMeta(
+                    name=mdir.name, version=_manifest["version"], tag=_tag,
+                    environment=_manifest["dep"]["env"],
+                    size=pretty_bytes(_path.stat().st_size),
+                    created=_manifest["created_at"]
+                )
 
     def _load_swmp_manifest(self, fpath) -> dict:
         with TarFS(fpath) as tar:
@@ -126,58 +101,45 @@ class ModelPackageLocalStore(object):
                     f.write(chunk)
         rprint(f" :clap: pull completed")
 
-    def _parse_swmp(self, swmp: str) -> t.Tuple[str, str]:
-        if ":" not in swmp:
-            _name, _version = swmp, LATEST_TAG
-        else:
-            if swmp.count(":") > 1:
-                raise Exception(f"{swmp} format wrong, use [model]:[version]")
-
-            _name, _version = swmp.split(":")
-        return _name, _version
-
     def swmp_path(self, swmp: str) -> Path:
-        _model, _version = self._parse_swmp(swmp)
+        _model, _version = self._parse_swobj(swmp)
         return (self.pkgdir / _model / f"{_version}.swmp")
 
-    @property
-    def sw_remote_addr(self) -> str:
-        return self._swcli_config.get("controller", {}).get("remote_addr", "")
-
-    @property
-    def _sw_token(self) -> str:
-        return self._swcli_config.get("controller", {}).get("token", "")
-
     def info(self, swmp: str) -> None:
-        _manifest = self.get_swmp_info(*self._parse_swmp(swmp))
+        _manifest = self.get_swmp_info(*self._parse_swobj(swmp))
         _config_panel = Panel(Pretty(_manifest, expand_all=True), title="inspect _manifest.yaml / model.yaml info")
         Console().print(_config_panel)
         #TODO: add workdir tree
 
     def get_swmp_info(self, _name: str, _version: str) -> dict:
-        _workdir = self.workdir / _name / _version
-        _swmp_path = self.pkgdir / _name / (_version if _version == LATEST_TAG else f"{_version}.swmp")
+        _workdir = self._guess(self.workdir / _name, _version)
+        _swmp_path = self._guess(self.pkgdir / _name, _version if _version == self.LATEST_TAG else f"{_version}.swmp")
+
         if _workdir.exists():
             _manifest = yaml.safe_load((_workdir / DEFAULT_MANIFEST_NAME).open())
             _model = yaml.safe_load((_workdir / DEFAULT_MODEL_YAML_NAME).open())
-        else:
+        elif _swmp_path.exists():
             with TarFS(str(_swmp_path.resolve())) as tar:
                 _manifest = yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
                 _model = yaml.safe_load(tar.open(DEFAULT_MODEL_YAML_NAME))
+        else:
+            raise NotFoundError(f"{_workdir} and {_swmp_path} are both not existed.")
+
         _manifest.update(_model)
         _manifest["workdir"] = str(_workdir.resolve())
         _manifest["pkg"] = str(_swmp_path.resolve())
         return _manifest
 
-    def gc(self, dry_run=False) -> None:
-        pass
+    def gc(self, dry_run: bool=False) -> None:
+        ...
 
     def delete(self, swmp) -> None:
-        _model, _version = self._parse_swmp(swmp)
+        _model, _version = self._parse_swobj(swmp)
 
-        pkg_fpath = self.pkgdir / _model / _version
+        pkg_fpath = self._guess(self.pkgdir / _model, _version)
         if pkg_fpath.exists():
-            if _version == LATEST_TAG:
+            click.confirm(f"continue to delete {pkg_fpath}?", abort=True)
+            if _version == self.LATEST_TAG:
                 try:
                     pkg_fpath.unlink()
                     pkg_fpath.resolve().unlink()
@@ -187,20 +149,22 @@ class ModelPackageLocalStore(object):
                     rprint(f" :collision: delete swmp {pkg_fpath}")
                     rprint(f" :bomb: delete swmp {pkg_fpath.resolve()}")
             else:
-                latest = self.pkgdir / _model / LATEST_TAG
+                latest = self.pkgdir / _model / self.LATEST_TAG
                 if latest.exists() and latest.resolve() == pkg_fpath.resolve():
                     rprint(f" :collision: delete swmp {latest}")
                 rprint(f" :bomb: delete swmp {pkg_fpath}")
 
-        workdir_fpath = self.workdir / _model / _version
+        workdir_fpath = self._guess(self.workdir / _model, _version)
         if workdir_fpath.exists() and workdir_fpath.is_dir():
+            click.confirm(f"continue to delete {workdir_fpath}?", abort=True)
+
             open_fs(str(workdir_fpath.resolve())).removetree("/")
             workdir_fpath.rmdir()
             rprint(f" :bomb: delete workdir {workdir_fpath}")
 
-
-        pkg_fpath = self.pkgdir / _model / (_version if _version == LATEST_TAG else f"{_version}.swmp")
+        pkg_fpath = self._guess(self.pkgdir / _model,
+                                _version if _version == self.LATEST_TAG else f"{_version}.swmp")
         if pkg_fpath.exists():
+            click.confirm(f"continue to delete {pkg_fpath}?", abort=True)
             latest = self.pkgdir / _model
-
             pkg_fpath.unlink()

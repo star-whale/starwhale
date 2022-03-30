@@ -17,3 +17,9 @@ class NoSupportError(Exception):
 
     def __str__(self) -> str:
         return "no support"
+
+
+class NotFoundError(Exception):
+
+    def __str__(self) -> str:
+        return "path no found"

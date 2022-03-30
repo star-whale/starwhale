@@ -116,3 +116,16 @@ def convert_to_bytes(s: t.Union[str, int]) -> int:
             return _bytes_map[f] * int(s.split(f)[0])
     else:
         return int(s)
+
+
+_bytes_progress = ("B", "KB", "MB", "GB", "TB", "PB")
+
+def pretty_bytes(b: t.Union[int, float]) -> str:
+
+    def _c(b: t.Union[int, float], idx:int) -> str:
+        if b < 1024 or (idx + 1 == len(_bytes_progress)):
+            return f"{b:.2f}{_bytes_progress[idx]}"
+        else:
+            return _c(b / 1024, idx+1)
+
+    return _c(b, 0)
