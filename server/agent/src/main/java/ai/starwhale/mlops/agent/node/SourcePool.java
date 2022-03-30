@@ -14,14 +14,17 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.node.Device.Status;
 import cn.hutool.core.collection.CollectionUtil;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.PostConstruct;
-import java.util.*;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class SourcePool {
@@ -58,7 +61,7 @@ public class SourcePool {
     }
 
 
-    public Set<Device> allocate(AllocateRequest request) {
+    public Set<Device> allocate(AllocateRequest request) throws AllocationException {
         synchronized (lock) {
             if (CollectionUtil.isNotEmpty(devices)) {
                 // determine whether the conditions are met
@@ -80,14 +83,24 @@ public class SourcePool {
                     return results;
                 }
             }
+            // no available device will throw Exception
             throw new AllocationException("allocate device error");
         }
 
     }
 
     // todo with function and middle state
-    public void release(Set<Device> devices) {
-        refresh();
+    public void release(Set<Device> releaseDevices) {
+        synchronized (lock) {
+            if (CollectionUtil.isNotEmpty(devices)) {
+                for (Device device : devices) {
+                    Optional<Device> find = releaseDevices.stream().filter(d-> d.getId().equals(device.getId())).findFirst();
+                    if (find.isPresent()) {
+                        device.setStatus(Status.idle);
+                    }
+                }
+            }
+        }
     }
 
     @Builder

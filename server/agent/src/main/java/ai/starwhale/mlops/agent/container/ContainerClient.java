@@ -9,28 +9,25 @@ public interface ContainerClient {
     /**
      *
      * @param imageId
-     * @param args
+     * @param config
      * @return container id
      */
     Optional<String> startContainer(String imageId, ImageConfig config);
     Optional<Boolean> stopContainer(String containerId);
     Optional<ContainerStatus> status(String containerId);
 
+    /**
+     * "created""running""paused""restarting""removing""exited""dead"
+     */
     enum ContainerStatus {
-
         /**
-         * running
+         * normal life cycle
          */
-        RUNNING,
+        CREATED, RUNNING, PAUSED, RESTARTING, REMOVING, EXITED, DEAD,
 
         /**
          * 404 no such container
          */
-        NO_SUCH_CONTAINER,
-
-        /**
-         * server error
-         */
-        SERVER_ERROR
+        NO_SUCH_CONTAINER
     }
 }
