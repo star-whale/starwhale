@@ -8,8 +8,8 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.agent.DeviceVO;
-import ai.starwhale.mlops.api.protocol.job.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -25,7 +25,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@Tag(name = "Env")
+@Tag(name = "Runtime")
 @Validated
 public interface EnvApi {
 
@@ -40,7 +40,7 @@ public interface EnvApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = List.class)))
         })
-    @GetMapping(value = "/env/baseImage")
+    @GetMapping(value = "/runtime/baseImage")
     ResponseEntity<ResponseMessage<List<BaseImageVO>>> listBaseImage(
         @Parameter(
             in = ParameterIn.QUERY,
@@ -61,6 +61,6 @@ public interface EnvApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = List.class)))
         })
-    @GetMapping(value = "/env/device")
+    @GetMapping(value = "/runtime/device")
     ResponseEntity<ResponseMessage<List<DeviceVO>>> listDevice();
 }

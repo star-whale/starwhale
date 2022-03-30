@@ -7,25 +7,23 @@
   -->
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.enviroment.BaseImageMapper">
+<mapper namespace="ai.starwhale.mlops.domain.job.BaseImageMapper">
     <select id="listBaseImages" resultMap="baseImageResultMap">
         select id as image_id,
                image_name,
-               image_path,
                created_time as image_created_time,
                modified_time as image_modified_time
         from base_image
         <if test="imageName != null and imageName != ''">
-            and image_name like concat(#{imageName}, '%')
+            where image_name like concat(#{imageName}, '%')
         </if>
     </select>
 
 
 
-    <resultMap id="baseImageResultMap" type="ai.starwhale.mlops.domain.enviroment.BaseImageEntity" >
+    <resultMap id="baseImageResultMap" type="ai.starwhale.mlops.domain.job.BaseImageEntity" >
         <id property="id" column="image_id" />
         <result property="imageName" column="image_name" />
-        <result property="imagePath" column="image_path" />
         <result property="createdTime" column="image_created_time" />
         <result property="modifiedTime" column="image_modified_time" />
     </resultMap>
