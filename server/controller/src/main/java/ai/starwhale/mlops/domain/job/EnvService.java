@@ -5,9 +5,12 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.enviroment;
+package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.api.protocol.job.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import ai.starwhale.mlops.domain.node.Device;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -29,5 +32,16 @@ public class EnvService {
         return baseImageEntities.stream()
             .map(baseImageConvertor::convert)
             .collect(Collectors.toList());
+    }
+
+    public List<DeviceVO> listDevices() {
+        List<DeviceVO> list = new ArrayList<>();
+        for(Device.Clazz cl : Device.Clazz.values()) {
+            list.add(DeviceVO.builder()
+                .id(String.valueOf(cl.ordinal() + 1))
+                .name(cl.name())
+                .build());
+        }
+        return list;
     }
 }
