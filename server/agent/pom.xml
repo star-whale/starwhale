@@ -71,9 +71,8 @@
         </dependency>
         <!---->
         <dependency>
-            <groupId>org.dom4j</groupId>
-            <artifactId>dom4j</artifactId>
-            <version>${dom-version}</version>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
         </dependency>
         <!-- unit test -->
         <dependency>

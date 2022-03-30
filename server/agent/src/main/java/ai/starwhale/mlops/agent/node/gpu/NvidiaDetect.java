@@ -13,12 +13,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
 import org.springframework.util.StringUtils;
 
 @Slf4j
@@ -26,7 +29,11 @@ public class NvidiaDetect implements DeviceDetect {
 
     private final static String detectCmd = "nvidia-smi -q -x";
 
-    private static final String REG = "<!DOCTYPE.*.dtd\">";
+    private final XmlMapper xmlMapper;
+
+    public NvidiaDetect(XmlMapper xmlMapper) {
+        this.xmlMapper = xmlMapper;
+    }
 
     @Override
     public Optional<List<GPUInfo>> detect() {
@@ -37,25 +44,24 @@ public class NvidiaDetect implements DeviceDetect {
                 return Optional.of(gpuInfos);
             }
         } catch (Exception e) {
-            log.error("detect gpu info occur error , message : {}", e.getMessage(), e);
+            log.error("detect gpu info occur error, message: {}", e.getMessage(), e);
         }
         return Optional.empty();
     }
 
     /**
      * get gpu info by cmd
-     *
      * @return xml text
      * @throws IOException IO error
      */
     public String getGpuXmlInfo() throws IOException {
-        Process process;
+        java.lang.Process process;
         String result = "";
         process = Runtime.getRuntime().exec(detectCmd);
         try (InputStream inputStream = process.getInputStream()) {
             result = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            log.error("exec cmd:{}  occur io error, message : {}", detectCmd, e.getMessage(), e);
+            log.error("exec cmd:{} occur io error, message: {}", detectCmd, e.getMessage(), e);
         } finally {
             if (process.isAlive()) {
                 process.destroy();
@@ -64,59 +70,103 @@ public class NvidiaDetect implements DeviceDetect {
         return result;
     }
 
-
     /**
      * Nvidia gpu info（by nvidia-smi）
-     *
      * @return gpu usage info
-     * @throws DocumentException xml parse error
+     * @throws JsonProcessingException xml parse error
      */
-    public List<GPUInfo> convertXml(String xmlText) throws DocumentException {
-        // ignore dtd
-        xmlText = xmlText.replaceAll(REG, "");
-        Document document = DocumentHelper.parseText(xmlText);
-        String driverVersion = document.getRootElement().element("driver_version").getText();
-        String cudaVersion = document.getRootElement().element("cuda_version").getText();
-        List<Element> gpu = document.getRootElement().elements("gpu");
+    public List<GPUInfo> convertXml(String xmlText) throws JsonProcessingException {
+        NvidiaSmiLog smiLog = xmlMapper.readValue(xmlText, NvidiaSmiLog.class);
+
+        String driverVersion = smiLog.getDriverVersion();
+        String cudaVersion = smiLog.getCudaVersion();
         List<GPUInfo> gpuInfoList = new ArrayList<>();
-        gpu.forEach(element -> {
+        smiLog.getGpu().forEach(gpu -> {
 
-            String uuid = element.element("uuid").getText();
-            String productName = element.element("product_name").getText();
-            String productBrand = element.element("product_brand").getText();
-            Element fbMemoryUsage = element.element("fb_memory_usage");
-            String total = fbMemoryUsage.element("total").getText();
-            String used = fbMemoryUsage.element("used").getText();
-            String free = fbMemoryUsage.element("free").getText();
+            String uuid = gpu.getUuid();
+            String productName = gpu.getProductName();
+            String productBrand = gpu.getProductBrand();
 
-            Element processes = element.element("processes");
-            List<Element> infos = processes.elements("process_info");
-            List<GPUInfo.ProcessInfo> processInfos = new ArrayList<>();
-            infos.forEach(info -> {
-                String pid = info.element("pid").getText();
-                String name = info.element("process_name").getText();
-                String usedMemory = info.element("used_memory").getText();
-                processInfos.add(
+            List<Process> processes = gpu.getProcesses();
+            List<GPUInfo.ProcessInfo> processInfo = new ArrayList<>();
+            processes.forEach(process -> {
+                String pid = process.getPid();
+                String name = process.getProcessName();
+                String usedMemory = process.getUsedMemory();
+                processInfo.add(
                         GPUInfo.ProcessInfo.builder().pid(pid).name(name).usedMemory(usedMemory).build()
                 );
             });
+
+            FbMemoryUsage fbMemoryUsage = gpu.getFbMemoryUsage();
+            String total = fbMemoryUsage.getTotal();
+            String used = fbMemoryUsage.getUsed();
+            String free = fbMemoryUsage.getFree();
             int intTotal = Integer.parseInt(total.split(" ")[0]);
             int intUsed = Integer.parseInt(used.split(" ")[0]);
 
             GPUInfo gpuInfo = GPUInfo.builder()
-                .id(uuid)
-                .name(productName)
-                .brand(productBrand)
-                .totalMemory(total)
-                .freeMemory(free)
-                .usedMemory(used)
-                .driverInfo(String.format("driver version:%s,cuda version:%s", driverVersion, cudaVersion))
-                .usageRate((int) ((float) intUsed / intTotal * 100))
-                .processInfos(processInfos)
-                .build();
+                    .id(uuid)
+                    .name(productName)
+                    .brand(productBrand)
+                    .totalMemory(total)
+                    .freeMemory(free)
+                    .usedMemory(used)
+                    .driverInfo(String.format("driver version:%s,cuda version:%s", driverVersion, cudaVersion))
+                    .usageRate((int) ((float) intUsed / intTotal * 100))
+                    .processInfos(processInfo)
+                    .build();
 
             gpuInfoList.add(gpuInfo);
         });
         return gpuInfoList;
     }
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Data
+class NvidiaSmiLog {
+    @JsonProperty("driver_version")
+    private String driverVersion;
+    @JsonProperty("cuda_version")
+    private String cudaVersion;
+    @JacksonXmlElementWrapper(useWrapping = false)
+    private List<GPU> gpu;
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Data
+class GPU {
+    private String id;
+    //名称
+    @JsonProperty("product_name")
+    private String productName;
+    @JsonProperty("product_brand")
+    private String productBrand;
+    @JsonProperty("uuid")
+    private String uuid;
+    @JsonProperty("fb_memory_usage")
+    private FbMemoryUsage fbMemoryUsage;
+    private List<Process> processes;
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Data
+class FbMemoryUsage {
+    private String total;
+    private String used;
+    private String free;
+
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Data
+class Process {
+
+    private String pid;
+    @JsonProperty("process_name")
+    private String processName;
+    @JsonProperty("used_memory")
+    private String usedMemory;
+
 }
