@@ -8,7 +8,6 @@
 package ai.starwhale.mlops.agent.node.gpu;
 
 import java.util.List;
-import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
 
@@ -16,18 +15,39 @@ import lombok.Data;
 @Data
 public class GPUInfo {
 
+    /**
+     * uuid, Eg: GPU-2edf82f7-d4ce-60ef-e81c-850f5fc277a0
+     */
     private String id;
 
+    /**
+     * Eg: GeForce MX330, GeForce RTX 2070, Tesla T4 etc.
+     */
     private String name;
 
+    /**
+     * Eg: "driver version: 451.80,cuda version: 11.0"
+     */
     private String driverInfo;
 
+    /**
+     * Eg: GeForce
+     */
     private String brand;
 
+    /**
+     * Eg: 2048 MiB
+     */
     private String totalMemory;
 
+    /**
+     * Eg: 64MiB
+     */
     private String usedMemory;
 
+    /**
+     * Eg: 1984MiB
+     */
     private String freeMemory;
 
     /**

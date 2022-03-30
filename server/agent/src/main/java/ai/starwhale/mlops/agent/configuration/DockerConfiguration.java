@@ -9,8 +9,10 @@ package ai.starwhale.mlops.agent.configuration;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.container.impl.DockerContainerClient;
+import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
 import java.net.URI;
@@ -24,7 +26,7 @@ import org.springframework.util.StringUtils;
 public class DockerConfiguration {
 
     @Bean
-    public DockerHttpClient dockerClient(AgentProperties agentProperties)
+    public DockerClient dockerClient(AgentProperties agentProperties)
         throws URISyntaxException {
         DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
         URI dockerHost;
@@ -33,17 +35,18 @@ public class DockerConfiguration {
         } else {
             dockerHost = config.getDockerHost();
         }
-        return new ApacheDockerHttpClient.Builder()
+        DockerHttpClient httpClient =  new ApacheDockerHttpClient.Builder()
             .dockerHost(dockerHost)
             .sslConfig(config.getSSLConfig())
             .maxConnections(100)
             .connectionTimeout(Duration.ofSeconds(30))
             .responseTimeout(Duration.ofSeconds(45))
             .build();
+        return DockerClientImpl.getInstance(config, httpClient);
     }
 
     @Bean
-    public ContainerClient containerClient(DockerHttpClient dockerHttpClient) {
-        return new DockerContainerClient(dockerHttpClient);
+    public ContainerClient containerClient(DockerClient dockerClient) {
+        return new DockerContainerClient(dockerClient);
     }
 }

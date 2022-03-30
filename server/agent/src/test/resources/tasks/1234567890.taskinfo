@@ -6,12 +6,12 @@
     "resultPaths": []
   },
   "containerId": "",
-  "devices": {},
+  "devices": null,
   "swModelPackage": {
     "id": 666666666,
     "path": "test/661234567890"
   },
-  "swDataSetSlice": [
+  "swdsBlocks": [
     {
 
     }
