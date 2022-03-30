@@ -138,7 +138,6 @@ class NvidiaSmiLog {
 @Data
 class GPU {
     private String id;
-    //名称
     @JsonProperty("product_name")
     private String productName;
     @JsonProperty("product_brand")
