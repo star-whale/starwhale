@@ -6,7 +6,7 @@
 
     <groupId>ai.starwhale</groupId>
     <artifactId>server</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>${starwhale.version}</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -14,6 +14,7 @@
         <module>controller-sdk</module>
         <module>agent</module>
         <module>agent-sdk</module>
+        <module>storage-access-layer</module>
     </modules>
 
     <properties>
@@ -26,6 +27,7 @@
         <mybatis.starter.version>2.2.2</mybatis.starter.version>
         <pagehelper.starter.version>1.4.1</pagehelper.starter.version>
         <guava.version>31.1-jre</guava.version>
+        <starwhale.version>0.1.0-SNAPSHOT</starwhale.version>
     </properties>
 
     <dependencyManagement>
@@ -48,12 +50,17 @@
             <dependency>
                 <groupId>ai.starwhale</groupId>
                 <artifactId>starwhale-agent-sdk</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>${starwhale.version}</version>
             </dependency>
             <dependency>
                 <groupId>ai.starwhale</groupId>
                 <artifactId>starwhale-controller-sdk</artifactId>
-                <version>0.1.0-SNAPSHOT</version>
+                <version>${starwhale.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ai.starwhale</groupId>
+                <artifactId>storage-access-layer</artifactId>
+                <version>${starwhale.version}</version>
             </dependency>
 
             <!-- swagger-ui -->

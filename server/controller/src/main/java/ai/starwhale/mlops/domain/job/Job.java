@@ -69,6 +69,16 @@ public class Job {
         SCHEDULED,
 
         /**
+         * CANCEL triggered by user( at least one task is TO_CANCEL)
+         */
+        TO_CANCEL,
+
+        /**
+         * canceling is done
+         */
+        CANCELED,
+
+        /**
          * all the tasks are finished
          */
         FINISHED

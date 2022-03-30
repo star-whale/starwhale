@@ -11,12 +11,14 @@ import java.util.LinkedList;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * index to make the access to SWDS Slices faster
  */
 @Data
 @Builder
+@NoArgsConstructor
 public class SWDSIndex {
 
     /**

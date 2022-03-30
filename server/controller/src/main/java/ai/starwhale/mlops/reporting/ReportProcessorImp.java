@@ -9,13 +9,12 @@ package ai.starwhale.mlops.reporting;
 
 import ai.starwhale.mlops.api.protocol.report.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.ReportResponse;
-import ai.starwhale.mlops.domain.node.DeviceHolder;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import ai.starwhale.mlops.domain.task.TaskCommand;
 import ai.starwhale.mlops.domain.task.TaskCommand.CommandType;
-import ai.starwhale.mlops.domain.task.TaskStatusMachine;
+import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskTrigger;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.TaskScheduler;
@@ -35,7 +34,7 @@ public class ReportProcessorImp implements ReportProcessor{
 
     CommandingTasksChecker commandingTasksChecker;
 
-    TaskStatusMachine taskStatusMachine;
+    LivingTaskStatusMachine livingTaskStatusMachine;
 
     TaskScheduler taskScheduler;
 
@@ -49,7 +48,7 @@ public class ReportProcessorImp implements ReportProcessor{
          }
          taskStatusChange(report.getTasks());
          final List<TaskTrigger> toAssignTasks = taskScheduler.schedule(nodeInfo);
-         final Collection<Task> toCancelTasks = taskStatusMachine.ofStatus(TaskStatus.TO_CANCEL);
+         final Collection<Task> toCancelTasks = livingTaskStatusMachine.ofStatus(TaskStatus.TO_CANCEL);
          scheduledTaskStatusChange(toAssignTasks);
          canceledTaskStatusChange(toCancelTasks);
          commandingTasksChecker.onTaskCommanding(buildTaskCommands(toAssignTasks,toCancelTasks),nodeInfo);
@@ -66,11 +65,11 @@ public class ReportProcessorImp implements ReportProcessor{
     }
 
     private void canceledTaskStatusChange(Collection<Task> tasks) {
-        taskStatusMachine.statusChange(tasks,TaskStatus.CANCEL_COMMANDING);
+        livingTaskStatusMachine.adopt(tasks,TaskStatus.CANCEL_COMMANDING);
     }
 
     private void scheduledTaskStatusChange(List<TaskTrigger> toAssignTasks) {
-        taskStatusMachine.statusChange(toAssignTasks.stream().map(TaskTrigger::getTask).collect(
+        livingTaskStatusMachine.adopt(toAssignTasks.stream().map(TaskTrigger::getTask).collect(
             Collectors.toList()), TaskStatus.ASSIGNING);
 
     }
@@ -82,7 +81,8 @@ public class ReportProcessorImp implements ReportProcessor{
                 .computeIfAbsent(task.getStatus(), status -> new LinkedList<>());
             tasks.add(task);
         });
-        taskUpdateMap.forEach((targetStatus,tasks)-> taskStatusMachine.statusChange(tasks,targetStatus));
+        taskUpdateMap.forEach((targetStatus,tasks)-> livingTaskStatusMachine
+            .adopt(tasks,targetStatus));
 
     }
 
