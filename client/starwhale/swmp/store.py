@@ -74,7 +74,9 @@ class ModelPackageLocalStore(LocalStorage):
         #TODO: add more push log
         rprint("try to push swmp...")
         r = requests.post(url, data={"swmp": swmp},
-                          files={"file": _spath.open("rb")})
+                          files={"file": _spath.open("rb")},
+                          headers={"Authorization": self._sw_token}
+                          )
         r.raise_for_status()
         rprint(" :clap: push done.")
 
