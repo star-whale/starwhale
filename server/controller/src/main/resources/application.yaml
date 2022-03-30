@@ -35,3 +35,7 @@ server:
   port: 8082
   servlet:
     context-path: /api/v1
+
+logging:
+  level:
+    ai.starwhale.mlops.domain: debug

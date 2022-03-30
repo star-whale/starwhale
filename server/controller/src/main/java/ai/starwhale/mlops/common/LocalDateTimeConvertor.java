@@ -19,6 +19,9 @@ public class LocalDateTimeConvertor implements Convertor<LocalDateTime, Long>{
 
     @Override
     public Long convert(LocalDateTime localDateTime) throws ConvertException {
+        if(localDateTime == null) {
+            return -1L;
+        }
         return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
