@@ -29,6 +29,11 @@ public class Task {
     Long jobId;
 
     /**
+     * random uuid for the task
+     */
+    String uuid;
+
+    /**
      * status of the task
      */
     TaskStatus status;
@@ -141,6 +146,7 @@ public class Task {
 
     }
 
+    @Override
     public boolean equals(Object obj){
 
         if(!(obj instanceof Task)){

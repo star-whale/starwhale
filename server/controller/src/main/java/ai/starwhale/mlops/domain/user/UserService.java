@@ -47,14 +47,18 @@ public class UserService implements UserDetailsService {
 
 
     public UserVO currentUser() {
+        User user = currentUserDetail();
+        UserEntity userEntity = userMapper.findUserByName(user.getName());
+        return userConvertor.convert(userEntity);
+    }
+
+    public User currentUserDetail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null) {
             return null;
         }
 
-        User user = (User)authentication.getPrincipal();
-        UserEntity userEntity = userMapper.findUserByName(user.getName());
-        return userConvertor.convert(userEntity);
+        return (User)authentication.getPrincipal();
     }
 
     public UserVO findUserById(String id) {

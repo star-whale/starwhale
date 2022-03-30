@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022.1-2022
+  ~ StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="ai.starwhale.mlops.domain.task.TaskMapper">
+    <sql id="select_task">
+        select t.id as task_id,
+               t.task_uuid,
+               t.job_id,
+               t.agent_id,
+               t.task_status,
+               t.result_path as task_result_path,
+               t.swds_blocks as task_swds_blocks,
+               t.created_time as task_created_time,
+               t.modified_time as task_modified_time,
+               a.id as agent_id,
+               a.agent_ip,
+               a.agent_version,
+               a.connect_time,
+               a.created_time as agent_created_time,
+               a.modified_time as agent_modified_time
+        from task_info as t,
+             agent_info as a
+        where t.agent_id = a.id
+    </sql>
+    <select id="listTasks" resultMap="taskResultMap">
+        <include refid="select_task" />
+        and t.job_id = #{jobId}
+    </select>
+
+    <select id="findTaskById" resultMap="taskResultMap" >
+        <include refid="select_task"/>
+        and t.id = #{taskId}
+    </select>
+
+    <insert id="addTask" parameterType="ai.starwhale.mlops.domain.task.TaskEntity" useGeneratedKeys="true" keyProperty="id">
+        insert into task_info(task_uuid, job_id, agent_id, task_status, result_path, swds_blocks)
+        values(#{taskUuid}, #{jobId}, #{agentId}, #{taskStatus}, #{resultPath}, #{swdsBlocks})
+    </insert>
+
+    <resultMap id="taskResultMap" type="ai.starwhale.mlops.domain.task.TaskEntity" >
+        <id property="id" column="task_id" />
+        <result property="taskUuid" column="task_uuid" />
+        <result property="jobId" column="job_id" />
+        <result property="agentId" column="agent_id" />
+        <result property="taskStatus" column="task_status" />
+        <result property="resultPath" column="task_result_path" />
+        <result property="swdsBlocks" column="task_swds_blocks" />
+        <result property="createdTime" column="task_created_time" />
+        <result property="modifiedTime" column="task_modified_time" />
+        <association property="agent" resultMap="ai.starwhale.mlops.domain.system.AgentMapper.agentResultMap" />
+    </resultMap>
+</mapper>

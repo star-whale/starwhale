@@ -5,9 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.enviroment;
+package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.api.protocol.job.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.exception.ConvertException;

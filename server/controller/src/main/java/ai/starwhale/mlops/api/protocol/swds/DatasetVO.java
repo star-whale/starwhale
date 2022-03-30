@@ -29,9 +29,6 @@ public class DatasetVO implements Serializable {
     @JsonProperty("createTime")
     private Long createTime;
 
-    @JsonProperty("ownerName")
-    private String ownerName;
-
     @JsonProperty("owner")
     private UserVO owner;
 }
