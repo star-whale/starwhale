@@ -12,8 +12,9 @@ import ai.starwhale.mlops.api.protocol.report.ReportResponse;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
-import ai.starwhale.mlops.domain.task.TaskCommand;
-import ai.starwhale.mlops.domain.task.TaskCommand.CommandType;
+import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
+import ai.starwhale.mlops.domain.task.bo.TaskCommand;
+import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskTrigger;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
@@ -37,6 +38,8 @@ public class ReportProcessorImp implements ReportProcessor{
     LivingTaskStatusMachine livingTaskStatusMachine;
 
     TaskScheduler taskScheduler;
+
+    TaskBoConverter taskBoConverter;
 
     // 1. check commanding tasks; 2. change task status; 3. schedule task & cancel task;
      public ReportResponse receive(ReportRequest report){
@@ -112,7 +115,7 @@ public class ReportProcessorImp implements ReportProcessor{
     }
 
     TaskTrigger buildTaskTriggerFromTask(Task task){
-         //TODO find swmp & swds
+         //todo(renyanda) find swmp & swds
          return TaskTrigger.builder().task(task).build();
     }
 

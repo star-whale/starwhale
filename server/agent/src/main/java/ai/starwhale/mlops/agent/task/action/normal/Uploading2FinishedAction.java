@@ -21,7 +21,7 @@ public class Uploading2FinishedAction extends AbsBaseTaskTransition {
     public EvaluationTask processing(EvaluationTask oldTask, Context context) {
         EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
         // todo: upload result file to the storage
-        newTask.getTask().setResultPaths(List.of(""));
+        newTask.getTask().setResultPaths("");
         newTask.getTask().setStatus(TaskStatus.FINISHED);
         return newTask;
     }

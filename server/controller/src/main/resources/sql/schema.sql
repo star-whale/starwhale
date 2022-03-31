@@ -166,7 +166,7 @@ CREATE TABLE IF NOT EXISTS task_info
     id              bigint           NOT NULL AUTO_INCREMENT COMMENT 'PK',
     task_uuid       varchar(255)     NOT NULL,
     job_id          bigint           NOT NULL,
-    agent_id        bigint           NOT NULL,
+    agent_id        bigint           ,
     task_status     tinyint UNSIGNED NOT NULL,
     result_path     text             NOT NULL,
     swds_blocks     text,

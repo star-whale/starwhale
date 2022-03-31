@@ -67,6 +67,19 @@
         and j.id = #{jobId}
     </select>
 
+    <select id="findJobByStatus" resultMap="jobResultMap" >
+        <include refid="select_jobs"/>
+        and j.job_status = #{jobStatus}
+    </select>
+
+    <update id="updateJobStatus">
+        update job_info set job_status = #{jobStatus} WHERE id in
+        <foreach item="item" index="index" collection="jobIds"
+          open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
     <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.JobEntity" useGeneratedKeys="true" keyProperty="id">
         insert into job_info(job_uuid,
                              project_id,

@@ -10,4 +10,8 @@ public interface JobMapper {
     JobEntity findJobById(@Param("jobId") Long jobId);
 
     int addJob(JobEntity jobEntity);
+
+    List<JobEntity> findJobByStatus(@Param("jobStatus") Integer jobStatus);
+
+    void updateJobStatus(@Param("jobIds") List<Long> jobIds,@Param("jobStatus") Integer jobStatus);
 }

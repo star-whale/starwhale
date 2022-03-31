@@ -121,7 +121,7 @@ public class MCResultCollector implements ResultCollector {
 
     @Override
     public void feed(InputStream labelResult) {
-        //TODO
+        //todo(renyanda)
     }
 
     Queue<String> readLinesFromIS(InputStream is) throws IOException {

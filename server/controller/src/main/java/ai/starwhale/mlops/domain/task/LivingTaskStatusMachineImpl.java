@@ -7,6 +7,9 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.JobEntity;
+import ai.starwhale.mlops.domain.job.JobMapper;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import java.util.Collection;
@@ -14,6 +17,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -31,10 +35,18 @@ import org.springframework.transaction.interceptor.TransactionAspectSupport;
 public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     /**
+     * contains hot tasks
      * key: task.id
      * value: task.identity
      */
     ConcurrentHashMap<Long, Task> taskIdMap;
+
+    /**
+     * contains hot jobs
+     * key: task.id
+     * value: task.identity
+     */
+    ConcurrentHashMap<Long, Job> jobIdMap;
 
     /**
      * key: task.status
@@ -58,11 +70,13 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
      */
     ConcurrentLinkedQueue<Long> toBeCheckedJobs;
 
-    final int persistBatchSize;
+    TaskMapper taskMapper;
 
-    public LivingTaskStatusMachineImpl(int persistBatchSize) {
-        this.persistBatchSize = persistBatchSize;
+    JobMapper jobMapper;
+
+    public LivingTaskStatusMachineImpl() {
         taskIdMap = new ConcurrentHashMap<>();
+        jobIdMap = new ConcurrentHashMap<>();
         taskStatusMap = new ConcurrentHashMap<>();
         jobTaskMap = new ConcurrentHashMap<>();
         toBePersistentTasks = new ConcurrentLinkedQueue<>();
@@ -101,9 +115,11 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
                 task.setStatus(status);
                 taskStatusMap.computeIfAbsent(status,k-> Collections.synchronizedList(new LinkedList<>()))
                     .add(task.getId());
-                jobTaskMap.computeIfAbsent(task.getJobId(),k->Collections.synchronizedList(new LinkedList<>()))
+                final Long jobId = task.getJobId();
+                jobTaskMap.computeIfAbsent(jobId,k->Collections.synchronizedList(new LinkedList<>()))
                     .add(task.getId());
-                toBeCheckedJobs.offer(task.getJobId());
+                toBeCheckedJobs.offer(jobId);
+                jobIdMap.computeIfAbsent(jobId, this::jobById);
             })
             .collect(Collectors.toList());
 
@@ -126,38 +142,66 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     @Scheduled(fixedDelay = 1000)
     public void doPersist() {
-        if (toBePersistentTasks.size() > persistBatchSize) {
-            //if FINISHED OR ERROR is persist ,remove from taskIdMap
-        }
+        persistTaskStatus(drainToSet(toBePersistentTasks));
+        persistJobStatus(drainToSet(toBeCheckedJobs));
+    }
+
+    Set<Long> drainToSet(
+        ConcurrentLinkedQueue<Long> queue) {
         Set<Long> jobSet = new HashSet<>();
         Long poll;
         while (true){
-            poll = toBeCheckedJobs.poll();
+            poll = queue.poll();
             if(null == poll){
                 break;
             }
             jobSet.add(poll);
         }
+        return jobSet;
+    }
 
-        //update job status
+    void persistTaskStatus(Set<Long> taskIds){
+        persistTaskStatus(taskIds.parallelStream().map(id->taskIdMap.get(id)).collect(Collectors.toList()));
     }
 
     void persistTaskStatus(List<Task> tasks) {
-        //TODO
+        tasks.parallelStream().collect(Collectors.groupingBy(Task::getStatus))
+            .forEach((taskStatus, taskList) -> taskMapper
+                .updateTaskStatus(taskList.stream().map(Task::getId).collect(Collectors.toList()),
+                    taskStatus.getOrder()));
     }
 
     /**
      * change job status triggered by living task status change
-     * SPLIT        ->  SCHEDULED
-     * SCHEDULED    ->  FINISHED
-     * TO_CANCEL    ->  CANCELED
-     *
      */
-    void checkJob(Set<Long> toBeCheckedJobs){
-
+    void persistJobStatus(Set<Long> toBeCheckedJobs) {
+        final Map<JobStatus, List<Long>> jobDesiredStatusMap = toBeCheckedJobs.parallelStream()
+            .collect(Collectors.groupingBy((jobid -> {
+                final List<Long> taskIds = jobTaskMap.get(jobid);
+                final JobStatus desiredJobStatuses = taskIds.parallelStream()
+                    .map(taskId -> taskIdMap.get(taskId).getStatus())
+                    .reduce(JobStatus.FINISHED, (jobStatus, taskStatus) -> {
+                            if (taskStatus.getDesiredJobStatus().before(jobStatus)) {
+                                jobStatus = taskStatus.getDesiredJobStatus();
+                            }
+                            return jobStatus;
+                        }
+                        , (js1, js2) -> js1.before(js2) ? js1 : js2);
+                return desiredJobStatuses;
+            })));
+        jobDesiredStatusMap.forEach((desiredStatus, jobids) -> {
+            //filter these job who's current status is before desired status
+            final List<Long> toBeUpdated = jobids.parallelStream().filter(jid -> {
+                final Job job = jobIdMap.get(jid);
+                return null != job && job.getStatus().before(desiredStatus);
+            }).peek(jobId -> jobIdMap.get(jobId).setStatus(desiredStatus))
+                .collect(Collectors.toList());
+            jobMapper.updateJobStatus(toBeUpdated, desiredStatus.getValue());
+        });
     }
 
-    void persistJobStatus(List<Long> jobIds, JobStatus jobStatus){
-        //TODO
+    Job jobById(Long id){
+        final JobEntity jobEntity = jobMapper.findJobById(id);
+        return Job.builder().id(jobEntity.getId()).status(JobStatus.from(jobEntity.getJobStatus())).build();
     }
 }
