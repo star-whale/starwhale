@@ -11,6 +11,7 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.node.Device.Status;
 import ai.starwhale.mlops.domain.node.Node;
+import ai.starwhale.mlops.domain.task.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskTrigger;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -30,14 +31,11 @@ public class SimpleTaskScheduler implements TaskScheduler {
 
     final Map<Device.Clazz, ConcurrentLinkedQueue<TaskTrigger>> taskQueueTable;
 
+    TaskMapper taskMapper;
+
     public SimpleTaskScheduler() {
         this.taskQueueTable = Map.of(Clazz.CPU, new ConcurrentLinkedQueue<>(),
             Clazz.GPU, new ConcurrentLinkedQueue<>());
-        loadTasks();
-    }
-
-    //TODO load tasks that is new created
-    private void loadTasks() {
     }
 
     @Override
@@ -54,6 +52,8 @@ public class SimpleTaskScheduler implements TaskScheduler {
             .map(device -> taskQueueTable.get(device.getClazz()).poll())// pull task from the device corresponding queue
             .filter(Objects::nonNull)//remove null tasks got from empty queue
             .collect(Collectors.toList());
+
+        //todo(renyanda): save node info to task
     }
 
     private void validNode(Node node) {

@@ -9,31 +9,70 @@ package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
+import ai.starwhale.mlops.domain.job.JobMapper;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
+import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.domain.task.Task;
+import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.task.TaskEntity;
+import ai.starwhale.mlops.domain.task.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * split job by swds index
  */
+@Slf4j
 public class JobSpliteratorByIndex implements JobSpliterator {
 
-    SWDSIndexLoader swdsIndexLoader;
+    /**
+     * %s1 = prefix
+     * %s2 = jobUUID
+     * %s3 = taskUUID
+     */
+    static final String STORAGE_PATH_FORMATTER = "%s/result/task/%s/%s";
+    final String storagePrefix;
+
+    private final SWDSIndexLoader swdsIndexLoader;
+
+    private final SWDSBlockSerializer swdsBlockSerializer;
+
+    private final TaskMapper taskMapper;
+
+    private final JobMapper jobMapper;
+
+    TaskBoConverter taskBoConverter;
+
+
+    public JobSpliteratorByIndex(SWDSIndexLoader swdsIndexLoader,SWDSBlockSerializer swdsBlockSerializer,TaskMapper taskMapper,JobMapper jobMapper,String storagePrefix){
+        this.swdsBlockSerializer = swdsBlockSerializer;
+        this.swdsIndexLoader = swdsIndexLoader;
+        this.taskMapper = taskMapper;
+        this.jobMapper = jobMapper;
+        this.storagePrefix = storagePrefix;
+    }
 
     /**
      * get all data blocks and split them by a simple random number
      * transactional jobStatus->SPLIT taskStatus->NEW
      */
     @Override
+    @Transactional
     public List<TaskTrigger> split(Job job) {
         final List<SWDataSet> swDataSets = job.getSwDataSets();
         Integer deviceAmount = job.getJobRuntime().getDeviceAmount();
@@ -44,32 +83,35 @@ public class JobSpliteratorByIndex implements JobSpliterator {
             .flatMap(Collection::stream)
             .collect(Collectors.groupingBy(blk->r.nextInt(deviceAmount)))
             ;
-        final List<Task> tasks = allocateTasks(job, deviceAmount);
-        return squashTaskTriggers(job, tasks, swdsBlocks);
+        List<TaskEntity> taskList;
+        try {
+            taskList = buildTaskEntities(job, swdsBlocks);
+        } catch (JsonProcessingException e) {
+            log.error("error swds index ",e);
+            throw new SWValidationException(ValidSubject.SWDS);
+        }
+        taskMapper.addAll(taskList);
+        jobMapper.updateJobStatus(List.of(job.getId()),JobStatus.SPLIT.getValue());
+        return taskBoConverter.toTaskTrigger(taskList,job);
     }
 
-    private List<TaskTrigger> squashTaskTriggers(Job job, List<Task> tasks, Map<Integer, List<SWDSBlock>> swdsBlocks) {
-        List<TaskTrigger> taskTriggers = new LinkedList<>();
+    private List<TaskEntity> buildTaskEntities(Job job, Map<Integer, List<SWDSBlock>> swdsBlocks)
+        throws JsonProcessingException {
+        List<TaskEntity> taskEntities = new LinkedList<>();
         for(int i=0;i<job.getJobRuntime().getDeviceAmount();i++){
-            taskTriggers.add(TaskTrigger.builder()
-                .swModelPackage(job.getSwmp())
-                .imageId(job.getJobRuntime().getBaseImage())
-                .swdsBlocks(swdsBlocks.get(i))
-                .task(tasks.get(i))
+            final String taskUuid = UUID.randomUUID().toString();
+            taskEntities.add(TaskEntity.builder()
+                .jobId(job.getId())
+                .resultPath(storagePath(job.getUuid(),taskUuid))
+                .swdsBlocks(swdsBlockSerializer.toString(swdsBlocks.get(i)))
+                .taskStatus(TaskStatus.CREATED.getOrder())
+                .taskUuid(taskUuid)
                 .build());
         }
-        return taskTriggers;
+        return taskEntities;
     }
 
-    private List<Task> allocateTasks(Job job, Integer deviceAmount) {
-        //TODO tasks should be saved into DB in this step, here is a mock,if tasks already exist load them
-
-        List<Task> tasks = new LinkedList<>();
-        for (int i = 0; i < deviceAmount; i++) {
-            tasks.add(Task.builder().jobId(job.getId()).build());
-        }
-
-        job.setStatus(JobStatus.SPLIT);
-        return tasks;
+    private String storagePath(String jobId,String taskId) {
+        return String.format(STORAGE_PATH_FORMATTER, storagePrefix, jobId,taskId);
     }
 }

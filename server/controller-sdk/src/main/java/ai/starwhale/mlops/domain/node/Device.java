@@ -48,7 +48,23 @@ public class Device {
      * the device class CPU or GPU
      */
     public enum Clazz{
-        CPU,GPU
+        CPU(1),GPU(2),UNKNOWN(-999);
+        final int value;
+        Clazz(int v){
+            this.value = v;
+        }
+        public int getValue(){
+            return this.value;
+        }
+        public static Clazz from(int v){
+            for(Clazz deviceClass:Clazz.values()){
+                if(deviceClass.value == v){
+                    return deviceClass;
+                }
+            }
+            return UNKNOWN;
+        }
+
     }
 
     /**

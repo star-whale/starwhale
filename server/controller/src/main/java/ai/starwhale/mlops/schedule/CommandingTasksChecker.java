@@ -7,10 +7,9 @@
 
 package ai.starwhale.mlops.schedule;
 
-import ai.starwhale.mlops.domain.node.DeviceHolder;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.task.Task;
-import ai.starwhale.mlops.domain.task.TaskCommand;
+import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -36,15 +35,7 @@ public class CommandingTasksChecker {
     final Map<Node, Set<TaskCommand>> commandingTasks ;
 
     public CommandingTasksChecker(){
-        commandingTasks = loadFromDB();
-    }
-
-
-    private ConcurrentHashMap<Node, Set<TaskCommand>> loadFromDB() {
-        log.info("CommandingTasksChecker Loading ...");
-
-        //TODO ASSIGNING & CANCEL_COMMANDING load from DB
-        return new ConcurrentHashMap<>();
+        commandingTasks = new ConcurrentHashMap<>();
     }
 
     /**

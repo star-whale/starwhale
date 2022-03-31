@@ -8,13 +8,14 @@ package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
-import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.RandomUtil;
-import ai.starwhale.mlops.domain.task.TaskConvertor;
+import ai.starwhale.mlops.domain.job.Job.JobStatus;
+import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskMapper;
+import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageHelper;
@@ -30,6 +31,7 @@ import ai.starwhale.mlops.schedule.TaskScheduler;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -44,14 +46,20 @@ public class JobService {
     @Resource
     private JobConvertor jobConvertor;
 
+    JobBoConverter jobBoConverter;
+
     @Resource
     private UserService userService;
-  
+
     JobSpliterator jobSpliterator;
 
     TaskScheduler taskScheduler;
 
     LivingTaskStatusMachine livingTaskStatusMachine;
+
+    TaskMapper taskMapper;
+
+    TaskBoConverter taskBoConverter;
 
 
     public List<JobVO> listJobs(String projectId, PageParams pageParams) {
@@ -82,12 +90,12 @@ public class JobService {
             .deviceType(Integer.valueOf(jobRequest.getDeviceId()))
             .deviceAmount(jobRequest.getDeviceCount())
             .resultOutputPath(jobRequest.getResultOutputPath())
-            .jobStatus(1)
+            .jobStatus(JobStatus.CREATED.getValue())
             .build();
         jobMapper.addJob(jobEntity);
         return idConvertor.convert(jobEntity.getId());
     }
-  
+
     /**
      * load created jobs from user at fixed delay
      */
@@ -105,17 +113,23 @@ public class JobService {
     }
 
     Stream<Job> findAllNewJobs(){
-        //TODO
-        return null;
+        final List<JobEntity> newJobs = jobMapper.findJobByStatus(JobStatus.CREATED.getValue());
+        return newJobs.stream().map(entity-> jobBoConverter.fromEntity(entity));
     }
 
     /**
      * transactional
      * jobStatus->TO_CANCEL; taskStatus->TO_CANCEL
      */
+    @Transactional
     public void cancelJob(Long jobId){
-        //TODO
-        livingTaskStatusMachine.adopt(null,TaskStatus.TO_CANCEL);
+        jobMapper.updateJobStatus(List.of(jobId), JobStatus.CANCELED.getValue());
+        final List<TaskEntity> taskEntities = taskMapper.listTasks(jobId);
+        taskMapper.updateTaskStatus(taskEntities.parallelStream().map(TaskEntity::getId).collect(
+            Collectors.toList()), TaskStatus.TO_CANCEL.getOrder());
+        livingTaskStatusMachine.adopt(taskEntities.parallelStream()
+                .map(entity -> taskBoConverter.fromTaskEntity(entity)).collect(Collectors.toList()),
+            TaskStatus.TO_CANCEL);
     }
 
 }

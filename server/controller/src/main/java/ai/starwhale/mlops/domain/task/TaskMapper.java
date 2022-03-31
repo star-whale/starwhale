@@ -10,4 +10,12 @@ public interface TaskMapper {
     TaskEntity findTaskById(@Param("taskId") Long taskId);
 
     int addTask(TaskEntity taskEntity);
+
+    int addAll(@Param("taskList")List<TaskEntity> taskList);
+
+    void updateTaskStatus(@Param("ids") List<Long> taskIds,@Param("taskStatus") int taskStatus);
+
+    List<TaskEntity> findTaskByStatus(@Param("taskStatus") int taskStatus);
+
+    List<TaskEntity> findTaskByStatusIn(@Param("taskStatusList") List<Integer> taskStatusList);
 }

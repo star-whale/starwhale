@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -39,9 +40,11 @@ public class Task {
     TaskStatus status;
 
     /**
-     * storage path of results
+     * storage directory path of results
      */
-    List<String> resultPaths;
+    String resultPaths;
+
+    private String swdsBlocks;
 
     /**
      * possible statuses of a task
@@ -51,72 +54,79 @@ public class Task {
         /**
          * after created before assigned to an Agent. Ready to be scheduled
          */
-        CREATED(1),
+        CREATED(110, JobStatus.SPLIT),
 
         /**
          * after assigned to an Agent before assignment is acknowledged
          */
-        ASSIGNING(2),
+        ASSIGNING(120, JobStatus.SCHEDULING),
 
         /**
          * after assignment is acknowledged before running
          */
-        PREPARING(3),
+        PREPARING(130, JobStatus.SCHEDULED),
 
         /**
          * running
          */
-        RUNNING(4),
+        RUNNING(140, JobStatus.SCHEDULED),
 
         /**
          * after task exit normally(container is stopped)
          */
-        UPLOADING(5),
+        UPLOADING(150, JobStatus.SCHEDULED),
 
 
         /**
          * after task exit normally before finished. garbage clearing
          */
-        CLOSING(6),
+        CLOSING(160, JobStatus.SCHEDULED),
 
         /**
          * garbage is cleared
          */
-        FINISHED(100),
+        FINISHED(1000, JobStatus.FINISHED),
 
         /**
          * when report successfully to the controller,it should be archived
          */
-        ARCHIVED(101),
+        ARCHIVED(1010, JobStatus.FINISHED),
 
         /**
          * canceling triggered by the user
          */
-        TO_CANCEL(10),
+        TO_CANCEL(210, JobStatus.TO_CANCEL),
 
         /**
          * canceling request sent to Agent before real canceled
          */
-        CANCEL_COMMANDING(11),
+        CANCEL_COMMANDING(220, JobStatus.TO_CANCEL),
 
         /**
          * canceling request sent to Agent before real canceled
          */
-        CANCELING(12),
+        CANCELING(230, JobStatus.TO_CANCEL),
 
         /**
          * canceled by the controller
          */
-        CANCELED(13),
+        CANCELED(240, JobStatus.CANCELED),
 
         /**
          * task exit with unexpected error
          */
-        EXIT_ERROR(-1);
+        EXIT_ERROR(-1,JobStatus.EXIT_ERROR),
+
+        /**
+         * UNKNOWN from an Integer
+         */
+        UNKNOWN(-999,JobStatus.UNKNOWN);
 
         int order;
 
         TaskStatus next;
+
+        JobStatus desiredJobStatus;
 
         static {
             CREATED.next = ASSIGNING;
@@ -132,8 +142,9 @@ public class Task {
             EXIT_ERROR.next = EXIT_ERROR;
         }
 
-        TaskStatus(int order){
+        TaskStatus(int order,JobStatus jobStatus){
             this.order = order;
+            this.desiredJobStatus = jobStatus;
         }
 
         public TaskStatus next(){
@@ -142,6 +153,23 @@ public class Task {
 
         public boolean before(TaskStatus nextStatus){
             return this.order < nextStatus.order;
+        }
+
+        public int getOrder(){
+            return this.order;
+        }
+
+        public JobStatus getDesiredJobStatus(){
+            return this.desiredJobStatus;
+        }
+
+        public static TaskStatus from(int v){
+            for(TaskStatus jobStatus:TaskStatus.values()){
+                if(jobStatus.order == v){
+                    return jobStatus;
+                }
+            }
+            return UNKNOWN;
         }
 
     }
