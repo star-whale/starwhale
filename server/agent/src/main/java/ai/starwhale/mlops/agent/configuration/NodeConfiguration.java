@@ -9,7 +9,7 @@ package ai.starwhale.mlops.agent.configuration;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.DeviceDetect;
-import ai.starwhale.mlops.agent.node.gpu.NvidiaDetect;
+import ai.starwhale.mlops.agent.node.gpu.NvidiaCmdDetect;
 import ai.starwhale.mlops.agent.node.initializer.SourcePoolInitializer;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -33,7 +33,7 @@ public class NodeConfiguration {
     }
     @Bean
     public DeviceDetect nvidiaGPUDetect(XmlMapper xmlMapper) {
-        return new NvidiaDetect(xmlMapper);
+        return new NvidiaCmdDetect(xmlMapper);
     }
 
     // todo:other brand of gpu

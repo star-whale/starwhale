@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.agent.task.action.normal;
 
 import ai.starwhale.mlops.agent.container.ImageConfig;
+import ai.starwhale.mlops.agent.container.ImageConfig.GPUConfig;
 import ai.starwhale.mlops.agent.exception.ContainerException;
 import ai.starwhale.mlops.agent.node.SourcePool.AllocateRequest;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
@@ -17,6 +18,8 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -46,8 +49,19 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
         // allocate device to this task,if fail will throw exception, now it is blocked
         oldTask.setDevices(allocated);
         // todo fill with task info
-        Optional<String> containerId = containerClient.startContainer("",
-            ImageConfig.builder().build());
+        Optional<String> containerId = containerClient.startContainer(
+            ImageConfig.builder()
+                .autoRemove(false)
+                .env(List.of())
+                .entrypoint(List.of())
+                .gpuConfig(GPUConfig.builder()
+                    .count(1)
+                    .capabilities(List.of(List.of("gpu")))
+                    .deviceIds(allocated.stream().map(Device::getId).collect(Collectors.toList()))
+                    .build()
+                )
+                .build()
+        );
         // whether the container create and start success
         if (containerId.isPresent()) {
             EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);

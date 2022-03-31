@@ -13,8 +13,8 @@ import static org.mockito.ArgumentMatchers.any;
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
+import ai.starwhale.mlops.agent.node.gpu.DeviceDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
-import ai.starwhale.mlops.agent.node.gpu.NvidiaDetect;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
@@ -60,7 +60,7 @@ public class TaskExecutorTest {
 
     // todo Have some problem:mock not effect
     @MockBean
-    private NvidiaDetect nvidiaDetect;
+    private DeviceDetect nvidiaDetect;
 
     @MockBean
     private TaskPersistence taskPersistence;
@@ -78,7 +78,7 @@ public class TaskExecutorTest {
     private SourcePool sourcePool;
 
     void mockConfig() throws IOException {
-        Mockito.when(containerClient.startContainer(any(), any())).thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
+        Mockito.when(containerClient.startContainer(any())).thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(List.of(
                 EvaluationTask.builder()
                         .task(

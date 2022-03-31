@@ -25,13 +25,13 @@ import java.util.List;
 import java.util.Optional;
 
 @Slf4j
-public class NvidiaDetect implements DeviceDetect {
+public class NvidiaCmdDetect implements DeviceDetect {
 
     private final static String detectCmd = "nvidia-smi -q -x";
 
     private final XmlMapper xmlMapper;
 
-    public NvidiaDetect(XmlMapper xmlMapper) {
+    public NvidiaCmdDetect(XmlMapper xmlMapper) {
         this.xmlMapper = xmlMapper;
     }
 
