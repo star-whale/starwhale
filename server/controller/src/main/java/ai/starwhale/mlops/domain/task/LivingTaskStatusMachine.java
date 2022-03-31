@@ -12,11 +12,9 @@ import java.util.Collection;
 /**
  * manage status of Tasks or side effects caused by change of Task status (Job status change)
  */
-public interface TaskStatusMachine {
+public interface LivingTaskStatusMachine {
 
-    void adopt(Collection<Task> newBorn);
-
-    void statusChange(Collection<Task> livingTasks, Task.TaskStatus targetStatus);
+    void adopt(Collection<Task> livingTasks, Task.TaskStatus status);
 
     Collection<Task> ofStatus(Task.TaskStatus taskStatus);
 

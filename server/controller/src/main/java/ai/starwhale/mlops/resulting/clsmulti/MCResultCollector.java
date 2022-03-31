@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.resulting.clsmulti;
 
-import ai.starwhale.mlops.domain.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.resulting.Indicator;
 import ai.starwhale.mlops.resulting.ResultCollector;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -169,8 +169,7 @@ public class MCResultCollector implements ResultCollector {
 
     @Override
     public void dump() throws IOException {
-        final OutputStream outputStream = storageAccessService.put(storagePath);
-        objectMapper.writeValue(outputStream, rawResultHolder);
+        storageAccessService.put(this.storagePath,objectMapper.writeValueAsBytes( rawResultHolder));
     }
 
     private String storagePath() {

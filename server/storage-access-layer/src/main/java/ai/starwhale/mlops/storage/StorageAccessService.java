@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.storage;
+package ai.starwhale.mlops.storage;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,7 +16,8 @@ import java.util.stream.Stream;
  */
 public interface StorageAccessService {
 
-    OutputStream put(String path);
+    void put(String path,InputStream inputStream);
+    void put(String path,byte[] body);
     InputStream get(String path);
     Stream<String> list(String path);
 

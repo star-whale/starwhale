@@ -21,6 +21,10 @@
             <artifactId>starwhale-controller-sdk</artifactId>
         </dependency>
         <dependency>
+            <groupId>ai.starwhale</groupId>
+            <artifactId>storage-access-layer</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>

@@ -5,14 +5,17 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.domain.job.split;
 
+import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.TaskTrigger;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +31,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
 
     /**
      * get all data blocks and split them by a simple random number
+     * transactional jobStatus->SPLIT taskStatus->NEW
      */
     @Override
     public List<TaskTrigger> split(Job job) {
@@ -37,11 +41,11 @@ public class JobSpliteratorByIndex implements JobSpliterator {
         final Map<Integer,List<SWDSBlock>> swdsBlocks = swDataSets.parallelStream()
             .map(swDataSet -> swdsIndexLoader.load(swDataSet.getIndexPath()))
             .map(SWDSIndex::getSWDSBlockList)
-            .flatMap(swdsBlockList -> swdsBlockList.stream())
+            .flatMap(Collection::stream)
             .collect(Collectors.groupingBy(blk->r.nextInt(deviceAmount)))
             ;
-        final List<Task> tasks = allocateTasks(job.getId(), deviceAmount);
-        return squashTaskTriggers(job,tasks,swdsBlocks);
+        final List<Task> tasks = allocateTasks(job, deviceAmount);
+        return squashTaskTriggers(job, tasks, swdsBlocks);
     }
 
     private List<TaskTrigger> squashTaskTriggers(Job job, List<Task> tasks, Map<Integer, List<SWDSBlock>> swdsBlocks) {
@@ -49,7 +53,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
         for(int i=0;i<job.getJobRuntime().getDeviceAmount();i++){
             taskTriggers.add(TaskTrigger.builder()
                 .swModelPackage(job.getSwmp())
-                .imageId(job.getJobRuntime().baseImage)
+                .imageId(job.getJobRuntime().getBaseImage())
                 .swdsBlocks(swdsBlocks.get(i))
                 .task(tasks.get(i))
                 .build());
@@ -57,13 +61,15 @@ public class JobSpliteratorByIndex implements JobSpliterator {
         return taskTriggers;
     }
 
-    private List<Task> allocateTasks(Long id, Integer deviceAmount) {
-        //TODO tasks should be saved into DB in this step, here is a mock
+    private List<Task> allocateTasks(Job job, Integer deviceAmount) {
+        //TODO tasks should be saved into DB in this step, here is a mock,if tasks already exist load them
 
         List<Task> tasks = new LinkedList<>();
         for (int i = 0; i < deviceAmount; i++) {
-            tasks.add(Task.builder().jobId(id).id(1L).build());
+            tasks.add(Task.builder().jobId(job.getId()).build());
         }
+
+        job.setStatus(JobStatus.SPLIT);
         return tasks;
     }
 }

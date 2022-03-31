@@ -17,6 +17,10 @@
             <artifactId>starwhale-controller-sdk</artifactId>
         </dependency>
         <dependency>
+            <groupId>ai.starwhale</groupId>
+            <artifactId>storage-access-layer</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
@@ -117,6 +121,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>10</source>
+                    <target>10</target>
+                </configuration>
             </plugin>
         </plugins>
     </build>
