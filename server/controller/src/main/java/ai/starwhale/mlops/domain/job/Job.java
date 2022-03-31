@@ -23,6 +23,8 @@ public class Job {
 
     Long id;
 
+    String uuid;
+
     /**
      * the SWDSs to run on
      */

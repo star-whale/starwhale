@@ -9,9 +9,10 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.agent.DeviceVO;
-import ai.starwhale.mlops.api.protocol.job.BaseImageVO;
-import ai.starwhale.mlops.domain.enviroment.EnvService;
+import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
+import ai.starwhale.mlops.domain.job.EnvService;
+import ai.starwhale.mlops.domain.node.Device;
 import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +33,7 @@ public class EnvController implements EnvApi{
 
     @Override
     public ResponseEntity<ResponseMessage<List<DeviceVO>>> listDevice() {
-        return null;
+        List<DeviceVO> deviceVOS = envService.listDevices();
+        return ResponseEntity.ok(Code.success.asResponse(deviceVOS));
     }
 }

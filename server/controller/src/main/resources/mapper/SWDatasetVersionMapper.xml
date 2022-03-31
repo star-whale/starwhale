@@ -11,10 +11,10 @@
         select dsv.id as dsv_id,
                dataset_id,
                owner_id,
-               version_name,
-               version_tag,
-               version_meta,
-               storage_path,
+               version_name as dsv_version_name,
+               version_tag as dsv_version_tag,
+               version_meta as dsv_version_meta,
+               storage_path as dsv_storage_path,
                dsv.created_time as dsv_created_time,
                dsv.modified_time as dsv_modified_time,
                u.id as user_id,
@@ -65,11 +65,11 @@
 
     <resultMap id="dsVersionResultMap" type="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity" >
         <id property="id" column="dsv_id" />
-        <result property="datasetId" column="dsv_id" />
-        <result property="versionName" column="version_name" />
-        <result property="versionTag" column="version_tag" />
-        <result property="versionMeta" column="version_meta" />
-        <result property="storagePath" column="storage_path" />
+        <result property="datasetId" column="dataset_id" />
+        <result property="versionName" column="dsv_version_name" />
+        <result property="versionTag" column="dsv_version_tag" />
+        <result property="versionMeta" column="dsv_version_meta" />
+        <result property="storagePath" column="dsv_storage_path" />
         <result property="createdTime" column="dsv_created_time"/>
         <result property="modifiedTime" column="dsv_modified_time"/>
         <result property="ownerId" column="owner_id" />

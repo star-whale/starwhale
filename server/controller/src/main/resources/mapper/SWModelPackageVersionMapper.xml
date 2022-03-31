@@ -9,12 +9,12 @@
 <mapper namespace="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionMapper">
     <sql id="select_swmp_version">
         select mv.id as mv_id,
-               swmp_id,
-               owner_id,
-               version_name,
-               version_tag,
-               version_meta,
-               storage_path,
+               mv.swmp_id,
+               mv.owner_id,
+               mv.version_name as mv_version_name,
+               mv.version_tag as mv_version_tag,
+               mv.version_meta as mv_version_meta,
+               mv.storage_path as mv_storage_path,
                mv.created_time as mv_created_time,
                mv.modified_time as mv_modified_time,
                u.id as user_id,
@@ -65,10 +65,10 @@
     <resultMap id="swmpVersionResultMap" type="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity" >
         <id property="id" column="mv_id" />
         <result property="swmpId" column="swmp_id" />
-        <result property="versionName" column="version_name" />
-        <result property="versionTag" column="version_tag" />
-        <result property="versionMeta" column="version_meta" />
-        <result property="storagePath" column="storage_path" />
+        <result property="versionName" column="mv_version_name" />
+        <result property="versionTag" column="mv_version_tag" />
+        <result property="versionMeta" column="mv_version_meta" />
+        <result property="storagePath" column="mv_storage_path" />
         <result property="createdTime" column="mv_created_time"/>
         <result property="modifiedTime" column="mv_modified_time"/>
         <result property="ownerId" column="owner_id" />

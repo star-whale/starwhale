@@ -59,7 +59,6 @@ CREATE TABLE IF NOT EXISTS base_image
 (
     id            bigint       NOT NULL AUTO_INCREMENT COMMENT 'PK',
     image_name    varchar(255) NOT NULL,
-    image_path    varchar(255) NOT NULL,
     created_time  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -132,42 +131,49 @@ CREATE TABLE IF NOT EXISTS job_info
 (
     id              bigint           NOT NULL AUTO_INCREMENT COMMENT 'PK',
     job_uuid        varchar(255)     NOT NULL,
+    project_id      bigint           NOT NULL,
     swmp_version_id bigint           NOT NULL,
     owner_id        bigint           NOT NULL,
-    start_time      datetime         NOT NULL,
-    stop_time       datetime         NOT NULL,
+    created_time    datetime         NOT NULL,
+    finished_time   datetime,
     duration_ms     bigint           NOT NULL,
     job_status      tinyint UNSIGNED NOT NULL,
+    base_image_id   bigint           NOT NULL,
+    device_type     tinyint UNSIGNED NOT NULL,
+    device_amount   int              NOT NULL,
+    result_output_path text          NOT NULL,
     PRIMARY KEY (id),
     UNIQUE INDEX uk_job_uuid (job_uuid) USING BTREE,
     INDEX idx_swmp_version_id (swmp_version_id) USING BTREE,
-    INDEX idx_owner_id (owner_id) USING BTREE
+    INDEX idx_owner_id (owner_id) USING BTREE,
+    INDEX idx_base_image (base_image_id) USING BTREE
 );
 
 CREATE TABLE IF NOT EXISTS job_dataset_version_rel
 (
     id                 bigint   NOT NULL AUTO_INCREMENT COMMENT 'PK',
-    task_id            bigint   NOT NULL,
+    job_id            bigint   NOT NULL,
     dataset_version_id bigint   NOT NULL,
     created_time       datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time      datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX idx_task_id (task_id) USING BTREE,
+    INDEX idx_job_id (job_id) USING BTREE,
     INDEX idx_dataset_version_id (dataset_version_id) USING BTREE
 );
 
 CREATE TABLE IF NOT EXISTS task_info
 (
     id              bigint           NOT NULL AUTO_INCREMENT COMMENT 'PK',
-    job_uuid        varchar(255)     NOT NULL,
-    swmp_version_id bigint           NOT NULL,
-    owner_id        bigint           NOT NULL,
-    start_time      datetime         NOT NULL,
-    stop_time       datetime         NOT NULL,
-    duration        bigint           NOT NULL,
-    job_status      tinyint UNSIGNED NOT NULL,
+    task_uuid       varchar(255)     NOT NULL,
+    job_id          bigint           NOT NULL,
+    agent_id        bigint           NOT NULL,
+    task_status     tinyint UNSIGNED NOT NULL,
+    result_path     text             NOT NULL,
+    swds_blocks     text,
+    created_time    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_time   datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE INDEX uk_job_uuid (job_uuid) USING BTREE,
-    INDEX idx_swmp_version_id (swmp_version_id) USING BTREE,
-    INDEX idx_owner_id (owner_id) USING BTREE
+    UNIQUE INDEX uk_task_uuid (task_uuid) USING BTREE,
+    INDEX idx_job_id (job_id) USING BTREE,
+    INDEX idx_agent_id (agent_id) USING BTREE
 );
