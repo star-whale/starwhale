@@ -6,7 +6,7 @@ data_dir: data
 data_filter: "*image*"
 label_filter: "*label*"
 
-process: process:DataSetProcessExecutor
+process: mnist.process:DataSetProcessExecutor
 pip_req: requirements.txt
 
 desc: MNIST data and label test dataset

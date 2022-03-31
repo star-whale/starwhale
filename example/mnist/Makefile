@@ -1,4 +1,3 @@
-
 venv-create:
 	python3 -m venv venv
 
@@ -18,3 +17,12 @@ conda-clone:
 
 conda-create:
 	conda env create --file mnist-env-lock
+
+train:
+	python mnist/train.py
+
+test:
+	python mnist/test.py
+
+inference:
+	python mnist/ppl.py
