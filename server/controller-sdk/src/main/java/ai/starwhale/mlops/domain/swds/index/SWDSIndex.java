@@ -7,8 +7,8 @@
 
 package ai.starwhale.mlops.domain.swds.index;
 
-import java.util.LinkedList;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class SWDSIndex {
 
     /**
