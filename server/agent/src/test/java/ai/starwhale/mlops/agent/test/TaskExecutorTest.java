@@ -15,7 +15,6 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
 import ai.starwhale.mlops.agent.node.gpu.NvidiaDetect;
-import ai.starwhale.mlops.agent.report.ReportHttpClient;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
@@ -70,7 +69,7 @@ public class TaskExecutorTest {
     private TaskExecutor taskExecutor;
 
     @Autowired
-    DoTransition<String, List<EvaluationTask>> rebuildTasksAction;
+    DoTransition<Void, List<EvaluationTask>> rebuildTasksAction;
 
     @Autowired
     private TaskPool taskPool;
@@ -80,7 +79,7 @@ public class TaskExecutorTest {
 
     void mockConfig() throws IOException {
         Mockito.when(containerClient.startContainer(any(), any())).thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
-        Mockito.when(taskPersistence.getAll()).thenReturn(List.of(
+        Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(List.of(
                 EvaluationTask.builder()
                         .task(
                                 Task.builder().id(1234567890L).jobId(222222L).status(TaskStatus.PREPARING).build()
@@ -119,7 +118,7 @@ public class TaskExecutorTest {
         mockConfig();
 
         URL taskPathUrl = ResourceUtils.getURL("classpath:tasks");
-        rebuildTasksAction.apply(taskPathUrl.getPath().substring(1), Context.builder().build());
+        rebuildTasksAction.apply(Void.TYPE.cast(null), Context.builder().build());
         sourcePool.refresh();
         sourcePool.setToReady();
         // check rebuild state

@@ -21,7 +21,7 @@ public interface TaskPersistence {
      * get all tasks
      * @return all tasks
      */
-    List<EvaluationTask> getAll() throws IOException;
+    List<EvaluationTask> getAllActiveTasks() throws IOException;
 
     /**
      * get task by id

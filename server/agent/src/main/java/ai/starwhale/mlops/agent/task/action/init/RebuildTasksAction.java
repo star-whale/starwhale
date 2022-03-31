@@ -7,52 +7,42 @@
 
 package ai.starwhale.mlops.agent.task.action.init;
 
-import ai.starwhale.mlops.agent.container.ContainerClient;
-import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
-import ai.starwhale.mlops.api.ReportApi;
 import cn.hutool.core.collection.CollectionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 
 @Service
 @Slf4j
-public class RebuildTasksAction implements DoTransition<String, List<EvaluationTask>> {
-    @Autowired
-    private SourcePool sourcePool;
+public class RebuildTasksAction implements DoTransition<Void, List<EvaluationTask>> {
 
     @Autowired
     private TaskPool taskPool;
-
-    private ContainerClient containerClient;
-
-    private ReportApi reportApi;
 
     @Autowired
     private TaskPersistence taskPersistence;
 
     @Override
-    public boolean valid(String basePath, Context context) {
-        return StringUtils.hasText(basePath) && !taskPool.isReady();
+    public boolean valid(Void v, Context context) {
+        return !taskPool.isReady();
     }
 
     @Override
-    public List<EvaluationTask> processing(String basePath, Context context)
+    public List<EvaluationTask> processing(Void v, Context context)
         throws Exception {
         log.info("start to rebuild task pool");
-        return taskPersistence.getAll();
+        return taskPersistence.getAllActiveTasks();
     }
 
     @Override
-    public void success(String basePath, List<EvaluationTask> tasks, Context context) {
+    public void success(Void v, List<EvaluationTask> tasks, Context context) {
         if (CollectionUtil.isNotEmpty(tasks)) {
             tasks.forEach(taskPool::fill);
             taskPool.setToReady();
@@ -61,7 +51,7 @@ public class RebuildTasksAction implements DoTransition<String, List<EvaluationT
     }
 
     @Override
-    public void fail(String basePath, Context context, Exception e) {
-        log.info("rebuild task pool from:{} error", basePath);
+    public void fail(Void v, Context context, Exception e) {
+        log.info("rebuild task pool error");
     }
 }

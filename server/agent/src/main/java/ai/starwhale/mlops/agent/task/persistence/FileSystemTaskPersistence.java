@@ -33,7 +33,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public List<EvaluationTask> getAll() throws IOException {
+    public List<EvaluationTask> getAllActiveTasks() throws IOException {
         Path tasksPath = Path.of(agentProperties.getTask().getInfoPath());
         if (!Files.exists(tasksPath)) {
             Files.createDirectories(tasksPath);
@@ -91,7 +91,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
             Path sourcePath = Path.of(
                 agentProperties.getTask().getInfoPath() + "/" + task.getTask().getId()
                     + ".taskinfo"),
-                targetDir = Path.of(agentProperties.getTask().getArchivedInfoPath() + "/");
+                targetDir = Path.of(agentProperties.getTask().getArchivedDirPath() + "/");
             if (!Files.exists(targetDir)) {
                 Files.createDirectories(targetDir);
             }

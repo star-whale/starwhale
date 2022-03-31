@@ -28,15 +28,11 @@ import java.util.List;
 @ConditionalOnProperty(name = "sw.task.rebuild.enabled", havingValue = "true", matchIfMissing = true)
 public class TaskPoolInitializer implements CommandLineRunner {
     @Autowired
-    private AgentProperties agentProperties;
-    @Autowired
-    private TaskPool taskPool;
-    @Autowired
-    private DoTransition<String, List<EvaluationTask>> rebuildTasksAction;
+    private DoTransition<Void, List<EvaluationTask>> rebuildTasksAction;
 
     @Override
     public void run(String... args) throws Exception {
-        rebuildTasksAction.apply(agentProperties.getTask().getInfoPath(),
+        rebuildTasksAction.apply(Void.TYPE.cast(null),
             Context.builder().build());
     }
 }

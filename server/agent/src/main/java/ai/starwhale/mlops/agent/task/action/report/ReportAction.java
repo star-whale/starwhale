@@ -41,9 +41,6 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
     private ReportApi reportApi;
 
     @Autowired
-    DoTransition<String, List<EvaluationTask>> rebuildTasksAction;
-
-    @Autowired
     DoTransition<EvaluationTask, EvaluationTask> init2PreparingAction;
 
     @Autowired

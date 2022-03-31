@@ -38,7 +38,7 @@ public class TaskExecutor {
 
     /* task actions start */
     final
-    DoTransition<String, List<EvaluationTask>> rebuildTasksAction;
+    DoTransition<Void, List<EvaluationTask>> rebuildTasksAction;
 
     final
     DoTransition<EvaluationTask, EvaluationTask> init2PreparingAction;
@@ -77,7 +77,7 @@ public class TaskExecutor {
     public TaskExecutor(
             SourcePool sourcePool,
             TaskPool taskPool,
-            DoTransition<String, List<EvaluationTask>> rebuildTasksAction,
+            DoTransition<Void, List<EvaluationTask>> rebuildTasksAction,
             DoTransition<EvaluationTask, EvaluationTask> init2PreparingAction,
             DoTransition<EvaluationTask, EvaluationTask> preparing2RunningAction,
             DoTransition<EvaluationTask, EvaluationTask> preparing2CanceledAction,
