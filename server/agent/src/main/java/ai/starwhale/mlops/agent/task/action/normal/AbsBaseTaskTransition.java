@@ -34,12 +34,14 @@ public abstract class AbsBaseTaskTransition implements DoTransition<EvaluationTa
     @Override
     public void pre(EvaluationTask task, Context context) throws Exception {
         task.setStage(Stage.inProgress);
+        // todo: maybe overwrite current newest data!!
         taskPersistence.save(task);
     }
 
     @Override
     public void post(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
         newTask.setStage(Stage.completed);
+        // todo: maybe overwrite current newest data!!
         taskPersistence.save(newTask);
     }
 }

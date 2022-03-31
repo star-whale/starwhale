@@ -15,12 +15,13 @@ import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
 import com.github.dockerjava.transport.DockerHttpClient;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Duration;
 
 @Configuration
 public class DockerConfiguration {

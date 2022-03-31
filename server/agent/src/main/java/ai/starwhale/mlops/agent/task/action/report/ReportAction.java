@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.agent.task.action.report;
 
+import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
@@ -19,12 +20,13 @@ import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.TaskTrigger;
 import cn.hutool.core.collection.CollectionUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 @Service
 public class ReportAction implements DoTransition<ReportRequest, ReportResponse> {
@@ -33,10 +35,10 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
     private TaskPool taskPool;
 
     @Autowired
-    private ReportApi reportApi;
+    protected SourcePool sourcePool;
 
     @Autowired
-    DoTransition<String, List<EvaluationTask>> rebuildTasksAction;
+    private ReportApi reportApi;
 
     @Autowired
     DoTransition<EvaluationTask, EvaluationTask> init2PreparingAction;
@@ -45,21 +47,12 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
     DoTransition<EvaluationTask, EvaluationTask> finishedOrCanceled2ArchivedAction;
 
     @Override
-    public boolean valid(ReportRequest reportRequest, Context context) {
-        // valid params
-        return reportRequest.getNodeInfo() != null || CollectionUtil.isNotEmpty(
-            reportRequest.getTasks());
-    }
-
-    @Override
     public ReportResponse processing(ReportRequest reportRequest, Context context)
         throws Exception {
         // all tasks(exclude archived) should be report to the controller
         // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
-        List<Task> finishedTasks = taskPool.finishedTasks.stream()
-            .map(EvaluationTask::getTask).collect(Collectors.toList());
-        List<Task> canceledTasks = taskPool.canceledTasks.stream()
-            .map(EvaluationTask::getTask).collect(Collectors.toList());
+        List<EvaluationTask> finishedTasks = List.copyOf(taskPool.finishedTasks);
+        List<EvaluationTask> canceledTasks = List.copyOf(taskPool.canceledTasks);
 
         List<Task> all = new ArrayList<>();
         // without stop the world
@@ -72,19 +65,22 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
         all.addAll(new ArrayList<>(
             taskPool.uploadingTasks.stream().map(EvaluationTask::getTask)
                 .collect(Collectors.toList())));
-        all.addAll(finishedTasks);
+        all.addAll(taskPool.finishedTasks.stream()
+                .map(EvaluationTask::getTask).collect(Collectors.toList()));
         all.addAll(new ArrayList<>(
             taskPool.errorTasks.stream().map(EvaluationTask::getTask)
                 .collect(Collectors.toList())));
-        all.addAll(canceledTasks);
+        all.addAll(taskPool.canceledTasks.stream()
+                .map(EvaluationTask::getTask).collect(Collectors.toList()));
         reportRequest.setTasks(all);
 
         // todo
-        Node node = Node.builder().ipAddr("").name("").memorySizeGB(0l).devices(null)
+        Node node = Node.builder().ipAddr("").name("").memorySizeGB(0l).devices(List.copyOf(sourcePool.getDevices()))
             .build();
 
+        reportRequest.setNodeInfo(node);
         context.set("finished", finishedTasks);
-        context.set("canceled", finishedTasks);
+        context.set("canceled", canceledTasks);
 
         ResponseMessage<ReportResponse> response = reportApi.report(reportRequest);
         if (Objects.equals(response.getCode(),
@@ -115,6 +111,7 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
                 for (TaskTrigger newTask : response.getTasksToRun()) {
                     init2PreparingAction.apply(EvaluationTask.builder()
                         .task(newTask.getTask())
+                        .imageId(newTask.getImageId())
                         .swdsBlocks(newTask.getSwdsBlocks())
                         .swModelPackage(newTask.getSwModelPackage())
                         .build(), context);

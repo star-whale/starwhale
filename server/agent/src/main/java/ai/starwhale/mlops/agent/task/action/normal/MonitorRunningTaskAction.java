@@ -7,13 +7,12 @@
 
 package ai.starwhale.mlops.agent.task.action.normal;
 
-import ai.starwhale.mlops.agent.container.ContainerClient.ContainerStatus;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
-import java.io.IOException;
-import java.util.Optional;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
@@ -21,26 +20,7 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
     @Override
     public EvaluationTask processing(EvaluationTask runningTask, Context context)
         throws IOException {
-        // todo check container status:running or stopped and result status:success or error
-        Optional<ContainerStatus> status = containerClient.status(
-            runningTask.getContainerId());
-        if (status.isPresent()) {
-            switch (status.get()) {
-                case RUNNING:
-                    return runningTask;
-                case DEAD:
-                case EXITED:
-                    // check result files if is prepared
-                    break;
-                case CREATED:
-                case PAUSED:
-                case RESTARTING:
-                case REMOVING:
-                case NO_SUCH_CONTAINER:
-                    break;
-            }
-        }
-        // finally, dominated by disk(see if other processes have modified)
+        // dominated by disk(see if other processes have modified)
         return taskPersistence.getTaskById(runningTask.getTask().getId());
     }
 

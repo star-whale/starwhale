@@ -7,11 +7,12 @@
 
 package ai.starwhale.mlops.agent.task.action;
 
-import java.util.HashMap;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Builder
 @AllArgsConstructor

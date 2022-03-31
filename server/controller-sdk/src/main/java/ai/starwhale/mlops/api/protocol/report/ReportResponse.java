@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.api.protocol.report;
 
 import ai.starwhale.mlops.domain.task.TaskTrigger;
+import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import lombok.AllArgsConstructor;
  * Return Task commands to Agent
  */
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReportResponse {

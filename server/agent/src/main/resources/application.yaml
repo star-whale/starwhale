@@ -3,6 +3,8 @@ server:
 sw:
   agent:
     task:
-      infoPath: ${SW_TASK_INFO_PATH:/opt/starwhale/tasks/}
-      archivedInfoPath: ${SW_TASK_INFO_PATH:/opt/starwhale/archived-tasks/}
-      resultPath: ${SW_TASK_RESULT_PATH:/opt/starwhale/taskResults/}
+      infoPath: ${SW_TASK_INFO_PATH:/var/starwhale/task/info/}
+      statusPath: ${SW_TASK_STATUS_PATH:/var/starwhale/task/status/}
+      archivedDirPath: ${SW_TASK_ARCHIVED_INFO_PATH:/var/starwhale/task/archived/}
+      resultPath: ${SW_TASK_RESULT_PATH:/var/starwhale/task/result/}
+      logPath: ${SW_TASK_LOG_PATH:/var/starwhale/task/log/}

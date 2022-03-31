@@ -14,17 +14,19 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.node.Device.Status;
 import cn.hutool.core.collection.CollectionUtil;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class SourcePool {
@@ -45,6 +47,10 @@ public class SourcePool {
             devices.clear();
             devices.addAll(this.detectDevices());
         }
+    }
+
+    public Set<Device> getDevices() {
+        return Set.copyOf(devices);
     }
 
     /**
@@ -93,11 +99,10 @@ public class SourcePool {
     public void release(Set<Device> releaseDevices) {
         synchronized (lock) {
             if (CollectionUtil.isNotEmpty(devices)) {
-                for (Device device : devices) {
-                    Optional<Device> find = releaseDevices.stream().filter(d-> d.getId().equals(device.getId())).findFirst();
-                    if (find.isPresent()) {
-                        device.setStatus(Status.idle);
-                    }
+
+                for (Device device : releaseDevices) {
+                    Optional<Device> find = devices.stream().filter(d-> d.getId().equals(device.getId())).findFirst();
+                    find.ifPresent(value -> value.setStatus(Status.idle));
                 }
             }
         }

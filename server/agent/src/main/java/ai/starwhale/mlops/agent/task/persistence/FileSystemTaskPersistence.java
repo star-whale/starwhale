@@ -10,6 +10,9 @@ package ai.starwhale.mlops.agent.task.persistence;
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,8 +20,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -32,7 +33,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public List<EvaluationTask> getAll() throws IOException {
+    public List<EvaluationTask> getAllActiveTasks() throws IOException {
         Path tasksPath = Path.of(agentProperties.getTask().getInfoPath());
         if (!Files.exists(tasksPath)) {
             Files.createDirectories(tasksPath);
@@ -90,7 +91,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
             Path sourcePath = Path.of(
                 agentProperties.getTask().getInfoPath() + "/" + task.getTask().getId()
                     + ".taskinfo"),
-                targetDir = Path.of(agentProperties.getTask().getArchivedInfoPath() + "/");
+                targetDir = Path.of(agentProperties.getTask().getArchivedDirPath() + "/");
             if (!Files.exists(targetDir)) {
                 Files.createDirectories(targetDir);
             }

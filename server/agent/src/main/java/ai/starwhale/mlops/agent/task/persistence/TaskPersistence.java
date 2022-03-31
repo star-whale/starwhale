@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public interface TaskPersistence {
      * get all tasks
      * @return all tasks
      */
-    List<EvaluationTask> getAll() throws IOException;
+    List<EvaluationTask> getAllActiveTasks() throws IOException;
 
     /**
      * get task by id

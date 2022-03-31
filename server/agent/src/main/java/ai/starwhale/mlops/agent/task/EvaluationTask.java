@@ -11,10 +11,11 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.Task;
-import java.util.List;
-import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * sufficient information for an Agent to run a Task
@@ -37,6 +38,11 @@ public class EvaluationTask {
      * the devices list which the task hold
      */
     Set<Device> devices;
+
+    /**
+     * the proper image to get swmp run
+     */
+    private String imageId;
 
     /**
      * swmp meta info

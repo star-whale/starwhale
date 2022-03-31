@@ -29,6 +29,7 @@ public class FinishedOrCanceled2ArchivedAction extends AbsBaseTaskTransition {
         // remove from origin list
         taskPool.finishedTasks.remove(oldTask);
         taskPool.canceledTasks.remove(oldTask);
+        taskPool.archivedTasks.add(newTask);
         // move to the archived dir
         taskPersistence.move2Archived(newTask);
     }
