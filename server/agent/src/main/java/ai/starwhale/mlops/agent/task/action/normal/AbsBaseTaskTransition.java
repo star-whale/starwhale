@@ -17,6 +17,8 @@ import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.IOException;
+
 public abstract class AbsBaseTaskTransition implements DoTransition<EvaluationTask, EvaluationTask> {
 
     @Autowired
@@ -34,14 +36,12 @@ public abstract class AbsBaseTaskTransition implements DoTransition<EvaluationTa
     @Override
     public void pre(EvaluationTask task, Context context) throws Exception {
         task.setStage(Stage.inProgress);
-        // todo: maybe overwrite current newest data!!
         taskPersistence.save(task);
     }
 
     @Override
-    public void post(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+    public void post(EvaluationTask oldTask, EvaluationTask newTask, Context context) throws Exception {
         newTask.setStage(Stage.completed);
-        // todo: maybe overwrite current newest data!!
         taskPersistence.save(newTask);
     }
 }

@@ -77,7 +77,7 @@ public class TaskExecutorTest {
     @Autowired
     private SourcePool sourcePool;
 
-    void mockConfig() throws IOException {
+    void mockConfig() throws Exception {
         Mockito.when(containerClient.startContainer(any())).thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(List.of(
                 EvaluationTask.builder()
@@ -114,7 +114,7 @@ public class TaskExecutorTest {
     }
 
     @Test
-    public void rebuild_preparing2RunningTest() throws IOException {
+    public void rebuild_preparing2RunningTest() throws Exception {
         mockConfig();
 
         URL taskPathUrl = ResourceUtils.getURL("classpath:tasks");

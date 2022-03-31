@@ -5,6 +5,7 @@ sw:
     task:
       infoPath: ${SW_TASK_INFO_PATH:/var/starwhale/task/info/}
       statusPath: ${SW_TASK_STATUS_PATH:/var/starwhale/task/status/}
+      swmpPath: ${SW_TASK_SWMP_PATH:/var/starwhale/task/swmp/}
       archivedDirPath: ${SW_TASK_ARCHIVED_INFO_PATH:/var/starwhale/task/archived/}
       resultPath: ${SW_TASK_RESULT_PATH:/var/starwhale/task/result/}
       logPath: ${SW_TASK_LOG_PATH:/var/starwhale/task/log/}

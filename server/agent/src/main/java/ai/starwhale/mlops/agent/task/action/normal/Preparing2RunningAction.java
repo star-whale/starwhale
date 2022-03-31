@@ -16,10 +16,16 @@ import ai.starwhale.mlops.agent.task.EvaluationTask.Stage;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
+
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -27,6 +33,7 @@ import java.util.Set;
 
 @Service
 public class Preparing2RunningAction extends AbsBaseTaskTransition {
+
 
     @Override
     public boolean valid(EvaluationTask task, Context context) {
@@ -40,8 +47,9 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     }
 
     @Override
-    public EvaluationTask processing(EvaluationTask oldTask, Context context) {
-        //
+    public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
+        // pull swmp(tar) and uncompress it to the swmp dir
+        String swmpPath = taskPersistence.preloadingSWMP(oldTask);
         // allocate device(GPU or todo CPU) for task
         Set<Device> allocated = sourcePool.allocate(
             AllocateRequest.builder().gpuNum(1).build());
