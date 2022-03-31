@@ -77,8 +77,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
         //if in transaction context save immediately or add to toBePersistent
         boolean inTransactionContext = false;
         try {
-            TransactionAspectSupport
-                .currentTransactionStatus();
+            TransactionAspectSupport.currentTransactionStatus();
             inTransactionContext = true;
         } catch (NoTransactionException e) {
             log.debug("no transaction context in call of status {} ", status);

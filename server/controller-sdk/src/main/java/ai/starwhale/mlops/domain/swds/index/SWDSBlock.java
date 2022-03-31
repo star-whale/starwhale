@@ -13,20 +13,6 @@ import lombok.Data;
 
 /**
  * the storage unit of one data set
- * {
- *    "id": 1,          //第n条记录
- *    "batch": 50,      //用户自定义的batch数量，即会将多少样本达成一个整体写入到swds_bin中，默认是1
- *    "data": {
- *        "file": xx,     //数据所在的文件名
- *        "offset": 0,    //数据偏移位置
- *        "size": 0,      //字节数量
- *    },
- *    "label": {
- *        "file": xx,     //数据所在的文件名
- *        "offset": 0,    //数据偏移位置
- *        "size": 0,      //字节数量
- *    }
- * }
  */
 @Data
 @Builder
