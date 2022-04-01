@@ -6,13 +6,17 @@ from collections import namedtuple
 from pathlib import Path
 import json
 import logging
+from datetime import datetime
 
 import loguru
+import jsonlines
+from starwhale.consts import FMT_DATETIME
 
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError
-from starwhale.utils.fs import ensure_dir
+from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils import pretty_bytes
+from .loader import DATA_FIELD, get_data_loader
 
 _TASK_ROOT_DIR = "/var/starwhale"
 
@@ -22,8 +26,9 @@ _ptype = t.Union[str, None, Path]
 _LOG_TYPE = namedtuple("LOG_TYPE", ["SW", "USER"])(
     "starwhale", "user"
 )
+_jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
 
-class RunConfig(object):
+class _RunConfig(object):
 
     def __init__(self, swds_config_path: _ptype="",
                  status_dir: _ptype="",
@@ -54,9 +59,9 @@ class RunConfig(object):
         ensure_dir(self.status_dir)
 
     @classmethod
-    def create_by_env(cls) -> "RunConfig":
+    def create_by_env(cls) -> "_RunConfig":
         _env = os.environ.get
-        return RunConfig(
+        return _RunConfig(
             swds_config_path=_env("SW_TASK_SWDS_CONFIG"),
             status_dir=_env("SW_TASK_STATUS_DIR"),
             log_dir=_env("SW_TASK_LOG_DIR"),
@@ -66,7 +71,7 @@ class RunConfig(object):
 
 class PipelineHandler(object):
     RESULT_OUTPUT_TYPE = namedtuple("OUTPUT_TYPE", ["JSONL", "PLAIN"])("jsonline", "plain")
-    STATUS = namedtuple("STATUS", ["START", "RUNNING", "OK", "FAILED"])("start", "running", "ok", "failed")
+    STATUS = namedtuple("STATUS", ["START", "RUNNING", "SUCCESS", "FAILED"])("start", "running", "success", "failed")
 
     __metaclass__ = ABCMeta
 
@@ -79,18 +84,25 @@ class PipelineHandler(object):
         self.ignore_error = ignore_error
 
         self.logger, self._sw_logger = self._init_logger()
-        self.config = RunConfig.create_by_env()
+        self.config = _RunConfig.create_by_env()
         self._orig_stdout = sys.stdout
         self._orig_stderr = sys.stderr
 
+        self._data_loader = get_data_loader(self.config.swds_config, self._sw_logger)
+        #TODO: split status/result files
+        self._result_writer = _jl_writer(self.config.result_dir / "current")
+        self._status_writer = _jl_writer(self.config.status_dir / "timeline")
+
         #TODO: find some elegant call method
         self._monkey_patch()
+        self._update_status(self.STATUS.START)
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
         #TODO: remove logger first?
         #TODO: add custom log format, include daemonset pod name
         from loguru import logger as _logger
 
+        #TODO: configure log rotation size
         _logger.add("{time}.log", rotation="500MB", backtrace=True, diagnose=True, serialize=True)
         _logger.bind(type=_LOG_TYPE.USER, task_id=os.environ.get("SW_TASK_ID", ""), job_id=os.environ.get("SW_GROUP_ID", ""))
         _sw_logger = _logger.bind(type=_LOG_TYPE.SW)
@@ -108,6 +120,16 @@ class PipelineHandler(object):
         sys.stdout = self._orig_stdout
         sys.stderr = self._orig_stderr
 
+        try:
+            self._result_writer.close()
+        except Exception as e:
+            self._sw_logger.exception(f"result writer close exception: {e}")
+
+        try:
+            self._status_writer.close()
+        except Exception as e:
+            self._sw_logger.exception(f"status writer close exception: {e}")
+
         self.logger.remove()
         self._sw_logger.remove()
 
@@ -119,37 +141,60 @@ class PipelineHandler(object):
         #TODO: forbid inherit object override this method
         self._sw_logger.info("start to run pipeline...")
 
-        for data, label in self._iter_dataset():
-            d_idx, d_content, d_size, d_batch = data
-            l_idx, l_content, l_size, l_batch = label
+        self._update_status(self.STATUS.RUNNING)
 
-            self._sw_logger.info(f"[{d_idx}] data loaded, size:{pretty_bytes(d_size)}, batch:{d_batch}")
-            output = ""
+        for data, label in self._data_loader:
+            self._sw_logger.info(f"[{data.index}] data loaded, size:{pretty_bytes(data.data_size)}, batch:{data.batch_size}")
+            output = b""
+            exception = None
             try:
                 #TODO: inspect profiling
-                output = self.handle(d_content, d_batch,
-                                     label_content=l_content, label_size=l_size,
-                                     label_batch=l_batch, data_index=d_idx, label_index=l_idx)
-            except Exception:
-                self._sw_logger.exception(f"[{d_idx}] data handle -> failed")
+                output = self.handle(
+                    data.data, data.batch_size,
+                    data_index=data.index, data_size=data.data_size,
+                    label_content=label.data, label_size=label.data_size,
+                    label_batch=label.batch_size, label_index=label.index)
+            except Exception as e:
+                exception = e
+                self._sw_logger.exception(f"[{data.index}] data handle -> failed")
                 if not self.ignore_error:
+                    self._update_status(self.STATUS.FAILED)
                     raise
             else:
-                #TODO: add more info into success
-                self._sw_logger.info(f"[{d_idx} data handle -> success]")
+                exception = None
+                self._sw_logger.info(f"[{data.index} data handle -> success]")
             finally:
-                self._sw_logger.info(f"[{d_idx} data handle -> finished]")
+                self._sw_logger.info(f"[{data.index} data handle -> finished]")
 
             try:
-                self._do_record(output, data, label)
+                self._do_record(output, data, label, exception)
             except Exception:
-                self._sw_logger.exception(f"{d_idx} data record")
+                self._sw_logger.exception(f"{data.index} data record")
 
+        self._update_status(self.STATUS.SUCCESS)
         self._sw_logger.info("finish pipeline")
 
-    def _do_record(self, output, data, label):
-        #TODO: add status json line
-        pass
+    def _do_record(self, output: t.Any, data: DATA_FIELD, label: DATA_FIELD, exception: t.Union[None, Exception]):
+        self._status_writer.write({
+            "time": datetime.now().astimezone().strftime(FMT_DATETIME),
+            "status": exception is None,
+            "exception": str(exception),
+            "index": data.index,
+            "output_size": len(output),
+        })
 
-    def _iter_dataset(self) -> t.Tuple[t.Any, t.Any]:
-        yield None, None
+        #TODO: output maybe cannot be jsonized
+        result = {
+            "index": data.index,
+            "result": output,
+            "batch": data.batch_size,
+        }
+        if self.merge_label:
+            result["label"] = label.data,
+        self._result_writer.write(result)
+
+        self._update_status(self.STATUS.RUNNING)
+
+    def _update_status(self, status: str) -> None:
+        fpath = self.config.status_dir / "current"
+        ensure_file(fpath, status)
