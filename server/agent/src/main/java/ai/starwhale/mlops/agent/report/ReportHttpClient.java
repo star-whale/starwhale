@@ -9,8 +9,8 @@ package ai.starwhale.mlops.agent.report;
 
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.report.ReportRequest;
-import ai.starwhale.mlops.api.protocol.report.ReportResponse;
+import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
+import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 

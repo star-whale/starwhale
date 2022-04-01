@@ -12,7 +12,8 @@ import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.node.Device.Status;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.task.TaskMapper;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import java.util.Collection;
@@ -29,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SimpleTaskScheduler implements TaskScheduler {
 
-    final Map<Device.Clazz, ConcurrentLinkedQueue<TaskTrigger>> taskQueueTable;
+    final Map<Device.Clazz, ConcurrentLinkedQueue<Task>> taskQueueTable;
 
     TaskMapper taskMapper;
 
@@ -39,12 +40,12 @@ public class SimpleTaskScheduler implements TaskScheduler {
     }
 
     @Override
-    public void adoptTasks(Collection<TaskTrigger> TaskTriggers, Device.Clazz deviceClass) {
-        taskQueueTable.get(deviceClass).addAll(TaskTriggers);
+    public void adoptTasks(Collection<Task> tasks, Device.Clazz deviceClass) {
+        taskQueueTable.get(deviceClass).addAll(tasks);
     }
 
     @Override
-    public List<TaskTrigger> schedule(Node node) {
+    public List<Task> schedule(Node node) {
         validNode(node);
         return node.getDevices()
             .stream()

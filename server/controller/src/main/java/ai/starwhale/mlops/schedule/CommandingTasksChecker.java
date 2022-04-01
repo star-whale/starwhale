@@ -8,7 +8,8 @@
 package ai.starwhale.mlops.schedule;
 
 import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.task.Task;
+import ai.starwhale.mlops.domain.system.Agent;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import java.util.Collections;
 import java.util.HashSet;
@@ -32,7 +33,7 @@ import org.springframework.util.CollectionUtils;
 @Slf4j
 public class CommandingTasksChecker {
 
-    final Map<Node, Set<TaskCommand>> commandingTasks ;
+    final Map<Agent, Set<TaskCommand>> commandingTasks ;
 
     public CommandingTasksChecker(){
         commandingTasks = new ConcurrentHashMap<>();
@@ -41,13 +42,13 @@ public class CommandingTasksChecker {
     /**
      * whenever a command is dispatched to Agent, this method is expected to be called
      * @param tasks the task command to Agent
-     * @param node the node info of the Agent
+     * @param agent the agent info of the Agent
      */
-    public void onTaskCommanding(List<TaskCommand> tasks,Node node){
+    public void onTaskCommanding(List<TaskCommand> tasks,Agent agent){
         if(CollectionUtils.isEmpty(tasks)){
             return;
         }
-        commandingTasks.computeIfAbsent(node,n->Collections.synchronizedSet(new HashSet<>())).addAll(tasks);
+        commandingTasks.computeIfAbsent(agent,n->Collections.synchronizedSet(new HashSet<>())).addAll(tasks);
     }
 
     /**
@@ -57,7 +58,7 @@ public class CommandingTasksChecker {
      * @return not properly present tasks that are commanding to this node.
      */
     public List<TaskCommand> onNodeReporting(Node node,List<Task> reportedTasks){
-        final Set<TaskCommand> taskCommands = commandingTasks.get(node);
+        final Set<TaskCommand> taskCommands = commandingTasks.get(Agent.fromNode(node));
         final Map<Long, Task> nodeTasks = reportedTasks.stream()
             .collect(Collectors.toMap(Task::getId,
                 Function.identity()));

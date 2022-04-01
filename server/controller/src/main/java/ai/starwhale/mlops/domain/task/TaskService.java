@@ -4,6 +4,7 @@ import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.RandomUtil;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,7 +49,7 @@ public class TaskService {
             task.setUuid(uuid);
         }
         TaskEntity entity = TaskEntity.builder()
-            .jobId(task.getJobId())
+            .jobId(task.getJob().getId())
             .taskUuid(uuid)
             .taskStatus(task.getStatus().ordinal())
             .build();

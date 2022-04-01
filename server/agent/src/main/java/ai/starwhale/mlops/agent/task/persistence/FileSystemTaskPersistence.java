@@ -72,7 +72,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public boolean save(EvaluationTask task) {
         try {
             String path = agentProperties.getTask().getInfoPath();
-            Path taskPath = Path.of(path + "/" + task.getTask().getId() + ".taskinfo");
+            Path taskPath = Path.of(path + "/" + task.getId() + ".taskinfo");
             if (!Files.exists(taskPath)) {
                 Files.createFile(taskPath);
             }
@@ -89,7 +89,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public boolean move2Archived(EvaluationTask task) {
         try {
             Path sourcePath = Path.of(
-                agentProperties.getTask().getInfoPath() + "/" + task.getTask().getId()
+                agentProperties.getTask().getInfoPath() + "/" + task.getId()
                     + ".taskinfo"),
                 targetDir = Path.of(agentProperties.getTask().getArchivedDirPath() + "/");
             if (!Files.exists(targetDir)) {

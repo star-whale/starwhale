@@ -9,7 +9,9 @@ package ai.starwhale.mlops.agent.task.action.normal;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.task.TaskStatus;
+import java.io.IOException;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -21,19 +23,19 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
     public EvaluationTask processing(EvaluationTask runningTask, Context context)
         throws IOException {
         // dominated by disk(see if other processes have modified)
-        return taskPersistence.getTaskById(runningTask.getTask().getId());
+        return taskPersistence.getTaskById(runningTask.getId());
     }
 
     @Override
     public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
 
-        if (newTask.getTask().getStatus() == TaskStatus.UPLOADING) {
+        if (newTask.getStatus() == TaskStatus.UPLOADING) {
             taskPool.uploadingTasks.add(newTask);
             // if run success, release device to available device pool todo:is there anything else to do?
             sourcePool.release(newTask.getDevices());
             // only update memory list,there is no need to update the disk file(already update by taskContainer)
             taskPool.runningTasks.remove(oldTask);
-        } else if (newTask.getTask().getStatus() == TaskStatus.EXIT_ERROR) {
+        } else if (newTask.getStatus() == TaskStatus.EXIT_ERROR) {
             taskPool.errorTasks.add(newTask);
             // if run success, release device to available device pool todo:is there anything else to do?
             sourcePool.release(newTask.getDevices());

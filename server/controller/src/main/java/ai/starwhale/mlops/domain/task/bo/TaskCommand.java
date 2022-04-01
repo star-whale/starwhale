@@ -7,8 +7,7 @@
 
 package ai.starwhale.mlops.domain.task.bo;
 
-import ai.starwhale.mlops.domain.task.Task;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.task.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

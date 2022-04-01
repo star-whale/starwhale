@@ -10,7 +10,8 @@ package ai.starwhale.mlops.schedule;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Node;
 
-import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.List;
 import java.util.Collection;
 
@@ -22,10 +23,10 @@ public interface TaskScheduler {
 
     /**
      * scheduler should maintain the tasks to be scheduled
-     * @param TaskTriggers tasks to be scheduled
+     * @param tasks tasks to be scheduled
      * @param deviceClass the device type should be scheduled on
      */
-    void adoptTasks(Collection<TaskTrigger> TaskTriggers, Device.Clazz deviceClass);
+    void adoptTasks(Collection<Task> tasks, Device.Clazz deviceClass);
 
     /**
      * pop tasks available to the node. if no task is available or the node is full, an empty list should be returned
@@ -33,5 +34,5 @@ public interface TaskScheduler {
      * @param node the node load info
      * @return tasks to be assigned to the node
      */
-    List<TaskTrigger> schedule(Node node);
+    List<Task> schedule(Node node);
 }

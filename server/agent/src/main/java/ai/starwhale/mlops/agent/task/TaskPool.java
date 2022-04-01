@@ -27,7 +27,7 @@ public class TaskPool {
         public final List<Long> needToCancel = new Vector<>();
 
         public void fill(EvaluationTask task) {
-            switch (task.getTask().getStatus()) {
+            switch (task.getStatus()) {
                 case CREATED:
                 case ASSIGNING:
                     break;

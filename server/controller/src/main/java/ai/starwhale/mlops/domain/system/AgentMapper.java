@@ -8,11 +8,16 @@
 package ai.starwhale.mlops.domain.system;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 public interface AgentMapper {
 
     List<AgentEntity> listAgents();
 
     Long addAgent(AgentEntity agent);
+
+    AgentEntity findByIp(@Param("ip")String ip);
+
+    AgentEntity findByIpForUpdate(@Param("ip")String ip);
 
 }

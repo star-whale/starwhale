@@ -14,7 +14,7 @@ import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.EvaluationTask.Stage;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import org.springframework.stereotype.Service;
@@ -52,7 +52,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
         if (containerId.isPresent()) {
             EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
             newTask.setContainerId(containerId.get());
-            newTask.getTask().setStatus(TaskStatus.RUNNING);
+            newTask.setStatus(TaskStatus.RUNNING);
             return newTask;
         } else {
             // todo: retry or take it to the tail of queue

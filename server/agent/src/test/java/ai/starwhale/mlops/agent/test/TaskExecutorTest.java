@@ -23,18 +23,17 @@ import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.report.ReportResponse;
+import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.Task;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.task.TaskStatus;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 
-import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.domain.TaskTrigger;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,16 +79,10 @@ public class TaskExecutorTest {
     void mockConfig() throws IOException {
         Mockito.when(containerClient.startContainer(any(), any())).thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(List.of(
-                EvaluationTask.builder()
-                        .task(
-                                Task.builder().id(1234567890L).jobId(222222L).status(TaskStatus.PREPARING).build()
-                        )
-                        .build(),
-                EvaluationTask.builder()
-                        .task(
-                                Task.builder().id(2234567890L).jobId(222222L).status(TaskStatus.PREPARING).build()
-                        )
-                        .build()
+            EvaluationTask.builder()
+                .id(1234567890L).status(TaskStatus.PREPARING).build(),
+            EvaluationTask.builder()
+                .id(2234567890L).status(TaskStatus.PREPARING).build()
         ));
         Mockito.when(taskPersistence.save(any())).thenReturn(true);
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(

@@ -9,7 +9,7 @@ package ai.starwhale.mlops.agent.task.action.normal;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ public class FinishedOrCanceled2ArchivedAction extends AbsBaseTaskTransition {
     public EvaluationTask processing(EvaluationTask oldTask, Context context)
         throws Exception {
         EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
-        newTask.getTask().setStatus(TaskStatus.ARCHIVED);
+        newTask.setStatus(TaskStatus.ARCHIVED);
         return newTask;
     }
 

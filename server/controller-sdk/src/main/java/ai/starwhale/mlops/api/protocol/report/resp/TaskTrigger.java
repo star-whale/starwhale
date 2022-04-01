@@ -1,11 +1,11 @@
 /*
  * Copyright 2022.1-2022
- *  starwhale.ai All right reserved. This software is the confidential and proprietary information of
- *  starwhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with  starwhale.ai.
+ * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+ * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+ * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.task;
+package ai.starwhale.mlops.api.protocol.report.resp;
 
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
@@ -25,9 +25,9 @@ import lombok.NoArgsConstructor;
 public class TaskTrigger {
 
     /**
-     * task meta info
+     * unique id for the task
      */
-    private Task task;
+    Long id;
 
     /**
      * the proper image to get swmp run
@@ -44,15 +44,17 @@ public class TaskTrigger {
      */
     private List<SWDSBlock> swdsBlocks;
 
+    /**
+     * storage directory where task result is uploaded
+     */
+    private String resultPath;
+
     public boolean equals(Object obj){
 
         if(!(obj instanceof TaskTrigger)){
             return false;
         }
         TaskTrigger tt = (TaskTrigger)obj;
-        if(null == tt.getTask() || null == tt.getTask().getId()){
-            return false;
-        }
-        return this.task.getId().equals(tt.getTask().getId());
+        return null != tt.getId() && tt.getId().equals(this.id);
     }
 }

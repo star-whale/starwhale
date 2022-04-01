@@ -20,9 +20,9 @@ import java.util.List;
 public class Node {
 
     /**
-     * unique name in the cluster
+     * the version of the agent that is deployed on this node
      */
-    String name;
+    String agentVersion;
 
     /**
      * the ip address of this node

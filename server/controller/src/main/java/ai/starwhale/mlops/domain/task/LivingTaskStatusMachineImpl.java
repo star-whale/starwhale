@@ -8,16 +8,16 @@
 package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.JobMapper;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.NoTransactionException;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
+import org.springframework.util.CollectionUtils;
 
 /**
  * an implementation of LivingTaskStatusMachine
@@ -115,11 +116,11 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
                 task.setStatus(status);
                 taskStatusMap.computeIfAbsent(status,k-> Collections.synchronizedList(new LinkedList<>()))
                     .add(task.getId());
-                final Long jobId = task.getJobId();
+                final Long jobId = task.getJob().getId();
                 jobTaskMap.computeIfAbsent(jobId,k->Collections.synchronizedList(new LinkedList<>()))
                     .add(task.getId());
                 toBeCheckedJobs.offer(jobId);
-                jobIdMap.computeIfAbsent(jobId, this::jobById);
+                jobIdMap.computeIfAbsent(jobId, k ->task.getJob());
             })
             .collect(Collectors.toList());
 
@@ -138,6 +139,11 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     public Collection<Task> ofStatus(TaskStatus taskStatus) {
         return taskStatusMap.get(taskStatus).stream().map(taskIdMap::get)
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Task> ofId(Long taskId) {
+        return Optional.ofNullable(taskIdMap.get(taskId));
     }
 
     @Scheduled(fixedDelay = 1000)
@@ -197,11 +203,29 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             }).peek(jobId -> jobIdMap.get(jobId).setStatus(desiredStatus))
                 .collect(Collectors.toList());
             jobMapper.updateJobStatus(toBeUpdated, desiredStatus.getValue());
+
+            if (desiredStatus == JobStatus.FINISHED) {
+                removeFinishedJobTasks(jobids);
+            }
+
         });
     }
 
-    Job jobById(Long id){
-        final JobEntity jobEntity = jobMapper.findJobById(id);
-        return Job.builder().id(jobEntity.getId()).status(JobStatus.from(jobEntity.getJobStatus())).build();
+    private void removeFinishedJobTasks(List<Long> jobids) {
+        if(CollectionUtils.isEmpty(jobids)){
+            return;
+        }
+        jobids.parallelStream().forEach(jid->{
+            final List<Long> toBeCleardTaskIds = jobTaskMap.get(jid);
+            final List<Long> finishedTasks = taskStatusMap.get(TaskStatus.FINISHED);
+            jobIdMap.remove(jid);
+            toBeCleardTaskIds.parallelStream().forEach(tid->{
+                taskIdMap.remove(tid);
+                finishedTasks.remove(tid);
+            });
+
+        });
+
     }
+
 }

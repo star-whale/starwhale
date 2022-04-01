@@ -7,8 +7,8 @@
 
 package ai.starwhale.mlops.reporting;
 
-import ai.starwhale.mlops.api.protocol.report.ReportRequest;
-import ai.starwhale.mlops.api.protocol.report.ReportResponse;
+import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
+import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 
 /**
  * the processor for every report from Agent

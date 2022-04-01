@@ -9,7 +9,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.system.AgentMapper">
 
-    <select id="listAgents" resultMap="agentResultMap">
+    <sql id="select_agents">
         select id as agent_id,
                inet_ntoa(agent_ip) as agent_ip,
                connect_time,
@@ -17,12 +17,26 @@
                device_info,
                created_time as agent_created_time,
                modified_time as agent_modified_time
-        from agent_info
+        from agent_info as a where 1=1
+    </sql>
+
+    <select id="listAgents" resultMap="agentResultMap">
+        <include refid="select_agents"/>
+    </select>
+
+    <select id="findByIp" resultMap="agentResultMap">
+        <include refid="select_agents"/>
+        and a.agent_ip = inet_aton(#{ip})
+    </select>
+
+    <select id="findByIpForUpdate" resultMap="agentResultMap">
+        <include refid="select_agents"/>
+        and a.agent_ip = inet_aton(#{ip}) for update
     </select>
 
     <insert id="addAgent" parameterType="ai.starwhale.mlops.domain.system.AgentEntity" >
         insert into agent_info(agent_ip, connect_time, agent_version, device_info)
-        values (#{agentIp}, #{connectTime}, #{agentVersion}, #{deviceInfo})
+        values (inet_aton(#{agentIp}), #{connectTime}, #{agentVersion}, #{deviceInfo})
         on duplicate key update connect_time = #{connectTime},
                                 agent_version = #{agentVersion},
                                 device_info = #{deviceInfo}
