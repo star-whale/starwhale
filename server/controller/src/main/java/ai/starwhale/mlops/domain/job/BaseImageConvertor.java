@@ -23,7 +23,9 @@ public class BaseImageConvertor implements Convertor<BaseImageEntity, BaseImageV
 
     @Override
     public BaseImageVO convert(BaseImageEntity baseImageEntity) throws ConvertException {
-        Objects.requireNonNull(baseImageEntity, "baseImageEntity");
+        if(baseImageEntity == null) {
+            return BaseImageVO.empty();
+        }
         return BaseImageVO.builder()
             .id(idConvertor.convert(baseImageEntity.getId()))
             .name(baseImageEntity.getImageName())

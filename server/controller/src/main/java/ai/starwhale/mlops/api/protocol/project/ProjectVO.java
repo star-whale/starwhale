@@ -28,4 +28,7 @@ public class ProjectVO implements Serializable {
 
     private UserVO owner;
 
+    public static ProjectVO empty() {
+        return new ProjectVO("", "", -1L, UserVO.empty());
+    }
 }

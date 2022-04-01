@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
+import org.aspectj.weaver.loadtime.Agent;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.validation.annotation.Validated;
 
 @Data
@@ -30,6 +32,10 @@ public class AgentVO implements Serializable {
     private StatusEnum status;
 
     private String version;
+
+    public static AgentVO empty() {
+        return new AgentVO("", "", -1L, StatusEnum.OFFLINE, "");
+    }
 
     /**
      * Gets or Sets status

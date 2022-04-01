@@ -27,7 +27,9 @@ public class AgentConvertor implements Convertor<AgentEntity, AgentVO> {
 
     @Override
     public AgentVO convert(AgentEntity agentEntity) throws ConvertException {
-        Objects.requireNonNull(agentEntity, "agentEntity");
+        if(agentEntity == null) {
+            return AgentVO.empty();
+        }
         return AgentVO.builder()
             .id(idConvertor.convert(agentEntity.getId()))
             .ip(agentEntity.getAgentIp())

@@ -11,6 +11,7 @@ import ai.starwhale.mlops.api.protocol.user.RoleVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +23,9 @@ public class RoleConvertor implements Convertor<RoleEntity, RoleVO> {
 
     @Override
     public RoleVO convert(RoleEntity entity) throws ConvertException {
+        if(entity == null) {
+            return RoleVO.empty();
+        }
         return RoleVO.builder()
             .id(idConvertor.convert(entity.getId()))
             .roleName(entity.getRoleName())
@@ -31,6 +35,7 @@ public class RoleConvertor implements Convertor<RoleEntity, RoleVO> {
 
     @Override
     public RoleEntity revert(RoleVO vo) throws ConvertException {
+        Objects.requireNonNull(vo, "RoleVO");
         return RoleEntity.builder()
             .id(idConvertor.revert(vo.getId()))
             .roleName(vo.getRoleName())

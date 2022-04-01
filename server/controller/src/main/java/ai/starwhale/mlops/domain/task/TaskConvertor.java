@@ -6,6 +6,7 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.system.AgentConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,9 @@ public class TaskConvertor implements Convertor<TaskEntity, TaskVO> {
 
     @Override
     public TaskVO convert(TaskEntity entity) throws ConvertException {
+        if(entity == null) {
+            return TaskVO.empty();
+        }
         return TaskVO.builder()
             .id(idConvertor.convert(entity.getId()))
             .uuid(entity.getTaskUuid())
@@ -34,6 +38,7 @@ public class TaskConvertor implements Convertor<TaskEntity, TaskVO> {
 
     @Override
     public TaskEntity revert(TaskVO vo) throws ConvertException {
+        Objects.requireNonNull(vo, "TaskVO");
         return TaskEntity.builder()
             .taskStatus(vo.getTaskStatus())
             .taskUuid(vo.getUuid())

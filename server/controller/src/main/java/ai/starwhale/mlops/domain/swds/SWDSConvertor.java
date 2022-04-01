@@ -13,6 +13,7 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -40,6 +41,7 @@ public class SWDSConvertor implements Convertor<SWDatasetEntity, DatasetVO> {
 
     @Override
     public SWDatasetEntity revert(DatasetVO vo) throws ConvertException {
+        Objects.requireNonNull(vo, "datasetVO");
         return SWDatasetEntity.builder()
             .id(idConvertor.revert(vo.getId()))
             .datasetName(vo.getName())
