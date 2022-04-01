@@ -25,4 +25,8 @@ public class BaseImageVO implements Serializable {
 
     @JsonProperty("name")
     private String name;
+
+    public static BaseImageVO empty() {
+        return new BaseImageVO("", "");
+    }
 }

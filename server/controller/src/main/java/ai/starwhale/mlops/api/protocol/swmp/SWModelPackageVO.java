@@ -33,4 +33,7 @@ public class SWModelPackageVO implements Serializable {
     @JsonProperty("owner")
     private UserVO owner;
 
+    public static SWModelPackageVO empty() {
+        return new SWModelPackageVO("", "", -1L, UserVO.empty());
+    }
 }

@@ -24,4 +24,7 @@ public class RoleVO {
 
     private String roleNameEn;
 
+    public static RoleVO empty() {
+        return new RoleVO("", "", "");
+    }
 }

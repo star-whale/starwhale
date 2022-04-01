@@ -8,6 +8,7 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +47,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
 
     @Override
     public JobEntity revert(JobVO jobVO) throws ConvertException {
+        Objects.requireNonNull(jobVO, "jobVO");
         return null;
     }
 

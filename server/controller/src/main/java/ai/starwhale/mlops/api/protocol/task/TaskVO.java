@@ -35,4 +35,8 @@ public class TaskVO implements Serializable {
 
     @JsonProperty("taskStatus")
     private Integer taskStatus;
+
+    public static TaskVO empty() {
+        return new TaskVO("", "", AgentVO.empty(), -1L, 0);
+    }
 }

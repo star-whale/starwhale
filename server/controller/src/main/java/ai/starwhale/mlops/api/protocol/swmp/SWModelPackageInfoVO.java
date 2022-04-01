@@ -10,6 +10,7 @@ package ai.starwhale.mlops.api.protocol.swmp;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import javax.validation.Valid;
 import lombok.Builder;
@@ -28,6 +29,10 @@ public class SWModelPackageInfoVO implements Serializable {
     @JsonProperty("files")
     @Valid
     private List<ModelFile> files;
+
+    public static SWModelPackageInfoVO empty() {
+        return new SWModelPackageInfoVO("", new ArrayList<>());
+    }
 
     @Data
     @Builder

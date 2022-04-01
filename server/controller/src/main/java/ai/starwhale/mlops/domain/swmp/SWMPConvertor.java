@@ -13,6 +13,7 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -41,6 +42,7 @@ public class SWMPConvertor implements Convertor<SWModelPackageEntity, SWModelPac
 
     @Override
     public SWModelPackageEntity revert(SWModelPackageVO vo) throws ConvertException {
+        Objects.requireNonNull(vo, "SWModelPackageVO");
         return SWModelPackageEntity.builder()
             .id(idConvertor.revert(vo.getId()))
             .swmpName(vo.getName())
