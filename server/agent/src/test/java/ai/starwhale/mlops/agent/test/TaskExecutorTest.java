@@ -13,7 +13,7 @@ import static org.mockito.ArgumentMatchers.any;
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.node.gpu.DeviceDetect;
+import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
@@ -21,6 +21,7 @@ import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.persistence.TaskPersistence.ExecuteStatus;
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.ReportResponse;
@@ -29,8 +30,6 @@ import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,7 +40,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.util.ResourceUtils;
 
 @SpringBootTest(
         classes = StarWhaleAgentTestApplication.class)
@@ -60,7 +58,7 @@ public class TaskExecutorTest {
 
     // todo Have some problem:mock not effect
     @MockBean
-    private DeviceDetect nvidiaDetect;
+    private GPUDetect nvidiaDetect;
 
     @MockBean
     private TaskPersistence taskPersistence;
@@ -117,7 +115,6 @@ public class TaskExecutorTest {
     public void rebuild_preparing2RunningTest() throws Exception {
         mockConfig();
 
-        URL taskPathUrl = ResourceUtils.getURL("classpath:tasks");
         rebuildTasksAction.apply(Void.TYPE.cast(null), Context.builder().build());
         sourcePool.refresh();
         sourcePool.setToReady();
@@ -134,8 +131,9 @@ public class TaskExecutorTest {
         EvaluationTask runningTask = taskPool.runningTasks.get(0);
         Long id = runningTask.getTask().getId();
         // mock taskContainer already change status to uploading todo:or other status
-        runningTask.getTask().setStatus(TaskStatus.UPLOADING);
         Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);
+
+        Mockito.when(taskPersistence.status(id)).thenReturn(ExecuteStatus.OK);
         // do monitor test
         taskExecutor.monitorRunningTasks();
 

@@ -50,7 +50,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
         // pull swmp(tar) and uncompress it to the swmp dir
         String swmpPath = taskPersistence.preloadingSWMP(oldTask);
-        // allocate device(GPU or todo CPU) for task
+        // allocate device(GPU or CPU) for task
         Set<Device> allocated = sourcePool.allocate(
             AllocateRequest.builder().gpuNum(1).build());
 
@@ -60,7 +60,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
         Optional<String> containerId = containerClient.startContainer(
             ImageConfig.builder()
                 .autoRemove(false)
-                .env(List.of())
+                .env(List.of()) // todo env
                 .entrypoint(List.of())
                 .gpuConfig(GPUConfig.builder()
                     .count(1)

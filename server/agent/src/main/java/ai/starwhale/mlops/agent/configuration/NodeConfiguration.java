@@ -8,8 +8,12 @@
 package ai.starwhale.mlops.agent.configuration;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.node.gpu.DeviceDetect;
+import ai.starwhale.mlops.agent.node.cpu.CPUDetect;
+import ai.starwhale.mlops.agent.node.cpu.SimpleCPUDetect;
+import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.NvidiaCmdDetect;
+import ai.starwhale.mlops.agent.node.host.HostDetect;
+import ai.starwhale.mlops.agent.node.host.SimpleHostDetect;
 import ai.starwhale.mlops.agent.node.initializer.SourcePoolInitializer;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,8 +26,8 @@ import java.util.Map;
 public class NodeConfiguration {
 
     @Bean
-    public SourcePool sourcePool(Map<String, DeviceDetect> gpuDetectImpl) {
-        return new SourcePool(gpuDetectImpl);
+    public SourcePool sourcePool(Map<String, GPUDetect> gpuDetectImpl, CPUDetect cpuDetect) {
+        return new SourcePool(gpuDetectImpl, cpuDetect);
     }
 
     @Bean
@@ -31,9 +35,22 @@ public class NodeConfiguration {
     public SourcePoolInitializer sourcePoolInitializer(SourcePool sourcePool) {
         return new SourcePoolInitializer(sourcePool);
     }
+
     @Bean
-    public DeviceDetect nvidiaGPUDetect(XmlMapper xmlMapper) {
+    @ConditionalOnProperty(name = "sw.node.sourcePool.gpu.nvidia.detect", havingValue = "cmd", matchIfMissing = true)
+    public GPUDetect nvidiaGPUDetect(XmlMapper xmlMapper) {
         return new NvidiaCmdDetect(xmlMapper);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "sw.node.sourcePool.cpu.detect", havingValue = "simple", matchIfMissing = true)
+    public CPUDetect simpleCPUDetect() {
+        return new SimpleCPUDetect();
+    }
+    @Bean
+    @ConditionalOnProperty(name = "sw.node.sourcePool.host.detect", havingValue = "simple", matchIfMissing = true)
+    public HostDetect simpleSystemDetect() {
+        return new SimpleHostDetect();
     }
 
     // todo:other brand of gpu

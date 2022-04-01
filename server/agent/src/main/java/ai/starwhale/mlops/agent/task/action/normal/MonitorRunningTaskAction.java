@@ -9,21 +9,35 @@ package ai.starwhale.mlops.agent.task.action.normal;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
+import ai.starwhale.mlops.agent.task.persistence.TaskPersistence.ExecuteStatus;
 import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
 
 @Service
 public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
 
     @Override
     public EvaluationTask processing(EvaluationTask runningTask, Context context)
-        throws IOException {
+        throws Exception {
         // dominated by disk(see if other processes have modified)
         EvaluationTask newTask = BeanUtil.toBean(runningTask, EvaluationTask.class);
-        newTask.getTask().setStatus(taskPersistence.getTaskStatusById(runningTask.getTask().getId()));
+
+        ExecuteStatus executeStatus = taskPersistence.status(runningTask.getTask().getId());
+        switch (executeStatus) {
+            case START:
+            case RUNNING:
+            case UNKNOWN:
+                // nothing to do,just wait
+                break;
+            case OK:
+                newTask.getTask().setStatus(TaskStatus.UPLOADING);
+                break;
+            case FAILED:
+                newTask.getTask().setStatus(TaskStatus.EXIT_ERROR);
+                break;
+        }
+
         return newTask;
     }
 

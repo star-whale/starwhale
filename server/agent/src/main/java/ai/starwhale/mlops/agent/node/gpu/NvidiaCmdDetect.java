@@ -24,8 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * detect GPU info by nvidia-smi cmd(dependency direct running on the host)
+ */
 @Slf4j
-public class NvidiaCmdDetect implements DeviceDetect {
+public class NvidiaCmdDetect implements GPUDetect {
 
     private final static String detectCmd = "nvidia-smi -q -x";
 

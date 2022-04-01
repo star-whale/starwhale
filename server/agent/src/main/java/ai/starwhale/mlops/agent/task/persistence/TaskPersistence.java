@@ -8,9 +8,6 @@
 package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
-import ai.starwhale.mlops.domain.task.Task;
-
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -32,12 +29,21 @@ public interface TaskPersistence {
     EvaluationTask getTaskById(Long id) throws Exception;
 
     /**
-     * get task status by id
+     * get task container status by id
      * @param id key
      * @return task
      */
-    Task.TaskStatus getTaskStatusById(Long id) throws Exception;
+    ExecuteStatus status(Long id) throws Exception;
 
+    /**
+     * "created""running""paused""restarting""removing""exited""dead"
+     */
+    enum ExecuteStatus {
+        /**
+         * normal life cycle
+         */
+        START, RUNNING, OK, FAILED, UNKNOWN
+    }
     /**
      * save task
      * @param task task

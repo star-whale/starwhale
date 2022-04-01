@@ -9,9 +9,13 @@ package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
-import ai.starwhale.mlops.domain.task.Task;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import cn.hutool.extra.compress.CompressUtil;
+import cn.hutool.extra.compress.extractor.Extractor;
 import cn.hutool.json.JSONUtil;
+import java.io.File;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -74,12 +79,15 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public Task.TaskStatus getTaskStatusById(Long id) throws Exception {
+    public ExecuteStatus status(Long id) throws Exception {
         String path = agentProperties.getTask().getStatusPath();
         // get the newest task info
         Path taskPath = Path.of(path + "/" + id + statusSuffix);
         String status = Files.readString(taskPath);
-        return Task.TaskStatus.valueOf(status);
+        if (StringUtils.hasText(status)) {
+            return ExecuteStatus.valueOf(status);
+        }
+        return ExecuteStatus.UNKNOWN;
     }
 
     @Override
@@ -118,10 +126,12 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public String preloadingSWMP(EvaluationTask task) throws Exception {
         // pull swmp(tar) and uncompress it to the swmp dir
         InputStream swmpStream = storageAccessService.get(task.getSwModelPackage().getPath());
-        Path targetDir = Path.of(agentProperties.getTask().getSwmpPath() + "/" + task.getTask().getId() + "/" );
-        Files.copy(swmpStream, targetDir);
-        // todo untar
-
-        return targetDir.toString();
+        String targetDir = agentProperties.getTask().getSwmpPath() + "/" + task.getTask().getId() + "/" ;
+        // Path targetDir = Path.of(agentProperties.getTask().getSwmpPath() + "/" + task.getTask().getId() + "/" );
+        // Files.copy(swmpStream, targetDir);
+        // untar:direct uncompress to the target dir
+        Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);
+        extractor.extract(new File(targetDir));
+        return targetDir;
     }
 }
