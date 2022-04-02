@@ -7,7 +7,6 @@
 
 package ai.starwhale.mlops.domain.swds.index;
 
-import java.util.LinkedList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

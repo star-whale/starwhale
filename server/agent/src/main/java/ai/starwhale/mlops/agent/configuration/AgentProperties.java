@@ -21,20 +21,38 @@ public class AgentProperties {
     public static class Task {
 
         /**
-         * taskInfo file path
+         * taskInfo dir path,Eg:/var/starwhale/task/info/,
+         * and every file of taskInfo will locate at path/{taskId}.taskinfo(format:json)
          */
         private String infoPath;
+
+        /**
+         * task running status dir path,Eg:/var/starwhale/task/status/,
+         * and every file of taskStatus will locate at path/{taskId}.status(format:txt)
+         */
         private String statusPath;
 
         /**
-         * archived taskInfo file path
+         * swmp dir path,Eg:/var/starwhale/task/swmp/,
+         * and every modelDir of task will locate at path/{taskId}/
+         */
+        private String swmpPath;
+
+        /**
+         * archived taskInfo file path,Eg:/var/starwhale/task/archived/
          */
         private String archivedDirPath;
 
         /**
-         * task result file path
+         * task result dir path,Eg:/var/starwhale/task/result/,
+         * and every task's result file will locate at path/{taskId}/xxxResult
          */
         private String resultPath;
+
+        /**
+         * task runtime log dir path,Eg:/var/starwhale/task/log/,
+         * and every task's log file will locate at path/{taskId}/xxx.log
+         */
         private String logPath;
     }
 

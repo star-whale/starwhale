@@ -13,6 +13,7 @@
     <properties>
         <docker-client-version>3.2.13</docker-client-version>
         <dom-version>2.1.1</dom-version>
+        <oshi-version>6.1.5</oshi-version>
     </properties>
     <dependencies>
         <!-- star whale package -->
@@ -73,10 +74,16 @@
             <artifactId>docker-java-transport-httpclient5</artifactId>
             <version>${docker-client-version}</version>
         </dependency>
-        <!---->
+        <!--xml parse -->
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+        <!-- system info detect -->
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-core</artifactId>
+            <version>${oshi-version}</version>
         </dependency>
         <!-- unit test -->
         <dependency>

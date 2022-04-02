@@ -13,6 +13,7 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,9 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
 
     @Override
     public ProjectVO convert(ProjectEntity entity) throws ConvertException {
+        if(entity == null) {
+            return ProjectVO.empty();
+        }
         return ProjectVO.builder()
             .id(idConvertor.convert(entity.getId()))
             .name(entity.getProjectName())
@@ -42,6 +46,7 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
 
     @Override
     public ProjectEntity revert(ProjectVO vo) throws ConvertException {
+        Objects.requireNonNull(vo, "vo");
         return ProjectEntity.builder()
             .id(idConvertor.revert(vo.getId()))
             .projectName(vo.getName())

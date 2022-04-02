@@ -27,4 +27,8 @@ public class UserVO {
     private RoleVO role;
 
     private Boolean isEnabled;
+
+    public static UserVO empty() {
+        return new UserVO("", "", -1L, RoleVO.empty(), false);
+    }
 }

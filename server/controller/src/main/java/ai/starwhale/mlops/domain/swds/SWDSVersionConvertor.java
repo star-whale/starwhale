@@ -13,6 +13,7 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
+import java.util.Objects;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -44,6 +45,7 @@ public class SWDSVersionConvertor implements Convertor<SWDatasetVersionEntity, D
     @Override
     public SWDatasetVersionEntity revert(DatasetVersionVO vo)
         throws ConvertException {
+        Objects.requireNonNull(vo, "datasetVersionVO");
         return SWDatasetVersionEntity.builder()
             .id(idConvertor.revert(vo.getId()))
             .versionName(vo.getName())
