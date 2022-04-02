@@ -1,0 +1,12 @@
+{
+    "backend": "fuse",
+    "swds": [
+        {
+            "bucket": "~/.cache/starwhale/dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data",
+            "key": {
+                "data": "data_ubyte_0.swds_bin:0",
+                "label": "label_ubyte_0.swds_bin:0"
+            }
+        }
+    ]
+}

@@ -26,3 +26,13 @@ test:
 
 inference:
 	python mnist/ppl.py
+
+ppl-fuse-test:
+	SW_TASK_SWDS_CONFIG=./test/swds_fuse.json SW_TASK_STATUS_DIR=./test/task_volume/status \
+	SW_TASK_LOG_DIR=./test/task_volume/log SW_TASK_RESULT_DIR=./test/task_volume/result \
+	python mnist/ppl.py
+
+ppl-s3-test:
+	SW_TASK_SWDS_CONFIG=./test/swds_s3.json SW_TASK_STATUS_DIR=./test/task_volume/status \
+	SW_TASK_LOG_DIR=./test/task_volume/log SW_TASK_RESULT_DIR=./test/task_volume/result \
+	python mnist/ppl.py

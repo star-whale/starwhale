@@ -16,4 +16,4 @@ tag:
 attr:
   batch_size: 50
   alignment_size: 4k
-  volume_size: 8M
+  volume_size: 32M

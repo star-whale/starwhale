@@ -1,0 +1,41 @@
+{
+    "backend": "s3",
+    "secret": {
+        "access_key": "minioadmin",
+        "secret_key": "minioadmin"
+    },
+    "service": {
+        "endpoint": "http://localhost:9000",
+        "region": "local"
+    },
+    "swds": [
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/data_ubyte_0.swds_bin:0",
+                "label": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/label_ubyte_0.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/data_ubyte_1.swds_bin:0",
+                "label": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/label_ubyte_1.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/data_ubyte_2.swds_bin:0",
+                "label": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/label_ubyte_2.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/data_ubyte_3.swds_bin:0",
+                "label": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/label_ubyte_3.swds_bin:0"
+            }
+        }
+    ]
+}
