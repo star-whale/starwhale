@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.agent.container;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,10 +16,12 @@ import java.util.Map;
 @Data
 @Builder
 public class ImageConfig {
+
     private String image;
-    private String[] env;
+    private List<String> env;
     private Map<String, String> labels;
     private Boolean autoRemove;
+    private List<String> entrypoint;
     /**
      * Set the Network mode for the container
      * <ul>
@@ -32,41 +35,59 @@ public class ImageConfig {
     private String networkMode;
 
     private CPUConfig cpuConfig;
+    private GPUConfig gpuConfig;
     private IOConfig ioConfig;
 
-    private Mount mount;
+    private List<Mount> mounts;
 
-    static class CPUConfig {
+    @Data
+    @Builder
+    public static class GPUConfig {
+
+        private String driver;
+
+        private Integer count;
+
+        private List<String> deviceIds;
+
+        private List<List<String>> capabilities;
+    }
+
+    @Data
+    @Builder
+    public static class CPUConfig {
+
         private Long cpuPeriod;
 
-        private Long cpuRealtimePeriod;
-
-        private Long cpuRealtimeRuntime;
-
-        private Integer cpuShares;
-
-        /**
-         * @since 1_20
-         */
         private Long cpuQuota;
-
-        private String cpusetCpus;
-
-        private String cpusetMems;
 
         private Long cpuCount;
 
         private Long cpuPercent;
     }
 
-    static class IOConfig {
+    @Data
+    @Builder
+    public static class IOConfig {
+
         private Long ioMaximumIOps;
 
         private Long ioMaximumBandwidth;
     }
 
-    static class Mount {
-        private MountType type;
+    @Data
+    @Builder
+    public static class Mount {
+
+        /**
+         * <ul>
+         *     <li>BIND</li>
+         *     <li>VOLUME</li>
+         *     <li>TMPFS</li>
+         *     <li>NPIPE</li>
+         * </ul>
+         */
+        private String type;
 
         private String source;
 
@@ -74,12 +95,6 @@ public class ImageConfig {
 
         private Boolean readOnly;
 
-        enum MountType {
-            BIND,
-            VOLUME,
-            TMPFS,
-            NPIPE
-        }
 
     }
 

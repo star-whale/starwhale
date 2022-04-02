@@ -8,7 +8,9 @@
 package ai.starwhale.mlops.agent.node;
 
 import ai.starwhale.mlops.agent.exception.AllocationException;
-import ai.starwhale.mlops.agent.node.gpu.DeviceDetect;
+import ai.starwhale.mlops.agent.node.cpu.CPUDetect;
+import ai.starwhale.mlops.agent.node.cpu.CPUInfo;
+import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
@@ -20,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,13 +34,15 @@ public class SourcePool {
 
     private final Object lock = new Object();
 
-    private final Map<String, DeviceDetect> gpuDetectImpl;
+    private final Map<String, GPUDetect> gpuDetect;
+    private final CPUDetect cpuDetect;
 
     private final Set<Device> devices = new CopyOnWriteArraySet<>();
 
     public SourcePool(
-        Map<String, DeviceDetect> gpuDetectImpl) {
-        this.gpuDetectImpl = gpuDetectImpl;
+        Map<String, GPUDetect> gpuDetect, CPUDetect cpuDetect) {
+        this.gpuDetect = gpuDetect;
+        this.cpuDetect = cpuDetect;
     }
 
     public void refresh() {
@@ -74,13 +77,26 @@ public class SourcePool {
                 long idleGpuNum = devices.stream().filter(
                         device -> device.getStatus().equals(Status.idle) && device.getClazz()
                                 .equals(Clazz.GPU)).count();
-                if (idleGpuNum >= request.getGpuNum()) {
+                long idleCpuNum = devices.stream().filter(
+                        device -> device.getStatus().equals(Status.idle) && device.getClazz()
+                                .equals(Clazz.CPU)).count();
+                if (idleGpuNum >= request.getGpuNum() && idleCpuNum >= request.getCpuNum()) {
                     int tmp = request.getGpuNum();
                     Set<Device> results = new HashSet<>();
 
                     for (Device device : devices) {
                         if (device.getStatus().equals(Status.idle) && device.getClazz()
                                 .equals(Clazz.GPU) && tmp > 0) {
+                            device.setStatus(Status.busy);
+                            results.add(device);
+                            tmp--;
+                        }
+                    }
+
+                    tmp = request.getCpuNum();
+                    for (Device device : devices) {
+                        if (device.getStatus().equals(Status.idle) && device.getClazz()
+                                .equals(Clazz.CPU) && tmp > 0) {
                             device.setStatus(Status.busy);
                             results.add(device);
                             tmp--;
@@ -95,11 +111,9 @@ public class SourcePool {
 
     }
 
-    // todo with function and middle state
     public void release(Set<Device> releaseDevices) {
         synchronized (lock) {
             if (CollectionUtil.isNotEmpty(devices)) {
-
                 for (Device device : releaseDevices) {
                     Optional<Device> find = devices.stream().filter(d-> d.getId().equals(device.getId())).findFirst();
                     find.ifPresent(value -> value.setStatus(Status.idle));
@@ -115,12 +129,13 @@ public class SourcePool {
         int gpuNum;
         /* GeForce GTX 1070 Ti/GeForce RTX 2070/Tesla T4 */
         // Set<String> labels;
+        int cpuNum;
     }
 
     private Set<Device> detectDevices() {
-        List<GPUInfo> gpuInfos = gpuDetectImpl.values().stream()
+        List<GPUInfo> gpuInfos = gpuDetect.values().stream()
             // realtime detect
-            .map(DeviceDetect::detect)
+            .map(GPUDetect::detect)
             // filter the empty result
             .filter(Optional::isPresent)
             // get the result
@@ -129,9 +144,7 @@ public class SourcePool {
             .flatMap(Collection::stream)
             // reduce these results
             .collect(Collectors.toList());
-        // todo:cpu
-
-        return gpuInfos.stream()
+        Set<Device> deviceSet = gpuInfos.stream()
             .map(gpuInfo ->
                 Device.builder()
                     .id(gpuInfo.getId())
@@ -142,5 +155,20 @@ public class SourcePool {
                         : Status.idle)
                     .build())
             .collect(Collectors.toSet());
+        Optional<CPUInfo> cpuInfo = cpuDetect.detect();
+        if(cpuInfo.isPresent()) {
+            CPUInfo cpu = cpuInfo.get();
+            for(int i = cpu.getCpuNum(); i >= 0;i--){
+                deviceSet.add(
+                    Device.builder()
+                        .id(String.valueOf(i))
+                        .status(Status.idle) // todo how to check one is idle, is "--cpu-period and --cpu-quota" more fit?
+                        .clazz(Clazz.CPU)
+                        .type(cpu.getCpuModel())
+                        .build()
+                );
+            }
+        }
+        return deviceSet;
     }
 }

@@ -8,12 +8,13 @@ import java.util.Optional;
 public interface ContainerClient {
     /**
      *
-     * @param imageId
-     * @param config
+     * @param config start param
      * @return container id
      */
-    Optional<String> startContainer(String imageId, ImageConfig config);
-    Optional<Boolean> stopContainer(String containerId);
+    Optional<String> startContainer(ImageConfig config);
+    boolean stopAndRemoveContainer(String containerId, boolean deleteVolume);
+    boolean stopContainer(String containerId);
+    boolean removeContainer(String containerId, boolean deleteVolume);
     Optional<ContainerStatus> status(String containerId);
 
     /**

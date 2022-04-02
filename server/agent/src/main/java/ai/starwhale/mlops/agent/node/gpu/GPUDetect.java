@@ -13,6 +13,6 @@ import java.util.Optional;
 /**
  * detect devices of the machine
  */
-public interface DeviceDetect {
+public interface GPUDetect {
     Optional<List<GPUInfo>> detect();
 }

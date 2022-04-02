@@ -8,8 +8,6 @@
 package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
-
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -21,21 +19,37 @@ public interface TaskPersistence {
      * get all tasks
      * @return all tasks
      */
-    List<EvaluationTask> getAllActiveTasks() throws IOException;
+    List<EvaluationTask> getAllActiveTasks() throws Exception;
 
     /**
      * get task by id
      * @param id key
      * @return task
      */
-    EvaluationTask getTaskById(Long id) throws IOException;
+    EvaluationTask getTaskById(Long id) throws Exception;
 
+    /**
+     * get task container status by id
+     * @param id key
+     * @return task
+     */
+    ExecuteStatus status(Long id) throws Exception;
+
+    /**
+     * "created""running""paused""restarting""removing""exited""dead"
+     */
+    enum ExecuteStatus {
+        /**
+         * normal life cycle
+         */
+        START, RUNNING, OK, FAILED, UNKNOWN
+    }
     /**
      * save task
      * @param task task
      * @return if success
      */
-    boolean save(EvaluationTask task);
+    boolean save(EvaluationTask task) throws Exception;
 
     /**
      * move task to the archived state
@@ -43,4 +57,11 @@ public interface TaskPersistence {
      * @return if success
      */
     boolean move2Archived(EvaluationTask task);
+
+    /**
+     * preloading task's swmp tar,and untar it to the dir
+     * @param task task
+     * @return disk dir path
+     */
+    String preloadingSWMP(EvaluationTask task) throws Exception;
 }

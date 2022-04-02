@@ -7,6 +7,8 @@
 
 package ai.starwhale.mlops.agent.task.action;
 
+import java.io.IOException;
+
 public interface DoTransition<Old, New> {
 
             default boolean valid(Old old, Context context) {
@@ -24,7 +26,7 @@ public interface DoTransition<Old, New> {
                 return null;
             }
 
-            default void post(Old old, New n, Context context) {
+            default void post(Old old, New n, Context context) throws Exception {
             }
 
             default void success(Old old, New n, Context context) {
