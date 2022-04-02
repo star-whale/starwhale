@@ -266,6 +266,7 @@ class DataSet(object):
         logger.info(f"[step:swds]finish gen swds @ {self._data_dir}")
 
     def _render_manifest(self) -> None:
+        self._manifest["name"] = self._name
         self._manifest["extra"] = dict(
             desc=self._swds_config.desc,
             tag=self._swds_config.tag or [self._version[:7]]
