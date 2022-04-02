@@ -3,8 +3,8 @@ package ai.starwhale.mlops.domain.task;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.util.RandomUtil;
 import ai.starwhale.mlops.domain.task.bo.Task;
+import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,7 +45,7 @@ public class TaskService {
     public Boolean addTask(Task task) {
         String uuid = task.getUuid();
         if(!StringUtils.hasText(uuid)) {
-            uuid = RandomUtil.randomHexString(16);
+            uuid = IdUtil.simpleUUID();
             task.setUuid(uuid);
         }
         TaskEntity entity = TaskEntity.builder()

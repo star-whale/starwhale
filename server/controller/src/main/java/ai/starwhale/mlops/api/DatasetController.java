@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -78,7 +79,7 @@ public class DatasetController implements DatasetApi{
             SWDSObject.builder()
                 .projectId(projectId)
                 .id(datasetId)
-                .latestVersion(SWDSObject.Version.builder().name(dsVersionName).build())
+                .latestVersion(Version.builder().name(dsVersionName).build())
                 .build(),
             PageParams.builder()
                 .pageNum(pageNum)
@@ -100,18 +101,24 @@ public class DatasetController implements DatasetApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(String projectId, String datasetId,
         String versionId, String tag) {
-        Boolean res = swDatasetService.modifySWMPVersion(
+        Boolean res = swDatasetService.modifySWDSVersion(
             Version.builder().id(versionId).tag(tag).build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(String projectId,
+    public ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(String projectId, String versionId,
         Integer pageNum, Integer pageSize) {
-        List<DatasetVO> voList = swDatasetService.listSWMP(
-            SWDSObject.builder().projectId(projectId).build(),
-            PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
+        List<DatasetVO> voList;
+        if(StringUtils.hasText(versionId)) {
+            DatasetVO ds = swDatasetService.findDatasetByVersionId(versionId);
+            voList = List.of(ds);
+        } else {
+            voList = swDatasetService.listSWDataset(
+                SWDSObject.builder().projectId(projectId).build(),
+                PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
+        }
         PageInfo<DatasetVO> pageInfo = new PageInfo<>(voList);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
@@ -155,4 +162,6 @@ public class DatasetController implements DatasetApi{
             .build();
         return swDatasetService.addVersion(swmp);
     }
+
+
 }
