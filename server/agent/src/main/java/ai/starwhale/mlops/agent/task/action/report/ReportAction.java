@@ -13,12 +13,12 @@ import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.api.ReportApi;
+import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
+import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
+import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.report.ReportRequest;
-import ai.starwhale.mlops.api.protocol.report.ReportResponse;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.task.Task;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
 import cn.hutool.core.collection.CollectionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,28 +54,28 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
         List<EvaluationTask> finishedTasks = List.copyOf(taskPool.finishedTasks);
         List<EvaluationTask> canceledTasks = List.copyOf(taskPool.canceledTasks);
 
-        List<Task> all = new ArrayList<>();
+        List<TaskReport> all = new ArrayList<>();
         // without stop the world
         all.addAll(new ArrayList<>(
-            taskPool.preparingTasks.stream().map(EvaluationTask::getTask)
+            taskPool.preparingTasks.stream().map(EvaluationTask::toTaskReport)
                 .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-            taskPool.runningTasks.stream().map(EvaluationTask::getTask)
+            taskPool.runningTasks.stream().map(EvaluationTask::toTaskReport)
                 .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-            taskPool.uploadingTasks.stream().map(EvaluationTask::getTask)
+            taskPool.uploadingTasks.stream().map(EvaluationTask::toTaskReport)
                 .collect(Collectors.toList())));
-        all.addAll(taskPool.finishedTasks.stream()
-                .map(EvaluationTask::getTask).collect(Collectors.toList()));
+        all.addAll(finishedTasks.stream().map(EvaluationTask::toTaskReport)
+            .collect(Collectors.toList()));
         all.addAll(new ArrayList<>(
-            taskPool.errorTasks.stream().map(EvaluationTask::getTask)
+            taskPool.errorTasks.stream().map(EvaluationTask::toTaskReport)
                 .collect(Collectors.toList())));
-        all.addAll(taskPool.canceledTasks.stream()
-                .map(EvaluationTask::getTask).collect(Collectors.toList()));
+        all.addAll(canceledTasks.stream().map(EvaluationTask::toTaskReport)
+            .collect(Collectors.toList()));
         reportRequest.setTasks(all);
 
         // todo
-        Node node = Node.builder().ipAddr("").name("").memorySizeGB(0l).devices(List.copyOf(sourcePool.getDevices()))
+        Node node = Node.builder().ipAddr("").agentVersion("").memorySizeGB(0l).devices(List.copyOf(sourcePool.getDevices()))
             .build();
 
         reportRequest.setNodeInfo(node);
@@ -109,12 +109,7 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
             // add controller's new tasks to current queue
             if (CollectionUtil.isNotEmpty(response.getTasksToRun())) {
                 for (TaskTrigger newTask : response.getTasksToRun()) {
-                    init2PreparingAction.apply(EvaluationTask.builder()
-                        .task(newTask.getTask())
-                        .imageId(newTask.getImageId())
-                        .swdsBlocks(newTask.getSwdsBlocks())
-                        .swModelPackage(newTask.getSwModelPackage())
-                        .build(), context);
+                    init2PreparingAction.apply(EvaluationTask.fromTaskTrigger(newTask), context);
                 }
             }
             // add controller's wait to cancel tasks to current list

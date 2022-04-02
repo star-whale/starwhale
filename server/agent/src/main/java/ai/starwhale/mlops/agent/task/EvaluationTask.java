@@ -7,15 +7,16 @@
 
 package ai.starwhale.mlops.agent.task;
 
+import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.Task;
-import lombok.Builder;
-import lombok.Data;
-
+import ai.starwhale.mlops.domain.task.TaskStatus;
 import java.util.List;
 import java.util.Set;
+import lombok.Builder;
+import lombok.Data;
 
 /**
  * sufficient information for an Agent to run a Task
@@ -25,9 +26,21 @@ import java.util.Set;
 public class EvaluationTask {
 
     /**
-     * task meta info
+     * unique id for the task
      */
-    Task task;
+    Long id;
+
+    /**
+     * the proper image to get swmp run
+     */
+    String imageId;
+
+    String resultPath;
+
+    /**
+     * task status
+     */
+    TaskStatus status;
 
     /**
      * the container id
@@ -38,11 +51,6 @@ public class EvaluationTask {
      * the devices list which the task hold
      */
     Set<Device> devices;
-
-    /**
-     * the proper image to get swmp run
-     */
-    private String imageId;
 
     /**
      * swmp meta info
@@ -69,9 +77,22 @@ public class EvaluationTask {
             return false;
         }
         EvaluationTask tt = (EvaluationTask)obj;
-        if(null == tt.getTask() || null == tt.getTask().getId()){
-            return false;
-        }
-        return this.task.getId().equals(tt.getTask().getId());
+        return this.getId().equals(tt.getId());
+    }
+
+    public static EvaluationTask fromTaskTrigger(TaskTrigger taskTrigger){
+        return EvaluationTask.builder().id(taskTrigger.getId())
+            .imageId(taskTrigger.getImageId())
+            .resultPath(taskTrigger.getResultPath())
+            .status(TaskStatus.CREATED)
+            .stage(Stage.inProgress)
+            .swdsBlocks(taskTrigger.getSwdsBlocks())
+            .swModelPackage(taskTrigger.getSwModelPackage())
+            .build();
+    }
+
+
+    public TaskReport toTaskReport(){
+        return TaskReport.builder().id(this.id).status(this.status).build();
     }
 }

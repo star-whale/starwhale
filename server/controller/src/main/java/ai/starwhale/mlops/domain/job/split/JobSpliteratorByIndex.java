@@ -15,11 +15,10 @@ import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
-import ai.starwhale.mlops.domain.task.Task;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskMapper;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -73,7 +72,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
      */
     @Override
     @Transactional
-    public List<TaskTrigger> split(Job job) {
+    public List<Task> split(Job job) {
         final List<SWDataSet> swDataSets = job.getSwDataSets();
         Integer deviceAmount = job.getJobRuntime().getDeviceAmount();
         Random r = new Random();
@@ -92,7 +91,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
         }
         taskMapper.addAll(taskList);
         jobMapper.updateJobStatus(List.of(job.getId()),JobStatus.SPLIT.getValue());
-        return taskBoConverter.toTaskTrigger(taskList,job);
+        return taskBoConverter.fromTaskEntity(taskList,job);
     }
 
     private List<TaskEntity> buildTaskEntities(Job job, Map<Integer, List<SWDSBlock>> swdsBlocks)

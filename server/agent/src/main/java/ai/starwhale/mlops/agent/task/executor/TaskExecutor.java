@@ -13,8 +13,10 @@ import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.action.SelectOneToExecute;
-import ai.starwhale.mlops.api.protocol.report.ReportRequest;
-import ai.starwhale.mlops.api.protocol.report.ReportResponse;
+import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
+import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -110,7 +112,7 @@ public class TaskExecutor {
             execute.apply(
                     taskPool.preparingTasks.peek(),
                     Context.instance(),
-                    task -> !taskPool.needToCancel.contains(task.getTask().getId()),
+                    task -> !taskPool.needToCancel.contains(task.getId()),
                     preparing2RunningAction,
                     preparing2CanceledAction
             );
@@ -127,7 +129,7 @@ public class TaskExecutor {
                 execute.apply(
                         runningTask,
                         Context.instance(),
-                        task -> !taskPool.needToCancel.contains(task.getTask().getId()),
+                        task -> !taskPool.needToCancel.contains(task.getId()),
                         monitorRunningTaskAction,
                         running2CanceledAction
                 );
@@ -143,7 +145,7 @@ public class TaskExecutor {
             for (EvaluationTask uploadingTask : new ArrayList<>(taskPool.uploadingTasks)) {
                 execute.apply(uploadingTask,
                         Context.instance(),
-                        task -> !taskPool.needToCancel.contains(task.getTask().getId()),
+                        task -> !taskPool.needToCancel.contains(task.getId()),
                         uploading2FinishedAction,
                         uploading2CanceledAction);
 

@@ -7,30 +7,39 @@
 
 package ai.starwhale.mlops.reporting;
 
-import ai.starwhale.mlops.api.protocol.report.ReportRequest;
-import ai.starwhale.mlops.api.protocol.report.ReportResponse;
+import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
+import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
+import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.task.Task;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.system.Agent;
+import ai.starwhale.mlops.domain.system.AgentEntity;
+import ai.starwhale.mlops.domain.system.AgentMapper;
+import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.TaskScheduler;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 /**
  * the processor for every report from Agent
  */
+@Slf4j
 public class ReportProcessorImp implements ReportProcessor{
 
     CommandingTasksChecker commandingTasksChecker;
@@ -41,39 +50,77 @@ public class ReportProcessorImp implements ReportProcessor{
 
     TaskBoConverter taskBoConverter;
 
-    // 1. check commanding tasks; 2. change task status; 3. schedule task & cancel task;
+    AgentMapper agentMapper;
+
+    ObjectMapper jsonMapper;
+
+    // 0.if node doesn't exists creat one 1. check commanding tasks;  2. change task status; 3. schedule task & cancel task;
+    @Transactional
      public ReportResponse receive(ReportRequest report){
          final Node nodeInfo = report.getNodeInfo();
+        final AgentEntity agentEntity = agentMapper.findByIpForUpdate(nodeInfo.getIpAddr());
+        if(null == agentEntity){
+            insertAgent(nodeInfo);
+        }
+        final List<TaskReport> taskReports = report.getTasks();
+         final List<Task> tasks = taskReports.parallelStream().map(taskReport -> {
+             final Long taskId = taskReport.getId();
+             final Task tsk = livingTaskStatusMachine.ofId(taskId)
+                 .orElseGet(() -> {
+                     log.warn("not hot task load into mem {}",taskId);
+                     final Task task = taskBoConverter.fromId(taskId);
+                     livingTaskStatusMachine.adopt(List.of(task),task.getStatus());
+                     return task;
+                 });
+             tsk.setStatus(taskReport.getStatus());
+             return tsk;
+         }).collect(Collectors.toList());
          final List<TaskCommand> unProperTasks = commandingTasksChecker
-             .onNodeReporting(nodeInfo,report.getTasks());
+             .onNodeReporting(nodeInfo,tasks);
          if(!CollectionUtils.isEmpty(unProperTasks)){
              return rebuildReportResponse(unProperTasks);
          }
-         taskStatusChange(report.getTasks());
-         final List<TaskTrigger> toAssignTasks = taskScheduler.schedule(nodeInfo);
+         taskStatusChange(tasks);
+         final List<Task> toAssignTasks = taskScheduler.schedule(nodeInfo);
          final Collection<Task> toCancelTasks = livingTaskStatusMachine.ofStatus(TaskStatus.TO_CANCEL);
          scheduledTaskStatusChange(toAssignTasks);
          canceledTaskStatusChange(toCancelTasks);
-         commandingTasksChecker.onTaskCommanding(buildTaskCommands(toAssignTasks,toCancelTasks),nodeInfo);
+         commandingTasksChecker.onTaskCommanding(taskBoConverter.toTaskCommand(toAssignTasks),
+             Agent.fromNode(nodeInfo));
          return buidResponse(toAssignTasks, toCancelTasks);
      }
 
-    public ReportResponse buidResponse(List<TaskTrigger> toAssignTasks,
+    private void insertAgent(Node nodeInfo) {
+        String deviceInfo="";
+        try {
+            deviceInfo = jsonMapper.writeValueAsString(nodeInfo.getDevices());
+        } catch (JsonProcessingException e) {
+            log.error("serialize device info from node failed",e);
+        }
+        final AgentEntity agentEntity = AgentEntity.builder()
+            .agentIp(nodeInfo.getIpAddr())
+            .agentVersion(nodeInfo.getAgentVersion())
+            .connectTime(LocalDateTime.now())
+            .deviceInfo(deviceInfo)
+            .build();
+        agentMapper.addAgent(agentEntity);
+    }
+
+    public ReportResponse buidResponse(List<Task> toAssignTasks,
         Collection<Task> toCancelTasks) {
         final List<Long> taskIdsToCancel = toCancelTasks.stream().map(Task::getId)
             .collect(
                 Collectors.toList());
         return new ReportResponse(
-            taskIdsToCancel, toAssignTasks);
+            taskIdsToCancel, taskBoConverter.toTaskTrigger(toAssignTasks));
     }
 
     private void canceledTaskStatusChange(Collection<Task> tasks) {
         livingTaskStatusMachine.adopt(tasks,TaskStatus.CANCEL_COMMANDING);
     }
 
-    private void scheduledTaskStatusChange(List<TaskTrigger> toAssignTasks) {
-        livingTaskStatusMachine.adopt(toAssignTasks.stream().map(TaskTrigger::getTask).collect(
-            Collectors.toList()), TaskStatus.ASSIGNING);
+    private void scheduledTaskStatusChange(List<Task> toAssignTasks) {
+        livingTaskStatusMachine.adopt(toAssignTasks, TaskStatus.ASSIGNING);
 
     }
 
@@ -89,35 +136,21 @@ public class ReportProcessorImp implements ReportProcessor{
 
     }
 
-    List<TaskCommand> buildTaskCommands(List<TaskTrigger> toAssignTasks,Collection<Task> toCancelTasks){
-        final Stream<TaskCommand> TaskTriggerStream = toAssignTasks.stream()
-            .map(tk -> new TaskCommand(CommandType.TRIGGER, tk.getTask()));
-        final Stream<TaskCommand> taskCancelStream = toCancelTasks.stream()
-            .map(ct -> new TaskCommand(CommandType.CANCEL, ct));
-        return Stream.concat(TaskTriggerStream,taskCancelStream).collect(Collectors.toList());
-    }
+    ReportResponse rebuildReportResponse(List<TaskCommand> taskCommands){
 
-    ReportResponse rebuildReportResponse(List<TaskCommand> TaskTriggers){
-        List<Long> taskIdsToCancel = new LinkedList<>();
 
-        List<TaskTrigger> tasksToRun = new LinkedList<>();
+        List<Long> taskIdsToCancel = taskCommands.parallelStream()
+            .filter(taskCommand -> taskCommand.getCommandType() == CommandType.CANCEL)
+            .map(TaskCommand::getTask)
+            .map(Task::getId).collect(Collectors.toList());
 
-        TaskTriggers.forEach(taskCommand -> {
-            if(taskCommand.getCommandType() == CommandType.CANCEL){
-                taskIdsToCancel.add(taskCommand.getTask().getId());
-            }else{
-                tasksToRun.add(buildTaskTriggerFromTask(taskCommand.getTask()));
-            }
-        });
+        List<TaskTrigger> tasksToRun = taskCommands.parallelStream()
+            .filter(taskCommand -> taskCommand.getCommandType() == CommandType.TRIGGER)
+            .map(TaskCommand::getTask)
+            .map(task -> taskBoConverter.toTaskTrigger(task)).collect(Collectors.toList());
 
         return new ReportResponse(taskIdsToCancel,tasksToRun);
 
     }
-
-    TaskTrigger buildTaskTriggerFromTask(Task task){
-         //todo(renyanda) find swmp & swds
-         return TaskTrigger.builder().task(task).build();
-    }
-
 
 }

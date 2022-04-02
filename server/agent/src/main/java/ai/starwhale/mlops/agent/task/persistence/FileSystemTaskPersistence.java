@@ -94,7 +94,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public boolean save(EvaluationTask task) throws IOException {
 
         String path = agentProperties.getTask().getInfoPath();
-        Path taskPath = Path.of(path + "/" + task.getTask().getId() + infoSuffix);
+        Path taskPath = Path.of(path + "/" + task.getId() + infoSuffix);
         if (!Files.exists(taskPath)) {
             Files.createFile(taskPath);
         }
@@ -107,7 +107,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public boolean move2Archived(EvaluationTask task) {
         try {
             Path sourcePath = Path.of(
-                    agentProperties.getTask().getInfoPath() + "/" + task.getTask().getId()
+                    agentProperties.getTask().getInfoPath() + "/" + task.getId()
                             + infoSuffix),
                     targetDir = Path.of(agentProperties.getTask().getArchivedDirPath() + "/");
             if (!Files.exists(targetDir)) {
@@ -126,8 +126,8 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public String preloadingSWMP(EvaluationTask task) throws Exception {
         // pull swmp(tar) and uncompress it to the swmp dir
         InputStream swmpStream = storageAccessService.get(task.getSwModelPackage().getPath());
-        String targetDir = agentProperties.getTask().getSwmpPath() + "/" + task.getTask().getId() + "/" ;
-        // Path targetDir = Path.of(agentProperties.getTask().getSwmpPath() + "/" + task.getTask().getId() + "/" );
+        String targetDir = agentProperties.getTask().getSwmpPath() + "/" + task.getId() + "/" ;
+        // Path targetDir = Path.of(agentProperties.getTask().getSwmpPath() + "/" + task.getId() + "/" );
         // Files.copy(swmpStream, targetDir);
         // untar:direct uncompress to the target dir
         Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);

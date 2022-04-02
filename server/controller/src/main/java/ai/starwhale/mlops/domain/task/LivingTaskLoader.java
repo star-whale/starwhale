@@ -9,15 +9,13 @@ package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.JobMapper;
-import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
-import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.TaskScheduler;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -50,15 +48,22 @@ public class LivingTaskLoader {
     public void loadLivingTasks(){
         //load living tasks and assign them to livingTaskStatusMachine
         Stream<TaskEntity> taskStream = livingTasksFromDB();
-        final Map<Integer, List<TaskEntity>> collect = taskStream.parallel()
-            .collect(Collectors.groupingBy(TaskEntity::getTaskStatus));
-        collect.entrySet().parallelStream()
-            .forEach(entry -> livingTaskStatusMachine.adopt(entry.getValue().stream().map(entity->taskBoConverter.fromTaskEntity(entity)).collect(
-                Collectors.toList()), TaskStatus.from(entry.getKey())));
+        final Map<Long, List<TaskEntity>> collectJob = taskStream.parallel()
+            .collect(Collectors.groupingBy(TaskEntity::getJobId));
+        final Map<TaskStatus, List<Task>> collectStatus = collectJob.entrySet().parallelStream()
+            .map(entry -> {
+                final JobEntity job = jobMapper.findJobById(entry.getKey());
+                return taskBoConverter
+                    .fromTaskEntity(entry.getValue(), jobBoConverter.fromEntity(job));
+            }).flatMap(Collection::stream)
+            .collect(Collectors.groupingBy(Task::getStatus));
 
-        scheduleCreatedTasks(collect.get(TaskStatus.CREATED));
-        checkCommandingTasks(collect.get(TaskStatus.ASSIGNING));
-        checkCommandingTasks(collect.get(TaskStatus.CANCEL_COMMANDING));
+        collectStatus.entrySet().parallelStream()
+            .forEach(entry -> livingTaskStatusMachine.adopt(entry.getValue(), entry.getKey()));
+
+        scheduleCreatedTasks(collectStatus.get(TaskStatus.CREATED));
+        checkCommandingTasks(collectStatus.get(TaskStatus.ASSIGNING));
+        checkCommandingTasks(collectStatus.get(TaskStatus.CANCEL_COMMANDING));
     }
 
     /**
@@ -80,32 +85,27 @@ public class LivingTaskLoader {
     /**
      * load CREATED tasks on start
      */
-    void scheduleCreatedTasks(List<TaskEntity> tasks){
-        if(null == tasks){
+    void scheduleCreatedTasks(List<Task> tasks){
+        if (null == tasks) {
             return;
         }
-        tasks.parallelStream().collect(Collectors.groupingBy(TaskEntity::getJobId))
-            .forEach((jobId, taskList) -> {
-                final JobEntity job = jobMapper.findJobById(jobId);
-                taskScheduler.adoptTasks(
-                    taskBoConverter.toTaskTrigger(taskList, jobBoConverter.fromEntity(job)),
-                    Device.Clazz.from(job.getDeviceType()));
-            });
-
+        tasks.parallelStream()
+            .collect(Collectors.groupingBy(task -> task.getJob().getJobRuntime().getDeviceClass()))
+            .forEach((deviceClass, taskList) ->
+                taskScheduler.adoptTasks(taskList, deviceClass));
     }
 
     /**
      * load commanding tasks on start
      */
-    void checkCommandingTasks(List<TaskEntity> tasks){
+    void checkCommandingTasks(List<Task> tasks){
         if(null == tasks){
             return;
         }
         tasks.parallelStream()
-            .collect(Collectors.groupingBy(TaskEntity::getAgent))
-            .forEach((agent, taskEntities) -> commandingTasksChecker
-                .onTaskCommanding(taskBoConverter.toTaskCommand(taskEntities),
-                    Node.builder().ipAddr(agent.getAgentIp()).build()));
+            .collect(Collectors.groupingBy(Task::getAgent))
+            .forEach((agent, taskList) -> commandingTasksChecker
+                .onTaskCommanding(taskBoConverter.toTaskCommand(taskList),agent));
 
     }
 

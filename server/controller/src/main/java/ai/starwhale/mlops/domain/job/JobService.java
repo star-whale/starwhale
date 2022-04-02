@@ -15,6 +15,8 @@ import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskMapper;
+import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -25,8 +27,7 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.schedule.TaskScheduler;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -104,10 +105,9 @@ public class JobService {
         final Stream<Job> allNewJobs = findAllNewJobs();
         allNewJobs.parallel().forEach(job->{
             //one transaction
-            final List<TaskTrigger> taskTriggers = jobSpliterator.split(job);
-            taskScheduler.adoptTasks(taskTriggers,job.getJobRuntime().getDeviceClass());
-            livingTaskStatusMachine.adopt(taskTriggers.stream().map(TaskTrigger::getTask).collect(
-                Collectors.toList()), TaskStatus.CREATED);
+            final List<Task> tasks = jobSpliterator.split(job);
+            taskScheduler.adoptTasks(tasks,job.getJobRuntime().getDeviceClass());
+            livingTaskStatusMachine.adopt(tasks, TaskStatus.CREATED);
         });
 
     }
@@ -127,8 +127,8 @@ public class JobService {
         final List<TaskEntity> taskEntities = taskMapper.listTasks(jobId);
         taskMapper.updateTaskStatus(taskEntities.parallelStream().map(TaskEntity::getId).collect(
             Collectors.toList()), TaskStatus.TO_CANCEL.getOrder());
-        livingTaskStatusMachine.adopt(taskEntities.parallelStream()
-                .map(entity -> taskBoConverter.fromTaskEntity(entity)).collect(Collectors.toList()),
+        final JobEntity job = jobMapper.findJobById(jobId);
+        livingTaskStatusMachine.adopt(taskBoConverter.fromTaskEntity(taskEntities,jobBoConverter.fromEntity(job)),
             TaskStatus.TO_CANCEL);
     }
 

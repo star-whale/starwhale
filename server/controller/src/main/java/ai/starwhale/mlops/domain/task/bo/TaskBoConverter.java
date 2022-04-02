@@ -8,11 +8,15 @@
 package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.JobEntity;
+import ai.starwhale.mlops.domain.job.JobMapper;
+import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
-import ai.starwhale.mlops.domain.task.Task;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.system.Agent;
+import ai.starwhale.mlops.domain.task.TaskMapper;
+import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.domain.task.TaskEntity;
-import ai.starwhale.mlops.domain.task.TaskTrigger;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,36 +32,66 @@ public class TaskBoConverter {
 
     SWDSBlockSerializer swdsBlockSerializer;
 
-    public Task fromTaskEntity(TaskEntity entity){
-        return Task.builder()
-            .id(entity.getId())
-            .jobId(entity.getJobId())
-            .status(TaskStatus.from(entity.getTaskStatus()))
-            .resultPaths(entity.getResultPath())
-            .swdsBlocks(entity.getSwdsBlocks())
-            .build();
+    TaskMapper taskMapper;
+
+    JobMapper jobMapper;
+
+    JobBoConverter jobBoConverter;
+
+    /**
+     * heavy opt
+     * @param id id of a task
+     * @return task
+     */
+    public Task fromId(Long id){
+        final TaskEntity entity = taskMapper.findTaskById(id);
+        final JobEntity jobById = jobMapper.findJobById(entity.getJobId());
+        return buildTask(jobBoConverter.fromEntity(jobById),entity);
     }
 
-    public List<TaskTrigger> toTaskTrigger(List<TaskEntity> tasks, Job job){
-        return tasks.parallelStream()
-            .map(this::fromTaskEntity)
-            .map(t->{
-            try {
-                return TaskTrigger.builder().task(t)
-                    .imageId(job.getJobRuntime().getBaseImage())
-                    .swdsBlocks(swdsBlockSerializer.fromString(t.getSwdsBlocks()))
-                    .swModelPackage(job.getSwmp()).build();
-            } catch (JsonProcessingException e) {
-                log.error("read swds blocks from db failed ",e);
-                throw new SWValidationException(ValidSubject.TASK);
-            }
-        }).collect(Collectors.toList());
+    public List<Task> fromTaskEntity(List<TaskEntity> entities,Job job){
+        return entities.parallelStream().map(entity -> buildTask(job, entity)).collect(Collectors.toList());
+
     }
 
-    public List<TaskCommand> toTaskCommand(List<TaskEntity> tasks) {
+    public Task buildTask(Job job, TaskEntity entity) {
+        try {
+            return Task.builder()
+                .id(entity.getId())
+                .job(job)
+                .agent(Agent.fromEntity(entity.getAgent()))
+                .status(TaskStatus.from(entity.getTaskStatus()))
+                .resultPaths(entity.getResultPath())
+                .swdsBlocks(swdsBlockSerializer.fromString(entity.getSwdsBlocks()))
+                .build();
+        } catch (JsonProcessingException e) {
+            log.error("read swds blocks from db failed ",e);
+            throw new SWValidationException(ValidSubject.TASK);
+        }
+    }
+
+    public List<TaskTrigger> toTaskTrigger(List<Task> tasks){
         return tasks.parallelStream()
-            .map(t -> new TaskCommand(TaskCommand.CommandType.from(TaskStatus.from(t.getTaskStatus())), fromTaskEntity(t)))
+            .map(this::toTaskTrigger).collect(Collectors.toList());
+    }
+
+    public TaskTrigger toTaskTrigger(Task t){
+        return TaskTrigger.builder()
+            .id(t.getId())
+            .imageId(t.getJob().getJobRuntime().getBaseImage())
+            .resultPath(t.getResultPaths())
+            .swdsBlocks(t.getSwdsBlocks())
+            .swModelPackage(t.getJob().getSwmp()).build();
+    }
+
+    public List<TaskCommand> toTaskCommand(List<Task> tasks) {
+        return tasks.parallelStream()
+            .map(this::toTaskCommand)
             .collect(Collectors.toList());
+    }
+
+    public TaskCommand toTaskCommand(Task task) {
+        return new TaskCommand(TaskCommand.CommandType.from(task.getStatus()), task);
     }
 
 }

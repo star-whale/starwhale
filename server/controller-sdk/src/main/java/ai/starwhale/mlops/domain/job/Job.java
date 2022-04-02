@@ -10,6 +10,8 @@ package ai.starwhale.mlops.domain.job;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
+import java.util.Objects;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,6 +22,7 @@ import lombok.NoArgsConstructor;
 @Data
 @Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class Job {
 
     Long id;
@@ -112,6 +115,20 @@ public class Job {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Job job = (Job) o;
+        return uuid.equals(job.uuid);
+    }
 
-
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid);
+    }
 }

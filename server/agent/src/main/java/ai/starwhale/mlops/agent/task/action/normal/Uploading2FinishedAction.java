@@ -9,7 +9,7 @@ package ai.starwhale.mlops.agent.task.action.normal;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
+import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +22,7 @@ public class Uploading2FinishedAction extends AbsBaseTaskTransition {
     public EvaluationTask processing(EvaluationTask oldTask, Context context) {
         EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
         // todo: upload result file to the storage
-        newTask.getTask().setResultPaths("");
-        newTask.getTask().setStatus(TaskStatus.FINISHED);
+        newTask.setStatus(TaskStatus.FINISHED);
         return newTask;
     }
 

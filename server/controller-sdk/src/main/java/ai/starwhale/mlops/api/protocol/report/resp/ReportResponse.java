@@ -5,20 +5,26 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.api.protocol.report;
+package ai.starwhale.mlops.api.protocol.report.resp;
 
-import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.task.Task;
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 /**
- * Agent report the info of it's node to Controller.
+ * Return Task commands to Agent
  */
 @Data
 @Builder
-public class ReportRequest {
-    Node nodeInfo;
-    List<Task> tasks;
+@AllArgsConstructor
+@NoArgsConstructor
+public class ReportResponse {
+
+    List<Long> taskIdsToCancel;
+
+    List<TaskTrigger> tasksToRun;
+
 }

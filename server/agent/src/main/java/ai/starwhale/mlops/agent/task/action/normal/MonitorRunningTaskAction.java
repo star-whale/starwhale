@@ -9,8 +9,10 @@ package ai.starwhale.mlops.agent.task.action.normal;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
+import ai.starwhale.mlops.domain.task.TaskStatus;
+import java.io.IOException;
+import java.util.Optional;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence.ExecuteStatus;
-import ai.starwhale.mlops.domain.task.Task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +25,7 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
         // dominated by disk(see if other processes have modified)
         EvaluationTask newTask = BeanUtil.toBean(runningTask, EvaluationTask.class);
 
-        ExecuteStatus executeStatus = taskPersistence.status(runningTask.getTask().getId());
+        ExecuteStatus executeStatus = taskPersistence.status(runningTask.getId());
         switch (executeStatus) {
             case START:
             case RUNNING:
@@ -31,10 +33,10 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
                 // nothing to do,just wait
                 break;
             case OK:
-                newTask.getTask().setStatus(TaskStatus.UPLOADING);
+                newTask.setStatus(TaskStatus.UPLOADING);
                 break;
             case FAILED:
-                newTask.getTask().setStatus(TaskStatus.EXIT_ERROR);
+                newTask.setStatus(TaskStatus.EXIT_ERROR);
                 break;
         }
 
@@ -44,13 +46,13 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
     @Override
     public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
 
-        if (newTask.getTask().getStatus() == TaskStatus.UPLOADING) {
+        if (newTask.getStatus() == TaskStatus.UPLOADING) {
             taskPool.uploadingTasks.add(newTask);
             // if run success, release device to available device pool todo:is there anything else to do?
             sourcePool.release(newTask.getDevices());
             // only update memory list,there is no need to update the disk file(already update by taskContainer)
             taskPool.runningTasks.remove(oldTask);
-        } else if (newTask.getTask().getStatus() == TaskStatus.EXIT_ERROR) {
+        } else if (newTask.getStatus() == TaskStatus.EXIT_ERROR) {
             taskPool.errorTasks.add(newTask);
             // if run success, release device to available device pool todo:is there anything else to do?
             sourcePool.release(newTask.getDevices());
