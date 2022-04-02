@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.resulting.clsmulti;
+package ai.starwhale.mlops.resulting.impl.clsmulti;
 
 import ai.starwhale.mlops.resulting.Indicator;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,13 +24,13 @@ public class MCIndicator extends Indicator<AtomicInteger> {
     public MCIndicator(String label,String prediction){
         this.label = label;
         this.prediction = prediction;
-        this.key = label + KEY_CONNECTOR + prediction;
+        this.name = label + KEY_CONNECTOR + prediction;
         this.value = new AtomicInteger(1);
     }
 
     public MCIndicator(String key,Integer value){
         final String[] split = key.split(KEY_CONNECTOR);
-        this.key = key;
+        this.name = key;
         this.label = split[0];
         this.prediction = split[1];
         this.value = new AtomicInteger(value);

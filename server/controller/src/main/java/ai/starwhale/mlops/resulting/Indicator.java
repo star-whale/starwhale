@@ -22,7 +22,7 @@ public class Indicator<T> {
     /**
      * the indicator name
      */
-    protected String key;
+    protected String name;
 
     /**
      * the value of this indicator

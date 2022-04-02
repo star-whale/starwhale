@@ -15,80 +15,83 @@ import ai.starwhale.mlops.domain.job.Job.JobStatus;
 public enum TaskStatus {
     /**
      * after created before assigned to an Agent. Ready to be scheduled
+     * init: new created
+     * doing: assigning to agent
+     * done: assigned to agent
      */
-    CREATED(110, JobStatus.SPLIT),
+    CREATED(0x110, JobStatus.SPLIT),
 
     /**
      * after assigned to an Agent before assignment is acknowledged
      */
-    ASSIGNING(120, JobStatus.SCHEDULING),
+    ASSIGNING(0x120, JobStatus.SCHEDULING),
 
     /**
      * after assignment is acknowledged before running
      */
-    PREPARING(130, JobStatus.SCHEDULED),
+    PREPARING(0x130, JobStatus.SCHEDULED),
 
     /**
      * running
      */
-    RUNNING(140, JobStatus.SCHEDULED),
+    RUNNING(0x140, JobStatus.SCHEDULED),
 
     /**
      * after task exit normally(container is stopped)
      */
-    UPLOADING(150, JobStatus.SCHEDULED),
+    UPLOADING(0x150, JobStatus.SCHEDULED),
 
 
     /**
      * after task exit normally before finished. garbage clearing
      */
-    CLOSING(160, JobStatus.SCHEDULED),
+    CLOSING(0x160, JobStatus.SCHEDULED),
 
     /**
      * garbage is cleared
      */
-    FINISHED(1000, JobStatus.FINISHED),
+    FINISHED(0xf00, JobStatus.FINISHED),
 
     /**
-     * when report successfully to the controller,it should be archived
+     * when report successfully to the controller,it should be archived (Agent only status)
      */
-    ARCHIVED(1010, JobStatus.FINISHED),
+    ARCHIVED(0xf10, JobStatus.FINISHED),
 
     /**
      * canceling triggered by the user
      */
-    TO_CANCEL(210, JobStatus.TO_CANCEL),
+    CANCEL(0x210, JobStatus.TO_CANCEL),
 
     /**
      * canceling request sent to Agent before real canceled
      */
-    CANCEL_COMMANDING(220, JobStatus.TO_CANCEL),
+    CANCEL_COMMANDING(0x220, JobStatus.TO_CANCEL),
 
     /**
      * canceling request sent to Agent before real canceled
      */
-    CANCELING(230, JobStatus.TO_CANCEL),
+    CANCELING(0x230, JobStatus.TO_CANCEL),
 
     /**
      * canceled by the controller
      */
-    CANCELED(240, JobStatus.CANCELED),
+    CANCELED(0x240, JobStatus.CANCELED),
 
     /**
      * task exit with unexpected error
      */
-    EXIT_ERROR(-1,JobStatus.EXIT_ERROR),
+    EXIT_ERROR(-0x10,JobStatus.EXIT_ERROR),
 
     /**
      * UNKNOWN from an Integer
      */
-    UNKNOWN(-999,JobStatus.UNKNOWN);
+    UNKNOWN(-0xf0,JobStatus.UNKNOWN);
 
-    int order;
+    final int order;
 
     TaskStatus next;
 
-    JobStatus desiredJobStatus;
+    final JobStatus desiredJobStatus;
 
     static {
         CREATED.next = ASSIGNING;
@@ -97,7 +100,7 @@ public enum TaskStatus {
         RUNNING.next = CLOSING;
         CLOSING.next = FINISHED;
         FINISHED.next = FINISHED;
-        TO_CANCEL.next = CANCEL_COMMANDING;
+        CANCEL.next = CANCEL_COMMANDING;
         CANCEL_COMMANDING.next = CANCELING;
         CANCELING.next = CANCELED;
         CANCELED.next = CANCELED;
@@ -126,9 +129,9 @@ public enum TaskStatus {
     }
 
     public static TaskStatus from(int v){
-        for(TaskStatus jobStatus:TaskStatus.values()){
-            if(jobStatus.order == v){
-                return jobStatus;
+        for(TaskStatus taskStatus:TaskStatus.values()){
+            if(taskStatus.order == v){
+                return taskStatus;
             }
         }
         return UNKNOWN;

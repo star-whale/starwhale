@@ -5,10 +5,10 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.resulting.clsmulti;
+package ai.starwhale.mlops.resulting.impl.clsmulti;
 
 import ai.starwhale.mlops.resulting.Indicator;
-import ai.starwhale.mlops.resulting.clsbi.BCConfusionMetrics;
+import ai.starwhale.mlops.resulting.impl.clsbi.BCConfusionMetrics;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;

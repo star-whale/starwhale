@@ -36,7 +36,7 @@ public class Task {
     /**
      * status of the task
      */
-    TaskStatus status;
+    StagingTaskStatus status;
 
     /**
      * storage directory path of results

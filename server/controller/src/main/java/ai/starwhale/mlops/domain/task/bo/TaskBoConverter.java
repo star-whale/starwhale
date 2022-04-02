@@ -60,7 +60,7 @@ public class TaskBoConverter {
                 .id(entity.getId())
                 .job(job)
                 .agent(Agent.fromEntity(entity.getAgent()))
-                .status(TaskStatus.from(entity.getTaskStatus()))
+                .status(StagingTaskStatus.from(entity.getTaskStatus()))
                 .resultPaths(entity.getResultPath())
                 .swdsBlocks(swdsBlockSerializer.fromString(entity.getSwdsBlocks()))
                 .build();

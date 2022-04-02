@@ -5,10 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.resulting.clsmulti;
+package ai.starwhale.mlops.resulting.impl.clsmulti;
 
 import ai.starwhale.mlops.resulting.Indicator;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -30,7 +29,7 @@ public class CohenKappa extends Indicator<Double> {
     final Map<String, AtomicInteger> labelAmountPrediction = new ConcurrentHashMap<>();
 
     public CohenKappa(MCConfusionMetrics confusionMetrics) {
-        this.key = NAME;
+        this.name = NAME;
         for (MCIndicator indicator : confusionMetrics.getValue()) {
             update(indicator);
         }

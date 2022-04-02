@@ -7,9 +7,9 @@
 
 package ai.starwhale.test.resulting;
 
-import ai.starwhale.mlops.resulting.clsmulti.CohenKappa;
-import ai.starwhale.mlops.resulting.clsmulti.MCConfusionMetrics;
-import ai.starwhale.mlops.resulting.clsmulti.MCIndicator;
+import ai.starwhale.mlops.resulting.impl.clsmulti.CohenKappa;
+import ai.starwhale.mlops.resulting.impl.clsmulti.MCConfusionMetrics;
+import ai.starwhale.mlops.resulting.impl.clsmulti.MCIndicator;
 import java.util.HashMap;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
