@@ -207,6 +207,10 @@ public interface DatasetApi {
             schema = @Schema())
         @PathVariable("projectId")
             String projectId,
+        @Parameter(in = ParameterIn.QUERY, description = "Dataset versionId", schema = @Schema())
+        @Valid
+        @RequestParam(value = "versionId", required = false)
+            String versionId,
         @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
         @Valid
         @RequestParam(value = "pageNum", required = false, defaultValue = "1")
@@ -236,4 +240,5 @@ public interface DatasetApi {
             String datasetName,
         @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
         SWDSRequest swdsRequest);
+
 }
