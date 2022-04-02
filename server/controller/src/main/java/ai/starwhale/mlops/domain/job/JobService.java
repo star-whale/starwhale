@@ -13,13 +13,16 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.RandomUtil;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
+import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskMapper;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -39,6 +42,9 @@ public class JobService {
 
     @Resource
     private JobMapper jobMapper;
+
+    @Resource
+    private JobSWDSVersionMapper jobSWDSVersionMapper;
 
     @Resource
     private IDConvertor idConvertor;
@@ -73,14 +79,25 @@ public class JobService {
 
     public JobVO findJob(String projectId, String jobId) {
         JobEntity entity = jobMapper.findJobById(idConvertor.revert(jobId));
-        return jobConvertor.convert(entity);
+
+        JobVO jobVO = jobConvertor.convert(entity);
+        List<SWDatasetVersionEntity> dsvEntities = jobSWDSVersionMapper.listSWDSVersionsByJobId(
+            entity.getId());
+
+        List<String> idList = dsvEntities.stream()
+            .map(SWDatasetVersionEntity::getVersionName)
+            .collect(Collectors.toList());
+
+        jobVO.setDatasets(idList);
+
+        return jobVO;
     }
 
     public String createJob(JobRequest jobRequest, String projectId) {
         User user = userService.currentUserDetail();
         JobEntity jobEntity = JobEntity.builder()
             .ownerId(idConvertor.revert(user.getId()))
-            .jobUuid(RandomUtil.randomHexString(16))
+            .jobUuid(IdUtil.simpleUUID())
             .createdTime(LocalDateTime.now())
             //.finishedTime(LocalDateTime.now())
             .durationMs(0L)
@@ -92,7 +109,16 @@ public class JobService {
             .resultOutputPath(jobRequest.getResultOutputPath())
             .jobStatus(JobStatus.CREATED.getValue())
             .build();
+
         jobMapper.addJob(jobEntity);
+
+        String datasetVersionIds = jobRequest.getDatasetVersionIds();
+        List<Long> dsvIds = Arrays.stream(datasetVersionIds.split("[,;]"))
+            .map(idConvertor::revert)
+            .collect(Collectors.toList());
+
+        jobSWDSVersionMapper.addJobSWDSVersions(jobEntity.getId(), dsvIds);
+
         return idConvertor.convert(jobEntity.getId());
     }
 
