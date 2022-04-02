@@ -1,5 +1,4 @@
 from pathlib import Path
-import io
 import os
 
 import torch
@@ -7,7 +6,6 @@ from torchvision import transforms
 from PIL import Image
 
 from starwhale.api.model import PipelineHandler
-from contextlib import redirect_stdout
 
 from model import Net
 
@@ -73,12 +71,12 @@ def load_test_env(fuse=True):
     os.environ["SW_TASK_LOG_DIR"] = _p("task_volume/log")
     os.environ["SW_TASK_RESULT_DIR"] = _p("task_volume/result")
 
-    #fname = "swds_fuse.json" if fuse else "swds_s3.json"
-    fname = "swds_fuse_simple.json" if fuse else "swds_s3.json"
+    fname = "swds_fuse.json" if fuse else "swds_s3.json"
+    #fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
     os.environ["SW_TASK_SWDS_CONFIG"] = _p(fname)
 
 
 if __name__ == "__main__":
-    load_test_env(fuse=True)
+    load_test_env(fuse=False)
     mnist = MNISTInference()
     mnist.starwhale_internal_run()

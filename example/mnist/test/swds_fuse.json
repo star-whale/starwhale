@@ -2,28 +2,28 @@
     "backend": "fuse",
     "swds": [
         {
-            "bucket": "~/.cache/starwhale/dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data",
+            "bucket": "~/.cache/starwhale/dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data",
             "key": {
                 "data": "data_ubyte_0.swds_bin:0",
                 "label": "label_ubyte_0.swds_bin:0"
             }
         },
         {
-            "bucket": "~/.cache/starwhale/dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data",
+            "bucket": "~/.cache/starwhale/dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data",
             "key": {
                 "data": "data_ubyte_1.swds_bin:0",
                 "label": "label_ubyte_1.swds_bin:0"
             }
         },
         {
-            "bucket": "~/.cache/starwhale/dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data",
+            "bucket": "~/.cache/starwhale/dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data",
             "key": {
                 "data": "data_ubyte_2.swds_bin:0",
                 "label": "label_ubyte_2.swds_bin:0"
             }
         },
         {
-            "bucket": "~/.cache/starwhale/dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data",
+            "bucket": "~/.cache/starwhale/dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data",
             "key": {
                 "data": "data_ubyte_3.swds_bin:0",
                 "label": "label_ubyte_3.swds_bin:0"

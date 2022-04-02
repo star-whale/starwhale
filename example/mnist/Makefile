@@ -25,6 +25,7 @@ test:
 	python mnist/test.py
 
 inference:
+	rm -rf test/task_volume/*
 	python mnist/ppl.py
 
 ppl-fuse-test:

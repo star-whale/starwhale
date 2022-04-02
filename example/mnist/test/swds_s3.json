@@ -12,29 +12,127 @@
         {
             "bucket": "starwhale",
             "key": {
-                "data": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/data_ubyte_0.swds_bin:0",
-                "label": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/label_ubyte_0.swds_bin:0"
+                "data": "dataset/mnist/gu3tezlgmrrgcnrsmiztcmjxny2dq4i/data/data_ubyte_0.swds_bin:0:81855",
+                "label": "dataset/mnist/gu3tezlgmrrgcnrsmiztcmjxny2dq4i/data/label_ubyte_0.swds_bin:0:8127"
             }
         },
         {
             "bucket": "starwhale",
             "key": {
-                "data": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/data_ubyte_1.swds_bin:0",
-                "label": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/label_ubyte_1.swds_bin:0"
+                "data": "dataset/mnist/gu3tezlgmrrgcnrsmiztcmjxny2dq4i/data/data_ubyte_1.swds_bin:122784:204639",
+                "label": "dataset/mnist/gu3tezlgmrrgcnrsmiztcmjxny2dq4i/data/label_ubyte_1.swds_bin:12192:20319"
             }
         },
         {
             "bucket": "starwhale",
             "key": {
-                "data": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/data_ubyte_2.swds_bin:0",
-                "label": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/label_ubyte_2.swds_bin:0"
+                "data": "dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data/data_ubyte_0.swds_bin:0",
+                "label": "dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data/label_ubyte_0.swds_bin:0"
             }
         },
         {
             "bucket": "starwhale",
             "key": {
-                "data": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/data_ubyte_3.swds_bin:0",
-                "label": "dataset/mnist/grsgcy3cgi3ggzjqge3gizjygz3wk4y/data/label_ubyte_3.swds_bin:0"
+                "data": "dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data/data_ubyte_1.swds_bin:0",
+                "label": "dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data/label_ubyte_1.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_0.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_0.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_1.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_1.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_2.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_2.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_3.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_3.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_4.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_4.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_5.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_5.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_6.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_6.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_7.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_7.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_8.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_8.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_9.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_9.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_10.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_10.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_11.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_11.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_12.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_12.swds_bin:0"
+            }
+        },
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/data_ubyte_13.swds_bin:0",
+                "label": "dataset/mnist/ge4dmzrvmeywkytcha4gkyrwgq4gk6i/data/label_ubyte_13.swds_bin:0"
             }
         }
     ]
