@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,11 +47,17 @@ public class SWModelPackageController implements SWModelPackageApi{
     private UserService userService;
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(String projectId,
+    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(String projectId, String versionId,
         String modelName, Integer pageNum, Integer pageSize) {
-        List<SWModelPackageVO> voList = swmpService.listSWMP(
-            SWMPObject.builder().projectId(projectId).name(modelName).build(),
-            PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
+        List<SWModelPackageVO> voList;
+        if(StringUtils.hasText(versionId)) {
+            SWModelPackageVO vo = swmpService.findModelByVersionId(versionId);
+            voList = List.of(vo);
+        } else {
+            voList = swmpService.listSWMP(
+                SWMPObject.builder().projectId(projectId).name(modelName).build(),
+                PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
+        }
         PageInfo<SWModelPackageVO> pageInfo = new PageInfo<>(voList);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
