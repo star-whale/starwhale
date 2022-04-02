@@ -40,6 +40,11 @@
         order by dsv.id desc
     </select>
 
+    <select id="getVersionById" resultMap="dsVersionResultMap" >
+        <include refid="select_swds_version" />
+        and dsv.id = #{dsVersionId}
+    </select>
+
     <select id="getLatestVersion" resultMap="dsVersionResultMap" >
         <include refid="select_swds_version" />
         and dataset_id = #{datasetId}
