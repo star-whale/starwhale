@@ -10,9 +10,11 @@ import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.util.RandomUtil;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
+import ai.starwhale.mlops.domain.job.split.JobSpliterator;
+import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
@@ -20,18 +22,17 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.schedule.TaskScheduler;
+import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
-import javax.annotation.Resource;
-import org.springframework.stereotype.Service;
-import ai.starwhale.mlops.domain.job.split.JobSpliterator;
-import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
-import ai.starwhale.mlops.schedule.TaskScheduler;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Resource;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -40,6 +41,9 @@ public class JobService {
 
     @Resource
     private JobMapper jobMapper;
+
+    @Resource
+    private JobSWDSVersionMapper jobSWDSVersionMapper;
 
     @Resource
     private IDConvertor idConvertor;
@@ -74,14 +78,25 @@ public class JobService {
 
     public JobVO findJob(String projectId, String jobId) {
         JobEntity entity = jobMapper.findJobById(idConvertor.revert(jobId));
-        return jobConvertor.convert(entity);
+
+        JobVO jobVO = jobConvertor.convert(entity);
+        List<SWDatasetVersionEntity> dsvEntities = jobSWDSVersionMapper.listSWDSVersionsByJobId(
+            entity.getId());
+
+        List<String> idList = dsvEntities.stream()
+            .map(SWDatasetVersionEntity::getVersionName)
+            .collect(Collectors.toList());
+
+        jobVO.setDatasets(idList);
+
+        return jobVO;
     }
 
     public String createJob(JobRequest jobRequest, String projectId) {
         User user = userService.currentUserDetail();
         JobEntity jobEntity = JobEntity.builder()
             .ownerId(idConvertor.revert(user.getId()))
-            .jobUuid(RandomUtil.randomHexString(16))
+            .jobUuid(IdUtil.simpleUUID())
             .createdTime(LocalDateTime.now())
             //.finishedTime(LocalDateTime.now())
             .durationMs(0L)
@@ -93,7 +108,16 @@ public class JobService {
             .resultOutputPath(jobRequest.getResultOutputPath())
             .jobStatus(JobStatus.CREATED.getValue())
             .build();
+
         jobMapper.addJob(jobEntity);
+
+        String datasetVersionIds = jobRequest.getDatasetVersionIds();
+        List<Long> dsvIds = Arrays.stream(datasetVersionIds.split("[,;]"))
+            .map(idConvertor::revert)
+            .collect(Collectors.toList());
+
+        jobSWDSVersionMapper.addJobSWDSVersions(jobEntity.getId(), dsvIds);
+
         return idConvertor.convert(jobEntity.getId());
     }
 

@@ -36,23 +36,23 @@ public class SWDatasetService {
     @Resource
     private SWDSVersionConvertor versionConvertor;
 
-    public List<DatasetVO> listSWMP(SWDSObject swmp, PageParams pageParams) {
+    public List<DatasetVO> listSWDataset(SWDSObject swds, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWDatasetEntity> entities = swdsMapper.listDatasets(
-            idConvertor.revert(swmp.getProjectId()), swmp.getName());
+            idConvertor.revert(swds.getProjectId()), swds.getName());
 
         return entities.stream()
             .map(swdsConvertor::convert)
             .collect(Collectors.toList());
     }
 
-    public Boolean deleteSWDS(SWDSObject swmp) {
-        int res = swdsMapper.deleteDataset(idConvertor.revert(swmp.getId()));
+    public Boolean deleteSWDS(SWDSObject swds) {
+        int res = swdsMapper.deleteDataset(idConvertor.revert(swds.getId()));
         return res > 0;
     }
 
 
-    public Boolean modifySWMPVersion(Version version) {
+    public Boolean modifySWDSVersion(Version version) {
         int update = swdsVersionMapper.update(
             SWDatasetVersionEntity.builder()
                 .id(idConvertor.revert(version.getId()))
@@ -69,10 +69,10 @@ public class SWDatasetService {
         return res > 0;
     }
 
-    public List<DatasetVersionVO> listDatasetVersionHistory(SWDSObject swmp, PageParams pageParams) {
+    public List<DatasetVersionVO> listDatasetVersionHistory(SWDSObject swds, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWDatasetVersionEntity> entities = swdsVersionMapper.listVersions(
-            idConvertor.revert(swmp.getId()), swmp.getLatestVersion().getName());
+            idConvertor.revert(swds.getId()), swds.getLatestVersion().getName());
 
         return entities.stream()
             .map(versionConvertor::convert)
@@ -100,6 +100,14 @@ public class SWDatasetService {
             .build();
         swdsVersionMapper.addNewVersion(entity);
         return idConvertor.convert(entity.getId());
+    }
+
+    public DatasetVO findDatasetByVersionId(String versionId) {
+        SWDatasetVersionEntity dsv = swdsVersionMapper.getVersionById(
+            idConvertor.revert(versionId));
+        SWDatasetEntity entity = swdsMapper.findDatasetById(dsv.getDatasetId());
+
+        return swdsConvertor.convert(entity);
     }
 
 }
