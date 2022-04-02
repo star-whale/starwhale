@@ -25,8 +25,7 @@ public class NaiveCollectorFinder implements CollectorFinder {
         try {
             return Optional.of(new MCResultCollector(jobId.toString()));
         } catch (IOException e) {
-            e.printStackTrace();
-            log.error("initing MCResultCollector failed for job {}",jobId);
+            log.error("initing MCResultCollector failed for job {}",jobId,e);
             return Optional.empty();
         }
     }
