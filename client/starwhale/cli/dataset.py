@@ -1,5 +1,4 @@
 import click
-from loguru import logger
 
 from starwhale.consts import DEFAULT_DATASET_YAML_NAME
 from starwhale.swds.dataset import DataSet
@@ -18,6 +17,7 @@ def dataset_cmd():
 def _build(workdir, dataset_yaml):
     #TODO: add cmd options for dataset build, another choice for dataset.yaml
     #TODO: add dryrun
+    #TODO: add compress args
     DataSet.build(workdir, dataset_yaml)
 
 
@@ -42,3 +42,9 @@ def _info(swds):
 @click.argument("swds")
 def _delete(swds):
     DataSetLocalStore().delete(swds)
+
+
+@dataset_cmd.command("gc", help="Delete useless dataset dir")
+@click.option("--dry-run", is_flag=True, help="Dry-run swds gc")
+def _gc(dry_run):
+    DataSetLocalStore().gc(dry_run)

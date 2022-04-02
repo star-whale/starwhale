@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import sys
 import typing as t
@@ -82,9 +83,9 @@ class PipelineHandler(object):
         self.merge_label = merge_label
         self.output_type = output_type
         self.ignore_error = ignore_error
+        self.config = _RunConfig.create_by_env()
 
         self.logger, self._sw_logger = self._init_logger()
-        self.config = _RunConfig.create_by_env()
         self._orig_stdout = sys.stdout
         self._orig_stderr = sys.stderr
 
@@ -103,8 +104,8 @@ class PipelineHandler(object):
         from loguru import logger as _logger
 
         #TODO: configure log rotation size
-        _logger.add("{time}.log", rotation="500MB", backtrace=True, diagnose=True, serialize=True)
-        _logger.bind(type=_LOG_TYPE.USER, task_id=os.environ.get("SW_TASK_ID", ""), job_id=os.environ.get("SW_GROUP_ID", ""))
+        _logger.add(self.config.log_dir / "{time}.log", rotation="500MB", backtrace=True, diagnose=True, serialize=True)
+        _logger.bind(type=_LOG_TYPE.USER, task_id=os.environ.get("SW_TASK_ID", ""), job_id=os.environ.get("SW_JOB_ID", ""))
         _sw_logger = _logger.bind(type=_LOG_TYPE.SW)
         return _logger, _sw_logger
 
@@ -142,9 +143,25 @@ class PipelineHandler(object):
         self._sw_logger.info("start to run pipeline...")
 
         self._update_status(self.STATUS.RUNNING)
+        try:
+            self.do_starwhale_internal_run()
+        except Exception as e:
+            self._update_status(self.STATUS.FAILED)
+            self._sw_logger.exception(f"do_starwhale_internal_run abort, exception: {e}")
+        else:
+            self._update_status(self.STATUS.SUCCESS)
+            self._sw_logger.info("finish pipeline")
 
+    def do_starwhale_internal_run(self) -> None:
         for data, label in self._data_loader:
-            self._sw_logger.info(f"[{data.index}] data loaded, size:{pretty_bytes(data.data_size)}, batch:{data.batch_size}")
+            self._sw_logger.info(f"[{data.index}]data-label loaded, data size:{pretty_bytes(data.data_size)}, label size:{pretty_bytes(label.data_size)} ,batch:{data.batch_size}")
+
+            if data.index != label.index:
+                msg = f"data index[{data.index}] is not equal label index [{label.index}], {'ignore error' if self.ignore_error else ''}"
+                self._sw_logger.error(msg)
+                if not self.ignore_error:
+                    raise Exception(msg)
+
             output = b""
             exception = None
             try:
@@ -162,17 +179,12 @@ class PipelineHandler(object):
                     raise
             else:
                 exception = None
-                self._sw_logger.info(f"[{data.index} data handle -> success]")
-            finally:
-                self._sw_logger.info(f"[{data.index} data handle -> finished]")
+                self._sw_logger.info(f"[{data.index}] data handle -> success")
 
             try:
                 self._do_record(output, data, label, exception)
             except Exception:
                 self._sw_logger.exception(f"{data.index} data record")
-
-        self._update_status(self.STATUS.SUCCESS)
-        self._sw_logger.info("finish pipeline")
 
     def _do_record(self, output: t.Any, data: DATA_FIELD, label: DATA_FIELD, exception: t.Union[None, Exception]):
         self._status_writer.write({
@@ -189,8 +201,9 @@ class PipelineHandler(object):
             "result": output,
             "batch": data.batch_size,
         }
+        #TODO: user define label parser
         if self.merge_label:
-            result["label"] = label.data,
+            result["label"] = label.data.decode(),
         self._result_writer.write(result)
 
         self._update_status(self.STATUS.RUNNING)

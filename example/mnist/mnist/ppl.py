@@ -1,13 +1,13 @@
 from pathlib import Path
 import io
 import os
-from numpy import dtype
 
 import torch
 from torchvision import transforms
 from PIL import Image
 
 from starwhale.api.model import PipelineHandler
+from contextlib import redirect_stdout
 
 from model import Net
 
@@ -53,6 +53,7 @@ class MNISTInference(PipelineHandler):
         model = Net().to(device)
         model.load_state_dict(torch.load(str(ROOTDIR / "models/mnist_cnn.pt")))
         model.eval()
+        print("load mnist model, start to inference...")
         return model
 
 

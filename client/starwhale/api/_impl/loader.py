@@ -1,3 +1,5 @@
+from __future__ import annotations
+from posixpath import expanduser
 import typing as t
 from pathlib import Path
 from collections import namedtuple
@@ -7,6 +9,7 @@ import loguru
 from loguru import logger as _logger
 import boto3
 from botocore.client import Config as S3Config
+from numpy import pad
 
 from starwhale.utils.error import NoSupportError
 
@@ -47,12 +50,12 @@ class DataLoader(object):
 
         if self.backend == _SWDS_BACKEND_TYPE.S3:
             _s = self.secret
-            if (not _s or isinstance(_s, dict) or
+            if (not _s or not isinstance(_s, dict) or
                 not _s.get("access_key") or not _s.get("secret_key")):
                 raise Exception(f"secret({_s}) format is invalid")
 
             _s = self.service
-            if (not _s or isinstance(_s, dict) or
+            if (not _s or not isinstance(_s, dict) or
                 not _s.get("endpoint") or not _s.get("region")):
                 raise Exception(f"s3_service({_s} format is invalid)")
 
@@ -67,14 +70,15 @@ class DataLoader(object):
     def _do_iter(self, bucket: str, key_compose: str) -> t.Iterator[DATA_FIELD]:
         from .dataset import _header_struct, _header_size
 
+        self.logger.info(f"@{bucket}/{key_compose}")
         _file = self._make_file(bucket, key_compose)
         while True:
             header = _file.read(_header_size)
             if not header:
                 break
-            _, _, idx, size, batch, _ = _header_struct.unpack(header)
-            data = _file.read(size)
-            yield DATA_FIELD(idx, size, batch, data)
+            _, _, idx, size, padding_size, batch, _ = _header_struct.unpack(header)
+            data = _file.read(size + padding_size)
+            yield DATA_FIELD(idx, size, batch, data[:size])
 
     def __str__(self) -> str:
         return f"DataLoader for {self.backend}"
@@ -111,7 +115,7 @@ class S3DataLoader(DataLoader):
             "s3", endpoint_url=self.service["endpoint"],
             aws_access_key_id=self.secret["access_key"],
             aws_secret_access_key=self.secret["secret_key"],
-            config=S3Config(signature_version="S3V4", retries={"max_attempts": 1000}),
+            config=S3Config(signature_version="s3v4", retries={"max_attempts": 1000}),
             region_name=self.service["region"])
 
     def _make_file(self, bucket: str, key_compose: str) -> t.Any:
@@ -130,7 +134,8 @@ class FuseDataLoader(DataLoader):
 
     def _make_file(self, bucket: str, key_compose: str) -> t.Any:
         _key, _start, _ = self._parse_key(key_compose)
-        _file = (Path(bucket) / _key).open("rb")
+        bucket_path = Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
+        _file = (bucket_path / _key).open("rb")
         _file.seek(_start)
         #TODO: support end
         return _file
@@ -181,16 +186,17 @@ class S3BufferedFileLike(object):
         self._buffer = bytearray()
 
     def _next_data(self) -> t.Tuple[bytes, int]:
-        if self.end == _FILE_END_POS:
-            end = _CHUNK_SIZE
-        else:
-            end = min(self.end, self._current_s3_start + _CHUNK_SIZE - 1)
+        end = _CHUNK_SIZE + self._current_s3_start - 1
+        end =  end if self.end == _FILE_END_POS else min(self.end, end)
 
-        return self._do_fetch_data(self._current_s3_start, end)
+        data, length = self._do_fetch_data(self._current_s3_start, end)
+        self._current_s3_start += length
+
+        return data, length
 
     def _do_fetch_data(self, _start: int, _end: int) -> t.Tuple[bytes, int]:
         #TODO: add more exception handle
-        if self._s3_eof:
+        if self._s3_eof or (_end != _FILE_END_POS and _end < _start):
             return b"", 0
 
         resp = self.obj.get(Range=f"bytes={_start}-{_end}") # type: ignore
@@ -199,7 +205,7 @@ class S3BufferedFileLike(object):
         out = resp["Body"].read()
         body.close()
 
-        self._s3_eof = _end == _FILE_END_POS or (_end - _start + 1) >= length
+        self._s3_eof = _end == _FILE_END_POS or (_end - _start + 1) > length
         return out, length
 
 

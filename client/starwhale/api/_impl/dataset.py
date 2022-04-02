@@ -79,6 +79,7 @@ class BuildExecutor(object):
     def _write(self, writer, idx: int, data: bytes) -> t.Tuple[int, int]:
         size = len(data)
         crc = crc32(data) #TODO: crc is right?
+        start = writer.tell()
         padding_size = self._get_padding_size(size + _header_size)
 
         _header = _header_struct.pack(
@@ -86,8 +87,7 @@ class BuildExecutor(object):
         )
         _padding = b'\0' * padding_size
         writer.write(_header + data + _padding)
-        start = writer.tell()
-        return start, size
+        return start, _header_size + size + padding_size
 
     def _get_padding_size(self, size):
         remain = (size + _header_size) % self.alignment_bytes_size
