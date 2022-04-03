@@ -41,11 +41,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest(
-        classes = StarWhaleAgentTestApplication.class)
+    classes = StarWhaleAgentTestApplication.class)
 @TestPropertySource(
-        properties = {"sw.task.rebuild.enabled=false", "sw.task.scheduler.enabled=false", "sw.node.sourcePool.init.enabled=false"},
-        locations = "classpath:application-integrationtest.yaml")
+    properties = {"sw.task.rebuild.enabled=false", "sw.task.scheduler.enabled=false",
+        "sw.node.sourcePool.init.enabled=false"},
+    locations = "classpath:application-integrationtest.yaml")
 public class TaskExecutorTest {
+
     @Autowired
     private AgentProperties agentProperties;
 
@@ -75,31 +77,34 @@ public class TaskExecutorTest {
     private SourcePool sourcePool;
 
     void mockConfig() throws Exception {
-        Mockito.when(containerClient.startContainer(any())).thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
-        Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(List.of(
-            EvaluationTask.builder()
-                .id(1234567890L).status(TaskStatus.PREPARING).build(),
-            EvaluationTask.builder()
-                .id(2234567890L).status(TaskStatus.PREPARING).build()
-        ));
+        Mockito.when(containerClient.startContainer(any()))
+            .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
+        Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(Optional.of(
+            List.of(
+                EvaluationTask.builder()
+                    .id(1234567890L).status(TaskStatus.PREPARING).build(),
+                EvaluationTask.builder()
+                    .id(2234567890L).status(TaskStatus.PREPARING).build()
+            ))
+        );
         Mockito.when(taskPersistence.save(any())).thenReturn(true);
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(
-                List.of(
-                        GPUInfo.builder()
-                                .id("1dbb121b-1c5a-3a75-8063-0e1620edefe6")
-                                .driverInfo("driver:1.450.8, CUDA:10.1")
-                                .brand("xxxx T4").name("swtest")
-                                .processInfos(
-                                        List.of(GPUInfo.ProcessInfo.builder().pid("1").build())
-                                )
-                                .build(),
-                        GPUInfo.builder()
-                                .id("2dbb121b-1c5a-3a75-8063-0e1620edefe8")
-                                .driverInfo("driver:1.450.8, CUDA:10.1")
-                                .brand("xxxx T4")
-                                .name("swtest")
-                                .build()
-                )
+            List.of(
+                GPUInfo.builder()
+                    .id("1dbb121b-1c5a-3a75-8063-0e1620edefe6")
+                    .driverInfo("driver:1.450.8, CUDA:10.1")
+                    .brand("xxxx T4").name("swtest")
+                    .processInfos(
+                        List.of(GPUInfo.ProcessInfo.builder().pid("1").build())
+                    )
+                    .build(),
+                GPUInfo.builder()
+                    .id("2dbb121b-1c5a-3a75-8063-0e1620edefe8")
+                    .driverInfo("driver:1.450.8, CUDA:10.1")
+                    .brand("xxxx T4")
+                    .name("swtest")
+                    .build()
+            )
         ));
 
     }
@@ -119,14 +124,13 @@ public class TaskExecutorTest {
         assertEquals(1, taskPool.preparingTasks.size());
         assertEquals(1, taskPool.runningTasks.size());
 
-
         // mockConfig
         EvaluationTask runningTask = taskPool.runningTasks.get(0);
         Long id = runningTask.getId();
-        // mock taskContainer already change status to uploading todo:or other status
-        Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);
+        // mock taskContainer already change status to uploading
+        // Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);
 
-        Mockito.when(taskPersistence.status(id)).thenReturn(ExecuteStatus.OK);
+        Mockito.when(taskPersistence.status(id)).thenReturn(Optional.of(ExecuteStatus.OK));
         // do monitor test
         taskExecutor.monitorRunningTasks();
 
@@ -143,27 +147,28 @@ public class TaskExecutorTest {
 
         // mockConfig
         // todo upload mock
+        Mockito.when(taskPersistence.uploadResult(any())).thenReturn(true);
 
         taskExecutor.uploadTaskResults();
         // check execute result
         assertEquals(0, taskPool.uploadingTasks.size());
         assertEquals(1, taskPool.finishedTasks.size());
 
-        // mockConfig
+        // mockConfig:mock controller report api
         Mockito.when(reportApi.report(any()))
-                .thenReturn(
-                        ResponseMessage.<ReportResponse>builder()
-                                .code("success")
-                                .data(ReportResponse.builder().tasksToRun(List.of(
-                                        TaskTrigger.builder()
-                                                .imageId("test-image")
-                                                .swdsBlocks(List.of())
-                                                .swModelPackage(SWModelPackage.builder().build())
-                                                .id(666666L)
-                                                .build()
-                                )).build())
-                                .build()
-                );
+            .thenReturn(
+                ResponseMessage.<ReportResponse>builder()
+                    .code("success")
+                    .data(ReportResponse.builder().tasksToRun(List.of(
+                        TaskTrigger.builder()
+                            .imageId("test-image")
+                            .swdsBlocks(List.of())
+                            .swModelPackage(SWModelPackage.builder().build())
+                            .id(666666L)
+                            .build()
+                    )).build())
+                    .build()
+            );
 
         // do report test
         taskExecutor.reportTasks();

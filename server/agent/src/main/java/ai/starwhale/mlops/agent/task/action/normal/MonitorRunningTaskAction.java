@@ -25,21 +25,22 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
         // dominated by disk(see if other processes have modified)
         EvaluationTask newTask = BeanUtil.toBean(runningTask, EvaluationTask.class);
 
-        ExecuteStatus executeStatus = taskPersistence.status(runningTask.getId());
-        switch (executeStatus) {
-            case START:
-            case RUNNING:
-            case UNKNOWN:
-                // nothing to do,just wait
-                break;
-            case OK:
-                newTask.setStatus(TaskStatus.UPLOADING);
-                break;
-            case FAILED:
-                newTask.setStatus(TaskStatus.EXIT_ERROR);
-                break;
+        Optional<ExecuteStatus> executeStatus = taskPersistence.status(runningTask.getId());
+        if (executeStatus.isPresent()) {
+            switch (executeStatus.get()) {
+                case START:
+                case RUNNING:
+                case UNKNOWN:
+                    // nothing to do,just wait
+                    break;
+                case OK:
+                    newTask.setStatus(TaskStatus.UPLOADING);
+                    break;
+                case FAILED:
+                    newTask.setStatus(TaskStatus.EXIT_ERROR);
+                    break;
+            }
         }
-
         return newTask;
     }
 

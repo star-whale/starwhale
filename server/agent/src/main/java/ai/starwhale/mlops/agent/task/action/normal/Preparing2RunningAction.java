@@ -16,20 +16,14 @@ import ai.starwhale.mlops.agent.task.EvaluationTask.Stage;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.TaskStatus;
-import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
-
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
 
 @Service
 public class Preparing2RunningAction extends AbsBaseTaskTransition {
@@ -37,19 +31,21 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
 
     @Override
     public boolean valid(EvaluationTask task, Context context) {
+        // todo: Check if the previous steps have been prepared
         return task.getStage() != Stage.inProgress;
     }
 
     @Override
     public void orElse(EvaluationTask task, Context context) {
-        // represent last time occurred some errors
+        // represent last step occurred some errors
         // todo:fault tolerance
     }
 
     @Override
     public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
-        // pull swmp(tar) and uncompress it to the swmp dir
-        String swmpPath = taskPersistence.preloadingSWMP(oldTask);
+        // pull swmp(tar) and uncompress it to the swmp dir todo:use async?and check if prepared when schedule
+        boolean res = taskPersistence.preloadingSWMP(oldTask);
+
         // allocate device(GPU or CPU) for task
         Set<Device> allocated = sourcePool.allocate(
             AllocateRequest.builder().gpuNum(1).build());
@@ -68,6 +64,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
                     .deviceIds(allocated.stream().map(Device::getId).collect(Collectors.toList()))
                     .build()
                 )
+                .labels(Map.of("taskId", oldTask.getId().toString()))
                 .build()
         );
         // whether the container create and start success

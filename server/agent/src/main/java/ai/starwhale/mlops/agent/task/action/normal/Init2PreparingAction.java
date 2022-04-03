@@ -23,7 +23,7 @@ public class Init2PreparingAction extends AbsBaseTaskTransition {
     }
 
     @Override
-    public EvaluationTask processing(EvaluationTask oldTask, Context context) {
+    public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
         EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
         newTask.setStatus(TaskStatus.PREPARING);
         return newTask;

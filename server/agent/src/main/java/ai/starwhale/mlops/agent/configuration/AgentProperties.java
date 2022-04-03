@@ -21,46 +21,18 @@ public class AgentProperties {
     public static class Task {
 
         /**
-         * taskInfo dir path,Eg:/var/starwhale/task/info/,
-         * and every file of taskInfo will locate at path/{taskId}.taskinfo(format:json)
+         * taskInfo dir path,default:/var/starwhale/task/
          */
-        private String infoPath;
+        private String basePath;
 
-        /**
-         * task running status dir path,Eg:/var/starwhale/task/status/,
-         * and every file of taskStatus will locate at path/{taskId}.status(format:txt)
-         */
-        private String statusPath;
-
-        /**
-         * swmp dir path,Eg:/var/starwhale/task/swmp/,
-         * and every modelDir of task will locate at path/{taskId}/
-         */
-        private String swmpPath;
-
-        /**
-         * archived taskInfo file path,Eg:/var/starwhale/task/archived/
-         */
-        private String archivedDirPath;
-
-        /**
-         * task result dir path,Eg:/var/starwhale/task/result/,
-         * and every task's result file will locate at path/{taskId}/xxxResult
-         */
-        private String resultPath;
-
-        /**
-         * task runtime log dir path,Eg:/var/starwhale/task/log/,
-         * and every task's log file will locate at path/{taskId}/xxx.log
-         */
-        private String logPath;
+        private static final String g = "";
     }
 
     @Data
     public static class Container {
 
         /**
-         * docker host:linux-unix:///var/run/docker.sock,windows-npipe:////./pipe/docker_engine
+         * docker host:(linux)unix:///var/run/docker.sock,(windows)npipe:////./pipe/docker_engine
          */
         private String host;
     }
