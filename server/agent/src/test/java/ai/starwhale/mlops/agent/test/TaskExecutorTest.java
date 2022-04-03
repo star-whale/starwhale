@@ -25,6 +25,7 @@ import ai.starwhale.mlops.agent.task.persistence.TaskPersistence.ExecuteStatus;
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskStatus;
@@ -32,7 +33,6 @@ import ai.starwhale.mlops.domain.task.TaskStatus;
 import java.util.List;
 import java.util.Optional;
 
-import ai.starwhale.mlops.domain.TaskTrigger;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,7 +122,7 @@ public class TaskExecutorTest {
 
         // mockConfig
         EvaluationTask runningTask = taskPool.runningTasks.get(0);
-        Long id = runningTask.getTask().getId();
+        Long id = runningTask.getId();
         // mock taskContainer already change status to uploading todo:or other status
         Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);
 
@@ -159,7 +159,7 @@ public class TaskExecutorTest {
                                                 .imageId("test-image")
                                                 .swdsBlocks(List.of())
                                                 .swModelPackage(SWModelPackage.builder().build())
-                                                .task(Task.builder().id(666666L).status(TaskStatus.ASSIGNING).build())
+                                                .id(666666L)
                                                 .build()
                                 )).build())
                                 .build()

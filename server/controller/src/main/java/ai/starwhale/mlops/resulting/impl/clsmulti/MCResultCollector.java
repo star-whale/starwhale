@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.resulting.clsmulti;
+package ai.starwhale.mlops.resulting.impl.clsmulti;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.resulting.Indicator;
@@ -16,7 +16,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -42,7 +41,7 @@ public class MCResultCollector implements ResultCollector {
     /**
      * dump to or reload from storage
      */
-    final String id;
+    final String jobUUID;
 
     /**
      * key: label-prediction
@@ -68,11 +67,11 @@ public class MCResultCollector implements ResultCollector {
 
     /**
      * a little bit heavy operation because of load
-     * @param id the result id
+     * @param jobUUID the result id
      * @throws IOException storage exception
      */
-    public MCResultCollector(String id) throws IOException {
-        this.id = id;
+    public MCResultCollector(String jobUUID) throws IOException {
+        this.jobUUID = jobUUID;
         rawResultHolder = new ConcurrentHashMap<>();
         storagePath = storagePath();
         load();
@@ -84,6 +83,11 @@ public class MCResultCollector implements ResultCollector {
         this.results.add(cohenKappa);
         this.results.add(mbcConfusionMetrics);
         newItemIn = false;
+    }
+
+    @Override
+    public String getIdentity() {
+        return this.jobUUID;
     }
 
     @Override
@@ -108,7 +112,7 @@ public class MCResultCollector implements ResultCollector {
             }
             final MCIndicator mcIndicator = new MCIndicator(
                 label, inferenceResult);
-            final String indicatorKey = mcIndicator.getKey();
+            final String indicatorKey = mcIndicator.getName();
             rawResultHolder.computeIfAbsent(indicatorKey,
                 k -> Collections.synchronizedList(new LinkedList<>()))
                 .add(mcIndicator);
@@ -173,6 +177,6 @@ public class MCResultCollector implements ResultCollector {
     }
 
     private String storagePath() {
-        return String.format(STORAGE_PATH_FORMATTER, storagePrefix, id);
+        return String.format(STORAGE_PATH_FORMATTER, storagePrefix, jobUUID);
     }
 }

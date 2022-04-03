@@ -10,7 +10,9 @@ package ai.starwhale.mlops.domain.task;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobMapper;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
+import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -53,7 +55,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
      * key: task.status
      * value: task.id
      */
-    ConcurrentHashMap<TaskStatus, List<Long>> taskStatusMap;
+    ConcurrentHashMap<StagingTaskStatus, List<Long>> taskStatusMap;
 
     /**
      * key: task.jobId
@@ -86,7 +88,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
 
     @Override
-    public void adopt(Collection<Task> livingTasks, final TaskStatus status) {
+    public void adopt(Collection<Task> livingTasks, final StagingTaskStatus status) {
         //watch status change validation
         //update to taskStatusMap & taskIdMap
         //if in transaction context save immediately or add to toBePersistent
@@ -136,7 +138,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     }
 
     @Override
-    public Collection<Task> ofStatus(TaskStatus taskStatus) {
+    public Collection<Task> ofStatus(StagingTaskStatus taskStatus) {
         return taskStatusMap.get(taskStatus).stream().map(taskIdMap::get)
             .collect(Collectors.toList());
     }
@@ -174,7 +176,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
         tasks.parallelStream().collect(Collectors.groupingBy(Task::getStatus))
             .forEach((taskStatus, taskList) -> taskMapper
                 .updateTaskStatus(taskList.stream().map(Task::getId).collect(Collectors.toList()),
-                    taskStatus.getOrder()));
+                    taskStatus.getValue()));
     }
 
     /**
@@ -205,6 +207,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             jobMapper.updateJobStatus(toBeUpdated, desiredStatus.getValue());
 
             if (desiredStatus == JobStatus.FINISHED) {
+                //todo(renyanda) when to remove
                 removeFinishedJobTasks(jobids);
             }
 
@@ -217,7 +220,8 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
         }
         jobids.parallelStream().forEach(jid->{
             final List<Long> toBeCleardTaskIds = jobTaskMap.get(jid);
-            final List<Long> finishedTasks = taskStatusMap.get(TaskStatus.FINISHED);
+            final List<Long> finishedTasks = taskStatusMap.get(new StagingTaskStatus(TaskStatus.FINISHED,
+                TaskStatusStage.DONE));
             jobIdMap.remove(jid);
             toBeCleardTaskIds.parallelStream().forEach(tid->{
                 taskIdMap.remove(tid);

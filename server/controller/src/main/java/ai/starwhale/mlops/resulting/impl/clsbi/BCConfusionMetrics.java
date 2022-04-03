@@ -5,17 +5,16 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.resulting.clsbi;
+package ai.starwhale.mlops.resulting.impl.clsbi;
 
 import ai.starwhale.mlops.resulting.Indicator;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * a Bi Classification confusion metrics:
  */
-public class BCConfusionMetrics extends Indicator<BCConfusionMetrics> {
-
-    public static final String NAME = "BCConfusionMetrics";
+public class BCConfusionMetrics{
 
     /**
      * true positive amount
@@ -41,22 +40,18 @@ public class BCConfusionMetrics extends Indicator<BCConfusionMetrics> {
     double recall;
 
     public BCConfusionMetrics(){
-        super(NAME,null);
         this.tp = new AtomicInteger(0);
         this.tn = new AtomicInteger(0);
         this.fp = new AtomicInteger(0);
         this.fn = new AtomicInteger(0);
-        this.value = this;
     }
 
     public BCConfusionMetrics(int tp, int tn, int fp, int fn) {
-        super(NAME,null);
         this.tp = new AtomicInteger(tp);
         this.tn = new AtomicInteger(tn);
         this.fp = new AtomicInteger(fp);
         this.fn = new AtomicInteger(fn);
         calculate();
-        this.value = this;
     }
 
     public void calculate(){
@@ -125,5 +120,6 @@ public class BCConfusionMetrics extends Indicator<BCConfusionMetrics> {
     public double getRecall() {
         return recall;
     }
+
 }
 

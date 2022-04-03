@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.Collection;
 import java.util.Optional;
@@ -16,9 +17,9 @@ import java.util.Optional;
  */
 public interface LivingTaskStatusMachine {
 
-    void adopt(Collection<Task> livingTasks, TaskStatus status);
+    void adopt(Collection<Task> livingTasks, StagingTaskStatus status);
 
-    Collection<Task> ofStatus(TaskStatus taskStatus);
+    Collection<Task> ofStatus(StagingTaskStatus taskStatus);
 
     Optional<Task> ofId(Long taskId);
 

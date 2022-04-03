@@ -7,8 +7,8 @@
 
 package ai.starwhale.test.resulting;
 
-import ai.starwhale.mlops.resulting.clsmulti.MCConfusionMetrics;
-import ai.starwhale.mlops.resulting.clsmulti.MCIndicator;
+import ai.starwhale.mlops.resulting.impl.clsmulti.MCConfusionMetrics;
+import ai.starwhale.mlops.resulting.impl.clsmulti.MCIndicator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,7 +33,7 @@ public class TestMCConfusionMetrics {
         final List<MCIndicator> metricsValue = mcConfusionMetrics.getValue();
         Assertions.assertEquals(9, metricsValue.size());
         Map<String, Integer> metricsExpected = mockMetrics();
-        metricsValue.forEach(mcIndicator -> Assertions.assertEquals(metricsExpected.get(mcIndicator.getKey()),
+        metricsValue.forEach(mcIndicator -> Assertions.assertEquals(metricsExpected.get(mcIndicator.getName()),
             mcIndicator.getValue().intValue()));
     }
 
@@ -56,7 +56,7 @@ public class TestMCConfusionMetrics {
         mockResultHolder.put("C-B", new LinkedList<>());
         mockResultHolder.put("C-C", new LinkedList<>());
         final List<MCIndicator> indicators = mockIndicators();
-        indicators.forEach(indicator-> mockResultHolder.get(indicator.getKey()).add(indicator));
+        indicators.forEach(indicator-> mockResultHolder.get(indicator.getName()).add(indicator));
         return mockResultHolder;
     }
 

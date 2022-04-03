@@ -18,6 +18,7 @@ import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.user.User;
@@ -28,6 +29,11 @@ import com.github.pagehelper.PageHelper;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+
+import ai.starwhale.mlops.domain.job.split.JobSpliterator;
+import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
+import ai.starwhale.mlops.schedule.TaskScheduler;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
@@ -131,7 +137,7 @@ public class JobService {
             //one transaction
             final List<Task> tasks = jobSpliterator.split(job);
             taskScheduler.adoptTasks(tasks,job.getJobRuntime().getDeviceClass());
-            livingTaskStatusMachine.adopt(tasks, TaskStatus.CREATED);
+            livingTaskStatusMachine.adopt(tasks, new StagingTaskStatus(TaskStatus.CREATED));
         });
 
     }
@@ -150,10 +156,10 @@ public class JobService {
         jobMapper.updateJobStatus(List.of(jobId), JobStatus.CANCELED.getValue());
         final List<TaskEntity> taskEntities = taskMapper.listTasks(jobId);
         taskMapper.updateTaskStatus(taskEntities.parallelStream().map(TaskEntity::getId).collect(
-            Collectors.toList()), TaskStatus.TO_CANCEL.getOrder());
+            Collectors.toList()), TaskStatus.CANCEL.getOrder());
         final JobEntity job = jobMapper.findJobById(jobId);
         livingTaskStatusMachine.adopt(taskBoConverter.fromTaskEntity(taskEntities,jobBoConverter.fromEntity(job)),
-            TaskStatus.TO_CANCEL);
+            new StagingTaskStatus(TaskStatus.CANCEL));
     }
 
 }

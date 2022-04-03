@@ -10,8 +10,10 @@ package ai.starwhale.mlops.domain.task;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
+import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
+import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.TaskScheduler;
 import java.util.Arrays;
@@ -50,7 +52,7 @@ public class LivingTaskLoader {
         Stream<TaskEntity> taskStream = livingTasksFromDB();
         final Map<Long, List<TaskEntity>> collectJob = taskStream.parallel()
             .collect(Collectors.groupingBy(TaskEntity::getJobId));
-        final Map<TaskStatus, List<Task>> collectStatus = collectJob.entrySet().parallelStream()
+        final Map<StagingTaskStatus, List<Task>> collectStatus = collectJob.entrySet().parallelStream()
             .map(entry -> {
                 final JobEntity job = jobMapper.findJobById(entry.getKey());
                 return taskBoConverter
@@ -61,9 +63,9 @@ public class LivingTaskLoader {
         collectStatus.entrySet().parallelStream()
             .forEach(entry -> livingTaskStatusMachine.adopt(entry.getValue(), entry.getKey()));
 
-        scheduleCreatedTasks(collectStatus.get(TaskStatus.CREATED));
-        checkCommandingTasks(collectStatus.get(TaskStatus.ASSIGNING));
-        checkCommandingTasks(collectStatus.get(TaskStatus.CANCEL_COMMANDING));
+        scheduleCreatedTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.CREATED)));
+        checkCommandingTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.ASSIGNING)));
+        checkCommandingTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.CANCEL_COMMANDING)));
     }
 
     /**
@@ -72,11 +74,13 @@ public class LivingTaskLoader {
     private Stream<TaskEntity> livingTasksFromDB() {
         final List<Integer> livingTaskStatus = Arrays.asList(TaskStatus.values())
             .parallelStream()
-            .filter(taskStatus -> taskStatus != TaskStatus.FINISHED
-                && taskStatus != TaskStatus.ARCHIVED
-                && taskStatus != TaskStatus.CANCELED
-                && taskStatus != TaskStatus.EXIT_ERROR)
-            .map(TaskStatus::getOrder)
+            .map(status-> List.of(new StagingTaskStatus(status,TaskStatusStage.INIT),new StagingTaskStatus(status,TaskStatusStage.DOING),new StagingTaskStatus(status,TaskStatusStage.DONE)))
+            .flatMap(Collection::stream)
+            .filter(taskStatus -> !taskStatus.equals(new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.DONE))
+                && !taskStatus.equals(new StagingTaskStatus(TaskStatus.ARCHIVED))
+                && !taskStatus.equals(new StagingTaskStatus(TaskStatus.CANCELED))
+                && !taskStatus.equals(new StagingTaskStatus(TaskStatus.EXIT_ERROR)))
+            .map(StagingTaskStatus::getValue)
             .collect(Collectors.toList());
         return taskMapper.findTaskByStatusIn(livingTaskStatus).stream();
     }
