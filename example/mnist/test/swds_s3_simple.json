@@ -29,6 +29,6 @@
                 "data": "dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data/data_ubyte_0.swds_bin:0",
                 "label": "dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data/label_ubyte_0.swds_bin:0"
             }
-        },
+        }
     ]
 }
