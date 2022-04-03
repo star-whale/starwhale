@@ -234,6 +234,7 @@ class ModelPackage(object):
         logger.info("[step:copy]finish copy files")
 
     def _render_manifest(self):
+        self._manifest["name"] = self._name
         self._manifest["tag"] = self._swmp_config.tag or []
         self._manifest["build"] = dict(
             os=platform.system(),
