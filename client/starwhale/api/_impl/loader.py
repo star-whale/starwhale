@@ -78,7 +78,8 @@ class DataLoader(object):
                 break
             _, _, idx, size, padding_size, batch, _ = _header_struct.unpack(header)
             data = _file.read(size + padding_size)
-            yield DATA_FIELD(idx, size, batch, data[:size])
+            yield DATA_FIELD(idx, size, batch,
+                             data[:size].tobytes() if isinstance(data, memoryview) else data[:size])
 
     def __str__(self) -> str:
         return f"DataLoader for {self.backend}"
@@ -118,6 +119,7 @@ class S3DataLoader(DataLoader):
             config=S3Config(signature_version="s3v4", retries={"max_attempts": 1000}),
             region_name=self.service["region"])
 
+    #TODO: tune return typing hint
     def _make_file(self, bucket: str, key_compose: str) -> t.Any:
         _key, _start, _end = self._parse_key(key_compose)
         return S3BufferedFileLike(
@@ -150,7 +152,7 @@ class S3BufferedFileLike(object):
         self.start = start
         self.end = end
 
-        self._buffer = bytearray()
+        self._buffer = memoryview(bytearray(0))
         self._current = 0
         self._s3_eof = False
         self._current_s3_start = start
@@ -158,32 +160,37 @@ class S3BufferedFileLike(object):
     def tell(self):
         return self._current
 
-    def read(self, size: int) -> bytes:
+    def read(self, size: int) -> memoryview:
         if (self._current + size) <= len(self._buffer):
             end = self._current + size
-            out = bytes(self._buffer[self._current:end])
+            out = self._buffer[self._current:end]
             self._current = end
             return out
         else:
             data, _ = self._next_data()
-            self._buffer = self._buffer[self._current:] + data
+            _release_buffer = self._buffer
+            self._buffer = memoryview(self._buffer[self._current:].tobytes() + data)
+            _release_buffer.release()
             self._current = 0
 
             if len(self._buffer) == 0:
-                return b""  # EOF
+                return memoryview(bytearray(0))  # EOF
             elif (self._current + size) > len(self._buffer):
                 #TODO: maybe ignore this error?
                 raise Exception(f"{self.key} file cannot read {size} data, error format")
             else:
                 end = self._current + size
-                out = bytes(self._buffer[self._current:end])
+                out = self._buffer[self._current:end]
                 self._current = end
                 return out
 
     def close(self):
         #TODO: cleanup stream and open
         self.obj = None
-        self._buffer = bytearray()
+        try:
+            self._buffer.release()
+        except Exception as e:
+            _logger.warning(f"skip _buffer(memoryview) release exception:{e}")
 
     def _next_data(self) -> t.Tuple[bytes, int]:
         end = _CHUNK_SIZE + self._current_s3_start - 1
