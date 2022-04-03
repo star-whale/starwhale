@@ -11,10 +11,10 @@ from starwhale.swds.dataset import (
     D_ALIGNMENT_SIZE, D_USER_BATCH_SIZE, D_FILE_VOLUME_SIZE
 )
 
-
+#TODO: tune header size
 _header_magic = struct.unpack(">I", b"SWDS")[0]
 _data_magic = struct.unpack(">I", b"SDWS")[0]
-_header_struct = struct.Struct(">IIQII")
+_header_struct = struct.Struct(">IIQIIII")
 _header_size = _header_struct.size
 
 
@@ -27,7 +27,9 @@ class BuildExecutor(object):
         crc           uint32  I
         idx           uint64  Q
         size          uint32  I
-        data_magic    uint32  I --> above 24 bytes
+        padding_size  uint32  I
+        batch_size    uint32  I
+        data_magic    uint32  I --> above 32 bytes
         data bytes...
         padding bytes...        --> default 4K padding
     """
@@ -77,12 +79,15 @@ class BuildExecutor(object):
     def _write(self, writer, idx: int, data: bytes) -> t.Tuple[int, int]:
         size = len(data)
         crc = crc32(data) #TODO: crc is right?
-
-        _header = _header_struct.pack(_header_magic, crc, idx, size, _data_magic)
-        _padding = b'\0' * self._get_padding_size(size + _header_size)
         start = writer.tell()
+        padding_size = self._get_padding_size(size + _header_size)
+
+        _header = _header_struct.pack(
+            _header_magic, crc, idx, size, padding_size, self._batch, _data_magic
+        )
+        _padding = b'\0' * padding_size
         writer.write(_header + data + _padding)
-        return start, size
+        return start, _header_size + size + padding_size
 
     def _get_padding_size(self, size):
         remain = (size + _header_size) % self.alignment_bytes_size

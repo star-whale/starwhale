@@ -38,3 +38,4 @@ pylint.out
 # User Test Data
 example/mnist/data
 example/mnist/sw_output
+example/mnist/test/task_volume

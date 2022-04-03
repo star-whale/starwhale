@@ -12,3 +12,4 @@ typing-extensions>=4.1.1
 commonmark>=0.9.1
 rich==12.0.0
 jsonlines=3.0.0
+boto3>=1.21.0
