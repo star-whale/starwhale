@@ -60,6 +60,10 @@ public interface SWModelPackageApi {
             schema = @Schema())
         @PathVariable("projectId")
             String projectId,
+        @Parameter(in = ParameterIn.QUERY, description = "Model versionId", schema = @Schema())
+        @Valid
+        @RequestParam(value = "versionId", required = false)
+            String versionId,
         @Parameter(
             in = ParameterIn.PATH,
             description = "Model name prefix to search for",

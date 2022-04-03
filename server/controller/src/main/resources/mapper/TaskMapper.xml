@@ -24,9 +24,10 @@
                a.connect_time,
                a.created_time as agent_created_time,
                a.modified_time as agent_modified_time
-        from task_info as t,
-             agent_info as a
-        where t.agent_id = a.id
+        from task_info as t
+        left join
+            agent_info as a
+        on t.agent_id = a.id
     </sql>
     <select id="listTasks" resultMap="taskResultMap">
         <include refid="select_task" />

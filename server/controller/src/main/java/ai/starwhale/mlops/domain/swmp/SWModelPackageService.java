@@ -111,4 +111,12 @@ public class SWModelPackageService {
         swmpVersionMapper.addNewVersion(entity);
         return idConvertor.convert(entity.getId());
     }
+
+    public SWModelPackageVO findModelByVersionId(String versionId) {
+        SWModelPackageVersionEntity mv = swmpVersionMapper.getVersionById(
+            idConvertor.revert(versionId));
+        SWModelPackageEntity entity = swmpMapper.findSWModelPackageById(mv.getSwmpId());
+
+        return swmpConvertor.convert(entity);
+    }
 }

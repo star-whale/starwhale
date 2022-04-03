@@ -14,6 +14,8 @@ public interface SWModelPackageVersionMapper {
 
     List<SWModelPackageVersionEntity> listVersions(@Param("swmpId") Long swmpId, @Param("namePrefix")String namePrefix);
 
+    SWModelPackageVersionEntity getVersionById(@Param("dsVersionId")Long dsVersionId);
+
     SWModelPackageVersionEntity getLatestVersion(@Param("swmpId")Long swmpId);
 
     int revertTo(@Param("swmpVersionId")Long swmpVersionId);
