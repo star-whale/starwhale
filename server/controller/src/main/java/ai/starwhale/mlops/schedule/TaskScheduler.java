@@ -30,7 +30,7 @@ public interface TaskScheduler {
 
     /**
      * pop tasks available to the node. if no task is available or the node is full, an empty list should be returned
-     * TaskStatus -> Assigning
+     * TaskStatus -> Created.DOING
      * @param node the node load info
      * @return tasks to be assigned to the node
      */

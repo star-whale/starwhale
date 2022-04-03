@@ -15,6 +15,7 @@ import ai.starwhale.mlops.domain.system.Agent;
 import ai.starwhale.mlops.domain.system.AgentEntity;
 import ai.starwhale.mlops.domain.system.AgentMapper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
@@ -72,7 +73,7 @@ public class ReportProcessorImp implements ReportProcessor{
                      livingTaskStatusMachine.adopt(List.of(task),task.getStatus());
                      return task;
                  });
-             tsk.setStatus(taskReport.getStatus());
+             tsk.setStatus(new StagingTaskStatus(taskReport.getStatus()));
              return tsk;
          }).collect(Collectors.toList());
          final List<TaskCommand> unProperTasks = commandingTasksChecker
@@ -82,7 +83,7 @@ public class ReportProcessorImp implements ReportProcessor{
          }
          taskStatusChange(tasks);
          final List<Task> toAssignTasks = taskScheduler.schedule(nodeInfo);
-         final Collection<Task> toCancelTasks = livingTaskStatusMachine.ofStatus(TaskStatus.TO_CANCEL);
+         final Collection<Task> toCancelTasks = livingTaskStatusMachine.ofStatus(new StagingTaskStatus(TaskStatus.CANCEL));
          scheduledTaskStatusChange(toAssignTasks);
          canceledTaskStatusChange(toCancelTasks);
          commandingTasksChecker.onTaskCommanding(taskBoConverter.toTaskCommand(toAssignTasks),
@@ -116,16 +117,16 @@ public class ReportProcessorImp implements ReportProcessor{
     }
 
     private void canceledTaskStatusChange(Collection<Task> tasks) {
-        livingTaskStatusMachine.adopt(tasks,TaskStatus.CANCEL_COMMANDING);
+        livingTaskStatusMachine.adopt(tasks,new StagingTaskStatus(TaskStatus.CANCEL_COMMANDING));
     }
 
     private void scheduledTaskStatusChange(List<Task> toAssignTasks) {
-        livingTaskStatusMachine.adopt(toAssignTasks, TaskStatus.ASSIGNING);
+        livingTaskStatusMachine.adopt(toAssignTasks, new StagingTaskStatus(TaskStatus.ASSIGNING));
 
     }
 
     private void taskStatusChange(List<Task> reportedTasks) {
-        Map<TaskStatus,List<Task>> taskUpdateMap = new HashMap<>();
+        Map<StagingTaskStatus,List<Task>> taskUpdateMap = new HashMap<>();
         reportedTasks.forEach(task->{
             final List<Task> tasks = taskUpdateMap
                 .computeIfAbsent(task.getStatus(), status -> new LinkedList<>());

@@ -7,10 +7,10 @@
 
 package ai.starwhale.test.resulting;
 
-import ai.starwhale.mlops.resulting.clsbi.BCConfusionMetrics;
-import ai.starwhale.mlops.resulting.clsmulti.MBCConfusionMetrics;
-import ai.starwhale.mlops.resulting.clsmulti.MCConfusionMetrics;
-import ai.starwhale.mlops.resulting.clsmulti.MCIndicator;
+import ai.starwhale.mlops.resulting.impl.clsbi.BCConfusionMetrics;
+import ai.starwhale.mlops.resulting.impl.clsmulti.MBCConfusionMetrics;
+import ai.starwhale.mlops.resulting.impl.clsmulti.MCConfusionMetrics;
+import ai.starwhale.mlops.resulting.impl.clsmulti.MCIndicator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

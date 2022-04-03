@@ -17,6 +17,12 @@ import java.util.List;
 public interface ResultCollector {
 
     /**
+     * every collector should have an identity
+     * @return the identity for the collector
+     */
+    String getIdentity();
+
+    /**
      * feed the collector with one pair of label and inferenceResult
      * @param label label of the raw data
      * @param inferenceResult inference result of the raw data

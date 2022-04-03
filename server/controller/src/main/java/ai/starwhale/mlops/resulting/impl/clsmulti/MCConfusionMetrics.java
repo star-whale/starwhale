@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.resulting.clsmulti;
+package ai.starwhale.mlops.resulting.impl.clsmulti;
 
 import ai.starwhale.mlops.resulting.Indicator;
 import java.util.HashMap;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  */
 public class MCConfusionMetrics extends Indicator<List<MCIndicator>> {
 
-    public static final String NAME = "ConfusionMetrics";
+    public static final String NAME = "MCConfusionMetrics";
 
     final Map<String, MCIndicator> lookupTable = new HashMap<>();
 
@@ -41,12 +41,12 @@ public class MCConfusionMetrics extends Indicator<List<MCIndicator>> {
     }
 
     public void feed(MCIndicator freshIndicator) {
-        MCIndicator residentIndicator = lookupTable.get(freshIndicator.getKey());
+        MCIndicator residentIndicator = lookupTable.get(freshIndicator.getName());
         if (null == residentIndicator) {
             synchronized (lookupTable) {
-                residentIndicator = lookupTable.get(freshIndicator.getKey());
+                residentIndicator = lookupTable.get(freshIndicator.getName());
                 if (null == residentIndicator) {
-                    lookupTable.put(freshIndicator.getKey(), freshIndicator);
+                    lookupTable.put(freshIndicator.getName(), freshIndicator);
                     this.value.add(freshIndicator);
                 } else {
                     residentIndicator.getValue().addAndGet(freshIndicator.getValue().get());

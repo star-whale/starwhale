@@ -51,7 +51,7 @@ public class TaskService {
         TaskEntity entity = TaskEntity.builder()
             .jobId(task.getJob().getId())
             .taskUuid(uuid)
-            .taskStatus(task.getStatus().ordinal())
+            .taskStatus(task.getStatus().getValue())
             .build();
         return taskMapper.addTask(entity) > 0;
     }
