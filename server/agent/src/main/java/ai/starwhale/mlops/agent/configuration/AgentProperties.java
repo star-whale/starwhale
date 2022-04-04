@@ -25,7 +25,6 @@ public class AgentProperties {
          */
         private String basePath;
 
-        private static final String g = "";
     }
 
     @Data
