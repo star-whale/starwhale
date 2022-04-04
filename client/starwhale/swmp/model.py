@@ -151,7 +151,6 @@ class ModelPackage(object):
             _model_yaml_fname = DEFAULT_MODEL_YAML_NAME
         else:
             _workdir = Path(swmp)
-
         _model_fpath = _workdir / _model_yaml_fname
 
         if not _model_fpath.exists():
@@ -184,7 +183,7 @@ class ModelPackage(object):
         if not sw.model:
             raise FileFormatError("model yaml no model")
 
-        for path in sw.model:
+        for path in sw.model + sw.config:
             if not (self.workdir / path).exists():
                 raise FileFormatError(f"model - {path} is not existed")
 
@@ -272,11 +271,17 @@ class ModelPackage(object):
         snapshot_fs = open_fs(str(self._snapshot_workdir.resolve()))
         src_fs = open_fs(str(self._src_dir.resolve()))
         #TODO: support exclude dir
+        #TODO: support glob pkg_data
+        #TODO: ignore some folders, such as __pycache__
         copy_file(workdir_fs, self._model_yaml_fname, snapshot_fs, DEFAULT_MODEL_YAML_NAME)
         copy_fs(workdir_fs, src_fs,
                 walker=Walker(
-                    filter=["*.py", self._model_yaml_fname] + SUPPORTED_PIP_REQ + _mc.model + _mc.config + _mc.run.pkg_data,
+                    filter=["*.py", self._model_yaml_fname] + SUPPORTED_PIP_REQ + _mc.run.pkg_data,
                 ), workers=DEFAULT_COPY_WORKERS)
+
+        for _fname in _mc.config + _mc.model:
+            copy_file(workdir_fs, _fname, src_fs, _fname)
+
         logger.info("[step:copy]finish copy files")
 
     def _render_manifest(self):
