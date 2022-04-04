@@ -13,6 +13,7 @@ import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
 import cn.hutool.core.collection.CollectionUtil;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,8 @@ public class RebuildTasksAction implements DoTransition<Void, List<EvaluationTas
     public List<EvaluationTask> processing(Void v, Context context)
         throws Exception {
         log.info("start to rebuild task pool");
-        return taskPersistence.getAllActiveTasks();
+        Optional<List<EvaluationTask>> tasks = taskPersistence.getAllActiveTasks();
+        return tasks.orElseGet(List::of);
     }
 
     @Override

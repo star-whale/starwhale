@@ -9,31 +9,33 @@ package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * agent task persistence api
  */
 public interface TaskPersistence {
 
+
     /**
      * get all tasks
      * @return all tasks
      */
-    List<EvaluationTask> getAllActiveTasks() throws Exception;
+    Optional<List<EvaluationTask>> getAllActiveTasks();
 
     /**
      * get task by id
      * @param id key
      * @return task
      */
-    EvaluationTask getTaskById(Long id) throws Exception;
+    Optional<EvaluationTask> getTaskById(Long id);
 
     /**
      * get task container status by id
      * @param id key
      * @return task
      */
-    ExecuteStatus status(Long id) throws Exception;
+    Optional<ExecuteStatus> status(Long id);
 
     /**
      * "created""running""paused""restarting""removing""exited""dead"
@@ -49,7 +51,7 @@ public interface TaskPersistence {
      * @param task task
      * @return if success
      */
-    boolean save(EvaluationTask task) throws Exception;
+    boolean save(EvaluationTask task);
 
     /**
      * move task to the archived state
@@ -63,5 +65,12 @@ public interface TaskPersistence {
      * @param task task
      * @return disk dir path
      */
-    String preloadingSWMP(EvaluationTask task) throws Exception;
+    boolean preloadingSWMP(EvaluationTask task);
+
+    /**
+     * upload result to storage
+     * @param task task
+     * @return oss path
+     */
+    boolean uploadResult(EvaluationTask task);
 }

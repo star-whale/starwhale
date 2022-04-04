@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.agent.task.action.normal;
 
+import ai.starwhale.mlops.agent.exception.UploadException;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.task.TaskStatus;
@@ -21,14 +22,19 @@ public class Uploading2FinishedAction extends AbsBaseTaskTransition {
     @Override
     public EvaluationTask processing(EvaluationTask oldTask, Context context) {
         EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
-        // todo: upload result file to the storage
-        newTask.setStatus(TaskStatus.FINISHED);
-        return newTask;
+        // upload result file to the storage
+        if (taskPersistence.uploadResult(oldTask)) {
+            newTask.setStatus(TaskStatus.FINISHED);
+            return newTask;
+        }
+        throw new UploadException("upload result error");
     }
 
     @Override
     public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
-        taskPool.uploadingTasks.remove(oldTask);
-        taskPool.finishedTasks.add(newTask);
+        if (newTask.getStatus() == TaskStatus.FINISHED) {
+            taskPool.uploadingTasks.remove(oldTask);
+            taskPool.finishedTasks.add(newTask);
+        }
     }
 }

@@ -13,9 +13,11 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.extra.compress.CompressUtil;
 import cn.hutool.extra.compress.extractor.Extractor;
 import cn.hutool.json.JSONUtil;
+import java.io.BufferedInputStream;
 import java.io.File;
-import java.nio.charset.Charset;
+import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,8 +36,78 @@ import org.springframework.util.StringUtils;
 @Service
 public class FileSystemTaskPersistence implements TaskPersistence {
 
-    private final String infoSuffix = ".taskinfo";
-    private final String statusSuffix = ".status";
+    String baseTaskPathFormat = "%s/%s/";
+
+    String infoSuffix = "taskInfo.json";
+
+    String infoFilePath = baseTaskPathFormat + infoSuffix;
+
+
+    String statusFilePath = baseTaskPathFormat + "status.txt";
+
+
+    String swmpDirPath = baseTaskPathFormat + "swmp/";
+
+
+    String resultDirPath = baseTaskPathFormat + "result/";
+
+
+    String logDirPath = baseTaskPathFormat + "log/";
+
+    /**
+     * archived taskInfo file path,Eg:/var/starwhale/task/archived/{taskId}/
+     */
+    String archivedDirPath = "%s/archived/";
+
+
+    String path(String format, Object... objects) {
+        return String.format(format, objects);
+    }
+
+    /**
+     * @param id taskId
+     * taskInfo dir path,Eg:/var/starwhale/task/{taskId}/taskInfo.json(format:json)
+     */
+    public String pathOfInfoFile(Long id) {
+        return path(infoFilePath, agentProperties.getTask().getBasePath(), id);
+    }
+
+    /**
+     * @param id taskId
+     * task running status dir path,Eg:/var/starwhale/task/{taskId}/status(format:txt)
+     */
+    public String pathOfStatusFile(Long id) {
+        return path(statusFilePath, agentProperties.getTask().getBasePath(), id);
+    }
+
+    public String basePathOfTask(Long id) {
+        return path(baseTaskPathFormat, agentProperties.getTask().getBasePath(), id);
+    }
+
+    /**
+     * @param id taskId
+     * swmp dir path,Eg:/var/starwhale/task/{taskId}/swmp/(dir)
+     */
+    public String pathOfSWMPDir(Long id) {
+        return path(swmpDirPath, agentProperties.getTask().getBasePath(), id);
+    }
+
+    // todo:swds config file
+
+    /**
+     * @param id taskId
+     * task result dir path,Eg:/var/starwhale/task/{taskId}/result/
+     */
+    public String pathOfResult(Long id) {
+        return path(resultDirPath, agentProperties.getTask().getBasePath(), id);
+    }
+
+    /**
+     * task runtime log dir path,Eg:/var/starwhale/task/log/{taskId}/log
+     */
+    public String pathOfLog(Long id) {
+        return path(logDirPath, agentProperties.getTask().getBasePath(), id);
+    }
 
     @Autowired
     private AgentProperties agentProperties;
@@ -43,73 +115,93 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     private StorageAccessService storageAccessService;
 
     @Override
-    public List<EvaluationTask> getAllActiveTasks() throws Exception {
-        Path tasksPath = Path.of(agentProperties.getTask().getInfoPath());
-        if (!Files.exists(tasksPath)) {
-            Files.createDirectories(tasksPath);
-            log.info("init tasks dir, nothing to rebuild, path:{}", tasksPath);
-            return List.of();
-        } else {
-            // rebuild taskQueue
-            Stream<Path> taskInfos = Files.find(tasksPath, 1,
+    public Optional<List<EvaluationTask>> getAllActiveTasks() {
+        try {
+            Path tasksPath = Path.of(agentProperties.getTask().getBasePath());
+            if (!Files.exists(tasksPath)) {
+                Files.createDirectories(tasksPath);
+                log.info("init tasks dir, nothing to rebuild, path:{}", tasksPath);
+                return Optional.of(List.of());
+            } else {
+                // rebuild taskQueue
+                Stream<Path> taskInfos = Files.find(tasksPath, 1,
                     (path, basicFileAttributes) -> true);
-            return taskInfos
-                    .filter(path -> path.getFileName().toString().endsWith(infoSuffix))
-                    .map(path -> {
-                        try {
-                            String json = Files.readString(path);
-                            return JSONUtil.toBean(json, EvaluationTask.class);
-                        } catch (IOException e) {
-                            log.error(e.getMessage(), e);
-                        }
-                        return null;
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+                return Optional.of(
+                    taskInfos
+                        .filter(path -> path.getFileName().toString().endsWith(infoSuffix))
+                        .map(path -> {
+                            try {
+                                String json = Files.readString(path);
+                                return JSONUtil.toBean(json, EvaluationTask.class);
+                            } catch (IOException e) {
+                                log.error(e.getMessage(), e);
+                            }
+                            return null;
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList())
+                );
+            }
+        } catch (Exception e) {
+            log.error("get all active tasks occur error:{}", e.getMessage(), e);
+            return Optional.empty();
         }
+
     }
 
     @Override
-    public EvaluationTask getTaskById(Long id) throws Exception {
-        String path = agentProperties.getTask().getInfoPath();
-        // get the newest task info
-        Path taskPath = Path.of(path + "/" + id + infoSuffix);
-        String json = Files.readString(taskPath);
-        return JSONUtil.toBean(json, EvaluationTask.class);
+    public Optional<EvaluationTask> getTaskById(Long id) {
+        try {
+            // get the newest task info
+            Path taskPath = Path.of(pathOfInfoFile(id));
+            String json = Files.readString(taskPath);
+            return Optional.of(JSONUtil.toBean(json, EvaluationTask.class));
+        } catch (Exception e) {
+            log.error("get task by id:{} occur error:{}", id, e.getMessage(), e);
+            return Optional.empty();
+        }
+
     }
 
     @Override
-    public ExecuteStatus status(Long id) throws Exception {
-        String path = agentProperties.getTask().getStatusPath();
-        // get the newest task info
-        Path taskPath = Path.of(path + "/" + id + statusSuffix);
-        String status = Files.readString(taskPath);
-        if (StringUtils.hasText(status)) {
-            return ExecuteStatus.valueOf(status);
+    public Optional<ExecuteStatus> status(Long id) {
+        try {
+            // get the newest task info
+            Path taskPath = Path.of(pathOfStatusFile(id));
+            String status = Files.readString(taskPath);
+            if (StringUtils.hasText(status)) {
+                return Optional.of(ExecuteStatus.valueOf(status));
+            }
+            return Optional.of(ExecuteStatus.UNKNOWN);
+        } catch (Exception e) {
+            log.error("get task container status occur error:{}", e.getMessage(), e);
+            return Optional.empty();
         }
-        return ExecuteStatus.UNKNOWN;
+
     }
 
     @Override
-    public boolean save(EvaluationTask task) throws IOException {
-
-        String path = agentProperties.getTask().getInfoPath();
-        Path taskPath = Path.of(path + "/" + task.getId() + infoSuffix);
-        if (!Files.exists(taskPath)) {
-            Files.createFile(taskPath);
+    public boolean save(EvaluationTask task) {
+        try {
+            Path taskPath = Path.of(pathOfInfoFile(task.getId()));
+            if (!Files.exists(taskPath)) {
+                Files.createFile(taskPath);
+            }
+            // update info to the task file
+            Files.writeString(taskPath, JSONUtil.toJsonStr(task));
+            return true;
+        } catch (Exception e) {
+            log.error("save task status occur error:{}", e.getMessage(), e);
+            return false;
         }
-        // update info to the task file
-        Files.writeString(taskPath, JSONUtil.toJsonStr(task));
-        return true;
+
     }
 
     @Override
     public boolean move2Archived(EvaluationTask task) {
         try {
-            Path sourcePath = Path.of(
-                    agentProperties.getTask().getInfoPath() + "/" + task.getId()
-                            + infoSuffix),
-                    targetDir = Path.of(agentProperties.getTask().getArchivedDirPath() + "/");
+            Path sourcePath = Path.of(basePathOfTask(task.getId())),
+                targetDir = Path.of(path(archivedDirPath, agentProperties.getTask().getBasePath()));
             if (!Files.exists(targetDir)) {
                 Files.createDirectories(targetDir);
             }
@@ -117,21 +209,39 @@ public class FileSystemTaskPersistence implements TaskPersistence {
             Files.move(sourcePath, targetDir);
             return true;
         } catch (IOException e) {
-            log.error(e.getMessage(), e);
+            log.error("move task to archived dir occur error:{}", e.getMessage(), e);
         }
         return false;
     }
 
     @Override
-    public String preloadingSWMP(EvaluationTask task) throws Exception {
-        // pull swmp(tar) and uncompress it to the swmp dir
-        InputStream swmpStream = storageAccessService.get(task.getSwModelPackage().getPath());
-        String targetDir = agentProperties.getTask().getSwmpPath() + "/" + task.getId() + "/" ;
-        // Path targetDir = Path.of(agentProperties.getTask().getSwmpPath() + "/" + task.getId() + "/" );
-        // Files.copy(swmpStream, targetDir);
-        // untar:direct uncompress to the target dir
-        Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);
-        extractor.extract(new File(targetDir));
-        return targetDir;
+    public boolean preloadingSWMP(EvaluationTask task) {
+        try {
+            // pull swmp(tar) and uncompress it to the swmp dir
+            InputStream swmpStream = storageAccessService.get(task.getSwModelPackage().getPath());
+            // uncompress, default is tar:direct uncompress to the target dir
+            Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);
+            extractor.extract(
+                new File(pathOfSWMPDir(task.getId())));
+            return true;
+        } catch (Exception e) {
+            log.error("preloading swmp occur error:{}", e.getMessage(), e);
+            return false;
+        }
+
+    }
+
+    @Override
+    public boolean uploadResult(EvaluationTask task) {
+        try {
+            // todo:result is a file? or a set of files?
+            storageAccessService.put(task.getResultPath(),
+                new BufferedInputStream(new FileInputStream(pathOfResult(task.getId()))));
+            return true;
+        } catch (Exception e) {
+            log.error("upload result occur error:{}", e.getMessage(), e);
+            return false;
+        }
+
     }
 }
