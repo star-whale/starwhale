@@ -1,0 +1,86 @@
+body {
+  margin: 0;
+  /* font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif; */
+  font-family: Inter-Regular, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',Arial,'Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 400;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+[data-baseweb="toaster"],
+[data-baseweb="modal"],
+[data-baseweb="popover"] {
+  z-index: 1000;
+}
+
+/* inter-blod */
+@font-face {
+  font-family: 'Inter';
+  font-style:  normal;
+  font-weight: 700;
+  font-display: swap;
+  src: local(''),
+       url("./assets/fonts/Inter-Bold.woff2?v=3.19") format("woff2"),
+       url("./assets/fonts/Inter-Bold.woff?v=3.19") format("woff");
+}
+
+@font-face {
+  font-family: 'Inter-Regular';
+  font-style:  normal;
+  font-weight: 400;
+  font-display: swap;
+  src: local(''),
+       url("./assets/fonts/Inter-Regular.woff") format("woff2"),
+       url("./assets/fonts/Inter-Regular.woff2") format("woff");
+}
+
+
+
+/* zen-tokyo-zoo-regular - latin */
+@font-face {
+  font-family: 'Zen Tokyo Zoo';
+  font-style: normal;
+  font-weight: 400;
+  src: url('./assets/fonts/zen-tokyo-zoo-v1-latin-regular.eot'); /* IE9 Compat Modes */
+  src: local(''),
+       url('./assets/fonts/zen-tokyo-zoo-v1-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('./assets/fonts/zen-tokyo-zoo-v1-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
+       url('./assets/fonts/zen-tokyo-zoo-v1-latin-regular.woff') format('woff'), /* Modern Browsers */
+       url('./assets/fonts/zen-tokyo-zoo-v1-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('./assets/fonts/zen-tokyo-zoo-v1-latin-regular.svg#ZenTokyoZoo') format('svg'); /* Legacy iOS */
+}
+
+/* monoton-regular - latin */
+@font-face {
+  font-family: 'Monoton';
+  font-style: normal;
+  font-weight: 400;
+  src: url('./assets/fonts/monoton-v10-latin-regular.eot'); /* IE9 Compat Modes */
+  src: local(''),
+       url('./assets/fonts/monoton-v10-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('./assets/fonts/monoton-v10-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
+       url('./assets/fonts/monoton-v10-latin-regular.woff') format('woff'), /* Modern Browsers */
+       url('./assets/fonts/monoton-v10-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('./assets/fonts/monoton-v10-latin-regular.svg#Monoton') format('svg'); /* Legacy iOS */
+}
+
+/* teko-regular - latin */
+@font-face {
+  font-family: 'Teko';
+  font-style: normal;
+  font-weight: 400;
+  src: url('./assets/fonts/teko-v10-latin-regular.eot'); /* IE9 Compat Modes */
+  src: local(''),
+       url('./assets/fonts/teko-v10-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('./assets/fonts/teko-v10-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
+       url('./assets/fonts/teko-v10-latin-regular.woff') format('woff'), /* Modern Browsers */
+       url('./assets/fonts/teko-v10-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('./assets/fonts/teko-v10-latin-regular.svg#Teko') format('svg'); /* Legacy iOS */
+}
