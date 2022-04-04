@@ -147,8 +147,8 @@ class ModelPackage(object):
             _name, _version = swmp.split(":")
             #TODO: tune model package local store init twice
             #TODO: guess _version?
-            _workdir = ModelPackageLocalStore().workdir / _name / _version
-            _model_yaml_fname = DEFAULT_MODEL_YAML_NAME
+            #TODO: model.yaml auto-detect
+            _workdir = ModelPackageLocalStore().workdir / _name / _version / "src"
         else:
             _workdir = Path(swmp)
         _model_fpath = _workdir / _model_yaml_fname
