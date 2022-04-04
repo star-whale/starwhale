@@ -8,14 +8,6 @@ module.exports = {
         { plugin: CracoEsbuildPlugin },
     ],
     webpack: {
-        // devServer: {
-        //     client: {
-        //       overlay: {
-        //         errors: true,
-        //         warnings: false,
-        //       },
-        //     },
-        //   },
         alias: {
             '@user': path.resolve(__dirname, 'src/domain/user'),
             '@model': path.resolve(__dirname, 'src/domain/model'),

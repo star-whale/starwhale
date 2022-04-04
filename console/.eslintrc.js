@@ -101,16 +101,6 @@ module.exports = {
             version: 'detect',
         },
         'import/resolver': {
-            // webpack: {
-            //     config: {
-            //         resolve: {
-            //             alias: {
-            //                 '@': path.resolve('src'),
-            //             },
-            //             extensions: ['.js', '.jsx','ts','.tsx'],
-            //         },
-            //     },
-            // },
             alias: {
                 map: [['@', './src']],
                 extensions: ['.tsx', '.ts', '.js', '.jsx'],
