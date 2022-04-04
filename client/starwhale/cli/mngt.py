@@ -21,6 +21,7 @@ def add_mngt_command(cli):
 
     @cli.command("quickstart", help="StarWhale Quickstart")
     def _quickstart():
+        #TODO: init git repo, add some gitignore
         pass
 
     @cli.command("autocomplete", help="Generate zsh/bash command auto complete")
