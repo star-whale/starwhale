@@ -11,3 +11,6 @@ sw:
 #      archivedDirPath: ${SW_TASK_ARCHIVED_INFO_PATH:/var/starwhale/task/archived/}
 #      resultPath: ${SW_TASK_RESULT_PATH:/var/starwhale/task/result/}
 #      logPath: ${SW_TASK_LOG_PATH:/var/starwhale/task/log/}
+  controller:
+    name: swController
+    url: http://localhost:8080/
