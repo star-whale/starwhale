@@ -9,9 +9,8 @@ config:
 
 run:
   runtime: python3.8
-  ppl: ppl.py
+  ppl: mnist.ppl:MNISTInference
   pip_req: requirements.txt
-  args: --predictor
 
 desc: mnist by pytorch
 

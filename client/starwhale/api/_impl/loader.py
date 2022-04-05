@@ -1,5 +1,4 @@
 from __future__ import annotations
-from posixpath import expanduser
 import typing as t
 from pathlib import Path
 from collections import namedtuple
@@ -9,7 +8,6 @@ import loguru
 from loguru import logger as _logger
 import boto3
 from botocore.client import Config as S3Config
-from numpy import pad
 
 from starwhale.utils.error import NoSupportError
 
@@ -116,7 +114,9 @@ class S3DataLoader(DataLoader):
             "s3", endpoint_url=self.service["endpoint"],
             aws_access_key_id=self.secret["access_key"],
             aws_secret_access_key=self.secret["secret_key"],
-            config=S3Config(signature_version="s3v4", retries={"max_attempts": 1000}),
+            config=S3Config(
+                signature_version="s3v4",
+                retries={"max_attempts": 30}),
             region_name=self.service["region"])
 
     #TODO: tune return typing hint

@@ -170,3 +170,7 @@ class ModelPackageLocalStore(LocalStorage):
             click.confirm(f"continue to delete {pkg_fpath}?", abort=True)
             latest = self.pkgdir / _model
             pkg_fpath.unlink()
+
+    def extract(self, swmp: str, force: bool=False) -> None:
+        #TODO: extract swmp into workdir
+        ...

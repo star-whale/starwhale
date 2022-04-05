@@ -12,14 +12,14 @@ from datetime import datetime
 import loguru
 import jsonlines
 from starwhale.consts import FMT_DATETIME
-
+from starwhale.consts.env import SW_ENV
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.utils import pretty_bytes
+from starwhale.utils import pretty_bytes, in_production
 from .loader import DATA_FIELD, get_data_loader
 
-_TASK_ROOT_DIR = "/var/starwhale"
+_TASK_ROOT_DIR = "/var/starwhale" if  in_production() else "/tmp/starwhale"
 
 _p = lambda p, sub: Path(p) if p else Path(_TASK_ROOT_DIR) / sub
 _ptype = t.Union[str, None, Path]
@@ -63,11 +63,23 @@ class _RunConfig(object):
     def create_by_env(cls) -> "_RunConfig":
         _env = os.environ.get
         return _RunConfig(
-            swds_config_path=_env("SW_TASK_SWDS_CONFIG"),
-            status_dir=_env("SW_TASK_STATUS_DIR"),
-            log_dir=_env("SW_TASK_LOG_DIR"),
-            result_dir=_env("SW_TASK_RESULT_DIR"),
+            swds_config_path=_env(SW_ENV.SWDS_CONFIG),
+            status_dir=_env(SW_ENV.STATUS_D),
+            log_dir=_env(SW_ENV.LOG_D),
+            result_dir=_env(SW_ENV.RESULT_D),
         )
+
+    @classmethod
+    def set_env(cls, _config: dict={}) -> None:
+        def _set(_k, _e):
+            _v = _config.get(_k)
+            if _v:
+                os.environ[_e] = _v
+
+        _set("status_dir", SW_ENV.STATUS_D)
+        _set("log_dir", SW_ENV.LOG_D)
+        _set("result_dir", SW_ENV.RESULT_D)
+        _set("swds_config", SW_ENV.SWDS_CONFIG)
 
 
 class PipelineHandler(object):
@@ -115,6 +127,9 @@ class PipelineHandler(object):
 
         if not isinstance(sys.stderr, StreamWrapper):
             sys.stderr = StreamWrapper(sys.stderr, self.logger, logging.WARN)
+
+    def __str__(self) -> str:
+        return f"PipelineHandler status@{self.config.status_dir}, log@{self.config.log_dir}, result@{self.config.result_dir}"
 
     def __exit__(self):
         #TODO: reset sys for stdout/stderr?

@@ -21,6 +21,7 @@ from starwhale import __version__
 from starwhale.utils import (
     convert_to_bytes, gen_uniq_version
 )
+from starwhale.utils.load import import_cls
 from starwhale.utils.venv import SUPPORTED_PIP_REQ, dump_python_dep_env, detect_pip_req
 from starwhale.utils.error import FileTypeError, NoSupportError
 from starwhale.consts import (
@@ -211,32 +212,10 @@ class DataSet(object):
         )
 
         self._manifest["dep"] = _manifest
-
         logger.info("[step:dump]finish dump dep")
 
-    def _import_build_executor_cls(self, workdir, process) -> t.Any:
-        from starwhale.api._impl.dataset import BuildExecutor
-        _module_name, _cls_name = process.split(":", 1)
-
-        _changed = False
-        _w = str(workdir.absolute())
-        if _w not in sys.path:
-            sys.path.insert(0, _w)
-            _changed = True
-
-        try:
-            _module = importlib.import_module(_module_name, package=_w)
-            _cls = getattr(_module, _cls_name, None)
-            if not _cls or not issubclass(_cls, BuildExecutor):
-                raise Exception(f"{process} is not subclass of starwhale.api.dataset.BuildExecutor")
-        except Exception:
-            if _changed:
-                sys.path.remove(_w)
-            raise
-
-        return _cls
-
     def _call_make_swds(self) -> None:
+        from starwhale.api._impl.dataset import BuildExecutor
         logger.info("[step:swds]try to gen swds...")
         self._manifest["dataset_attr"] = self._swds_config.attr.__dict__
         self._manifest["mode"] = self._swds_config.mode
@@ -244,7 +223,7 @@ class DataSet(object):
 
         #TODO: add more import format support, current is module:class
         logger.info(f"[info:swds]try to import {self._swds_config.process} @ {self.workdir}")
-        _cls = self._import_build_executor_cls(self.workdir, self._swds_config.process)
+        _cls = import_cls(self.workdir, self._swds_config.process, BuildExecutor)
         _sw = self._swds_config
         _obj = _cls(
              data_dir=self.workdir / self._swds_config.data_dir,

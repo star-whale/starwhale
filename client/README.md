@@ -5,6 +5,4 @@
 - cd client dir
 - pip install -e
 - run "swcli --help" or "python -m starwhale --help"
-
-# VSCode Debug:
-- DEBUG model
+- docker run -it -v ~/.cache/minio:/data -p 9000:9000 -p 9001:9001 quay.io/minio/minio:latest server /data --console-address ":9001"

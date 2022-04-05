@@ -35,6 +35,11 @@ def get_external_python_version():
         ], stderr=sys.stderr
     )
 
+def in_dev() -> bool:
+    return not in_production()
+
+def in_production() -> bool:
+    return os.environ.get("SW_PRODUCTION", "") == "1"
 
 def is_venv() -> bool:
     #TODO: refactor for get external venv attr

@@ -7,7 +7,7 @@ from PIL import Image
 
 from starwhale.api.model import PipelineHandler
 
-from model import Net
+from .model import Net
 
 ROOTDIR = Path(__file__).parent.parent
 IMAGE_WIDTH = 28
