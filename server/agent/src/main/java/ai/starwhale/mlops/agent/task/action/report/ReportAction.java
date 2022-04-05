@@ -7,7 +7,10 @@
 
 package ai.starwhale.mlops.agent.task.action.report;
 
+import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.node.SourcePool;
+import ai.starwhale.mlops.agent.node.base.SystemDetect;
+import ai.starwhale.mlops.agent.node.base.SystemInfo;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
@@ -39,6 +42,12 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
 
     @Autowired
     private ReportApi reportApi;
+
+    @Autowired
+    private SystemDetect systemDetect;
+
+    @Autowired
+    private AgentProperties agentProperties;
 
     @Autowired
     DoTransition<EvaluationTask, EvaluationTask> init2PreparingAction;
@@ -74,8 +83,20 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
             .collect(Collectors.toList()));
         reportRequest.setTasks(all);
 
-        // todo
-        Node node = Node.builder().ipAddr("").agentVersion("").memorySizeGB(0l).devices(List.copyOf(sourcePool.getDevices()))
+        SystemInfo systemInfo = systemDetect.detect()
+            .orElse(
+                SystemInfo.builder()
+                    .hostAddress("localhost")
+                    .availableMemory(0)
+                    .totalMemory(0)
+                    .build()
+            );
+
+        Node node = Node.builder()
+            .ipAddr(systemInfo.getHostAddress())
+            .agentVersion(agentProperties.getVersion())
+            .memorySizeGB(systemInfo.getTotalMemory())
+            .devices(List.copyOf(sourcePool.getDevices()))
             .build();
 
         reportRequest.setNodeInfo(node);

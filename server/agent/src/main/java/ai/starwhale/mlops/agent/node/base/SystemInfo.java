@@ -5,11 +5,16 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.exception;
+package ai.starwhale.mlops.agent.node.base;
 
-public class UploadException extends RuntimeException {
+import lombok.Builder;
+import lombok.Data;
 
-    public UploadException(String message) {
-        super(message);
-    }
+@Data
+@Builder
+public class SystemInfo {
+    private String hostName;
+    private String hostAddress;
+    private long totalMemory;
+    private long availableMemory;
 }

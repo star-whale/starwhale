@@ -5,23 +5,29 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.node.host;
+package ai.starwhale.mlops.agent.node.base;
 
 import cn.hutool.system.SystemUtil;
+import cn.hutool.system.oshi.OshiUtil;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import oshi.hardware.GlobalMemory;
 
 @Slf4j
-public class SimpleHostDetect implements HostDetect {
+public class SimpleSystemDetect implements SystemDetect {
 
     @Override
-    public Optional<HostInfo> detect() {
-        cn.hutool.system.HostInfo hostInfo = SystemUtil.getHostInfo();
+    public Optional<SystemInfo> detect() {
         try{
+            cn.hutool.system.HostInfo hostInfo = SystemUtil.getHostInfo();
+
+            GlobalMemory memory = OshiUtil.getMemory();
             return Optional.of(
-                HostInfo.builder()
+                SystemInfo.builder()
                     .hostAddress(hostInfo.getAddress())
                     .hostName(hostInfo.getName())
+                    .totalMemory(memory.getTotal())
+                    .availableMemory(memory.getAvailable())
                     .build()
             );
         } catch (Exception e) {

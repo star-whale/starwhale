@@ -73,4 +73,41 @@ public interface TaskPersistence {
      * @return oss path
      */
     boolean uploadResult(EvaluationTask task);
+
+    /**
+     * @param id taskId
+     * taskInfo dir path,Eg:/var/starwhale/task/{taskId}/taskInfo.json(format:json)
+     */
+    String pathOfInfoFile(Long id);
+
+    /**
+     * @param id taskId
+     * task running status dir path,Eg:/var/starwhale/task/{taskId}/status(format:txt)
+     */
+    String pathOfStatusFile(Long id);
+
+    /**
+     * @param id taskId
+     * one task's base dir path,Eg:/var/starwhale/task/{taskId}/
+     */
+    String basePathOfTask(Long id);
+
+    /**
+     * @param id taskId
+     * swmp dir path,Eg:/var/starwhale/task/{taskId}/swmp/(dir)
+     */
+    String pathOfSWMPDir(Long id);
+
+    // todo:swds config file
+
+    /**
+     * @param id taskId
+     * task result dir path,Eg:/var/starwhale/task/{taskId}/result/
+     */
+    String pathOfResult(Long id);
+
+    /**
+     * task runtime log dir path,Eg:/var/starwhale/task/log/{taskId}/log
+     */
+    String pathOfLog(Long id);
 }

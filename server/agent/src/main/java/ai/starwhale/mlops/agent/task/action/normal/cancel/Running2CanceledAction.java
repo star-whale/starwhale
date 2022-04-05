@@ -5,22 +5,29 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.action.cancel;
+package ai.starwhale.mlops.agent.task.action.normal.cancel;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 
 @Service
 public class Running2CanceledAction extends AbsBaseCancelTaskTransition {
     @Override
     public EvaluationTask processing(EvaluationTask oldTask, Context context) {
-        // todo: stop the container
-        return super.processing(oldTask, context);
+        // stop the container
+        if (containerClient.stopAndRemoveContainer(oldTask.getContainerId(), true)){
+            return super.processing(oldTask, context);
+        }
+       return null;
     }
 
     @Override
     public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
-        taskPool.runningTasks.remove(oldTask);
+        if (Objects.nonNull(newTask)) {
+            taskPool.runningTasks.remove(oldTask);
+            super.success(oldTask, newTask, context);
+        }
     }
 }

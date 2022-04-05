@@ -7,14 +7,12 @@
 
 package ai.starwhale.mlops.agent.task.action.normal;
 
-import ai.starwhale.mlops.agent.exception.UploadException;
+import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class Uploading2FinishedAction extends AbsBaseTaskTransition {
@@ -27,7 +25,7 @@ public class Uploading2FinishedAction extends AbsBaseTaskTransition {
             newTask.setStatus(TaskStatus.FINISHED);
             return newTask;
         }
-        throw new UploadException("upload result error");
+        throw ErrorCode.uploadError.asException("upload result error");
     }
 
     @Override

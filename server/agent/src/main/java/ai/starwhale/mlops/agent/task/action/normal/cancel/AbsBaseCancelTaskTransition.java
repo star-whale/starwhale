@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.action.cancel;
+package ai.starwhale.mlops.agent.task.action.normal.cancel;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
@@ -13,6 +13,7 @@ import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.normal.AbsBaseTaskTransition;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public abstract class AbsBaseCancelTaskTransition extends AbsBaseTaskTransition {
@@ -33,8 +34,10 @@ public abstract class AbsBaseCancelTaskTransition extends AbsBaseTaskTransition 
 
     @Override
     public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
-        taskPool.canceledTasks.add(newTask);
-        // cancel success
-        taskPool.needToCancel.remove(newTask.getId());
+        if (Objects.nonNull(newTask)) {
+            taskPool.canceledTasks.add(newTask);
+            // cancel success
+            taskPool.needToCancel.remove(newTask.getId());
+        }
     }
 }

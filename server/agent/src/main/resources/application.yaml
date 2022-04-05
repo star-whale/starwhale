@@ -2,6 +2,7 @@ server:
   port: 8088
 sw:
   agent:
+    version: 0.1.0
     task:
       basePath: ${SW_TASK_BASE_PATH:/var/starwhale/task/}
 #      infoPath: ${SW_TASK_INFO_PATH:/var/starwhale/task/info/}

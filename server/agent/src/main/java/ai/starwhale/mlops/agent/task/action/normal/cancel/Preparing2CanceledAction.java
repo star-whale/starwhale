@@ -5,7 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.action.cancel;
+package ai.starwhale.mlops.agent.task.action.normal.cancel;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.action.Context;
@@ -16,5 +16,6 @@ public class Preparing2CanceledAction extends AbsBaseCancelTaskTransition {
     @Override
     public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
         taskPool.preparingTasks.remove(oldTask);
+        super.success(oldTask, newTask, context);
     }
 }

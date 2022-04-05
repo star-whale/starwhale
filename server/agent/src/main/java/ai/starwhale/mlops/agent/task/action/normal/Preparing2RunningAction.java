@@ -9,7 +9,8 @@ package ai.starwhale.mlops.agent.task.action.normal;
 
 import ai.starwhale.mlops.agent.container.ImageConfig;
 import ai.starwhale.mlops.agent.container.ImageConfig.GPUConfig;
-import ai.starwhale.mlops.agent.exception.ContainerException;
+import ai.starwhale.mlops.agent.container.ImageConfig.Mount;
+import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool.AllocateRequest;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.EvaluationTask.Stage;
@@ -27,7 +28,11 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class Preparing2RunningAction extends AbsBaseTaskTransition {
-
+    private static final String containerBasePath = "/var/starwhale/task/";
+    private static final String statusFileEnv = "SW_TASK_STATUS_FILE";
+    private static final String logDirEnv = "SW_TASK_LOG_DIR";
+    private static final String resultDirEnv = "SW_TASK_RESULT_DIR";
+    private static final String swdsFileEnv = "SW_TASK_SWDS_CONFIG";
 
     @Override
     public boolean valid(EvaluationTask task, Context context) {
@@ -44,42 +49,57 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     @Override
     public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
         // pull swmp(tar) and uncompress it to the swmp dir todo:use async?and check if prepared when schedule
-        boolean res = taskPersistence.preloadingSWMP(oldTask);
+        if (taskPersistence.preloadingSWMP(oldTask)) {
+            // allocate device(GPU or CPU) for task
+            Set<Device> allocated = sourcePool.allocate(
+                AllocateRequest.builder().gpuNum(1).build());
 
-        // allocate device(GPU or CPU) for task
-        Set<Device> allocated = sourcePool.allocate(
-            AllocateRequest.builder().gpuNum(1).build());
+            // allocate device to this task,if fail will throw exception, now it is blocked
+            oldTask.setDevices(allocated);
 
-        // allocate device to this task,if fail will throw exception, now it is blocked
-        oldTask.setDevices(allocated);
-        // todo fill with task info
-        Optional<String> containerId = containerClient.startContainer(
-            ImageConfig.builder()
-                .autoRemove(false)
-                .env(List.of()) // todo env
-                .entrypoint(List.of())
-                .gpuConfig(GPUConfig.builder()
-                    .count(1)
-                    .capabilities(List.of(List.of("gpu")))
-                    .deviceIds(allocated.stream().map(Device::getId).collect(Collectors.toList()))
+            // fill with task info
+            Optional<String> containerId = containerClient.startContainer(
+                ImageConfig.builder()
+                    .autoRemove(false)
+                    .env(List.of(
+                        env(statusFileEnv,  taskPersistence.pathOfStatusFile(oldTask.getId())),
+                        env(swdsFileEnv,  taskPersistence.pathOfInfoFile(oldTask.getId())),
+                        env(logDirEnv, containerBasePath + "log/"),
+                        env(resultDirEnv, containerBasePath + "result/")
+                    ))
+                    .entrypoint(List.of()) // todo entrypoint
+                    .gpuConfig(GPUConfig.builder()
+                        .count(1)
+                        .capabilities(List.of(List.of("gpu")))
+                        .deviceIds(
+                            allocated.stream().map(Device::getId).collect(Collectors.toList()))
+                        .build()
+                    )
+                    .mounts(List.of(
+                        Mount.builder().source(taskPersistence.basePathOfTask(oldTask.getId()))
+                            .target(containerBasePath).type("VOLUME").build()
+                    ))
+                    .labels(Map.of("taskId", oldTask.getId().toString()))
                     .build()
-                )
-                .labels(Map.of("taskId", oldTask.getId().toString()))
-                .build()
-        );
-        // whether the container create and start success
-        if (containerId.isPresent()) {
-            EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
-            newTask.setContainerId(containerId.get());
-            newTask.setStatus(TaskStatus.RUNNING);
-            return newTask;
-        } else {
-            // todo: retry or take it to the tail of queue
-            // should release, throw exception and handled by the fail method
-            throw new ContainerException(
-                String.format("start task container by image:%s fail", ""));
+            );
+            // whether the container create and start success
+            if (containerId.isPresent()) {
+                EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
+                newTask.setContainerId(containerId.get());
+                newTask.setStatus(TaskStatus.RUNNING);
+                return newTask;
+            } else {
+                // todo: retry or take it to the tail of queue
+                // should release, throw exception and handled by the fail method
+                throw ErrorCode.containerError.asException(
+                    String.format("start task container by image:%s fail", ""));
+            }
         }
+        throw ErrorCode.downloadError.asException("preDownload swmp error");
+    }
 
+    private String env(String key, String value) {
+        return String.format("%s=%s", key, value);
     }
 
     @Override

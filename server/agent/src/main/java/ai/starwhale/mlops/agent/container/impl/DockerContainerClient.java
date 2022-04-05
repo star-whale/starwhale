@@ -78,6 +78,7 @@ public class DockerContainerClient implements ContainerClient {
             .withEntrypoint(imageConfig.getEntrypoint())
             .exec();
         if (StringUtils.hasText(response.getId())) {
+            client.startContainerCmd(response.getId()).exec();
             return Optional.of(response.getId());
         }
         return Optional.empty();

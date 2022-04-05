@@ -5,11 +5,13 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.exception;
+package ai.starwhale.mlops.agent.node.base;
 
-public class AllocationException extends RuntimeException {
+import java.util.Optional;
 
-    public AllocationException(String message) {
-        super(message);
-    }
+/**
+ * system info detect
+ */
+public interface SystemDetect {
+    Optional<SystemInfo> detect();
 }

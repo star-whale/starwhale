@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.agent.node;
 
-import ai.starwhale.mlops.agent.exception.AllocationException;
+import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.cpu.CPUDetect;
 import ai.starwhale.mlops.agent.node.cpu.CPUInfo;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
@@ -70,7 +70,7 @@ public class SourcePool {
     }
 
 
-    public Set<Device> allocate(AllocateRequest request) throws AllocationException {
+    public Set<Device> allocate(AllocateRequest request) throws Exception {
         synchronized (lock) {
             if (CollectionUtil.isNotEmpty(devices)) {
                 // determine whether the conditions are met
@@ -106,7 +106,7 @@ public class SourcePool {
                 }
             }
             // no available device will throw Exception
-            throw new AllocationException("allocate device error");
+            throw ErrorCode.allocateError.asException("allocate device error");
         }
 
     }

@@ -5,14 +5,11 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.node.host;
+package ai.starwhale.mlops.agent.exception;
 
-import lombok.Builder;
-import lombok.Data;
+public class AgentException extends RuntimeException {
 
-@Data
-@Builder
-public class HostInfo {
-    private String hostName;
-    private String hostAddress;
+    public AgentException(String message) {
+        super(message);
+    }
 }
