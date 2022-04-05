@@ -26,6 +26,9 @@ class MNISTInference(PipelineHandler):
         output = self.model(data)
         return self._post(output)
 
+    def handle_label(self, label, batch_size, **kw):
+        return [int(l) for l in label]
+
     def _pre(self, input: bytes, batch_size: int):
         images = []
         for i in range(0, batch_size):
