@@ -14,6 +14,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "sw.agent")
 public class AgentProperties {
 
+    private String version;
     private Task task;
     private Container container;
 

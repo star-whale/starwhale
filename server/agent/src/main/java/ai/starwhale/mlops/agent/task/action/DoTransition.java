@@ -7,53 +7,51 @@
 
 package ai.starwhale.mlops.agent.task.action;
 
-import java.io.IOException;
-
 public interface DoTransition<Old, New> {
 
-            default boolean valid(Old old, Context context) {
-                return true;
+    default boolean valid(Old old, Context context) {
+        return true;
+    }
+
+    default void orElse(Old old, Context context) {
+    }
+
+    default void pre(Old old, Context context) throws Exception {
+
+    }
+
+    default New processing(Old old, Context context) throws Exception {
+        return null;
+    }
+
+    default void post(Old old, New n, Context context) throws Exception {
+    }
+
+    default void success(Old old, New n, Context context) {
+    }
+
+    /**
+     * when occur some exception
+     *
+     * @param old old param
+     */
+    default void fail(Old old, Context context, Exception e) {
+    }
+
+
+    default void apply(Old old, Context context) {
+        if (valid(old, context)) {
+            try {
+                pre(old, context);
+                New o = processing(old, context);
+                post(old, o, context);
+                success(old, o, context);
+            } catch (Exception e) {
+                // log.error(e.getMessage(), e);
+                fail(old, context, e);
             }
-
-            default void orElse(Old old, Context context) {
-            }
-
-            default void pre(Old old, Context context) throws Exception {
-
-            }
-
-            default New processing(Old old, Context context) throws Exception {
-                return null;
-            }
-
-            default void post(Old old, New n, Context context) throws Exception {
-            }
-
-            default void success(Old old, New n, Context context) {
-            }
-
-            /**
-             * when occur some exception
-             *
-             * @param old old param
-             */
-            default void fail(Old old, Context context, Exception e) {
-            }
-
-
-            default void apply(Old old, Context context) {
-                if (valid(old, context)) {
-                    try {
-                        pre(old, context);
-                        New o = processing(old, context);
-                        post(old, o, context);
-                        success(old, o, context);
-                    } catch (Exception e) {
-                        // log.error(e.getMessage(), e);
-                        fail(old, context, e);
-                    }
-                } else {
-                    orElse(old, context);
-                }
-            }
+        } else {
+            orElse(old, context);
         }
+    }
+}

@@ -12,8 +12,8 @@ import ai.starwhale.mlops.agent.node.cpu.CPUDetect;
 import ai.starwhale.mlops.agent.node.cpu.SimpleCPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.NvidiaCmdDetect;
-import ai.starwhale.mlops.agent.node.host.HostDetect;
-import ai.starwhale.mlops.agent.node.host.SimpleHostDetect;
+import ai.starwhale.mlops.agent.node.base.SystemDetect;
+import ai.starwhale.mlops.agent.node.base.SimpleSystemDetect;
 import ai.starwhale.mlops.agent.node.initializer.SourcePoolInitializer;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -47,10 +47,11 @@ public class NodeConfiguration {
     public CPUDetect simpleCPUDetect() {
         return new SimpleCPUDetect();
     }
+
     @Bean
-    @ConditionalOnProperty(name = "sw.node.sourcePool.host.detect", havingValue = "simple", matchIfMissing = true)
-    public HostDetect simpleSystemDetect() {
-        return new SimpleHostDetect();
+    @ConditionalOnProperty(name = "sw.node.sourcePool.system.detect", havingValue = "simple", matchIfMissing = true)
+    public SystemDetect simpleSystemDetect() {
+        return new SimpleSystemDetect();
     }
 
     // todo:other brand of gpu

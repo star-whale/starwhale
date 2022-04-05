@@ -118,6 +118,8 @@ public class TaskExecutorTest {
         sourcePool.setToReady();
         // check rebuild state
         assertEquals(2, taskPool.preparingTasks.size());
+
+        Mockito.when(taskPersistence.preloadingSWMP(any())).thenReturn(true);
         // do prepare test
         taskExecutor.dealPreparingTasks();
         // check execute result todo swmp downloaded and uncompress it to the dir
