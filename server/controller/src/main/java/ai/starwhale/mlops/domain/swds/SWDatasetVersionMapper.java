@@ -16,6 +16,8 @@ public interface SWDatasetVersionMapper {
 
     SWDatasetVersionEntity getVersionById(@Param("dsVersionId")Long dsVersionId);
 
+    List<SWDatasetVersionEntity> findVersionsByIds(@Param("ids")List<Long> ids);
+
     SWDatasetVersionEntity getLatestVersion(@Param("datasetId")Long datasetId);
 
     int revertTo(@Param("dsId")Long dsId, @Param("dsVersionId")Long dsVersionId);

@@ -39,9 +39,12 @@
         order by mv.id desc
     </select>
 
-    <select id="getVersionById" resultMap="swmpVersionResultMap" >
+    <select id="findVersionsByIds" resultMap="swmpVersionResultMap" >
         <include refid="select_swmp_version" />
-        and mv.id = #{dsVersionId}
+        and mv.id in
+        <foreach collection="dsVersionIds" separator="," item="dsvId" open="(" close=")">
+            #{dsvId}
+        </foreach>
     </select>
 
     <select id="getLatestVersion" resultMap="swmpVersionResultMap" >

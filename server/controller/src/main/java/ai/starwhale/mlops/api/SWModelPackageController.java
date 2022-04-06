@@ -33,7 +33,6 @@ import java.util.Optional;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -51,8 +50,7 @@ public class SWModelPackageController implements SWModelPackageApi{
         String modelName, Integer pageNum, Integer pageSize) {
         List<SWModelPackageVO> voList;
         if(StringUtils.hasText(versionId)) {
-            SWModelPackageVO vo = swmpService.findModelByVersionId(versionId);
-            voList = List.of(vo);
+            voList = swmpService.findModelByVersionId(List.of(versionId.split("[,;]")));
         } else {
             voList = swmpService.listSWMP(
                 SWMPObject.builder().projectId(projectId).name(modelName).build(),

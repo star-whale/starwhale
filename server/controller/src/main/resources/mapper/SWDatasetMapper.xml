@@ -44,6 +44,14 @@
         and s.id = #{id}
     </select>
 
+    <select id="findDatasetsByIds" resultMap="swdsResultMap" >
+        <include refid="select_swds"/>
+        and s.id in
+        <foreach collection="ids" separator="," open="(" close=")" item="id">
+            #{id}
+        </foreach>
+    </select>
+
     <insert id="addDataset" useGeneratedKeys="true" keyProperty="id">
         insert into dataset_info(dataset_name, project_id, owner_id)
         values(#{datasetName}, #{projectId}, #{ownerId})
