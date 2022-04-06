@@ -88,7 +88,7 @@ class PipelineHandler(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, merge_label: bool=False,
+    def __init__(self, merge_label: bool=True,
                  output_type: str= RESULT_OUTPUT_TYPE.JSONL,
                  ignore_error: bool=False) -> None:
         #TODO: add args for compare result and label directly
@@ -151,7 +151,11 @@ class PipelineHandler(object):
 
     @abstractmethod
     def handle(self, data: bytes, batch_size: int, **kw) -> t.Any:
+        #TODO: how to handle each batch element is not equal.
         raise NotImplementedError
+
+    def handle_label(self, label: bytes, batch_size: int, **kw) -> t.Any:
+        return label.decode()
 
     def starwhale_internal_run(self) -> None:
         #TODO: forbid inherit object override this method
@@ -198,8 +202,8 @@ class PipelineHandler(object):
 
             try:
                 self._do_record(output, data, label, exception)
-            except Exception:
-                self._sw_logger.exception(f"{data.index} data record")
+            except Exception as e:
+                self._sw_logger.exception(f"{data.index} data record exception: {e}")
 
     def _do_record(self, output: t.Any, data: DATA_FIELD, label: DATA_FIELD, exception: t.Union[None, Exception]):
         self._status_writer.write({
@@ -216,11 +220,18 @@ class PipelineHandler(object):
             "result": output,
             "batch": data.batch_size,
         }
-        #TODO: user define label parser
         if self.merge_label:
-            result["label"] = label.data.decode(),
-        self._result_writer.write(result)
+            try:
+                result["label"] = self.handle_label(label.data, label.batch_size, index=label.index, size=label.data_size)
+            except Exception as e:
+                self._sw_logger.exception(f"{label.data} label handle exception:{e}")
+                if not self.ignore_error:
+                    self._update_status(self.STATUS.FAILED)
+                    raise
+                else:
+                    result["label"] = ""
 
+        self._result_writer.write(result)
         self._update_status(self.STATUS.RUNNING)
 
     def _update_status(self, status: str) -> None:
