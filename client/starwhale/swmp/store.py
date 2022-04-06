@@ -138,38 +138,31 @@ class ModelPackageLocalStore(LocalStorage):
     def delete(self, swmp) -> None:
         _model, _version = self._parse_swobj(swmp)
 
-        pkg_fpath = self._guess(self.pkgdir / _model, _version)
-        if pkg_fpath.exists():
-            click.confirm(f"continue to delete {pkg_fpath}?", abort=True)
-            if _version == self.LATEST_TAG:
-                try:
-                    pkg_fpath.unlink()
-                    pkg_fpath.resolve().unlink()
-                except Exception as e:
-                    rprint(Pretty(e))
-                finally:
-                    rprint(f" :collision: delete swmp {pkg_fpath}")
-                    rprint(f" :bomb: delete swmp {pkg_fpath.resolve()}")
-            else:
-                latest = self.pkgdir / _model / self.LATEST_TAG
-                if latest.exists() and latest.resolve() == pkg_fpath.resolve():
-                    rprint(f" :collision: delete swmp {latest}")
-                rprint(f" :bomb: delete swmp {pkg_fpath}")
+        def _remove_workdir(_real_version):
+            workdir_fpath = self._guess(self.workdir / _model, _real_version)
+            if not (workdir_fpath.exists() and workdir_fpath.is_dir()):
+                return
 
-        workdir_fpath = self._guess(self.workdir / _model, _version)
-        if workdir_fpath.exists() and workdir_fpath.is_dir():
             click.confirm(f"continue to delete {workdir_fpath}?", abort=True)
-
             open_fs(str(workdir_fpath.resolve())).removetree("/")
             workdir_fpath.rmdir()
             rprint(f" :bomb: delete workdir {workdir_fpath}")
 
-        pkg_fpath = self._guess(self.pkgdir / _model,
-                                _version if _version == self.LATEST_TAG else f"{_version}.swmp")
+        pkg_fpath = self._guess(self.pkgdir / _model, _version)
         if pkg_fpath.exists():
             click.confirm(f"continue to delete {pkg_fpath}?", abort=True)
-            latest = self.pkgdir / _model
+            pkg_fpath = pkg_fpath.resolve()
             pkg_fpath.unlink()
+            rprint(f" :collision: delete swmp {pkg_fpath}")
+
+            _remove_workdir(pkg_fpath.name)
+
+            latest = self.pkgdir / _model / self.LATEST_TAG
+            if _version == self.LATEST_TAG or latest.resolve() == pkg_fpath:
+                latest.unlink()
+                rprint(f" :bomb: delete swmp {latest}")
+
+        _remove_workdir(_version)
 
     def extract(self, swmp: str, force: bool=False) -> None:
         #TODO: extract swmp into workdir
