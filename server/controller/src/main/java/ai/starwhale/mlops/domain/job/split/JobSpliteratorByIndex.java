@@ -10,6 +10,7 @@ package ai.starwhale.mlops.domain.job.split;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobMapper;
+import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
@@ -39,13 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class JobSpliteratorByIndex implements JobSpliterator {
 
-    /**
-     * %s1 = prefix
-     * %s2 = jobUUID
-     * %s3 = taskUUID
-     */
-    static final String STORAGE_PATH_FORMATTER = "%s/result/task/%s/%s";
-    final String storagePrefix;
+    StoragePathCoordinator storagePathCoordinator;
 
     private final SWDSIndexLoader swdsIndexLoader;
 
@@ -63,7 +58,6 @@ public class JobSpliteratorByIndex implements JobSpliterator {
         this.swdsIndexLoader = swdsIndexLoader;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
-        this.storagePrefix = storagePrefix;
     }
 
     /**
@@ -111,6 +105,6 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     }
 
     private String storagePath(String jobId,String taskId) {
-        return String.format(STORAGE_PATH_FORMATTER, storagePrefix, jobId,taskId);
+        return storagePathCoordinator.taskResultPath(jobId,taskId);
     }
 }

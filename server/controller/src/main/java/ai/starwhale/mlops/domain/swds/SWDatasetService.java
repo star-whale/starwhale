@@ -12,6 +12,7 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
+import ai.starwhale.mlops.domain.swds.upload.Manifest;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.stream.Collectors;

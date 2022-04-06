@@ -94,13 +94,14 @@ CREATE TABLE IF NOT EXISTS swmp_version
     PRIMARY KEY (id),
     INDEX idx_swmp_id (swmp_id) USING BTREE,
     INDEX idx_owner_id (owner_id) USING BTREE
+    unique unq_swmp_version_name (swmp_id,version_name) USING BTREE,
 );
 
 CREATE TABLE IF NOT EXISTS dataset_info
 (
     id            bigint           NOT NULL AUTO_INCREMENT COMMENT 'PK',
     dataset_name  varchar(255)     NOT NULL,
-    project_id    bigint           NOT NULL,
+    project_id    bigint           NULL,
     owner_id      bigint           NOT NULL,
     is_deleted    tinyint UNSIGNED NOT NULL DEFAULT 0,
     created_time  datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -117,14 +118,16 @@ CREATE TABLE IF NOT EXISTS dataset_version
     dataset_id    bigint       NOT NULL,
     owner_id      bigint       NOT NULL,
     version_name  varchar(255) NOT NULL,
-    version_tag   varchar(255) NOT NULL,
+    version_tag   varchar(255) NULL,
     version_meta  TEXT         NOT NULL,
     storage_path  TEXT         NOT NULL,
+    status    tinyint UNSIGNED NOT NULL DEFAULT 0,
     created_time  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     INDEX idx_dataset_id (dataset_id) USING BTREE,
-    INDEX idx_owner_id (owner_id) USING BTREE
+    INDEX idx_owner_id (owner_id) USING BTREE,
+    unique unq_swds_version_name (dataset_id,version_name) USING BTREE,
 );
 
 CREATE TABLE IF NOT EXISTS job_info

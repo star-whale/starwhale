@@ -21,4 +21,5 @@ public interface SWDatasetMapper {
     SWDatasetEntity findDatasetById(@Param("id")Long id);
 
 
+    SWDatasetEntity findByName(@Param("name")String name);
 }

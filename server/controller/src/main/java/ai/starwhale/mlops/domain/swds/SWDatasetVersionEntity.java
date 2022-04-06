@@ -37,4 +37,13 @@ public class SWDatasetVersionEntity extends BaseEntity {
     private String versionMeta;
 
     private String storagePath;
+
+    /**
+     * 0 - unavailable
+     * 1 - available
+     */
+    private Integer status = STATUS_UN_AVAILABLE;
+
+    public static final Integer STATUS_AVAILABLE=1;
+    public static final Integer STATUS_UN_AVAILABLE=0;
 }

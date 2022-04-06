@@ -44,6 +44,11 @@
         and s.id = #{id}
     </select>
 
+    <select id="findByName" resultMap="swdsResultMap" >
+        <include refid="select_swds"/>
+        and s.dataset_name = #{name}
+    </select>
+
     <insert id="addDataset" useGeneratedKeys="true" keyProperty="id">
         insert into dataset_info(dataset_name, project_id, owner_id)
         values(#{datasetName}, #{projectId}, #{ownerId})
