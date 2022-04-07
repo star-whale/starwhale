@@ -1,8 +1,8 @@
 server:
-  port: 8088
+  port: ${SW_AGENT_PORT:8088}
 sw:
   agent:
-    version: 0.1.0
+    version: ${SW_AGENT_VERSION:0.1.0}
     task:
       basePath: ${SW_TASK_BASE_PATH:/var/starwhale/task/}
 #      infoPath: ${SW_TASK_INFO_PATH:/var/starwhale/task/info/}
@@ -13,4 +13,4 @@ sw:
 #      logPath: ${SW_TASK_LOG_PATH:/var/starwhale/task/log/}
   controller:
     name: swController
-    url: http://localhost:8080/
+    url: ${SW_CONTROLLER_URL:http://localhost:8080/}
