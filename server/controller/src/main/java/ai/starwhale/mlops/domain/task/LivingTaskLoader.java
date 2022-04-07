@@ -16,6 +16,8 @@ import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.TaskScheduler;
+import org.springframework.stereotype.Service;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -27,21 +29,32 @@ import javax.annotation.PostConstruct;
 /**
  * loading tasks
  */
+@Service
 public class LivingTaskLoader {
 
-    LivingTaskStatusMachine livingTaskStatusMachine;
+    final LivingTaskStatusMachine livingTaskStatusMachine;
 
-    TaskScheduler taskScheduler;
+    final TaskScheduler taskScheduler;
 
-    CommandingTasksChecker commandingTasksChecker;
+    final CommandingTasksChecker commandingTasksChecker;
 
-    TaskMapper taskMapper;
+    final TaskMapper taskMapper;
 
-    JobMapper jobMapper;
+    final JobMapper jobMapper;
 
-    TaskBoConverter taskBoConverter;
+    final TaskBoConverter taskBoConverter;
 
-    JobBoConverter jobBoConverter;
+    final JobBoConverter jobBoConverter;
+
+    public LivingTaskLoader(LivingTaskStatusMachine livingTaskStatusMachine, TaskScheduler taskScheduler, CommandingTasksChecker commandingTasksChecker, TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter, JobBoConverter jobBoConverter) {
+        this.livingTaskStatusMachine = livingTaskStatusMachine;
+        this.taskScheduler = taskScheduler;
+        this.commandingTasksChecker = commandingTasksChecker;
+        this.taskMapper = taskMapper;
+        this.jobMapper = jobMapper;
+        this.taskBoConverter = taskBoConverter;
+        this.jobBoConverter = jobBoConverter;
+    }
 
     /**
      * load tasks that are not FINISHED or ERROR into mem

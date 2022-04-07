@@ -29,24 +29,33 @@ import java.util.stream.Stream;
 import javax.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 /**
  * coordinate collectors of jobs
  */
 //todo(renyanda) status consistency is a big problem to be refined
 @Slf4j
+@Service
 public class ResultCollectManager {
 
-    TaskMapper taskMapper;
+    final TaskMapper taskMapper;
 
-    CollectorFinder collectorFinder;
+    final CollectorFinder collectorFinder;
 
-    LivingTaskStatusMachine livingTaskStatusMachine;
+    final LivingTaskStatusMachine livingTaskStatusMachine;
 
     //todo(renyanda) how to free result collector of job
-    Map<Long,ResultCollector> resultCollectors = new ConcurrentHashMap<>();
+    final Map<Long,ResultCollector> resultCollectors = new ConcurrentHashMap<>();
 
-    StorageAccessService storageAccessService;
+    final StorageAccessService storageAccessService;
+
+    public ResultCollectManager(TaskMapper taskMapper, CollectorFinder collectorFinder, LivingTaskStatusMachine livingTaskStatusMachine, StorageAccessService storageAccessService) {
+        this.taskMapper = taskMapper;
+        this.collectorFinder = collectorFinder;
+        this.livingTaskStatusMachine = livingTaskStatusMachine;
+        this.storageAccessService = storageAccessService;
+    }
 
     public EvaluationResult resultOfJob(Long jobId){
         final ResultCollector resultCollector = getResultCollector(jobId);
@@ -64,8 +73,6 @@ public class ResultCollectManager {
     @Scheduled(fixedDelay = 1000)
     public void onTaskFinished(){
         final Collection<Task> finishedTasks = livingTaskStatusMachine.ofStatus(new StagingTaskStatus(TaskStatus.FINISHED));
-        final List<Long> taskIds = finishedTasks.parallelStream().map(Task::getId)
-            .collect(Collectors.toList());
         livingTaskStatusMachine.adopt(finishedTasks,new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.DOING));
         finishedTasks.parallelStream()
             .forEach(taskEntity->{
@@ -80,7 +87,13 @@ public class ResultCollectManager {
                 }
 
                 final String resultLabelPath = taskEntity.getResultPaths();
-                final Stream<String> resultLabels = storageAccessService.list(resultLabelPath);
+                final Stream<String> resultLabels;
+                try {
+                    resultLabels = storageAccessService.list(resultLabelPath);
+                } catch (IOException e) {
+                    log.error("listing inference results for task failed {}",taskEntityId,e);
+                    return;
+                }
                 resultLabels.forEach((labelComparePath)->{
                     try(final InputStream labelIS = storageAccessService.get(labelComparePath)){
                         collector.feed(labelIS);

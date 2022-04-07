@@ -9,17 +9,24 @@ package ai.starwhale.mlops.domain.swds.index;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.stereotype.Component;
+
 import java.util.LinkedList;
 import java.util.List;
 
 /**
  * serialize & deserialize SWDSBlocks
  */
+@Component
 public class SWDSBlockSerializer {
 
     private static final String TOKEN_LINE="\n";
 
-    ObjectMapper objectMapper;
+    final ObjectMapper objectMapper;
+
+    public SWDSBlockSerializer(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     public List<SWDSBlock> fromString(String str) throws JsonProcessingException {
         final String[] lines = str.split(TOKEN_LINE);

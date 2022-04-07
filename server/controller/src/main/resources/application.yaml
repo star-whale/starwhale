@@ -36,6 +36,14 @@ server:
   servlet:
     context-path: /api/v1
 
+storage:
+  path-prefix: StarWhale
+  s3-config:
+    bucket: StarWhale
+    accessKey: accessKey
+    secretKey: secretKey
+    region: region
+
 logging:
   level:
     ai.starwhale.mlops.domain: debug

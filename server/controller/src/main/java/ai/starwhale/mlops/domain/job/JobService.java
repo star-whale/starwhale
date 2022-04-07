@@ -57,20 +57,26 @@ public class JobService {
     @Resource
     private JobConvertor jobConvertor;
 
-    JobBoConverter jobBoConverter;
+    @Resource
+    private JobBoConverter jobBoConverter;
 
     @Resource
     private UserService userService;
 
-    JobSpliterator jobSpliterator;
+    @Resource
+    private JobSpliterator jobSpliterator;
 
-    TaskScheduler taskScheduler;
+    @Resource
+    private TaskScheduler taskScheduler;
 
-    LivingTaskStatusMachine livingTaskStatusMachine;
+    @Resource
+    private LivingTaskStatusMachine livingTaskStatusMachine;
 
-    TaskMapper taskMapper;
+    @Resource
+    private TaskMapper taskMapper;
 
-    TaskBoConverter taskBoConverter;
+    @Resource
+    private TaskBoConverter taskBoConverter;
 
 
     public List<JobVO> listJobs(String projectId, PageParams pageParams) {

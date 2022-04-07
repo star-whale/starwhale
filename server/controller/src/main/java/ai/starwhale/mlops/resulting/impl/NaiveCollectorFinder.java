@@ -9,24 +9,27 @@ package ai.starwhale.mlops.resulting.impl;
 
 import ai.starwhale.mlops.resulting.CollectorFinder;
 import ai.starwhale.mlops.resulting.ResultCollector;
-import ai.starwhale.mlops.resulting.impl.clsmulti.MCResultCollector;
-import java.io.IOException;
 import java.util.Optional;
+
+import ai.starwhale.mlops.resulting.impl.clsmulti.MCResultCollectorFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 /**
  * just return a MCResultCollector
  */
+@Service
 @Slf4j
 public class NaiveCollectorFinder implements CollectorFinder {
 
+    final MCResultCollectorFactory mcResultCollectorFactory;
+
+    public NaiveCollectorFinder(MCResultCollectorFactory mcResultCollectorFactory) {
+        this.mcResultCollectorFactory = mcResultCollectorFactory;
+    }
+
     @Override
     public Optional<ResultCollector> findCollector(Long jobId) {
-        try {
-            return Optional.of(new MCResultCollector(jobId.toString()));
-        } catch (IOException e) {
-            log.error("initing MCResultCollector failed for job {}",jobId,e);
-            return Optional.empty();
-        }
+        return mcResultCollectorFactory.of(jobId.toString()).map(mcResultCollector -> (ResultCollector)mcResultCollector);
     }
 }

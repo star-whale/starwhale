@@ -31,16 +31,19 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * split job by swds index
  */
 @Slf4j
+@Service
 public class JobSpliteratorByIndex implements JobSpliterator {
 
-    StoragePathCoordinator storagePathCoordinator;
+    private final StoragePathCoordinator storagePathCoordinator;
 
     private final SWDSIndexLoader swdsIndexLoader;
 
@@ -50,14 +53,15 @@ public class JobSpliteratorByIndex implements JobSpliterator {
 
     private final JobMapper jobMapper;
 
-    TaskBoConverter taskBoConverter;
+    private final TaskBoConverter taskBoConverter;
 
-
-    public JobSpliteratorByIndex(SWDSIndexLoader swdsIndexLoader,SWDSBlockSerializer swdsBlockSerializer,TaskMapper taskMapper,JobMapper jobMapper,String storagePrefix){
-        this.swdsBlockSerializer = swdsBlockSerializer;
+    public JobSpliteratorByIndex(StoragePathCoordinator storagePathCoordinator, SWDSIndexLoader swdsIndexLoader, SWDSBlockSerializer swdsBlockSerializer, TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter) {
+        this.storagePathCoordinator = storagePathCoordinator;
         this.swdsIndexLoader = swdsIndexLoader;
+        this.swdsBlockSerializer = swdsBlockSerializer;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
+        this.taskBoConverter = taskBoConverter;
     }
 
     /**

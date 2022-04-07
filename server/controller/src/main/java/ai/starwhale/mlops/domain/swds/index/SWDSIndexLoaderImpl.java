@@ -18,13 +18,20 @@ import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Slf4j
+@Service
 public class SWDSIndexLoaderImpl implements SWDSIndexLoader {
 
-    StorageAccessService storageAccessService;
+    final StorageAccessService storageAccessService;
 
-    ObjectMapper objectMapper;
+    final ObjectMapper objectMapper;
+
+    public SWDSIndexLoaderImpl(StorageAccessService storageAccessService, ObjectMapper objectMapper) {
+        this.storageAccessService = storageAccessService;
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public SWDSIndex load(String storagePath) {

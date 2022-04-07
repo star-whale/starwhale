@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
@@ -41,19 +42,29 @@ import org.springframework.util.CollectionUtils;
  * the processor for every report from Agent
  */
 @Slf4j
+@Service
 public class ReportProcessorImp implements ReportProcessor{
 
-    CommandingTasksChecker commandingTasksChecker;
+    final CommandingTasksChecker commandingTasksChecker;
 
-    LivingTaskStatusMachine livingTaskStatusMachine;
+    final LivingTaskStatusMachine livingTaskStatusMachine;
 
-    TaskScheduler taskScheduler;
+    final TaskScheduler taskScheduler;
 
-    TaskBoConverter taskBoConverter;
+    final TaskBoConverter taskBoConverter;
 
-    AgentMapper agentMapper;
+    final AgentMapper agentMapper;
 
-    ObjectMapper jsonMapper;
+    final ObjectMapper jsonMapper;
+
+    public ReportProcessorImp(CommandingTasksChecker commandingTasksChecker, LivingTaskStatusMachine livingTaskStatusMachine, TaskScheduler taskScheduler, TaskBoConverter taskBoConverter, AgentMapper agentMapper, ObjectMapper jsonMapper) {
+        this.commandingTasksChecker = commandingTasksChecker;
+        this.livingTaskStatusMachine = livingTaskStatusMachine;
+        this.taskScheduler = taskScheduler;
+        this.taskBoConverter = taskBoConverter;
+        this.agentMapper = agentMapper;
+        this.jsonMapper = jsonMapper;
+    }
 
     // 0.if node doesn't exists creat one 1. check commanding tasks;  2. change task status; 3. schedule task & cancel task;
     @Transactional

@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MCResultCollector implements ResultCollector {
 
-    StoragePathCoordinator storagePathCoordinator;
+    final StoragePathCoordinator storagePathCoordinator;
     final String storagePath;
 
     /**
@@ -51,9 +51,9 @@ public class MCResultCollector implements ResultCollector {
 
     final List<Indicator> results;
 
-    StorageAccessService storageAccessService;
+    final StorageAccessService storageAccessService;
 
-    ObjectMapper objectMapper;
+    final ObjectMapper objectMapper;
 
     volatile boolean newItemIn;
 
@@ -63,15 +63,16 @@ public class MCResultCollector implements ResultCollector {
 
     final MBCConfusionMetrics mbcConfusionMetrics;
 
-
-
     /**
      * a little bit heavy operation because of load
      * @param jobUUID the result id
      * @throws IOException storage exception
      */
-    public MCResultCollector(String jobUUID) throws IOException {
+    public MCResultCollector(String jobUUID,StoragePathCoordinator storagePathCoordinator,StorageAccessService storageAccessService,ObjectMapper objectMapper) throws IOException {
         this.jobUUID = jobUUID;
+        this.storageAccessService = storageAccessService;
+        this.storagePathCoordinator = storagePathCoordinator;
+        this.objectMapper = objectMapper;
         rawResultHolder = new ConcurrentHashMap<>();
         storagePath = storagePath();
         load();

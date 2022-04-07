@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.NoTransactionException;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.CollectionUtils;
@@ -35,6 +36,7 @@ import org.springframework.util.CollectionUtils;
  * an implementation of LivingTaskStatusMachine
  */
 @Slf4j
+@Service
 public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     /**
@@ -42,42 +44,44 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
      * key: task.id
      * value: task.identity
      */
-    ConcurrentHashMap<Long, Task> taskIdMap;
+    final ConcurrentHashMap<Long, Task> taskIdMap;
 
     /**
      * contains hot jobs
      * key: task.id
      * value: task.identity
      */
-    ConcurrentHashMap<Long, Job> jobIdMap;
+    final ConcurrentHashMap<Long, Job> jobIdMap;
 
     /**
      * key: task.status
      * value: task.id
      */
-    ConcurrentHashMap<StagingTaskStatus, List<Long>> taskStatusMap;
+    final ConcurrentHashMap<StagingTaskStatus, List<Long>> taskStatusMap;
 
     /**
      * key: task.jobId
      * value: task.id
      */
-    ConcurrentHashMap<Long, List<Long>> jobTaskMap;
+    final ConcurrentHashMap<Long, List<Long>> jobTaskMap;
 
     /**
      * task.id
      */
-    ConcurrentLinkedQueue<Long> toBePersistentTasks;
+    final ConcurrentLinkedQueue<Long> toBePersistentTasks;
 
     /**
      * task.jobId
      */
-    ConcurrentLinkedQueue<Long> toBeCheckedJobs;
+    final ConcurrentLinkedQueue<Long> toBeCheckedJobs;
 
-    TaskMapper taskMapper;
+    final TaskMapper taskMapper;
 
-    JobMapper jobMapper;
+    final JobMapper jobMapper;
 
-    public LivingTaskStatusMachineImpl() {
+    public LivingTaskStatusMachineImpl(TaskMapper taskMapper, JobMapper jobMapper) {
+        this.taskMapper = taskMapper;
+        this.jobMapper = jobMapper;
         taskIdMap = new ConcurrentHashMap<>();
         jobIdMap = new ConcurrentHashMap<>();
         taskStatusMap = new ConcurrentHashMap<>();
@@ -85,7 +89,6 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
         toBePersistentTasks = new ConcurrentLinkedQueue<>();
         toBeCheckedJobs = new ConcurrentLinkedQueue<>();
     }
-
 
     @Override
     public void adopt(Collection<Task> livingTasks, final StagingTaskStatus status) {

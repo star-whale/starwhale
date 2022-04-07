@@ -8,10 +8,13 @@
 package ai.starwhale.mlops.domain.swds.upload;
 
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
+import org.springframework.stereotype.Component;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Component
 public class HotSwdsHolder {
 
     Map<Long, SWDatasetVersionEntity> swdsHolder;

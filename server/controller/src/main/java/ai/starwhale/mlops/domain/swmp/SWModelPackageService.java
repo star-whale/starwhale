@@ -52,9 +52,11 @@ public class SWModelPackageService {
     @Resource
     private SWMPVersionConvertor versionConvertor;
 
-    StoragePathCoordinator storagePathCoordinator;
+    @Resource
+    private StoragePathCoordinator storagePathCoordinator;
 
-    StorageAccessService storageAccessService;
+    @Resource
+    private StorageAccessService storageAccessService;
 
     public List<SWModelPackageVO> listSWMP(SWMPObject swmp, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
