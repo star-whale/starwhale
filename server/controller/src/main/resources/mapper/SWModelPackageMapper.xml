@@ -43,6 +43,14 @@
         and s.id = #{id}
     </select>
 
+    <select id="findSWModelPackagesByIds" resultMap="swmpResultMap" >
+        <include refid="select_swmp"/>
+        and s.id in
+        <foreach collection="ids" separator="," open="(" close=")" item="id">
+            #{id}
+        </foreach>
+    </select>
+
     <select id="findByNameForUpdate" resultMap="swmpResultMap" >
         <include refid="select_swmp"/>
         and s.name = #{name} for update

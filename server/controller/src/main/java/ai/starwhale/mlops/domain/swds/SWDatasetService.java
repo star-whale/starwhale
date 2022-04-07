@@ -103,12 +103,21 @@ public class SWDatasetService {
         return idConvertor.convert(entity.getId());
     }
 
-    public DatasetVO findDatasetByVersionId(String versionId) {
-        SWDatasetVersionEntity dsv = swdsVersionMapper.getVersionById(
-            idConvertor.revert(versionId));
-        SWDatasetEntity entity = swdsMapper.findDatasetById(dsv.getDatasetId());
+    public List<DatasetVO> findDatasetsByVersionIds(List<String> versionIds) {
+        List<Long> vIds = versionIds.stream()
+            .map(idConvertor::revert)
+            .collect(Collectors.toList());
+        List<SWDatasetVersionEntity> versions = swdsVersionMapper.findVersionsByIds(vIds);
 
-        return swdsConvertor.convert(entity);
+        List<Long> ids = versions.stream()
+            .map(SWDatasetVersionEntity::getDatasetId)
+            .collect(Collectors.toList());
+
+        List<SWDatasetEntity> datasets = swdsMapper.findDatasetsByIds(ids);
+
+        return datasets.stream()
+            .map(swdsConvertor::convert)
+            .collect(Collectors.toList());
     }
 
 }

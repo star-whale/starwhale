@@ -131,12 +131,22 @@ public class SWModelPackageService {
         return idConvertor.convert(entity.getId());
     }
 
-    public SWModelPackageVO findModelByVersionId(String versionId) {
-        SWModelPackageVersionEntity mv = swmpVersionMapper.getVersionById(
-            idConvertor.revert(versionId));
-        SWModelPackageEntity entity = swmpMapper.findSWModelPackageById(mv.getSwmpId());
+    public List<SWModelPackageVO> findModelByVersionId(List<String> versionIds) {
+        List<Long> vIds = versionIds.stream()
+            .map(idConvertor::revert)
+            .collect(Collectors.toList());
 
-        return swmpConvertor.convert(entity);
+        List<SWModelPackageVersionEntity> versions = swmpVersionMapper.findVersionsByIds(vIds);
+
+        List<Long> ids = versions.stream()
+            .map(SWModelPackageVersionEntity::getSwmpId)
+            .collect(Collectors.toList());
+
+        List<SWModelPackageEntity> models = swmpMapper.findSWModelPackagesByIds(ids);
+
+        return models.stream()
+            .map(swmpConvertor::convert)
+            .collect(Collectors.toList());
     }
 
 

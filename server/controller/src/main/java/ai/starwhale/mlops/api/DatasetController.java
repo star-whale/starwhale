@@ -163,8 +163,7 @@ public class DatasetController implements DatasetApi{
         Integer pageNum, Integer pageSize) {
         List<DatasetVO> voList;
         if(StringUtils.hasText(versionId)) {
-            DatasetVO ds = swDatasetService.findDatasetByVersionId(versionId);
-            voList = List.of(ds);
+            voList = swDatasetService.findDatasetsByVersionIds(List.of(versionId.split("[,;]")));
         } else {
             voList = swDatasetService.listSWDataset(
                 SWDSObject.builder().projectId(projectId).build(),

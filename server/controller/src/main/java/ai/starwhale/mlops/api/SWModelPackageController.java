@@ -51,8 +51,7 @@ public class SWModelPackageController implements SWModelPackageApi{
         String modelName, Integer pageNum, Integer pageSize) {
         List<SWModelPackageVO> voList;
         if(StringUtils.hasText(versionId)) {
-            SWModelPackageVO vo = swmpService.findModelByVersionId(versionId);
-            voList = List.of(vo);
+            voList = swmpService.findModelByVersionId(List.of(versionId.split("[,;]")));
         } else {
             voList = swmpService.listSWMP(
                 SWMPObject.builder().projectId(projectId).name(modelName).build(),
