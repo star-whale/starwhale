@@ -7,20 +7,24 @@
 
 package ai.starwhale.mlops.resulting.impl.clsmulti;
 
+import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.resulting.Indicator;
 import ai.starwhale.mlops.resulting.ResultCollector;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MCResultCollector implements ResultCollector {
 
-    /**
-     * %s1 = prefix %s2 = id
-     */
-    static final String STORAGE_PATH_FORMATTER = "%s/resultMetrics/MCResultCollector/%s";
-    String storagePrefix;
+    StoragePathCoordinator storagePathCoordinator;
     final String storagePath;
 
     /**
@@ -91,17 +91,9 @@ public class MCResultCollector implements ResultCollector {
     }
 
     @Override
-    public void feed(InputStream labelIS, InputStream inferenceResultIS) {
-        final Queue<String> labels;
-        final Queue<String> inferenceResults;
-        try {
-            labels = readLinesFromIS(labelIS);
-            inferenceResults = readLinesFromIS(inferenceResultIS);
-        } catch (IOException e) {
-            log.error("read label or inference result failed", e);
-            return;
-        }
-
+    public void feed(InputStream labelIS, InputStream inferenceResultIS) throws IOException {
+        final Queue<String> labels = readLinesFromIS(labelIS);
+        final Queue<String> inferenceResults = readLinesFromIS(inferenceResultIS);
         String label;
         String inferenceResult;
         do {
@@ -110,22 +102,37 @@ public class MCResultCollector implements ResultCollector {
             if (null == label) {
                 break;
             }
-            final MCIndicator mcIndicator = new MCIndicator(
-                label, inferenceResult);
-            final String indicatorKey = mcIndicator.getName();
-            rawResultHolder.computeIfAbsent(indicatorKey,
-                k -> Collections.synchronizedList(new LinkedList<>()))
-                .add(mcIndicator);
-            mcConfusionMetrics.feed(mcIndicator);
-            cohenKappa.feed(mcIndicator);
-            mbcConfusionMetrics.feed(mcIndicator);
-            newItemIn = true;
+            feed(new MCIndicator(label, inferenceResult));
         } while (true);
     }
 
+    public void feed(MCIndicator mcIndicator) {
+        rawResultHolder.computeIfAbsent(mcIndicator.getName(),
+            k -> Collections.synchronizedList(new LinkedList<>()))
+            .add(mcIndicator);
+        mcConfusionMetrics.feed(mcIndicator);
+        cohenKappa.feed(mcIndicator);
+        mbcConfusionMetrics.feed(mcIndicator);
+        newItemIn = true;
+    }
+
     @Override
-    public void feed(InputStream labelResult) {
-        //todo(renyanda)
+    public void feed(InputStream inferenceResultIS) throws IOException {
+        final Queue<String> jsonLines = readLinesFromIS(inferenceResultIS);
+        jsonLines.parallelStream().map(jsonline -> {
+            InferenceResult inferenceResult;
+            try {
+                inferenceResult = objectMapper
+                    .readValue(jsonline, InferenceResult.class);
+            } catch (JsonProcessingException e) {
+                log.error("unknown format of json line {}", jsonline);
+                return null;
+            }
+            return inferenceResult;
+        }).filter(Objects::nonNull)
+            .map(InferenceResult::toMCIndicators)
+            .flatMap(Collection::parallelStream)
+            .forEach(this::feed);
     }
 
     Queue<String> readLinesFromIS(InputStream is) throws IOException {
@@ -177,6 +184,6 @@ public class MCResultCollector implements ResultCollector {
     }
 
     private String storagePath() {
-        return String.format(STORAGE_PATH_FORMATTER, storagePrefix, jobUUID);
+        return storagePathCoordinator.resultMetricsPath(jobUUID);
     }
 }

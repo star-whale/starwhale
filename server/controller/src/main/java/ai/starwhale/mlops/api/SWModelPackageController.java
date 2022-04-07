@@ -9,6 +9,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWMPVersionRequest;
@@ -33,7 +34,6 @@ import java.util.Optional;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -133,6 +133,13 @@ public class SWModelPackageController implements SWModelPackageApi{
                 .build());
         String versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(Optional.of(versionId).orElseThrow(ApiOperationException::new))));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> upload(MultipartFile dsFile,
+        ClientSWMPRequest uploadRequest) {
+        swmpService.upload(dsFile,uploadRequest);
+        return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
     private String createVersion(String projectId, String modelId, MultipartFile zipFile, String importPath, String userId) {

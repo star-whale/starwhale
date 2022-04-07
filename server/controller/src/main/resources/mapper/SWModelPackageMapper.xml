@@ -43,6 +43,13 @@
         and s.id = #{id}
     </select>
 
+    <select id="findByNameForUpdate" resultMap="swmpResultMap" >
+        <include refid="select_swmp"/>
+        and s.name = #{name} for update
+    </select>
+
+
+
     <insert id="addSWModelPackage" useGeneratedKeys="true" keyProperty="id">
         insert into swmp_info(swmp_name, project_id, owner_id)
         values(#{swmpName}, #{projectId}, #{ownerId})

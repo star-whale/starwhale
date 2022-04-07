@@ -27,13 +27,13 @@ public interface ResultCollector {
      * @param label label of the raw data
      * @param inferenceResult inference result of the raw data
      */
-    void feed(InputStream label,InputStream inferenceResult);
+    void feed(InputStream label,InputStream inferenceResult) throws IOException;
 
     /**
      * feed the collector with one pair of label and inferenceResult
      * @param labelResult label & inference result
      */
-    void feed(InputStream labelResult);
+    void feed(InputStream labelResult) throws IOException;
 
     /**
      * collect the results

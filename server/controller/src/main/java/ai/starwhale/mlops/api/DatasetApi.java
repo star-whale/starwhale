@@ -13,10 +13,14 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDSVersionRequest;
+import ai.starwhale.mlops.api.protocol.swds.upload.UploadHeader;
+import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
+import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -32,6 +36,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
@@ -165,6 +170,19 @@ public interface DatasetApi {
             String datasetId,
         @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
         SWDSVersionRequest swdsVersionRequest);
+
+    @Operation(summary = "Create a new dataset version",
+        description = "Create a new version of the dataset. "
+            + "The data resources can be selected by uploading the file package or entering the server path.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+        value = "v01/dataset/push",
+        produces = {"application/json"},
+        consumes = {"multipart/form-data"})
+    ResponseEntity<ResponseMessage<UploadResult>> uploadDS(
+        @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) String uploadHeader,
+        @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile dsFile,
+        @RequestBody UploadRequest uploadRequest);
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

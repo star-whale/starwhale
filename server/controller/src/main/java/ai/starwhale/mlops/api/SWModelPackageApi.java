@@ -8,6 +8,9 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
+import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
+import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWMPVersionRequest;
@@ -33,6 +36,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
@@ -238,4 +242,16 @@ public interface SWModelPackageApi {
             String projectId,
         @Parameter(description = "file detail") @RequestPart("zipFile") MultipartFile zipFile,
         SWMPRequest swmpRequest);
+
+    @Operation(summary = "Create a new swmp version",
+        description = "Create a new version of the swmp. "
+            + "The data resources can be selected by uploading the file package or entering the server path.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(
+        value = "v01/model/push",
+        produces = {"application/json"},
+        consumes = {"multipart/form-data"})
+    ResponseEntity<ResponseMessage<String>> upload(
+        @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile file,
+        @RequestBody ClientSWMPRequest uploadRequest);
 }
