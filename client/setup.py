@@ -4,6 +4,8 @@ install_requires = open("requirements.txt").readlines()
 
 
 setup(name='starwhale',
+      author='Starwhale Team',
+      author_email="developer@starwhale.ai",
       version="0.1.0",
       description='MLOps Platform',
       keywords="MLOps AI",
