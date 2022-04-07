@@ -1,7 +1,10 @@
 check:
 	python setup.py check
 
-build-wheel: check
+clean:
+	rm -rf dist/*
+
+build-wheel: check clean
 	python setup.py sdist bdist_wheel
 	ls -alh dist
 
