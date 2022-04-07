@@ -7,3 +7,6 @@ build-wheel: check
 
 upload-pypi:
 	python setup.py register sdist upload
+
+build-dev-wheel:
+	pip install -e .
