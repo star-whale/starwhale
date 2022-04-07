@@ -28,6 +28,8 @@
         <pagehelper.starter.version>1.4.1</pagehelper.starter.version>
         <guava.version>31.1-jre</guava.version>
         <starwhale.version>0.1.0-SNAPSHOT</starwhale.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <dependencyManagement>

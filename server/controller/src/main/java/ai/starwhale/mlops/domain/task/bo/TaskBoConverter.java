@@ -23,20 +23,29 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 /**
  * convert task objects
  */
 @Slf4j
+@Service
 public class TaskBoConverter {
 
-    SWDSBlockSerializer swdsBlockSerializer;
+    final SWDSBlockSerializer swdsBlockSerializer;
 
-    TaskMapper taskMapper;
+    final TaskMapper taskMapper;
 
-    JobMapper jobMapper;
+    final JobMapper jobMapper;
 
-    JobBoConverter jobBoConverter;
+    final JobBoConverter jobBoConverter;
+
+    public TaskBoConverter(SWDSBlockSerializer swdsBlockSerializer, TaskMapper taskMapper, JobMapper jobMapper, JobBoConverter jobBoConverter) {
+        this.swdsBlockSerializer = swdsBlockSerializer;
+        this.taskMapper = taskMapper;
+        this.jobMapper = jobMapper;
+        this.jobBoConverter = jobBoConverter;
+    }
 
     /**
      * heavy opt

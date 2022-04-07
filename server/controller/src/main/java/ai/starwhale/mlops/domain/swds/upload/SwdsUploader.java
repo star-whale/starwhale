@@ -26,30 +26,41 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
+@Service
 public class SwdsUploader {
 
-    HotSwdsHolder hotSwdsHolder;
-    @Resource
-    private SWDatasetMapper swdsMapper;
+    final HotSwdsHolder hotSwdsHolder;
 
-    @Resource
-    private SWDatasetVersionMapper swdsVersionMapper;
+    final SWDatasetMapper swdsMapper;
 
-    StoragePathCoordinator storagePathCoordinator;
+    final SWDatasetVersionMapper swdsVersionMapper;
 
-    StorageAccessService storageAccessService;
+    final StoragePathCoordinator storagePathCoordinator;
+
+    final StorageAccessService storageAccessService;
 
     /**
      * prefix + / + fileName
      */
     static final String FORMATTER_STORAGE_PATH="%s/%s";
 
-    ObjectMapper yamlMapper;
+    final ObjectMapper yamlMapper;
+
+    public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper, SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService, @Qualifier("yamlMapper") ObjectMapper yamlMapper) {
+        this.hotSwdsHolder = hotSwdsHolder;
+        this.swdsMapper = swdsMapper;
+        this.swdsVersionMapper = swdsVersionMapper;
+        this.storagePathCoordinator = storagePathCoordinator;
+        this.storageAccessService = storageAccessService;
+        this.yamlMapper = yamlMapper;
+    }
 
     public void cancel(String uploadId){
         final SWDatasetVersionEntity swDatasetVersionEntity = getSwdsVersion(uploadId);

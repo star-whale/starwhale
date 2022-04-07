@@ -13,10 +13,12 @@ import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import org.springframework.stereotype.Component;
 
 /**
  * convert JobEntity to Job
  */
+@Component
 public class JobBoConverter {
 
     public Job fromEntity(JobEntity jobEntity){

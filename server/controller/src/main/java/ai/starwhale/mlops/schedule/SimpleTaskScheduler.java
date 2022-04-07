@@ -23,20 +23,23 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 /**
  * a simple implementation of JobScheduler
  */
 @Slf4j
+@Service
 public class SimpleTaskScheduler implements TaskScheduler {
 
     final Map<Device.Clazz, ConcurrentLinkedQueue<Task>> taskQueueTable;
 
-    TaskMapper taskMapper;
+    final TaskMapper taskMapper;
 
-    public SimpleTaskScheduler() {
+    public SimpleTaskScheduler(TaskMapper taskMapper) {
         this.taskQueueTable = Map.of(Clazz.CPU, new ConcurrentLinkedQueue<>(),
             Clazz.GPU, new ConcurrentLinkedQueue<>());
+        this.taskMapper = taskMapper;
     }
 
     @Override

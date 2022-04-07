@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -31,6 +32,7 @@ import org.springframework.util.CollectionUtils;
  * --------agent-------
  */
 @Slf4j
+@Service
 public class CommandingTasksChecker {
 
     final Map<Agent, Set<TaskCommand>> commandingTasks ;
