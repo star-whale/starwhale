@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.storage;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.stream.Stream;
@@ -16,9 +17,9 @@ import java.util.stream.Stream;
  */
 public interface StorageAccessService {
 
-    void put(String path,InputStream inputStream);
-    void put(String path,byte[] body);
-    InputStream get(String path);
-    Stream<String> list(String path);
+    void put(String path,InputStream inputStream) throws IOException;
+    void put(String path,byte[] body) throws IOException;
+    InputStream get(String path) throws IOException;
+    Stream<String> list(String path) throws IOException;
 
 }

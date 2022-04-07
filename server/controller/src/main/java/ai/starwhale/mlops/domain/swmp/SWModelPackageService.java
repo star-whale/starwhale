@@ -7,18 +7,33 @@
 
 package ai.starwhale.mlops.domain.swmp;
 
+import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import com.github.pagehelper.PageHelper;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 public class SWModelPackageService {
 
@@ -36,6 +51,10 @@ public class SWModelPackageService {
 
     @Resource
     private SWMPVersionConvertor versionConvertor;
+
+    StoragePathCoordinator storagePathCoordinator;
+
+    StorageAccessService storageAccessService;
 
     public List<SWModelPackageVO> listSWMP(SWMPObject swmp, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -128,5 +147,57 @@ public class SWModelPackageService {
         return models.stream()
             .map(swmpConvertor::convert)
             .collect(Collectors.toList());
+    }
+
+
+    /**
+     * prefix + / + fileName
+     */
+    static final String FORMATTER_STORAGE_PATH="%s/%s";
+    @Transactional
+    public void upload(MultipartFile dsFile,
+        ClientSWMPRequest uploadRequest){
+
+        SWModelPackageEntity entity = swmpMapper.findByNameForUpdate(uploadRequest.getName());
+        if(null == entity){
+            //create
+            entity = SWModelPackageEntity.builder().isDeleted(0)
+                .ownerId(getOwner())
+                .swmpName(uploadRequest.getName())
+                .build();
+            swmpMapper.addSWModelPackage(entity);
+        }
+        SWModelPackageVersionEntity swModelPackageVersionEntity = swmpVersionMapper.findByNameAndSwmpId(uploadRequest.getVersion(),entity.getId());
+        if(null != swModelPackageVersionEntity){
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip("swmp version duplicate"+uploadRequest.getVersion()),
+                HttpStatus.BAD_REQUEST);
+        }
+
+        //upload to storage
+        final String swmpPath = storagePathCoordinator
+            .swmpPath(uploadRequest.getName(), uploadRequest.getVersion());
+
+        try(final InputStream inputStream = dsFile.getInputStream()){
+            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getName()),inputStream);
+        } catch (IOException e) {
+            log.error("upload swmp failed {}",uploadRequest.getSwmp(),e);
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        //create new entity
+        swModelPackageVersionEntity = SWModelPackageVersionEntity.builder()
+            .ownerId(getOwner())
+            .storagePath(swmpPath)
+            .swmpId(entity.getId())
+            .versionName(uploadRequest.getVersion())
+            .versionMeta(uploadRequest.getSwmp())
+            .build();
+        swmpVersionMapper.addNewVersion(swModelPackageVersionEntity);
+
+    }
+
+    private Long getOwner() {
+        //TODO(renyanda) get owner from session
+        return 1L;
     }
 }

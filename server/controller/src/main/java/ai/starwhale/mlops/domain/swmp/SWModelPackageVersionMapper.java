@@ -23,4 +23,6 @@ public interface SWModelPackageVersionMapper {
     int addNewVersion(SWModelPackageVersionEntity entity);
 
     int update(SWModelPackageVersionEntity entity);
+
+    SWModelPackageVersionEntity findByNameAndSwmpId(@Param("swmpVersion")String version, @Param("swmpId")Long id);
 }

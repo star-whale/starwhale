@@ -14,6 +14,8 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDSVersionRequest;
+import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
+import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.RandomUtil;
@@ -21,21 +23,37 @@ import ai.starwhale.mlops.domain.swds.SWDSFile;
 import ai.starwhale.mlops.domain.swds.SWDSObject;
 import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
 import ai.starwhale.mlops.domain.swds.SWDatasetService;
+import ai.starwhale.mlops.domain.swds.upload.Manifest;
+import ai.starwhale.mlops.domain.swds.upload.SwdsUploader;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.ApiOperationException;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.lang.Assert;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageInfo;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
+@Slf4j
 public class DatasetController implements DatasetApi{
 
     @Resource
@@ -43,6 +61,8 @@ public class DatasetController implements DatasetApi{
 
     @Resource
     private UserService userService;
+
+    SwdsUploader swdsUploader;
 
     @Override
     public ResponseEntity<ResponseMessage<String>> revertDatasetVersion(String projectId,
@@ -96,6 +116,37 @@ public class DatasetController implements DatasetApi{
         String versionId = createVersion(projectId, datasetId, zipFile, swdsVersionRequest.getImportPath(), user.getId());
         return ResponseEntity.ok(Code.success
             .asResponse(String.valueOf(Optional.of(versionId).orElseThrow(ApiOperationException::new))));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<UploadResult>> uploadDS(String uploadId,
+        MultipartFile dsFile, UploadRequest uploadRequest) {
+        switch (uploadRequest.getPhase()){
+            case MANIFEST:
+                String text;
+                try (final InputStream inputStream = dsFile.getInputStream()){
+                    text = new BufferedReader(
+                        new InputStreamReader(inputStream, StandardCharsets.UTF_8))
+                        .lines()
+                        .collect(Collectors.joining("\n"));
+                } catch (IOException e) {
+                    log.error("read manifest file failed",e);
+                    throw new StarWhaleApiException(new SWProcessException(ErrorType.NETWORK),HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(swdsUploader.create(text,dsFile.getName()))));
+            case BLOB:
+                //get ds path and upload to the dest path
+                swdsUploader.uploadBody(uploadId,dsFile);
+                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
+            case CANCEL:
+                swdsUploader.cancel(uploadId);
+                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
+            case END:
+                swdsUploader.end(uploadId);
+                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
+            default:
+                throw new SWValidationException(ValidSubject.SWDS).tip("unknown phase " + uploadRequest.getPhase());
+        }
     }
 
     @Override

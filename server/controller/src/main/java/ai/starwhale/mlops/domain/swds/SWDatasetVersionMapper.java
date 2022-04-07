@@ -20,10 +20,16 @@ public interface SWDatasetVersionMapper {
 
     SWDatasetVersionEntity getLatestVersion(@Param("datasetId")Long datasetId);
 
+    SWDatasetVersionEntity findByDSIdAndVersionNameForUpdate(@Param("datasetId")Long datasetId,@Param("versionName")String versionName);
+
     int revertTo(@Param("dsId")Long dsId, @Param("dsVersionId")Long dsVersionId);
 
     int addNewVersion(SWDatasetVersionEntity entity);
 
     int update(SWDatasetVersionEntity entity);
+
+    int updateStatus(Long id ,Integer status);
+
+    int deleteById(Long id);
 
 }

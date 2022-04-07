@@ -22,4 +22,6 @@ public interface SWModelPackageMapper {
 
     List<SWModelPackageEntity> findSWModelPackagesByIds(@Param("ids")List<Long> ids);
 
+    SWModelPackageEntity findByNameForUpdate(@Param("name")String name);
+
 }

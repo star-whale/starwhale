@@ -47,6 +47,12 @@
         </foreach>
     </select>
 
+    <select id="findByNameAndSwmpId" resultMap="swmpVersionResultMap" >
+        <include refid="select_swmp_version" />
+        and mv.swmp_id = #{swmpId}
+        and mv.version_name = #{swmpVersion}
+    </select>
+
     <select id="getLatestVersion" resultMap="swmpVersionResultMap" >
         <include refid="select_swmp_version" />
         and swmp_id = #{swmpId}

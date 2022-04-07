@@ -15,6 +15,7 @@
                version_tag as dsv_version_tag,
                version_meta as dsv_version_meta,
                storage_path as dsv_storage_path,
+               status as status,
                dsv.created_time as dsv_created_time,
                dsv.modified_time as dsv_modified_time,
                u.id as user_id,
@@ -38,6 +39,13 @@
             and version_name like concat(#{namePrefix}, '%')
         </if>
         order by dsv.id desc
+    </select>
+
+    <select id="findByDSIdAndVersionNameForUpdate" resultMap="dsVersionResultMap" >
+        <include refid="select_swds_version" />
+        and dataset_id = #{datasetId}
+        and version_name = #{versionName}
+        for update
     </select>
 
     <select id="getVersionById" resultMap="dsVersionResultMap" >
@@ -76,6 +84,16 @@
         update dataset_version set version_tag = #{versionTag} where id = #{id}
     </update>
 
+    <update id="updateStatus">
+        update dataset_version set status = #{status} where id = #{id}
+    </update>
+
+    <delete id = "deleteById">
+      delete from dataset_version WHERE id = #{id};
+   </delete>
+
+
+
     <resultMap id="dsVersionResultMap" type="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity" >
         <id property="id" column="dsv_id" />
         <result property="datasetId" column="dataset_id" />
@@ -86,6 +104,7 @@
         <result property="createdTime" column="dsv_created_time"/>
         <result property="modifiedTime" column="dsv_modified_time"/>
         <result property="ownerId" column="owner_id" />
+        <result property="status" column="status" />
         <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
     </resultMap>
 </mapper>
