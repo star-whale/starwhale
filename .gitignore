@@ -17,7 +17,8 @@ pylint.out
 *.zip
 *.tar.gz
 *.rar
-/dist/
+dist/
+build/
 *.egg
 *.egg/
 *.egg-info/
