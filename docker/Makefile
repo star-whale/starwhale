@@ -1,4 +1,4 @@
-BASE_IMAGE :=starwhaleai/base:0.1.0-nightly-2022040701
+BASE_IMAGE :=starwhaleai/base:0.1.0-nightly-2022040801
 SW_IMAGE := starwhaleai/starwhale:0.1.0-nightly-2022040801
 SW_VERSION := 0.1.0.dev0
 

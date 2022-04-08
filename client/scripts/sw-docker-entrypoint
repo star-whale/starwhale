@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+set -e
+ulimit -n 65535 || true
+
+CONDA_BIN="/opt/miniconda3/bin/"
+WORKDIR="/opt/starwhale/"
+
+_update_python_alter() {
+    echo "--> set python/python3 to $1 ..."
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/$1 10
+    update-alternatives --install /usr/bin/python python /usr/bin/$1 10
+}
+
+pre_check() {
+    echo "--> run pre check for swmp model dir ..."
+    #TODO: add swmp check cmd
+    #swcli swmp check .
+
+    if [! -f "${SW_TASK_SWDS_CONFIG}" ]; then
+        echo "${SW_TASK_SWDS_CONFIG} not found, please set env and volume file into container"
+        exit 1
+    fi
+}
+
+set_python() {
+    if [ "$RUNTIME" = "python3.7" ] || [ "$RUNTIME" = "python3.9" ] ; then
+        _update_python_alter "$RUNTIME"
+    else
+        _update_python_alter "python3.8"
+    fi
+}
+
+activate_swmp_env() {
+    echo '--> activate swmp env ...'
+    swcli swmp activate .
+}
+
+run_ppl() {
+    echo "--> start to run swmp ppl ..."
+    swcli swmp ppl ${WORKDIR}/src
+}
+
+welcome() {
+    echo "===================================="
+    echo "StarWhale Docker Entrypoint"
+    echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
+    echo "Version: `swcli --version`"
+    echo "Model: ${SW_SWMP_NAME}@${SW_SWMP_VERSION}"
+    echo "===================================="
+}
+
+main() {
+    welcome
+    pre_check
+    set_python
+    activate_swmp_env
+    run_ppl
+}
+
+main

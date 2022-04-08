@@ -39,6 +39,9 @@ setup(name='starwhale',
       """,
       python_requires = ">=3.7.0",
       scripts=[
+          'sw-docker-entrypoint',
       ],
-      package_data={},
+      package_data={
+          "starwhale": ['swmp/templates/Dockerfile'],
+      },
 )
