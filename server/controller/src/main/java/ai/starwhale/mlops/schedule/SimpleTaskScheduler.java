@@ -34,12 +34,9 @@ public class SimpleTaskScheduler implements TaskScheduler {
 
     final Map<Device.Clazz, ConcurrentLinkedQueue<Task>> taskQueueTable;
 
-    final TaskMapper taskMapper;
-
-    public SimpleTaskScheduler(TaskMapper taskMapper) {
+    public SimpleTaskScheduler() {
         this.taskQueueTable = Map.of(Clazz.CPU, new ConcurrentLinkedQueue<>(),
             Clazz.GPU, new ConcurrentLinkedQueue<>());
-        this.taskMapper = taskMapper;
     }
 
     @Override
