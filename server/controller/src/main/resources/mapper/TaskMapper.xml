@@ -65,6 +65,14 @@
         </foreach>
     </update>
 
+    <update id="updateTaskAgent">
+        update task_info set agent_id = #{agentId} WHERE id in
+        <foreach item="item" index="index" collection="ids"
+          open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
     <select id="findTaskByStatus" resultMap="taskResultMap" >
         <include refid="select_task"/>
         and t.task_status = #{taskStatus}
