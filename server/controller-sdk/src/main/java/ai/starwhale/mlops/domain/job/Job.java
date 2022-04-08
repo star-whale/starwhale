@@ -57,51 +57,56 @@ public class Job {
         /**
          * created by user
          */
-        CREATED(10),
+        CREATED(10, false),
 
         /**
          * split but no task is assigned to an Agent
          */
-        SPLIT(20),
-
-        /**
-         * more than one task is assigned to Agent
-         */
-        SCHEDULING(30),
-
-        /**
-         * all tasks are assigned to Agents, but not all of them is finished
-         */
-        SCHEDULED(40),
+        RUNNING(20, false),
 
         /**
          * CANCEL triggered by user( at least one task is TO_CANCEL)
          */
-        TO_CANCEL(50),
+        TO_CANCEL(50, false),
 
         /**
          * canceling is done
          */
-        CANCELED(60),
+        CANCELED(60, true),
+
+        /**
+         * canceling is done
+         */
+        COLLECT_RESULT(70, false),
 
         /**
          * all the tasks are finished
          */
-        FINISHED(100),
+        FINISHED(100, true),
 
         /**
          * some task exit with unexpected error
          */
-        EXIT_ERROR(-1),
+        EXIT_ERROR(-1, true),
 
-        UNKNOWN(-999);
+        UNKNOWN(-999, false);
         final int value;
-        JobStatus(int v){
+        /**
+         * no subsequent statues reported to controller
+         */
+        final boolean finalStatus;
+        JobStatus(int v,boolean finalStatus){
             this.value = v;
+            this.finalStatus = finalStatus;
         }
         public int getValue(){
             return this.value;
         }
+
+        public boolean isFinalStatus() {
+            return finalStatus;
+        }
+
         public static JobStatus from(int v){
             for(JobStatus jobStatus:JobStatus.values()){
                 if(jobStatus.value == v){

@@ -56,8 +56,6 @@ public class SimpleTaskScheduler implements TaskScheduler {
             .map(device -> taskQueueTable.get(device.getClazz()).poll())// pull task from the device corresponding queue
             .filter(Objects::nonNull)//remove null tasks got from empty queue
             .collect(Collectors.toList());
-
-        //todo(renyanda): save node info to task
     }
 
     private void validNode(Node node) {

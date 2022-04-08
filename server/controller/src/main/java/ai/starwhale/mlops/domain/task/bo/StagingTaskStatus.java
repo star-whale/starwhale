@@ -12,8 +12,8 @@ import ai.starwhale.mlops.domain.task.TaskStatus;
 import java.util.Objects;
 
 public class StagingTaskStatus implements Comparable<StagingTaskStatus>{
-    TaskStatus status;
-    TaskStatusStage stage;
+    final TaskStatus status;
+    final TaskStatusStage stage;
 
     public StagingTaskStatus(){
         this.status = TaskStatus.CREATED;
@@ -34,13 +34,12 @@ public class StagingTaskStatus implements Comparable<StagingTaskStatus>{
         return stage;
     }
 
-    public void setStage(TaskStatusStage stage) {
-        this.stage = stage;
+    public StagingTaskStatus stage(TaskStatusStage stage) {
+        return new StagingTaskStatus(this.status,stage);
     }
 
-    public StagingTaskStatus stage(TaskStatusStage stage) {
-        this.stage = stage;
-        return this;
+    public StagingTaskStatus clearStage() {
+        return new StagingTaskStatus(this.status,TaskStatusStage.INIT);
     }
 
     public int getValue(){
@@ -85,6 +84,12 @@ public class StagingTaskStatus implements Comparable<StagingTaskStatus>{
     }
 
     public JobStatus getDesiredJobStatus() {
+        if(this.status.getDesiredJobStatus() == JobStatus.COLLECT_RESULT && this.stage == TaskStatusStage.DONE){
+            return JobStatus.FINISHED;
+        }
+        if(this.stage == TaskStatusStage.FAILED){
+            return JobStatus.EXIT_ERROR;
+        }
         return this.status.getDesiredJobStatus();
     }
 }

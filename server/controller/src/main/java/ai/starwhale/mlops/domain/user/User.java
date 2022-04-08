@@ -25,6 +25,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class User implements UserDetails, Serializable {
 
     private String id;
+    private Long idTableKey;
     private String name;
     private String password;
     private String salt;
@@ -76,6 +77,7 @@ public class User implements UserDetails, Serializable {
         setSalt(entity.getUserPwdSalt());
         setActive(entity.getUserEnabled() == 1);
         setRoles(Set.of(new Role().fromEntity(entity.getRole(), idConvertor)));
+        setIdTableKey(entity.getId());
         return this;
     }
 

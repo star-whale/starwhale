@@ -65,15 +65,18 @@ public class CommandingTasksChecker {
             .collect(Collectors.toMap(Task::getId,
                 Function.identity()));
         final List<TaskCommand> unProperTasks = new LinkedList<>();
+        final List<TaskCommand> properTasks = new LinkedList<>();
         taskCommands.forEach(taskCommand -> {
             final Task nodeTask = nodeTasks.get(taskCommand.getTask().getId());
             final boolean unproperlyExed = !taskCommand.agentProper(nodeTask);
             if(unproperlyExed){
                 unProperTasks.add(taskCommand);
             }else {
-                taskCommands.remove(taskCommand);
+                properTasks.add(taskCommand);
             }
         });
+
+        taskCommands.removeAll(properTasks);
 
         return unProperTasks;
     }

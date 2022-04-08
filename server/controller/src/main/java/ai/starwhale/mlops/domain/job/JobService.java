@@ -30,10 +30,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
-import ai.starwhale.mlops.domain.job.split.JobSpliterator;
-import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
-import ai.starwhale.mlops.schedule.TaskScheduler;
-
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
@@ -149,7 +145,7 @@ public class JobService {
     }
 
     Stream<Job> findAllNewJobs(){
-        final List<JobEntity> newJobs = jobMapper.findJobByStatus(JobStatus.CREATED.getValue());
+        final List<JobEntity> newJobs = jobMapper.findJobByStatusIn(List.of(JobStatus.CREATED.getValue()));
         return newJobs.stream().map(entity-> jobBoConverter.fromEntity(entity));
     }
 
@@ -159,12 +155,12 @@ public class JobService {
      */
     @Transactional
     public void cancelJob(Long jobId){
-        jobMapper.updateJobStatus(List.of(jobId), JobStatus.CANCELED.getValue());
+        jobMapper.updateJobStatus(List.of(jobId), JobStatus.TO_CANCEL.getValue());
         final List<TaskEntity> taskEntities = taskMapper.listTasks(jobId);
         taskMapper.updateTaskStatus(taskEntities.parallelStream().map(TaskEntity::getId).collect(
             Collectors.toList()), TaskStatus.CANCEL.getOrder());
         final JobEntity job = jobMapper.findJobById(jobId);
-        livingTaskStatusMachine.adopt(taskBoConverter.fromTaskEntity(taskEntities,jobBoConverter.fromEntity(job)),
+        livingTaskStatusMachine.update(taskBoConverter.fromTaskEntity(taskEntities,jobBoConverter.fromEntity(job)),
             new StagingTaskStatus(TaskStatus.CANCEL));
     }
 

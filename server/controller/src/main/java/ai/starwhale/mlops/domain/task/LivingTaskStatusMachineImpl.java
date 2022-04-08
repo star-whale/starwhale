@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.NoTransactionException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.CollectionUtils;
 
@@ -91,18 +92,15 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     }
 
     @Override
-    public void adopt(Collection<Task> livingTasks, final StagingTaskStatus status) {
-        //watch status change validation
-        //update to taskStatusMap & taskIdMap
-        //if in transaction context save immediately or add to toBePersistent
-        boolean inTransactionContext = false;
-        try {
-            TransactionAspectSupport.currentTransactionStatus();
-            inTransactionContext = true;
-        } catch (NoTransactionException e) {
-            log.debug("no transaction context in call of status {} ", status);
-        }
+    public void adopt(Collection<Task> tasks, final StagingTaskStatus status) {
+        tasks.parallelStream().forEach(task -> {
+            updateCache(status, task);
+        });
+    }
 
+    @Override
+    @Transactional
+    public void update(Collection<Task> livingTasks, StagingTaskStatus status) {
         final Stream<Task> toBeUpdateStream = livingTasks.parallelStream().filter(task -> {
             final Task taskResident = taskIdMap.get(task.getId());
             if (null == taskResident) {
@@ -119,25 +117,19 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             .map(task -> taskIdMap.computeIfAbsent(task.getId(), k -> task))
             .peek(task -> {
                 task.setStatus(status);
-                taskStatusMap.computeIfAbsent(status,k-> Collections.synchronizedList(new LinkedList<>()))
-                    .add(task.getId());
                 final Long jobId = task.getJob().getId();
-                jobTaskMap.computeIfAbsent(jobId,k->Collections.synchronizedList(new LinkedList<>()))
-                    .add(task.getId());
+                updateCache(status, task);
                 toBeCheckedJobs.offer(jobId);
-                jobIdMap.computeIfAbsent(jobId, k ->task.getJob());
             })
             .collect(Collectors.toList());
 
-
-        if (inTransactionContext) {
+        if (flushDB(status)) {
             persistTaskStatus(toBeUpdatedTasks);
         } else {
             toBePersistentTasks.addAll(toBeUpdatedTasks.parallelStream()
                 .map(Task::getId)
                 .collect(Collectors.toList()));
         }
-
     }
 
     @Override
@@ -210,7 +202,6 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             jobMapper.updateJobStatus(toBeUpdated, desiredStatus.getValue());
 
             if (desiredStatus == JobStatus.FINISHED) {
-                //todo(renyanda) when to remove
                 removeFinishedJobTasks(jobids);
             }
 
@@ -233,6 +224,23 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
         });
 
+    }
+
+
+    //easily lost statuses must be flush to db immediately
+    private boolean flushDB(StagingTaskStatus status) {
+        return status.getStatus().isFinalStatus()
+            || status.getStage() != TaskStatusStage.INIT;
+    }
+
+    private void updateCache(StagingTaskStatus status, Task task) {
+        Long jobId = task.getJob().getId();
+        taskIdMap.put(task.getId(),task);
+        jobIdMap.computeIfAbsent(jobId, k ->task.getJob());
+        taskStatusMap.computeIfAbsent(status,k-> Collections.synchronizedList(new LinkedList<>()))
+            .add(task.getId());
+        jobTaskMap.computeIfAbsent(jobId,k->Collections.synchronizedList(new LinkedList<>()))
+            .add(task.getId());
     }
 
 }

@@ -19,6 +19,8 @@ public interface LivingTaskStatusMachine {
 
     void adopt(Collection<Task> livingTasks, StagingTaskStatus status);
 
+    void update(Collection<Task> livingTasks, StagingTaskStatus status);
+
     Collection<Task> ofStatus(StagingTaskStatus taskStatus);
 
     Optional<Task> ofId(Long taskId);

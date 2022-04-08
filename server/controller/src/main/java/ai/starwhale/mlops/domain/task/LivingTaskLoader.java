@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
@@ -77,25 +78,23 @@ public class LivingTaskLoader {
             .forEach(entry -> livingTaskStatusMachine.adopt(entry.getValue(), entry.getKey()));
 
         scheduleCreatedTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.CREATED)));
-        checkCommandingTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.ASSIGNING)));
-        checkCommandingTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.CANCEL_COMMANDING)));
+        checkCommandingTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.CREATED,TaskStatusStage.DOING)));
+        checkCommandingTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.CANCEL,TaskStatusStage.DOING)));
     }
 
     /**
-     * @return tasks that are not FINISHED or ERROR
+     * @return tasks of jobs that are not FINISHED neither ERROR neither ERROR
      */
     private Stream<TaskEntity> livingTasksFromDB() {
-        final List<Integer> livingTaskStatus = Arrays.asList(TaskStatus.values())
+        List<Integer> hotJobStatuses = Arrays.asList(JobStatus.values())
             .parallelStream()
-            .map(status-> List.of(new StagingTaskStatus(status,TaskStatusStage.INIT),new StagingTaskStatus(status,TaskStatusStage.DOING),new StagingTaskStatus(status,TaskStatusStage.DONE)))
-            .flatMap(Collection::stream)
-            .filter(taskStatus -> !taskStatus.equals(new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.DONE))
-                && !taskStatus.equals(new StagingTaskStatus(TaskStatus.ARCHIVED))
-                && !taskStatus.equals(new StagingTaskStatus(TaskStatus.CANCELED))
-                && !taskStatus.equals(new StagingTaskStatus(TaskStatus.EXIT_ERROR)))
-            .map(StagingTaskStatus::getValue)
+            .filter(jobStatus -> !jobStatus.isFinalStatus())
+            .map(JobStatus::getValue)
             .collect(Collectors.toList());
-        return taskMapper.findTaskByStatusIn(livingTaskStatus).stream();
+        return jobMapper.findJobByStatusIn(hotJobStatuses)
+            .parallelStream()
+            .map(jobEntity -> taskMapper.listTasks(jobEntity.getId()))
+            .flatMap(Collection::stream);
     }
 
 

@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.storage.s3;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.stream.Stream;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -16,6 +17,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
@@ -60,5 +62,13 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         final ListObjectsResponse listObjectsResponse = s3client.listObjects(
             ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path).build());
         return listObjectsResponse.contents().stream().map(S3Object::key);
+    }
+
+    @Override
+    public void delete(String path) throws IOException {
+        s3client.deleteObject(DeleteObjectRequest.builder()
+            .bucket(s3Config.getBucket())
+            .key(path)
+            .build());
     }
 }
