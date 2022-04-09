@@ -3,6 +3,7 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
+import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -127,4 +128,26 @@ public interface JobApi {
             schema = @Schema())
         @PathVariable("action")
             String action);
+
+    @Operation(summary = "Job Evaluation Result")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "OK",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = EvaluationResult.class)))
+        })
+    @GetMapping(value = "/project/{projectId}/job/{jobId}/result")
+    ResponseEntity<ResponseMessage<EvaluationResult>> getJobResult(@Parameter(
+        in = ParameterIn.PATH,
+        description = "Project id",
+        schema = @Schema())
+    @PathVariable("projectId")
+        String projectId,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("jobId")
+            String jobId);
 }

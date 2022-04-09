@@ -8,6 +8,7 @@ package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
+import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
@@ -23,6 +24,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.resulting.ResultCollectManager;
 import ai.starwhale.mlops.schedule.TaskScheduler;
 import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
@@ -74,6 +76,8 @@ public class JobService {
     @Resource
     private TaskBoConverter taskBoConverter;
 
+    @Resource
+    private ResultCollectManager resultCollectManager;
 
     public List<JobVO> listJobs(String projectId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -98,6 +102,11 @@ public class JobService {
         jobVO.setDatasets(idList);
 
         return jobVO;
+    }
+
+    public EvaluationResult getJobResult(String projectId, String jobId) {
+        return resultCollectManager.resultOfJob(
+            idConvertor.revert(jobId));
     }
 
     public String createJob(JobRequest jobRequest, String projectId) {
