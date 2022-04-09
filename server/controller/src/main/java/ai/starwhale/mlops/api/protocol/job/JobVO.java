@@ -7,7 +7,9 @@
 
 package ai.starwhale.mlops.api.protocol.job;
 
+import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -37,7 +39,7 @@ public class JobVO implements Serializable {
 
     @JsonProperty("datasets")
     @Valid
-    private List<String> datasets;
+    private List<DatasetVersionVO> datasets;
 
     @JsonProperty("baseImage")
     private BaseImageVO baseImage;
@@ -62,4 +64,7 @@ public class JobVO implements Serializable {
 
     @JsonProperty("jobStatus")
     private Integer jobStatus;
+
+    @JsonProperty("evaluationResult")
+    private EvaluationResult evaluationResult;
 }

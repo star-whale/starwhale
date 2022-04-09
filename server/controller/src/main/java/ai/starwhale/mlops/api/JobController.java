@@ -37,6 +37,7 @@ public class JobController implements JobApi{
     @Override
     public ResponseEntity<ResponseMessage<JobVO>> findJob(String projectId, String jobId) {
         JobVO job = jobService.findJob(projectId, jobId);
+
         return ResponseEntity.ok(Code.success.asResponse(job));
     }
 

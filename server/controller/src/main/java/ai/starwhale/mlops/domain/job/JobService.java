@@ -8,11 +8,15 @@ package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
+import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
+import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
+import ai.starwhale.mlops.domain.swds.SWDSConvertor;
+import ai.starwhale.mlops.domain.swds.SWDSVersionConvertor;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskEntity;
@@ -23,6 +27,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.resulting.ResultCollectManager;
 import ai.starwhale.mlops.schedule.TaskScheduler;
 import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
@@ -46,6 +51,9 @@ public class JobService {
 
     @Resource
     private JobSWDSVersionMapper jobSWDSVersionMapper;
+
+    @Resource
+    private SWDSVersionConvertor swdsVersionConvertor;
 
     @Resource
     private IDConvertor idConvertor;
@@ -74,6 +82,9 @@ public class JobService {
     @Resource
     private TaskBoConverter taskBoConverter;
 
+    @Resource
+    private ResultCollectManager resultCollectManager;
+
 
     public List<JobVO> listJobs(String projectId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -91,11 +102,15 @@ public class JobService {
         List<SWDatasetVersionEntity> dsvEntities = jobSWDSVersionMapper.listSWDSVersionsByJobId(
             entity.getId());
 
-        List<String> idList = dsvEntities.stream()
-            .map(SWDatasetVersionEntity::getVersionName)
+        List<DatasetVersionVO> dsvList = dsvEntities.stream()
+            .map(swdsVersionConvertor::convert)
             .collect(Collectors.toList());
 
-        jobVO.setDatasets(idList);
+        jobVO.setDatasets(dsvList);
+
+        EvaluationResult evaluationResult = resultCollectManager.resultOfJob(entity.getId());
+//        EvaluationResult evaluationResult = new EvaluationResult("MCResultCollector", List.of());
+        jobVO.setEvaluationResult(evaluationResult);
 
         return jobVO;
     }
