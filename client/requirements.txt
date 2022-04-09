@@ -8,7 +8,7 @@ loguru==0.6.0
 conda-pack==0.6.0
 virtualenv>=13.0.0
 fs>=2.4.0
-typing-extensions>=4.1.1
+typing-extensions==4.0.0
 commonmark>=0.9.1
 rich==12.0.0
 jsonlines==3.0.0
