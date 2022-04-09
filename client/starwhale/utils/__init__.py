@@ -8,11 +8,8 @@ import sys
 import platform
 import subprocess
 import typing as t
-from pathlib import Path
 
-from loguru import logger
-
-from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX
+from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX, PYTHON_RUN_ENV
 
 
 def gen_uniq_version(feature: str = "") -> str:
@@ -55,11 +52,11 @@ def is_conda() -> bool:
 
 def get_python_run_env() -> str:
     if is_conda():
-        return "conda"
+        return PYTHON_RUN_ENV.CONDA
     elif is_venv():
-        return "venv"
+        return PYTHON_RUN_ENV.VENV
     else:
-        return "system"
+        return PYTHON_RUN_ENV.SYSTEM
 
 
 def get_conda_env() -> str:

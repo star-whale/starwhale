@@ -1,31 +1,35 @@
 from http import HTTPStatus
 from pathlib import Path
-from collections import namedtuple
 import yaml
 import sys
 import typing as t
+import tarfile
 
 import click
 import requests
-from rich.table import Table
 from rich.console import Console
-from rich import box
 from rich.panel import Panel
 from rich.pretty import Pretty
 from rich import print as rprint
 from fs import open_fs
 from fs.tarfs import TarFS
+from loguru import logger
 
 from starwhale.utils import fmt_http_server, pretty_bytes
 from starwhale.consts import (
-    DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME, SW_API_VERSION
+    DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME, SW_API_VERSION,
 )
+from starwhale.utils.venv import (
+    CONDA_ENV_TAR, DUMP_CONDA_ENV_FNAME, DUMP_PIP_REQ_FNAME,
+    DUMP_USER_PIP_REQ_FNAME, install_req, venv_activate,
+    conda_activate, conda_restore, venv_setup,
+)
+from starwhale.utils.fs import ensure_dir
 from starwhale.base.store import LocalStorage
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.http import wrap_sw_error_resp
 
 TMP_FILE_BUFSIZE = 8192
-
 
 class ModelPackageLocalStore(LocalStorage):
 
@@ -176,3 +180,71 @@ class ModelPackageLocalStore(LocalStorage):
     def extract(self, swmp: str, force: bool=False) -> None:
         #TODO: extract swmp into workdir
         ...
+
+    def activate(self, swmp: str) -> None:
+        if swmp.count(":") == 1:
+            _name, _version = swmp.split(":")
+            #TODO: guess _version?
+            _workdir = self.workdir / _name / _version
+        else:
+            _workdir = Path(swmp)
+
+        _workdir = _workdir.resolve()
+        _manifest = yaml.safe_load((_workdir / DEFAULT_MANIFEST_NAME).open())
+
+        _env = _manifest["dep"]["env"]
+        _f = getattr(self, f"_activate_{_env}")
+        _f(_workdir, _manifest["dep"])
+
+    def _activate_conda(self, _workdir: Path, _dep: dict) -> None:
+        if not _dep["conda"]["use"]:
+            raise Exception("env set conda, but conda:use is false")
+
+        _conda_dir = _workdir / "dep" / "conda"
+        _tar_fpath = _conda_dir / CONDA_ENV_TAR
+        _env_dir = _conda_dir / "env"
+        if not _env_dir.exists():
+            #TODO: cleanup env dir first?
+            ensure_dir(_env_dir)
+
+        if _dep["local_gen_env"] and _tar_fpath.exists():
+            logger.info(f"extract {_tar_fpath} ...")
+            with tarfile.open(str(_tar_fpath)) as f:
+                f.extractall(str(_env_dir))
+
+            logger.info(f"activate venv {_env_dir} ...")
+            venv_activate(_env_dir)
+        else:
+            logger.info(f"restore conda env ...")
+            _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
+            #TODO: controller will proceed in advance
+            output = conda_restore(_env_yaml, _env_dir)
+            logger.debug(f"conda environment restore: {output.decode()}")
+
+            logger.info(f"activate conda {_env_dir} ...")
+            conda_activate(_env_dir)
+
+    def _activate_venv(self, _workdir: Path, _dep: dict, _rebuild: bool=False) -> None:
+        if not _dep["venv"]["use"] and not _rebuild:
+            raise Exception("env set venv, but venv:use is false")
+
+        _python_dir = _workdir / "python"
+        _venv_dir = _python_dir / "venv"
+
+        if _rebuild or not _dep["local_gen_env"] or not (_venv_dir / "bin" / "activate").exists():
+            #TODO: _venv_dir cleanup?
+            logger.info(f"setup venv and pip install {_venv_dir}")
+            venv_setup(_venv_dir)
+            for _name in (DUMP_PIP_REQ_FNAME, DUMP_USER_PIP_REQ_FNAME):
+                _path = _python_dir / _name
+                if not _path.exists():
+                    continue
+
+                logger.info(f"pip install {_path} ...")
+                install_req(_venv_dir, _path)
+
+        logger.info(f"activate venv {_venv_dir}")
+        venv_activate(_venv_dir)
+
+    def _activate_system(self, _workdir: Path, _dep: dict) -> None:
+        self._activate_venv(_workdir, _dep, _rebuild=True)

@@ -18,7 +18,7 @@ from starwhale.utils.error import NoSupportError
 from starwhale.utils.fs import ensure_dir
 
 
-CONDA_ENV_TAR = "env.tar"
+CONDA_ENV_TAR = "env.tar.gz"
 DUMP_CONDA_ENV_FNAME = "env-lock.yaml"
 DUMP_PIP_REQ_FNAME = "pip-req-lock.txt"
 DUMP_USER_PIP_REQ_FNAME = "pip-req.txt"
@@ -41,10 +41,14 @@ def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
     check_call(cmd)
 
 
-def setup_venv(venvdir: t.Union[str, Path]) -> None:
-    venvdir = str(venvdir)
+def venv_activate(venvdir: t.Union[str, Path]) -> None:
+    _fpath = Path(venvdir) / "bin" / "activate"
+    check_call(['source', str(_fpath.absolute())])
+
+
+def venv_setup(venvdir: t.Union[str, Path]) -> None:
     #TODO: define starwhale virtualenv.py
-    check_call(['python3', '-m', 'venv', venvdir])
+    check_call(['python3', '-m', 'venv', str(venvdir)])
 
 
 def pip_freeze(path: t.Union[str, Path]) -> bytes:
@@ -54,10 +58,32 @@ def pip_freeze(path: t.Union[str, Path]) -> bytes:
 
 def conda_export(path: t.Union[str, Path], env:str="") -> bytes:
     #TODO: add cmd timeout
-    cmd = "conda env export"
+    cmd = f"{get_conda_bin()} env export"
     env = f"-n {env}" if env else ""
     return subprocess.check_output(f"{cmd} {env} > {path}", shell=True, stderr=subprocess.STDOUT)
 
+
+def conda_restore(env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]) -> bytes:
+    cmd = f"{get_conda_bin()} env create --file {env_fpath} --prefix {target_env}"
+    return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+
+
+def conda_activate(env: t.Union[str, Path]) -> None:
+    check_call([get_conda_bin(), "activate", str(env)])
+
+
+def get_conda_bin() -> str:
+    #TODO: add process cache
+    for _p in (
+        "/opt/miniconda3/bin/conda",
+        "/opt/anaconda3/bin/conda",
+        "~/miniconda3/bin/conda",
+        "~/anaconda3/bin/conda",
+    ):
+        if os.path.exists(_p):
+            return _p
+    else:
+        return "conda"
 
 def dump_python_dep_env(dep_dir: t.Union[str, Path],
                         pip_req_fpath: str,
@@ -91,6 +117,9 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
 
     logger.info(f"[info:dep]python env({pr_env}), os({sys_name}, python({py_ver}))")
 
+    if os.path.exists(pip_req_fpath):
+        copy_fs(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
+
     if is_conda():
         logger.info(f"[info:dep]dump conda environment yaml: {_conda_lock_env}")
         conda_export(_conda_lock_env)
@@ -122,13 +151,12 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
         else:
             #TODO: tune venv create performance, use clone?
             logger.info(f"[info:dep]build venv dir: {_venv_dir}")
-            setup_venv(_venv_dir)
+            venv_setup(_venv_dir)
             logger.info(f"[info:dep]install pip freeze({_pip_lock_req}) to venv: {_venv_dir}")
             install_req(_venv_dir, _pip_lock_req)
-            if pip_req_fpath:
+            if os.path.exists(pip_req_fpath):
                 logger.info(f"[info:dep]install custom pip({pip_req_fpath}) to venv: {_venv_dir}")
                 install_req(_venv_dir, pip_req_fpath)
-                copy_fs(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
     else:
         raise NoSupportError(f"no support {sys_name} system")
 
