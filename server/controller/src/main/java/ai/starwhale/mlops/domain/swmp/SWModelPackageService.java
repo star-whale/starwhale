@@ -15,6 +15,9 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
+import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.exception.SWAuthException;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -57,6 +60,9 @@ public class SWModelPackageService {
 
     @Resource
     private StorageAccessService storageAccessService;
+
+    @Resource
+    private UserService userService;
 
     public List<SWModelPackageVO> listSWMP(SWMPObject swmp, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -199,7 +205,10 @@ public class SWModelPackageService {
     }
 
     private Long getOwner() {
-        //TODO(renyanda) get owner from session
-        return 1L;
+        User currentUserDetail = userService.currentUserDetail();
+        if(null == currentUserDetail){
+            throw new SWAuthException(SWAuthException.AuthType.SWMP_UPLOAD);
+        }
+        return Long.valueOf(currentUserDetail.getIdTableKey());
     }
 }

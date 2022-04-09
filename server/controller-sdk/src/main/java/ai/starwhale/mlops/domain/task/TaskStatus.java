@@ -19,105 +19,76 @@ public enum TaskStatus {
      * doing: assigning to agent
      * done: assigned to agent
      */
-    CREATED(0x110, JobStatus.SPLIT),
-
-    /**
-     * after assigned to an Agent before assignment is acknowledged
-     */
-    ASSIGNING(0x120, JobStatus.SCHEDULING),
+    CREATED(0x110, JobStatus.RUNNING, false),
 
     /**
      * after assignment is acknowledged before running
      */
-    PREPARING(0x130, JobStatus.SCHEDULED),
+    PREPARING(0x130, JobStatus.RUNNING, false),
 
     /**
      * running
      */
-    RUNNING(0x140, JobStatus.SCHEDULED),
+    RUNNING(0x140, JobStatus.RUNNING, false),
 
     /**
      * after task exit normally(container is stopped)
      */
-    UPLOADING(0x150, JobStatus.SCHEDULED),
+    UPLOADING(0x150, JobStatus.RUNNING, false),
 
 
     /**
      * after task exit normally before finished. garbage clearing
      */
-    CLOSING(0x160, JobStatus.SCHEDULED),
+    CLOSING(0x160, JobStatus.RUNNING, false),
 
     /**
      * garbage is cleared
      */
-    FINISHED(0xf00, JobStatus.FINISHED),
+    FINISHED(0xf00, JobStatus.COLLECT_RESULT, true),
 
     /**
      * when report successfully to the controller,it should be archived (Agent only status)
      */
-    ARCHIVED(0xf10, JobStatus.FINISHED),
+    ARCHIVED(0xf10, JobStatus.COLLECT_RESULT, true),
 
     /**
      * canceling triggered by the user
      */
-    CANCEL(0x210, JobStatus.TO_CANCEL),
+    CANCEL(0x210, JobStatus.TO_CANCEL, false),
 
     /**
-     * canceling request sent to Agent before real canceled
+     * canceling triggered by the user
      */
-    CANCEL_COMMANDING(0x220, JobStatus.TO_CANCEL),
-
-    /**
-     * canceling request sent to Agent before real canceled
-     */
-    CANCELING(0x230, JobStatus.TO_CANCEL),
-
-    /**
-     * canceled by the controller
-     */
-    CANCELED(0x240, JobStatus.CANCELED),
+    CANCELED(0x220, JobStatus.CANCELED, true),
 
     /**
      * task exit with unexpected error
      */
-    EXIT_ERROR(-0x10,JobStatus.EXIT_ERROR),
+    EXIT_ERROR(-0x10,JobStatus.EXIT_ERROR, true),
 
     /**
      * UNKNOWN from an Integer
      */
-    UNKNOWN(-0xf0,JobStatus.UNKNOWN);
+    UNKNOWN(-0xf0,JobStatus.UNKNOWN, false);
 
     final int order;
 
-    TaskStatus next;
-
     final JobStatus desiredJobStatus;
 
-    static {
-        CREATED.next = ASSIGNING;
-        ASSIGNING.next = PREPARING;
-        PREPARING.next = RUNNING;
-        RUNNING.next = CLOSING;
-        CLOSING.next = FINISHED;
-        FINISHED.next = FINISHED;
-        CANCEL.next = CANCEL_COMMANDING;
-        CANCEL_COMMANDING.next = CANCELING;
-        CANCELING.next = CANCELED;
-        CANCELED.next = CANCELED;
-        EXIT_ERROR.next = EXIT_ERROR;
-    }
+    /**
+     * no subsequent statues reported to controller
+     */
+    final boolean finalStatus;
 
-    TaskStatus(int order,JobStatus jobStatus){
+    TaskStatus(int order,JobStatus jobStatus,boolean finalStatus){
         this.order = order;
         this.desiredJobStatus = jobStatus;
+        this.finalStatus = finalStatus;
     }
 
-    public TaskStatus next(){
-        return this.next;
-    }
-
-    public boolean before(TaskStatus nextStatus){
-        return this.order < nextStatus.order;
+    public boolean isFinalStatus() {
+        return finalStatus;
     }
 
     public int getOrder(){

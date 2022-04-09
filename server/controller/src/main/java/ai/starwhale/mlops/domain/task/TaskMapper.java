@@ -18,4 +18,7 @@ public interface TaskMapper {
     List<TaskEntity> findTaskByStatus(@Param("taskStatus") int taskStatus);
 
     List<TaskEntity> findTaskByStatusIn(@Param("taskStatusList") List<Integer> taskStatusList);
+
+    void updateTaskAgent(@Param("ids") List<Long> taskIds,@Param("agentId") Long agentId);
 }
+

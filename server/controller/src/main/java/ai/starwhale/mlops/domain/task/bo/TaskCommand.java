@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 public class TaskCommand {
 
     public enum CommandType{
-        CANCEL(new StagingTaskStatus(TaskStatus.CANCEL_COMMANDING)),TRIGGER(new StagingTaskStatus(TaskStatus.ASSIGNING)),UNKNOWN(new StagingTaskStatus(TaskStatus.UNKNOWN));
+        CANCEL(new StagingTaskStatus(TaskStatus.CANCEL,TaskStatusStage.DOING)),TRIGGER(new StagingTaskStatus(TaskStatus.CREATED,TaskStatusStage.DOING)),UNKNOWN(new StagingTaskStatus(TaskStatus.UNKNOWN));
         final StagingTaskStatus correspondStatus;
         CommandType(StagingTaskStatus status){
             correspondStatus = status;
@@ -43,7 +43,7 @@ public class TaskCommand {
 
     public boolean agentProper(Task nodeTask){
         return null != nodeTask
-            && this.commandType.correspondStatus.compareTo(nodeTask.getStatus()) <= 0;
+            && this.commandType.correspondStatus.clearStage().compareTo(nodeTask.getStatus()) <= 0;
     }
 
 }

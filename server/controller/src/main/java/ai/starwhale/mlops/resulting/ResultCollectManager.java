@@ -8,6 +8,9 @@
 package ai.starwhale.mlops.resulting;
 
 import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
+import ai.starwhale.mlops.domain.job.Job.JobStatus;
+import ai.starwhale.mlops.domain.job.JobEntity;
+import ai.starwhale.mlops.domain.job.JobMapper;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskMapper;
@@ -34,24 +37,27 @@ import org.springframework.stereotype.Service;
 /**
  * coordinate collectors of jobs
  */
-//todo(renyanda) status consistency is a big problem to be refined
 @Slf4j
 @Service
 public class ResultCollectManager {
 
     final TaskMapper taskMapper;
 
+    final JobMapper jobMapper;
+
     final CollectorFinder collectorFinder;
 
     final LivingTaskStatusMachine livingTaskStatusMachine;
 
-    //todo(renyanda) how to free result collector of job
     final Map<Long,ResultCollector> resultCollectors = new ConcurrentHashMap<>();
 
     final StorageAccessService storageAccessService;
 
-    public ResultCollectManager(TaskMapper taskMapper, CollectorFinder collectorFinder, LivingTaskStatusMachine livingTaskStatusMachine, StorageAccessService storageAccessService) {
+    public ResultCollectManager(TaskMapper taskMapper,
+        JobMapper jobMapper, CollectorFinder collectorFinder,
+        LivingTaskStatusMachine livingTaskStatusMachine, StorageAccessService storageAccessService) {
         this.taskMapper = taskMapper;
+        this.jobMapper = jobMapper;
         this.collectorFinder = collectorFinder;
         this.livingTaskStatusMachine = livingTaskStatusMachine;
         this.storageAccessService = storageAccessService;
@@ -59,30 +65,45 @@ public class ResultCollectManager {
 
     public EvaluationResult resultOfJob(Long jobId){
         final ResultCollector resultCollector = getResultCollector(jobId);
-        final List<Indicator> indicators = resultCollector.collect();
-        return new EvaluationResult(resultCollector.getClass().getName(),indicators);
+        return new EvaluationResult(resultCollector.getClass().getName(),resultCollector.collect());
     }
 
-    ResultCollector getResultCollector(Long jobId) throws SWValidationException{
-        return resultCollectors
-            .computeIfAbsent(jobId,
-                jid -> collectorFinder.findCollector(jid).orElseThrow(()-> new SWValidationException(
-                    ValidSubject.JOB)));
+    /**
+     * collection done jobs will be persist to DB by TaskStatusMachine
+     */
+    @Scheduled(fixedDelay = 1000)
+    public void removeFinishedJobs(){
+        List<Long> collectDoneJobs = resultCollectors.keySet().parallelStream().filter(jobId -> {
+            JobEntity jobEntity = jobMapper.findJobById(jobId);
+            return jobEntity.getJobStatus() == JobStatus.FINISHED.getValue()
+                || jobEntity.getJobStatus() == JobStatus.CANCELED.getValue()
+                || jobEntity.getJobStatus() == JobStatus.EXIT_ERROR.getValue();
+        }).peek(jobId->{
+            try {
+                resultCollectors.get(jobId).dump();
+            } catch (IOException e) {
+                log.error("dumping result of job {} failed",jobId,e);
+                jobMapper.updateJobStatus(List.of(jobId),JobStatus.EXIT_ERROR.getValue());
+            }
+        })
+            .collect(Collectors.toList());
+
+        collectDoneJobs.parallelStream().forEach(doneJob->resultCollectors.remove(doneJob));
     }
 
     @Scheduled(fixedDelay = 1000)
     public void onTaskFinished(){
         final Collection<Task> finishedTasks = livingTaskStatusMachine.ofStatus(new StagingTaskStatus(TaskStatus.FINISHED));
-        livingTaskStatusMachine.adopt(finishedTasks,new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.DOING));
+        livingTaskStatusMachine.update(finishedTasks,new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.DOING));
         finishedTasks.parallelStream()
             .forEach(taskEntity->{
                 ResultCollector collector;
                 final Long taskEntityId = taskEntity.getId();
                 try{
-                    collector = getResultCollector(taskEntity.getJob().getId());
+                    collector = getResultCollectorFromCache(taskEntity.getJob().getId());
                 }catch (SWValidationException e){
                     log.error("no result collector found for task {}",taskEntityId);
-                    livingTaskStatusMachine.adopt(List.of(taskEntity),new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.FAILED));
+                    livingTaskStatusMachine.update(List.of(taskEntity),new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.FAILED));
                     return;
                 }
 
@@ -92,6 +113,7 @@ public class ResultCollectManager {
                     resultLabels = storageAccessService.list(resultLabelPath);
                 } catch (IOException e) {
                     log.error("listing inference results for task failed {}",taskEntityId,e);
+                    livingTaskStatusMachine.update(List.of(taskEntity),new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.FAILED));
                     return;
                 }
                 resultLabels.forEach((labelComparePath)->{
@@ -99,13 +121,23 @@ public class ResultCollectManager {
                         collector.feed(labelIS);
                     }catch (IOException e){
                         log.error("reading labels failed for task {}",taskEntityId,e);
-                        livingTaskStatusMachine.adopt(List.of(taskEntity),new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.FAILED));
+                        livingTaskStatusMachine.update(List.of(taskEntity),new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.FAILED));
                     }
-
                 });
-
+                livingTaskStatusMachine.update(finishedTasks,new StagingTaskStatus(TaskStatus.FINISHED,TaskStatusStage.DONE));
             });
 
+    }
+
+    ResultCollector getResultCollectorFromCache(Long jobId) throws SWValidationException{
+        return resultCollectors
+            .computeIfAbsent(jobId,
+                jid -> getResultCollector(jid));
+    }
+
+    private ResultCollector getResultCollector(Long jid) {
+        return collectorFinder.findCollector(jid).orElseThrow(()-> new SWValidationException(
+            ValidSubject.JOB));
     }
 
     @PreDestroy

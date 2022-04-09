@@ -88,7 +88,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
             throw new SWValidationException(ValidSubject.SWDS);
         }
         taskMapper.addAll(taskList);
-        jobMapper.updateJobStatus(List.of(job.getId()),JobStatus.SPLIT.getValue());
+        jobMapper.updateJobStatus(List.of(job.getId()),JobStatus.RUNNING.getValue());
         return taskBoConverter.fromTaskEntity(taskList,job);
     }
 

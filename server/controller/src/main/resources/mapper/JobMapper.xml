@@ -67,9 +67,13 @@
         and j.id = #{jobId}
     </select>
 
-    <select id="findJobByStatus" resultMap="jobResultMap" >
+    <select id="findJobByStatusIn" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
-        and j.job_status = #{jobStatus}
+        and j.job_status in
+        <foreach item="item" index="index" collection="jobStatuses"
+          open="(" separator="," close=")">
+            #{item}
+        </foreach>
     </select>
 
     <update id="updateJobStatus">

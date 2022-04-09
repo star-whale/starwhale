@@ -21,5 +21,5 @@ public interface StorageAccessService {
     void put(String path,byte[] body) throws IOException;
     InputStream get(String path) throws IOException;
     Stream<String> list(String path) throws IOException;
-
+    void delete(String path) throws IOException;
 }

@@ -29,7 +29,6 @@ public class TaskPool {
         public void fill(EvaluationTask task) {
             switch (task.getStatus()) {
                 case CREATED:
-                case ASSIGNING:
                     break;
                 case PREPARING:
                     preparingTasks.add(task);

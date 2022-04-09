@@ -18,8 +18,7 @@ public class Init2PreparingAction extends AbsBaseTaskTransition {
 
     @Override
     public boolean valid(EvaluationTask obj, Context context) {
-        return obj.getStatus() == TaskStatus.CREATED
-            || obj.getStatus() == TaskStatus.ASSIGNING;
+        return obj.getStatus() == TaskStatus.CREATED;
     }
 
     @Override

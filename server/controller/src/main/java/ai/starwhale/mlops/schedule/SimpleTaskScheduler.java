@@ -34,12 +34,9 @@ public class SimpleTaskScheduler implements TaskScheduler {
 
     final Map<Device.Clazz, ConcurrentLinkedQueue<Task>> taskQueueTable;
 
-    final TaskMapper taskMapper;
-
-    public SimpleTaskScheduler(TaskMapper taskMapper) {
+    public SimpleTaskScheduler() {
         this.taskQueueTable = Map.of(Clazz.CPU, new ConcurrentLinkedQueue<>(),
             Clazz.GPU, new ConcurrentLinkedQueue<>());
-        this.taskMapper = taskMapper;
     }
 
     @Override
@@ -56,8 +53,6 @@ public class SimpleTaskScheduler implements TaskScheduler {
             .map(device -> taskQueueTable.get(device.getClazz()).poll())// pull task from the device corresponding queue
             .filter(Objects::nonNull)//remove null tasks got from empty queue
             .collect(Collectors.toList());
-
-        //todo(renyanda): save node info to task
     }
 
     private void validNode(Node node) {

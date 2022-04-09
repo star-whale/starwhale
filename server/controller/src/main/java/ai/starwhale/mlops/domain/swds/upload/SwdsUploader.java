@@ -12,6 +12,9 @@ import ai.starwhale.mlops.domain.swds.SWDatasetEntity;
 import ai.starwhale.mlops.domain.swds.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionMapper;
+import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.exception.SWAuthException;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -24,7 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import javax.annotation.Resource;
+
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -46,6 +50,8 @@ public class SwdsUploader {
 
     final StorageAccessService storageAccessService;
 
+    final UserService userService;
+
     /**
      * prefix + / + fileName
      */
@@ -53,12 +59,13 @@ public class SwdsUploader {
 
     final ObjectMapper yamlMapper;
 
-    public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper, SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService, @Qualifier("yamlMapper") ObjectMapper yamlMapper) {
+    public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper, SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService, UserService userService, @Qualifier("yamlMapper") ObjectMapper yamlMapper) {
         this.hotSwdsHolder = hotSwdsHolder;
         this.swdsMapper = swdsMapper;
         this.swdsVersionMapper = swdsVersionMapper;
         this.storagePathCoordinator = storagePathCoordinator;
         this.storageAccessService = storageAccessService;
+        this.userService = userService;
         this.yamlMapper = yamlMapper;
     }
 
@@ -68,8 +75,14 @@ public class SwdsUploader {
         hotSwdsHolder.cancel(Long.valueOf(uploadId));
         final String storagePath = swDatasetVersionEntity.getStoragePath();
         try {
-            storageAccessService.list(storagePath);
-            //todo(renyanda): clear storage remove dataset from db asynchronously
+            Stream<String> files = storageAccessService.list(storagePath);
+            files.parallel().forEach(file-> {
+                try {
+                    storageAccessService.delete(file);
+                } catch (IOException e) {
+                    log.error("clear file failed {}",file,e);
+                }
+            });
         } catch (IOException e) {
             log.error("delete storage objects failed for {}",uploadId,e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),
@@ -165,8 +178,11 @@ public class SwdsUploader {
     }
 
     private Long getOwner() {
-        //TODO(renyanda) get owner from session
-        return 1L;
+        User currentUserDetail = userService.currentUserDetail();
+        if(null == currentUserDetail){
+            throw new SWAuthException(SWAuthException.AuthType.SWDS_UPLOAD);
+        }
+        return Long.valueOf(currentUserDetail.getIdTableKey());
     }
 
 
