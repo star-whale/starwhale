@@ -24,7 +24,7 @@ from starwhale.utils.venv import (
     DUMP_USER_PIP_REQ_FNAME, install_req, venv_activate,
     conda_activate, conda_restore, venv_setup,
 )
-from starwhale.utils.fs import ensure_dir
+from starwhale.utils.fs import ensure_dir, empty_dir
 from starwhale.base.store import LocalStorage
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.http import wrap_sw_error_resp
@@ -203,9 +203,9 @@ class ModelPackageLocalStore(LocalStorage):
         _conda_dir = _workdir / "dep" / "conda"
         _tar_fpath = _conda_dir / CONDA_ENV_TAR
         _env_dir = _conda_dir / "env"
-        if not _env_dir.exists():
-            #TODO: cleanup env dir first?
-            ensure_dir(_env_dir)
+
+        empty_dir(_env_dir)
+        ensure_dir(_env_dir)
 
         if _dep["local_gen_env"] and _tar_fpath.exists():
             logger.info(f"extract {_tar_fpath} ...")
@@ -218,8 +218,7 @@ class ModelPackageLocalStore(LocalStorage):
             logger.info(f"restore conda env ...")
             _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
             #TODO: controller will proceed in advance
-            output = conda_restore(_env_yaml, _env_dir)
-            logger.debug(f"conda environment restore: {output.decode()}")
+            conda_restore(_env_yaml, _env_dir)
 
             logger.info(f"activate conda {_env_dir} ...")
             conda_activate(_env_dir)
@@ -228,7 +227,7 @@ class ModelPackageLocalStore(LocalStorage):
         if not _dep["venv"]["use"] and not _rebuild:
             raise Exception("env set venv, but venv:use is false")
 
-        _python_dir = _workdir / "python"
+        _python_dir = _workdir / "dep" / "python"
         _venv_dir = _python_dir / "venv"
 
         if _rebuild or not _dep["local_gen_env"] or not (_venv_dir / "bin" / "activate").exists():

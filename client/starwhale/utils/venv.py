@@ -2,12 +2,10 @@ import os
 import platform
 import typing as t
 from pathlib import Path
-import subprocess
-from subprocess import check_call, check_output
+import shutil
 
 from loguru import logger
 import conda_pack
-from fs.copy import copy_fs
 
 from starwhale.utils import (
     get_python_run_env, get_python_version,
@@ -16,6 +14,7 @@ from starwhale.utils import (
 )
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.fs import ensure_dir
+from starwhale.utils.process import check_call
 
 
 CONDA_ENV_TAR = "env.tar.gz"
@@ -43,7 +42,8 @@ def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
 
 def venv_activate(venvdir: t.Union[str, Path]) -> None:
     _fpath = Path(venvdir) / "bin" / "activate"
-    check_call(['source', str(_fpath.absolute())])
+    cmd = f"source {_fpath.absolute()}"
+    check_call(cmd, shell=True, executable="/bin/bash")
 
 
 def venv_setup(venvdir: t.Union[str, Path]) -> None:
@@ -51,25 +51,26 @@ def venv_setup(venvdir: t.Union[str, Path]) -> None:
     check_call(['python3', '-m', 'venv', str(venvdir)])
 
 
-def pip_freeze(path: t.Union[str, Path]) -> bytes:
+def pip_freeze(path: t.Union[str, Path]):
     #TODO: add cmd timeout and error log
-    return check_output(f"pip freeze > {path}", shell=True, stderr=subprocess.STDOUT)
+    check_call(f"pip freeze > {path}", shell=True)
 
 
-def conda_export(path: t.Union[str, Path], env:str="") -> bytes:
+def conda_export(path: t.Union[str, Path], env:str=""):
     #TODO: add cmd timeout
     cmd = f"{get_conda_bin()} env export"
     env = f"-n {env}" if env else ""
-    return subprocess.check_output(f"{cmd} {env} > {path}", shell=True, stderr=subprocess.STDOUT)
+    check_call(f"{cmd} {env} > {path}", shell=True)
 
 
 def conda_restore(env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]) -> bytes:
     cmd = f"{get_conda_bin()} env create --file {env_fpath} --prefix {target_env}"
-    return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+    check_call(cmd, shell=True)
 
 
 def conda_activate(env: t.Union[str, Path]) -> None:
-    check_call([get_conda_bin(), "activate", str(env)])
+    cmd = f"{get_conda_bin()} activate {env}"
+    check_call(cmd, shell=True)
 
 
 def get_conda_bin() -> str:
@@ -77,8 +78,8 @@ def get_conda_bin() -> str:
     for _p in (
         "/opt/miniconda3/bin/conda",
         "/opt/anaconda3/bin/conda",
-        "~/miniconda3/bin/conda",
-        "~/anaconda3/bin/conda",
+        os.path.expanduser("~/miniconda3/bin/conda"),
+        os.path.expanduser("~/anaconda3/bin/conda"),
     ):
         if os.path.exists(_p):
             return _p
@@ -118,7 +119,7 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
     logger.info(f"[info:dep]python env({pr_env}), os({sys_name}, python({py_ver}))")
 
     if os.path.exists(pip_req_fpath):
-        copy_fs(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
+        shutil.copyfile(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
 
     if is_conda():
         logger.info(f"[info:dep]dump conda environment yaml: {_conda_lock_env}")

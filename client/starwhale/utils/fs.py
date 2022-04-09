@@ -1,4 +1,5 @@
 import os
+import shutil
 import typing as t
 import errno
 from pathlib import Path
@@ -25,6 +26,17 @@ def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> No
         _tmp_f.rename(path)
 
     os.chmod(path, mode)
+
+
+def empty_dir(path: t.Union[str, Path]) -> None:
+    path = Path(path)
+    if not path.exists():
+        return
+
+    if path.is_dir():
+        shutil.rmtree(str(path.resolve()))
+    else:
+        path.unlink()
 
 
 def ensure_dir(path: t.Union[str, Path], mode: int=0o755, recursion: bool=True) ->None:

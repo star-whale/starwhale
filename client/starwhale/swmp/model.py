@@ -277,6 +277,7 @@ class ModelPackage(object):
         copy_fs(workdir_fs, src_fs,
                 walker=Walker(
                     filter=["*.py", self._model_yaml_fname] + SUPPORTED_PIP_REQ + _mc.run.pkg_data,
+                    exclude_dirs=_mc.run.exclude_pkg_data,
                 ), workers=DEFAULT_COPY_WORKERS)
 
         for _fname in _mc.config + _mc.model:
