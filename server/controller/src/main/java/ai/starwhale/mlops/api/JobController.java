@@ -4,6 +4,7 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
+import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.JobService;
@@ -61,6 +62,14 @@ public class JobController implements JobApi{
     public ResponseEntity<ResponseMessage<String>> action(String projectId, String jobId,
         String action) {
         return ResponseEntity.ok(Code.success.asResponse("Success: " + action));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<EvaluationResult>> getJobResult(String projectId,
+        String jobId) {
+
+        EvaluationResult jobResult = jobService.getJobResult(projectId, jobId);
+        return ResponseEntity.ok(Code.success.asResponse(jobResult));
     }
 
 
