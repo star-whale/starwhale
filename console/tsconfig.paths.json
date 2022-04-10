@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"],
+      "@user/*": ["src/domain/user/*"],
+      "@project/*": ["src/domain/project/*"],
+      "@model/*": ["src/domain/model/*"],
+      "@job/*": ["src/domain/job/*"],
+      "@dataset/*": ["src/domain/dataset/*"],
+      "@base/*": ["src/domain/base/*"],
+    }
+  }
+}
