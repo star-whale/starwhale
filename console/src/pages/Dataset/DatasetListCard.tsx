@@ -31,7 +31,7 @@ export default function DatasetListCard() {
 
     return (
         <Card
-            title={t('datasets')}
+            title={t('Datasets')}
             extra={
                 <Button size={ButtonSize.compact} onClick={() => setIsCreateDatasetOpen(true)}>
                     {t('create')}

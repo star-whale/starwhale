@@ -38,7 +38,7 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('models'),
+                title: t('Models'),
                 path: `/projects/${project?.id}/models`,
             },
             {

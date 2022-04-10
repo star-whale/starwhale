@@ -1,4 +1,4 @@
-import en from 'javascript-time-ago/locale/en.json';
+import en from 'javascript-time-ago/locale/en.json'
 export interface ILocaleItem {
     en: string
 }
@@ -25,8 +25,8 @@ const locales0 = {
     'model versions': {
         en: 'model versions',
     },
-    'models': {
-        en: 'models',
+    'Models': {
+        en: 'Models',
     },
     'Model Information': {
         en: 'Model Information',
@@ -41,7 +41,7 @@ const locales0 = {
         en: 'dataset versions',
     },
     'datasets': {
-        en: 'datasets',
+        en: 'Datasets',
     },
     'Datasets': {
         en: 'Datasets',
@@ -61,8 +61,8 @@ const locales0 = {
     'tasks': {
         en: 'tasks',
     },
-    'jobs': {
-        en: 'jobs',
+    'Jobs': {
+        en: 'Jobs',
     },
     'PROJECT': {
         en: 'PROJECT',
@@ -221,8 +221,8 @@ const locales0 = {
         en: 'login',
     },
     'overview': {
-        en: 'overview'
-    }
+        en: 'overview',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

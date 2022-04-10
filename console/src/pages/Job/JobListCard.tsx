@@ -45,7 +45,7 @@ export default function JobListCard() {
     return (
         <ErrorBoundary>
             <Card
-                title={t('jobs')}
+                title={t('Jobs')}
                 extra={
                     <Button
                         size={ButtonSize.compact}

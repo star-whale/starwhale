@@ -37,7 +37,7 @@ export default function TaskLayout({ children }: IJobLayoutProps) {
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('jobs'),
+                title: t('Jobs'),
                 path: `/projects/${project?.id}/jobs`,
             },
             {

@@ -31,7 +31,7 @@ export default function ModelListCard() {
 
     return (
         <Card
-            title={t('models')}
+            title={t('Models')}
             extra={
                 <Button size={ButtonSize.compact} onClick={() => setIsCreateModelOpen(true)}>
                     {t('create')}

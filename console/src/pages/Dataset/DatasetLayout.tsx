@@ -45,7 +45,7 @@ export default function DatasetLayout({ children }: IDatasetLayoutProps) {
             //     path: `/projects/${project?.id}`,
             // },
             {
-                title: t('datasets'),
+                title: t('Datasets'),
                 path: `/projects/${project?.id}/datasets`,
             },
             {

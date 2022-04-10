@@ -37,7 +37,7 @@ export default function DatasetVersionLayout({ children }: IDatasetLayoutProps) 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('datasets'),
+                title: t('Datasets'),
                 path: `/projects/${project?.id}/datasets`,
             },
             {

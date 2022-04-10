@@ -42,9 +42,9 @@ example/mnist/sw_output
 example/mnist/test/task_volume
 
 # UI
-/node_modules
-/coverage
-/build
+node_modules
+coverage
+build
 .DS_Store
 .env.local
 .env.development.local

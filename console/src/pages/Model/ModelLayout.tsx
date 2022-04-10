@@ -45,7 +45,7 @@ export default function ModelLayout({ children }: IModelLayoutProps) {
             //     path: `/projects/${project?.id}`,
             // },
             {
-                title: t('models'),
+                title: t('Models'),
                 path: `/projects/${project?.id}/models`,
             },
             {

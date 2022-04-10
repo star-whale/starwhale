@@ -45,7 +45,7 @@ export default function JobLayout({ children }: IJobLayoutProps) {
             //     path: `/projects/${project?.id}`,
             // },
             {
-                title: t('jobs'),
+                title: t('Jobs'),
                 path: `/projects/${project?.id}/jobs`,
             },
             {
