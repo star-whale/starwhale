@@ -25,11 +25,12 @@
         where id = #{id}
     </update>
 
-    <select id="listProjects" parameterType="java.lang.String" resultMap="projectResultMap" >
+    <sql id="select_project">
         select p.id as project_id,
                p.project_name,
                p.owner_id,
                p.is_deleted as project_is_deleted,
+               p.is_default as project_is_default,
                p.created_time as project_created_time,
                p.modified_time as project_modified_time,
                u.id as user_id,
@@ -42,39 +43,35 @@
         from project_info as p,
              user_info as u,
              user_role as r
-        where p.is_deleted = 0
-          and u.id = p.owner_id
+        where u.id = p.owner_id
           and r.id = u.role_id
+    </sql>
+
+    <select id="listProjects" parameterType="java.lang.String" resultMap="projectResultMap" >
+        <include refid="select_project"/>
+        and p.is_deleted = 0
         <if test="projectName != null and projectName != ''">
             and p.project_name like concat(#{projectName}, '%')
         </if>
     </select>
 
     <select id="findProject" parameterType="java.lang.Long" resultMap="projectResultMap">
-        select p.id as project_id,
-               p.project_name,
-               p.owner_id,
-               p.is_deleted as project_is_deleted,
-               p.created_time as project_created_time,
-               p.modified_time as project_modified_time,
-               u.id as user_id,
-               u.user_name,
-               u.created_time as user_created_time,
-               u.user_enabled,
-               r.id as role_id,
-               r.role_name,
-               r.role_name_en
-        from project_info as p,
-             user_info as u,
-             user_role as r
-        where p.id = #{id}
-          and u.id = p.owner_id
+        <include refid="select_project"/>
+        and p.id = #{id}
     </select>
+
+    <select id="findDefaultProject" parameterType="java.lang.Long" resultMap="projectResultMap">
+        <include refid="select_project"/>
+        and p.owner_id = #{userId}
+        and p.is_default = 1
+    </select>
+
 
     <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.ProjectEntity">
         <id property="id" column="project_id" />
         <result property="projectName" column="project_name"/>
         <result property="isDeleted" column="project_is_deleted"/>
+        <result property="isDefault" column="project_is_default"/>
         <result property="createdTime" column="project_created_time"/>
         <result property="modifiedTime" column="project_modified_time"/>
         <result property="ownerId" column="owner_id" />

@@ -25,6 +25,8 @@ public class Project {
 
     private String ownerId;
 
+    private boolean isDefault;
+
     public Project fromEntity(ProjectEntity entity) {
         return fromEntity(entity, null);
     }

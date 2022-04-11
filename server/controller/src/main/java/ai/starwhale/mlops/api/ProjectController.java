@@ -55,6 +55,7 @@ public class ProjectController implements ProjectApi{
             .createProject(Project.builder()
                 .name(projectRequest.getProjectName())
                 .ownerId(user.getId())
+                .isDefault(false)
                 .build());
         return ResponseEntity.ok(Code.success.asResponse(projectId));
 
