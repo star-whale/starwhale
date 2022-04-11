@@ -1,23 +1,29 @@
 #!/usr/bin/env bash
 
-set -e
+set -xe
 ulimit -n 65535 || true
 
-CONDA_BIN="/opt/miniconda3/bin/"
-WORKDIR="/opt/starwhale/"
+CONDA_BIN="/opt/miniconda3/bin"
+WORKDIR="/opt/starwhale"
+RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}')
 
 _update_python_alter() {
     echo "--> set python/python3 to $1 ..."
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/$1 10
     update-alternatives --install /usr/bin/python python /usr/bin/$1 10
+    python3 --version
 }
 
 pre_check() {
     echo "--> run pre check for swmp model dir ..."
-    #TODO: add swmp check cmd
-    #swcli swmp check .
+    cd ${WORKDIR}
 
-    if [! -f "${SW_TASK_SWDS_CONFIG}" ]; then
+    if [ ! -f "_manifest.yaml" ] || [ ! -f "model.yaml" ]; then
+        echo "${WORKDIR} is not starwhale target dir, will exit"
+        exit 1
+    fi
+
+    if [ ! -f "${SW_TASK_SWDS_CONFIG}" ]; then
         echo "${SW_TASK_SWDS_CONFIG} not found, please set env and volume file into container"
         exit 1
     fi
@@ -33,7 +39,7 @@ set_python() {
 
 activate_swmp_env() {
     echo '--> prepare activate swmp env ...'
-    swcli swmp pre-activate .
+    swcli model pre-activate .
 
     echo '--> source activate ...'
     $(sh ./activate.sw)
@@ -41,7 +47,7 @@ activate_swmp_env() {
 
 run_ppl() {
     echo "--> start to run swmp ppl ..."
-    swcli swmp ppl ${WORKDIR}/src
+    swcli model ppl ${WORKDIR}/src
 }
 
 welcome() {
