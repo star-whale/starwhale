@@ -32,8 +32,11 @@ set_python() {
 }
 
 activate_swmp_env() {
-    echo '--> activate swmp env ...'
-    swcli swmp activate .
+    echo '--> prepare activate swmp env ...'
+    swcli swmp pre-activate .
+
+    echo '--> source activate ...'
+    $(sh ./activate.sw)
 }
 
 run_ppl() {

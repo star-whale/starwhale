@@ -6,6 +6,7 @@ import shutil
 
 from loguru import logger
 import conda_pack
+from rich import print as rprint
 
 from starwhale.utils import (
     get_python_run_env, get_python_version,
@@ -13,7 +14,7 @@ from starwhale.utils import (
     get_conda_env,
 )
 from starwhale.utils.error import NoSupportError
-from starwhale.utils.fs import ensure_dir
+from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.process import check_call
 
 
@@ -21,6 +22,7 @@ CONDA_ENV_TAR = "env.tar.gz"
 DUMP_CONDA_ENV_FNAME = "env-lock.yaml"
 DUMP_PIP_REQ_FNAME = "pip-req-lock.txt"
 DUMP_USER_PIP_REQ_FNAME = "pip-req.txt"
+SW_ACTIVATE_SCRIPT = "activate.sw"
 
 SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
 
@@ -73,6 +75,23 @@ def conda_activate(env: t.Union[str, Path]) -> None:
     check_call(cmd, shell=True)
 
 
+def conda_activate_render(env: t.Union[str, Path], path: Path) -> None:
+    content = f"echo '{get_conda_bin()} activate {env}'"
+    _render_sw_activate(content, path)
+
+
+def venv_activate_render(venvdir: t.Union[str, Path], path: Path) -> None:
+    content = f"echo 'source {venvdir}/bin/activate'"
+    _render_sw_activate(content, path)
+
+
+def _render_sw_activate(content: str, path: Path) -> None:
+    ensure_file(path, content, mode=0o755)
+    rprint(f" :clap: {path.name} is generated at {path}")
+    rprint(f" :compass: run cmd:  ")
+    rprint(f" \t [bold red] $(sh {path}) [/]")
+
+
 def get_conda_bin() -> str:
     #TODO: add process cache
     for _p in (
@@ -85,6 +104,7 @@ def get_conda_bin() -> str:
             return _p
     else:
         return "conda"
+
 
 def dump_python_dep_env(dep_dir: t.Union[str, Path],
                         pip_req_fpath: str,

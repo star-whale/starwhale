@@ -97,8 +97,9 @@ def _ppl(swmp, model_yaml, status_dir, log_dir, result_dir, swds_config):
                       "result_dir": result_dir,
                       "swds_config": swds_config})
 
-@model_cmd.command("activate", help="Restore and activate swmp runtime environment")
+@model_cmd.command("pre-activate", help="Prepare to restore and activate swmp runtime environment")
 @click.argument("swmp")
-def _activate(swmp):
+def _pre_activate(swmp):
     #TODO: add auto decompress
-    ModelPackageLocalStore().activate(swmp)
+    #TODO: set activate.sw path
+    ModelPackageLocalStore().pre_activate(swmp)
