@@ -82,15 +82,16 @@ def conda_activate_render(env: t.Union[str, Path], path: Path) -> None:
 
 
 def venv_activate_render(venvdir: t.Union[str, Path], path: Path, relocate: bool=False) -> None:
+    bin = f"{venvdir}/bin"
     if relocate:
         content = f"""
-sed -i '1d' starwhale sw swcli {venvdir}/bin/pip* virtual*
-sed -i '1i\#!{venvdir}/bin/python3' sw swcli starwhale {venvdir}/bin/pip* virtual*
+sed -i '1d' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
+sed -i '1i\#!{bin}/python3' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
 
-sed -i 's#^VIRTUAL_ENV=.*$#VIRTUAL_ENV={venvdir}#g' {venvdir}/bin/activate
-rm -rf {venvdir}/bin/python3
-ln -s /usr/bin/python3 {venvdir}/bin/python3
-echo 'source {venvdir}/bin/activate'
+sed -i 's#^VIRTUAL_ENV=.*$#VIRTUAL_ENV={venvdir}#g' {bin}/activate
+rm -rf {bin}/python3
+ln -s /usr/bin/python3 {bin}/python3
+echo 'source {bin}/activate'
 """
     else:
         content = f"""
