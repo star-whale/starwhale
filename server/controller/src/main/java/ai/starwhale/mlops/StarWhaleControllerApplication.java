@@ -7,15 +7,12 @@
 
 package ai.starwhale.mlops;
 
-import ai.starwhale.mlops.configuration.bean.StorageProperties;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 @SpringBootApplication
 @MapperScan("ai.starwhale.mlops.domain")
-@EnableConfigurationProperties(StorageProperties.class)
 public class StarWhaleControllerApplication {
     public static void main(String[] args) {
         new SpringApplicationBuilder(StarWhaleControllerApplication.class).run(args);
