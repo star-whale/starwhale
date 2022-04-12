@@ -11,8 +11,9 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.project.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
-import ai.starwhale.mlops.domain.swds.upload.Manifest;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,6 +37,9 @@ public class SWDatasetService {
 
     @Resource
     private SWDSVersionConvertor versionConvertor;
+
+    @Resource
+    private ProjectManager projectManager;
 
     public List<DatasetVO> listSWDataset(SWDSObject swds, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -86,6 +90,12 @@ public class SWDatasetService {
             .ownerId(idConvertor.revert(swds.getOwnerId()))
             .projectId(idConvertor.revert(swds.getProjectId()))
             .build();
+        if(entity.getProjectId() == 0) {
+            ProjectEntity defaultProject = projectManager.findDefaultProject(entity.getOwnerId());
+            if(defaultProject != null) {
+                entity.setProjectId(defaultProject.getId());
+            }
+        }
         swdsMapper.addDataset(entity);
         return idConvertor.convert(entity.getId());
     }
