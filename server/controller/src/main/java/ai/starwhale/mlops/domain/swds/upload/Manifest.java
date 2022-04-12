@@ -26,7 +26,7 @@ public class Manifest{
     DatasetAttr datasetAttr;
     @JsonProperty("dataset_byte_size")
     int datasetByteSize;
-    Dep dep;
+    Dep2 dep;
     Extra extra;
     String mode;
     String process;

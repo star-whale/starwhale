@@ -8,8 +8,6 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
-import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
 import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWMPRequest;
@@ -27,7 +25,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -36,7 +34,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
@@ -253,5 +250,15 @@ public interface SWModelPackageApi {
         consumes = {"multipart/form-data"})
     ResponseEntity<ResponseMessage<String>> upload(
         @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile file,
+        ClientSWMPRequest uploadRequest);
+
+    @Operation(summary = "Create a new swmp version",
+        description = "Create a new version of the swmp. "
+            + "The data resources can be selected by uploading the file package or entering the server path.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+        value = "/project/model/pull",
+        produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    byte[] pull(
         ClientSWMPRequest uploadRequest);
 }

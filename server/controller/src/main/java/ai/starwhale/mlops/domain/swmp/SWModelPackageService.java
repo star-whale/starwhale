@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -191,7 +192,7 @@ public class SWModelPackageService {
             .swmpPath(uploadRequest.getName(), uploadRequest.getVersion());
 
         try(final InputStream inputStream = dsFile.getInputStream()){
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getName()),inputStream);
+            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),inputStream);
         } catch (IOException e) {
             log.error("upload swmp failed {}",uploadRequest.getSwmp(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),
@@ -215,5 +216,36 @@ public class SWModelPackageService {
             throw new SWAuthException(SWAuthException.AuthType.SWMP_UPLOAD);
         }
         return Long.valueOf(currentUserDetail.getIdTableKey());
+    }
+
+    public byte[] pull(ClientSWMPRequest pullRequest) {
+        SWModelPackageEntity swModelPackageEntity = swmpMapper.findByName(pullRequest.getName());
+        if(null == swModelPackageEntity){
+            throw new SWValidationException(ValidSubject.SWMP).tip("swmp not found");
+        }
+        SWModelPackageVersionEntity swModelPackageVersionEntity = swmpVersionMapper.findByNameAndSwmpId(
+            pullRequest.getVersion(), swModelPackageEntity.getId());
+        if(null == swModelPackageVersionEntity){
+            throw new SWValidationException(ValidSubject.SWMP).tip("swmp version not found");
+        }
+        List<String> files;
+        try {
+            files = storageAccessService.list(
+                swModelPackageVersionEntity.getStoragePath()).collect(Collectors.toList());
+        } catch (IOException e) {
+            log.error("listing file from storage failed {}",swModelPackageVersionEntity.getStoragePath(),e);
+            throw new SWProcessException(ErrorType.STORAGE);
+        }
+        if(CollectionUtils.isEmpty(files)){
+            throw new SWValidationException(ValidSubject.SWMP).tip("swmp version empty folder");
+        }
+        try(InputStream fileInputStream = storageAccessService.get(
+            files.get(0))) {
+            return fileInputStream.readAllBytes();
+        } catch (IOException e) {
+            log.error("download file from storage failed {}",swModelPackageVersionEntity.getStoragePath(),e);
+            throw new SWProcessException(ErrorType.STORAGE);
+        }
+
     }
 }

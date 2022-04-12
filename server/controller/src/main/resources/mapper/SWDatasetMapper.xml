@@ -56,7 +56,7 @@
         and s.dataset_name = #{name}
     </select>
 
-    <insert id="addDataset" useGeneratedKeys="true" keyProperty="id">
+    <insert id="addDataset" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into dataset_info(dataset_name, project_id, owner_id)
         values(#{datasetName}, #{projectId}, #{ownerId})
     </insert>

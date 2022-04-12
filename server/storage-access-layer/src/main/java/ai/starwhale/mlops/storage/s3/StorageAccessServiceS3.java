@@ -48,8 +48,8 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     }
 
     @Override
-    public void put(String path,InputStream inputStream) {
-        s3client.putObject(PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),RequestBody.fromInputStream(inputStream,0l));
+    public void put(String path,InputStream inputStream) throws IOException {
+        s3client.putObject(PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),RequestBody.fromInputStream(inputStream,inputStream.available()));
     }
 
     @Override

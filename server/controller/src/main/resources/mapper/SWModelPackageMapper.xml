@@ -56,6 +56,11 @@
         and s.swmp_name = #{name} for update
     </select>
 
+    <select id="findByName" resultMap="swmpResultMap" >
+        <include refid="select_swmp"/>
+        and s.swmp_name = #{name}
+    </select>
+
 
 
     <insert id="addSWModelPackage" useGeneratedKeys="true" keyProperty="id">

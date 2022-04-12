@@ -141,6 +141,11 @@ public class SWModelPackageController implements SWModelPackageApi{
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
+    @Override
+    public byte[] pull(ClientSWMPRequest pullRequest) {
+        return swmpService.pull(pullRequest);
+    }
+
     private String createVersion(String projectId, String modelId, MultipartFile zipFile, String importPath, String userId) {
         String path = importPath;
         String meta = "";

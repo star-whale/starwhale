@@ -8,6 +8,9 @@
 package ai.starwhale.mlops.domain.swds.upload;
 
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.SWDatasetVersionMapper;
+import java.util.List;
+import javax.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -19,7 +22,11 @@ public class HotSwdsHolder {
 
     Map<Long, SWDatasetVersionEntity> swdsHolder;
 
-    public HotSwdsHolder(){
+    final SWDatasetVersionMapper swDatasetVersionMapper;
+
+    public HotSwdsHolder(
+        SWDatasetVersionMapper swDatasetVersionMapper){
+        this.swDatasetVersionMapper = swDatasetVersionMapper;
         this.swdsHolder = new ConcurrentHashMap<>();
     }
 
@@ -37,6 +44,15 @@ public class HotSwdsHolder {
 
     public Optional<SWDatasetVersionEntity> of(Long id){
         return Optional.ofNullable(swdsHolder.get(id));
+    }
+
+    @PostConstruct
+    public void loadUploadingDs(){
+        List<SWDatasetVersionEntity> datasetVersionEntities = swDatasetVersionMapper.findVersionsByStatus(
+            SWDatasetVersionEntity.STATUS_UN_AVAILABLE);
+        datasetVersionEntities.parallelStream().forEach(dv->{
+            swdsHolder.putIfAbsent(dv.getId(),dv);
+        });
     }
 
 }
