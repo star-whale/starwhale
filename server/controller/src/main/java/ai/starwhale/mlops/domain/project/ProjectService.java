@@ -63,6 +63,7 @@ public class ProjectService {
         ProjectEntity entity = ProjectEntity.builder()
             .projectName(project.getName())
             .ownerId(idConvertor.revert(project.getOwnerId()))
+            .isDefault(project.isDefault() ? 1 : 0)
             .build();
         projectMapper.createProject(entity);
         return idConvertor.convert(entity.getId());
@@ -74,7 +75,12 @@ public class ProjectService {
      * @return Is the operation successful.
      */
     public Boolean deleteProject(Project project) {
-        int res = projectMapper.deleteProject(idConvertor.revert(project.getId()));
+        Long id = idConvertor.revert(project.getId());
+        ProjectEntity entity = projectMapper.findProject(id);
+        if(entity.getIsDefault() > 0) {
+            return false;
+        }
+        int res = projectMapper.deleteProject(id);
         return res > 0;
     }
 

@@ -20,5 +20,7 @@ public interface ProjectMapper {
 
     ProjectEntity findProject(@Param("id") Long id);
 
+    ProjectEntity findDefaultProject(@Param("userId") Long userId);
+
     int modifyProject(ProjectEntity project);
 }
