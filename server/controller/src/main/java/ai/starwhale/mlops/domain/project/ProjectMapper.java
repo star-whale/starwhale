@@ -18,6 +18,8 @@ public interface ProjectMapper {
 
     List<ProjectEntity> listProjects(@Param("projectName") String projectName);
 
+    List<ProjectEntity> listProjectsByOwner(@Param("userId") Long userId);
+
     ProjectEntity findProject(@Param("id") Long id);
 
     ProjectEntity findDefaultProject(@Param("userId") Long userId);

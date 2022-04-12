@@ -13,7 +13,8 @@ import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.project.ProjectMapper;
+import ai.starwhale.mlops.domain.project.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
 import ai.starwhale.mlops.domain.user.User;
@@ -66,7 +67,8 @@ public class SWModelPackageService {
     private UserService userService;
 
     @Resource
-    private ProjectMapper projectMapper;
+    private ProjectManager projectManager;
+
 
     public List<SWModelPackageVO> listSWMP(SWMPObject swmp, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -126,6 +128,12 @@ public class SWModelPackageService {
             .ownerId(idConvertor.revert(swmp.getOwnerId()))
             .projectId(idConvertor.revert(swmp.getProjectId()))
             .build();
+        if(entity.getProjectId() == 0) {
+            ProjectEntity defaultProject = projectManager.findDefaultProject(entity.getOwnerId());
+            if(defaultProject != null) {
+                entity.setProjectId(defaultProject.getId());
+            }
+        }
         swmpMapper.addSWModelPackage(entity);
         return idConvertor.convert(entity.getId());
     }
@@ -175,7 +183,7 @@ public class SWModelPackageService {
             //create
             entity = SWModelPackageEntity.builder().isDeleted(0)
                 .ownerId(getOwner())
-                .projectId(projectMapper.findDefaultProject(getOwner()).getId())
+                .projectId(projectManager.findDefaultProject(getOwner()).getId())
                 .swmpName(uploadRequest.getName())
                 .build();
             swmpMapper.addSWModelPackage(entity);

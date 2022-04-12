@@ -55,6 +55,12 @@
         </if>
     </select>
 
+    <select id="listProjectsByOwner" parameterType="java.lang.Long" resultMap="projectResultMap">
+        <include refid="select_project"/>
+        and p.owner_id = #{userId}
+        order by id
+    </select>
+
     <select id="findProject" parameterType="java.lang.Long" resultMap="projectResultMap">
         <include refid="select_project"/>
         and p.id = #{id}
