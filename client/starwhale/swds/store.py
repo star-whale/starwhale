@@ -65,6 +65,7 @@ class DataSetLocalStore(LocalStorage):
                     name=name_dir.name, version=ver_dir.name,
                     tag=_tag, environment=_manifest["dep"]["env"],
                     size=pretty_bytes(_manifest.get("dataset_byte_size", 0)),
+                    generate="",
                     created=_manifest["created_at"],
                 )
 

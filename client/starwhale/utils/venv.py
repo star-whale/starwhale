@@ -124,7 +124,6 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
     py_ver = get_python_version()
 
     _manifest = dict(
-        dep=dict(local_gen_env=False),
         env=pr_env,
         system=sys_name,
         python=py_ver,
@@ -164,7 +163,7 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
     elif is_linux():
         #TODO: more design local or remote build venv
         #TODO: ignore some pkg when dump, like notebook?
-        _manifest["dep"]["local_gen_env"] = True  # type: ignore
+        _manifest["local_gen_env"] = True  # type: ignore
 
         if is_conda():
             cenv = get_conda_env()

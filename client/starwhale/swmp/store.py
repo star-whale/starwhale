@@ -59,6 +59,7 @@ class ModelPackageLocalStore(LocalStorage):
                     name=mdir.name, version=_manifest["version"], tag=_tag,
                     environment=_manifest["dep"]["env"],
                     size=pretty_bytes(_path.stat().st_size),
+                    generate="local" if _manifest["dep"]["local_gen_env"] else "remote",
                     created=_manifest["created_at"]
                 )
 
