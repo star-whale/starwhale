@@ -158,8 +158,7 @@ class ModelPackageLocalStore(LocalStorage):
                 return
 
             click.confirm(f"continue to delete {workdir_fpath}?", abort=True)
-            open_fs(str(workdir_fpath.resolve())).removetree("/")
-            workdir_fpath.rmdir()
+            empty_dir(workdir_fpath)
             rprint(f" :bomb: delete workdir {workdir_fpath}")
 
         pkg_fpath = self._guess(self.pkgdir / _model, _version)
