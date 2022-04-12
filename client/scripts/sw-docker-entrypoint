@@ -4,7 +4,7 @@ set -e
 ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"
-WORKDIR="/opt/starwhale"
+WORKDIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
 RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}')
 
 _update_python_alter() {
