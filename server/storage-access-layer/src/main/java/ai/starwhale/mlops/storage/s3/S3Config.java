@@ -10,13 +10,15 @@ package ai.starwhale.mlops.storage.s3;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class S3Config {
-    final String bucket;
-    final String accessKey;
-    final String secretKey;
-    final String region;
+    String bucket;
+    String accessKey;
+    String secretKey;
+    String region;
 
 }
