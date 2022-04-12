@@ -20,5 +20,10 @@ public class S3Config {
     String accessKey;
     String secretKey;
     String region;
+    String endpoint;
+
+    public boolean overWriteEndPoint(){
+        return null != endpoint && !endpoint.isBlank();
+    }
 
 }

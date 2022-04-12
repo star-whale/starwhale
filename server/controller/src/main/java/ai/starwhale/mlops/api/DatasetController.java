@@ -62,7 +62,8 @@ public class DatasetController implements DatasetApi{
     @Resource
     private UserService userService;
 
-    SwdsUploader swdsUploader;
+    @Resource
+    private SwdsUploader swdsUploader;
 
     @Override
     public ResponseEntity<ResponseMessage<String>> revertDatasetVersion(String projectId,

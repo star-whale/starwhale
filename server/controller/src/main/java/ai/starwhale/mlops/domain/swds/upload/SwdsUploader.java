@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.swds.upload;
 
+import ai.starwhale.mlops.domain.project.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDatasetEntity;
 import ai.starwhale.mlops.domain.swds.SWDatasetMapper;
@@ -52,6 +53,8 @@ public class SwdsUploader {
 
     final UserService userService;
 
+    final ProjectMapper projectMapper;
+
     /**
      * prefix + / + fileName
      */
@@ -59,13 +62,18 @@ public class SwdsUploader {
 
     final ObjectMapper yamlMapper;
 
-    public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper, SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator, StorageAccessService storageAccessService, UserService userService, @Qualifier("yamlMapper") ObjectMapper yamlMapper) {
+    public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
+        SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,
+        StorageAccessService storageAccessService, UserService userService,
+        ProjectMapper projectMapper,
+        @Qualifier("yamlMapper") ObjectMapper yamlMapper) {
         this.hotSwdsHolder = hotSwdsHolder;
         this.swdsMapper = swdsMapper;
         this.swdsVersionMapper = swdsVersionMapper;
         this.storagePathCoordinator = storagePathCoordinator;
         this.storageAccessService = storageAccessService;
         this.userService = userService;
+        this.projectMapper = projectMapper;
         this.yamlMapper = yamlMapper;
     }
 
@@ -174,6 +182,7 @@ public class SwdsUploader {
             .datasetName(manifest.getName())
             .isDeleted(0)
             .ownerId(getOwner())
+            .projectId(projectMapper.findDefaultProject(getOwner()).getId())
             .build();
     }
 
