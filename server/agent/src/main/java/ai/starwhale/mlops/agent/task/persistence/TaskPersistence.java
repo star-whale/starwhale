@@ -67,6 +67,8 @@ public interface TaskPersistence {
      */
     boolean preloadingSWMP(EvaluationTask task);
 
+    boolean generateSWDSConfig(EvaluationTask task);
+
     /**
      * upload result to storage
      * @param task task
@@ -82,7 +84,7 @@ public interface TaskPersistence {
 
     /**
      * @param id taskId
-     * task running status dir path,Eg:/var/starwhale/task/{taskId}/status(format:txt)
+     * task running status dir path,Eg:/var/starwhale/task/{taskId}/status/current(format:txt)
      */
     String pathOfStatusFile(Long id);
 
@@ -98,7 +100,11 @@ public interface TaskPersistence {
      */
     String pathOfSWMPDir(Long id);
 
-    // todo:swds config file
+    /**
+     * @param id taskId
+     * swds config file path,Eg:/var/starwhale/task/{taskId}/config/swds.json(format:json)
+     */
+    String pathOfSWDSFile(Long id);
 
     /**
      * @param id taskId
