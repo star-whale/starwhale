@@ -9,6 +9,13 @@ logging:
 sw:
   jwt:
     secret: wdxlG3UK66m6uTUgxXFjizli
+  storage:
+    path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
+    s3-config:
+      bucket: ${SW_STORAGE_BUCKET:StarWhale}
+      accessKey: ${SW_STORAGE_ACCESSKEY:accessKey}
+      secretKey: ${SW_STORAGE_SECRETKEY:secretKey}
+      region: ${SW_STORAGE_REGION:region}
 server:
   port: 80
 ---
@@ -35,14 +42,6 @@ server:
   port: 8082
   servlet:
     context-path: /api/v1
-
-storage:
-  path-prefix: StarWhale
-  s3-config:
-    bucket: StarWhale
-    accessKey: accessKey
-    secretKey: secretKey
-    region: region
 
 logging:
   level:

@@ -13,4 +13,11 @@ sw:
 #      logPath: ${SW_TASK_LOG_PATH:/var/starwhale/task/log/}
   controller:
     name: swController
-    url: ${SW_CONTROLLER_URL:http://localhost:8080/}
+    url: ${SW_CONTROLLER_URL:http://localhost:8082/}
+  storage:
+    path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
+    s3-config:
+      bucket: ${SW_STORAGE_BUCKET:StarWhale}
+      accessKey: ${SW_STORAGE_ACCESSKEY:accessKey}
+      secretKey: ${SW_STORAGE_SECRETKEY:secretKey}
+      region: ${SW_STORAGE_REGION:region}
