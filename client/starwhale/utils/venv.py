@@ -33,9 +33,9 @@ def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
     req = str(req)
     cmd = [os.path.join(venvdir, 'bin', 'pip'), 'install',
            '--exists-action', 'w',
-           '--index-url', 'http://pypim.dapps.douban.com/simple',
-           '--extra-index-url', 'https://pypi.python.org/simple/',
-           '--trusted-host', 'pypim.dapps.douban.com',
+           '--index-url', 'http://mirrors.aliyun.com/pypi/simple/',
+           '--extra-index-url', 'https://pypi.tuna.tsinghua.edu.cn/simple/ http://pypi.mirrors.ustc.edu.cn/simple/ https://pypi.doubanio.com/simple/ https://pypi.org/',
+           '--trusted-host', 'mirrors.aliyun.com pypi.tuna.tsinghua.edu.cn pypi.mirrors.ustc.edu.cn pypi.doubanio.com pypi.org',
            ]
 
     cmd += ['-r', req] if os.path.isfile(req) else [req]
@@ -51,7 +51,7 @@ def venv_activate(venvdir: t.Union[str, Path]) -> None:
 def venv_setup(venvdir: t.Union[str, Path]) -> None:
     #TODO: define starwhale virtualenv.py
     #TODO: use more elegant method to make venv portable
-    check_call(f"python3 -m venv --copies {venvdir}", shell=True)
+    check_call(f"python3 -m venv {venvdir}", shell=True)
 
 
 def pip_freeze(path: t.Union[str, Path]):
@@ -84,9 +84,13 @@ def conda_activate_render(env: t.Union[str, Path], path: Path) -> None:
 def venv_activate_render(venvdir: t.Union[str, Path], path: Path, relocate: bool=False) -> None:
     if relocate:
         content = f"""
-sed -i '1s/.*/#!\/usr\/bin\/env python3/' {venvdir}/bin/pip*
-sed -i "s/^VIRTUAL_ENV=.*$/VIRTUAL_ENV={venvdir}/g" {venvdir}/bin/activate
-echo 'source {venvdir}/bin/activate'"
+sed -i '1d' starwhale sw swcli {venvdir}/bin/pip* virtual*
+sed -i '1i\#!{venvdir}/bin/python3' sw swcli starwhale {venvdir}/bin/pip* virtual*
+
+sed -i 's#^VIRTUAL_ENV=.*$#VIRTUAL_ENV={venvdir}#g' {venvdir}/bin/activate
+rm -rf {venvdir}/bin/python3
+ln -s /usr/bin/python3 {venvdir}/bin/python3
+echo 'source {venvdir}/bin/activate'
 """
     else:
         content = f"""

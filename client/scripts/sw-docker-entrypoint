@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -xe
+set -e
 ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"

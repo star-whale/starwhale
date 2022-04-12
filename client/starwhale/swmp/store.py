@@ -232,8 +232,10 @@ class ModelPackageLocalStore(LocalStorage):
         _python_dir = _workdir / "dep" / "python"
         _venv_dir = _python_dir / "venv"
 
+        _relocate = True
         if _rebuild or not _dep["local_gen_env"] or not (_venv_dir / "bin" / "activate").exists():
             logger.info(f"setup venv and pip install {_venv_dir}")
+            _relocate = False
             venv_setup(_venv_dir)
             for _name in (DUMP_PIP_REQ_FNAME, DUMP_USER_PIP_REQ_FNAME):
                 _path = _python_dir / _name
@@ -244,7 +246,7 @@ class ModelPackageLocalStore(LocalStorage):
                 install_req(_venv_dir, _path)
 
         logger.info(f"render activate script: {_ascript}")
-        venv_activate_render(_venv_dir, _ascript, relocate=True)
+        venv_activate_render(_venv_dir, _ascript, relocate=_relocate)
 
     def _activate_system(self, _workdir: Path, _dep: dict) -> None:
         self._activate_venv(_workdir, _dep, _rebuild=True)

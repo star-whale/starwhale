@@ -1,6 +1,6 @@
 BASE_IMAGE :=starwhaleai/base:0.1.0-nightly-2022041101
 SW_IMAGE := starwhaleai/starwhale:0.1.0-nightly-2022041101
-SW_VERSION := 0.1.0.dev1
+SW_VERSION := 0.1.0.dev3
 
 build-base:
 	docker build -f Dockerfile.base -t $(BASE_IMAGE) .
