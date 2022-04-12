@@ -85,8 +85,7 @@ def conda_activate_render(env: t.Union[str, Path], path: Path) -> None:
 
 def venv_activate_render(venvdir: t.Union[str, Path], path: Path) -> None:
     content = f"""
-VIRTUAL_ENV={venvdir}
-export VIRTUAL_ENV
+sed -i '1i\export VIRTUAL_ENV={venvdir}' {venvdir}/bin/activate
 echo 'source {venvdir}/bin/activate'"
 """
     _render_sw_activate(content, path)
