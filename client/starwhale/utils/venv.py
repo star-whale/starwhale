@@ -95,7 +95,7 @@ echo 'source {bin}/activate'
 """
     else:
         content = f"""
-echo 'source {venvdir}/bin/activate'"
+echo 'source {venvdir}/bin/activate'
 """
     _render_sw_activate(content, path)
 
