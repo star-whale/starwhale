@@ -20,9 +20,9 @@ spring:
   datasource:
     name: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/starwhale?useUnicode=true&characterEncoding=UTF-8
-    username: starwhale
-    password: sw1234
+    url: jdbc:mysql://127.0.0.1:3306/starwhale?useUnicode=true&characterEncoding=UTF-8
+    username: root
+    password: my-secret-pw
     schema: classpath:sql/schema.sql
     initialization-mode: always
 
@@ -39,10 +39,11 @@ server:
 storage:
   path-prefix: StarWhale
   s3-config:
-    bucket: StarWhale
-    accessKey: accessKey
-    secretKey: secretKey
-    region: region
+    bucket: starwhale
+    accessKey: 12345678
+    secretKey: 12345678
+    region: local
+    endpoint: http://localhost:9000
 
 logging:
   level:

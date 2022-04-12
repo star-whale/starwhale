@@ -13,6 +13,7 @@ import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.project.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
 import ai.starwhale.mlops.domain.user.User;
@@ -63,6 +64,9 @@ public class SWModelPackageService {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private ProjectMapper projectMapper;
 
     public List<SWModelPackageVO> listSWMP(SWMPObject swmp, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -171,6 +175,7 @@ public class SWModelPackageService {
             //create
             entity = SWModelPackageEntity.builder().isDeleted(0)
                 .ownerId(getOwner())
+                .projectId(projectMapper.findDefaultProject(getOwner()).getId())
                 .swmpName(uploadRequest.getName())
                 .build();
             swmpMapper.addSWModelPackage(entity);

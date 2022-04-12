@@ -248,10 +248,10 @@ public interface SWModelPackageApi {
             + "The data resources can be selected by uploading the file package or entering the server path.")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-        value = "v01/model/push",
+        value = "/project/model/push",
         produces = {"application/json"},
         consumes = {"multipart/form-data"})
     ResponseEntity<ResponseMessage<String>> upload(
         @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile file,
-        @RequestBody ClientSWMPRequest uploadRequest);
+        ClientSWMPRequest uploadRequest);
 }
