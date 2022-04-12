@@ -3,6 +3,10 @@ spring:
     active: dev
   application:
     name: star-whale-controller
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
 logging:
   level:
     root: info
@@ -12,10 +16,11 @@ sw:
   storage:
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
     s3-config:
-      bucket: ${SW_STORAGE_BUCKET:StarWhale}
-      accessKey: ${SW_STORAGE_ACCESSKEY:accessKey}
-      secretKey: ${SW_STORAGE_SECRETKEY:secretKey}
-      region: ${SW_STORAGE_REGION:region}
+      bucket: ${SW_STORAGE_BUCKET:starwhale}
+      accessKey: ${SW_STORAGE_ACCESSKEY:12345678}
+      secretKey: ${SW_STORAGE_SECRETKEY:12345678}
+      region: ${SW_STORAGE_REGION:local}
+      endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
 server:
   port: 80
 ---
@@ -42,15 +47,6 @@ server:
   port: 8082
   servlet:
     context-path: /api/v1
-
-storage:
-  path-prefix: StarWhale
-  s3-config:
-    bucket: starwhale
-    accessKey: 12345678
-    secretKey: 12345678
-    region: local
-    endpoint: http://localhost:9000
 
 logging:
   level:

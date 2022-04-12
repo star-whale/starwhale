@@ -24,4 +24,6 @@ public interface SWModelPackageMapper {
 
     SWModelPackageEntity findByNameForUpdate(@Param("name")String name);
 
+    SWModelPackageEntity findByName(@Param("name")String name);
+
 }

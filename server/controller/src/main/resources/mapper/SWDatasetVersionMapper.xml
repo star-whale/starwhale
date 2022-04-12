@@ -53,6 +53,11 @@
         and dsv.id = #{dsVersionId}
     </select>
 
+    <select id="findVersionsByStatus" resultMap="dsVersionResultMap" >
+        <include refid="select_swds_version" />
+        and dsv.status = #{status}
+    </select>
+
     <select id="findVersionsByIds" resultMap="dsVersionResultMap" >
         <include refid="select_swds_version" />
         and dsv.id in

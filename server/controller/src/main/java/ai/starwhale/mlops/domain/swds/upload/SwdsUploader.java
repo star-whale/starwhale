@@ -101,11 +101,11 @@ public class SwdsUploader {
 
     public void uploadBody(String uploadId, MultipartFile file){
         final SWDatasetVersionEntity swDatasetVersionEntity = getSwdsVersion(uploadId);
-        final String storagePath = String.format(FORMATTER_STORAGE_PATH,swDatasetVersionEntity.getStoragePath(),file.getName());
+        final String storagePath = String.format(FORMATTER_STORAGE_PATH,swDatasetVersionEntity.getStoragePath(),file.getOriginalFilename());
         try(final InputStream inputStream = file.getInputStream()){
             storageAccessService.put(storagePath,inputStream);
         } catch (IOException e) {
-            log.error("upload swds to failed {}",file.getName(),e);
+            log.error("upload swds to failed {}",file.getOriginalFilename(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -148,7 +148,7 @@ public class SwdsUploader {
         if(null == swDatasetEntity){
             //create
             swDatasetEntity = from(manifest);
-            swdsMapper.addDataset(from(manifest));
+            swdsMapper.addDataset(swDatasetEntity);
 
         }
         SWDatasetVersionEntity byDSIdAndVersionName = swdsVersionMapper

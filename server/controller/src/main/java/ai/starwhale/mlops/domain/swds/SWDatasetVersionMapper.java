@@ -18,6 +18,8 @@ public interface SWDatasetVersionMapper {
 
     List<SWDatasetVersionEntity> findVersionsByIds(@Param("ids")List<Long> ids);
 
+    List<SWDatasetVersionEntity> findVersionsByStatus(@Param("status")Integer status);
+
     SWDatasetVersionEntity getLatestVersion(@Param("datasetId")Long datasetId);
 
     SWDatasetVersionEntity findByDSIdAndVersionNameForUpdate(@Param("datasetId")Long datasetId,@Param("versionName")String versionName);
