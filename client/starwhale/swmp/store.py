@@ -244,7 +244,7 @@ class ModelPackageLocalStore(LocalStorage):
                 install_req(_venv_dir, _path)
 
         logger.info(f"render activate script: {_ascript}")
-        venv_activate_render(_venv_dir, _ascript)
+        venv_activate_render(_venv_dir, _ascript, relocate=True)
 
     def _activate_system(self, _workdir: Path, _dep: dict) -> None:
         self._activate_venv(_workdir, _dep, _rebuild=True)

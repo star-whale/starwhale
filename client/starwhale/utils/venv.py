@@ -52,8 +52,6 @@ def venv_setup(venvdir: t.Union[str, Path]) -> None:
     #TODO: define starwhale virtualenv.py
     #TODO: use more elegant method to make venv portable
     check_call(f"python3 -m venv --copies {venvdir}", shell=True)
-    check_call(f"sed -i '1s/.*/#!\/usr\/bin\/env python3/' {venvdir}/bin/pip*", shell=True)
-    check_call(f"sed -i '/^export VIRTUAL_ENV/d;/^VIRTUAL_ENV=/d' {venvdir}/bin/activate", shell=True)
 
 
 def pip_freeze(path: t.Union[str, Path]):
@@ -83,9 +81,15 @@ def conda_activate_render(env: t.Union[str, Path], path: Path) -> None:
     _render_sw_activate(content, path)
 
 
-def venv_activate_render(venvdir: t.Union[str, Path], path: Path) -> None:
-    content = f"""
-sed -i '1i\export VIRTUAL_ENV={venvdir}' {venvdir}/bin/activate
+def venv_activate_render(venvdir: t.Union[str, Path], path: Path, relocate: bool=False) -> None:
+    if relocate:
+        content = f"""
+sed -i '1s/.*/#!\/usr\/bin\/env python3/' {venvdir}/bin/pip*
+sed -i "s/^VIRTUAL_ENV=.*$/VIRTUAL_ENV={venvdir}/g" {venvdir}/bin/activate
+echo 'source {venvdir}/bin/activate'"
+"""
+    else:
+        content = f"""
 echo 'source {venvdir}/bin/activate'"
 """
     _render_sw_activate(content, path)
