@@ -1,3 +1,4 @@
+from email.policy import default
 import click
 
 from starwhale.consts import DEFAULT_DATASET_YAML_NAME
@@ -28,8 +29,10 @@ def _list():
 
 @dataset_cmd.command("push", help="Push swds into starwhale controller")
 @click.argument("swds")
-def _push(swds):
-    DataSetLocalStore().push(swds)
+@click.option("-p", "--project", default="", help="project name, if omit, starwhale will push swmp to your default project")
+@click.option("-f", "--force", is_flag=True, help="force push swds")
+def _push(swds, project, force):
+    DataSetLocalStore().push(swds, project, force)
 
 
 @dataset_cmd.command("info", help="Show dataset details")

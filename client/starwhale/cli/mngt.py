@@ -11,7 +11,6 @@ def add_mngt_command(cli):
     @click.password_option(confirmation_prompt=False)
     @click.option("--starwhale", prompt="starwhale controller web:", default=DEFAULT_LOCAL_SW_CONTROLLER_ADDR)
     def _login(username, password, starwhale):
-        password = codecs.encode(password, "rot13")
         login(username, password, starwhale)
 
     @cli.command("logout", help="Logout StarWhale Controller")

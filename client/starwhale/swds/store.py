@@ -1,13 +1,13 @@
 from collections import namedtuple
+from http import HTTPStatus
 from pathlib import Path
 import sys
 import yaml
+import typing as t
 
 import click
 import requests
 from rich.console import Console
-from rich import box
-from rich.table import Table
 from rich.panel import Panel
 from rich.pretty import Pretty
 from rich import print as rprint
@@ -19,13 +19,14 @@ from starwhale.base.store import LocalStorage
 from starwhale.consts import (
     DEFAULT_DATASET_YAML_NAME, DEFAULT_MANIFEST_NAME, SW_API_VERSION
 )
+from starwhale.utils.http import wrap_sw_error_resp
 from starwhale.utils import fmt_http_server, pretty_bytes
 from starwhale.utils.error import NotFoundError
 
 #TODO: refactor Dataset and ModelPackage LocalStorage
 
 _UPLOAD_PHASE = namedtuple("_UPLOAD_PHASE", ["MANIFEST", "BLOB", "END", "CANCEL"])(
-    "manifest", "blob", "end", "cancel"
+    "MANIFEST", "BLOB", "END", "CANCEL"
 )
 
 
@@ -66,10 +67,9 @@ class DataSetLocalStore(LocalStorage):
                     created=_manifest["created_at"],
                 )
 
-
-    def push(self, sw_name: str) -> None:
+    def push(self, sw_name: str, project: str="", force: bool=False) -> None:
         server = fmt_http_server(self.sw_remote_addr)
-        url = f"{server}/{SW_API_VERSION}/dataset/push"
+        url = f"{server}/api/{SW_API_VERSION}/project/dataset/push"
 
         _name, _version = self._parse_swobj(sw_name)
         _dir = self._guess(self.dataset_dir / _name, _version)
@@ -78,7 +78,7 @@ class DataSetLocalStore(LocalStorage):
             sys.exit(1)
 
         #TODO: refer to docker push
-        rprint("try to push swds...")
+        rprint(" :fire: try to push swds...")
         _manifest_path = _dir / DEFAULT_MANIFEST_NAME
         _swds = f"{_name}:{_dir.name}"
         _headers = {"Authorization": self._sw_token}
@@ -86,17 +86,18 @@ class DataSetLocalStore(LocalStorage):
         #TODO: use rich progress
         r = requests.post(
             url,
-            data={"swds": _swds, "phase": _UPLOAD_PHASE.MANIFEST},
+            data={"swds": _swds, "phase": _UPLOAD_PHASE.MANIFEST,
+                  "project": project, "force": 1 if force else 0},
             files={"file": _manifest_path.open("rb")},
             headers=_headers,
         )
-        r.raise_for_status()
-        rprint(f" :climbing: {_UPLOAD_PHASE.MANIFEST}:{_manifest_path} uploaded")
-        upload_id = r.json().get("upload_id")
+        wrap_sw_error_resp(r, "push", exit=True)
+
+        rprint(f"\t :arrow_up: {DEFAULT_MANIFEST_NAME} :ok:")
+        upload_id = r.json().get("data", {}).get("upload_id")
         if not upload_id:
             raise Exception("get invalid upload_id")
         _headers["X-SW-UPLOAD-ID"] = upload_id
-
         _manifest = yaml.safe_load(_manifest_path.open())
 
         #TODO: add retry deco
@@ -110,8 +111,10 @@ class DataSetLocalStore(LocalStorage):
                 files={"file": _fp.open("rb")},
                 headers=_headers
             )
-            r.raise_for_status()
-            rprint(f" :clap: {_fp.name} uploaded")
+            if r.status_code == HTTPStatus.OK:
+                rprint(f"\t :arrow_up: {_fp.name} :ok:")
+            else:
+                wrap_sw_error_resp(r, "upload", use_raise=True)
 
         #TODO: parallel upload
         try:
@@ -119,10 +122,12 @@ class DataSetLocalStore(LocalStorage):
                 _upload_blob(p)
         except Exception as e:
             rprint(f"when upload blobs, we meet Exception{e}, will cancel upload")
-            requests.post(url, data={"swds": _swds, "phase": _UPLOAD_PHASE.CANCEL}, headers=_headers).raise_for_status()
+            r = requests.post(url, data={"swds": _swds, "project": project, "phase": _UPLOAD_PHASE.CANCEL}, headers=_headers)
+            wrap_sw_error_resp(r, "cancel", use_raise=True)
         else:
-            print(" :clap: :clap: all uploaded.")
-            requests.post(url, data={"swds": _swds, "phase": _UPLOAD_PHASE.END}, headers=_headers).raise_for_status()
+            rprint(" :clap: :clap: all uploaded.")
+            r =  requests.post(url, data={"swds": _swds, "project": project, "phase": _UPLOAD_PHASE.END}, headers=_headers)
+            wrap_sw_error_resp(r, "end", use_raise=True)
 
     def pull(self, sw_name: str) -> None:
         ...
