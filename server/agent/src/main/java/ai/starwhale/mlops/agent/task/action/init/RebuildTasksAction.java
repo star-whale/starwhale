@@ -48,8 +48,8 @@ public class RebuildTasksAction implements DoTransition<Void, List<EvaluationTas
         if (CollectionUtil.isNotEmpty(tasks)) {
             tasks.forEach(taskPool::fill);
             taskPool.setToReady();
-            log.info("rebuild task pool success, size:{}", tasks.size());
         }
+        log.info("rebuild task pool success, size:{}", tasks.size());
     }
 
     @Override
