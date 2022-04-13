@@ -65,6 +65,11 @@ public class Job {
         RUNNING(20, false),
 
         /**
+         * paused by user
+         */
+        PAUSED(30, false),
+
+        /**
          * CANCEL triggered by user( at least one task is TO_CANCEL)
          */
         TO_CANCEL(50, false),

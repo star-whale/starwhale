@@ -90,6 +90,8 @@ public class TaskBoConverter {
             .imageId(t.getJob().getJobRuntime().getBaseImage())
             .resultPath(t.getResultPaths())
             .swdsBlocks(t.getSwdsBlocks())
+            .deviceAmount(t.getJob().getJobRuntime().getDeviceAmount())
+            .deviceClass(t.getJob().getJobRuntime().getDeviceClass())
             .swModelPackage(t.getJob().getSwmp()).build();
     }
 

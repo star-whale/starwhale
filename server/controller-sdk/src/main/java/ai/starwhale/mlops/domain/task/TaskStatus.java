@@ -22,6 +22,11 @@ public enum TaskStatus {
     CREATED(0x110, JobStatus.RUNNING, false),
 
     /**
+     * pausing triggered by user
+     */
+    PAUSED(0x120, JobStatus.PAUSED, false),
+
+    /**
      * after assignment is acknowledged before running
      */
     PREPARING(0x130, JobStatus.RUNNING, false),
