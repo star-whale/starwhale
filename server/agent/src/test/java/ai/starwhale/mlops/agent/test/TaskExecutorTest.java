@@ -82,9 +82,9 @@ public class TaskExecutorTest {
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(Optional.of(
             List.of(
                 EvaluationTask.builder()
-                    .id(1234567890L).status(TaskStatus.PREPARING).build(),
+                    .id(1234567890L).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build(),
                 EvaluationTask.builder()
-                    .id(2234567890L).status(TaskStatus.PREPARING).build()
+                    .id(2234567890L).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build()
             ))
         );
         Mockito.when(taskPersistence.save(any())).thenReturn(true);
@@ -120,6 +120,7 @@ public class TaskExecutorTest {
         assertEquals(2, taskPool.preparingTasks.size());
 
         Mockito.when(taskPersistence.preloadingSWMP(any())).thenReturn(true);
+        Mockito.when(taskPersistence.generateSWDSConfig(any())).thenReturn(true);
         // do prepare test
         taskExecutor.dealPreparingTasks();
         // check execute result todo swmp downloaded and uncompress it to the dir
@@ -148,7 +149,6 @@ public class TaskExecutorTest {
         assertEquals(1, idleNum);
 
         // mockConfig
-        // todo upload mock
         Mockito.when(taskPersistence.uploadResult(any())).thenReturn(true);
 
         taskExecutor.uploadTaskResults();
