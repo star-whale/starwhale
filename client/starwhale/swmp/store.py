@@ -87,10 +87,10 @@ class ModelPackageLocalStore(LocalStorage):
         else:
             wrap_sw_error_resp(r, "push failed!", exit=True)
 
-    def pull(self, swmp: str, server: str, force: bool) -> None:
+    def pull(self, swmp: str, project:str="", server: str="", force: bool=False) -> None:
         server = server.strip() or self.sw_remote_addr
         server = fmt_http_server(server)
-        url = f"{server}/{SW_API_VERSION}/model/pull"
+        url = f"{server}/api/{SW_API_VERSION}/project/model/pull"
 
         _spath = self.swmp_path(swmp)
         if _spath.exists() and not force:
@@ -102,13 +102,15 @@ class ModelPackageLocalStore(LocalStorage):
         #TODO: get size in advance
         rprint(f"try to pull {swmp}")
         with requests.get(url, stream=True,
-                         parmas={"swmp": swmp}, # type: ignore
+                         params={"swmp": swmp, "project": project}, # type: ignore
                          headers={"Authorization": self._sw_token}) as r:
-            r.raise_for_exception()
-            with _spath.open("wb") as f:
-                for chunk in r.iter_content(chunk_size=TMP_FILE_BUFSIZE):
-                    f.write(chunk)
-        rprint(f" :clap: pull completed")
+            if r.status_code == HTTPStatus.OK:
+                with _spath.open("wb") as f:
+                    for chunk in r.iter_content(chunk_size=TMP_FILE_BUFSIZE):
+                        f.write(chunk)
+                rprint(f" :clap: pull completed")
+            else:
+                wrap_sw_error_resp(r, "pull failed", exit=True)
 
     def swmp_path(self, swmp: str) -> Path:
         _model, _version = self._parse_swobj(swmp)

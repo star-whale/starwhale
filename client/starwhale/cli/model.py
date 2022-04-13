@@ -39,10 +39,11 @@ def _push(swmp, project, force):
 
 @model_cmd.command("pull", help="Pull swmp from starwhale controller or hub.starwhale.ai")
 @click.argument("swmp")
-@click.option("-s", "--starwhale", help="starwhale controller server, default is swcli config remote_addr")
-@click.option("-f", "--force", default=False, help="force pull swmp")
-def _pull(swmp, starwhale, force):
-    ModelPackageLocalStore().pull(swmp, starwhale, force)
+@click.option("-p", "--project", default="", help="project name, if omit, starwhale will push swmp to your default project")
+@click.option("-s", "--starwhale", default="", help="starwhale controller server, default is swcli config remote_addr")
+@click.option("-f", "--force", is_flag=True, help="force pull swmp")
+def _pull(swmp, project, starwhale, force):
+    ModelPackageLocalStore().pull(swmp, project, starwhale, force)
 
 
 @model_cmd.command("info", help="Get more info abort local swmp")

@@ -6,8 +6,6 @@ import yaml
 import click
 import requests
 from rich.console import Console
-from rich import box
-from rich.table import Table
 from rich.panel import Panel
 from rich.pretty import Pretty
 from rich import print as rprint
