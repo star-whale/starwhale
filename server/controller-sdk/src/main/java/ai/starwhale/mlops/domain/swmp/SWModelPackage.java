@@ -19,6 +19,10 @@ public class SWModelPackage {
 
     Long id;
 
+    String name;
+
+    String version;
+
     /**
      * The storage path of the swmp, it could be a directory or a single file
      */

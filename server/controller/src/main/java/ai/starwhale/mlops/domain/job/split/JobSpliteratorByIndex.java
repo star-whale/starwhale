@@ -19,6 +19,7 @@ import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -72,14 +74,12 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     @Transactional
     public List<Task> split(Job job) {
         final List<SWDataSet> swDataSets = job.getSwDataSets();
-        Integer deviceAmount = job.getJobRuntime().getDeviceAmount();
-        Random r = new Random();
+        AtomicInteger atomicInteger = new AtomicInteger(0);
         final Map<Integer,List<SWDSBlock>> swdsBlocks = swDataSets.parallelStream()
             .map(swDataSet -> swdsIndexLoader.load(swDataSet.getIndexPath()))
             .map(SWDSIndex::getSWDSBlockList)
             .flatMap(Collection::stream)
-            .collect(Collectors.groupingBy(blk->r.nextInt(deviceAmount)))
-            ;
+            .collect(Collectors.groupingBy(blk->atomicInteger.incrementAndGet()));//one block on task
         List<TaskEntity> taskList;
         try {
             taskList = buildTaskEntities(job, swdsBlocks);
@@ -95,13 +95,13 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     private List<TaskEntity> buildTaskEntities(Job job, Map<Integer, List<SWDSBlock>> swdsBlocks)
         throws JsonProcessingException {
         List<TaskEntity> taskEntities = new LinkedList<>();
-        for(int i=0;i<job.getJobRuntime().getDeviceAmount();i++){
+        for(int i=0;i<swdsBlocks.size();i++){
             final String taskUuid = UUID.randomUUID().toString();
             taskEntities.add(TaskEntity.builder()
                 .jobId(job.getId())
                 .resultPath(storagePath(job.getUuid(),taskUuid))
                 .swdsBlocks(swdsBlockSerializer.toString(swdsBlocks.get(i)))
-                .taskStatus(TaskStatus.CREATED.getOrder())
+                .taskStatus(new StagingTaskStatus(TaskStatus.CREATED).getValue())
                 .taskUuid(taskUuid)
                 .build());
         }

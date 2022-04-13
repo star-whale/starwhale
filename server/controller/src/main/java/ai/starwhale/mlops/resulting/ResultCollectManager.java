@@ -153,7 +153,7 @@ public class ResultCollectManager {
             } catch (IOException e) {
                 //rollback taskStatus to init
                 log.error("collector dump failed {} {}", collector.getClass(),collector.getIdentity());
-                taskMapper.updateTaskStatus(doingCollectTasks,TaskStatus.FINISHED.getOrder());
+                taskMapper.updateTaskStatus(doingCollectTasks,new StagingTaskStatus(TaskStatus.FINISHED).getValue());
 
             }
         });

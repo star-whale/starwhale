@@ -28,9 +28,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.NoTransactionException;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -80,9 +78,13 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     final JobMapper jobMapper;
 
-    public LivingTaskStatusMachineImpl(TaskMapper taskMapper, JobMapper jobMapper) {
+    final TaskJobStatusHelper taskJobStatusHelper;
+
+    public LivingTaskStatusMachineImpl(TaskMapper taskMapper, JobMapper jobMapper,
+        TaskJobStatusHelper taskJobStatusHelper) {
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
+        this.taskJobStatusHelper = taskJobStatusHelper;
         taskIdMap = new ConcurrentHashMap<>();
         jobIdMap = new ConcurrentHashMap<>();
         taskStatusMap = new ConcurrentHashMap<>();
@@ -143,6 +145,12 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
         return Optional.ofNullable(taskIdMap.get(taskId));
     }
 
+    @Override
+    public Collection<Task> ofJob(Long jobId) {
+        return jobTaskMap.get(jobId).stream().map(taskIdMap::get)
+            .collect(Collectors.toList());
+    }
+
     @Scheduled(fixedDelay = 1000)
     public void doPersist() {
         persistTaskStatus(drainToSet(toBePersistentTasks));
@@ -179,19 +187,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
      */
     void persistJobStatus(Set<Long> toBeCheckedJobs) {
         final Map<JobStatus, List<Long>> jobDesiredStatusMap = toBeCheckedJobs.parallelStream()
-            .collect(Collectors.groupingBy((jobid -> {
-                final List<Long> taskIds = jobTaskMap.get(jobid);
-                final JobStatus desiredJobStatuses = taskIds.parallelStream()
-                    .map(taskId -> taskIdMap.get(taskId).getStatus())
-                    .reduce(JobStatus.FINISHED, (jobStatus, taskStatus) -> {
-                            if (taskStatus.getDesiredJobStatus().before(jobStatus)) {
-                                jobStatus = taskStatus.getDesiredJobStatus();
-                            }
-                            return jobStatus;
-                        }
-                        , (js1, js2) -> js1.before(js2) ? js1 : js2);
-                return desiredJobStatuses;
-            })));
+            .collect(Collectors.groupingBy((jobid -> taskJobStatusHelper.desiredJobStatus(this.ofJob(jobid)))));
         jobDesiredStatusMap.forEach((desiredStatus, jobids) -> {
             //filter these job who's current status is before desired status
             final List<Long> toBeUpdated = jobids.parallelStream().filter(jid -> {

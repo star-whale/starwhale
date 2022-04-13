@@ -25,4 +25,6 @@ public interface LivingTaskStatusMachine {
 
     Optional<Task> ofId(Long taskId);
 
+    Collection<Task> ofJob(Long jobId);
+
 }
