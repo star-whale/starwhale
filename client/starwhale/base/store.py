@@ -48,7 +48,7 @@ class LocalStorage(object):
 
     @property
     def _sw_token(self) -> str:
-        return self._swcli_config.get("controller", {}).get("token", "")
+        return self._swcli_config.get("controller", {}).get("sw_token", "")
 
     def _parse_swobj(self, sw_name:str) -> t.Tuple[str, str]:
         if ":" not in sw_name:

@@ -10,6 +10,7 @@ from rich.panel import Panel
 from starwhale.utils.config import update_swcli_config
 from starwhale.utils import fmt_http_server
 from starwhale.consts import SW_API_VERSION
+from starwhale.utils.http import wrap_sw_error_resp
 
 DEFAULT_HTTP_TIMEOUT = 5
 
@@ -33,9 +34,7 @@ def login(username, password, server):
             )
         )
     else:
-        rprint(f":fearful: login failed!")
-        rprint(f"[red]status code: {r.status_code}, msg: {r.text}[/]")
-        Panel(Pretty(r.text), title="Error Message")
+        wrap_sw_error_resp(r, "login failed!", exit=True)
 
 
 def logout():

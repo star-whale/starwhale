@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from pathlib import Path
 from collections import namedtuple
 import yaml
@@ -21,6 +22,7 @@ from starwhale.consts import (
 )
 from starwhale.base.store import LocalStorage
 from starwhale.utils.error import NotFoundError
+from starwhale.utils.http import wrap_sw_error_resp
 
 TMP_FILE_BUFSIZE = 8192
 
@@ -60,9 +62,10 @@ class ModelPackageLocalStore(LocalStorage):
         with TarFS(fpath) as tar:
             return yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
 
-    def push(self, swmp: str) -> None:
+    def push(self, swmp: str, project: str="", force: bool=False) -> None:
         server= fmt_http_server(self.sw_remote_addr)
-        url = f"{server}/{SW_API_VERSION}/model/push"
+        #TODO: add more restful api for project, /api/v1/project/{project_id}/model/push
+        url = f"{server}/api/{SW_API_VERSION}/project/model/push"
 
         _spath = self.swmp_path(swmp)
         if not _spath.exists():
@@ -72,13 +75,17 @@ class ModelPackageLocalStore(LocalStorage):
         #TODO: add progress bar and rich live
         #TODO: add multi-part upload
         #TODO: add more push log
-        rprint("try to push swmp...")
-        r = requests.post(url, data={"swmp": swmp},
+        #TODO: use head first to check swmp exists
+        #TODO: add timeout
+        rprint(":fire: try to push swmp...")
+        r = requests.post(url, data={"swmp": swmp, "project": project, "force": 1 if force else 0},
                           files={"file": _spath.open("rb")},
                           headers={"Authorization": self._sw_token}
                           )
-        r.raise_for_status()
-        rprint(" :clap: push done.")
+        if r.status_code == HTTPStatus.OK:
+            rprint(" :clap: push done.")
+        else:
+            wrap_sw_error_resp(r, "push failed!", exit=True)
 
     def pull(self, swmp: str, server: str, force: bool) -> None:
         server = server.strip() or self.sw_remote_addr

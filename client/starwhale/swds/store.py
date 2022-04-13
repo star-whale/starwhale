@@ -78,7 +78,7 @@ class DataSetLocalStore(LocalStorage):
             sys.exit(1)
 
         #TODO: refer to docker push
-        rprint("try to push swds...")
+        rprint(" :fire: try to push swds...")
         _manifest_path = _dir / DEFAULT_MANIFEST_NAME
         _swds = f"{_name}:{_dir.name}"
         _headers = {"Authorization": self._sw_token}

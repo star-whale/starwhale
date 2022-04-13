@@ -31,14 +31,16 @@ def _delete(swmp):
 
 @model_cmd.command("push", help="Push swmp into starwhale controller or hub.starwhale.ai")
 @click.argument("swmp")
-def _push(swmp):
-    ModelPackageLocalStore().push(swmp)
+@click.option("-p", "--project", help="project name, if omit, starwhale will push swmp to your default project")
+@click.option("-f", "--force", default=False, help="force push swmp")
+def _push(swmp, project, force):
+    ModelPackageLocalStore().push(swmp, project, force)
 
 
 @model_cmd.command("pull", help="Pull swmp from starwhale controller or hub.starwhale.ai")
 @click.argument("swmp")
 @click.option("-s", "--starwhale", help="starwhale controller server, default is swcli config remote_addr")
-@click.option("--force", default=False, help="force pull swmp")
+@click.option("-f", "--force", default=False, help="force pull swmp")
 def _pull(swmp, starwhale, force):
     ModelPackageLocalStore().pull(swmp, starwhale, force)
 
