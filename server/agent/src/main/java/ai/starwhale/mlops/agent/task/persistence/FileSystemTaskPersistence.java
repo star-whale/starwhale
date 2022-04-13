@@ -9,15 +9,20 @@ package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import cn.hutool.extra.compress.CompressUtil;
 import cn.hutool.extra.compress.extractor.Extractor;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.LinkOption;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
@@ -42,9 +47,13 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     @Autowired
     private AgentProperties agentProperties;
     @Autowired
+    private StorageProperties storageProperties;
+    @Autowired
     private StorageAccessService storageAccessService;
 
-    private String baseTaskPathFormat = "%s/%s/";
+    private String baseModelPathFormat = "swmp/%s/%s/";
+
+    private String baseTaskPathFormat = "task/%s/%s/";
 
     private String infoSuffix = "taskInfo.json";
 
@@ -72,43 +81,43 @@ public class FileSystemTaskPersistence implements TaskPersistence {
 
     @Override
     public String basePathOfTask(Long id) {
-        return path(baseTaskPathFormat, agentProperties.getTask().getBasePath(), id);
+        return path(baseTaskPathFormat, agentProperties.getBasePath(), id);
     }
 
     @Override
     public String pathOfInfoFile(Long id) {
-        return path(infoFilePath, agentProperties.getTask().getBasePath(), id);
+        return path(infoFilePath, agentProperties.getBasePath(), id);
     }
 
     @Override
     public String pathOfStatusFile(Long id) {
-        return path(statusFilePath, agentProperties.getTask().getBasePath(), id);
+        return path(statusFilePath, agentProperties.getBasePath(), id);
     }
 
     @Override
     public String pathOfSWMPDir(Long id) {
-        return path(swmpDirPath, agentProperties.getTask().getBasePath(), id);
+        return path(swmpDirPath, agentProperties.getBasePath(), id);
     }
 
     @Override
     public String pathOfSWDSFile(Long id) {
-        return path(swdsConfigFilePath, agentProperties.getTask().getBasePath(), id);
+        return path(swdsConfigFilePath, agentProperties.getBasePath(), id);
     }
 
     @Override
     public String pathOfResult(Long id) {
-        return path(resultDirPath, agentProperties.getTask().getBasePath(), id);
+        return path(resultDirPath, agentProperties.getBasePath(), id);
     }
 
     @Override
     public String pathOfLog(Long id) {
-        return path(logDirPath, agentProperties.getTask().getBasePath(), id);
+        return path(logDirPath, agentProperties.getBasePath(), id);
     }
 
     @Override
     public Optional<List<EvaluationTask>> getAllActiveTasks() {
         try {
-            Path tasksPath = Path.of(agentProperties.getTask().getBasePath());
+            Path tasksPath = Path.of(agentProperties.getBasePath());
             if (!Files.exists(tasksPath)) {
                 Files.createDirectories(tasksPath);
                 log.info("init tasks dir, nothing to rebuild, path:{}", tasksPath);
@@ -192,7 +201,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public boolean move2Archived(EvaluationTask task) {
         try {
             Path sourcePath = Path.of(basePathOfTask(task.getId())),
-                    targetDir = Path.of(path(archivedDirPath, agentProperties.getTask().getBasePath()));
+                    targetDir = Path.of(path(archivedDirPath, agentProperties.getBasePath()));
             if (!Files.exists(targetDir)) {
                 Files.createDirectories(targetDir);
             }
@@ -208,12 +217,29 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     @Override
     public boolean preloadingSWMP(EvaluationTask task) {
         try {
-            // pull swmp(tar) and uncompress it to the swmp dir
-            InputStream swmpStream = storageAccessService.get(task.getSwModelPackage().getPath());
-            // uncompress, default is tar:direct uncompress to the target dir
-            Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);
-            extractor.extract(
-                    new File(pathOfSWMPDir(task.getId())));
+            SWModelPackage model = task.getSwModelPackage();
+            Path swmpLocalPath = Path.of(path(baseModelPathFormat, model.getName(), model.getVersion()));
+            // check if exist
+            if (!Files.exists(swmpLocalPath)) {
+                // pull swmp(tar) and uncompress it to the swmp dir
+                Stream<String> paths = storageAccessService.list((task.getSwModelPackage().getPath()));
+                paths.collect(Collectors.toList()).forEach(path-> {
+                    InputStream swmpStream = null;
+                    try {
+                        swmpStream = storageAccessService.get(path);
+                    } catch (IOException e) {
+                        log.error("download swmp file error", e);
+                    }
+                    // uncompress, default is tar:direct uncompress to the target dir
+                    Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);
+                    extractor.extract(
+                            new File(swmpLocalPath.toString()));
+                });
+
+            }
+            // todo: copy link to task, not relly copy ,wait to verify
+            Files.copy(swmpLocalPath, Path.of(pathOfSWMPDir(task.getId())));
+
             return true;
         } catch (Exception e) {
             log.error("preloading swmp occur error:{}", e.getMessage(), e);
@@ -222,8 +248,38 @@ public class FileSystemTaskPersistence implements TaskPersistence {
 
     }
 
+    private final String dataFormat = "%s:%s:%s";
+
     @Override
     public boolean generateSWDSConfig(EvaluationTask task) {
+        JSONObject object = JSONUtil.createObj();
+        object.set("backend", storageProperties.getType());
+        object.set("secret", JSONUtil.createObj()
+                .set("access_key", storageProperties.getS3Config().getAccessKey())
+                .set("secret_key", storageProperties.getS3Config().getSecretKey())
+        );
+        object.set("service", JSONUtil.createObj()
+                .set("endpoint", storageProperties.getS3Config().getEndpoint())
+                .set("region", storageProperties.getS3Config().getRegion())
+        );
+        JSONArray swds = JSONUtil.createArray();
+
+        task.getSwdsBlocks().forEach(swdsBlock -> {
+            JSONObject ds = JSONUtil.createObj();
+            ds.set("bucket", storageProperties.getS3Config().getBucket());
+            ds.set("key", JSONUtil.createObj()
+                    .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getSize()))
+                    .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getSize()))
+            );
+            swds.add(ds);
+        });
+        object.set("swds", swds);
+        try {
+            Files.writeString(Path.of(swdsConfigFilePath), JSONUtil.toJsonStr(object));
+            return true;
+        } catch (IOException e) {
+            log.error("generate swds config failed:{}", e.getMessage(), e);
+        }
         return false;
     }
 

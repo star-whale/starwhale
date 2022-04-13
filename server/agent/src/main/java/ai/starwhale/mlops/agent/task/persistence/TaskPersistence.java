@@ -67,6 +67,11 @@ public interface TaskPersistence {
      */
     boolean preloadingSWMP(EvaluationTask task);
 
+    /**
+     * pre generate swds config
+     * @param task task
+     * @return if success
+     */
     boolean generateSWDSConfig(EvaluationTask task);
 
     /**

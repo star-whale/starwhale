@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @ConfigurationProperties(prefix = "sw.storage")
 public class StorageProperties {
-
+    String type;
     String pathPrefix;
     S3Config s3Config;
 }
