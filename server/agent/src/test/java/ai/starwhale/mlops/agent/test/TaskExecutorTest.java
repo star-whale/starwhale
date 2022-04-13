@@ -57,7 +57,6 @@ public class TaskExecutorTest {
     @MockBean
     private ContainerClient containerClient;
 
-    // todo Have some problem:mock not effect
     @MockBean
     private GPUDetect nvidiaDetect;
 

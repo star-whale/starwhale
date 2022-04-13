@@ -218,7 +218,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public boolean preloadingSWMP(EvaluationTask task) {
         try {
             SWModelPackage model = task.getSwModelPackage();
-            Path swmpLocalPath = Path.of(path(baseModelPathFormat, model.getName(), model.getVersion()));
+            Path swmpLocalPath = Path.of(path(agentProperties.getBasePath() + baseModelPathFormat, model.getName(), model.getVersion()));
             // check if exist
             if (!Files.exists(swmpLocalPath)) {
                 // pull swmp(tar) and uncompress it to the swmp dir

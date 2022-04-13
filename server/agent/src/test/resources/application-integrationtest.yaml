@@ -2,6 +2,15 @@ server:
   port: 8088
 sw:
   agent:
-    task:
-      infoPath: ${SW_TASK_INFO_PATH:/opt/starwhale/tasks/}
-      resultPath: ${SW_TASK_RESULT_PATH:/opt/starwhale/taskResults/}
+    basePath: ${SW_BASE_PATH:/opt/starwhale/}
+  controller:
+    name: swController
+    url: ${SW_CONTROLLER_URL:http://localhost:8082/}
+  storage:
+    path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
+    s3-config:
+      bucket: ${SW_STORAGE_BUCKET:starwhale}
+      accessKey: ${SW_STORAGE_ACCESSKEY:accessKey}
+      secretKey: ${SW_STORAGE_SECRETKEY:secretKey}
+      region: ${SW_STORAGE_REGION:region}
+      endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
