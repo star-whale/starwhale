@@ -31,8 +31,8 @@ def _delete(swmp):
 
 @model_cmd.command("push", help="Push swmp into starwhale controller or hub.starwhale.ai")
 @click.argument("swmp")
-@click.option("-p", "--project", help="project name, if omit, starwhale will push swmp to your default project")
-@click.option("-f", "--force", default=False, help="force push swmp")
+@click.option("-p", "--project", default="", help="project name, if omit, starwhale will push swmp to your default project")
+@click.option("-f", "--force", is_flag=True, help="force push swmp")
 def _push(swmp, project, force):
     ModelPackageLocalStore().push(swmp, project, force)
 
@@ -76,7 +76,7 @@ def _gc(dry_run):
 
 @model_cmd.command("extract", help="Extract local swmp tar file into workdir")
 @click.argument("swmp")
-@click.option("--force", default=False, help="force pull swmp")
+@click.option("-f", "--force", is_flag=True, help="force pull swmp")
 def _extract(swmp, force):
     ModelPackageLocalStore().extract(swmp, force)
 
