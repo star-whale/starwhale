@@ -16,27 +16,31 @@ import ai.starwhale.mlops.api.protocol.swmp.SWMPVersionRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
-import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.RandomUtil;
 import ai.starwhale.mlops.domain.swmp.SWMPFile;
 import ai.starwhale.mlops.domain.swmp.SWMPObject;
 import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageService;
+import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.ApiOperationException;
-import cn.hutool.core.lang.Assert;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import javax.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @RestController
 public class SWModelPackageController implements SWModelPackageApi{
 
@@ -70,7 +74,10 @@ public class SWModelPackageController implements SWModelPackageApi{
             .latestVersion(Version.builder().id(revertRequest.getVersionId()).build())
             .build();
         Boolean res = swmpService.revertVersionTo(swmp);
-        Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert swmp version failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
@@ -78,7 +85,10 @@ public class SWModelPackageController implements SWModelPackageApi{
     public ResponseEntity<ResponseMessage<String>> deleteModelById(String projectId,String modelId) {
         Boolean res = swmpService.deleteSWMP(
             SWMPObject.builder().projectId(projectId).id(modelId).build());
-        Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete swmp failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
@@ -109,10 +119,11 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> createModelVersion(String projectId, String modelId,
         MultipartFile zipFile, SWMPVersionRequest request) {
-        UserVO user = userService.currentUser();
+        User user = userService.currentUserDetail();
         String versionId = createVersion(projectId, modelId, zipFile, request.getImportPath(), user.getId());
+        log.info("Create swmp version successfully, id = {}", versionId);
         return ResponseEntity.ok(Code.success
-            .asResponse(String.valueOf(Optional.of(versionId).orElseThrow(ApiOperationException::new))));
+            .asResponse("success"));
     }
 
     @Override
@@ -120,18 +131,22 @@ public class SWModelPackageController implements SWModelPackageApi{
         String tag) {
         Boolean res = swmpService.modifySWMPVersion(
             Version.builder().id(versionId).tag(tag).build());
-        Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update swmp failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> createModel(String projectId, MultipartFile zipFile, SWMPRequest swmpRequest) {
-        UserVO user = userService.currentUser();
+        User user = userService.currentUserDetail();
         String modelId = swmpService.addSWMP(
             SWMPObject.builder().projectId(projectId).name(swmpRequest.getModelName()).ownerId(user.getId())
                 .build());
         String versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
-        return ResponseEntity.ok(Code.success.asResponse(String.valueOf(Optional.of(versionId).orElseThrow(ApiOperationException::new))));
+        log.info("Create swmp successfully, version id = {}", versionId);
+        return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
