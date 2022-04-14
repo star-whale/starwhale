@@ -36,6 +36,8 @@ public class SWDatasetVersionEntity extends BaseEntity {
 
     private String versionMeta;
 
+    private String filesUploaded;
+
     private String storagePath;
 
     /**

@@ -122,6 +122,7 @@ CREATE TABLE IF NOT EXISTS dataset_version
     version_name  varchar(255) NOT NULL,
     version_tag   varchar(255) ,
     version_meta  TEXT         NOT NULL,
+    files_uploaded  TEXT       ,
     storage_path  TEXT         NOT NULL,
     status    tinyint UNSIGNED NOT NULL DEFAULT 0,
     created_time  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,

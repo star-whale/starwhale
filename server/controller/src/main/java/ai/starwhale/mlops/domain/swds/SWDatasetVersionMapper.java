@@ -28,10 +28,12 @@ public interface SWDatasetVersionMapper {
 
     int addNewVersion(SWDatasetVersionEntity entity);
 
-    int update(SWDatasetVersionEntity entity);
+    int updateVersionTag(SWDatasetVersionEntity entity);
 
-    int updateStatus(Long id ,Integer status);
+    int updateFilesUploaded(SWDatasetVersionEntity entity);
 
-    int deleteById(Long id);
+    int updateStatus(@Param("id")Long id ,@Param("status")Integer status);
+
+    int deleteById(@Param("id")Long id);
 
 }

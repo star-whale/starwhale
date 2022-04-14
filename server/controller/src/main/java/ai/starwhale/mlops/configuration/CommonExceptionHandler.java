@@ -9,6 +9,10 @@ package ai.starwhale.mlops.configuration;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.Code;
+import ai.starwhale.mlops.exception.SWAuthException;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.StarWhaleException;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -55,11 +59,30 @@ public class CommonExceptionHandler {
     }
 
     @ExceptionHandler(StarWhaleApiException.class)
-    public ResponseEntity<ResponseMessage<String>> handleStarWhaleException(HttpServletRequest request, StarWhaleApiException ex) {
+    public ResponseEntity<ResponseMessage<String>> handleStarWhaleApiException(HttpServletRequest request, StarWhaleApiException ex) {
         logger.error("handleInternalServerError {}\n", request.getRequestURI(), ex);
 
         return ResponseEntity
             .status(ex.getHttpStatus())
+            .body(new ResponseMessage<>(ex.getCode(), ex.getTip()));
+    }
+
+    @ExceptionHandler(StarWhaleException.class)
+    public ResponseEntity<ResponseMessage<String>> handleStarWhaleException(HttpServletRequest request, StarWhaleException ex) {
+        logger.error("handleInternalServerError {}\n", request.getRequestURI(), ex);
+        HttpStatus httpStatus;
+        if (ex instanceof SWValidationException) {
+            httpStatus = HttpStatus.BAD_REQUEST;
+        } else if (ex instanceof SWAuthException) {
+            httpStatus = HttpStatus.UNAUTHORIZED;
+        } else if (ex instanceof SWProcessException) {
+            httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        } else {
+            httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        return ResponseEntity
+            .status(httpStatus)
             .body(new ResponseMessage<>(ex.getCode(), ex.getTip()));
     }
 
