@@ -20,8 +20,14 @@ public class FinishedOrCanceled2ArchivedAction extends AbsBaseTaskTransition {
     public EvaluationTask processing(EvaluationTask oldTask, Context context)
         throws Exception {
         EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
+        // move to the archived dir
+        taskPersistence.move2Archived(newTask);
         newTask.setStatus(TaskStatus.ARCHIVED);
         return newTask;
+    }
+    @Override
+    public void post(EvaluationTask oldTask, EvaluationTask newTask, Context context) throws Exception {
+        // just override super method
     }
 
     @Override
@@ -30,7 +36,5 @@ public class FinishedOrCanceled2ArchivedAction extends AbsBaseTaskTransition {
         taskPool.finishedTasks.remove(oldTask);
         taskPool.canceledTasks.remove(oldTask);
         taskPool.archivedTasks.add(newTask);
-        // move to the archived dir
-        taskPersistence.move2Archived(newTask);
     }
 }

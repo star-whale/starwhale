@@ -33,9 +33,4 @@ public class Init2PreparingAction extends AbsBaseTaskTransition {
         // add the new task to the tail
         taskPool.preparingTasks.offer(newTask);
     }
-
-    @Override
-    public void fail(EvaluationTask evaluationTask, Context context, Exception e) {
-        // nothing to do
-    }
 }

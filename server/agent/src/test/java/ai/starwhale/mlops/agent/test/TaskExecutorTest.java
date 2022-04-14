@@ -109,7 +109,7 @@ public class TaskExecutorTest {
     }
 
     @Test
-    public void rebuild_preparing2RunningTest() throws Exception {
+    public void fullFlowTest() throws Exception {
         mockConfig();
 
         rebuildTasksAction.apply(Void.TYPE.cast(null), Context.builder().build());
@@ -118,11 +118,10 @@ public class TaskExecutorTest {
         // check rebuild state
         assertEquals(2, taskPool.preparingTasks.size());
 
-        Mockito.when(taskPersistence.preloadingSWMP(any())).thenReturn(true);
-        Mockito.when(taskPersistence.generateSWDSConfig(any())).thenReturn(true);
+        Mockito.when(taskPersistence.preloadingSWMP(any())).thenReturn("basepath/swmp/testmodel/v1/");
         // do prepare test
         taskExecutor.dealPreparingTasks();
-        // check execute result todo swmp downloaded and uncompress it to the dir
+        // check execute result
         assertEquals(1, taskPool.preparingTasks.size());
         assertEquals(1, taskPool.runningTasks.size());
 
@@ -148,7 +147,7 @@ public class TaskExecutorTest {
         assertEquals(1, idleNum);
 
         // mockConfig
-        Mockito.when(taskPersistence.uploadResult(any())).thenReturn(true);
+        // Mockito.when(taskPersistence.uploadResult(any())).thenReturn(true);
 
         taskExecutor.uploadTaskResults();
         // check execute result

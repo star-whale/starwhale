@@ -122,10 +122,10 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
                 "canceled", List.class);
             // when success,archived the finished/canceled task,and rm to the archive dir
             for (EvaluationTask finishedTask : finishedTasks) {
-                finishedOrCanceled2ArchivedAction.apply(finishedTask, context);
+                finishedOrCanceled2ArchivedAction.apply(finishedTask, null);
             }
             for (EvaluationTask canceledTask : canceledTasks) {
-                finishedOrCanceled2ArchivedAction.apply(canceledTask, context);
+                finishedOrCanceled2ArchivedAction.apply(canceledTask, null);
             }
             // add controller's new tasks to current queue
             if (CollectionUtil.isNotEmpty(response.getTasksToRun())) {
@@ -138,10 +138,5 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
                 taskPool.needToCancel.addAll(response.getTaskIdsToCancel());
             }
         }
-    }
-
-    @Override
-    public void fail(ReportRequest reportRequest, Context context, Exception e) {
-        // do nothing
     }
 }
