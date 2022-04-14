@@ -14,10 +14,11 @@ sw:
     name: swController
     url: ${SW_CONTROLLER_URL:http://localhost:8082/}
   storage:
+    type: s3
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
     s3-config:
       bucket: ${SW_STORAGE_BUCKET:starwhale}
-      accessKey: ${SW_STORAGE_ACCESSKEY:12345678}
-      secretKey: ${SW_STORAGE_SECRETKEY:12345678}
-      region: ${SW_STORAGE_REGION:local}
+      accessKey: ${SW_STORAGE_ACCESSKEY:accessKey}
+      secretKey: ${SW_STORAGE_SECRETKEY:secretKey}
+      region: ${SW_STORAGE_REGION:region}
       endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}

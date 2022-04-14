@@ -8,6 +8,8 @@
 package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,6 +40,14 @@ public interface TaskPersistence {
     Optional<ExecuteStatus> status(Long id);
 
     /**
+     * update status of task
+     * @param id task id
+     * @param status status
+     * @return if success
+     */
+    boolean updateStatus(Long id, ExecuteStatus status) throws Exception;
+
+    /**
      * "created""running""paused""restarting""removing""exited""dead"
      */
     enum ExecuteStatus {
@@ -58,28 +68,28 @@ public interface TaskPersistence {
      * @param task task
      * @return if success
      */
-    boolean move2Archived(EvaluationTask task);
+    void move2Archived(EvaluationTask task) throws Exception;
 
     /**
      * preloading task's swmp tar,and untar it to the dir
      * @param task task
      * @return disk dir path
      */
-    boolean preloadingSWMP(EvaluationTask task);
+    String preloadingSWMP(EvaluationTask task) throws Exception;
 
     /**
      * pre generate swds config
      * @param task task
      * @return if success
      */
-    boolean generateSWDSConfig(EvaluationTask task);
+    void generateSWDSConfig(EvaluationTask task) throws Exception;
 
     /**
      * upload result to storage
      * @param task task
      * @return oss path
      */
-    boolean uploadResult(EvaluationTask task);
+    void uploadResult(EvaluationTask task) throws Exception;
 
     /**
      * @param id taskId
@@ -100,22 +110,34 @@ public interface TaskPersistence {
     String basePathOfTask(Long id);
 
     /**
-     * @param id taskId
+     * @param name model name
+     * @param version model version
      * swmp dir path,Eg:/var/starwhale/task/{taskId}/swmp/(dir)
      */
-    String pathOfSWMPDir(Long id);
+    String pathOfSWMPDir(String name, String version);
 
     /**
      * @param id taskId
      * swds config file path,Eg:/var/starwhale/task/{taskId}/config/swds.json(format:json)
      */
-    String pathOfSWDSFile(Long id);
+    String pathOfSWDSConfigFile(Long id);
 
     /**
      * @param id taskId
      * task result dir path,Eg:/var/starwhale/task/{taskId}/result/
      */
     String pathOfResult(Long id);
+
+    /**
+     * task archived dir path,Eg:/var/starwhale/archived/
+     */
+    String pathOfArchived();
+
+    /**
+     * @param id taskId
+     * task archived dir path,Eg:/var/starwhale/archived/{taskId}/
+     */
+    String pathOfArchived(Long id);
 
     /**
      * task runtime log dir path,Eg:/var/starwhale/task/log/{taskId}/log

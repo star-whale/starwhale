@@ -15,10 +15,11 @@ import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
+import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
-
+@Slf4j
 public abstract class AbsBaseTaskTransition implements DoTransition<EvaluationTask, EvaluationTask> {
 
     @Autowired
@@ -43,5 +44,10 @@ public abstract class AbsBaseTaskTransition implements DoTransition<EvaluationTa
     public void post(EvaluationTask oldTask, EvaluationTask newTask, Context context) throws Exception {
         newTask.setStage(Stage.completed);
         taskPersistence.save(newTask);
+    }
+
+    @Override
+    public void fail(EvaluationTask task, Context context, Exception e) {
+        log.error("execute task:{}, error:{}", JSONUtil.toJsonStr(task), e.getMessage(), e);
     }
 }
