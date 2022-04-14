@@ -22,11 +22,6 @@ public class SWAuthException extends StarWhaleException {
         this.tip = PREFIX_TIP + authType.tipSubject;
     }
 
-    public SWAuthException tip(String tip){
-        this.tip = tip;
-        return this;
-    }
-
     @Override
     public String getCode() {
         return this.code;

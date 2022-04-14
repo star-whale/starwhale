@@ -50,4 +50,4 @@ server:
 
 logging:
   level:
-    ai.starwhale.mlops.domain: debug
+    ai.starwhale.mlops: debug
