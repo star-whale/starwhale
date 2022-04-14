@@ -29,7 +29,7 @@ public interface SWDatasetVersionMapper {
 
     int addNewVersion(SWDatasetVersionEntity entity);
 
-    int updateVersionTag(SWDatasetVersionEntity entity);
+    int update(SWDatasetVersionEntity entity);
 
     int updateFilesUploaded(SWDatasetVersionEntity entity);
 
