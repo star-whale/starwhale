@@ -85,9 +85,12 @@ export default function JobListCard() {
                                     </StyledLink>
                                 ),
                                 [JobStatusType.completed]: (
-                                    <Link to={`/projects/${projectId}/jobs/${job.id}`}>{t('View Results')}</Link>
+                                    <Link to={`/projects/${projectId}/jobs/${job.id}/results`}>
+                                        {t('View Results')}
+                                    </Link>
                                 ),
                             }
+                            job.jobStatus = JobStatusType.completed
 
                             return [
                                 <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}`}>
