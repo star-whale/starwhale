@@ -42,6 +42,10 @@ public class ProjectService {
      */
     public ProjectVO findProject(Project project) {
         ProjectEntity projectEntity = projectMapper.findProject(idConvertor.revert(project.getId()));
+        if(projectEntity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                .tip(String.format("Unable to find project %s", project.getId())), HttpStatus.BAD_REQUEST);
+        }
         return projectConvertor.convert(projectEntity);
     }
 
@@ -85,7 +89,7 @@ public class ProjectService {
         if(entity.getIsDefault() > 0) {
             throw new StarWhaleApiException(
                 new SWValidationException(ValidSubject.PROJECT)
-                    .tip("Default project cannot be deleted"), HttpStatus.BAD_REQUEST);
+                    .tip("Default project cannot be deleted."), HttpStatus.BAD_REQUEST);
         }
         int res = projectMapper.deleteProject(id);
         return res > 0;

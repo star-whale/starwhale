@@ -14,6 +14,8 @@ import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.exception.SWAuthException;
 import ai.starwhale.mlops.exception.SWAuthException.AuthType;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.lang.Assert;
 import com.github.pagehelper.PageHelper;
@@ -46,14 +48,20 @@ public class UserService implements UserDetailsService {
     @Override
     public User loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity userEntity = userMapper.findUserByName(username);
-        User user = new User().fromEntity(userEntity, idConvertor);
-        return Assert.notNull(user, () -> new UsernameNotFoundException(String.format("User %s is not found.", username)));
+        if(userEntity == null) {
+            throw new UsernameNotFoundException(String.format("User %s is not found.", username));
+        }
+        return new User().fromEntity(userEntity, idConvertor);
     }
 
 
     public UserVO currentUser() {
         User user = currentUserDetail();
         UserEntity userEntity = userMapper.findUserByName(user.getName());
+        if(userEntity == null) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB)
+                .tip(String.format("Unable to find user by name %s", user.getName())), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return userConvertor.convert(userEntity);
     }
 
@@ -62,7 +70,7 @@ public class UserService implements UserDetailsService {
         if(authentication == null) {
             throw new StarWhaleApiException(
                 new SWAuthException(AuthType.CURRENT_USER)
-                    .tip("Cannot get current user."), HttpStatus.UNAUTHORIZED);
+                    .tip("Unable to get current user."), HttpStatus.UNAUTHORIZED);
         }
 
         return (User)authentication.getPrincipal();

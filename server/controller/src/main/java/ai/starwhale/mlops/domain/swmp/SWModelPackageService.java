@@ -91,7 +91,15 @@ public class SWModelPackageService {
     public SWModelPackageInfoVO getSWMPInfo(SWMPObject swmp) {
         Long modelID = idConvertor.revert(swmp.getId());
         SWModelPackageEntity model = swmpMapper.findSWModelPackageById(modelID);
+        if(model == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                .tip("Unable to find swmp " + modelID), HttpStatus.BAD_REQUEST);
+        }
         SWModelPackageVersionEntity latestVersion = swmpVersionMapper.getLatestVersion(modelID);
+        if(latestVersion == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                .tip("Unable to find the latest version of swmp " + modelID), HttpStatus.BAD_REQUEST);
+        }
         String meta = latestVersion.getVersionMeta();
 
         return SWModelPackageInfoVO.builder().modelName(model.getSwmpName())
