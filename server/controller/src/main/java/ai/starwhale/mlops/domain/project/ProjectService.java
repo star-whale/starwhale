@@ -10,11 +10,15 @@ package ai.starwhale.mlops.domain.project;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -78,7 +82,9 @@ public class ProjectService {
         Long id = idConvertor.revert(project.getId());
         ProjectEntity entity = projectMapper.findProject(id);
         if(entity.getIsDefault() > 0) {
-            return false;
+            throw new StarWhaleApiException(
+                new SWValidationException(ValidSubject.PROJECT)
+                    .tip("Default project cannot be deleted"), HttpStatus.BAD_REQUEST);
         }
         int res = projectMapper.deleteProject(id);
         return res > 0;

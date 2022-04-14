@@ -16,15 +16,14 @@ import ai.starwhale.mlops.api.protocol.swds.SWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDSVersionRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
-import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.RandomUtil;
 import ai.starwhale.mlops.domain.swds.SWDSFile;
 import ai.starwhale.mlops.domain.swds.SWDSObject;
 import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
 import ai.starwhale.mlops.domain.swds.SWDatasetService;
-import ai.starwhale.mlops.domain.swds.upload.Manifest;
 import ai.starwhale.mlops.domain.swds.upload.SwdsUploader;
+import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.ApiOperationException;
 import ai.starwhale.mlops.exception.SWProcessException;
@@ -33,7 +32,6 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.lang.Assert;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageInfo;
 import java.io.BufferedReader;
 import java.io.File;
@@ -113,7 +111,7 @@ public class DatasetController implements DatasetApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> createDatasetVersion(String projectId, String datasetId,
         MultipartFile zipFile, SWDSVersionRequest swdsVersionRequest) {
-        UserVO user = userService.currentUser();
+        User user = userService.currentUserDetail();
         String versionId = createVersion(projectId, datasetId, zipFile, swdsVersionRequest.getImportPath(), user.getId());
         return ResponseEntity.ok(Code.success
             .asResponse(String.valueOf(Optional.of(versionId).orElseThrow(ApiOperationException::new))));
@@ -177,7 +175,7 @@ public class DatasetController implements DatasetApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> createDataset(String projectId,
         String datasetName, MultipartFile zipFile, SWDSRequest swdsRequest) {
-        UserVO user = userService.currentUser();
+        User user = userService.currentUserDetail();
         String modelId = swDatasetService.addDataset(
             SWDSObject.builder().projectId(projectId).name(datasetName).ownerId(user.getId())
                 .build());

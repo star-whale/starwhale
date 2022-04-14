@@ -11,12 +11,16 @@ import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
+import ai.starwhale.mlops.exception.SWAuthException;
+import ai.starwhale.mlops.exception.SWAuthException.AuthType;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.lang.Assert;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -55,7 +59,9 @@ public class UserService implements UserDetailsService {
     public User currentUserDetail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null) {
-            return null;
+            throw new StarWhaleApiException(
+                new SWAuthException(AuthType.CURRENT_USER)
+                    .tip("Cannot get current user."), HttpStatus.UNAUTHORIZED);
         }
 
         return (User)authentication.getPrincipal();

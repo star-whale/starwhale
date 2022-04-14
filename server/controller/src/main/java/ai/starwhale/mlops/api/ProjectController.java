@@ -11,17 +11,18 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.project.ProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
-import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.project.Project;
 import ai.starwhale.mlops.domain.project.ProjectService;
+import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
-import ai.starwhale.mlops.exception.ApiOperationException;
-import cn.hutool.core.lang.Assert;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
-import java.util.Optional;
 import javax.annotation.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,7 +50,7 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> createProject(ProjectRequest projectRequest) {
-        UserVO user = userService.currentUser();
+        User user = userService.currentUserDetail();
 
         String projectId = projectService
             .createProject(Project.builder()
@@ -57,6 +58,7 @@ public class ProjectController implements ProjectApi{
                 .ownerId(user.getId())
                 .isDefault(false)
                 .build());
+
         return ResponseEntity.ok(Code.success.asResponse(projectId));
 
     }
@@ -64,7 +66,10 @@ public class ProjectController implements ProjectApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> deleteProjectById(String projectId) {
         Boolean res = projectService.deleteProject(Project.builder().id(projectId).build());
-        Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete project failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
@@ -82,7 +87,10 @@ public class ProjectController implements ProjectApi{
                 .id(projectId)
                 .name(projectName)
                 .build());
-        Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update project failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 }

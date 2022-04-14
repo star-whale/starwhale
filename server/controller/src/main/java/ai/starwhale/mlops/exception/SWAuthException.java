@@ -22,6 +22,11 @@ public class SWAuthException extends StarWhaleException {
         this.tip = PREFIX_TIP + authType.tipSubject;
     }
 
+    public SWAuthException tip(String tip){
+        this.tip = tip;
+        return this;
+    }
+
     @Override
     public String getCode() {
         return this.code;
@@ -34,7 +39,8 @@ public class SWAuthException extends StarWhaleException {
 
     public enum AuthType {
         SWDS_UPLOAD("001","SWDS UPLOAD"),
-        SWMP_UPLOAD("002","SWMP UPLOAD");
+        SWMP_UPLOAD("002","SWMP UPLOAD"),
+        CURRENT_USER("003","CURRENT USER");
         final String code;
         final String tipSubject;
         AuthType(String code, String tipSubject){
