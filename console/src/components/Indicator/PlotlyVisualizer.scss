@@ -1,0 +1,10 @@
+
+.PlotlyVisualizer {
+  height: 100%;
+  padding: 10px;
+  overflow: auto;
+  &__recordCnt {
+    height: 100%;
+    overflow: auto;
+  }
+}

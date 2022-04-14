@@ -28,6 +28,7 @@ import TaskListCard from './pages/Job/TaskListCard'
 import JobForm from './domain/job/components/JobForm'
 import JobNewCard from './pages/Project/JobNewCard'
 import axios from 'axios'
+import JobResult from './pages/Job/JobResult'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -72,10 +73,11 @@ const Routes = () => {
                         </ProjectLayout>
                     </Route>
                     {/* job & task */}
-                    <Route exact path='/projects/:projectId/jobs/:jobId/tasks'>
+                    <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
                         <TaskLayout>
                             <Switch>
                                 <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={TaskListCard} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResult} />
                             </Switch>
                         </TaskLayout>
                     </Route>
