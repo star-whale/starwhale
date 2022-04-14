@@ -47,7 +47,7 @@ public interface DoTransition<Old, New> {
                 post(old, o, context);
                 success(old, o, context);
             } catch (Exception e) {
-                // log.error(e.getMessage(), e);
+                //log.error(e.getMessage(), e);
                 fail(old, context, e);
             }
         } else {

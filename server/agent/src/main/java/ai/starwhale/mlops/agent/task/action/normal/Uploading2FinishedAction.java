@@ -18,14 +18,13 @@ import org.springframework.stereotype.Service;
 public class Uploading2FinishedAction extends AbsBaseTaskTransition {
 
     @Override
-    public EvaluationTask processing(EvaluationTask oldTask, Context context) {
+    public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
         EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
         // upload result file to the storage
-        if (taskPersistence.uploadResult(oldTask)) {
-            newTask.setStatus(TaskStatus.FINISHED);
-            return newTask;
-        }
-        throw ErrorCode.uploadError.asException("upload result error");
+        taskPersistence.uploadResult(oldTask);
+        newTask.setStatus(TaskStatus.FINISHED);
+        return newTask;
+
     }
 
     @Override

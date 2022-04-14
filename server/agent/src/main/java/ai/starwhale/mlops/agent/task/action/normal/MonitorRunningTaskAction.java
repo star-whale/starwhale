@@ -64,8 +64,4 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
         }
     }
 
-    @Override
-    public void fail(EvaluationTask oldTask, Context context, Exception e) {
-        // nothing
-    }
 }

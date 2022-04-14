@@ -54,6 +54,6 @@ public class RebuildTasksAction implements DoTransition<Void, List<EvaluationTas
 
     @Override
     public void fail(Void v, Context context, Exception e) {
-        log.info("rebuild task pool error");
+        log.info("rebuild task pool error:{}", e.getMessage(), e);
     }
 }
