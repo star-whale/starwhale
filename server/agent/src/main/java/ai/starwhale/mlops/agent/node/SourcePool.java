@@ -158,7 +158,7 @@ public class SourcePool {
         Optional<CPUInfo> cpuInfo = cpuDetect.detect();
         if(cpuInfo.isPresent()) {
             CPUInfo cpu = cpuInfo.get();
-            for(int i = cpu.getCpuNum(); i >= 0;i--){
+            for(int i = cpu.getCpuNum() - 1 ; i >= 0;i--){
                 deviceSet.add(
                     Device.builder()
                         .id(String.valueOf(i))

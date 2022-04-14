@@ -38,8 +38,8 @@ public class NodeConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "sw.node.sourcePool.gpu.nvidia.detect", havingValue = "cmd", matchIfMissing = true)
-    public GPUDetect nvidiaGPUDetect(XmlMapper xmlMapper) {
-        return new NvidiaCmdDetect(xmlMapper);
+    public GPUDetect nvidiaGPUDetect() {
+        return new NvidiaCmdDetect(new XmlMapper());
     }
 
     @Bean
