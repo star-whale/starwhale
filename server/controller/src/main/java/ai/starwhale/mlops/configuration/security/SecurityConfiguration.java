@@ -72,7 +72,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
         web.ignoring().mvcMatchers("/static/**")
 //            .antMatchers("/login**")// ignore the swagger index html/""'/
             .antMatchers("/swagger-ui/**")
-            .antMatchers("/v3/api-docs/**");
+            .antMatchers("/v3/api-docs/**")
+            .antMatchers("/report");
     }
 
     @Override

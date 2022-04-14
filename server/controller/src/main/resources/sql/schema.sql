@@ -173,7 +173,7 @@ CREATE TABLE IF NOT EXISTS task_info
     task_uuid       varchar(255)     NOT NULL,
     job_id          bigint           NOT NULL,
     agent_id        bigint           ,
-    task_status     tinyint UNSIGNED NOT NULL,
+    task_status     int              NOT NULL,
     result_path     text             NOT NULL,
     swds_blocks     text,
     created_time    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,

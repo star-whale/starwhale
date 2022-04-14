@@ -58,10 +58,11 @@ public class JobBoConverter {
                 .version(jobEntity.getSwmpVersion().getVersionName())
                 .path(jobEntity.getSwmpVersion().getStoragePath()).build())
             .swDataSets(swDataSets)
+            .uuid(jobEntity.getJobUuid())
             .build();
     }
 
-    static final String PATH_INDEX = "index.jsonl";
+    static final String PATH_INDEX = "/index.jsonl";
     private String getIndexPath(SWDatasetVersionEntity swDatasetVersionEntity) {
         return swDatasetVersionEntity.getStoragePath() + PATH_INDEX;
     }

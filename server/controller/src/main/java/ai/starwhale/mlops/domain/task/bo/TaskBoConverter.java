@@ -70,6 +70,7 @@ public class TaskBoConverter {
                 .agent(Agent.fromEntity(entity.getAgent()))
                 .status(StagingTaskStatus.from(entity.getTaskStatus()))
                 .resultPaths(entity.getResultPath())
+                .uuid(entity.getTaskUuid())
                 .swdsBlocks(swdsBlockSerializer.fromString(entity.getSwdsBlocks()))
                 .build();
         } catch (JsonProcessingException e) {

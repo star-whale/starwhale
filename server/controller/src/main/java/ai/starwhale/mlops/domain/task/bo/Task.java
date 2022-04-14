@@ -13,14 +13,18 @@ import ai.starwhale.mlops.domain.system.Agent;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import java.util.List;
 import java.util.Objects;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Tasks are derived from a Job. Tasks are the executing units of a Job.
  */
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Task {
 
     /**

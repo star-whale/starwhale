@@ -104,6 +104,10 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     @Override
     @Transactional
     public void update(Collection<Task> livingTasks, StagingTaskStatus status) {
+        if(null == livingTasks || livingTasks.isEmpty()){
+            log.debug("empty tasks to be updated for status{}",status.getValue());
+            return;
+        }
         final Stream<Task> toBeUpdateStream = livingTasks.parallelStream().filter(task -> {
             final Task taskResident = taskIdMap.get(task.getId());
             if (null == taskResident) {
@@ -173,6 +177,9 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     }
 
     void persistTaskStatus(Set<Long> taskIds){
+        if(CollectionUtils.isEmpty(taskIds)){
+            return;
+        }
         persistTaskStatus(taskIds.parallelStream().map(id->taskIdMap.get(id)).collect(Collectors.toList()));
     }
 
@@ -187,6 +194,9 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
      * change job status triggered by living task status change
      */
     void persistJobStatus(Set<Long> toBeCheckedJobs) {
+        if(CollectionUtils.isEmpty(toBeCheckedJobs)){
+            return;
+        }
         final Map<JobStatus, List<Long>> jobDesiredStatusMap = toBeCheckedJobs.parallelStream()
             .collect(Collectors.groupingBy((jobid -> taskJobStatusHelper.desiredJobStatus(this.ofJob(jobid)))));
         jobDesiredStatusMap.forEach((desiredStatus, jobids) -> {
@@ -196,7 +206,9 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
                 return null != job && job.getStatus().before(desiredStatus);
             }).peek(jobId -> jobIdMap.get(jobId).setStatus(desiredStatus))
                 .collect(Collectors.toList());
-            jobMapper.updateJobStatus(toBeUpdated, desiredStatus.getValue());
+            if(null != toBeUpdated && !toBeUpdated.isEmpty()){
+                jobMapper.updateJobStatus(toBeUpdated, desiredStatus.getValue());
+            }
 
             if (desiredStatus == JobStatus.FINISHED) {
                 removeFinishedJobTasks(jobids);

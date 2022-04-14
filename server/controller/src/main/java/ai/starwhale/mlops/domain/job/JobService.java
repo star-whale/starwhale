@@ -46,6 +46,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Service
@@ -185,10 +186,7 @@ public class JobService {
             throw new SWValidationException(ValidSubject.JOB).tip("not running job can't be canceled ");
         }
         jobMapper.updateJobStatus(List.of(jobId), JobStatus.TO_CANCEL.getValue());
-        taskMapper.updateTaskStatus(tasks.parallelStream().map(Task::getId).collect(
-            Collectors.toList()), new StagingTaskStatus(TaskStatus.CANCEL).getValue());
-        livingTaskStatusMachine.update(tasks,
-            new StagingTaskStatus(TaskStatus.CANCEL));
+        updateTaskStatus(tasks,new StagingTaskStatus(TaskStatus.CANCEL));
     }
 
     /**
@@ -202,16 +200,23 @@ public class JobService {
             throw new SWValidationException(ValidSubject.JOB).tip("freezing job can't be paused ");
         }
         List<Task> createdTasks = tasks.parallelStream()
-            .filter(task -> task.getStatus() == new StagingTaskStatus(TaskStatus.CREATED)).collect(
+            .filter(task -> task.getStatus().equals(new StagingTaskStatus(TaskStatus.CREATED))).collect(
                 Collectors.toList());
         if(null == createdTasks || createdTasks.isEmpty()){
             throw new SWValidationException(ValidSubject.JOB).tip("all tasks are assigned to agent, this job can't be paused now");
         }
         jobMapper.updateJobStatus(List.of(jobId), JobStatus.PAUSED.getValue());
-        taskMapper.updateTaskStatus(createdTasks.parallelStream().map(Task::getId).collect(
-            Collectors.toList()), new StagingTaskStatus(TaskStatus.PAUSED).getValue());
-        livingTaskStatusMachine.update(createdTasks,
-            new StagingTaskStatus(TaskStatus.PAUSED));
+        updateTaskStatus(createdTasks,new StagingTaskStatus(TaskStatus.PAUSED));
+
+    }
+
+    private void updateTaskStatus(Collection<Task> createdTasks,StagingTaskStatus stagingTaskStatus) {
+        List<Long> toBeUpdateTasks = createdTasks.parallelStream().map(Task::getId).collect(
+            Collectors.toList());
+        if(!CollectionUtils.isEmpty(toBeUpdateTasks)){
+            taskMapper.updateTaskStatus(toBeUpdateTasks, stagingTaskStatus.getValue());
+            livingTaskStatusMachine.update(createdTasks, stagingTaskStatus);
+        }
     }
 
     /**
@@ -231,15 +236,12 @@ public class JobService {
             return;
         }
         List<Task> pausedTasks = tasks.parallelStream()
-            .filter(task -> task.getStatus() == new StagingTaskStatus(TaskStatus.PAUSED)).collect(
+            .filter(task -> task.getStatus().equals(new StagingTaskStatus(TaskStatus.PAUSED))).collect(
                 Collectors.toList());
         if(null == pausedTasks || pausedTasks.isEmpty()){
             return;
         }
-        taskMapper.updateTaskStatus(pausedTasks.parallelStream().map(Task::getId).collect(
-            Collectors.toList()), new StagingTaskStatus(TaskStatus.CREATED).getValue());
-        livingTaskStatusMachine.update(pausedTasks,
-            new StagingTaskStatus(TaskStatus.CREATED));
+        updateTaskStatus(pausedTasks,new StagingTaskStatus(TaskStatus.CREATED));
     }
 
 }

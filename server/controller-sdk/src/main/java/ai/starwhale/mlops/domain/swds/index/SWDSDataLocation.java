@@ -7,14 +7,18 @@
 
 package ai.starwhale.mlops.domain.swds.index;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * the location of the block data in one file
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SWDSDataLocation {
 
     /**

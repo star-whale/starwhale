@@ -8,14 +8,18 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.domain.node.Device;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  *
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class JobRuntime {
 
     /**

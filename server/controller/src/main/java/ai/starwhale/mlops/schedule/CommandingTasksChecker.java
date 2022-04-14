@@ -60,7 +60,7 @@ public class CommandingTasksChecker {
      * @return not properly present tasks that are commanding to this node.
      */
     public List<TaskCommand> onNodeReporting(Node node,List<Task> reportedTasks){
-        final Set<TaskCommand> taskCommands = commandingTasks.get(Agent.fromNode(node));
+        final Set<TaskCommand> taskCommands = commandingTasks.computeIfAbsent(Agent.fromNode(node),k->Collections.synchronizedSet(new HashSet<>()));
         final Map<Long, Task> nodeTasks = reportedTasks.stream()
             .collect(Collectors.toMap(Task::getId,
                 Function.identity()));
