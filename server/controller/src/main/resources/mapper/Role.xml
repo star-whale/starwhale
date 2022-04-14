@@ -6,7 +6,7 @@
   -->
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.user.RoleMapper">
+<mapper namespace="ai.starwhale.mlops.domain.user.mapper.RoleMapper">
 
     <select id="listRoles" resultMap="roleResultMap">
         select id as role_id,

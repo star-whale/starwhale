@@ -17,6 +17,8 @@ import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
+import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
+import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWAuthException;

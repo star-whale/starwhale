@@ -7,7 +7,7 @@
   -->
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.system.AgentMapper">
+<mapper namespace="ai.starwhale.mlops.domain.system.mapper.AgentMapper">
 
     <sql id="select_agents">
         select id as agent_id,

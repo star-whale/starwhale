@@ -13,11 +13,13 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
-import ai.starwhale.mlops.domain.task.TaskMapper;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -28,7 +30,7 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.resulting.ResultCollectManager;
-import ai.starwhale.mlops.schedule.TaskScheduler;
+import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
 import java.time.LocalDateTime;
@@ -71,7 +73,7 @@ public class JobService {
     private JobSpliterator jobSpliterator;
 
     @Resource
-    private TaskScheduler taskScheduler;
+    private SWTaskScheduler SWTaskScheduler;
 
     @Resource
     private LivingTaskStatusMachine livingTaskStatusMachine;
@@ -156,7 +158,7 @@ public class JobService {
         allNewJobs.parallel().forEach(job->{
             //one transaction
             final List<Task> tasks = jobSpliterator.split(job);
-            taskScheduler.adoptTasks(tasks,job.getJobRuntime().getDeviceClass());
+            SWTaskScheduler.adoptTasks(tasks,job.getJobRuntime().getDeviceClass());
             livingTaskStatusMachine.adopt(tasks, new StagingTaskStatus(TaskStatus.CREATED));
         });
 

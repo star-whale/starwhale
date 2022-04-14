@@ -11,8 +11,6 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.node.Device.Status;
 import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.task.TaskMapper;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -30,11 +28,11 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-public class SimpleTaskScheduler implements TaskScheduler {
+public class SimpleSWTaskScheduler implements SWTaskScheduler {
 
     final Map<Device.Clazz, ConcurrentLinkedQueue<Task>> taskQueueTable;
 
-    public SimpleTaskScheduler() {
+    public SimpleSWTaskScheduler() {
         this.taskQueueTable = Map.of(Clazz.CPU, new ConcurrentLinkedQueue<>(),
             Clazz.GPU, new ConcurrentLinkedQueue<>());
     }

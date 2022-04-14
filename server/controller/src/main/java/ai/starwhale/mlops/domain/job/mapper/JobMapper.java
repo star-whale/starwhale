@@ -1,5 +1,6 @@
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.domain.job.mapper;
 
+import ai.starwhale.mlops.domain.job.JobEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

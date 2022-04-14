@@ -7,7 +7,7 @@
   -->
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.user.UserMapper">
+<mapper namespace="ai.starwhale.mlops.domain.user.mapper.UserMapper">
     <insert id="createUser" parameterType="ai.starwhale.mlops.domain.user.UserEntity" useGeneratedKeys="true" keyProperty="id">
         insert into user_info (user_name, user_pwd, user_pwd_salt, role_id, user_enabled)
         values (#{userName}, #{userPwd}, #{userPwdSalt}, #{roleId}, #{userEnabled})
@@ -88,6 +88,6 @@
         <result property="createdTime" column="user_created_time"/>
         <result property="modifiedTime" column="user_modified_time"/>
         <result property="roleId" column="role_id"/>
-        <association property="role" resultMap="ai.starwhale.mlops.domain.user.RoleMapper.roleResultMap" />
+        <association property="role" resultMap="ai.starwhale.mlops.domain.user.mapper.RoleMapper.roleResultMap" />
     </resultMap>
 </mapper>

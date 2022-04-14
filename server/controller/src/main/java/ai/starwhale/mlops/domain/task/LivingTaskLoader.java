@@ -9,14 +9,15 @@ package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobEntity;
-import ai.starwhale.mlops.domain.job.JobMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
-import ai.starwhale.mlops.schedule.TaskScheduler;
+import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -35,7 +36,7 @@ public class LivingTaskLoader {
 
     final LivingTaskStatusMachine livingTaskStatusMachine;
 
-    final TaskScheduler taskScheduler;
+    final SWTaskScheduler SWTaskScheduler;
 
     final CommandingTasksChecker commandingTasksChecker;
 
@@ -47,9 +48,9 @@ public class LivingTaskLoader {
 
     final JobBoConverter jobBoConverter;
 
-    public LivingTaskLoader(LivingTaskStatusMachine livingTaskStatusMachine, TaskScheduler taskScheduler, CommandingTasksChecker commandingTasksChecker, TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter, JobBoConverter jobBoConverter) {
+    public LivingTaskLoader(LivingTaskStatusMachine livingTaskStatusMachine, SWTaskScheduler SWTaskScheduler, CommandingTasksChecker commandingTasksChecker, TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter, JobBoConverter jobBoConverter) {
         this.livingTaskStatusMachine = livingTaskStatusMachine;
-        this.taskScheduler = taskScheduler;
+        this.SWTaskScheduler = SWTaskScheduler;
         this.commandingTasksChecker = commandingTasksChecker;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
@@ -108,7 +109,7 @@ public class LivingTaskLoader {
         tasks.parallelStream()
             .collect(Collectors.groupingBy(task -> task.getJob().getJobRuntime().getDeviceClass()))
             .forEach((deviceClass, taskList) ->
-                taskScheduler.adoptTasks(taskList, deviceClass));
+                SWTaskScheduler.adoptTasks(taskList, deviceClass));
     }
 
     /**

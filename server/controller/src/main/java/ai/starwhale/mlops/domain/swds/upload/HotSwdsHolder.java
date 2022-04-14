@@ -8,7 +8,7 @@
 package ai.starwhale.mlops.domain.swds.upload;
 
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
-import ai.starwhale.mlops.domain.swds.SWDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
 import java.util.List;
 import javax.annotation.PostConstruct;
 import org.springframework.stereotype.Component;

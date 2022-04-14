@@ -7,7 +7,7 @@
   -->
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.job.JobMapper">
+<mapper namespace="ai.starwhale.mlops.domain.job.mapper.JobMapper">
 
     <sql id="select_jobs">
         select j.id as job_id,
@@ -125,8 +125,8 @@
         <result property="jobStatus" column="job_status" />
         <result property="deviceType" column="device_type" />
         <result property="deviceAmount" column="device_amount" />
-        <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionMapper.swmpVersionResultMap" />
-        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
-        <association property="baseImage" resultMap="ai.starwhale.mlops.domain.job.BaseImageMapper.baseImageResultMap" />
+        <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper.swmpVersionResultMap" />
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
+        <association property="baseImage" resultMap="ai.starwhale.mlops.domain.job.mapper.BaseImageMapper.baseImageResultMap" />
     </resultMap>
 </mapper>

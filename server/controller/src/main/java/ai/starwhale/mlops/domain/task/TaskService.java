@@ -4,6 +4,7 @@ import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
