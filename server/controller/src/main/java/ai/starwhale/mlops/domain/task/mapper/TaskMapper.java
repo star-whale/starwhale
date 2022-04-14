@@ -1,5 +1,6 @@
-package ai.starwhale.mlops.domain.task;
+package ai.starwhale.mlops.domain.task.mapper;
 
+import ai.starwhale.mlops.domain.task.TaskEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

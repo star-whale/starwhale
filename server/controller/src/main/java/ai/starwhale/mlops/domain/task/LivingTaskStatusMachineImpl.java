@@ -8,11 +8,12 @@
 package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.JobMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -136,7 +137,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     @Override
     public Collection<Task> ofStatus(StagingTaskStatus taskStatus) {
-        return taskStatusMap.get(taskStatus).stream().map(taskIdMap::get)
+        return taskStatusMap.computeIfAbsent(taskStatus,k-> Collections.synchronizedList(new LinkedList<>())).stream().map(taskIdMap::get)
             .collect(Collectors.toList());
     }
 

@@ -1,5 +1,6 @@
 package ai.starwhale.mlops.domain.project;
 
+import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;

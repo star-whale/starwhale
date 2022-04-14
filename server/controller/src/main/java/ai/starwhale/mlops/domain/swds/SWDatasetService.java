@@ -14,6 +14,8 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -5,8 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.domain.job.mapper;
 
+import ai.starwhale.mlops.domain.job.BaseImageEntity;
 import java.util.List;
 
 public interface BaseImageMapper {

@@ -5,8 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.swds;
+package ai.starwhale.mlops.domain.swds.mapper;
 
+import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

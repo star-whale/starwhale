@@ -5,8 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.user;
+package ai.starwhale.mlops.domain.user.mapper;
 
+import ai.starwhale.mlops.domain.user.RoleEntity;
 import java.util.List;
 
 public interface RoleMapper {

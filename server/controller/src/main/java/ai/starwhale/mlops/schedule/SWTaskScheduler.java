@@ -10,7 +10,6 @@ package ai.starwhale.mlops.schedule;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Node;
 
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.List;
 import java.util.Collection;
@@ -18,7 +17,7 @@ import java.util.Collection;
 /**
  * schedule tasks of jobs
  */
-public interface TaskScheduler {
+public interface SWTaskScheduler {
 
 
     /**
