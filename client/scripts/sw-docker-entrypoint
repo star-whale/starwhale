@@ -44,11 +44,11 @@ activate_swmp_env() {
     unset PYTHONWARNINGS
 
     echo '--> source activate ...'
-    $(sh ./activate.sw)
+    eval "$(./activate.sw)"
 }
 
 run_ppl() {
-    echo "--> start to run swmp ppl ..."
+    echo "--> start to run swmp ppl, use $(which swcli) cli..."
     swcli model ppl ${WORKDIR}/src
 }
 

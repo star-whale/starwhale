@@ -71,8 +71,8 @@ def conda_export(path: t.Union[str, Path], env:str=""):
     check_call(f"{cmd} {env} > {path}", shell=True)
 
 
-def conda_restore(env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]) -> bytes:
-    cmd = f"{get_conda_bin()} env create --file {env_fpath} --prefix {target_env}"
+def conda_restore(env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]):
+    cmd = f"{get_conda_bin()} env update --file {env_fpath} --prefix {target_env}"
     check_call(cmd, shell=True)
 
 
@@ -82,7 +82,13 @@ def conda_activate(env: t.Union[str, Path]) -> None:
 
 
 def conda_activate_render(env: t.Union[str, Path], path: Path) -> None:
-    content = f"echo '{get_conda_bin()} activate {env}'"
+    content = f"""
+_conda_hook="$(/opt/miniconda3/bin/conda shell.bash hook)"
+cat >> /dev/stdout << EOF
+$_conda_hook
+conda activate /opt/starwhale/swmp/dep/conda/env
+EOF
+"""
     _render_sw_activate(content, path)
 
 

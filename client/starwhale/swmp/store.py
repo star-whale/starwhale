@@ -205,10 +205,9 @@ class ModelPackageLocalStore(LocalStorage):
         _tar_fpath = _conda_dir / CONDA_ENV_TAR
         _env_dir = _conda_dir / "env"
 
-        empty_dir(_env_dir)
-        ensure_dir(_env_dir)
-
         if _dep["local_gen_env"] and _tar_fpath.exists():
+            empty_dir(_env_dir)
+            ensure_dir(_env_dir)
             logger.info(f"extract {_tar_fpath} ...")
             with tarfile.open(str(_tar_fpath)) as f:
                 f.extractall(str(_env_dir))
