@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 
 /**
@@ -32,6 +33,7 @@ public class Manifest{
     String process;
     String version;
     String name;
+    Map<String,String> signature;
     String rawYaml;
     @Data
     public static class Extra{

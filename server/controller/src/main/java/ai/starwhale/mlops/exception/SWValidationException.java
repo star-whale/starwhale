@@ -33,7 +33,8 @@ public class SWValidationException extends StarWhaleException {
     }
 
     public SWValidationException tip(String tip){
-        this.tip = tip;
+        this.tip += "\n";
+        this.tip += tip;
         return this;
     }
 

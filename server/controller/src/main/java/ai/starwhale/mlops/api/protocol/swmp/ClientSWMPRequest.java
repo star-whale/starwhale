@@ -22,6 +22,9 @@ public class ClientSWMPRequest {
      */
     static final String VERSION_LATEST="LATEST";
 
+    /**
+     * in formation of name:version
+     */
     String swmp;
 
 

@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.resulting.ResultCollectManager;
 import ai.starwhale.mlops.schedule.TaskScheduler;
 import cn.hutool.core.util.IdUtil;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -173,7 +175,8 @@ public class JobService {
     public void cancelJob(Long jobId){
         Collection<Task> tasks = livingTaskStatusMachine.ofJob(jobId);
         if(null == tasks || tasks.isEmpty()){
-            throw new SWValidationException(ValidSubject.JOB).tip("freezing job can't be canceled ");
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB).tip("freezing job can't be canceled "),
+                HttpStatus.BAD_REQUEST);
         }
         JobStatus desiredJobStatus = taskJobStatusHelper.desiredJobStatus(tasks);
         if(desiredJobStatus != JobStatus.RUNNING){

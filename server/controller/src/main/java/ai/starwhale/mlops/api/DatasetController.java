@@ -144,7 +144,7 @@ public class DatasetController implements DatasetApi{
                 swdsUploader.end(uploadId);
                 return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
             default:
-                throw new SWValidationException(ValidSubject.SWDS).tip("unknown phase " + uploadRequest.getPhase());
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("unknown phase " + uploadRequest.getPhase()),HttpStatus.BAD_REQUEST);
         }
     }
 

@@ -142,6 +142,7 @@ public class ResultCollectManager {
 
     @PreDestroy
     public void exitHook() {
+        log.debug("system exited!!");
         resultCollectors.entrySet().parallelStream().forEach(entry -> {
             final ResultCollector collector = entry.getValue();
             final List<Long> doingCollectTasks = taskMapper.listTasks(entry.getKey())
