@@ -20,39 +20,42 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class HotSwdsHolder {
 
-    Map<Long, SWDatasetVersionEntity> swdsHolder;
+    Map<String, SWDSVersionWithMeta> swdsHolder;
 
     final SWDatasetVersionMapper swDatasetVersionMapper;
 
+    final SWDSVersionWithMetaConverter swdsVersionWithMetaConverter;
+
     public HotSwdsHolder(
-        SWDatasetVersionMapper swDatasetVersionMapper){
+        SWDatasetVersionMapper swDatasetVersionMapper,
+        SWDSVersionWithMetaConverter swdsVersionWithMetaConverter) {
         this.swDatasetVersionMapper = swDatasetVersionMapper;
+        this.swdsVersionWithMetaConverter = swdsVersionWithMetaConverter;
         this.swdsHolder = new ConcurrentHashMap<>();
     }
 
-    public void manifest(SWDatasetVersionEntity swDatasetVersionEntity){
-        swdsHolder.putIfAbsent(swDatasetVersionEntity.getId(), swDatasetVersionEntity);
+    public void manifest(SWDatasetVersionEntity swDatasetVersionEntity) {
+        swdsHolder.put(swDatasetVersionEntity.getVersionName(),
+            swdsVersionWithMetaConverter.from(swDatasetVersionEntity));
     }
 
-    public void cancel(Long swdsId){
+    public void cancel(String swdsId) {
         swdsHolder.remove(swdsId);
     }
 
-    public void end(Long swdsId){
+    public void end(String swdsId) {
         swdsHolder.remove(swdsId);
     }
 
-    public Optional<SWDatasetVersionEntity> of(Long id){
+    public Optional<SWDSVersionWithMeta> of(String id) {
         return Optional.ofNullable(swdsHolder.get(id));
     }
 
     @PostConstruct
-    public void loadUploadingDs(){
+    public void loadUploadingDs() {
         List<SWDatasetVersionEntity> datasetVersionEntities = swDatasetVersionMapper.findVersionsByStatus(
             SWDatasetVersionEntity.STATUS_UN_AVAILABLE);
-        datasetVersionEntities.parallelStream().forEach(dv->{
-            swdsHolder.putIfAbsent(dv.getId(),dv);
-        });
+        datasetVersionEntities.parallelStream().forEach(this::manifest);
     }
 
 }

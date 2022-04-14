@@ -58,7 +58,7 @@ public class SWDatasetService {
 
 
     public Boolean modifySWDSVersion(Version version) {
-        int update = swdsVersionMapper.update(
+        int update = swdsVersionMapper.updateVersionTag(
             SWDatasetVersionEntity.builder()
                 .id(idConvertor.revert(version.getId()))
                 .versionTag(version.getTag())

@@ -37,6 +37,12 @@ public class SWAuthException extends StarWhaleException {
         return this.tip;
     }
 
+    public SWAuthException tip(String tip){
+        this.tip += "\n";
+        this.tip += tip;
+        return this;
+    }
+
     public enum AuthType {
         SWDS_UPLOAD("001","SWDS UPLOAD"),
         SWMP_UPLOAD("002","SWMP UPLOAD"),
