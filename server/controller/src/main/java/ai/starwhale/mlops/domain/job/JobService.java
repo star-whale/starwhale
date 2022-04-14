@@ -101,7 +101,10 @@ public class JobService {
 
     public JobVO findJob(String projectId, String jobId) {
         JobEntity entity = jobMapper.findJobById(idConvertor.revert(jobId));
-
+        if(entity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
+                .tip(String.format("Unable to find job %s", jobId)), HttpStatus.BAD_REQUEST);
+        }
         JobVO jobVO = jobConvertor.convert(entity);
         List<SWDatasetVersionEntity> dsvEntities = jobSWDSVersionMapper.listSWDSVersionsByJobId(
             entity.getId());
@@ -140,6 +143,10 @@ public class JobService {
         jobMapper.addJob(jobEntity);
 
         String datasetVersionIds = jobRequest.getDatasetVersionIds();
+        if(datasetVersionIds == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
+                .tip("Dataset Version ids must be set."), HttpStatus.BAD_REQUEST);
+        }
         List<Long> dsvIds = Arrays.stream(datasetVersionIds.split("[,;]"))
             .map(idConvertor::revert)
             .collect(Collectors.toList());
