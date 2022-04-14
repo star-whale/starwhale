@@ -9,6 +9,7 @@ package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import ai.starwhale.mlops.domain.job.mapper.BaseImageMapper;
 import ai.starwhale.mlops.domain.node.Device;
 import java.util.ArrayList;
 import java.util.List;

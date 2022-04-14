@@ -7,7 +7,7 @@
   -->
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.project.ProjectMapper">
+<mapper namespace="ai.starwhale.mlops.domain.project.mapper.ProjectMapper">
     <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity" useGeneratedKeys="true" keyProperty="id">
         insert into project_info(project_name, owner_id)
         values (#{projectName}, #{ownerId})
@@ -81,6 +81,6 @@
         <result property="createdTime" column="project_created_time"/>
         <result property="modifiedTime" column="project_modified_time"/>
         <result property="ownerId" column="owner_id" />
-        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
     </resultMap>
 </mapper>

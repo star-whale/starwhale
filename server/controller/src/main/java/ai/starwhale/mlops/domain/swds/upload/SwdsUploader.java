@@ -10,12 +10,12 @@ package ai.starwhale.mlops.domain.swds.upload;
 import static ai.starwhale.mlops.domain.swds.upload.SWDSVersionWithMetaConverter.EMPTY_YAML;
 
 import ai.starwhale.mlops.common.util.Blake2bUtil;
-import ai.starwhale.mlops.domain.project.ProjectMapper;
+import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDatasetEntity;
-import ai.starwhale.mlops.domain.swds.SWDatasetMapper;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
-import ai.starwhale.mlops.domain.swds.SWDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWAuthException;

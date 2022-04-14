@@ -7,7 +7,7 @@
   -->
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.swds.SWDatasetMapper">
+<mapper namespace="ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper">
     <sql id="select_swds">
         select s.id as swds_id,
                s.dataset_name,
@@ -75,6 +75,6 @@
         <result property="isDeleted" column="is_deleted" />
         <result property="createdTime" column="swds_created_time" />
         <result property="modifiedTime" column="swds_modified_time" />
-        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
     </resultMap>
 </mapper>

@@ -1,4 +1,4 @@
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.domain.job.mapper;
 
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import java.util.List;

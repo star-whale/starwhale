@@ -11,6 +11,7 @@ import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
+import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.exception.SWAuthException;
 import ai.starwhale.mlops.exception.SWAuthException.AuthType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;

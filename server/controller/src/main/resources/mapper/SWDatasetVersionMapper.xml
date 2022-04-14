@@ -6,7 +6,7 @@
   ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
   -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.swds.SWDatasetVersionMapper">
+<mapper namespace="ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper">
     <sql id="select_swds_version">
         select dsv.id as dsv_id,
                dataset_id,
@@ -115,6 +115,6 @@
         <result property="ownerId" column="owner_id" />
         <result property="status" column="status" />
         <result property="filesUploaded" column="files_uploaded" />
-        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
     </resultMap>
 </mapper>

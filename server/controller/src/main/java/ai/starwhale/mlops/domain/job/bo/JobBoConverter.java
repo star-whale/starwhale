@@ -11,13 +11,13 @@ import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobRuntime;
-import ai.starwhale.mlops.domain.job.JobSWDSVersionMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageEntity;
-import ai.starwhale.mlops.domain.swmp.SWModelPackageMapper;
+import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
