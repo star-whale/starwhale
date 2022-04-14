@@ -17,22 +17,21 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
 #python: python3.7/3.8/3.9, virtualenv, conda
+RUN mkdir /root/.pip
+COPY external/pip.conf /root/.pip/pip.conf
+
 RUN add-apt-repository -y ppa:deadsnakes/ppa \
     && apt-get update \
-    && apt-get install -y python3.7 python3.8 python3.9 python3-pip\
-    && pip config set global.index-url https://pypi.doubanio.com/simple/ \
-    && pip config set install.trusted-host pypi.doubanio.com \
+    && apt-get install -y python3.7 python3.8 python3.9 python3-pip python3-venv python3.8-venv python3.7-venv python3.9-venv \
     && python3.7 -m pip install virtualenv \
     && python3.8 -m pip install virtualenv \
     && python3.9 -m pip install virtualenv \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
-ENV PATH /opt/miniconda3/bin:$PATH
 RUN curl -s -o /tmp/conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && bash /tmp/conda.sh -b -p /opt/miniconda3 \
-    && conda init --all \
-    && conda clean -a -y -f \
+    && /opt/miniconda3/bin/conda clean -a -y -f \
     && rm -rf /tmp/conda.sh
 
 #TODO: gpu/cuda

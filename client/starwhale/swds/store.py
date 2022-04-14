@@ -20,6 +20,7 @@ from starwhale.consts import (
     DEFAULT_DATASET_YAML_NAME, DEFAULT_MANIFEST_NAME, SW_API_VERSION
 )
 from starwhale.utils.http import wrap_sw_error_resp
+from starwhale.utils.fs import empty_dir
 from starwhale.utils import fmt_http_server, pretty_bytes
 from starwhale.utils.error import NotFoundError
 
@@ -64,6 +65,7 @@ class DataSetLocalStore(LocalStorage):
                     name=name_dir.name, version=ver_dir.name,
                     tag=_tag, environment=_manifest["dep"]["env"],
                     size=pretty_bytes(_manifest.get("dataset_byte_size", 0)),
+                    generate="",
                     created=_manifest["created_at"],
                 )
 
@@ -156,8 +158,7 @@ class DataSetLocalStore(LocalStorage):
 
         if _dir.exists() and _dir.is_dir():
             click.confirm(f"continue to delete {_dir}?", abort=True)
-            open_fs(str(_dir.resolve())).removetree("/")
-            _dir.rmdir()
+            empty_dir(_dir)
             rprint(f" :bomb: delete dataset dir {_dir}")
         else:
             rprint(f" :diving_mask: {_dir} is not dir, please check, we will not delete it")

@@ -19,7 +19,7 @@ from starwhale.consts import (
 
 class LocalStorage(object):
     LATEST_TAG = "latest"
-    SWobjMeta = namedtuple("SWobjMeta", ["name", "version", "tag", "environment", "size", "created"])
+    SWobjMeta = namedtuple("SWobjMeta", ["name", "version", "tag", "environment", "size", "generate", "created"])
 
     __metaclass__ = ABCMeta
 
@@ -83,10 +83,11 @@ class LocalStorage(object):
         table.add_column("Tag", style="magenta")
         table.add_column("Size", style="magenta")
         table.add_column("Environment", style="magenta")
+        table.add_column("Generate", style="magenta")
         table.add_column("Created", justify="right")
 
         for s in self.iter_local_swobj():
-            table.add_row(s.name, s.version, s.tag, s.size, s.environment, s.created)
+            table.add_row(s.name, s.version, s.tag, s.size, s.environment, s.generate, s.created)
 
         Console().print(table)
 

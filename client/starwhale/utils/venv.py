@@ -2,12 +2,11 @@ import os
 import platform
 import typing as t
 from pathlib import Path
-import subprocess
-from subprocess import check_call, check_output
+import shutil
 
 from loguru import logger
 import conda_pack
-from fs.copy import copy_fs
+from rich import print as rprint
 
 from starwhale.utils import (
     get_python_run_env, get_python_version,
@@ -15,15 +14,22 @@ from starwhale.utils import (
     get_conda_env,
 )
 from starwhale.utils.error import NoSupportError
-from starwhale.utils.fs import ensure_dir
+from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.process import check_call
 
 
-CONDA_ENV_TAR = "env.tar"
+CONDA_ENV_TAR = "env.tar.gz"
 DUMP_CONDA_ENV_FNAME = "env-lock.yaml"
 DUMP_PIP_REQ_FNAME = "pip-req-lock.txt"
 DUMP_USER_PIP_REQ_FNAME = "pip-req.txt"
+SW_ACTIVATE_SCRIPT = "activate.sw"
 
 SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
+SW_PYPI_INDEX_URL = os.environ.get("SW_PYPI_INDEX_URL", "http://mirrors.aliyun.com/pypi/simple/")
+SW_PYPI_EXTRA_INDEX_URL = os.environ.get("SW_PYPI_EXTRA_INDEX_URL",
+                                         "https://pypi.tuna.tsinghua.edu.cn/simple/ http://pypi.mirrors.ustc.edu.cn/simple/ https://pypi.doubanio.com/simple/ https://pypi.org/simple")
+SW_PYPI_TRUSTED_HOST = os.environ.get("SW_PYPI_TRUSTED_HOST",
+                                      "mirrors.aliyun.com pypi.tuna.tsinghua.edu.cn pypi.mirrors.ustc.edu.cn pypi.doubanio.com pypi.org")
 
 
 def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
@@ -32,31 +38,98 @@ def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
     req = str(req)
     cmd = [os.path.join(venvdir, 'bin', 'pip'), 'install',
            '--exists-action', 'w',
-           '--index-url', 'http://pypim.dapps.douban.com/simple',
-           '--extra-index-url', 'https://pypi.python.org/simple/',
-           '--trusted-host', 'pypim.dapps.douban.com',
+           '--index-url', SW_PYPI_INDEX_URL,
+           '--extra-index-url', SW_PYPI_EXTRA_INDEX_URL,
+           '--trusted-host', SW_PYPI_TRUSTED_HOST,
            ]
 
     cmd += ['-r', req] if os.path.isfile(req) else [req]
     check_call(cmd)
 
 
-def setup_venv(venvdir: t.Union[str, Path]) -> None:
-    venvdir = str(venvdir)
+def venv_activate(venvdir: t.Union[str, Path]) -> None:
+    _fpath = Path(venvdir) / "bin" / "activate"
+    cmd = f"source {_fpath.absolute()}"
+    check_call(cmd, shell=True, executable="/bin/bash")
+
+
+def venv_setup(venvdir: t.Union[str, Path]) -> None:
     #TODO: define starwhale virtualenv.py
-    check_call(['python3', '-m', 'venv', venvdir])
+    #TODO: use more elegant method to make venv portable
+    check_call(f"python3 -m venv {venvdir}", shell=True)
 
 
-def pip_freeze(path: t.Union[str, Path]) -> bytes:
+def pip_freeze(path: t.Union[str, Path]):
     #TODO: add cmd timeout and error log
-    return check_output(f"pip freeze > {path}", shell=True, stderr=subprocess.STDOUT)
+    check_call(f"pip freeze > {path}", shell=True)
 
 
-def conda_export(path: t.Union[str, Path], env:str="") -> bytes:
+def conda_export(path: t.Union[str, Path], env:str=""):
     #TODO: add cmd timeout
-    cmd = "conda env export"
+    cmd = f"{get_conda_bin()} env export"
     env = f"-n {env}" if env else ""
-    return subprocess.check_output(f"{cmd} {env} > {path}", shell=True, stderr=subprocess.STDOUT)
+    check_call(f"{cmd} {env} > {path}", shell=True)
+
+
+def conda_restore(env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]):
+    cmd = f"{get_conda_bin()} env update --file {env_fpath} --prefix {target_env}"
+    check_call(cmd, shell=True)
+
+
+def conda_activate(env: t.Union[str, Path]) -> None:
+    cmd = f"{get_conda_bin()} activate {env}"
+    check_call(cmd, shell=True)
+
+
+def conda_activate_render(env: t.Union[str, Path], path: Path) -> None:
+    content = f"""
+_conda_hook="$(/opt/miniconda3/bin/conda shell.bash hook)"
+cat >> /dev/stdout << EOF
+$_conda_hook
+conda activate /opt/starwhale/swmp/dep/conda/env
+EOF
+"""
+    _render_sw_activate(content, path)
+
+
+def venv_activate_render(venvdir: t.Union[str, Path], path: Path, relocate: bool=False) -> None:
+    bin = f"{venvdir}/bin"
+    if relocate:
+        content = f"""
+sed -i '1d' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
+sed -i '1i\#!{bin}/python3' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
+
+sed -i 's#^VIRTUAL_ENV=.*$#VIRTUAL_ENV={venvdir}#g' {bin}/activate
+rm -rf {bin}/python3
+ln -s /usr/bin/python3 {bin}/python3
+echo 'source {bin}/activate'
+"""
+    else:
+        content = f"""
+echo 'source {venvdir}/bin/activate'
+"""
+    _render_sw_activate(content, path)
+
+
+def _render_sw_activate(content: str, path: Path) -> None:
+    ensure_file(path, content, mode=0o755)
+    rprint(f" :clap: {path.name} is generated at {path}")
+    rprint(f" :compass: run cmd:  ")
+    rprint(f" \t [bold red] $(sh {path}) [/]")
+
+
+def get_conda_bin() -> str:
+    #TODO: add process cache
+    for _p in (
+        "/opt/miniconda3/bin/conda",
+        "/opt/anaconda3/bin/conda",
+        os.path.expanduser("~/miniconda3/bin/conda"),
+        os.path.expanduser("~/anaconda3/bin/conda"),
+    ):
+        if os.path.exists(_p):
+            return _p
+    else:
+        return "conda"
 
 
 def dump_python_dep_env(dep_dir: t.Union[str, Path],
@@ -70,7 +143,6 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
     py_ver = get_python_version()
 
     _manifest = dict(
-        dep=dict(local_gen_env=False),
         env=pr_env,
         system=sys_name,
         python=py_ver,
@@ -91,6 +163,9 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
 
     logger.info(f"[info:dep]python env({pr_env}), os({sys_name}, python({py_ver}))")
 
+    if os.path.exists(pip_req_fpath):
+        shutil.copyfile(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
+
     if is_conda():
         logger.info(f"[info:dep]dump conda environment yaml: {_conda_lock_env}")
         conda_export(_conda_lock_env)
@@ -107,7 +182,7 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
     elif is_linux():
         #TODO: more design local or remote build venv
         #TODO: ignore some pkg when dump, like notebook?
-        _manifest["dep"]["local_gen_env"] = True  # type: ignore
+        _manifest["local_gen_env"] = True  # type: ignore
 
         if is_conda():
             cenv = get_conda_env()
@@ -122,13 +197,12 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
         else:
             #TODO: tune venv create performance, use clone?
             logger.info(f"[info:dep]build venv dir: {_venv_dir}")
-            setup_venv(_venv_dir)
+            venv_setup(_venv_dir)
             logger.info(f"[info:dep]install pip freeze({_pip_lock_req}) to venv: {_venv_dir}")
             install_req(_venv_dir, _pip_lock_req)
-            if pip_req_fpath:
+            if os.path.exists(pip_req_fpath):
                 logger.info(f"[info:dep]install custom pip({pip_req_fpath}) to venv: {_venv_dir}")
                 install_req(_venv_dir, pip_req_fpath)
-                copy_fs(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
     else:
         raise NoSupportError(f"no support {sys_name} system")
 
