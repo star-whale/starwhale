@@ -29,6 +29,7 @@ import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -75,11 +76,15 @@ public class ReportProcessorImp implements ReportProcessor {
     @Transactional
     public ReportResponse receive(ReportRequest report) {
         final Node nodeInfo = report.getNodeInfo();
+        if(null == nodeInfo){
+            log.error("node info reported is null");
+            return new ReportResponse(new ArrayList<>(),new ArrayList<>());
+        }
         AgentEntity agentEntity = agentMapper.findByIpForUpdate(nodeInfo.getIpAddr());
         if (null == agentEntity) {
             agentEntity = insertAgent(nodeInfo);
         }
-        final List<TaskReport> taskReports = report.getTasks();
+        final List<TaskReport> taskReports = report.getTasks() == null? new ArrayList<>():report.getTasks();
         final List<Task> tasks = taskReports.parallelStream().map(taskReport -> {
             final Long taskId = taskReport.getId();
             final Task tsk = livingTaskStatusMachine.ofId(taskId)

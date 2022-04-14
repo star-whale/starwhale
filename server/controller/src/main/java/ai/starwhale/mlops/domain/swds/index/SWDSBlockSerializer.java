@@ -46,7 +46,7 @@ public class SWDSBlockSerializer {
             sb.append(objectMapper.writeValueAsString(swdsBlock));
             sb.append(TOKEN_LINE);
         }
-        sb.deleteCharAt(sb.length());
+        sb.deleteCharAt(sb.length() - 1);
         return sb.toString();
     }
 

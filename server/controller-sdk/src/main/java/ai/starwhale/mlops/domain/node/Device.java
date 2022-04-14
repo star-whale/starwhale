@@ -8,14 +8,18 @@
 package ai.starwhale.mlops.domain.node;
 
 import java.util.Objects;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Device is a computational unit such as GPU/ CPU or TPU which is the core resource for a Node to schedule
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Device {
 
     /**

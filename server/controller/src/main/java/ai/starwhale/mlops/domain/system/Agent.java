@@ -27,6 +27,9 @@ public class Agent {
     String ip;
 
     public static Agent fromEntity(AgentEntity entity){
+        if(null == entity){
+            return null;
+        }
         return Agent.builder().id(entity.getId()).ip(entity.getAgentIp()).build();
     }
 
