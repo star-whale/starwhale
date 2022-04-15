@@ -36,6 +36,7 @@
                mv.version_meta as mv_version_meta,
                mv.created_time as mv_created_time,
                mv.modified_time as mv_modified_time,
+               mv.storage_path as mv_storage_path,
                b.id as image_id,
                b.image_name,
                b.created_time as image_created_time,
