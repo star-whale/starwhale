@@ -10,6 +10,7 @@ package ai.starwhale.mlops.agent.task.persistence;
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.utils.TarUtil;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
@@ -20,12 +21,12 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.security.Permissions;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
@@ -33,16 +34,16 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.util.StringUtils;
+import software.amazon.awssdk.services.s3.model.Permission;
 
 /**
  * <ul>under the basePath,Eg:/var/starwhale/，there have serial path：</ul>
@@ -157,7 +158,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 return Optional.of(List.of());
             } else {
                 // rebuild taskQueue
-                Stream<Path> taskInfos = Files.find(tasksPath, 1,
+                Stream<Path> taskInfos = Files.find(tasksPath, 3,
                         (path, basicFileAttributes) -> true);
                 return Optional.of(
                         taskInfos
@@ -208,7 +209,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 }
             }
 
-            return Optional.of(ExecuteStatus.UNKNOWN);
+            return Optional.of(ExecuteStatus.unknown);
         } catch (Exception e) {
             log.error("get task container status occur error:{}", e.getMessage(), e);
             return Optional.empty();
@@ -264,12 +265,26 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 InputStream swmpStream = null;
                 try {
                     swmpStream = storageAccessService.get(path);
+                    /*FileOutputStream outputStream = new FileOutputStream("/mnt/data/gxx/test.tar");
+                    int read;
+                    byte[] bytes = new byte[2048];
+                    while ((read = swmpStream.read(bytes)) != -1) {
+                        outputStream.write(bytes, 0, read);
+                    }*/
+                    // uncompress, default is tar:direct uncompress to the target dir
+                    /*Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);
+                    extractor.extract(new File(cachePathStr));
+                    Files.setPosixFilePermissions(Path.of(cachePathStr), Set.of(PosixFilePermission.OTHERS_EXECUTE, PosixFilePermission.OWNER_EXECUTE));*/
+
+                    TarUtil.extractor(swmpStream, cachePathStr);
+
                 } catch (IOException e) {
                     log.error("download swmp file error", e);
                 }
-                // uncompress, default is tar:direct uncompress to the target dir
-                Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);
-                extractor.extract(new File(cachePathStr));
+
+
+
+
             });
         }
         // FileUtils.copyDirectory(new File(cachePathStr), new File(taskPathStr));
@@ -286,7 +301,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
         }
         String configPathStr = pathOfSWDSConfigFile(task.getId());
         Path configPath = Path.of(configPathStr);
-        if (Files.notExists(configPath)) {
+        //if (Files.notExists(configPath)) {
             JSONObject object = JSONUtil.createObj();
             object.set("backend", storageProperties.getType());
             object.set("secret", JSONUtil.createObj()
@@ -303,14 +318,17 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 JSONObject ds = JSONUtil.createObj();
                 ds.set("bucket", storageProperties.getS3Config().getBucket());
                 ds.set("key", JSONUtil.createObj()
-                        .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getSize()))
-                        .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getSize()))
+                        /*.set("data", swdsBlock.getLocationInput().getFile())
+                        .set("label", swdsBlock.getLocationLabel().getFile())*/
+                        // todo just test
+                        .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getOffset() + swdsBlock.getLocationInput().getSize() - 1))
+                        .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
                 );
                 swds.add(ds);
             });
             object.set("swds", swds);
             Files.writeString(configPath, JSONUtil.toJsonStr(object), StandardOpenOption.CREATE);
-        }
+        //}
     }
 
     @Override

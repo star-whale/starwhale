@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Node;
 import cn.hutool.core.collection.CollectionUtil;
+import org.apache.commons.lang3.SerializationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -91,6 +92,12 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
                     .totalMemory(0)
                     .build()
             );
+
+        // just deal report device's status if there have some tasks which status are preparing
+        /*List devices = (List) SerializationUtils.clone(sourcePool.getDevices());
+        if(taskPool.preparingTasks.size() > 0) {
+
+        }*/
 
         Node node = Node.builder()
             .ipAddr(systemInfo.getHostAddress())

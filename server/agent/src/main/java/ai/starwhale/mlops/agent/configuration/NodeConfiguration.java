@@ -19,6 +19,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 import java.util.Map;
 
@@ -28,12 +29,6 @@ public class NodeConfiguration {
     @Bean
     public SourcePool sourcePool(Map<String, GPUDetect> gpuDetectImpl, CPUDetect cpuDetect) {
         return new SourcePool(gpuDetectImpl, cpuDetect);
-    }
-
-    @Bean
-    @ConditionalOnProperty(name = "sw.node.sourcePool.init.enabled", havingValue = "true", matchIfMissing = true)
-    public SourcePoolInitializer sourcePoolInitializer(SourcePool sourcePool) {
-        return new SourcePoolInitializer(sourcePool);
     }
 
     @Bean

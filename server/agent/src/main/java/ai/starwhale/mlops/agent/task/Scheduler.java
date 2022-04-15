@@ -33,7 +33,7 @@ public class Scheduler {
      * start container for preparing task
      */
 
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 5000)
     public void dealPreparingTasks() {
         this.executor.dealPreparingTasks();
     }
@@ -41,7 +41,7 @@ public class Scheduler {
     /**
      * monitor the status of running task
      */
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 5000)
     public void monitorRunningTasks() {
         this.executor.monitorRunningTasks();
     }
@@ -49,12 +49,12 @@ public class Scheduler {
     /**
      * do upload
      */
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 5000)
     public void uploadResultingTasks() {
         this.executor.uploadTaskResults();
     }
 
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 5000)
     public void reportTasks() {
         this.executor.reportTasks();
     }
