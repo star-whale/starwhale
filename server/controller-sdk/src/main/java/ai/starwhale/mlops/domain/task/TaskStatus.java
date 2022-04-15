@@ -50,7 +50,7 @@ public enum TaskStatus {
     /**
      * garbage is cleared
      */
-    FINISHED(0xf00, JobStatus.COLLECT_RESULT, true),
+    FINISHED(0xf00, JobStatus.RUNNING, true),
 
     /**
      * when report successfully to the controller,it should be archived (Agent only status)

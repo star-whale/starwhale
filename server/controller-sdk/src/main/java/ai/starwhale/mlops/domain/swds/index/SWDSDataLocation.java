@@ -36,4 +36,9 @@ public class SWDSDataLocation {
      */
     String file;
 
+    static final String PATH_SPLITER="/";
+    public void prependDSPath(String swdsPath) {
+        this.file = swdsPath + PATH_SPLITER + this.file;
+    }
+
 }

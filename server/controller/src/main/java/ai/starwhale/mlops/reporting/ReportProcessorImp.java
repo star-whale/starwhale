@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -49,7 +50,7 @@ public class ReportProcessorImp implements ReportProcessor {
 
     final LivingTaskStatusMachine livingTaskStatusMachine;
 
-    final SWTaskScheduler SWTaskScheduler;
+    final SWTaskScheduler swTaskScheduler;
 
     final TaskBoConverter taskBoConverter;
 
@@ -60,12 +61,12 @@ public class ReportProcessorImp implements ReportProcessor {
     final TaskMapper taskMapper;
 
     public ReportProcessorImp(CommandingTasksChecker commandingTasksChecker,
-        LivingTaskStatusMachine livingTaskStatusMachine, SWTaskScheduler SWTaskScheduler,
+        LivingTaskStatusMachine livingTaskStatusMachine, SWTaskScheduler swTaskScheduler,
         TaskBoConverter taskBoConverter, AgentMapper agentMapper, ObjectMapper jsonMapper,
         TaskMapper taskMapper) {
         this.commandingTasksChecker = commandingTasksChecker;
         this.livingTaskStatusMachine = livingTaskStatusMachine;
-        this.SWTaskScheduler = SWTaskScheduler;
+        this.swTaskScheduler = swTaskScheduler;
         this.taskBoConverter = taskBoConverter;
         this.agentMapper = agentMapper;
         this.jsonMapper = jsonMapper;
@@ -103,9 +104,12 @@ public class ReportProcessorImp implements ReportProcessor {
             return rebuildReportResponse(unProperTasks);
         }
         taskStatusChange(tasks);
-        final List<Task> toAssignTasks = SWTaskScheduler.schedule(nodeInfo);
+        final List<Task> toAssignTasks = swTaskScheduler.schedule(nodeInfo);
         final Collection<Task> toCancelTasks = livingTaskStatusMachine
-            .ofStatus(new StagingTaskStatus(TaskStatus.CANCEL));
+            .ofStatus(new StagingTaskStatus(TaskStatus.CANCEL))
+            .stream()
+            .filter(t->t.getAgent().equals(Agent.fromNode(nodeInfo)))
+            .collect(Collectors.toList());
         scheduledTaskStatusChange(toAssignTasks,agentEntity);
         canceledTaskStatusChange(toCancelTasks);
         commandingTasksChecker.onTaskCommanding(taskBoConverter.toTaskCommand(toAssignTasks),

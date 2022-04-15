@@ -125,6 +125,17 @@ public class Job {
         }
     }
 
+    public Job deepCopy(){
+        return Job.builder()
+            .id(this.id)
+            .uuid(this.uuid)
+            .jobRuntime(this.jobRuntime.copy())
+            .swDataSets(List.copyOf(this.swDataSets))
+            .status(this.status)
+            .swmp(this.swmp.copy())
+            .build();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -141,18 +141,18 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     @Override
     public Collection<Task> ofStatus(StagingTaskStatus taskStatus) {
-        return taskStatusMap.computeIfAbsent(taskStatus,k-> Collections.synchronizedList(new LinkedList<>())).stream().map(taskIdMap::get)
+        return taskStatusMap.computeIfAbsent(taskStatus,k-> Collections.synchronizedList(new LinkedList<>())).stream().map(tskId->taskIdMap.get(tskId).deepCopy())
             .collect(Collectors.toList());
     }
 
     @Override
     public Optional<Task> ofId(Long taskId) {
-        return Optional.ofNullable(taskIdMap.get(taskId));
+        return Optional.ofNullable(taskIdMap.get(taskId).deepCopy());
     }
 
     @Override
     public Collection<Task> ofJob(Long jobId) {
-        return jobTaskMap.get(jobId).stream().map(taskIdMap::get)
+        return jobTaskMap.get(jobId).stream().map(tskId->taskIdMap.get(tskId).deepCopy())
             .collect(Collectors.toList());
     }
 

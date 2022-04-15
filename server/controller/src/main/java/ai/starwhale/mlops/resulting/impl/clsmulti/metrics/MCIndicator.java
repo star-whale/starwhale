@@ -5,19 +5,21 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.resulting.impl.clsmulti;
+package ai.starwhale.mlops.resulting.impl.clsmulti.metrics;
 
 import ai.starwhale.mlops.resulting.Indicator;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.NoArgsConstructor;
 
 /**
  * indicator for Multiclass classification
  */
+@NoArgsConstructor
 public class MCIndicator extends Indicator<AtomicInteger> {
 
-    final String label;
+    String label;
 
-    final String prediction;
+    String prediction;
 
     static final String KEY_CONNECTOR="-";
 
