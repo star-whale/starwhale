@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -49,25 +50,16 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     public void orElse(EvaluationTask task, Context context) {
         // represent last step occurred some errors
         // todo:fault tolerance
+        task.setStage(Stage.completed);
+        taskPersistence.save(task);
     }
 
     @Override
     public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
-        // pull swmp(tar) and uncompress it to the swmp dir
-        String swmpDir = taskPersistence.preloadingSWMP(oldTask);
-
-        taskPersistence.generateSWDSConfig(oldTask);
-
         Set<Device> allocated = null;
         ImageConfig imageConfig = ImageConfig.builder()
                 .autoRemove(false)
-                .mounts(List.of(
-                        Mount.builder().source(taskPersistence.basePathOfTask(oldTask.getId()))
-                                .target(containerBasePath).type("VOLUME").build()
-                ))
-                .env(List.of(
-                        env(swmpDirEnv, swmpDir)
-                ))
+                .image(oldTask.getImageId())
                 .labels(Map.of("taskId", oldTask.getId().toString()))
                 .build();
         // allocate device(GPU or CPU) for task
@@ -75,13 +67,18 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
             case CPU:
                 allocated = sourcePool.allocate(
                         AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
+                imageConfig.setCpuConfig(
+                        ImageConfig.CPUConfig.builder()
+                                .cpuCount(Long.valueOf(oldTask.getDeviceAmount()))
+                                .build()
+                );
                 break;
             case GPU:
                 allocated = sourcePool.allocate(
                         AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
                 imageConfig.setGpuConfig(
                         GPUConfig.builder()
-                                .count(1)
+                                .count(oldTask.getDeviceAmount())
                                 .capabilities(List.of(List.of("gpu")))
                                 .deviceIds(
                                         allocated.stream().map(Device::getId).collect(Collectors.toList()))
@@ -93,6 +90,28 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
                 throw ErrorCode.allocateError.asException("unknown device class");
         }
 
+        // pull swmp(tar) and uncompress it to the swmp dir
+        String swmpDir = taskPersistence.preloadingSWMP(oldTask);
+
+//        imageConfig.setEnv(List.of(
+//                env(swmpDirEnv, swmpDir)
+//        ));
+        imageConfig.setMounts(List.of(
+                Mount.builder()
+                        .readOnly(false)
+                        .source(taskPersistence.basePathOfTask(oldTask.getId()))
+                        .target(containerBasePath)
+                        .type("BIND")
+                        .build(),
+                Mount.builder()
+                        .readOnly(false)
+                        .source(swmpDir)
+                        .target(containerBasePath + "swmp")
+                        .type("BIND")
+                        .build()
+        ));
+
+        taskPersistence.generateSWDSConfig(oldTask);
         // allocate device to this task,if fail will throw exception, now it is blocked
         oldTask.setDevices(allocated);
 
@@ -127,11 +146,12 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
 
     @Override
     public void fail(EvaluationTask oldTask, Context context, Exception e) {
-        super.fail(oldTask, context, e);
+        log.error("execute task:{}, error:{}", JSONUtil.toJsonStr(oldTask), e.getMessage());
         // rollback and wait again until next time
         if (CollectionUtil.isNotEmpty(oldTask.getDevices())) {
             sourcePool.release(oldTask.getDevices());
             oldTask.setDevices(null);
         }
+        oldTask.setStage(Stage.completed);
     }
 }

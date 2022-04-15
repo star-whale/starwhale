@@ -7,20 +7,24 @@
 
 package ai.starwhale.mlops.agent.task.action.init;
 
+import ai.starwhale.mlops.agent.exception.ErrorCode;
+import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
-import cn.hutool.core.collection.CollectionUtil;
+import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.task.TaskStatus;
 
-import java.util.Optional;
-
+import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -28,6 +32,9 @@ public class RebuildTasksAction implements DoTransition<Void, List<EvaluationTas
 
     @Autowired
     private TaskPool taskPool;
+
+    @Autowired
+    private SourcePool sourcePool;
 
     @Autowired
     private TaskPersistence taskPersistence;
@@ -41,13 +48,13 @@ public class RebuildTasksAction implements DoTransition<Void, List<EvaluationTas
     public List<EvaluationTask> processing(Void v, Context context)
             throws Exception {
         log.info("start to rebuild task pool");
-        Optional<List<EvaluationTask>> tasks = taskPersistence.getAllActiveTasks();
-        return tasks.orElseGet(List::of);
+        List<EvaluationTask> tasks = taskPersistence.getAllActiveTasks().orElse(List.of());
+        tasks.forEach(taskPool::fill);
+        return tasks;
     }
 
     @Override
     public void success(Void v, List<EvaluationTask> tasks, Context context) {
-        tasks.forEach(taskPool::fill);
         taskPool.setToReady();
         log.info("rebuild task pool success, size:{}", tasks.size());
     }

@@ -4,15 +4,16 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.container.ImageConfig;
 import cn.hutool.core.collection.CollectionUtil;
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.model.DeviceRequest;
-import com.github.dockerjava.api.model.HostConfig;
+import com.github.dockerjava.api.command.PullImageCmd;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.api.model.*;
 
-import com.github.dockerjava.api.model.Mount;
-import com.github.dockerjava.api.model.MountType;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
@@ -30,56 +31,70 @@ public class DockerContainerClient implements ContainerClient {
 
     @Override
     public Optional<String> startContainer(ImageConfig imageConfig) {
+        try {
+            HostConfig hostConfig = HostConfig.newHostConfig()
+                    .withNetworkMode(imageConfig.getNetworkMode())
+                    .withAutoRemove(imageConfig.getAutoRemove()); // usually is false
+            // gpu config
+            if (imageConfig.getGpuConfig() != null) {
+                DeviceRequest deviceRequest = new DeviceRequest();
+                deviceRequest.withCapabilities(imageConfig.getGpuConfig().getCapabilities());
+                deviceRequest.withDeviceIds(imageConfig.getGpuConfig().getDeviceIds());
+                deviceRequest.withCount(imageConfig.getGpuConfig().getDeviceIds().size());
+                hostConfig.withDeviceRequests(List.of(deviceRequest));
+            }
 
-        HostConfig hostConfig = HostConfig.newHostConfig()
-            .withNetworkMode(imageConfig.getNetworkMode())
-            .withAutoRemove(imageConfig.getAutoRemove()); // usually is false
-        // gpu config
-        if (imageConfig.getGpuConfig() != null) {
-            DeviceRequest deviceRequest = new DeviceRequest();
-            deviceRequest.withCapabilities(imageConfig.getGpuConfig().getCapabilities());
-            deviceRequest.withDeviceIds(imageConfig.getGpuConfig().getDeviceIds());
-            deviceRequest.withCount(imageConfig.getGpuConfig().getDeviceIds().size());
-            hostConfig.withDeviceRequests(List.of(deviceRequest));
-        }
+            // cpu config
+            if (imageConfig.getCpuConfig() != null) {
+                hostConfig.withCpuCount(imageConfig.getCpuConfig().getCpuCount());
+                hostConfig.withCpuPeriod(imageConfig.getCpuConfig().getCpuPeriod());
+                hostConfig.withCpuQuota(imageConfig.getCpuConfig().getCpuQuota());
+                hostConfig.withCpuPercent(imageConfig.getCpuConfig().getCpuPercent());
+            }
 
-        // cpu config
-        if (imageConfig.getCpuConfig() != null) {
-            hostConfig.withCpuCount(imageConfig.getCpuConfig().getCpuCount());
-            hostConfig.withCpuPeriod(imageConfig.getCpuConfig().getCpuPeriod());
-            hostConfig.withCpuQuota(imageConfig.getCpuConfig().getCpuQuota());
-            hostConfig.withCpuPercent(imageConfig.getCpuConfig().getCpuPercent());
-        }
+            // io config
+            if (imageConfig.getIoConfig() != null) {
+                hostConfig.withIoMaximumBandwidth(imageConfig.getIoConfig().getIoMaximumBandwidth());
+                hostConfig.withIoMaximumIOps(imageConfig.getIoConfig().getIoMaximumIOps());
+            }
 
-        // io config
-        if (imageConfig.getIoConfig() != null) {
-            hostConfig.withIoMaximumBandwidth(imageConfig.getIoConfig().getIoMaximumBandwidth());
-            hostConfig.withIoMaximumIOps(imageConfig.getIoConfig().getIoMaximumIOps());
-        }
+            // mount config
+            if (CollectionUtil.isNotEmpty(imageConfig.getMounts())) {
+                hostConfig.withMounts(
+                        imageConfig.getMounts().stream()
+                                .map(mount -> {
+                                    Mount m = new Mount();
+                                    m.withReadOnly(mount.getReadOnly());
+                                    m.withSource(mount.getSource());
+                                    m.withTarget(mount.getTarget());
+                                    m.withType(MountType.valueOf(mount.getType()));
+                                    return m;
+                                })
+                                .collect(Collectors.toList()));
+            }
 
-        // mount config
-        if (CollectionUtil.isNotEmpty(imageConfig.getMounts())) {
-            hostConfig.withMounts(
-                imageConfig.getMounts().stream()
-                    .map(mount -> {
-                        Mount m = new Mount();
-                        m.withReadOnly(mount.getReadOnly());
-                        m.withSource(mount.getSource());
-                        m.withTarget(mount.getTarget());
-                        m.withType(MountType.valueOf(mount.getType()));
-                        return m;
-                    })
-                    .collect(Collectors.toList()));
-        }
-        CreateContainerResponse response = client.createContainerCmd(imageConfig.getImage())
-            .withHostConfig(hostConfig)
-            .withEnv(imageConfig.getEnv())
-            .withLabels(imageConfig.getLabels())
-            .withEntrypoint(imageConfig.getEntrypoint())
-            .exec();
-        if (StringUtils.hasText(response.getId())) {
-            client.startContainerCmd(response.getId()).exec();
-            return Optional.of(response.getId());
+            CreateContainerResponse response = client.createContainerCmd(imageConfig.getImage())
+                    .withHostConfig(hostConfig)
+                    //.withEnv(imageConfig.getEnv())
+                    .withLabels(imageConfig.getLabels())
+                    // .withVolumes()
+                    // .withEntrypoint(imageConfig.getEntrypoint())
+                    .exec();
+            if (StringUtils.hasText(response.getId())) {
+                client.startContainerCmd(response.getId()).exec();
+                return Optional.of(response.getId());
+            }
+
+        } catch (NotFoundException e) {
+            log.error("image:{} not found at local, try to pull from remote", imageConfig.getImage());
+            ResultCallback.Adapter<PullResponseItem> resultCallback = client.pullImageCmd(imageConfig.getImage()).start();
+            try {
+                resultCallback.awaitCompletion();
+                // one more again
+                this.startContainer(imageConfig);
+            } catch (InterruptedException ex) {
+                log.error("unknown error:{}", ex.getMessage(), ex);
+            }
         }
         return Optional.empty();
     }

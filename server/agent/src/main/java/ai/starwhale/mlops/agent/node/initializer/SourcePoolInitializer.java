@@ -7,26 +7,66 @@
 
 package ai.starwhale.mlops.agent.node.initializer;
 
+import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool;
+import ai.starwhale.mlops.agent.task.TaskPool;
+import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.task.TaskStatus;
+import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * execute on every startup
  */
 @Slf4j
+@Order(1)
+@Component
+@ConditionalOnProperty(name = "sw.node.sourcePool.init.enabled", havingValue = "true", matchIfMissing = true)
 public class SourcePoolInitializer implements CommandLineRunner {
+    @Autowired
+    private SourcePool sourcePool;
 
-    private final SourcePool sourcePool;
-
-    public SourcePoolInitializer(SourcePool sourcePool) {
-        this.sourcePool = sourcePool;
-    }
-
+    @Autowired
+    private TaskPool taskPool;
 
     @Override
     public void run(String... args) throws Exception {
         sourcePool.refresh();
+        // ensure by order
+        if (taskPool.isReady()) {
+            var running = taskPool.runningTasks.stream().filter(task -> task.getStatus() == TaskStatus.RUNNING).collect(Collectors.toList());
+            running.forEach(task -> {
+                Set<Device> allocated = null;
+                try {
+                    // allocate device(GPU or CPU) for task
+                    switch (task.getDeviceClass()) {
+                        case CPU:
+                            allocated = sourcePool.allocate(
+                                    SourcePool.AllocateRequest.builder().cpuNum(task.getDeviceAmount()).build());
+                            break;
+                        case GPU:
+                            allocated = sourcePool.allocate(
+                                    SourcePool.AllocateRequest.builder().gpuNum(task.getDeviceAmount()).build());
+                            break;
+                        case UNKNOWN:
+                            log.error("unknown device class");
+                            throw ErrorCode.allocateError.asException("unknown device class");
+                    }
+                    task.setDevices(allocated);
+                } catch (Exception e) {
+                    log.error("init task:{} error:{}", JSONUtil.toJsonStr(task), e.getMessage());
+                }
+
+            });
+        }
         sourcePool.setToReady();
     }
 }

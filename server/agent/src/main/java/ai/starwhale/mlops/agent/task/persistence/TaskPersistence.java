@@ -54,7 +54,7 @@ public interface TaskPersistence {
         /**
          * normal life cycle
          */
-        START, RUNNING, OK, FAILED, UNKNOWN
+        start, running, success, failed, unknown
     }
     /**
      * save task
