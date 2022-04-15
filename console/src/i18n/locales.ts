@@ -223,6 +223,30 @@ const locales0 = {
     'overview': {
         en: 'overview',
     },
+    'TP': {
+        en: 'tp',
+    },
+    'TN': {
+        en: 'tn',
+    },
+    'FP': {
+        en: 'fp',
+    },
+    'FN': {
+        en: 'fn',
+    },
+    'Accuracy': {
+        en: 'Accuracy',
+    },
+    'Precision': {
+        en: 'Precision',
+    },
+    'Recall': {
+        en: 'Recall',
+    },
+    'Label': {
+        en: 'Label',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

@@ -1,10 +1,12 @@
 import BusyLoaderWrapper from '@/components/BusyLoaderWrapper/BusyLoaderWrapper'
 import Card from '@/components/Card'
+import { MBCConfusionMetricsIndicator } from '@/components/Indicator/MBCConfusionMetricsIndicator'
 import { Spinner } from 'baseui/spinner'
 import React from 'react'
 import Plot from 'react-plotly.js'
 
 type IDataType = 'MCConfusionMetrics' | 'CohenKappa' | 'MBCConfusionMetrics'
+
 interface IMCConfusionMetrics {
     label: string
     prediction: string
@@ -119,44 +121,91 @@ export default function JobResult() {
             title: 'A Graph',
         },
     }
+    const layout = {
+        title: 'Annotated Heatmap',
+        annotations: [],
+        xaxis: {
+            ticks: '',
+            side: 'top',
+        },
+        yaxis: {
+            ticks: '',
+            ticksuffix: ' ',
+            width: 700,
+            height: 700,
+            autosize: false,
+        },
+    }
+    const xValues = ['A', 'B', 'C']
+    const yValues = ['W', 'X', 'Y']
+    const zValues = [
+        [1, 20, 30],
+        [20, 1, 60],
+        [30, 60, 1],
+    ]
+
+    for (var i = 0; i < yValues.length; i++) {
+        for (var j = 0; j < xValues.length; j++) {
+            var currentValue = zValues[i][j]
+            if (currentValue != 0.0) {
+                var textColor = 'white'
+            } else {
+                var textColor = 'black'
+            }
+            const result = {
+                xref: 'x1',
+                yref: 'y1',
+                x: xValues[j],
+                y: yValues[i],
+                text: zValues[i][j],
+                font: {
+                    family: 'Arial',
+                    size: 12,
+                    color: textColor,
+                },
+                showarrow: false,
+            }
+            // layout.annotations.push(result)
+        }
+    }
+    const heatmapData = {
+        data: [
+            {
+                z: [
+                    [0.0, 0.0, 0.75, 0.75, 0.0],
+                    [0.0, 0.0, 0.75, 0.75, 0.0],
+                    [0.75, 0.75, 0.75, 0.75, 0.75],
+                    [0.0, 0.0, 0.0, 0.75, 0.0],
+                ],
+                colorscale: [
+                    [0, '#3D9970'],
+                    [1, '#001f3f'],
+                ],
+                showscale: false,
+                type: 'heatmap',
+            },
+        ],
+        layout: {
+            ...layout,
+        },
+    }
     const indicator: IIndicator | undefined = data.indicators.find((v) => v.name === 'MBCConfusionMetrics')
-    const MBCConfusionMetrics = indicator?.value
+    const MBCConfusionMetrics = indicator?.value || {}
     console.log(MBCConfusionMetrics)
     return (
         <>
+            <Card>
+                <MBCConfusionMetricsIndicator items={MBCConfusionMetrics} />
+            </Card>
             <div
                 style={{
                     width: '100%',
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
+                    gridTemplateColumns: 'repeat(2, minmax(450px, 1fr))',
                     // gridAutoRows: '450px',
                     gridGap: '16px',
                 }}
             >
-                {MBCConfusionMetrics &&
-                    Object.entries(MBCConfusionMetrics).map(([label, values]) => (
-                        <div>
-                            <h3>{label}</h3>
-                            <div
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(7, 1fr)',
-                                    placeItems: 'center',
-                                    gridGap: '1px',
-                                    backgroundColor: '#fff',
-                                }}
-                            >
-                                {Object.entries(values).map(([k, v]) => (
-                                    <p style={{ fontWeight: 800, backgroundColor: '#fff' }}>
-                                        {String(k).toUpperCase()}
-                                    </p>
-                                ))}
-                                {Object.entries(values).map(([k, v]) => (
-                                    <p>{v}</p>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
                 <Card>
                     <React.Suspense fallback={<Spinner />}>
                         <PlotlyVisualizer data={plotlyData} />
@@ -164,10 +213,9 @@ export default function JobResult() {
                 </Card>
                 <Card>
                     <React.Suspense fallback={<Spinner />}>
-                        <PlotlyVisualizer data={plotlyData} />
+                        <PlotlyVisualizer data={heatmapData} />
                     </React.Suspense>
                 </Card>
-                <Card></Card>
             </div>
         </>
     )
