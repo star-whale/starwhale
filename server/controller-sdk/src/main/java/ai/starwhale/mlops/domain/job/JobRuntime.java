@@ -36,4 +36,8 @@ public class JobRuntime {
      * what is the running container's image
      */
     String baseImage;
+
+    public JobRuntime copy(){
+        return  new JobRuntime(this.deviceClass,this.deviceAmount,this.baseImage);
+    }
 }

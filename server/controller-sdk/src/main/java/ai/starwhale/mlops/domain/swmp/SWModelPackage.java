@@ -32,4 +32,8 @@ public class SWModelPackage {
      */
     String path;
 
+    public SWModelPackage copy(){
+        return new SWModelPackage(this.id,this.name,this.version,this.path);
+    }
+
 }

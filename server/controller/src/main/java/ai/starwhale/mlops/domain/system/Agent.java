@@ -50,6 +50,10 @@ public class Agent {
             ip.equals(agent.ip);
     }
 
+    public Agent copy(){
+        return new Agent(id,ip);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(ip);

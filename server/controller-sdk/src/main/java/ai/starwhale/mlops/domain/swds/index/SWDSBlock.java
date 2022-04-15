@@ -45,4 +45,8 @@ public class SWDSBlock {
     @JsonProperty("data")
     SWDSDataLocation locationInput;
 
+    public void prependDSPath(String swdsPath) {
+        locationLabel.prependDSPath(swdsPath);
+        locationInput.prependDSPath(swdsPath);
+    }
 }

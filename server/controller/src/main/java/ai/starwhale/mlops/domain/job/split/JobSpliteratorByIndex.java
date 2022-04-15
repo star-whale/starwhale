@@ -31,12 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,7 +70,8 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     /**
      * when task amount exceeds 1000, bach insertion will emit an error
      */
-    static final Integer AMOUNT_TASK=256;
+    @Value("${sw.taskSize}")
+    Integer amountOfTasks =256;
     /**
      * get all data blocks and split them by a simple random number
      * transactional jobStatus->SPLIT taskStatus->NEW
@@ -82,10 +82,10 @@ public class JobSpliteratorByIndex implements JobSpliterator {
         final List<SWDataSet> swDataSets = job.getSwDataSets();
         Random r=new Random();
         final Map<Integer,List<SWDSBlock>> swdsBlocks = swDataSets.parallelStream()
-            .map(swDataSet -> swdsIndexLoader.load(swDataSet.getIndexPath()))
-            .map(SWDSIndex::getSWDSBlockList)
+            .map(swDataSet -> swdsIndexLoader.load(swDataSet.getIndexPath(),swDataSet.getPath()))
+            .map(SWDSIndex::getSwdsBlockList)
             .flatMap(Collection::stream)
-            .collect(Collectors.groupingBy(blk->r.nextInt(AMOUNT_TASK)));//one block on task
+            .collect(Collectors.groupingBy(blk->r.nextInt(amountOfTasks)));//one block on task
         List<TaskEntity> taskList;
         try {
             taskList = buildTaskEntities(job, swdsBlocks);

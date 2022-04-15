@@ -13,6 +13,8 @@ logging:
 sw:
   jwt:
     secret: wdxlG3UK66m6uTUgxXFjizli
+  taskSize:
+    1
   storage:
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
     s3-config:

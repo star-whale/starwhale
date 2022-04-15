@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.resulting.impl.clsmulti;
 
+import ai.starwhale.mlops.resulting.impl.clsmulti.metrics.MCIndicator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.LinkedList;
 import java.util.List;
