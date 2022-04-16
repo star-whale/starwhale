@@ -11,7 +11,7 @@ ENV TZ=Etc/UTC
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         wget locales make cmake build-essential software-properties-common curl sudo ca-certificates apt-transport-https iputils-ping net-tools openssh-server net-tools gcc-aarch64-linux-gnu \
-        zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils \
+        zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils gpg-agent \
     && locale-gen en_US.UTF-8 \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/* /tmp/*
