@@ -30,7 +30,7 @@ export default function JobLayout({ children }: IJobLayoutProps) {
     }, [job?.id, jobInfo.data, jobInfo.isLoading, jobInfo.isSuccess, setJob, setJobLoading])
 
     const [t] = useTranslation()
-    const jobName = job?.name ?? '-'
+    const uuid = job?.uuid ?? '-'
     const project = projectInfo.data ?? {}
     const projectName = project?.name ?? '-'
 
@@ -49,12 +49,12 @@ export default function JobLayout({ children }: IJobLayoutProps) {
                 path: `/projects/${project?.id}/jobs`,
             },
             {
-                title: jobName,
+                title: uuid ?? '-',
                 path: `/projects/${project?.id}/jobs/${jobId}`,
             },
         ]
         return items
-    }, [projectName, jobName, t])
+    }, [projectName, uuid, t])
 
     // const navItems: INavItem[] = useMemo(
     //     () => [

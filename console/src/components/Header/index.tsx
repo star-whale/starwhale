@@ -238,6 +238,3 @@ export default function Header() {
         </header>
     )
 }
-function setProjectLoading(isLoading: boolean) {
-    throw new Error('Function not implemented.')
-}

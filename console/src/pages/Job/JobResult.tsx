@@ -2,8 +2,15 @@ import BusyLoaderWrapper from '@/components/BusyLoaderWrapper/BusyLoaderWrapper'
 import Card from '@/components/Card'
 import { MBCConfusionMetricsIndicator } from '@/components/Indicator/MBCConfusionMetricsIndicator'
 import { Spinner } from 'baseui/spinner'
-import React from 'react'
+import React, { useEffect } from 'react'
 import Plot from 'react-plotly.js'
+import { useParams } from 'react-router-dom'
+import { useQuery } from 'react-query'
+import { fetchJobResult } from '@/domain/job/services/job'
+
+const PlotlyVisualizer = React.lazy(
+    () => import(/* webpackChunkName: "AudiosVisualizer" */ '@/components/Indicator/PlotlyVisualizer')
+)
 
 type IDataType = 'MCConfusionMetrics' | 'CohenKappa' | 'MBCConfusionMetrics'
 
@@ -102,11 +109,17 @@ const data: IDataProps = {
     ],
 }
 
-const PlotlyVisualizer = React.lazy(
-    () => import(/* webpackChunkName: "AudiosVisualizer" */ '@/components/Indicator/PlotlyVisualizer')
-)
-
 export default function JobResult() {
+    //TODO: waiting for api
+
+    // const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    // const jobResult = useQuery('fetchJobResult', () => fetchJobResult(jobId, projectId))
+    // useEffect(() => {
+    //     if (jobResult.isSuccess) {
+    //         console.log(jobResult.data)
+    //     }
+    // }, [jobResult])
+
     const plotlyData = {
         data: [
             {
@@ -122,8 +135,8 @@ export default function JobResult() {
         },
     }
     const layout = {
-        title: 'Annotated Heatmap',
-        annotations: [],
+        title: 'MBCConfusionMetrics',
+        annotations: [] as any[],
         xaxis: {
             ticks: '',
             side: 'top',
@@ -139,9 +152,10 @@ export default function JobResult() {
     const xValues = ['A', 'B', 'C']
     const yValues = ['W', 'X', 'Y']
     const zValues = [
-        [1, 20, 30],
-        [20, 1, 60],
-        [30, 60, 1],
+        [0.0, 0.0, 0.75, 0.75, 0.0],
+        [0.0, 0.0, 0.75, 0.75, 0.0],
+        [0.75, 0.75, 0.75, 0.75, 0.75],
+        [0.0, 0.0, 0.0, 0.75, 0.0],
     ]
 
     for (var i = 0; i < yValues.length; i++) {
@@ -165,18 +179,15 @@ export default function JobResult() {
                 },
                 showarrow: false,
             }
-            // layout.annotations.push(result)
+            layout.annotations.push(result)
         }
     }
     const heatmapData = {
         data: [
             {
-                z: [
-                    [0.0, 0.0, 0.75, 0.75, 0.0],
-                    [0.0, 0.0, 0.75, 0.75, 0.0],
-                    [0.75, 0.75, 0.75, 0.75, 0.75],
-                    [0.0, 0.0, 0.0, 0.75, 0.0],
-                ],
+                x: xValues,
+                y: yValues,
+                z: zValues,
                 colorscale: [
                     [0, '#3D9970'],
                     [1, '#001f3f'],
@@ -191,31 +202,37 @@ export default function JobResult() {
     }
     const indicator: IIndicator | undefined = data.indicators.find((v) => v.name === 'MBCConfusionMetrics')
     const MBCConfusionMetrics = indicator?.value || {}
-    console.log(MBCConfusionMetrics)
+
+    // if (!!!jobResult.isSuccess) {
+    //     return <div>loading</div>
+    // }
+
     return (
         <>
-            <Card>
+            <div style={{ padding: '20px', background: '#fff', borderRadius: '12px', marginBottom: '16px' }}>
                 <MBCConfusionMetricsIndicator items={MBCConfusionMetrics} />
-            </Card>
+            </div>
             <div
                 style={{
                     width: '100%',
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(2, minmax(450px, 1fr))',
-                    // gridAutoRows: '450px',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+                    // gridAutoRows: '460px',
                     gridGap: '16px',
+                    placeItems: 'stretch',
                 }}
             >
-                <Card>
-                    <React.Suspense fallback={<Spinner />}>
-                        <PlotlyVisualizer data={plotlyData} />
-                    </React.Suspense>
-                </Card>
-                <Card>
+                <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
                     <React.Suspense fallback={<Spinner />}>
                         <PlotlyVisualizer data={heatmapData} />
                     </React.Suspense>
-                </Card>
+                </div>
+
+                <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
+                    <React.Suspense fallback={<Spinner />}>
+                        <PlotlyVisualizer data={plotlyData} />
+                    </React.Suspense>
+                </div>
             </div>
         </>
     )

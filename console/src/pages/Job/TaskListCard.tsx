@@ -22,12 +22,13 @@ export default function TaskListCard({ header }: ITaskListCardProps) {
             {header}
             <Table
                 isLoading={tasksInfo.isLoading}
-                columns={[t('Task ID'), t('IP'), t('Started'), t('Status')]}
+                columns={[t('Task ID'), t('IP'), t('Version'), t('Started'), t('Status')]}
                 data={
                     tasksInfo.data?.list.map((task) => {
                         return [
                             task.uuid,
-                            task.ip,
+                            task.agent?.ip,
+                            task.agent?.version,
                             task.startTime && formatTimestampDateTime(task.startTime),
                             task.status && JobStatusType[task.status],
                         ]
