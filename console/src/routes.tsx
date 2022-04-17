@@ -32,13 +32,6 @@ import JobResult from './pages/Job/JobResult'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 1,
-        minHeight: '100vh',
-        position: 'relative',
-        minWidth: 'fit-content',
-        width: '100%',
         background: 'var(--color-brandRootBackground)',
         color: 'var(--color-contentPrimary)',
         ...Object.entries(theme.colors).reduce((p, [k, v]) => {
@@ -73,7 +66,7 @@ const Routes = () => {
                         </ProjectLayout>
                     </Route>
                     {/* job & task */}
-                    <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
+                    <Route exact path='/projects/:projectId/jobs/:jobId/:path'>
                         <TaskLayout>
                             <Switch>
                                 <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={TaskListCard} />
@@ -81,7 +74,7 @@ const Routes = () => {
                             </Switch>
                         </TaskLayout>
                     </Route>
-                    <Route exact path='/projects/:projectId/jobs/:jobId/:path?/:path?'>
+                    <Route exact path='/projects/:projectId/jobs/:jobId'>
                         <JobLayout>
                             <Switch>
                                 <Route exact path='/projects/:projectId/jobs/:jobId' component={JobOverview} />

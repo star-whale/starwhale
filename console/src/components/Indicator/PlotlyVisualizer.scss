@@ -1,10 +1,11 @@
 
 .PlotlyVisualizer {
   height: 100%;
-  padding: 10px;
   overflow: auto;
-  &__recordCnt {
+  &__chart {
     height: 100%;
     overflow: auto;
+    display: flex;
+    justify-content: center;
   }
 }

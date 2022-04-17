@@ -23,3 +23,8 @@ export async function doJobAction(projectId: string, jobId: string, action: JobA
     const resp = await axios.post<IJobSchema>(`/api/v1/project/${projectId}/job/${jobId}/${action}`, {})
     return resp.data
 }
+
+export async function fetchJobResult(projectId: string, jobId: string): Promise<IJobSchema> {
+    const resp = await axios.get<IJobSchema>(`/api/v1/project/${projectId}/job/${jobId}/result`)
+    return resp.data
+}

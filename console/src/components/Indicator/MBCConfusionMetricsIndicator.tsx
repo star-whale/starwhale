@@ -90,7 +90,6 @@ export function MBCConfusionMetricsIndicator({ items, style }: IMBCConfusionMetr
         const nextRows = rows.map((row) => {
             if (ids.includes(row.id)) {
                 const nextData = { ...row.data }
-                // nextData[1] = !nextData[1]
                 return { ...row, data: nextData }
             }
             return row
@@ -108,29 +107,29 @@ export function MBCConfusionMetricsIndicator({ items, style }: IMBCConfusionMetr
         removeRows([id])
     }
     const rowActions: RowActionT[] = []
-
     const batchActions: BatchActionT[] = [
-        {
-            label: 'Check',
-            onClick: ({ selection, clearSelection }) => {
-                flagRows(selection.map((r) => r.id))
-                clearSelection()
-            },
-            renderIcon: Check,
-        },
-        {
-            label: 'Remove',
-            onClick: ({ selection, clearSelection }) => {
-                removeRows(selection.map((r) => r.id))
-                clearSelection()
-            },
-            renderIcon: Alert,
-        },
+        // {
+        //     label: 'Check',
+        //     onClick: ({ selection, clearSelection }) => {
+        //         flagRows(selection.map((r) => r.id))
+        //         clearSelection()
+        //     },
+        //     renderIcon: Check,
+        // },
+        // {
+        //     label: 'Remove',
+        //     onClick: ({ selection, clearSelection }) => {
+        //         removeRows(selection.map((r) => r.id))
+        //         clearSelection()
+        //     },
+        //     renderIcon: Alert,
+        // },
     ]
 
+    //TODO: selected rows interactive
     console.log('rows', rows)
     return (
-        <div style={{ height: 300, overflow: 'auto', ...style }}>
+        <div style={{ height: 300, ...style }}>
             <StatefulDataTable batchActions={batchActions} rowActions={rowActions} columns={columns} rows={rows} />
         </div>
     )
