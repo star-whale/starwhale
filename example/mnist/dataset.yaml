@@ -3,8 +3,8 @@ name: mnist
 mode: generate
 
 data_dir: data
-data_filter: "*image*"
-label_filter: "*label*"
+data_filter: "t10k-image*"
+label_filter: "t10k-label*"
 
 process: mnist.process:DataSetProcessExecutor
 pip_req: requirements.txt
@@ -16,4 +16,4 @@ tag:
 attr:
   batch_size: 50
   alignment_size: 4k
-  volume_size: 16M
+  volume_size: 2M

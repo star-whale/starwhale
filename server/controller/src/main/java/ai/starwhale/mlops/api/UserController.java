@@ -12,6 +12,8 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.project.Project;
+import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageInfo;
@@ -26,6 +28,9 @@ public class UserController implements UserApi{
     @Resource
     private UserService userService;
 
+    @Resource
+    private ProjectService projectService;
+
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<UserVO>>> listUser(String userName,
         Integer pageNum, Integer pageSize) {
@@ -39,6 +44,13 @@ public class UserController implements UserApi{
     public ResponseEntity<ResponseMessage<String>> createUser(UserRequest request) {
         String id = userService.createUser(User.builder().name(request.getUserName()).build(),
             request.getUserPwd());
+
+        //create default project
+        projectService.createProject(Project.builder()
+                .name(request.getUserName())
+                .ownerId(id)
+                .isDefault(true)
+                .build());
         return ResponseEntity.ok(Code.success.asResponse(id));
     }
 

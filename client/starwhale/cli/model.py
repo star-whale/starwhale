@@ -31,16 +31,19 @@ def _delete(swmp):
 
 @model_cmd.command("push", help="Push swmp into starwhale controller or hub.starwhale.ai")
 @click.argument("swmp")
-def _push(swmp):
-    ModelPackageLocalStore().push(swmp)
+@click.option("-p", "--project", default="", help="project name, if omit, starwhale will push swmp to your default project")
+@click.option("-f", "--force", is_flag=True, help="force push swmp")
+def _push(swmp, project, force):
+    ModelPackageLocalStore().push(swmp, project, force)
 
 
 @model_cmd.command("pull", help="Pull swmp from starwhale controller or hub.starwhale.ai")
 @click.argument("swmp")
-@click.option("-s", "--starwhale", help="starwhale controller server, default is swcli config remote_addr")
-@click.option("--force", default=False, help="force pull swmp")
-def _pull(swmp, starwhale, force):
-    ModelPackageLocalStore().pull(swmp, starwhale, force)
+@click.option("-p", "--project", default="", help="project name, if omit, starwhale will push swmp to your default project")
+@click.option("-s", "--starwhale", default="", help="starwhale controller server, default is swcli config remote_addr")
+@click.option("-f", "--force", is_flag=True, help="force pull swmp")
+def _pull(swmp, project, starwhale, force):
+    ModelPackageLocalStore().pull(swmp, project, starwhale, force)
 
 
 @model_cmd.command("info", help="Get more info abort local swmp")
@@ -73,7 +76,7 @@ def _gc(dry_run):
 
 @model_cmd.command("extract", help="Extract local swmp tar file into workdir")
 @click.argument("swmp")
-@click.option("--force", default=False, help="force pull swmp")
+@click.option("-f", "--force", is_flag=True, help="force pull swmp")
 def _extract(swmp, force):
     ModelPackageLocalStore().extract(swmp, force)
 
@@ -93,3 +96,10 @@ def _ppl(swmp, model_yaml, status_dir, log_dir, result_dir, swds_config):
                       "log_dir": log_dir,
                       "result_dir": result_dir,
                       "swds_config": swds_config})
+
+@model_cmd.command("pre-activate", help="Prepare to restore and activate swmp runtime environment")
+@click.argument("swmp")
+def _pre_activate(swmp):
+    #TODO: add auto decompress
+    #TODO: set activate.sw path
+    ModelPackageLocalStore().pre_activate(swmp)

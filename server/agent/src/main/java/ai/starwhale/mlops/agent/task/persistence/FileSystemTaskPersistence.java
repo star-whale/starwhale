@@ -8,138 +8,172 @@
 package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
+import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.utils.TarUtil;
+import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.configuration.StorageProperties;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.extra.compress.CompressUtil;
 import cn.hutool.extra.compress.extractor.Extractor;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.security.Permissions;
 import java.util.Optional;
+
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.springframework.util.StringUtils;
 
+import org.springframework.util.StringUtils;
+import software.amazon.awssdk.services.s3.model.Permission;
+
+/**
+ * <ul>under the basePath,Eg:/var/starwhale/，there have serial path：</ul>
+ * <li>task</li>
+ * <li>swmp</li>
+ */
 @Slf4j
 @Service
 public class FileSystemTaskPersistence implements TaskPersistence {
 
-    String baseTaskPathFormat = "%s/%s/";
+    @Autowired
+    private AgentProperties agentProperties;
+    @Autowired
+    private StorageProperties storageProperties;
+    @Autowired
+    private StorageAccessService storageAccessService;
 
-    String infoSuffix = "taskInfo.json";
+    private final String baseModelPathFormat = "%s/swmp/%s/%s/";
 
-    String infoFilePath = baseTaskPathFormat + infoSuffix;
+    private final String baseTaskDirPathFormat = "%s/task/%s/";
 
+    private final String infoFile = "taskInfo.json";
+    private final String statusFile = "current";
+    private final String configFile = "swds.json";
 
-    String statusFilePath = baseTaskPathFormat + "status.txt";
+    private final String infoFilePathFormat = baseTaskDirPathFormat + infoFile;
 
+    private final String statusDirPathFormat = baseTaskDirPathFormat + "status/";
+    private final String statusFilePathFormat = statusDirPathFormat + statusFile;
 
-    String swmpDirPath = baseTaskPathFormat + "swmp/";
+    private final String swdsConfigDirPathFormat = baseTaskDirPathFormat + "config/";
+    private final String swdsConfigFilePathFormat = swdsConfigDirPathFormat + configFile;
 
+    private final String resultDirPathFormat = baseTaskDirPathFormat + "result/";
 
-    String resultDirPath = baseTaskPathFormat + "result/";
+    private final String logDirPathFormat = baseTaskDirPathFormat + "log/";
 
-
-    String logDirPath = baseTaskPathFormat + "log/";
-
-    /**
+    /*
      * archived taskInfo file path,Eg:/var/starwhale/task/archived/{taskId}/
      */
-    String archivedDirPath = "%s/archived/";
-
+    private final String archivedDirPathFormat = "%s/archived/";
+    private final String archivedTaskDirPathFormat = archivedDirPathFormat + "%s";
 
     String path(String format, Object... objects) {
         return String.format(format, objects);
     }
 
-    /**
-     * @param id taskId
-     * taskInfo dir path,Eg:/var/starwhale/task/{taskId}/taskInfo.json(format:json)
-     */
-    public String pathOfInfoFile(Long id) {
-        return path(infoFilePath, agentProperties.getTask().getBasePath(), id);
-    }
-
-    /**
-     * @param id taskId
-     * task running status dir path,Eg:/var/starwhale/task/{taskId}/status(format:txt)
-     */
-    public String pathOfStatusFile(Long id) {
-        return path(statusFilePath, agentProperties.getTask().getBasePath(), id);
-    }
-
+    @Override
     public String basePathOfTask(Long id) {
-        return path(baseTaskPathFormat, agentProperties.getTask().getBasePath(), id);
+        return path(baseTaskDirPathFormat, agentProperties.getBasePath(), id);
     }
 
-    /**
-     * @param id taskId
-     * swmp dir path,Eg:/var/starwhale/task/{taskId}/swmp/(dir)
-     */
-    public String pathOfSWMPDir(Long id) {
-        return path(swmpDirPath, agentProperties.getTask().getBasePath(), id);
+    @Override
+    public String pathOfInfoFile(Long id) {
+        return path(infoFilePathFormat, agentProperties.getBasePath(), id);
     }
 
-    // todo:swds config file
+    private String pathOfInfoDir(Long id) {
+        return path(baseTaskDirPathFormat, agentProperties.getBasePath(), id);
+    }
 
-    /**
-     * @param id taskId
-     * task result dir path,Eg:/var/starwhale/task/{taskId}/result/
-     */
+    @Override
+    public String pathOfStatusFile(Long id) {
+        return path(statusFilePathFormat, agentProperties.getBasePath(), id);
+    }
+
+    private String pathOfStatusDir(Long id) {
+        return path(statusDirPathFormat, agentProperties.getBasePath(), id);
+    }
+
+    @Override
+    public String pathOfSWMPDir(String name, String version) {
+        return path(baseModelPathFormat, agentProperties.getBasePath(), name, version);
+    }
+
+    @Override
+    public String pathOfSWDSConfigFile(Long id) {
+        return path(swdsConfigFilePathFormat, agentProperties.getBasePath(), id);
+    }
+
+    private String pathOfSWDSConfigDir(Long id) {
+        return path(swdsConfigDirPathFormat, agentProperties.getBasePath(), id);
+    }
+
+    @Override
     public String pathOfResult(Long id) {
-        return path(resultDirPath, agentProperties.getTask().getBasePath(), id);
+        return path(resultDirPathFormat, agentProperties.getBasePath(), id);
     }
 
-    /**
-     * task runtime log dir path,Eg:/var/starwhale/task/log/{taskId}/log
-     */
+    @Override
+    public String pathOfArchived() {
+        return path(archivedDirPathFormat, agentProperties.getBasePath());
+    }
+
+    @Override
+    public String pathOfArchived(Long id) {
+        return path(archivedTaskDirPathFormat, agentProperties.getBasePath(), id);
+    }
+
+    @Override
     public String pathOfLog(Long id) {
-        return path(logDirPath, agentProperties.getTask().getBasePath(), id);
+        return path(logDirPathFormat, agentProperties.getBasePath(), id);
     }
-
-    @Autowired
-    private AgentProperties agentProperties;
-    @Autowired
-    private StorageAccessService storageAccessService;
 
     @Override
     public Optional<List<EvaluationTask>> getAllActiveTasks() {
         try {
-            Path tasksPath = Path.of(agentProperties.getTask().getBasePath());
+            Path tasksPath = Path.of(agentProperties.getBasePath());
             if (!Files.exists(tasksPath)) {
                 Files.createDirectories(tasksPath);
                 log.info("init tasks dir, nothing to rebuild, path:{}", tasksPath);
                 return Optional.of(List.of());
             } else {
                 // rebuild taskQueue
-                Stream<Path> taskInfos = Files.find(tasksPath, 1,
-                    (path, basicFileAttributes) -> true);
+                Stream<Path> taskInfos = Files.find(tasksPath, 3,
+                        (path, basicFileAttributes) -> true);
                 return Optional.of(
-                    taskInfos
-                        .filter(path -> path.getFileName().toString().endsWith(infoSuffix))
-                        .map(path -> {
-                            try {
-                                String json = Files.readString(path);
-                                return JSONUtil.toBean(json, EvaluationTask.class);
-                            } catch (IOException e) {
-                                log.error(e.getMessage(), e);
-                            }
-                            return null;
-                        })
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList())
+                        taskInfos
+                                .filter(path -> path.getFileName().toString().endsWith(infoFile))
+                                .map(path -> {
+                                    try {
+                                        String json = Files.readString(path);
+                                        return JSONUtil.toBean(json, EvaluationTask.class);
+                                    } catch (IOException e) {
+                                        log.error(e.getMessage(), e);
+                                    }
+                                    return null;
+                                })
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toList())
                 );
             }
         } catch (Exception e) {
@@ -167,12 +201,15 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public Optional<ExecuteStatus> status(Long id) {
         try {
             // get the newest task info
-            Path taskPath = Path.of(pathOfStatusFile(id));
-            String status = Files.readString(taskPath);
-            if (StringUtils.hasText(status)) {
-                return Optional.of(ExecuteStatus.valueOf(status));
+            Path statusFilePath = Path.of(pathOfStatusFile(id));
+            if (Files.exists(statusFilePath)) {
+                String status = Files.readString(statusFilePath);
+                if (StringUtils.hasText(status)) {
+                    return Optional.of(ExecuteStatus.valueOf(status));
+                }
             }
-            return Optional.of(ExecuteStatus.UNKNOWN);
+
+            return Optional.of(ExecuteStatus.unknown);
         } catch (Exception e) {
             log.error("get task container status occur error:{}", e.getMessage(), e);
             return Optional.empty();
@@ -181,14 +218,25 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
+    public boolean updateStatus(Long id, ExecuteStatus status) throws Exception {
+        // get the newest task info
+        Path statusFilePath = Path.of(pathOfStatusFile(id));
+        if (Files.notExists(statusFilePath)) {
+            Files.createDirectories(Path.of(pathOfStatusDir(id)));
+        }
+        Files.writeString(statusFilePath, status.name(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        return true;
+    }
+
+    @Override
     public boolean save(EvaluationTask task) {
         try {
-            Path taskPath = Path.of(pathOfInfoFile(task.getId()));
-            if (!Files.exists(taskPath)) {
-                Files.createFile(taskPath);
+            Path taskDirPath = Path.of(pathOfInfoDir(task.getId()));
+            if (Files.notExists(taskDirPath)) {
+                Files.createDirectories(taskDirPath);
             }
             // update info to the task file
-            Files.writeString(taskPath, JSONUtil.toJsonStr(task));
+            Files.writeString(Path.of(pathOfInfoFile(task.getId())), JSONUtil.toJsonStr(task), StandardOpenOption.CREATE);
             return true;
         } catch (Exception e) {
             log.error("save task status occur error:{}", e.getMessage(), e);
@@ -198,49 +246,108 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public boolean move2Archived(EvaluationTask task) {
-        try {
-            Path sourcePath = Path.of(basePathOfTask(task.getId())),
-                targetDir = Path.of(path(archivedDirPath, agentProperties.getTask().getBasePath()));
-            if (!Files.exists(targetDir)) {
-                Files.createDirectories(targetDir);
-            }
-            // move to the task file
-            Files.move(sourcePath, targetDir);
-            return true;
-        } catch (IOException e) {
-            log.error("move task to archived dir occur error:{}", e.getMessage(), e);
-        }
-        return false;
+    public void move2Archived(EvaluationTask task) throws IOException {
+        // move to the archived task file
+        FileUtils.moveDirectoryToDirectory(new File(basePathOfTask(task.getId())), new File(pathOfArchived()), true);
     }
 
     @Override
-    public boolean preloadingSWMP(EvaluationTask task) {
-        try {
+    public String preloadingSWMP(EvaluationTask task) throws IOException {
+        SWModelPackage model = task.getSwModelPackage();
+
+        String cachePathStr = pathOfSWMPDir(model.getName(), model.getVersion());
+
+        // check if exist
+        if (Files.notExists(Path.of(cachePathStr))) {
             // pull swmp(tar) and uncompress it to the swmp dir
-            InputStream swmpStream = storageAccessService.get(task.getSwModelPackage().getPath());
-            // uncompress, default is tar:direct uncompress to the target dir
-            Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);
-            extractor.extract(
-                new File(pathOfSWMPDir(task.getId())));
-            return true;
-        } catch (Exception e) {
-            log.error("preloading swmp occur error:{}", e.getMessage(), e);
-            return false;
-        }
+            Stream<String> paths = storageAccessService.list((task.getSwModelPackage().getPath()));
+            paths.collect(Collectors.toList()).forEach(path -> {
+                InputStream swmpStream = null;
+                try {
+                    swmpStream = storageAccessService.get(path);
+                    /*FileOutputStream outputStream = new FileOutputStream("/mnt/data/gxx/test.tar");
+                    int read;
+                    byte[] bytes = new byte[2048];
+                    while ((read = swmpStream.read(bytes)) != -1) {
+                        outputStream.write(bytes, 0, read);
+                    }*/
+                    // uncompress, default is tar:direct uncompress to the target dir
+                    /*Extractor extractor = CompressUtil.createExtractor(StandardCharsets.UTF_8, swmpStream);
+                    extractor.extract(new File(cachePathStr));
+                    Files.setPosixFilePermissions(Path.of(cachePathStr), Set.of(PosixFilePermission.OTHERS_EXECUTE, PosixFilePermission.OWNER_EXECUTE));*/
 
+                    TarUtil.extractor(swmpStream, cachePathStr);
+
+                } catch (IOException e) {
+                    log.error("download swmp file error", e);
+                }
+
+
+
+
+            });
+        }
+        // FileUtils.copyDirectory(new File(cachePathStr), new File(taskPathStr));
+        return cachePathStr;
+    }
+
+    private final String dataFormat = "%s:%s:%s";
+
+    @Override
+    public void generateSWDSConfig(EvaluationTask task) throws IOException {
+        Path configDir = Path.of(pathOfSWDSConfigDir(task.getId()));
+        if (Files.notExists(configDir)) {
+            Files.createDirectories(configDir);
+        }
+        String configPathStr = pathOfSWDSConfigFile(task.getId());
+        Path configPath = Path.of(configPathStr);
+        //if (Files.notExists(configPath)) {
+            JSONObject object = JSONUtil.createObj();
+            object.set("backend", storageProperties.getType());
+            object.set("secret", JSONUtil.createObj()
+                    .set("access_key", storageProperties.getS3Config().getAccessKey())
+                    .set("secret_key", storageProperties.getS3Config().getSecretKey())
+            );
+            object.set("service", JSONUtil.createObj()
+                    .set("endpoint", storageProperties.getS3Config().getEndpoint())
+                    .set("region", storageProperties.getS3Config().getRegion())
+            );
+            JSONArray swds = JSONUtil.createArray();
+
+            task.getSwdsBlocks().forEach(swdsBlock -> {
+                JSONObject ds = JSONUtil.createObj();
+                ds.set("bucket", storageProperties.getS3Config().getBucket());
+                ds.set("key", JSONUtil.createObj()
+                        /*.set("data", swdsBlock.getLocationInput().getFile())
+                        .set("label", swdsBlock.getLocationLabel().getFile())*/
+                        // todo just test
+                        .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getOffset() + swdsBlock.getLocationInput().getSize() - 1))
+                        .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
+                );
+                swds.add(ds);
+            });
+            object.set("swds", swds);
+            Files.writeString(configPath, JSONUtil.toJsonStr(object), StandardOpenOption.CREATE);
+        //}
     }
 
     @Override
-    public boolean uploadResult(EvaluationTask task) {
-        try {
-            // todo:result is a file? or a set of files?
-            storageAccessService.put(task.getResultPath(),
-                new BufferedInputStream(new FileInputStream(pathOfResult(task.getId()))));
-            return true;
-        } catch (Exception e) {
-            log.error("upload result occur error:{}", e.getMessage(), e);
-            return false;
+    public void uploadResult(EvaluationTask task) throws IOException {
+        // results is a set of files
+        Stream<Path> paths = Files.find(Path.of(pathOfResult(task.getId())), 1, (a, b) -> true);
+        List<Path> results = paths.filter(path -> !Files.isDirectory(path))
+                .collect(Collectors.toList());
+        if (CollectionUtil.isNotEmpty(results)) {
+            results.forEach(path -> {
+                try {
+                    storageAccessService.put(task.getResultPath() + "/" + path.getFileName(),
+                            new BufferedInputStream(new FileInputStream(String.valueOf(path))));
+                } catch (IOException e) {
+                    log.error("upload result:{} occur error:{}", path.getFileName(), e.getMessage(), e);
+                }
+            });
+        } else {
+            throw ErrorCode.uploadError.asException(String.format("task:%s has no result to upload", task.getId()));
         }
 
     }

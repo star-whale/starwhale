@@ -84,8 +84,8 @@ public class StagingTaskStatus implements Comparable<StagingTaskStatus>{
     }
 
     public JobStatus getDesiredJobStatus() {
-        if(this.status.getDesiredJobStatus() == JobStatus.COLLECT_RESULT && this.stage == TaskStatusStage.DONE){
-            return JobStatus.FINISHED;
+        if(this.status == TaskStatus.FINISHED && this.stage == TaskStatusStage.DONE){
+            return JobStatus.COLLECT_RESULT;
         }
         if(this.stage == TaskStatusStage.FAILED){
             return JobStatus.EXIT_ERROR;

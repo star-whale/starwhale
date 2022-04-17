@@ -13,8 +13,8 @@ import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.system.Agent;
 import ai.starwhale.mlops.domain.system.AgentEntity;
-import ai.starwhale.mlops.domain.system.AgentMapper;
-import ai.starwhale.mlops.domain.task.TaskMapper;
+import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -25,17 +25,16 @@ import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
-import ai.starwhale.mlops.schedule.TaskScheduler;
+import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -51,7 +50,7 @@ public class ReportProcessorImp implements ReportProcessor {
 
     final LivingTaskStatusMachine livingTaskStatusMachine;
 
-    final TaskScheduler taskScheduler;
+    final SWTaskScheduler swTaskScheduler;
 
     final TaskBoConverter taskBoConverter;
 
@@ -62,12 +61,12 @@ public class ReportProcessorImp implements ReportProcessor {
     final TaskMapper taskMapper;
 
     public ReportProcessorImp(CommandingTasksChecker commandingTasksChecker,
-        LivingTaskStatusMachine livingTaskStatusMachine, TaskScheduler taskScheduler,
+        LivingTaskStatusMachine livingTaskStatusMachine, SWTaskScheduler swTaskScheduler,
         TaskBoConverter taskBoConverter, AgentMapper agentMapper, ObjectMapper jsonMapper,
         TaskMapper taskMapper) {
         this.commandingTasksChecker = commandingTasksChecker;
         this.livingTaskStatusMachine = livingTaskStatusMachine;
-        this.taskScheduler = taskScheduler;
+        this.swTaskScheduler = swTaskScheduler;
         this.taskBoConverter = taskBoConverter;
         this.agentMapper = agentMapper;
         this.jsonMapper = jsonMapper;
@@ -78,11 +77,15 @@ public class ReportProcessorImp implements ReportProcessor {
     @Transactional
     public ReportResponse receive(ReportRequest report) {
         final Node nodeInfo = report.getNodeInfo();
+        if(null == nodeInfo){
+            log.error("node info reported is null");
+            return new ReportResponse(new ArrayList<>(),new ArrayList<>());
+        }
         AgentEntity agentEntity = agentMapper.findByIpForUpdate(nodeInfo.getIpAddr());
         if (null == agentEntity) {
             agentEntity = insertAgent(nodeInfo);
         }
-        final List<TaskReport> taskReports = report.getTasks();
+        final List<TaskReport> taskReports = report.getTasks() == null? new ArrayList<>():report.getTasks();
         final List<Task> tasks = taskReports.parallelStream().map(taskReport -> {
             final Long taskId = taskReport.getId();
             final Task tsk = livingTaskStatusMachine.ofId(taskId)
@@ -101,9 +104,12 @@ public class ReportProcessorImp implements ReportProcessor {
             return rebuildReportResponse(unProperTasks);
         }
         taskStatusChange(tasks);
-        final List<Task> toAssignTasks = taskScheduler.schedule(nodeInfo);
+        final List<Task> toAssignTasks = swTaskScheduler.schedule(nodeInfo);
         final Collection<Task> toCancelTasks = livingTaskStatusMachine
-            .ofStatus(new StagingTaskStatus(TaskStatus.CANCEL));
+            .ofStatus(new StagingTaskStatus(TaskStatus.CANCEL))
+            .stream()
+            .filter(t->t.getAgent().equals(Agent.fromNode(nodeInfo)))
+            .collect(Collectors.toList());
         scheduledTaskStatusChange(toAssignTasks,agentEntity);
         canceledTaskStatusChange(toCancelTasks);
         commandingTasksChecker.onTaskCommanding(taskBoConverter.toTaskCommand(toAssignTasks),

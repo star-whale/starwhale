@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Node;
 import cn.hutool.core.collection.CollectionUtil;
+import org.apache.commons.lang3.SerializationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -92,6 +93,12 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
                     .build()
             );
 
+        // just deal report device's status if there have some tasks which status are preparing
+        /*List devices = (List) SerializationUtils.clone(sourcePool.getDevices());
+        if(taskPool.preparingTasks.size() > 0) {
+
+        }*/
+
         Node node = Node.builder()
             .ipAddr(systemInfo.getHostAddress())
             .agentVersion(agentProperties.getVersion())
@@ -122,10 +129,10 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
                 "canceled", List.class);
             // when success,archived the finished/canceled task,and rm to the archive dir
             for (EvaluationTask finishedTask : finishedTasks) {
-                finishedOrCanceled2ArchivedAction.apply(finishedTask, context);
+                finishedOrCanceled2ArchivedAction.apply(finishedTask, null);
             }
             for (EvaluationTask canceledTask : canceledTasks) {
-                finishedOrCanceled2ArchivedAction.apply(canceledTask, context);
+                finishedOrCanceled2ArchivedAction.apply(canceledTask, null);
             }
             // add controller's new tasks to current queue
             if (CollectionUtil.isNotEmpty(response.getTasksToRun())) {
@@ -138,10 +145,5 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
                 taskPool.needToCancel.addAll(response.getTaskIdsToCancel());
             }
         }
-    }
-
-    @Override
-    public void fail(ReportRequest reportRequest, Context context, Exception e) {
-        // do nothing
     }
 }

@@ -3,8 +3,7 @@ server:
 sw:
   agent:
     version: ${SW_AGENT_VERSION:0.1.0}
-    task:
-      basePath: ${SW_TASK_BASE_PATH:/var/starwhale/task/}
+    basePath: ${SW_BASE_PATH:/var/starwhale}
 #      infoPath: ${SW_TASK_INFO_PATH:/var/starwhale/task/info/}
 #      statusPath: ${SW_TASK_STATUS_PATH:/var/starwhale/task/status/}
 #      swmpPath: ${SW_TASK_SWMP_PATH:/var/starwhale/task/swmp/}
@@ -13,4 +12,13 @@ sw:
 #      logPath: ${SW_TASK_LOG_PATH:/var/starwhale/task/log/}
   controller:
     name: swController
-    url: ${SW_CONTROLLER_URL:http://localhost:8080/}
+    url: ${SW_CONTROLLER_URL:http://10.131.0.1:8082/}
+  storage:
+    type: s3
+    path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
+    s3-config:
+      bucket: ${SW_STORAGE_BUCKET:starwhale}
+      accessKey: ${SW_STORAGE_ACCESSKEY:accessKey}
+      secretKey: ${SW_STORAGE_SECRETKEY:secretKey}
+      region: ${SW_STORAGE_REGION:region}
+      endpoint: ${SW_STORAGE_ENDPOINT:http://10.131.0.1:9000}

@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.domain.task.TaskStatus;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -46,4 +47,20 @@ public class TaskCommand {
             && this.commandType.correspondStatus.clearStage().compareTo(nodeTask.getStatus()) <= 0;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TaskCommand that = (TaskCommand) o;
+        return task.equals(that.task);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(task);
+    }
 }

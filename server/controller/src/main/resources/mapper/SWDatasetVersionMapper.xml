@@ -6,7 +6,7 @@
   ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
   -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.swds.SWDatasetVersionMapper">
+<mapper namespace="ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper">
     <sql id="select_swds_version">
         select dsv.id as dsv_id,
                dataset_id,
@@ -53,6 +53,11 @@
         and dsv.id = #{dsVersionId}
     </select>
 
+    <select id="findVersionsByStatus" resultMap="dsVersionResultMap" >
+        <include refid="select_swds_version" />
+        and dsv.status = #{status}
+    </select>
+
     <select id="findVersionsByIds" resultMap="dsVersionResultMap" >
         <include refid="select_swds_version" />
         and dsv.id in
@@ -76,12 +81,16 @@
     </insert>
 
     <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, storage_path)
-        values(#{datasetId}, #{ownerId}, #{versionName}, #{versionTag}, #{versionMeta}, #{storagePath})
+        insert into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, storage_path, files_uploaded)
+        values(#{datasetId}, #{ownerId}, #{versionName}, #{versionTag}, #{versionMeta}, #{storagePath}, #{filesUploaded})
     </insert>
 
     <update id="update" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity">
         update dataset_version set version_tag = #{versionTag} where id = #{id}
+    </update>
+
+    <update id="updateFilesUploaded" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity">
+        update dataset_version set files_uploaded = #{filesUploaded} where id = #{id}
     </update>
 
     <update id="updateStatus">
@@ -105,6 +114,7 @@
         <result property="modifiedTime" column="dsv_modified_time"/>
         <result property="ownerId" column="owner_id" />
         <result property="status" column="status" />
-        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
+        <result property="filesUploaded" column="files_uploaded" />
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
     </resultMap>
 </mapper>

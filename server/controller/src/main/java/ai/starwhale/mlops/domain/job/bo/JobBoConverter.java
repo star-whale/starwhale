@@ -11,11 +11,13 @@ import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobRuntime;
-import ai.starwhale.mlops.domain.job.JobSWDSVersionMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import ai.starwhale.mlops.domain.swmp.SWModelPackageEntity;
+import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -29,8 +31,12 @@ public class JobBoConverter {
 
     final JobSWDSVersionMapper jobSWDSVersionMapper;
 
-    public JobBoConverter(JobSWDSVersionMapper jobSWDSVersionMapper) {
+    final SWModelPackageMapper swModelPackageMapper;
+
+    public JobBoConverter(JobSWDSVersionMapper jobSWDSVersionMapper,
+        SWModelPackageMapper swModelPackageMapper) {
         this.jobSWDSVersionMapper = jobSWDSVersionMapper;
+        this.swModelPackageMapper = swModelPackageMapper;
     }
 
     public Job fromEntity(JobEntity jobEntity){
@@ -38,18 +44,25 @@ public class JobBoConverter {
                 .indexPath(getIndexPath(swDatasetVersionEntity))
                 .path(swDatasetVersionEntity.getStoragePath())
                 .build()).collect(Collectors.toList());
+        SWModelPackageEntity modelPackageEntity = swModelPackageMapper.findSWModelPackageById(
+            jobEntity.getSwmpVersion().getSwmpId());
         return Job.builder()
             .id(jobEntity.getId())
             .jobRuntime(JobRuntime.builder().baseImage(jobEntity.getBaseImage().getImageName()).deviceAmount(jobEntity.getDeviceAmount()).deviceClass(
                 Device.Clazz.from(jobEntity.getDeviceType())).build())
             .status(JobStatus.from(jobEntity.getJobStatus()))
             .swmp(SWModelPackage
-                .builder().id(jobEntity.getSwmpVersionId()).path(jobEntity.getSwmpVersion().getStoragePath()).build())
+                .builder()
+                .id(jobEntity.getSwmpVersionId())
+                .name(modelPackageEntity.getSwmpName())
+                .version(jobEntity.getSwmpVersion().getVersionName())
+                .path(jobEntity.getSwmpVersion().getStoragePath()).build())
             .swDataSets(swDataSets)
+            .uuid(jobEntity.getJobUuid())
             .build();
     }
 
-    static final String PATH_INDEX = "index.jsonl";
+    static final String PATH_INDEX = "/index.jsonl";
     private String getIndexPath(SWDatasetVersionEntity swDatasetVersionEntity) {
         return swDatasetVersionEntity.getStoragePath() + PATH_INDEX;
     }

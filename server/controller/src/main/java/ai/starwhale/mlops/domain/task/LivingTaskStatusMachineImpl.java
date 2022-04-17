@@ -8,11 +8,12 @@
 package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.JobMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -28,9 +29,7 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.NoTransactionException;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -80,9 +79,13 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     final JobMapper jobMapper;
 
-    public LivingTaskStatusMachineImpl(TaskMapper taskMapper, JobMapper jobMapper) {
+    final TaskJobStatusHelper taskJobStatusHelper;
+
+    public LivingTaskStatusMachineImpl(TaskMapper taskMapper, JobMapper jobMapper,
+        TaskJobStatusHelper taskJobStatusHelper) {
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
+        this.taskJobStatusHelper = taskJobStatusHelper;
         taskIdMap = new ConcurrentHashMap<>();
         jobIdMap = new ConcurrentHashMap<>();
         taskStatusMap = new ConcurrentHashMap<>();
@@ -101,6 +104,10 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     @Override
     @Transactional
     public void update(Collection<Task> livingTasks, StagingTaskStatus status) {
+        if(null == livingTasks || livingTasks.isEmpty()){
+            log.debug("empty tasks to be updated for status{}",status.getValue());
+            return;
+        }
         final Stream<Task> toBeUpdateStream = livingTasks.parallelStream().filter(task -> {
             final Task taskResident = taskIdMap.get(task.getId());
             if (null == taskResident) {
@@ -134,13 +141,19 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     @Override
     public Collection<Task> ofStatus(StagingTaskStatus taskStatus) {
-        return taskStatusMap.get(taskStatus).stream().map(taskIdMap::get)
+        return taskStatusMap.computeIfAbsent(taskStatus,k-> Collections.synchronizedList(new LinkedList<>())).stream().map(tskId->taskIdMap.get(tskId).deepCopy())
             .collect(Collectors.toList());
     }
 
     @Override
     public Optional<Task> ofId(Long taskId) {
-        return Optional.ofNullable(taskIdMap.get(taskId));
+        return Optional.ofNullable(taskIdMap.get(taskId).deepCopy());
+    }
+
+    @Override
+    public Collection<Task> ofJob(Long jobId) {
+        return jobTaskMap.get(jobId).stream().map(tskId->taskIdMap.get(tskId).deepCopy())
+            .collect(Collectors.toList());
     }
 
     @Scheduled(fixedDelay = 1000)
@@ -164,6 +177,9 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     }
 
     void persistTaskStatus(Set<Long> taskIds){
+        if(CollectionUtils.isEmpty(taskIds)){
+            return;
+        }
         persistTaskStatus(taskIds.parallelStream().map(id->taskIdMap.get(id)).collect(Collectors.toList()));
     }
 
@@ -178,20 +194,11 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
      * change job status triggered by living task status change
      */
     void persistJobStatus(Set<Long> toBeCheckedJobs) {
+        if(CollectionUtils.isEmpty(toBeCheckedJobs)){
+            return;
+        }
         final Map<JobStatus, List<Long>> jobDesiredStatusMap = toBeCheckedJobs.parallelStream()
-            .collect(Collectors.groupingBy((jobid -> {
-                final List<Long> taskIds = jobTaskMap.get(jobid);
-                final JobStatus desiredJobStatuses = taskIds.parallelStream()
-                    .map(taskId -> taskIdMap.get(taskId).getStatus())
-                    .reduce(JobStatus.FINISHED, (jobStatus, taskStatus) -> {
-                            if (taskStatus.getDesiredJobStatus().before(jobStatus)) {
-                                jobStatus = taskStatus.getDesiredJobStatus();
-                            }
-                            return jobStatus;
-                        }
-                        , (js1, js2) -> js1.before(js2) ? js1 : js2);
-                return desiredJobStatuses;
-            })));
+            .collect(Collectors.groupingBy((jobid -> taskJobStatusHelper.desiredJobStatus(this.ofJob(jobid)))));
         jobDesiredStatusMap.forEach((desiredStatus, jobids) -> {
             //filter these job who's current status is before desired status
             final List<Long> toBeUpdated = jobids.parallelStream().filter(jid -> {
@@ -199,7 +206,9 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
                 return null != job && job.getStatus().before(desiredStatus);
             }).peek(jobId -> jobIdMap.get(jobId).setStatus(desiredStatus))
                 .collect(Collectors.toList());
-            jobMapper.updateJobStatus(toBeUpdated, desiredStatus.getValue());
+            if(null != toBeUpdated && !toBeUpdated.isEmpty()){
+                jobMapper.updateJobStatus(toBeUpdated, desiredStatus.getValue());
+            }
 
             if (desiredStatus == JobStatus.FINISHED) {
                 removeFinishedJobTasks(jobids);

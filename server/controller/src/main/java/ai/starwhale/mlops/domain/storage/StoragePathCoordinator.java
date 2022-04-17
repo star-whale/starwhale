@@ -30,6 +30,12 @@ public class StoragePathCoordinator {
     static final String STORAGE_PATH_FORMATTER_RESULT_COLLECTOR = "%s/resultMetrics/%s";
 
     /**
+     * where collected result metrics is stored
+     * %s1 = prefix %s2 = id
+     */
+    static final String STORAGE_PATH_FORMATTER_RESULT_METRICS = "%s/resultMetrics";
+
+    /**
      * where task result is stored
      * %s1 = prefix
      * %s2 = jobUUID
@@ -55,11 +61,16 @@ public class StoragePathCoordinator {
 
     public StoragePathCoordinator(String systemStoragePathPrefix){
         this.systemStoragePathPrefix = systemStoragePathPrefix;
+        //todo(renyanda) add date to path
         this.prefix = String.format(STORAGE_PATH_FORMATTER_PREFIX,systemStoragePathPrefix,SYS_NAME);
     }
 
     public String resultMetricsPath(String metricsId){
         return String.format(STORAGE_PATH_FORMATTER_RESULT_COLLECTOR,prefix,metricsId);
+    }
+
+    public String resultMetricsPath(){
+        return String.format(STORAGE_PATH_FORMATTER_RESULT_METRICS,prefix);
     }
 
     public String taskResultPath(String jobId,String taskId){

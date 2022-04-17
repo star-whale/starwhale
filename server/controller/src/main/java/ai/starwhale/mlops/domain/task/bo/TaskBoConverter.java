@@ -9,12 +9,11 @@ package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobEntity;
-import ai.starwhale.mlops.domain.job.JobMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.system.Agent;
-import ai.starwhale.mlops.domain.task.TaskMapper;
-import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -71,6 +70,7 @@ public class TaskBoConverter {
                 .agent(Agent.fromEntity(entity.getAgent()))
                 .status(StagingTaskStatus.from(entity.getTaskStatus()))
                 .resultPaths(entity.getResultPath())
+                .uuid(entity.getTaskUuid())
                 .swdsBlocks(swdsBlockSerializer.fromString(entity.getSwdsBlocks()))
                 .build();
         } catch (JsonProcessingException e) {
@@ -90,6 +90,8 @@ public class TaskBoConverter {
             .imageId(t.getJob().getJobRuntime().getBaseImage())
             .resultPath(t.getResultPaths())
             .swdsBlocks(t.getSwdsBlocks())
+            .deviceAmount(t.getJob().getJobRuntime().getDeviceAmount())
+            .deviceClass(t.getJob().getJobRuntime().getDeviceClass())
             .swModelPackage(t.getJob().getSwmp()).build();
     }
 

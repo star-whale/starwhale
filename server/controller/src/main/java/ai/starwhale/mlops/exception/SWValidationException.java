@@ -33,7 +33,8 @@ public class SWValidationException extends StarWhaleException {
     }
 
     public SWValidationException tip(String tip){
-        this.tip = tip;
+        this.tip += "\n";
+        this.tip += tip;
         return this;
     }
 
@@ -43,7 +44,8 @@ public class SWValidationException extends StarWhaleException {
         USER("003","USER"),
         NODE("004","NODE"),
         SWDS("005","Star Whale Data Set"),
-        SWMP("006","Star Whale Model Package");
+        SWMP("006","Star Whale Model Package"),
+        PROJECT("007","PROJECT");
         final String code;
         final String tipSubject;
         ValidSubject(String code,String tipSubject){

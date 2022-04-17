@@ -22,6 +22,11 @@ public enum TaskStatus {
     CREATED(0x110, JobStatus.RUNNING, false),
 
     /**
+     * pausing triggered by user
+     */
+    PAUSED(0x120, JobStatus.PAUSED, false),
+
+    /**
      * after assignment is acknowledged before running
      */
     PREPARING(0x130, JobStatus.RUNNING, false),
@@ -45,7 +50,7 @@ public enum TaskStatus {
     /**
      * garbage is cleared
      */
-    FINISHED(0xf00, JobStatus.COLLECT_RESULT, true),
+    FINISHED(0xf00, JobStatus.RUNNING, true),
 
     /**
      * when report successfully to the controller,it should be archived (Agent only status)

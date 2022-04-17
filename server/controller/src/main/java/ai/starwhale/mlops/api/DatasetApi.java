@@ -176,13 +176,12 @@ public interface DatasetApi {
             + "The data resources can be selected by uploading the file package or entering the server path.")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-        value = "v01/dataset/push",
-        produces = {"application/json"},
-        consumes = {"multipart/form-data"})
+        value = "/project/dataset/push",
+        produces = {"application/json"})
     ResponseEntity<ResponseMessage<UploadResult>> uploadDS(
         @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) String uploadHeader,
-        @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile dsFile,
-        @RequestBody UploadRequest uploadRequest);
+        @Parameter(description = "file detail") @RequestPart(value = "file",required = false) MultipartFile dsFile,
+        UploadRequest uploadRequest);
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

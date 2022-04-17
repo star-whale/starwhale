@@ -8,14 +8,18 @@
 package ai.starwhale.mlops.domain.swds.index;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * the storage unit of one data set
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SWDSBlock {
 
     /**
@@ -41,4 +45,8 @@ public class SWDSBlock {
     @JsonProperty("data")
     SWDSDataLocation locationInput;
 
+    public void prependDSPath(String swdsPath) {
+        locationLabel.prependDSPath(swdsPath);
+        locationInput.prependDSPath(swdsPath);
+    }
 }

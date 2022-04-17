@@ -28,15 +28,15 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
         Optional<ExecuteStatus> executeStatus = taskPersistence.status(runningTask.getId());
         if (executeStatus.isPresent()) {
             switch (executeStatus.get()) {
-                case START:
-                case RUNNING:
-                case UNKNOWN:
+                case start:
+                case running:
+                case unknown:
                     // nothing to do,just wait
                     break;
-                case OK:
+                case success:
                     newTask.setStatus(TaskStatus.UPLOADING);
                     break;
-                case FAILED:
+                case failed:
                     newTask.setStatus(TaskStatus.EXIT_ERROR);
                     break;
             }
@@ -64,8 +64,4 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
         }
     }
 
-    @Override
-    public void fail(EvaluationTask oldTask, Context context, Exception e) {
-        // nothing
-    }
 }

@@ -1,6 +1,7 @@
-BASE_IMAGE :=starwhaleai/base:0.1.0-nightly-2022040701
-SW_IMAGE := starwhaleai/starwhale:0.1.0-nightly-2022040801
-SW_VERSION := 0.1.0.dev0
+BASE_IMAGE :=starwhaleai/base:0.1.0-nightly-2022041501
+SW_IMAGE := starwhaleai/starwhale:0.1.0-nightly-2022041501
+SW_TASKSET_IMAGE := starwhaleai/taskset:0.1.0-nightly-2022041601
+SW_VERSION := 0.1.0.dev9
 
 build-base:
 	docker build -f Dockerfile.base -t $(BASE_IMAGE) .
@@ -11,3 +12,7 @@ build-starwhale:
 release:
 	docker push $(BASE_IMAGE)
 	docker push $(SW_IMAGE)
+	docker push $(SW_TASKSET_IMAGE)
+
+build-taskset:
+	docker build --build-arg BASE_IMAGE=$(BASE_IMAGE) -f Dockerfile.taskset -t $(SW_TASKSET_IMAGE) .

@@ -6,7 +6,7 @@
   ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
   -->
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionMapper">
+<mapper namespace="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper">
     <sql id="select_swmp_version">
         select mv.id as mv_id,
                mv.swmp_id,
@@ -86,6 +86,6 @@
         <result property="createdTime" column="mv_created_time"/>
         <result property="modifiedTime" column="mv_modified_time"/>
         <result property="ownerId" column="owner_id" />
-        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.UserMapper.userResultMap" />
+        <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
     </resultMap>
 </mapper>

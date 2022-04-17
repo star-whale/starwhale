@@ -13,16 +13,21 @@ import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import ai.starwhale.mlops.reporting.ReportProcessor;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ReportController implements ReportApi{
 
-    ReportProcessor reportProcessor;
+    final ReportProcessor reportProcessor;
+
+    public ReportController(ReportProcessor reportProcessor) {
+        this.reportProcessor = reportProcessor;
+    }
 
     @PostMapping("report")
     @Override
-    public ResponseMessage<ReportResponse> report(ReportRequest request) {
+    public ResponseMessage<ReportResponse> report(@RequestBody ReportRequest request) {
         return Code.success.asResponse(reportProcessor.receive(request));
     }
 }

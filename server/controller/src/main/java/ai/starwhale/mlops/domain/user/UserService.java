@@ -11,12 +11,18 @@ import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
-import cn.hutool.core.lang.Assert;
+import ai.starwhale.mlops.domain.user.mapper.UserMapper;
+import ai.starwhale.mlops.exception.SWAuthException;
+import ai.starwhale.mlops.exception.SWAuthException.AuthType;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -41,21 +47,29 @@ public class UserService implements UserDetailsService {
     @Override
     public User loadUserByUsername(String username) throws UsernameNotFoundException {
         UserEntity userEntity = userMapper.findUserByName(username);
-        User user = new User().fromEntity(userEntity, idConvertor);
-        return Assert.notNull(user, () -> new UsernameNotFoundException(String.format("User %s is not found.", username)));
+        if(userEntity == null) {
+            throw new UsernameNotFoundException(String.format("User %s is not found.", username));
+        }
+        return new User().fromEntity(userEntity, idConvertor);
     }
 
 
     public UserVO currentUser() {
         User user = currentUserDetail();
         UserEntity userEntity = userMapper.findUserByName(user.getName());
+        if(userEntity == null) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB)
+                .tip(String.format("Unable to find user by name %s", user.getName())), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return userConvertor.convert(userEntity);
     }
 
     public User currentUserDetail() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication == null) {
-            return null;
+            throw new StarWhaleApiException(
+                new SWAuthException(AuthType.CURRENT_USER)
+                    .tip("Unable to get current user."), HttpStatus.UNAUTHORIZED);
         }
 
         return (User)authentication.getPrincipal();

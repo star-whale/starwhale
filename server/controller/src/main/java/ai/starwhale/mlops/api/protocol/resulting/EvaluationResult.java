@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.api.protocol.resulting;
 
 import ai.starwhale.mlops.resulting.Indicator;
+import java.util.Collection;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,6 @@ import lombok.NoArgsConstructor;
 public class EvaluationResult {
 
     String evaluationType;
-    List<Indicator> indicators;
+    Collection<Indicator> indicators;
 
 }

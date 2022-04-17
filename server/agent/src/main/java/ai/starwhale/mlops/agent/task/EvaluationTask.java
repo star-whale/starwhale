@@ -13,8 +13,10 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskStatus;
+
 import java.util.List;
 import java.util.Set;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -62,6 +64,10 @@ public class EvaluationTask {
      */
     List<SWDSBlock> swdsBlocks;
 
+    Integer deviceAmount;
+
+    Device.Clazz deviceClass;
+
     /**
      * every stage will have a status which represents completion
      */
@@ -71,28 +77,30 @@ public class EvaluationTask {
         inProgress, completed
     }
 
-    public boolean equals(Object obj){
+    public boolean equals(Object obj) {
 
-        if(!(obj instanceof EvaluationTask)){
+        if (!(obj instanceof EvaluationTask)) {
             return false;
         }
-        EvaluationTask tt = (EvaluationTask)obj;
+        EvaluationTask tt = (EvaluationTask) obj;
         return this.getId().equals(tt.getId());
     }
 
-    public static EvaluationTask fromTaskTrigger(TaskTrigger taskTrigger){
+    public static EvaluationTask fromTaskTrigger(TaskTrigger taskTrigger) {
         return EvaluationTask.builder().id(taskTrigger.getId())
-            .imageId(taskTrigger.getImageId())
-            .resultPath(taskTrigger.getResultPath())
-            .status(TaskStatus.CREATED)
-            .stage(Stage.inProgress)
-            .swdsBlocks(taskTrigger.getSwdsBlocks())
-            .swModelPackage(taskTrigger.getSwModelPackage())
-            .build();
+                .imageId(taskTrigger.getImageId())
+                .resultPath(taskTrigger.getResultPath())
+                .status(TaskStatus.CREATED)
+                .stage(Stage.inProgress)
+                .deviceAmount(taskTrigger.getDeviceAmount())
+                .deviceClass(taskTrigger.getDeviceClass())
+                .swdsBlocks(taskTrigger.getSwdsBlocks())
+                .swModelPackage(taskTrigger.getSwModelPackage())
+                .build();
     }
 
 
-    public TaskReport toTaskReport(){
+    public TaskReport toTaskReport() {
         return TaskReport.builder().id(this.id).status(this.status).build();
     }
 }

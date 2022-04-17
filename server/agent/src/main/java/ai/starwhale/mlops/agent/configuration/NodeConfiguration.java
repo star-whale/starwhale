@@ -19,6 +19,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 import java.util.Map;
 
@@ -31,15 +32,9 @@ public class NodeConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "sw.node.sourcePool.init.enabled", havingValue = "true", matchIfMissing = true)
-    public SourcePoolInitializer sourcePoolInitializer(SourcePool sourcePool) {
-        return new SourcePoolInitializer(sourcePool);
-    }
-
-    @Bean
     @ConditionalOnProperty(name = "sw.node.sourcePool.gpu.nvidia.detect", havingValue = "cmd", matchIfMissing = true)
-    public GPUDetect nvidiaGPUDetect(XmlMapper xmlMapper) {
-        return new NvidiaCmdDetect(xmlMapper);
+    public GPUDetect nvidiaGPUDetect() {
+        return new NvidiaCmdDetect(new XmlMapper());
     }
 
     @Bean

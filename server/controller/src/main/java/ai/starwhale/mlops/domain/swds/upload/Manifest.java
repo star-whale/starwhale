@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import java.util.Map;
 import lombok.Data;
 
 /**
@@ -26,12 +27,13 @@ public class Manifest{
     DatasetAttr datasetAttr;
     @JsonProperty("dataset_byte_size")
     int datasetByteSize;
-    Dep dep;
+    Dep2 dep;
     Extra extra;
     String mode;
     String process;
     String version;
     String name;
+    Map<String,String> signature;
     String rawYaml;
     @Data
     public static class Extra{

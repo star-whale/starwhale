@@ -1,5 +1,6 @@
 import pathlib
-from unittest.mock import DEFAULT
+from collections import namedtuple
+
 
 #TODO: use str path, not Path Class
 HOMEDIR = pathlib.Path.home()
@@ -21,9 +22,13 @@ SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
 ENV_CONDA = "CONDA_DEFAULT_ENV"
 ENV_CONDA_PREFIX = "CONDA_PREFIX"
 
+PYTHON_RUN_ENV = namedtuple("PYTHON_RUN_ENV", ["CONDA", "VENV", "SYSTEM"])(
+    "conda", "venv", "system"
+)
+
 FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 
 #TODO: use better DEFAULT words?
 DEFAULT_COPY_WORKERS = 4
 
-SW_API_VERSION = "v0.1"
+SW_API_VERSION = "v1"

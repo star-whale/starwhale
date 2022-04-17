@@ -65,6 +65,11 @@ public class Job {
         RUNNING(20, false),
 
         /**
+         * paused by user
+         */
+        PAUSED(30, false),
+
+        /**
          * CANCEL triggered by user( at least one task is TO_CANCEL)
          */
         TO_CANCEL(50, false),
@@ -118,6 +123,17 @@ public class Job {
         public boolean before(JobStatus nextStatus){
             return this.value < nextStatus.value;
         }
+    }
+
+    public Job deepCopy(){
+        return Job.builder()
+            .id(this.id)
+            .uuid(this.uuid)
+            .jobRuntime(this.jobRuntime.copy())
+            .swDataSets(List.copyOf(this.swDataSets))
+            .status(this.status)
+            .swmp(this.swmp.copy())
+            .build();
     }
 
     @Override

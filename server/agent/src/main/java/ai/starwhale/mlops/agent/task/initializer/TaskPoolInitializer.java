@@ -7,15 +7,14 @@
 
 package ai.starwhale.mlops.agent.task.initializer;
 
-import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.task.EvaluationTask;
-import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -24,6 +23,7 @@ import java.util.List;
  * execute on every startup
  */
 @Slf4j
+@Order(0)
 @Component
 @ConditionalOnProperty(name = "sw.task.rebuild.enabled", havingValue = "true", matchIfMissing = true)
 public class TaskPoolInitializer implements CommandLineRunner {

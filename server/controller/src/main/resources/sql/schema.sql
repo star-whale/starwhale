@@ -4,7 +4,8 @@
  * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
-
+CREATE DATABASE IF NOT EXISTS starwhale;
+use starwhale;
 CREATE TABLE IF NOT EXISTS user_info
 (
     id            bigint           NOT NULL AUTO_INCREMENT COMMENT 'PK',
@@ -33,6 +34,7 @@ CREATE TABLE IF NOT EXISTS project_info
     id            bigint           NOT NULL AUTO_INCREMENT COMMENT 'PK',
     project_name  varchar(255)     NOT NULL,
     owner_id      bigint           NOT NULL,
+    is_default    tinyint UNSIGNED NOT NULL DEFAULT 0,
     is_deleted    tinyint UNSIGNED NOT NULL DEFAULT 0,
     created_time  datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -86,15 +88,15 @@ CREATE TABLE IF NOT EXISTS swmp_version
     swmp_id       bigint       NOT NULL,
     owner_id      bigint       NOT NULL,
     version_name  varchar(255) NOT NULL,
-    version_tag   varchar(255) NOT NULL,
+    version_tag   varchar(255) ,
     version_meta  TEXT         NOT NULL,
     storage_path  TEXT         NOT NULL,
     created_time  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     INDEX idx_swmp_id (swmp_id) USING BTREE,
-    INDEX idx_owner_id (owner_id) USING BTREE
-    unique unq_swmp_version_name (swmp_id,version_name) USING BTREE,
+    INDEX idx_owner_id (owner_id) USING BTREE,
+    unique unq_swmp_version_name (swmp_id,version_name) USING BTREE
 );
 
 CREATE TABLE IF NOT EXISTS dataset_info
@@ -118,8 +120,9 @@ CREATE TABLE IF NOT EXISTS dataset_version
     dataset_id    bigint       NOT NULL,
     owner_id      bigint       NOT NULL,
     version_name  varchar(255) NOT NULL,
-    version_tag   varchar(255) NULL,
+    version_tag   varchar(255) ,
     version_meta  TEXT         NOT NULL,
+    files_uploaded  TEXT       ,
     storage_path  TEXT         NOT NULL,
     status    tinyint UNSIGNED NOT NULL DEFAULT 0,
     created_time  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -127,7 +130,7 @@ CREATE TABLE IF NOT EXISTS dataset_version
     PRIMARY KEY (id),
     INDEX idx_dataset_id (dataset_id) USING BTREE,
     INDEX idx_owner_id (owner_id) USING BTREE,
-    unique unq_swds_version_name (dataset_id,version_name) USING BTREE,
+    unique unq_swds_version_name (dataset_id,version_name) USING BTREE
 );
 
 CREATE TABLE IF NOT EXISTS job_info
@@ -170,7 +173,7 @@ CREATE TABLE IF NOT EXISTS task_info
     task_uuid       varchar(255)     NOT NULL,
     job_id          bigint           NOT NULL,
     agent_id        bigint           ,
-    task_status     tinyint UNSIGNED NOT NULL,
+    task_status     int              NOT NULL,
     result_path     text             NOT NULL,
     swds_blocks     text,
     created_time    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,

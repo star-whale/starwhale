@@ -27,6 +27,9 @@ public class Agent {
     String ip;
 
     public static Agent fromEntity(AgentEntity entity){
+        if(null == entity){
+            return null;
+        }
         return Agent.builder().id(entity.getId()).ip(entity.getAgentIp()).build();
     }
 
@@ -45,6 +48,10 @@ public class Agent {
         Agent agent = (Agent) o;
         return Objects.equals(id, agent.id) ||
             ip.equals(agent.ip);
+    }
+
+    public Agent copy(){
+        return new Agent(id,ip);
     }
 
     @Override

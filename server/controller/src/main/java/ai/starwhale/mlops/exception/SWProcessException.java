@@ -32,6 +32,12 @@ public class SWProcessException extends StarWhaleException {
         return this.tip;
     }
 
+    public SWProcessException tip(String tip){
+        this.tip += "\n";
+        this.tip += tip;
+        return this;
+    }
+
     public enum ErrorType{
         STORAGE("001","STORAGE"),
         DB("002","DB"),

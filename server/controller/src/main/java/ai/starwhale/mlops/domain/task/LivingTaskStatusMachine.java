@@ -21,8 +21,11 @@ public interface LivingTaskStatusMachine {
 
     void update(Collection<Task> livingTasks, StagingTaskStatus status);
 
+
     Collection<Task> ofStatus(StagingTaskStatus taskStatus);
 
     Optional<Task> ofId(Long taskId);
+
+    Collection<Task> ofJob(Long jobId);
 
 }

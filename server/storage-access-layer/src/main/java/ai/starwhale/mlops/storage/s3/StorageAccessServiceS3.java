@@ -10,12 +10,14 @@ package ai.starwhale.mlops.storage.s3;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.stream.Stream;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
@@ -35,15 +37,19 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         AwsBasicCredentials awsCreds = AwsBasicCredentials.create(
             s3Config.getAccessKey(),
             s3Config.getSecretKey());
-        this.s3client = S3Client.builder()
+        S3ClientBuilder s3ClientBuilder = S3Client.builder()
             .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
-            .region(Region.of(s3Config.getRegion()))
+            .region(Region.of(s3Config.getRegion()));
+        if(s3Config.overWriteEndPoint()){
+            s3ClientBuilder.endpointOverride(URI.create(s3Config.getEndpoint()));
+        }
+        this.s3client = s3ClientBuilder
             .build();
     }
 
     @Override
-    public void put(String path,InputStream inputStream) {
-        s3client.putObject(PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),RequestBody.fromInputStream(inputStream,(Long)null));
+    public void put(String path,InputStream inputStream) throws IOException {
+        s3client.putObject(PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),RequestBody.fromInputStream(inputStream,inputStream.available()));
     }
 
     @Override

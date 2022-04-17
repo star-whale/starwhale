@@ -15,16 +15,18 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class AgentProperties {
 
     private String version;
+
+    /**
+     * base dir path,default:/var/starwhale/
+     */
+    private String basePath;
+
     private Task task;
+
     private Container container;
 
     @Data
     public static class Task {
-
-        /**
-         * taskInfo dir path,default:/var/starwhale/task/
-         */
-        private String basePath;
 
     }
 

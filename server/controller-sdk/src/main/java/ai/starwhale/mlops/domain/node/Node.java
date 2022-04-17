@@ -7,16 +7,20 @@
 
 package ai.starwhale.mlops.domain.node;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
+import lombok.NoArgsConstructor;
 
 /**
  * Node is a machine/ a virtual machine or even a K8S pod in the cluster
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Node {
 
     /**

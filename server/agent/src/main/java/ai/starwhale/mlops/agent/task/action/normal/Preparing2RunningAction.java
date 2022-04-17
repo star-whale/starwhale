@@ -19,16 +19,22 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class Preparing2RunningAction extends AbsBaseTaskTransition {
-    private static final String containerBasePath = "/var/starwhale/task/";
+    private static final String containerBasePath = "/opt/starwhale/";
+    private static final String swmpDirEnv = "SW_SWMP_WORKDIR";
     private static final String statusFileEnv = "SW_TASK_STATUS_FILE";
     private static final String logDirEnv = "SW_TASK_LOG_DIR";
     private static final String resultDirEnv = "SW_TASK_RESULT_DIR";
@@ -44,58 +50,86 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     public void orElse(EvaluationTask task, Context context) {
         // represent last step occurred some errors
         // todo:fault tolerance
+        task.setStage(Stage.completed);
+        taskPersistence.save(task);
     }
 
     @Override
     public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
-        // pull swmp(tar) and uncompress it to the swmp dir todo:use async?and check if prepared when schedule
-        if (taskPersistence.preloadingSWMP(oldTask)) {
-            // allocate device(GPU or CPU) for task
-            Set<Device> allocated = sourcePool.allocate(
-                AllocateRequest.builder().gpuNum(1).build());
-
-            // allocate device to this task,if fail will throw exception, now it is blocked
-            oldTask.setDevices(allocated);
-
-            // fill with task info
-            Optional<String> containerId = containerClient.startContainer(
-                ImageConfig.builder()
-                    .autoRemove(false)
-                    .env(List.of(
-                        env(statusFileEnv,  taskPersistence.pathOfStatusFile(oldTask.getId())),
-                        env(swdsFileEnv,  taskPersistence.pathOfInfoFile(oldTask.getId())),
-                        env(logDirEnv, containerBasePath + "log/"),
-                        env(resultDirEnv, containerBasePath + "result/")
-                    ))
-                    .entrypoint(List.of()) // todo entrypoint
-                    .gpuConfig(GPUConfig.builder()
-                        .count(1)
-                        .capabilities(List.of(List.of("gpu")))
-                        .deviceIds(
-                            allocated.stream().map(Device::getId).collect(Collectors.toList()))
-                        .build()
-                    )
-                    .mounts(List.of(
-                        Mount.builder().source(taskPersistence.basePathOfTask(oldTask.getId()))
-                            .target(containerBasePath).type("VOLUME").build()
-                    ))
-                    .labels(Map.of("taskId", oldTask.getId().toString()))
-                    .build()
-            );
-            // whether the container create and start success
-            if (containerId.isPresent()) {
-                EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
-                newTask.setContainerId(containerId.get());
-                newTask.setStatus(TaskStatus.RUNNING);
-                return newTask;
-            } else {
-                // todo: retry or take it to the tail of queue
-                // should release, throw exception and handled by the fail method
-                throw ErrorCode.containerError.asException(
-                    String.format("start task container by image:%s fail", ""));
-            }
+        Set<Device> allocated = null;
+        ImageConfig imageConfig = ImageConfig.builder()
+                .autoRemove(false)
+                .image(oldTask.getImageId())
+                .labels(Map.of("taskId", oldTask.getId().toString()))
+                .build();
+        // allocate device(GPU or CPU) for task
+        switch (oldTask.getDeviceClass()) {
+            case CPU:
+                allocated = sourcePool.allocate(
+                        AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
+                imageConfig.setCpuConfig(
+                        ImageConfig.CPUConfig.builder()
+                                .cpuCount(Long.valueOf(oldTask.getDeviceAmount()))
+                                .build()
+                );
+                break;
+            case GPU:
+                allocated = sourcePool.allocate(
+                        AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
+                imageConfig.setGpuConfig(
+                        GPUConfig.builder()
+                                .count(oldTask.getDeviceAmount())
+                                .capabilities(List.of(List.of("gpu")))
+                                .deviceIds(
+                                        allocated.stream().map(Device::getId).collect(Collectors.toList()))
+                                .build()
+                );
+                break;
+            case UNKNOWN:
+                log.error("unknown device class");
+                throw ErrorCode.allocateError.asException("unknown device class");
         }
-        throw ErrorCode.downloadError.asException("preDownload swmp error");
+
+        // pull swmp(tar) and uncompress it to the swmp dir
+        String swmpDir = taskPersistence.preloadingSWMP(oldTask);
+
+//        imageConfig.setEnv(List.of(
+//                env(swmpDirEnv, swmpDir)
+//        ));
+        imageConfig.setMounts(List.of(
+                Mount.builder()
+                        .readOnly(false)
+                        .source(taskPersistence.basePathOfTask(oldTask.getId()))
+                        .target(containerBasePath)
+                        .type("BIND")
+                        .build(),
+                Mount.builder()
+                        .readOnly(false)
+                        .source(swmpDir)
+                        .target(containerBasePath + "swmp")
+                        .type("BIND")
+                        .build()
+        ));
+
+        taskPersistence.generateSWDSConfig(oldTask);
+        // allocate device to this task,if fail will throw exception, now it is blocked
+        oldTask.setDevices(allocated);
+
+        // fill with task info
+        Optional<String> containerId = containerClient.startContainer(imageConfig);
+        // whether the container create and start success
+        if (containerId.isPresent()) {
+            EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
+            newTask.setContainerId(containerId.get());
+            newTask.setStatus(TaskStatus.RUNNING);
+            return newTask;
+        } else {
+            // todo: retry or take it to the tail of queue
+            // should release, throw exception and handled by the fail method
+            throw ErrorCode.containerError.asException(
+                    String.format("start task container by image:%s fail", ""));
+        }
+
     }
 
     private String env(String key, String value) {
@@ -112,10 +146,12 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
 
     @Override
     public void fail(EvaluationTask oldTask, Context context, Exception e) {
+        log.error("execute task:{}, error:{}", JSONUtil.toJsonStr(oldTask), e.getMessage());
         // rollback and wait again until next time
         if (CollectionUtil.isNotEmpty(oldTask.getDevices())) {
             sourcePool.release(oldTask.getDevices());
             oldTask.setDevices(null);
         }
+        oldTask.setStage(Stage.completed);
     }
 }

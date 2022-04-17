@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.api.protocol.report.resp;
 
+import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
@@ -48,6 +49,10 @@ public class TaskTrigger {
      * storage directory where task result is uploaded
      */
     private String resultPath;
+
+    private Integer deviceAmount;
+
+    private Device.Clazz deviceClass;
 
     public boolean equals(Object obj){
 

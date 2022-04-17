@@ -11,12 +11,19 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.project.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
-import ai.starwhale.mlops.domain.swds.upload.Manifest;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -36,6 +43,9 @@ public class SWDatasetService {
 
     @Resource
     private SWDSVersionConvertor versionConvertor;
+
+    @Resource
+    private ProjectManager projectManager;
 
     public List<DatasetVO> listSWDataset(SWDSObject swds, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -86,6 +96,14 @@ public class SWDatasetService {
             .ownerId(idConvertor.revert(swds.getOwnerId()))
             .projectId(idConvertor.revert(swds.getProjectId()))
             .build();
+        if(entity.getProjectId() == 0) {
+            ProjectEntity defaultProject = projectManager.findDefaultProject(entity.getOwnerId());
+            if(defaultProject == null) {
+                throw new StarWhaleApiException(new SWProcessException(ErrorType.DB)
+                    .tip("Unable to find default project by user " + entity.getOwnerId()), HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            entity.setProjectId(defaultProject.getId());
+        }
         swdsMapper.addDataset(entity);
         return idConvertor.convert(entity.getId());
     }

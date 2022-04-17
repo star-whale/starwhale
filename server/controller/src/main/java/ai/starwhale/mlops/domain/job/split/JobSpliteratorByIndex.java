@@ -9,7 +9,7 @@ package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
-import ai.starwhale.mlops.domain.job.JobMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
@@ -17,8 +17,9 @@ import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.domain.task.TaskEntity;
-import ai.starwhale.mlops.domain.task.TaskMapper;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -28,11 +29,13 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,6 +68,11 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     }
 
     /**
+     * when task amount exceeds 1000, bach insertion will emit an error
+     */
+    @Value("${sw.taskSize}")
+    Integer amountOfTasks =256;
+    /**
      * get all data blocks and split them by a simple random number
      * transactional jobStatus->SPLIT taskStatus->NEW
      */
@@ -72,14 +80,12 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     @Transactional
     public List<Task> split(Job job) {
         final List<SWDataSet> swDataSets = job.getSwDataSets();
-        Integer deviceAmount = job.getJobRuntime().getDeviceAmount();
-        Random r = new Random();
+        Random r=new Random();
         final Map<Integer,List<SWDSBlock>> swdsBlocks = swDataSets.parallelStream()
-            .map(swDataSet -> swdsIndexLoader.load(swDataSet.getIndexPath()))
-            .map(SWDSIndex::getSWDSBlockList)
+            .map(swDataSet -> swdsIndexLoader.load(swDataSet.getIndexPath(),swDataSet.getPath()))
+            .map(SWDSIndex::getSwdsBlockList)
             .flatMap(Collection::stream)
-            .collect(Collectors.groupingBy(blk->r.nextInt(deviceAmount)))
-            ;
+            .collect(Collectors.groupingBy(blk->r.nextInt(amountOfTasks)));//one block on task
         List<TaskEntity> taskList;
         try {
             taskList = buildTaskEntities(job, swdsBlocks);
@@ -95,13 +101,13 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     private List<TaskEntity> buildTaskEntities(Job job, Map<Integer, List<SWDSBlock>> swdsBlocks)
         throws JsonProcessingException {
         List<TaskEntity> taskEntities = new LinkedList<>();
-        for(int i=0;i<job.getJobRuntime().getDeviceAmount();i++){
+        for(Entry<Integer, List<SWDSBlock>> entry:swdsBlocks.entrySet()) {
             final String taskUuid = UUID.randomUUID().toString();
             taskEntities.add(TaskEntity.builder()
                 .jobId(job.getId())
                 .resultPath(storagePath(job.getUuid(),taskUuid))
-                .swdsBlocks(swdsBlockSerializer.toString(swdsBlocks.get(i)))
-                .taskStatus(TaskStatus.CREATED.getOrder())
+                .swdsBlocks(swdsBlockSerializer.toString(entry.getValue()))
+                .taskStatus(new StagingTaskStatus(TaskStatus.CREATED).getValue())
                 .taskUuid(taskUuid)
                 .build());
         }

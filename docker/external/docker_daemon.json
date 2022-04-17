@@ -1,0 +1,26 @@
+{
+  "hosts": [
+      "tcp://0.0.0.0:2376",
+      "unix:///var/run/docker.sock"
+  ],
+  "insecure-registries": [
+    "10.0.0.0/8",
+    "127.0.0.0/8",
+    "192.0.0.0/8"
+  ],
+  "live-restore": true,
+  "max-concurrent-downloads": 20,
+  "max-concurrent-uploads": 20,
+  "registry-mirrors": [
+    "https://docker.mirrors.ustc.edu.cn",
+    "https://hub-mirror.c.163.com"
+  ],
+  "mtu": 1450,
+  "runtimes": {
+      "nvidia": {
+          "path": "nvidia-container-runtime",
+          "runtimeArgs": []
+        }
+  },
+  "storage-driver": "overlay2"
+}

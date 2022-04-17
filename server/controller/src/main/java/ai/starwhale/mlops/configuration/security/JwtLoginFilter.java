@@ -46,7 +46,7 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
             String userName = this.obtainUsername(request);
             String password = this.obtainPassword(request);
 
-            //request.
+            threadLocal.remove();
 
             //Create unauthenticated credentials
             JwtLoginToken jwtLoginToken = new JwtLoginToken(userName, password);

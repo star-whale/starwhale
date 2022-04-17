@@ -30,10 +30,10 @@ public class SWDSIndex {
     /**
      * block items described by this index
      */
-    List<SWDSBlock> SWDSBlockList;
+    List<SWDSBlock> swdsBlockList;
 
     public SWDSIndex add(SWDSBlock swdsBlock){
-        this.SWDSBlockList.add(swdsBlock);
+        this.swdsBlockList.add(swdsBlock);
         return this;
     }
 

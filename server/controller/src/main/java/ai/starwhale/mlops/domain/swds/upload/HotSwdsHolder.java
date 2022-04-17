@@ -8,6 +8,9 @@
 package ai.starwhale.mlops.domain.swds.upload;
 
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
+import java.util.List;
+import javax.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -17,26 +20,42 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class HotSwdsHolder {
 
-    Map<Long, SWDatasetVersionEntity> swdsHolder;
+    Map<String, SWDSVersionWithMeta> swdsHolder;
 
-    public HotSwdsHolder(){
+    final SWDatasetVersionMapper swDatasetVersionMapper;
+
+    final SWDSVersionWithMetaConverter swdsVersionWithMetaConverter;
+
+    public HotSwdsHolder(
+        SWDatasetVersionMapper swDatasetVersionMapper,
+        SWDSVersionWithMetaConverter swdsVersionWithMetaConverter) {
+        this.swDatasetVersionMapper = swDatasetVersionMapper;
+        this.swdsVersionWithMetaConverter = swdsVersionWithMetaConverter;
         this.swdsHolder = new ConcurrentHashMap<>();
     }
 
-    public void manifest(SWDatasetVersionEntity swDatasetVersionEntity){
-        swdsHolder.putIfAbsent(swDatasetVersionEntity.getId(), swDatasetVersionEntity);
+    public void manifest(SWDatasetVersionEntity swDatasetVersionEntity) {
+        swdsHolder.put(swDatasetVersionEntity.getVersionName(),
+            swdsVersionWithMetaConverter.from(swDatasetVersionEntity));
     }
 
-    public void cancel(Long swdsId){
+    public void cancel(String swdsId) {
         swdsHolder.remove(swdsId);
     }
 
-    public void end(Long swdsId){
+    public void end(String swdsId) {
         swdsHolder.remove(swdsId);
     }
 
-    public Optional<SWDatasetVersionEntity> of(Long id){
+    public Optional<SWDSVersionWithMeta> of(String id) {
         return Optional.ofNullable(swdsHolder.get(id));
+    }
+
+    @PostConstruct
+    public void loadUploadingDs() {
+        List<SWDatasetVersionEntity> datasetVersionEntities = swDatasetVersionMapper.findVersionsByStatus(
+            SWDatasetVersionEntity.STATUS_UN_AVAILABLE);
+        datasetVersionEntities.parallelStream().forEach(this::manifest);
     }
 
 }

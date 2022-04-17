@@ -32,4 +32,6 @@ public class ProjectEntity extends BaseEntity {
 
     private Integer isDeleted;
 
+    private Integer isDefault;
+
 }
