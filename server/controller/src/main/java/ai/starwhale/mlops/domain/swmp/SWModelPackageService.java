@@ -9,6 +9,7 @@ package ai.starwhale.mlops.domain.swmp;
 
 import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
+import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO.ModelFile;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
@@ -28,11 +29,16 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.StorageObjectInfo;
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
@@ -103,11 +109,40 @@ public class SWModelPackageService {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                 .tip("Unable to find the latest version of swmp " + modelID), HttpStatus.BAD_REQUEST);
         }
-        String meta = latestVersion.getVersionMeta();
 
-        return SWModelPackageInfoVO.builder().modelName(model.getSwmpName())
-            .files(List.of()) // todo(dreamlandliu) parse file info in meta
-            .build();
+        //Get file list in storage
+        try {
+            String storagePath = latestVersion.getStoragePath();
+            Stream<String> list = storageAccessService.list(storagePath);
+            List<ModelFile> collect = list.map(filePath -> {
+                long length = 0L;
+                try {
+                    StorageObjectInfo info = storageAccessService.head(filePath);
+                    length = info.getContentLength();
+                } catch (IOException e) {
+                    log.error("storage head", e);
+                }
+                if (StrUtil.startWith(filePath, storagePath)) {
+                    filePath = filePath.substring(0, storagePath.length());
+                }
+                return ModelFile.builder()
+                    .name(filePath)
+                    .size(FileUtil.readableFileSize(length))
+                    .build();
+            }).collect(Collectors.toList());
+
+            return SWModelPackageInfoVO.builder()
+                .modelName(model.getSwmpName())
+                .files(collect)
+                .build();
+
+        } catch (IOException e) {
+            log.error("list swmp storage", e);
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE)
+                .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+
     }
 
     public Boolean modifySWMPVersion(Version version) {
