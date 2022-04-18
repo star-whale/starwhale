@@ -9,6 +9,8 @@ import ai.starwhale.mlops.resulting.repo.IndicatorRepo;
  */
 public interface ResultingPPL<DI extends Indicator, TI extends Indicator, JI extends Indicator, UI extends Indicator> {
 
+    String getUniqueName();
+
     DataResultCalculator<DI> getDataResultCalculator();
 
     TaskResultAggregator<DI,TI> getTaskResultAggregator();

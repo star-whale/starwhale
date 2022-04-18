@@ -57,13 +57,13 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
      * key: task.status
      * value: task.id
      */
-    final ConcurrentHashMap<StagingTaskStatus, List<Long>> taskStatusMap;
+    final ConcurrentHashMap<StagingTaskStatus, Set<Long>> taskStatusMap;
 
     /**
      * key: task.jobId
      * value: task.id
      */
-    final ConcurrentHashMap<Long, List<Long>> jobTaskMap;
+    final ConcurrentHashMap<Long, Set<Long>> jobTaskMap;
 
     /**
      * task.id
@@ -121,9 +121,8 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
         });
 
         final List<Task> toBeUpdatedTasks = toBeUpdateStream
-            .map(task -> taskIdMap.computeIfAbsent(task.getId(), k -> task))
+            .map(task -> getOrInsert(task))
             .peek(task -> {
-                task.setStatus(status);
                 final Long jobId = task.getJob().getId();
                 updateCache(status, task);
                 toBeCheckedJobs.offer(jobId);
@@ -141,7 +140,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     @Override
     public Collection<Task> ofStatus(StagingTaskStatus taskStatus) {
-        return taskStatusMap.computeIfAbsent(taskStatus,k-> Collections.synchronizedList(new LinkedList<>())).stream().map(tskId->taskIdMap.get(tskId).deepCopy())
+        return safeGetTaskIdsFromStatus(taskStatus).stream().map(tskId->taskIdMap.get(tskId).deepCopy())
             .collect(Collectors.toList());
     }
 
@@ -160,6 +159,14 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     public void doPersist() {
         persistTaskStatus(drainToSet(toBePersistentTasks));
         persistJobStatus(drainToSet(toBeCheckedJobs));
+    }
+
+    /**
+     * compensation for the failure case when all tasks of one job are final status but updating job status failed
+     */
+    @Scheduled(fixedDelay = 1000 * 60)
+    public void checkAllJobs() {
+        persistJobStatus(jobIdMap.keySet());
     }
 
     Set<Long> drainToSet(
@@ -222,10 +229,12 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             return;
         }
         jobids.parallelStream().forEach(jid->{
-            final List<Long> toBeCleardTaskIds = jobTaskMap.get(jid);
-            final List<Long> finishedTasks = taskStatusMap.get(new StagingTaskStatus(TaskStatus.FINISHED,
-                TaskStatusStage.DONE));
+            final Set<Long> toBeCleardTaskIds = jobTaskMap.get(jid);
+            final Set<Long> finishedTasks = safeGetTaskIdsFromStatus(
+                new StagingTaskStatus(TaskStatus.FINISHED,
+                    TaskStatusStage.DONE));
             jobIdMap.remove(jid);
+            jobTaskMap.remove(jid);
             toBeCleardTaskIds.parallelStream().forEach(tid->{
                 taskIdMap.remove(tid);
                 finishedTasks.remove(tid);
@@ -242,14 +251,44 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             || status.getStage() != TaskStatusStage.INIT;
     }
 
-    private void updateCache(StagingTaskStatus status, Task task) {
+    private void updateCache(StagingTaskStatus newStatus, Task task) {
+        //update jobIdMap
         Long jobId = task.getJob().getId();
+        getOrInsertJob(task, jobId);
+        //update taskStatusMap
+        Set<Long> taskIdsOfNewStatus = safeGetTaskIdsFromStatus(newStatus);
+        taskIdsOfNewStatus.add(task.getId());
+        StagingTaskStatus oldStatus = task.getStatus();
+        if(!newStatus.equals(oldStatus)){
+            Set<Long> taskIdsOfOldStatus = safeGetTaskIdsFromStatus(oldStatus);
+            taskIdsOfOldStatus.remove(task.getId());
+        }
+        //update jobTaskMap
+        Set<Long> taskIdsOfJob = safeGetTaskIdsFromJob(jobId);
+        if(!taskIdsOfJob.contains(task.getId())){
+            taskIdsOfJob.add(task.getId());
+        }
+        //update taskIdMap
+        task.setStatus(newStatus);
         taskIdMap.put(task.getId(),task);
-        jobIdMap.computeIfAbsent(jobId, k ->task.getJob());
-        taskStatusMap.computeIfAbsent(status,k-> Collections.synchronizedList(new LinkedList<>()))
-            .add(task.getId());
-        jobTaskMap.computeIfAbsent(jobId,k->Collections.synchronizedList(new LinkedList<>()))
-            .add(task.getId());
+    }
+
+
+    private Task getOrInsert(Task task) {
+        return taskIdMap.computeIfAbsent(task.getId(), k -> task);
+    }
+
+    private Job getOrInsertJob(Task task, Long jobId) {
+        return jobIdMap.computeIfAbsent(jobId, k -> task.getJob());
+    }
+
+    private Set<Long> safeGetTaskIdsFromJob(Long jobId) {
+        return jobTaskMap.computeIfAbsent(jobId,
+            k -> Collections.synchronizedSet(new HashSet<>()));
+    }
+
+    private Set<Long> safeGetTaskIdsFromStatus(StagingTaskStatus oldStatus) {
+        return taskStatusMap.computeIfAbsent(oldStatus, k -> Collections.synchronizedSet(new HashSet<>()));
     }
 
 }

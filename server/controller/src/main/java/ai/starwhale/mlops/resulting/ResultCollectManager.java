@@ -13,11 +13,6 @@ import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.task.TaskEntity;
-import ai.starwhale.mlops.domain.task.TaskStatus;
-import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -25,16 +20,9 @@ import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.resulting.pipline.ResultingPPL;
 import ai.starwhale.mlops.resulting.pipline.ResultingPPLFinder;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import javax.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 /**
  * coordinate collectors of jobs
@@ -71,7 +59,7 @@ public class ResultCollectManager {
         try {
             Collection<Indicator> indicators = resultingPPL.getIndicatorRepo()
                 .loadUILevel(job.getUuid());
-            return new EvaluationResult(resultingPPL.getClass().getName(),indicators);
+            return new EvaluationResult(resultingPPL.getUniqueName(),indicators);
         } catch (IOException e) {
             throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
         }

@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -28,17 +29,18 @@ import lombok.extern.slf4j.Slf4j;
  * we got (label,prediction) pair (1,2) this will generate 1:FN; 2:FP; 3:TN; 4:TN; 5:TN; 6:TN; 7:TN; 8:TN; 9:TN
  */
 @Slf4j
+@NoArgsConstructor
 public class MBCConfusionMetrics extends Indicator<Map<String, BCConfusionMetrics>> {
 
     public static final String NAME = "MBCConfusionMetrics";
 
-    final Set<String> labelSet;
+    Set<String> labelSet;
 
-    final Map<String, BCConfusionMetrics> confusionMetrics;
+    Map<String, BCConfusionMetrics> confusionMetrics;
 
-    final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
-    final Lock readLock;
-    final Lock writeLock;
+    ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    Lock readLock;
+    Lock writeLock;
 
     /**
      * key: label

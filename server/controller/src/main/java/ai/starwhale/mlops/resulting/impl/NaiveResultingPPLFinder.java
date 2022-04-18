@@ -30,6 +30,6 @@ public class NaiveResultingPPLFinder implements ResultingPPLFinder {
 
     @Override
     public ResultingPPL findForJob(Job job) {
-        return null;
+        return mcResultingPPL;
     }
 }
