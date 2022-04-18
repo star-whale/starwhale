@@ -120,7 +120,7 @@ function MBCConfusionMetricsIndicator({ data, style, isLoading }: IMBCConfusionM
 
     //TODO: selected rows interactive
     return (
-        <BusyLoaderWrapper loaderType='skeleton' isLoading={true}>
+        <BusyLoaderWrapper loaderType='skeleton' isLoading={isLoading}>
             <div ref={wrapperRef} key={key} style={{ width: '100%', height: 130 + rows.length * 36 + `px`, ...style }}>
                 <StatefulDataTable batchActions={batchActions} rowActions={rowActions} columns={columns} rows={rows} />
             </div>
