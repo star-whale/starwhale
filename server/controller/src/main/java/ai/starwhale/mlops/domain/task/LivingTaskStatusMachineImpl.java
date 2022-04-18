@@ -7,9 +7,10 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
@@ -17,7 +18,6 @@ import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -190,11 +190,21 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
         persistTaskStatus(taskIds.parallelStream().map(id->taskIdMap.get(id)).collect(Collectors.toList()));
     }
 
+
+    /**
+     * prevent send packet greater than @@GLOBAL.max_allowed_packet
+     */
+    static final Integer MAX_BATCH_SIZE = 1000;
+
     void persistTaskStatus(List<Task> tasks) {
         tasks.parallelStream().collect(Collectors.groupingBy(Task::getStatus))
-            .forEach((taskStatus, taskList) -> taskMapper
-                .updateTaskStatus(taskList.stream().map(Task::getId).collect(Collectors.toList()),
-                    taskStatus.getValue()));
+            .forEach((taskStatus, taskList) ->
+                BatchOperateHelper.doBatch(taskList
+                    , taskStatus
+                    , (tsks, status) -> taskMapper.updateTaskStatus(
+                        tsks.stream().map(Task::getId).collect(Collectors.toList()),
+                        status.getValue())
+                    , MAX_BATCH_SIZE));
     }
 
     /**
