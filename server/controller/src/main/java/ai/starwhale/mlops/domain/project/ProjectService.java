@@ -75,6 +75,7 @@ public class ProjectService {
             .isDefault(project.isDefault() ? 1 : 0)
             .build();
         projectMapper.createProject(entity);
+        log.info("Project has been created. ID={}, NAME={}", entity.getId(), entity.getProjectName());
         return idConvertor.convert(entity.getId());
     }
 
@@ -92,6 +93,7 @@ public class ProjectService {
                     .tip("Default project cannot be deleted."), HttpStatus.BAD_REQUEST);
         }
         int res = projectMapper.deleteProject(id);
+        log.info("Project has been deleted. ID={}", entity.getId());
         return res > 0;
     }
 
@@ -106,6 +108,7 @@ public class ProjectService {
             .projectName(project.getName())
             .build();
         int res = projectMapper.modifyProject(entity);
+        log.info("Project has been modified ID={}", entity.getId());
         return res > 0;
     }
 

@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,7 +85,9 @@ public class SWModelPackageService {
     }
 
     public Boolean deleteSWMP(SWMPObject swmp) {
-        int res = swmpMapper.deleteSWModelPackage(idConvertor.revert(swmp.getId()));
+        Long id = idConvertor.revert(swmp.getId());
+        int res = swmpMapper.deleteSWModelPackage(id);
+        log.info("SWMP has been deleted. ID={}", id);
         return res > 0;
     }
 
@@ -108,18 +111,20 @@ public class SWModelPackageService {
     }
 
     public Boolean modifySWMPVersion(Version version) {
-        int update = swmpVersionMapper.update(
-            SWModelPackageVersionEntity.builder()
-                .id(idConvertor.revert(version.getId()))
-                .versionTag(version.getTag())
-                .storagePath(version.getStoragePath())
-                .build());
+        SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
+            .id(idConvertor.revert(version.getId()))
+            .versionTag(version.getTag())
+            .storagePath(version.getStoragePath())
+            .build();
+        int update = swmpVersionMapper.update(entity);
+        log.info("SWMPVersion has been modified. ID={}", version.getId());
         return update > 0;
     }
 
     public Boolean revertVersionTo(SWMPObject swmp) {
-        int res = swmpVersionMapper.revertTo(idConvertor.revert(swmp.getLatestVersion().getId()));
-
+        Long vid = idConvertor.revert(swmp.getLatestVersion().getId());
+        int res = swmpVersionMapper.revertTo(vid);
+        log.info("SWMP Version has been revert to {}", vid);
         return res > 0;
     }
 
@@ -146,6 +151,7 @@ public class SWModelPackageService {
             }
         }
         swmpMapper.addSWModelPackage(entity);
+        log.info("SWMP has been created. ID={}, NAME={}", entity.getId(), entity.getSwmpName());
         return idConvertor.convert(entity.getId());
     }
 
@@ -159,6 +165,7 @@ public class SWModelPackageService {
             .storagePath(swmp.getLatestVersion().getStoragePath())
             .build();
         swmpVersionMapper.addNewVersion(entity);
+        log.info("SWMP Version has been created. ID={}", entity.getId());
         return idConvertor.convert(entity.getId());
     }
 

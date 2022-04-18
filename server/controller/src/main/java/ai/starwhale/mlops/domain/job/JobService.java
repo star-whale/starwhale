@@ -141,6 +141,7 @@ public class JobService {
             .build();
 
         jobMapper.addJob(jobEntity);
+        log.info("Job has been created. ID={}, UUID={}", jobEntity.getId(), jobEntity.getJobUuid());
 
         String datasetVersionIds = jobRequest.getDatasetVersionIds();
         if(datasetVersionIds == null) {

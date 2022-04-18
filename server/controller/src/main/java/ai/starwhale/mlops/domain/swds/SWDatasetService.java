@@ -23,9 +23,11 @@ import com.github.pagehelper.PageHelper;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class SWDatasetService {
 
@@ -58,25 +60,29 @@ public class SWDatasetService {
     }
 
     public Boolean deleteSWDS(SWDSObject swds) {
-        int res = swdsMapper.deleteDataset(idConvertor.revert(swds.getId()));
+        Long id = idConvertor.revert(swds.getId());
+        int res = swdsMapper.deleteDataset(id);
+        log.info("SWDS has been deleted. ID={}", swds.getId());
         return res > 0;
     }
 
 
     public Boolean modifySWDSVersion(Version version) {
-        int update = swdsVersionMapper.update(
-            SWDatasetVersionEntity.builder()
-                .id(idConvertor.revert(version.getId()))
-                .versionTag(version.getTag())
-                .storagePath(version.getStoragePath())
-                .build());
+        SWDatasetVersionEntity entity = SWDatasetVersionEntity.builder()
+            .id(idConvertor.revert(version.getId()))
+            .versionTag(version.getTag())
+            .storagePath(version.getStoragePath())
+            .build();
+        int update = swdsVersionMapper.update(entity);
+        log.info("SWDS Version has been modified. ID={}", entity.getId());
         return update > 0;
     }
 
     public Boolean revertVersionTo(SWDSObject swds) {
-        int res = swdsVersionMapper.revertTo(idConvertor.revert(swds.getId()),
-            idConvertor.revert(swds.getLatestVersion().getId()));
-
+        Long swdsId = idConvertor.revert(swds.getId());
+        Long revertTo = idConvertor.revert(swds.getLatestVersion().getId());
+        int res = swdsVersionMapper.revertTo(swdsId, revertTo);
+        log.info("SWDS Version {} has been revert to {}", swdsId, revertTo);
         return res > 0;
     }
 
@@ -105,6 +111,7 @@ public class SWDatasetService {
             entity.setProjectId(defaultProject.getId());
         }
         swdsMapper.addDataset(entity);
+        log.info("SWDS has been created. ID={}", entity.getId());
         return idConvertor.convert(entity.getId());
     }
 
@@ -118,6 +125,7 @@ public class SWDatasetService {
             .storagePath(swds.getLatestVersion().getStoragePath())
             .build();
         swdsVersionMapper.addNewVersion(entity);
+        log.info("SWDS Version has been created. DSID={}, VID={}", entity.getDatasetId(), entity.getId());
         return idConvertor.convert(entity.getId());
     }
 
