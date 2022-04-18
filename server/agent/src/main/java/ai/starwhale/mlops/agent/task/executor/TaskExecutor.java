@@ -15,13 +15,9 @@ import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.action.SelectOneToExecute;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -31,7 +27,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * ---------------------------------> canceled
  */
 @Slf4j
-@Service("agentTaskExecutor")
 public class TaskExecutor {
 
     final SourcePool sourcePool;

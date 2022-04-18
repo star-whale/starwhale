@@ -19,16 +19,15 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import cn.hutool.json.JSONUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -58,7 +57,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
         Set<Device> allocated = null;
         ImageConfig imageConfig = ImageConfig.builder()
-                .autoRemove(false)
+                .autoRemove(true)
                 .image(oldTask.getImageId())
                 .labels(Map.of("taskId", oldTask.getId().toString()))
                 .build();
@@ -93,9 +92,6 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
         // pull swmp(tar) and uncompress it to the swmp dir
         String swmpDir = taskPersistence.preloadingSWMP(oldTask);
 
-//        imageConfig.setEnv(List.of(
-//                env(swmpDirEnv, swmpDir)
-//        ));
         imageConfig.setMounts(List.of(
                 Mount.builder()
                         .readOnly(false)

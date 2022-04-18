@@ -9,7 +9,6 @@ package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -108,6 +107,11 @@ public interface TaskPersistence {
      * one task's base dir path,Eg:/var/starwhale/task/{taskId}/
      */
     String basePathOfTask(Long id);
+
+    /**
+     * one task's base dir path,Eg:/var/starwhale/task/
+     */
+    String basePathOfActiveTasks();
 
     /**
      * @param name model name

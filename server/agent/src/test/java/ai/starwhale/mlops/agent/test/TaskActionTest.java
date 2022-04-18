@@ -38,9 +38,9 @@ import static org.mockito.ArgumentMatchers.any;
         classes = StarWhaleAgentTestApplication.class)
 @TestPropertySource(
         properties = {
-                "sw.task.rebuild.enabled=false",
-                "sw.task.scheduler.enabled=false",
-                "sw.node.sourcePool.init.enabled=false",
+                "sw.agent.task.rebuild.enabled=false",
+                "sw.agent.task.scheduler.enabled=false",
+                "sw.agent.node.sourcePool.init.enabled=false",
                 // when test,please set these properties with debug configuration
                 /*"sw.storage.s3-config.endpoint=http://10.131.0.1:9000",
                 "sw.agent.basePath=C:/\\Users/\\gaoxinxing/\\swtest" //*/
@@ -208,7 +208,7 @@ public class TaskActionTest {
         assertEquals(2, taskPool.runningTasks.size());
 
         // change status to ok
-        taskPersistence.updateStatus(1234567890L, TaskPersistence.ExecuteStatus.OK);
+        taskPersistence.updateStatus(1234567890L, TaskPersistence.ExecuteStatus.success);
         // container has changed status to OK
         taskExecutor.monitorRunningTasks();
 

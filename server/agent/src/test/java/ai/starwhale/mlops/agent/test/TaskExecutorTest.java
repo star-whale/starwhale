@@ -7,9 +7,6 @@
 
 package ai.starwhale.mlops.agent.test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
@@ -29,10 +26,6 @@ import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskStatus;
-
-import java.util.List;
-import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,11 +33,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+
 @SpringBootTest(
     classes = StarWhaleAgentTestApplication.class)
 @TestPropertySource(
-    properties = {"sw.task.rebuild.enabled=false", "sw.task.scheduler.enabled=false",
-        "sw.node.sourcePool.init.enabled=false"},
+    properties = {"sw.agent.task.rebuild.enabled=false", "sw.agent.task.scheduler.enabled=false",
+        "sw.agent.node.sourcePool.init.enabled=false"},
     locations = "classpath:application-integrationtest.yaml")
 public class TaskExecutorTest {
 
@@ -131,7 +130,7 @@ public class TaskExecutorTest {
         // mock taskContainer already change status to uploading
         // Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);
 
-        Mockito.when(taskPersistence.status(id)).thenReturn(Optional.of(ExecuteStatus.OK));
+        Mockito.when(taskPersistence.status(id)).thenReturn(Optional.of(ExecuteStatus.success));
         // do monitor test
         taskExecutor.monitorRunningTasks();
 

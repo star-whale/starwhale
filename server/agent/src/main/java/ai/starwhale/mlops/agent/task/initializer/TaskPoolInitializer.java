@@ -13,9 +13,7 @@ import ai.starwhale.mlops.agent.task.action.DoTransition;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -24,8 +22,6 @@ import java.util.List;
  */
 @Slf4j
 @Order(0)
-@Component
-@ConditionalOnProperty(name = "sw.task.rebuild.enabled", havingValue = "true", matchIfMissing = true)
 public class TaskPoolInitializer implements CommandLineRunner {
     @Autowired
     private DoTransition<Void, List<EvaluationTask>> rebuildTasksAction;

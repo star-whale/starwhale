@@ -7,14 +7,11 @@
 
 package ai.starwhale.mlops.agent.task;
 
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.Queue;
 import java.util.Vector;
 
-@Service
 public class TaskPool {
 
         public final Queue<EvaluationTask> preparingTasks = new ArrayDeque<>();

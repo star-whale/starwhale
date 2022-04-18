@@ -13,12 +13,11 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskStatus;
+import lombok.Builder;
+import lombok.Data;
 
 import java.util.List;
 import java.util.Set;
-
-import lombok.Builder;
-import lombok.Data;
 
 /**
  * sufficient information for an Agent to run a Task
