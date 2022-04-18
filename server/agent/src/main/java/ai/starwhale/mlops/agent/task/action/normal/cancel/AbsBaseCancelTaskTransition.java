@@ -13,8 +13,9 @@ import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.normal.AbsBaseTaskTransition;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
-import java.util.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Objects;
 
 public abstract class AbsBaseCancelTaskTransition extends AbsBaseTaskTransition {
     @Autowired
