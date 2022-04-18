@@ -58,7 +58,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
         Set<Device> allocated = null;
         ImageConfig imageConfig = ImageConfig.builder()
-                .autoRemove(false)
+                .autoRemove(true)
                 .image(oldTask.getImageId())
                 .labels(Map.of("taskId", oldTask.getId().toString()))
                 .build();
@@ -93,9 +93,6 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
         // pull swmp(tar) and uncompress it to the swmp dir
         String swmpDir = taskPersistence.preloadingSWMP(oldTask);
 
-//        imageConfig.setEnv(List.of(
-//                env(swmpDirEnv, swmpDir)
-//        ));
         imageConfig.setMounts(List.of(
                 Mount.builder()
                         .readOnly(false)
