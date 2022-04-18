@@ -8,7 +8,10 @@
 package ai.starwhale.mlops.agent.task.persistence;
 
 import ai.starwhale.mlops.agent.task.EvaluationTask;
+import cn.hutool.core.collection.CollectionUtil;
 
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,61 +93,4 @@ public interface TaskPersistence {
      */
     void uploadResult(EvaluationTask task) throws Exception;
 
-    /**
-     * @param id taskId
-     * taskInfo dir path,Eg:/var/starwhale/task/{taskId}/taskInfo.json(format:json)
-     */
-    String pathOfInfoFile(Long id);
-
-    /**
-     * @param id taskId
-     * task running status dir path,Eg:/var/starwhale/task/{taskId}/status/current(format:txt)
-     */
-    String pathOfStatusFile(Long id);
-
-    /**
-     * @param id taskId
-     * one task's base dir path,Eg:/var/starwhale/task/{taskId}/
-     */
-    String basePathOfTask(Long id);
-
-    /**
-     * one task's base dir path,Eg:/var/starwhale/task/
-     */
-    String basePathOfActiveTasks();
-
-    /**
-     * @param name model name
-     * @param version model version
-     * swmp dir path,Eg:/var/starwhale/task/{taskId}/swmp/(dir)
-     */
-    String pathOfSWMPDir(String name, String version);
-
-    /**
-     * @param id taskId
-     * swds config file path,Eg:/var/starwhale/task/{taskId}/config/swds.json(format:json)
-     */
-    String pathOfSWDSConfigFile(Long id);
-
-    /**
-     * @param id taskId
-     * task result dir path,Eg:/var/starwhale/task/{taskId}/result/
-     */
-    String pathOfResult(Long id);
-
-    /**
-     * task archived dir path,Eg:/var/starwhale/archived/
-     */
-    String pathOfArchived();
-
-    /**
-     * @param id taskId
-     * task archived dir path,Eg:/var/starwhale/archived/{taskId}/
-     */
-    String pathOfArchived(Long id);
-
-    /**
-     * task runtime log dir path,Eg:/var/starwhale/task/log/{taskId}/log
-     */
-    String pathOfLog(Long id);
 }

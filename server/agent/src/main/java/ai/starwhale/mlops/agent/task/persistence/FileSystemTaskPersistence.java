@@ -21,7 +21,6 @@ import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -29,11 +28,11 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static ai.starwhale.mlops.agent.task.persistence.FileSystemPath.*;
 
 /**
  * <ul>under the basePath,Eg:/var/starwhale/，there have serial path：</ul>
@@ -44,104 +43,21 @@ import java.util.stream.Stream;
 @Service
 public class FileSystemTaskPersistence implements TaskPersistence {
 
-    @Autowired
-    private AgentProperties agentProperties;
-    @Autowired
-    private StorageProperties storageProperties;
-    @Autowired
-    private StorageAccessService storageAccessService;
+    private final AgentProperties agentProperties;
 
-    private final String baseModelPathFormat = "%s/swmp/%s/%s/";
+    private final StorageProperties storageProperties;
 
-    private final String baseTaskDirPathFormat = "%s/task/";
-    private final String taskDirPathFormat = baseTaskDirPathFormat + "%s/";
+    private final StorageAccessService storageAccessService;
 
-    private final String infoFile = "taskInfo.json";
-    private final String statusFile = "current";
-    private final String configFile = "swds.json";
+    private final FileSystemPath fileSystemPath;
 
-    private final String infoFilePathFormat = taskDirPathFormat + infoFile;
-
-    private final String statusDirPathFormat = taskDirPathFormat + "status/";
-    private final String statusFilePathFormat = statusDirPathFormat + statusFile;
-
-    private final String swdsConfigDirPathFormat = taskDirPathFormat + "config/";
-    private final String swdsConfigFilePathFormat = swdsConfigDirPathFormat + configFile;
-
-    private final String resultDirPathFormat = taskDirPathFormat + "result/";
-
-    private final String logDirPathFormat = taskDirPathFormat + "log/";
-
-    /*
-     * archived taskInfo file path,Eg:/var/starwhale/task/archived/{taskId}/
-     */
-    private final String archivedDirPathFormat = "%s/archived/";
-    private final String archivedTaskDirPathFormat = archivedDirPathFormat + "%s";
-
-    String path(String format, Object... objects) {
-        return String.format(format, objects);
-    }
-
-    @Override
-    public String basePathOfTask(Long id) {
-        return path(taskDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String basePathOfActiveTasks() {
-        return path(baseTaskDirPathFormat, agentProperties.getBasePath());
-    }
-
-    @Override
-    public String pathOfInfoFile(Long id) {
-        return path(infoFilePathFormat, agentProperties.getBasePath(), id);
-    }
-
-    private String pathOfInfoDir(Long id) {
-        return path(taskDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfStatusFile(Long id) {
-        return path(statusFilePathFormat, agentProperties.getBasePath(), id);
-    }
-
-    private String pathOfStatusDir(Long id) {
-        return path(statusDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfSWMPDir(String name, String version) {
-        return path(baseModelPathFormat, agentProperties.getBasePath(), name, version);
-    }
-
-    @Override
-    public String pathOfSWDSConfigFile(Long id) {
-        return path(swdsConfigFilePathFormat, agentProperties.getBasePath(), id);
-    }
-
-    private String pathOfSWDSConfigDir(Long id) {
-        return path(swdsConfigDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfResult(Long id) {
-        return path(resultDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfArchived() {
-        return path(archivedDirPathFormat, agentProperties.getBasePath());
-    }
-
-    @Override
-    public String pathOfArchived(Long id) {
-        return path(archivedTaskDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfLog(Long id) {
-        return path(logDirPathFormat, agentProperties.getBasePath(), id);
+    public FileSystemTaskPersistence(AgentProperties agentProperties,
+                                     StorageProperties storageProperties,
+                                     StorageAccessService storageAccessService) {
+        this.agentProperties = agentProperties;
+        this.storageProperties = storageProperties;
+        this.storageAccessService = storageAccessService;
+        this.fileSystemPath = new FileSystemPath(this.agentProperties.getBasePath());
     }
 
     @Override
@@ -158,7 +74,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                         (path, basicFileAttributes) -> true);
                 return Optional.of(
                         taskInfos
-                                .filter(path -> path.getFileName().toString().endsWith(infoFile))
+                                .filter(path -> path.getFileName().toString().endsWith(oneActiveEvaluationTaskSwdsConfigFile.value()))
                                 .map(path -> {
                                     try {
                                         String json = Files.readString(path);
@@ -227,7 +143,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     @Override
     public boolean save(EvaluationTask task) {
         try {
-            Path taskDirPath = Path.of(pathOfInfoDir(task.getId()));
+            Path taskDirPath = Path.of(basePathOfTask(task.getId()));
             if (Files.notExists(taskDirPath)) {
                 Files.createDirectories(taskDirPath);
             }
