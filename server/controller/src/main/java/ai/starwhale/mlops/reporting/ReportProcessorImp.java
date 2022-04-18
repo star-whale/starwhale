@@ -149,9 +149,13 @@ public class ReportProcessorImp implements ReportProcessor {
     }
 
     private void scheduledTaskStatusChange(List<Task> toAssignTasks,AgentEntity agentEntity) {
-        livingTaskStatusMachine.update(toAssignTasks, new StagingTaskStatus(TaskStatus.CREATED,TaskStatusStage.DOING));
+        if(CollectionUtils.isEmpty(toAssignTasks)){
+            return;
+        }
         taskMapper.updateTaskAgent(toAssignTasks.parallelStream().map(Task::getId).collect(
             Collectors.toList()), agentEntity.getId());
+        toAssignTasks.parallelStream().forEach(task -> task.setAgent(Agent.fromEntity(agentEntity)));
+        livingTaskStatusMachine.adopt(toAssignTasks, new StagingTaskStatus(TaskStatus.CREATED,TaskStatusStage.DOING));
     }
 
     private void taskStatusChange(List<Task> reportedTasks) {

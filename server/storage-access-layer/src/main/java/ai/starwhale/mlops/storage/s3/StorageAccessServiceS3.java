@@ -8,9 +8,11 @@
 package ai.starwhale.mlops.storage.s3;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Map;
 import java.util.stream.Stream;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -18,11 +20,13 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
-import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
@@ -45,6 +49,32 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         }
         this.s3client = s3ClientBuilder
             .build();
+    }
+
+    @Override
+    public StorageObjectInfo head(String path) throws IOException {
+        HeadObjectRequest build = HeadObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build();
+        try{
+            HeadObjectResponse headObjectResponse = s3client.headObject(build);
+            return new StorageObjectInfo(true,headObjectResponse.contentLength(),mapToString(headObjectResponse.metadata()));
+        }catch (NoSuchKeyException e){
+            return new StorageObjectInfo(false,0L,null);
+        }
+
+    }
+
+    private String mapToString(Map<String, String> metadata) {
+        if(metadata == null || metadata.isEmpty()){
+            return null;
+        }
+        StringBuilder stringBuilder = new StringBuilder();
+        metadata.forEach((k,v)->{
+            stringBuilder.append(k);
+            stringBuilder.append(":");
+            stringBuilder.append(v);
+            stringBuilder.append("\n");
+        });
+        return stringBuilder.toString();
     }
 
     @Override

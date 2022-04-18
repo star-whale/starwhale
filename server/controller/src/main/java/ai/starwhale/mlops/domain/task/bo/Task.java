@@ -65,11 +65,11 @@ public class Task {
         return Task.builder()
             .id(this.id)
             .uuid(this.uuid)
-            .status(new StagingTaskStatus(status.getStatus(),status.getStage()))
+            .status(new StagingTaskStatus(status.getStatus(), status.getStage()))
             .resultPaths(this.resultPaths)
             .swdsBlocks(List.copyOf(this.swdsBlocks))
             .job(this.job.deepCopy())
-            .agent(this.agent.copy())
+            .agent(null != this.agent ? this.agent.copy() : null)//agent is nullable
             .build();
     }
 

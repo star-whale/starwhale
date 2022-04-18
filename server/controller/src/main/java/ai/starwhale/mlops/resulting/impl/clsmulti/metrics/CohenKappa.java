@@ -13,10 +13,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.NoArgsConstructor;
 
 /**
  * refer to https://en.wikipedia.org/wiki/Cohen%27s_kappa
  */
+@NoArgsConstructor
 public class CohenKappa extends Indicator<Double> {
 
     public static final String NAME = "CohenKappa";

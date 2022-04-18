@@ -33,6 +33,11 @@ public class MCResultingPPL implements ResultingPPL<MCIndicator,MCIndicator,MCIn
     }
 
     @Override
+    public String getUniqueName() {
+        return "MCResultCollector";
+    }
+
+    @Override
     public DataResultCalculator<MCIndicator> getDataResultCalculator() {
         return mcResultCalculator;
     }
