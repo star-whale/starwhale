@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Node;
 import cn.hutool.core.collection.CollectionUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SerializationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class ReportAction implements DoTransition<ReportRequest, ReportResponse> {
 
@@ -117,6 +119,11 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void fail(ReportRequest reportRequest, Context context, Exception e) {
+        log.error("report error:{}", e.getMessage(), e);
     }
 
     @Override

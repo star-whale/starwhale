@@ -110,6 +110,11 @@ public interface TaskPersistence {
     String basePathOfTask(Long id);
 
     /**
+     * one task's base dir path,Eg:/var/starwhale/task/
+     */
+    String basePathOfActiveTasks();
+
+    /**
      * @param name model name
      * @param version model version
      * swmp dir path,Eg:/var/starwhale/task/{taskId}/swmp/(dir)

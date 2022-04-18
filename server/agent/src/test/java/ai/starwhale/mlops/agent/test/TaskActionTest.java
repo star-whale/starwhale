@@ -208,7 +208,7 @@ public class TaskActionTest {
         assertEquals(2, taskPool.runningTasks.size());
 
         // change status to ok
-        taskPersistence.updateStatus(1234567890L, TaskPersistence.ExecuteStatus.OK);
+        taskPersistence.updateStatus(1234567890L, TaskPersistence.ExecuteStatus.success);
         // container has changed status to OK
         taskExecutor.monitorRunningTasks();
 

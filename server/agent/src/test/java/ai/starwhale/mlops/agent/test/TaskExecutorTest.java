@@ -131,7 +131,7 @@ public class TaskExecutorTest {
         // mock taskContainer already change status to uploading
         // Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);
 
-        Mockito.when(taskPersistence.status(id)).thenReturn(Optional.of(ExecuteStatus.OK));
+        Mockito.when(taskPersistence.status(id)).thenReturn(Optional.of(ExecuteStatus.success));
         // do monitor test
         taskExecutor.monitorRunningTasks();
 
