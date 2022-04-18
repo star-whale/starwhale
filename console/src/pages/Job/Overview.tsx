@@ -18,20 +18,23 @@ export default function JobOverview() {
                 header={
                     <div
                         style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(3, 1fr)',
+                            gap: '12px',
+                            marginBottom: '32px',
+                            fontSize: '16px',
                         }}
                     >
-                        <div style={{ width: '40%' }}>
+                        <div>
                             {t('Job ID')}: {job?.uuid}
                         </div>
-                        <div style={{ width: '40%' }}>
+                        <div>
                             {t('Created time')}: {job?.createTime && formatTimestampDateTime(job.createTime)}
                         </div>
-                        <div style={{ width: '20%' }}>
+                        <div>
                             {t('Owner')}: {job?.owner?.name}
                         </div>
-                        <div style={{ width: '40%' }}>
+                        <div>
                             {t('Run time')}:&nbsp;
                             {typeof job?.duration == 'string' ? '-' : durationToStr(job?.duration ?? 0)}
                         </div>

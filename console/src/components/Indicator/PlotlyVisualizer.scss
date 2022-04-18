@@ -1,0 +1,11 @@
+
+.PlotlyVisualizer {
+  height: 100%;
+  overflow: auto;
+  &__chart {
+    height: 100%;
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+  }
+}

@@ -28,16 +28,10 @@ import TaskListCard from './pages/Job/TaskListCard'
 import JobForm from './domain/job/components/JobForm'
 import JobNewCard from './pages/Project/JobNewCard'
 import axios from 'axios'
+import JobResult from './pages/Job/JobResult'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 1,
-        minHeight: '100vh',
-        position: 'relative',
-        minWidth: 'fit-content',
-        width: '100%',
         background: 'var(--color-brandRootBackground)',
         color: 'var(--color-contentPrimary)',
         ...Object.entries(theme.colors).reduce((p, [k, v]) => {
@@ -72,14 +66,15 @@ const Routes = () => {
                         </ProjectLayout>
                     </Route>
                     {/* job & task */}
-                    <Route exact path='/projects/:projectId/jobs/:jobId/tasks'>
+                    <Route exact path='/projects/:projectId/jobs/:jobId/:path'>
                         <TaskLayout>
                             <Switch>
                                 <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={TaskListCard} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResult} />
                             </Switch>
                         </TaskLayout>
                     </Route>
-                    <Route exact path='/projects/:projectId/jobs/:jobId/:path?/:path?'>
+                    <Route exact path='/projects/:projectId/jobs/:jobId'>
                         <JobLayout>
                             <Switch>
                                 <Route exact path='/projects/:projectId/jobs/:jobId' component={JobOverview} />
