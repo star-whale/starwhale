@@ -30,7 +30,8 @@ export default function TaskListCard({ header }: ITaskListCardProps) {
                             task.agent?.ip,
                             task.agent?.version,
                             task.startTime && formatTimestampDateTime(task.startTime),
-                            task.status && JobStatusType[task.status],
+                            task.taskStatus,
+                            // && JobStatusType[task.status],
                         ]
                     }) ?? []
                 }

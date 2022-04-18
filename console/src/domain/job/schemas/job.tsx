@@ -20,8 +20,8 @@ export interface IJobSchema extends IResourceSchema {
     uuid: string
     name: string
     owner?: IUserSchema
-    modelName?: IModelSchema
-    modelVersion?: IModelVersionSchema
+    modelName?: string
+    modelVersion?: string
     dataset?: IDatasetSchema
     baseImage?: IBaseImageSchema
     device?: IDeviceSchema

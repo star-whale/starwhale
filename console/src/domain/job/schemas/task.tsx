@@ -6,7 +6,8 @@ export interface ITaskSchema extends IResourceSchema {
     uuid: string
     agent: IAgentSchema
     startTime: number
-    status: JobStatusType
+    taskStatus: number
+    // JobStatusType
 }
 
 export interface ITaskDetailSchema extends ITaskSchema {}

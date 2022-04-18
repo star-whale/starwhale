@@ -96,8 +96,8 @@ export default function JobListCard() {
                                 <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}`}>
                                     {job.uuid}
                                 </Link>,
-                                job.modelName?.name,
-                                job.modelVersion?.name,
+                                job.modelName,
+                                job.modelVersion,
                                 job.owner && <User user={job.owner} />,
                                 job.createTime && formatTimestampDateTime(job.createTime),
                                 typeof job.duration == 'string' ? '-' : durationToStr(job.duration),
