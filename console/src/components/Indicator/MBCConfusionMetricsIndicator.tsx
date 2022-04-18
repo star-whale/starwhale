@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
     StatefulDataTable,
     BooleanColumn,
@@ -12,19 +12,9 @@ import {
 import { Alert, Check } from 'baseui/icon'
 import useTranslation from '../../hooks/useTranslation'
 import _ from 'lodash'
+import { useWindowResize } from '../../hooks/window/useWindowResize'
+import { IMBCConfusionMetric, IMBCConfusionMetrics } from './types'
 
-export interface IMBCConfusionMetric {
-    id?: string
-    tp: number
-    tn: number
-    fp: number
-    fn: number
-    accuracy: number
-    precision: number
-    recall: number
-}
-
-export type IMBCConfusionMetrics = Record<string, IMBCConfusionMetric>
 export interface IMBCConfusionMetricsProps {
     style?: React.CSSProperties
     items: IMBCConfusionMetrics
@@ -33,6 +23,10 @@ export interface IMBCConfusionMetricsProps {
 
 export function MBCConfusionMetricsIndicator({ items, style }: IMBCConfusionMetricsProps) {
     const [t] = useTranslation()
+    const [key, setKey] = useState(0)
+    useWindowResize(() => {
+        setKey(key + 1)
+    })
 
     const columns = [
         StringColumn({
@@ -107,29 +101,12 @@ export function MBCConfusionMetricsIndicator({ items, style }: IMBCConfusionMetr
         removeRows([id])
     }
     const rowActions: RowActionT[] = []
-    const batchActions: BatchActionT[] = [
-        // {
-        //     label: 'Check',
-        //     onClick: ({ selection, clearSelection }) => {
-        //         flagRows(selection.map((r) => r.id))
-        //         clearSelection()
-        //     },
-        //     renderIcon: Check,
-        // },
-        // {
-        //     label: 'Remove',
-        //     onClick: ({ selection, clearSelection }) => {
-        //         removeRows(selection.map((r) => r.id))
-        //         clearSelection()
-        //     },
-        //     renderIcon: Alert,
-        // },
-    ]
+    const batchActions: BatchActionT[] = []
 
     //TODO: selected rows interactive
     console.log('rows', rows)
     return (
-        <div style={{ height: 300, ...style }}>
+        <div key={key} style={{ width: '100%', height: 120 + rows.length * 36 + `px`, ...style }}>
             <StatefulDataTable batchActions={batchActions} rowActions={rowActions} columns={columns} rows={rows} />
         </div>
     )

@@ -2,166 +2,86 @@ import BusyLoaderWrapper from '@/components/BusyLoaderWrapper/BusyLoaderWrapper'
 import Card from '@/components/Card'
 import { MBCConfusionMetricsIndicator } from '@/components/Indicator/MBCConfusionMetricsIndicator'
 import { Spinner } from 'baseui/spinner'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import Plot from 'react-plotly.js'
 import { useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
+import { IIndicator, IMBCConfusionMetrics, IMCConfusionMetrics, INDICATOR_TYPE } from '@/components/Indicator/types.d'
+import _ from 'lodash'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "AudiosVisualizer" */ '@/components/Indicator/PlotlyVisualizer')
 )
 
-type IDataType = 'MCConfusionMetrics' | 'CohenKappa' | 'MBCConfusionMetrics'
-
-interface IMCConfusionMetrics {
-    label: string
-    prediction: string
-    name: string
-    value: number
-}
-
-interface IMBCConfusionMetrics {
-    [s: string]: {
-        tp: number
-        tn: number
-        fp: number
-        fn: number
-        accuracy: number
-        precision: number
-        recall: number
-    }
-}
-
-interface IIndicator {
-    name: IDataType
-    value: IMBCConfusionMetrics
-}
-
-interface IDataProps {
-    evaluationType: string
-    indicators: Array<IIndicator>
-    // IMCConfusionMetrics | IMBCConfusionMetrics | ICohenKappa
-}
-
-const data: IDataProps = {
-    evaluationType: 'MCResultCollector',
-    indicators: [
-        // {
-        //     name: 'MCConfusionMetrics',
-        //     value: [
-        //         {
-        //             label: 'A',
-        //             prediction: 'A',
-        //             name: 'A-A',
-        //             value: 3,
-        //         },
-        //         {
-        //             label: 'A',
-        //             prediction: 'B',
-        //             name: 'A-B',
-        //             value: 2,
-        //         },
-        //         {
-        //             label: 'A',
-        //             prediction: 'C',
-        //             name: 'A-C',
-        //             value: 0,
-        //         },
-        //     ],
-        // },
-        // {
-        //     name: 'CohenKappa',
-        //     value: 2.34,
-        // },
-        {
-            name: 'MBCConfusionMetrics',
-            value: {
-                A: {
-                    tp: 20,
-                    tn: 30,
-                    fp: 33,
-                    fn: 22,
-                    accuracy: 0.11,
-                    precision: 0.22,
-                    recall: 0.33,
-                },
-                B: {
-                    tp: 20,
-                    tn: 30,
-                    fp: 33,
-                    fn: 22,
-                    accuracy: 0.11,
-                    precision: 0.22,
-                    recall: 0.33,
-                },
-                C: {
-                    tp: 20,
-                    tn: 30,
-                    fp: 33,
-                    fn: 22,
-                    accuracy: 0.11,
-                    precision: 0.22,
-                    recall: 0.33,
-                },
-            },
-        },
-    ],
-}
-
 export default function JobResult() {
-    //TODO: waiting for api
+    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    const jobResult = useQuery('fetchJobResult', () => fetchJobResult(jobId, projectId))
+    useEffect(() => {
+        if (jobResult.isSuccess) {
+            console.log(jobResult.data)
+        }
+    }, [jobResult])
 
-    // const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-    // const jobResult = useQuery('fetchJobResult', () => fetchJobResult(jobId, projectId))
-    // useEffect(() => {
-    //     if (jobResult.isSuccess) {
-    //         console.log(jobResult.data)
-    //     }
-    // }, [jobResult])
+    const dataMBCConfusionMetrics = useMemo((): IMBCConfusionMetrics => {
+        const indicator = jobResult?.data?.indicators.find(
+            (v: IIndicator) => v.name === INDICATOR_TYPE.MBCConfusionMetrics
+        )
+        return indicator?.value ?? {}
+    }, [jobResult, jobResult.data, jobResult.isSuccess])
 
-    const plotlyData = {
-        data: [
-            {
-                x: [0, 1, 2, 3, 4],
-                y: [1, 5, 3, 7, 5],
-                mode: 'lines+markers',
-                type: 'scatter',
-                line: { color: '#36425D' },
-            },
-        ],
-        layout: {
-            title: 'A Graph',
-        },
-    }
+    const dataMCConfusionMetrics = useMemo((): IMCConfusionMetrics => {
+        const indicator = jobResult?.data?.indicators.find(
+            (v: IIndicator) => v.name === INDICATOR_TYPE.MCConfusionMetrics
+        )
+        return indicator?.value ?? {}
+    }, [jobResult, jobResult.data, jobResult.isSuccess])
+
+    const labels = useMemo(() => {
+        return _.keys(dataMBCConfusionMetrics) ?? []
+    }, [dataMBCConfusionMetrics])
+
+    const [heatmap, maxValue] = useMemo(() => {
+        let metrics: number[][] = Array(labels.length)
+            .fill(0)
+            .map(() => Array(labels.length).fill(0))
+
+        let maxValue = 0
+
+        _.map(dataMCConfusionMetrics, (v, k) => {
+            metrics[_.toNumber(v.label)][_.toNumber(v.prediction)] = v.value
+            if (v.value > maxValue) {
+                maxValue = v.value
+            }
+        })
+        return [metrics, maxValue]
+    }, [dataMCConfusionMetrics])
+
     const layout = {
-        title: 'MBCConfusionMetrics',
+        title: 'MCConfusionMetrics',
         annotations: [] as any[],
         xaxis: {
             ticks: '',
-            side: 'top',
         },
         yaxis: {
             ticks: '',
             ticksuffix: ' ',
-            width: 700,
-            height: 700,
-            autosize: false,
+            width: 500,
+            height: 500,
+        },
+        font: {
+            family: 'Inter',
+            size: 16,
         },
     }
-    const xValues = ['A', 'B', 'C']
-    const yValues = ['W', 'X', 'Y']
-    const zValues = [
-        [0.0, 0.0, 0.75, 0.75, 0.0],
-        [0.0, 0.0, 0.75, 0.75, 0.0],
-        [0.75, 0.75, 0.75, 0.75, 0.75],
-        [0.0, 0.0, 0.0, 0.75, 0.0],
-    ]
+    const xValues = labels
+    const yValues = labels
+    const zValues = heatmap
 
     for (var i = 0; i < yValues.length; i++) {
         for (var j = 0; j < xValues.length; j++) {
             var currentValue = zValues[i][j]
-            if (currentValue != 0.0) {
+            if (currentValue != 0) {
                 var textColor = 'white'
             } else {
                 var textColor = 'black'
@@ -173,8 +93,8 @@ export default function JobResult() {
                 y: yValues[i],
                 text: zValues[i][j],
                 font: {
-                    family: 'Arial',
-                    size: 12,
+                    family: 'Inter',
+                    size: 14,
                     color: textColor,
                 },
                 showarrow: false,
@@ -192,45 +112,43 @@ export default function JobResult() {
                     [0, '#3D9970'],
                     [1, '#001f3f'],
                 ],
-                showscale: false,
+                // showscale: false,
                 type: 'heatmap',
+                // colorscale: 'Blackbody',
+                // autocolorscale: true,
             },
         ],
         layout: {
             ...layout,
         },
     }
-    const indicator: IIndicator | undefined = data.indicators.find((v) => v.name === 'MBCConfusionMetrics')
-    const MBCConfusionMetrics = indicator?.value || {}
-
-    // if (!!!jobResult.isSuccess) {
-    //     return <div>loading</div>
-    // }
 
     return (
         <>
-            <div style={{ padding: '20px', background: '#fff', borderRadius: '12px', marginBottom: '16px' }}>
-                <MBCConfusionMetricsIndicator items={MBCConfusionMetrics} />
-            </div>
             <div
                 style={{
                     width: '100%',
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(700px, 1fr))',
                     // gridAutoRows: '460px',
                     gridGap: '16px',
                     placeItems: 'stretch',
                 }}
             >
-                <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
-                    <React.Suspense fallback={<Spinner />}>
-                        <PlotlyVisualizer data={heatmapData} />
-                    </React.Suspense>
+                <div
+                    style={{
+                        placeSelf: 'stretch',
+                        padding: '20px',
+                        background: '#fff',
+                        borderRadius: '12px',
+                    }}
+                >
+                    <MBCConfusionMetricsIndicator items={dataMBCConfusionMetrics} />
                 </div>
 
                 <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
                     <React.Suspense fallback={<Spinner />}>
-                        <PlotlyVisualizer data={plotlyData} />
+                        <PlotlyVisualizer data={heatmapData} />
                     </React.Suspense>
                 </div>
             </div>

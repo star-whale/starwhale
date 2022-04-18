@@ -4,6 +4,7 @@ import { IModelSchema } from '@model/schemas/model'
 import { IDatasetSchema } from '@dataset/schemas/dataset'
 import { IModelVersionSchema } from '@/domain/model/schemas/modelVersion'
 import { IBaseImageSchema, IDeviceSchema } from '../../runtime/schemas/runtime'
+import { IIndicator } from '@/components/Indicator/types'
 
 export type JobActionType = 'cancel' | 'suspend' | 'resume'
 export enum JobStatusType {
@@ -53,4 +54,9 @@ export interface ICreateJobFormSchema extends ICreateJobSchema {
     modelId: string
     datasetId: string
     datasetVersionId: string
+}
+
+export interface IJobResultSchema {
+    evaluationType: string
+    indicators: Array<IIndicator>
 }
