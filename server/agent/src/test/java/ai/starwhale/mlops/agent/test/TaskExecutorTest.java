@@ -42,8 +42,8 @@ import static org.mockito.ArgumentMatchers.any;
 @SpringBootTest(
     classes = StarWhaleAgentTestApplication.class)
 @TestPropertySource(
-    properties = {"sw.task.rebuild.enabled=false", "sw.task.scheduler.enabled=false",
-        "sw.node.sourcePool.init.enabled=false"},
+    properties = {"sw.agent.task.rebuild.enabled=false", "sw.agent.task.scheduler.enabled=false",
+        "sw.agent.node.sourcePool.init.enabled=false"},
     locations = "classpath:application-integrationtest.yaml")
 public class TaskExecutorTest {
 

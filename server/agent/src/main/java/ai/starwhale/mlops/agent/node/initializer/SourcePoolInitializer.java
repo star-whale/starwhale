@@ -16,9 +16,7 @@ import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,8 +26,6 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Order(1)
-@Component
-@ConditionalOnProperty(name = "sw.node.sourcePool.init.enabled", havingValue = "true", matchIfMissing = true)
 public class SourcePoolInitializer implements CommandLineRunner {
     @Autowired
     private SourcePool sourcePool;

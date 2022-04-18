@@ -36,7 +36,7 @@ public class Node {
     /**
      * memory size in GB unit
      */
-    Long memorySizeGB;
+    Integer memorySizeGB;
 
     /**
      * the device holding information

@@ -24,9 +24,11 @@ import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Node;
 import cn.hutool.core.collection.CollectionUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -59,7 +61,7 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
 
     @Override
     public ReportResponse processing(ReportRequest reportRequest, Context context)
-        throws Exception {
+            throws Exception {
         // all tasks(exclude archived) should be report to the controller
         // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
         List<EvaluationTask> finishedTasks = List.copyOf(taskPool.finishedTasks);
@@ -68,31 +70,31 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
         List<TaskReport> all = new ArrayList<>();
         // without stop the world
         all.addAll(new ArrayList<>(
-            taskPool.preparingTasks.stream().map(EvaluationTask::toTaskReport)
-                .collect(Collectors.toList())));
+                taskPool.preparingTasks.stream().map(EvaluationTask::toTaskReport)
+                        .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-            taskPool.runningTasks.stream().map(EvaluationTask::toTaskReport)
-                .collect(Collectors.toList())));
+                taskPool.runningTasks.stream().map(EvaluationTask::toTaskReport)
+                        .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-            taskPool.uploadingTasks.stream().map(EvaluationTask::toTaskReport)
-                .collect(Collectors.toList())));
+                taskPool.uploadingTasks.stream().map(EvaluationTask::toTaskReport)
+                        .collect(Collectors.toList())));
         all.addAll(finishedTasks.stream().map(EvaluationTask::toTaskReport)
-            .collect(Collectors.toList()));
+                .collect(Collectors.toList()));
         all.addAll(new ArrayList<>(
-            taskPool.errorTasks.stream().map(EvaluationTask::toTaskReport)
-                .collect(Collectors.toList())));
+                taskPool.errorTasks.stream().map(EvaluationTask::toTaskReport)
+                        .collect(Collectors.toList())));
         all.addAll(canceledTasks.stream().map(EvaluationTask::toTaskReport)
-            .collect(Collectors.toList()));
+                .collect(Collectors.toList()));
         reportRequest.setTasks(all);
 
         SystemInfo systemInfo = systemDetect.detect()
-            .orElse(
-                SystemInfo.builder()
-                    .hostAddress("localhost")
-                    .availableMemory(0)
-                    .totalMemory(0)
-                    .build()
-            );
+                .orElse(
+                        SystemInfo.builder()
+                                .hostAddress("localhost")
+                                .availableMemory(0)
+                                .totalMemory(0)
+                                .build()
+                );
 
         // just deal report device's status if there have some tasks which status are preparing
         /*List devices = (List) SerializationUtils.clone(sourcePool.getDevices());
@@ -101,11 +103,11 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
         }*/
 
         Node node = Node.builder()
-            .ipAddr(systemInfo.getHostAddress())
-            .agentVersion(agentProperties.getVersion())
-            .memorySizeGB(systemInfo.getTotalMemory())
-            .devices(List.copyOf(sourcePool.getDevices()))
-            .build();
+                .ipAddr(systemInfo.getHostAddress())
+                .agentVersion(agentProperties.getVersion())
+                .memorySizeGB(BigInteger.valueOf(systemInfo.getTotalMemory()).divide(FileUtils.ONE_GB_BI).intValue())
+                .devices(List.copyOf(sourcePool.getDevices()))
+                .build();
 
         reportRequest.setNodeInfo(node);
         context.set("finished", finishedTasks);
@@ -113,7 +115,7 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
 
         ResponseMessage<ReportResponse> response = reportApi.report(reportRequest);
         if (Objects.equals(response.getCode(),
-            "success")) { // todo: when coding completed, change protocol:Code to sdk
+                "success")) { // todo: when coding completed, change protocol:Code to sdk
             return response.getData();
         } else {
             return null;
@@ -127,12 +129,12 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
 
     @Override
     public void success(ReportRequest reportRequest, ReportResponse response,
-        Context context) {
+                        Context context) {
         if (response != null) {
             @SuppressWarnings("unchecked") List<EvaluationTask> finishedTasks = context.get(
-                "finished", List.class);
+                    "finished", List.class);
             @SuppressWarnings("unchecked") List<EvaluationTask> canceledTasks = context.get(
-                "canceled", List.class);
+                    "canceled", List.class);
             // when success,archived the finished/canceled task,and rm to the archive dir
             for (EvaluationTask finishedTask : finishedTasks) {
                 finishedOrCanceled2ArchivedAction.apply(finishedTask, null);

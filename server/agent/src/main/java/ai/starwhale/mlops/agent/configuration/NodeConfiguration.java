@@ -14,6 +14,7 @@ import ai.starwhale.mlops.agent.node.cpu.CPUDetect;
 import ai.starwhale.mlops.agent.node.cpu.SimpleCPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.NvidiaCmdDetect;
+import ai.starwhale.mlops.agent.node.initializer.SourcePoolInitializer;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,12 @@ import java.util.Map;
 public class NodeConfiguration {
 
     @Bean
+    @ConditionalOnProperty(name = "sw.agent.node.sourcePool.init.enabled", havingValue = "true", matchIfMissing = true)
+    public SourcePoolInitializer sourcePoolInitializer() {
+        return new SourcePoolInitializer();
+    }
+
+    @Bean
     public SourcePool sourcePool(Map<String, GPUDetect> gpuDetectImpl, CPUDetect cpuDetect) {
         return new SourcePool(gpuDetectImpl, cpuDetect);
     }
@@ -32,7 +39,7 @@ public class NodeConfiguration {
     @Bean
     @ConditionalOnProperty(name = "sw.node.sourcePool.gpu.nvidia.detect", havingValue = "cmd", matchIfMissing = true)
     public GPUDetect nvidiaGPUDetect() {
-        return new NvidiaCmdDetect(new XmlMapper());
+        return new NvidiaCmdDetect();
     }
 
     @Bean
