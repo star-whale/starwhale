@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import {
     StatefulDataTable,
     BooleanColumn,
@@ -14,19 +14,34 @@ import useTranslation from '../../hooks/useTranslation'
 import _ from 'lodash'
 import { useWindowResize } from '../../hooks/window/useWindowResize'
 import { IMBCConfusionMetric, IMBCConfusionMetrics } from './types'
+import useResizeObserver from '../../hooks/window/useResizeObserver'
+import BusyLoaderWrapper from '../BusyLoaderWrapper/BusyLoaderWrapper'
 
 export interface IMBCConfusionMetricsProps {
     style?: React.CSSProperties
-    items: IMBCConfusionMetrics
+    data: IMBCConfusionMetrics
+    isLoading: boolean
     onSelectRows?: () => void
 }
 
-export function MBCConfusionMetricsIndicator({ items, style }: IMBCConfusionMetricsProps) {
+function MBCConfusionMetricsIndicator({ data, style, isLoading }: IMBCConfusionMetricsProps) {
     const [t] = useTranslation()
     const [key, setKey] = useState(0)
-    useWindowResize(() => {
-        setKey(key + 1)
-    })
+    const wrapperRef = useRef<HTMLDivElement>(null)
+    const [width, setWidth] = useState(wrapperRef?.current?.offsetWidth)
+
+    const throttled = useRef(
+        _.debounce(() => {
+            if (wrapperRef?.current?.offsetWidth != width) {
+                setWidth(wrapperRef?.current?.offsetWidth)
+                setKey(key + 1)
+            }
+        }, 100)
+    )
+
+    useResizeObserver((entries) => {
+        throttled.current()
+    }, wrapperRef)
 
     const columns = [
         StringColumn({
@@ -67,7 +82,7 @@ export function MBCConfusionMetricsIndicator({ items, style }: IMBCConfusionMetr
 
     useEffect(() => {
         const itemsToRowData: Array<{ id: string; data: IMBCConfusionMetric }> = _.values(
-            _.map(items, function (value, key) {
+            _.map(data, function (value, key) {
                 return {
                     id: key,
                     data: {
@@ -78,7 +93,7 @@ export function MBCConfusionMetricsIndicator({ items, style }: IMBCConfusionMetr
             })
         )
         setRows(itemsToRowData)
-    }, [items])
+    }, [data])
 
     function flagRows(ids: Array<string | number>) {
         const nextRows = rows.map((row) => {
@@ -104,10 +119,15 @@ export function MBCConfusionMetricsIndicator({ items, style }: IMBCConfusionMetr
     const batchActions: BatchActionT[] = []
 
     //TODO: selected rows interactive
-    console.log('rows', rows)
     return (
-        <div key={key} style={{ width: '100%', height: 120 + rows.length * 36 + `px`, ...style }}>
-            <StatefulDataTable batchActions={batchActions} rowActions={rowActions} columns={columns} rows={rows} />
-        </div>
+        <BusyLoaderWrapper loaderType='skeleton' isLoading={true}>
+            <div ref={wrapperRef} key={key} style={{ width: '100%', height: 130 + rows.length * 36 + `px`, ...style }}>
+                <StatefulDataTable batchActions={batchActions} rowActions={rowActions} columns={columns} rows={rows} />
+            </div>
+        </BusyLoaderWrapper>
     )
 }
+
+MBCConfusionMetricsIndicator.displayName = 'MBCConfusionMetricsIndicator'
+
+export default memo<IMBCConfusionMetricsProps>(MBCConfusionMetricsIndicator)

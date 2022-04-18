@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback, useRef } from 'react'
 
 import { Spinner, SIZE } from 'baseui/spinner'
 import { Skeleton } from 'baseui/skeleton'
@@ -30,13 +30,25 @@ function BusyLoaderWrapper({
     function loaderRender() {
         switch (loaderType) {
             case 'skeleton': {
-                return <Skeleton {...loaderConfig} />
+                return <Skeleton rows={5} height='100px' width='100%' animation {...loaderConfig} />
             }
             default: {
                 return <Spinner size={SIZE.large} {...loaderConfig} />
             }
         }
     }
+
+    const mountCard = useCallback(
+        (card) => {
+            if (card) {
+                // eslint-disable-next-line no-param-reassign
+                card.style.transform = 'translate3d(0, 0, 0)'
+            }
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
     return (
         <>
             {isLoading ? (
@@ -46,7 +58,11 @@ function BusyLoaderWrapper({
                     </div>
                 </ErrorBoundary>
             ) : children ? (
-                children
+                <ErrorBoundary>
+                    <div style={{ width, height }} ref={mountCard}>
+                        {children}
+                    </div>
+                </ErrorBoundary>
             ) : null}
         </>
     )

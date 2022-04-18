@@ -1,6 +1,6 @@
 import BusyLoaderWrapper from '@/components/BusyLoaderWrapper/BusyLoaderWrapper'
 import Card from '@/components/Card'
-import { MBCConfusionMetricsIndicator } from '@/components/Indicator/MBCConfusionMetricsIndicator'
+import MBCConfusionMetricsIndicator from '@/components/Indicator/MBCConfusionMetricsIndicator'
 import { Spinner } from 'baseui/spinner'
 import React, { useEffect, useMemo } from 'react'
 import Plot from 'react-plotly.js'
@@ -11,7 +11,7 @@ import { IIndicator, IMBCConfusionMetrics, IMCConfusionMetrics, INDICATOR_TYPE }
 import _ from 'lodash'
 
 const PlotlyVisualizer = React.lazy(
-    () => import(/* webpackChunkName: "AudiosVisualizer" */ '@/components/Indicator/PlotlyVisualizer')
+    () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
 
 export default function JobResult() {
@@ -74,6 +74,7 @@ export default function JobResult() {
             size: 16,
         },
     }
+    // TODO: big datas
     const xValues = labels
     const yValues = labels
     const zValues = heatmap
@@ -143,7 +144,7 @@ export default function JobResult() {
                         borderRadius: '12px',
                     }}
                 >
-                    <MBCConfusionMetricsIndicator items={dataMBCConfusionMetrics} />
+                    <MBCConfusionMetricsIndicator isLoading={jobResult.isLoading} data={dataMBCConfusionMetrics} />
                 </div>
 
                 <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
