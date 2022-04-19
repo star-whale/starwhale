@@ -15,7 +15,7 @@
                t.agent_id,
                t.task_status,
                t.result_path as task_result_path,
-               t.swds_blocks as task_swds_blocks,
+               t.task_request as task_task_request,
                t.created_time as task_created_time,
                t.modified_time as task_modified_time,
                a.id as agent_id,
@@ -94,7 +94,7 @@
         <result property="agentId" column="agent_id" />
         <result property="taskStatus" column="task_status" />
         <result property="resultPath" column="task_result_path" />
-        <result property="swdsBlocks" column="task_swds_blocks" />
+        <result property="taskRequest" column="task_task_request" />
         <result property="createdTime" column="task_created_time" />
         <result property="modifiedTime" column="task_modified_time" />
         <association property="agent" resultMap="ai.starwhale.mlops.domain.system.mapper.AgentMapper.agentResultMap" />

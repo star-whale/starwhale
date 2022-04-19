@@ -29,6 +29,8 @@ public class TaskEntity extends BaseEntity {
 
     private String resultPath;
 
-    private String swdsBlocks;
+    private String taskRequest;
+
+    private Integer taskType;
 
 }

@@ -10,10 +10,9 @@ public class TaskJobStatusHelper {
 
     public JobStatus desiredJobStatus(Collection<Task> tasks){
         final JobStatus desiredJobStatuses = tasks.parallelStream()
-            .map(task -> task.getStatus())
-            .reduce(JobStatus.FINISHED, (jobStatus, taskStatus) -> {
-                    if (taskStatus.getDesiredJobStatus().before(jobStatus)) {
-                        jobStatus = taskStatus.getDesiredJobStatus();
+            .reduce(JobStatus.FINISHED, (jobStatus, task) -> {
+                    if (task.getDesiredJobStatus().before(jobStatus)) {
+                        jobStatus = task.getDesiredJobStatus();
                     }
                     return jobStatus;
                 }

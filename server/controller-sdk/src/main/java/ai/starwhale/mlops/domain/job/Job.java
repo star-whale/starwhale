@@ -80,7 +80,7 @@ public class Job {
         CANCELED(60, true),
 
         /**
-         * canceling is done
+         * all ppl tasks are finished, cmp task should be triggered
          */
         COLLECT_RESULT(70, false),
 
