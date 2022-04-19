@@ -14,6 +14,7 @@ import ai.starwhale.mlops.agent.task.EvaluationTask.Stage;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
+import ai.starwhale.mlops.agent.task.persistence.FileSystemPath;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,9 @@ public abstract class AbsBaseTaskTransition implements DoTransition<EvaluationTa
 
     @Autowired
     protected TaskPersistence taskPersistence;
+
+    @Autowired
+    protected FileSystemPath fileSystemPath;
 
     @Autowired
     protected TaskPool taskPool;

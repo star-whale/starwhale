@@ -22,39 +22,45 @@ import java.util.List;
 @Slf4j
 public class FileSystemPath {
 
+    interface FileName {
+        String EvaluationTaskInfoFile = "taskInfo.json";
+        String EvaluationTaskConfigFile = "swds.json";
+    }
+
     private final String basePath;
 
-    public static PathNode baseDir = new PathNode("%s", PathNode.Type.variable, (PathNode) null);
+    private static PathNode baseDir = new PathNode("%s", PathNode.Type.variable, (PathNode) null);
 
 
-    public static PathNode tasksDir = new PathNode("tasks", PathNode.Type.value);
+    private static PathNode tasksDir = new PathNode("tasks", PathNode.Type.value);
 
     // active evaluation task
-    public static PathNode activeTaskDir = new PathNode("active", PathNode.Type.value);
-    public static PathNode activeEvaluationTaskDir = new PathNode("evaluation", PathNode.Type.value);
-    public static PathNode oneActiveEvaluationTaskDir = new PathNode("%s", PathNode.Type.variable);
-    public static PathNode oneActiveEvaluationTaskInfoFile = new PathNode("taskInfo.json", PathNode.Type.value);
-    public static PathNode oneActiveEvaluationTaskStatusDir = new PathNode("status", PathNode.Type.value);
-    public static PathNode oneActiveEvaluationTaskStatusFile = new PathNode("current", PathNode.Type.value);
-    public static PathNode oneActiveEvaluationTaskSwdsConfigDir = new PathNode("config", PathNode.Type.value);
-    public static PathNode oneActiveEvaluationTaskSwdsConfigFile = new PathNode("swds.json", PathNode.Type.value);
-    public static PathNode oneActiveEvaluationTaskResultDir = new PathNode("result", PathNode.Type.value);
-    public static PathNode oneActiveEvaluationTaskLogsDir = new PathNode("log", PathNode.Type.value);
+    private static PathNode activeTaskDir = new PathNode("active", PathNode.Type.value);
+    private static PathNode activeEvaluationTaskDir = new PathNode("evaluation", PathNode.Type.value);
+    private static PathNode oneActiveEvaluationTaskDir = new PathNode("%s", PathNode.Type.variable);
+    private static PathNode oneActiveEvaluationTaskInfoFile = new PathNode(FileName.EvaluationTaskInfoFile, PathNode.Type.value);
+    private static PathNode oneActiveEvaluationTaskStatusDir = new PathNode("status", PathNode.Type.value);
+    private static PathNode oneActiveEvaluationTaskStatusFile = new PathNode("current", PathNode.Type.value);
+    private static PathNode oneActiveEvaluationTaskSwdsConfigDir = new PathNode("config", PathNode.Type.value);
+    private static PathNode oneActiveEvaluationTaskSwdsConfigFile = new PathNode(FileName.EvaluationTaskConfigFile, PathNode.Type.value);
+    private static PathNode oneActiveEvaluationTaskResultDir = new PathNode("result", PathNode.Type.value);
+    private static PathNode oneActiveEvaluationTaskLogsDir = new PathNode("log", PathNode.Type.value);
 
     // active compare task
-    public static PathNode activeCompareTaskDir = new PathNode("compare", PathNode.Type.value);
-    public static PathNode oneActiveCompareTaskDir = new PathNode("%s", PathNode.Type.variable);
+    private static PathNode activeCompareTaskDir = new PathNode("compare", PathNode.Type.value);
+    private static PathNode oneActiveCompareTaskDir = new PathNode("%s", PathNode.Type.variable);
 
     // archived dir
-    public static PathNode archivedTaskDir = new PathNode("archived", PathNode.Type.value);
-    public static PathNode archivedEvaluationTaskDir = new PathNode("evaluation", PathNode.Type.value);
-    public static PathNode archivedCompareTaskDir = new PathNode("compare", PathNode.Type.value);
+    private static PathNode archivedTaskDir = new PathNode("archived", PathNode.Type.value);
+    private static PathNode archivedEvaluationTaskDir = new PathNode("evaluation", PathNode.Type.value);
+    private static PathNode oneArchivedEvaluationTaskDir = new PathNode("%s", PathNode.Type.variable);
+    private static PathNode archivedCompareTaskDir = new PathNode("compare", PathNode.Type.value);
 
 
     // swmp cache dir
-    public static PathNode swmpCacheDir = new PathNode("swmp", PathNode.Type.value);
-    public static PathNode swmpNameDir = new PathNode("%s", PathNode.Type.variable);
-    public static PathNode swmpVersionDir = new PathNode("%s", PathNode.Type.variable);
+    private static PathNode swmpCacheDir = new PathNode("swmp", PathNode.Type.value);
+    private static PathNode swmpNameDir = new PathNode("%s", PathNode.Type.variable);
+    private static PathNode oneSwmpDir = new PathNode("%s", PathNode.Type.variable);
 
 
     static {
@@ -73,12 +79,12 @@ public class FileSystemPath {
                                 .child(activeCompareTaskDir.child(oneActiveCompareTaskDir))
                         )
                         .child(archivedTaskDir
-                                .child(archivedEvaluationTaskDir)
+                                .child(archivedEvaluationTaskDir.child(oneArchivedEvaluationTaskDir))
                                 .child(archivedCompareTaskDir)
                         )
                 )
                 .child(swmpCacheDir
-                        .child(swmpNameDir.child(swmpVersionDir))
+                        .child(swmpNameDir.child(oneSwmpDir))
                 );
     }
 
@@ -94,14 +100,14 @@ public class FileSystemPath {
      * @param id taskId
      * one task's base dir path,Eg:/var/starwhale/task/{taskId}/
      */
-    public String basePathOfTask(Long id) {
+    public String oneActiveEvaluationTaskDir(Long id) {
         return oneActiveEvaluationTaskDir.path(basePath, id);
     }
 
     /**
      * one task's base dir path,Eg:/var/starwhale/task/
      */
-    public String basePathOfActiveTasks() {
+    public String activeTaskDir() {
         return activeTaskDir.path(basePath);
     }
 
@@ -109,7 +115,7 @@ public class FileSystemPath {
      * @param id taskId
      * taskInfo dir path,Eg:/var/starwhale/task/{taskId}/taskInfo.json(format:json)
      */
-    public String pathOfInfoFile(Long id) {
+    public String oneActiveEvaluationTaskInfoFile(Long id) {
         return oneActiveEvaluationTaskInfoFile.path(basePath, id);
     }
 
@@ -117,11 +123,11 @@ public class FileSystemPath {
      * @param id taskId
      * task running status dir path,Eg:/var/starwhale/task/{taskId}/status/current(format:txt)
      */
-    public String pathOfStatusFile(Long id) {
+    public String oneActiveEvaluationTaskStatusFile(Long id) {
         return oneActiveEvaluationTaskStatusFile.path(basePath, id);
     }
 
-    private String pathOfStatusDir(Long id) {
+    public String oneActiveEvaluationTaskStatusDir(Long id) {
         return oneActiveEvaluationTaskStatusDir.path(basePath, id);
     }
 
@@ -130,19 +136,19 @@ public class FileSystemPath {
      * @param version model version
      * swmp dir path,Eg:/var/starwhale/task/{taskId}/swmp/(dir)
      */
-    public String pathOfSWMPDir(String name, String version) {
-        return swmpVersionDir.path(basePath, name, version);
+    public String oneSwmpDir(String name, String version) {
+        return oneSwmpDir.path(basePath, name, version);
     }
 
     /**
      * @param id taskId
      * swds config file path,Eg:/var/starwhale/task/{taskId}/config/swds.json(format:json)
      */
-    public String pathOfSWDSConfigFile(Long id) {
+    public String oneActiveEvaluationTaskSwdsConfigFile(Long id) {
         return oneActiveEvaluationTaskSwdsConfigFile.path(basePath, id);
     }
 
-    private String pathOfSWDSConfigDir(Long id) {
+    public String oneActiveEvaluationTaskSwdsConfigDir(Long id) {
         return oneActiveEvaluationTaskSwdsConfigDir.path(basePath, id);
     }
 
@@ -150,23 +156,23 @@ public class FileSystemPath {
      * @param id taskId
      * task result dir path,Eg:/var/starwhale/task/{taskId}/result/
      */
-    public String pathOfResult(Long id) {
+    public String oneActiveEvaluationTaskResultDir(Long id) {
         return oneActiveEvaluationTaskResultDir.path(basePath, id);
     }
 
     /**
      * task archived dir path,Eg:/var/starwhale/archived/
      */
-    public String pathOfArchived() {
-        return archivedTaskDir.path(basePath);
+    public String archivedEvaluationTaskDir() {
+        return archivedEvaluationTaskDir.path(basePath);
     }
 
     /**
      * @param id taskId
      * task archived dir path,Eg:/var/starwhale/archived/{taskId}/
      */
-    public String pathOfArchived(Long id) {
-        return archivedEvaluationTaskDir.path(basePath, id);
+    public String oneArchivedEvaluationTaskDir(Long id) {
+        return oneArchivedEvaluationTaskDir.path(basePath, id);
     }
 
     /**

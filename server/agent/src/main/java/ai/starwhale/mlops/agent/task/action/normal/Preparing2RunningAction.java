@@ -95,7 +95,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
         imageConfig.setMounts(List.of(
                 Mount.builder()
                         .readOnly(false)
-                        .source(taskPersistence.basePathOfTask(oldTask.getId()))
+                        .source(fileSystemPath.oneActiveEvaluationTaskDir(oldTask.getId()))
                         .target(containerBasePath)
                         .type("BIND")
                         .build(),

@@ -4,8 +4,6 @@ import ai.starwhale.mlops.agent.task.persistence.FileSystemPath;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static ai.starwhale.mlops.agent.task.persistence.FileSystemPath.*;
-
 public class TaskDirTest {
     @Test
     public void main() {
@@ -67,30 +65,31 @@ public class TaskDirTest {
 
     @Test
     public void fs_test() {
-
+        FileSystemPath fileSystemPath = new FileSystemPath("var/sw");
         // base active task dir
-        Assertions.assertEquals("var/sw/tasks/active", activeTaskDir.path("var/sw"));
+        // Assertions.assertEquals("var/sw/tasks/active", fileSystemPath.archivedEvaluationTaskDiractiveTaskDir());
+        Long taskId = 123L;
         // evaluation task test
-        Assertions.assertEquals("var/sw/tasks/active/evaluation", activeEvaluationTaskDir.path("var/sw"));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123", oneActiveEvaluationTaskDir.path("var/sw", "123"));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/taskInfo.json", oneActiveEvaluationTaskInfoFile.path("var/sw", "123"));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/config", oneActiveEvaluationTaskSwdsConfigDir.path("var/sw", "123"));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/config/swds.json", oneActiveEvaluationTaskSwdsConfigFile.path("var/sw", "123"));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/status", oneActiveEvaluationTaskStatusDir.path("var/sw", "123"));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/status/current", oneActiveEvaluationTaskStatusFile.path("var/sw", "123"));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/result", oneActiveEvaluationTaskResultDir.path("var/sw", "123"));
+        //Assertions.assertEquals("var/sw/tasks/active/evaluation", fileSystemPath.activeEvaluationTaskDir());
+        Assertions.assertEquals("var/sw/tasks/active/evaluation/123", fileSystemPath.oneActiveEvaluationTaskDir(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/taskInfo.json", fileSystemPath.oneActiveEvaluationTaskInfoFile(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/config", fileSystemPath.oneActiveEvaluationTaskSwdsConfigDir(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/config/swds.json", fileSystemPath.oneActiveEvaluationTaskSwdsConfigFile(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/status", fileSystemPath.oneActiveEvaluationTaskStatusDir(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/status/current", fileSystemPath.oneActiveEvaluationTaskStatusFile(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/result", fileSystemPath.oneActiveEvaluationTaskResultDir(taskId));
 
         // compare task test
-        Assertions.assertEquals("var/sw/tasks/active/compare", activeCompareTaskDir.path("var/sw"));
-        Assertions.assertEquals("var/sw/tasks/active/compare/123", oneActiveCompareTaskDir.path("var/sw", "123"));
+        //Assertions.assertEquals("var/sw/tasks/active/compare", fileSystemPath.activeCompareTaskDir());
+        //Assertions.assertEquals("var/sw/tasks/active/compare/123", fileSystemPath.oneActiveCompareTaskDir(taskId));
 
         // archived task test
-        Assertions.assertEquals("var/sw/tasks/archived", archivedTaskDir.path("var/sw"));
-        Assertions.assertEquals("var/sw/tasks/archived/evaluation", archivedEvaluationTaskDir.path("var/sw"));
-        Assertions.assertEquals("var/sw/tasks/archived/compare", archivedCompareTaskDir.path("var/sw"));
+        // Assertions.assertEquals("var/sw/tasks/archived", fileSystemPath.archivedTaskDir());
+        Assertions.assertEquals("var/sw/tasks/archived/evaluation", fileSystemPath.archivedEvaluationTaskDir());
+        // Assertions.assertEquals("var/sw/tasks/archived/compare", fileSystemPath.archivedCompareTaskDir());
 
 
         // swmp local cache dir test
-        Assertions.assertEquals("var/sw/swmp/mnist/v1", swmpVersionDir.path("var/sw", "mnist", "v1"));
+        Assertions.assertEquals("var/sw/swmp/mnist/v1", fileSystemPath.oneSwmpDir( "mnist", "v1"));
     }
 }
