@@ -9,7 +9,7 @@ package ai.starwhale.mlops.agent.node.initializer;
 
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.task.TaskPool;
+import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.json.JSONUtil;

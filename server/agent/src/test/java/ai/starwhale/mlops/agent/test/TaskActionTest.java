@@ -5,12 +5,12 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
-import ai.starwhale.mlops.agent.task.PPLTask;
-import ai.starwhale.mlops.agent.task.TaskPool;
-import ai.starwhale.mlops.agent.task.action.DoTransition;
-import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
-import ai.starwhale.mlops.agent.task.persistence.FileSystemPath;
-import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.Action;
+import ai.starwhale.mlops.agent.task.ppltask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.ppltask.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.ppltask.persistence.TaskPersistence;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
@@ -61,10 +61,10 @@ public class TaskActionTest {
     private TaskExecutor taskExecutor;
 
     @Autowired
-    DoTransition<Void, List<PPLTask>> rebuildTasksAction;
+    Action<Void, List<PPLTask>> rebuildTasksAction;
 
     @Autowired
-    DoTransition<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction;
+    Action<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction;
 
     @Autowired
     private TaskPool taskPool;

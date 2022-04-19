@@ -8,13 +8,13 @@
 package ai.starwhale.mlops.agent.configuration;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.task.PPLTask;
-import ai.starwhale.mlops.agent.task.Scheduler;
-import ai.starwhale.mlops.agent.task.TaskPool;
-import ai.starwhale.mlops.agent.task.action.DoTransition;
-import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
-import ai.starwhale.mlops.agent.task.initializer.TaskPoolInitializer;
-import ai.starwhale.mlops.agent.task.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.ppltask.Scheduler;
+import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.Action;
+import ai.starwhale.mlops.agent.task.ppltask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.ppltask.initializer.TaskPoolInitializer;
+import ai.starwhale.mlops.agent.task.ppltask.persistence.FileSystemPath;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -46,22 +46,22 @@ public class TaskConfiguration {
     public TaskExecutor agentTaskExecutor(
             SourcePool sourcePool,
             TaskPool taskPool,
-            DoTransition<Void, List<PPLTask>> rebuildTasksAction,
-            DoTransition<PPLTask, PPLTask> init2PreparingAction,
-            DoTransition<PPLTask, PPLTask> preparing2RunningAction,
-            DoTransition<PPLTask, PPLTask> preparing2CanceledAction,
-            DoTransition<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction,
-            DoTransition<PPLTask, PPLTask> monitorRunningTaskAction,
-            DoTransition<PPLTask, PPLTask> running2CanceledAction,
-            DoTransition<PPLTask, PPLTask> uploading2FinishedAction,
-            DoTransition<PPLTask, PPLTask> uploading2CanceledAction,
-            DoTransition<ReportRequest, ReportResponse> reportAction) {
+            Action<Void, List<PPLTask>> rebuildTasksAction,
+            Action<PPLTask, PPLTask> init2PreparingAction,
+            Action<PPLTask, PPLTask> preparing2RunningAction,
+            Action<PPLTask, PPLTask> preparing2CanceledAction,
+            Action<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction,
+            Action<PPLTask, PPLTask> monitoringAction,
+            Action<PPLTask, PPLTask> running2CanceledAction,
+            Action<PPLTask, PPLTask> uploading2FinishedAction,
+            Action<PPLTask, PPLTask> uploading2CanceledAction,
+            Action<ReportRequest, ReportResponse> reportAction) {
         return new TaskExecutor(sourcePool, taskPool,
                 rebuildTasksAction,
                 init2PreparingAction,
                 preparing2RunningAction, preparing2CanceledAction,
                 finishedOrCanceled2ArchivedAction,
-                monitorRunningTaskAction,
+                monitoringAction,
                 running2CanceledAction,
                 uploading2FinishedAction, uploading2CanceledAction,
                 reportAction);

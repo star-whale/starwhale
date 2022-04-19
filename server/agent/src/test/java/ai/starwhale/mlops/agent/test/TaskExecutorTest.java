@@ -11,13 +11,13 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
-import ai.starwhale.mlops.agent.task.PPLTask;
-import ai.starwhale.mlops.agent.task.TaskPool;
-import ai.starwhale.mlops.agent.task.action.Context;
-import ai.starwhale.mlops.agent.task.action.DoTransition;
-import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
-import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
-import ai.starwhale.mlops.agent.task.persistence.TaskPersistence.ExecuteStatus;
+import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.Action;
+import ai.starwhale.mlops.agent.task.ppltask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.ppltask.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.ppltask.persistence.TaskPersistence.ExecuteStatus;
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
@@ -62,7 +62,7 @@ public class TaskExecutorTest {
     private TaskExecutor taskExecutor;
 
     @Autowired
-    DoTransition<Void, List<PPLTask>> rebuildTasksAction;
+    Action<Void, List<PPLTask>> rebuildTasksAction;
 
     @Autowired
     private TaskPool taskPool;

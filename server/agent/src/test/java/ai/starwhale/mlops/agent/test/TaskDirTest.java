@@ -1,6 +1,6 @@
 package ai.starwhale.mlops.agent.test;
 
-import ai.starwhale.mlops.agent.task.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.ppltask.persistence.FileSystemPath;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
