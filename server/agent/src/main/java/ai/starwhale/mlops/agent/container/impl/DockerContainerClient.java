@@ -5,6 +5,7 @@ import ai.starwhale.mlops.agent.container.ImageConfig;
 import cn.hutool.core.collection.CollectionUtil;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.*;
@@ -71,13 +72,20 @@ public class DockerContainerClient implements ContainerClient {
                                 .collect(Collectors.toList()));
             }
 
-            CreateContainerResponse response = client.createContainerCmd(imageConfig.getImage())
+            CreateContainerCmd createContainerCmd = client.createContainerCmd(imageConfig.getImage())
                     .withHostConfig(hostConfig)
-                    //.withEnv(imageConfig.getEnv())
-                    .withLabels(imageConfig.getLabels())
-                    // .withVolumes()
-                    // .withEntrypoint(imageConfig.getEntrypoint())
-                    .exec();
+                    .withLabels(imageConfig.getLabels());
+
+            if(CollectionUtil.isNotEmpty(imageConfig.getEntrypoint())) {
+                createContainerCmd.withEntrypoint(imageConfig.getEntrypoint());
+            }
+
+            if(CollectionUtil.isNotEmpty(imageConfig.getEnv())) {
+                createContainerCmd.withEnv(imageConfig.getEnv());
+            }
+            // exec create cmd
+            CreateContainerResponse response = createContainerCmd.exec();
+
             if (StringUtils.hasText(response.getId())) {
                 client.startContainerCmd(response.getId()).exec();
                 return Optional.of(response.getId());

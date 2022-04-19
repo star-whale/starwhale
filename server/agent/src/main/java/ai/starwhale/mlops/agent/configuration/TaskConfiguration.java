@@ -8,13 +8,13 @@
 package ai.starwhale.mlops.agent.configuration;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.task.EvaluationTask;
-import ai.starwhale.mlops.agent.task.Scheduler;
-import ai.starwhale.mlops.agent.task.TaskPool;
-import ai.starwhale.mlops.agent.task.action.DoTransition;
-import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
-import ai.starwhale.mlops.agent.task.initializer.TaskPoolInitializer;
-import ai.starwhale.mlops.agent.task.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskScheduler;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
+import ai.starwhale.mlops.agent.task.Action;
+import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.inferencetask.initializer.TaskPoolInitializer;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -46,22 +46,22 @@ public class TaskConfiguration {
     public TaskExecutor agentTaskExecutor(
             SourcePool sourcePool,
             TaskPool taskPool,
-            DoTransition<Void, List<EvaluationTask>> rebuildTasksAction,
-            DoTransition<EvaluationTask, EvaluationTask> init2PreparingAction,
-            DoTransition<EvaluationTask, EvaluationTask> preparing2RunningAction,
-            DoTransition<EvaluationTask, EvaluationTask> preparing2CanceledAction,
-            DoTransition<EvaluationTask, EvaluationTask> finishedOrCanceled2ArchivedAction,
-            DoTransition<EvaluationTask, EvaluationTask> monitorRunningTaskAction,
-            DoTransition<EvaluationTask, EvaluationTask> running2CanceledAction,
-            DoTransition<EvaluationTask, EvaluationTask> uploading2FinishedAction,
-            DoTransition<EvaluationTask, EvaluationTask> uploading2CanceledAction,
-            DoTransition<ReportRequest, ReportResponse> reportAction) {
+            Action<Void, List<InferenceTask>> rebuildTasksAction,
+            Action<InferenceTask, InferenceTask> init2PreparingAction,
+            Action<InferenceTask, InferenceTask> preparing2RunningAction,
+            Action<InferenceTask, InferenceTask> preparing2CanceledAction,
+            Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction,
+            Action<InferenceTask, InferenceTask> monitoringAction,
+            Action<InferenceTask, InferenceTask> running2CanceledAction,
+            Action<InferenceTask, InferenceTask> uploading2FinishedAction,
+            Action<InferenceTask, InferenceTask> uploading2CanceledAction,
+            Action<ReportRequest, ReportResponse> reportAction) {
         return new TaskExecutor(sourcePool, taskPool,
                 rebuildTasksAction,
                 init2PreparingAction,
                 preparing2RunningAction, preparing2CanceledAction,
                 finishedOrCanceled2ArchivedAction,
-                monitorRunningTaskAction,
+                monitoringAction,
                 running2CanceledAction,
                 uploading2FinishedAction, uploading2CanceledAction,
                 reportAction);
@@ -69,8 +69,8 @@ public class TaskConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "sw.agent.task.scheduler.enabled", havingValue = "true", matchIfMissing = true)
-    public Scheduler agentTaskScheduler(TaskExecutor agentTaskExecutor) {
-        return new Scheduler(agentTaskExecutor);
+    public TaskScheduler agentTaskScheduler(TaskExecutor agentTaskExecutor) {
+        return new TaskScheduler(agentTaskExecutor);
     }
 
 }
