@@ -21,7 +21,6 @@ import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -29,11 +28,11 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static ai.starwhale.mlops.agent.task.persistence.FileSystemPath.*;
 
 /**
  * <ul>under the basePath,Eg:/var/starwhale/，there have serial path：</ul>
@@ -44,110 +43,24 @@ import java.util.stream.Stream;
 @Service
 public class FileSystemTaskPersistence implements TaskPersistence {
 
-    @Autowired
-    private AgentProperties agentProperties;
-    @Autowired
-    private StorageProperties storageProperties;
-    @Autowired
-    private StorageAccessService storageAccessService;
+    private final StorageProperties storageProperties;
 
-    private final String baseModelPathFormat = "%s/swmp/%s/%s/";
+    private final StorageAccessService storageAccessService;
 
-    private final String baseTaskDirPathFormat = "%s/task/";
-    private final String taskDirPathFormat = baseTaskDirPathFormat + "%s/";
+    private final FileSystemPath fileSystemPath;
 
-    private final String infoFile = "taskInfo.json";
-    private final String statusFile = "current";
-    private final String configFile = "swds.json";
-
-    private final String infoFilePathFormat = taskDirPathFormat + infoFile;
-
-    private final String statusDirPathFormat = taskDirPathFormat + "status/";
-    private final String statusFilePathFormat = statusDirPathFormat + statusFile;
-
-    private final String swdsConfigDirPathFormat = taskDirPathFormat + "config/";
-    private final String swdsConfigFilePathFormat = swdsConfigDirPathFormat + configFile;
-
-    private final String resultDirPathFormat = taskDirPathFormat + "result/";
-
-    private final String logDirPathFormat = taskDirPathFormat + "log/";
-
-    /*
-     * archived taskInfo file path,Eg:/var/starwhale/task/archived/{taskId}/
-     */
-    private final String archivedDirPathFormat = "%s/archived/";
-    private final String archivedTaskDirPathFormat = archivedDirPathFormat + "%s";
-
-    String path(String format, Object... objects) {
-        return String.format(format, objects);
-    }
-
-    @Override
-    public String basePathOfTask(Long id) {
-        return path(taskDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String basePathOfActiveTasks() {
-        return path(baseTaskDirPathFormat, agentProperties.getBasePath());
-    }
-
-    @Override
-    public String pathOfInfoFile(Long id) {
-        return path(infoFilePathFormat, agentProperties.getBasePath(), id);
-    }
-
-    private String pathOfInfoDir(Long id) {
-        return path(taskDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfStatusFile(Long id) {
-        return path(statusFilePathFormat, agentProperties.getBasePath(), id);
-    }
-
-    private String pathOfStatusDir(Long id) {
-        return path(statusDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfSWMPDir(String name, String version) {
-        return path(baseModelPathFormat, agentProperties.getBasePath(), name, version);
-    }
-
-    @Override
-    public String pathOfSWDSConfigFile(Long id) {
-        return path(swdsConfigFilePathFormat, agentProperties.getBasePath(), id);
-    }
-
-    private String pathOfSWDSConfigDir(Long id) {
-        return path(swdsConfigDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfResult(Long id) {
-        return path(resultDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfArchived() {
-        return path(archivedDirPathFormat, agentProperties.getBasePath());
-    }
-
-    @Override
-    public String pathOfArchived(Long id) {
-        return path(archivedTaskDirPathFormat, agentProperties.getBasePath(), id);
-    }
-
-    @Override
-    public String pathOfLog(Long id) {
-        return path(logDirPathFormat, agentProperties.getBasePath(), id);
+    public FileSystemTaskPersistence(StorageProperties storageProperties,
+                                     StorageAccessService storageAccessService,
+                                     FileSystemPath fileSystemPath) {
+        this.storageProperties = storageProperties;
+        this.storageAccessService = storageAccessService;
+        this.fileSystemPath = fileSystemPath;
     }
 
     @Override
     public Optional<List<EvaluationTask>> getAllActiveTasks() {
         try {
-            Path tasksPath = Path.of(basePathOfActiveTasks());
+            Path tasksPath = Path.of(fileSystemPath.activeTaskDir());
             if (!Files.exists(tasksPath)) {
                 Files.createDirectories(tasksPath);
                 log.info("init tasks dir, nothing to rebuild, path:{}", tasksPath);
@@ -158,7 +71,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                         (path, basicFileAttributes) -> true);
                 return Optional.of(
                         taskInfos
-                                .filter(path -> path.getFileName().toString().endsWith(infoFile))
+                                .filter(path -> path.getFileName().toString().endsWith(FileName.EvaluationTaskInfoFile))
                                 .map(path -> {
                                     try {
                                         String json = Files.readString(path);
@@ -183,7 +96,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public Optional<EvaluationTask> getTaskById(Long id) {
         try {
             // get the newest task info
-            Path taskPath = Path.of(pathOfInfoFile(id));
+            Path taskPath = Path.of(fileSystemPath.oneActiveEvaluationTaskInfoFile(id));
             String json = Files.readString(taskPath);
             return Optional.of(JSONUtil.toBean(json, EvaluationTask.class));
         } catch (Exception e) {
@@ -197,7 +110,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public Optional<ExecuteStatus> status(Long id) {
         try {
             // get the newest task info
-            Path statusFilePath = Path.of(pathOfStatusFile(id));
+            Path statusFilePath = Path.of(fileSystemPath.oneActiveEvaluationTaskStatusFile(id));
             if (Files.exists(statusFilePath)) {
                 String status = Files.readString(statusFilePath);
                 if (StringUtils.hasText(status)) {
@@ -216,9 +129,9 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     @Override
     public boolean updateStatus(Long id, ExecuteStatus status) throws Exception {
         // get the newest task info
-        Path statusFilePath = Path.of(pathOfStatusFile(id));
+        Path statusFilePath = Path.of(fileSystemPath.oneActiveEvaluationTaskStatusFile(id));
         if (Files.notExists(statusFilePath)) {
-            Files.createDirectories(Path.of(pathOfStatusDir(id)));
+            Files.createDirectories(Path.of(fileSystemPath.oneActiveEvaluationTaskStatusDir(id)));
         }
         Files.writeString(statusFilePath, status.name(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         return true;
@@ -227,12 +140,12 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     @Override
     public boolean save(EvaluationTask task) {
         try {
-            Path taskDirPath = Path.of(pathOfInfoDir(task.getId()));
+            Path taskDirPath = Path.of(fileSystemPath.oneActiveEvaluationTaskDir(task.getId()));
             if (Files.notExists(taskDirPath)) {
                 Files.createDirectories(taskDirPath);
             }
             // update info to the task file
-            Files.writeString(Path.of(pathOfInfoFile(task.getId())), JSONUtil.toJsonStr(task), StandardOpenOption.CREATE);
+            Files.writeString(Path.of(fileSystemPath.oneActiveEvaluationTaskInfoFile(task.getId())), JSONUtil.toJsonStr(task), StandardOpenOption.CREATE);
             return true;
         } catch (Exception e) {
             log.error("save task status occur error:{}", e.getMessage(), e);
@@ -245,11 +158,11 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public void move2Archived(EvaluationTask task) throws IOException {
         // move to the archived task file
         try {
-            FileUtils.moveDirectoryToDirectory(new File(basePathOfTask(task.getId())), new File(pathOfArchived()), true);
+            FileUtils.moveDirectoryToDirectory(new File(fileSystemPath.oneActiveEvaluationTaskDir(task.getId())), new File(fileSystemPath.archivedEvaluationTaskDir()), true);
         } catch (FileExistsException e) {
-            String newPath = pathOfArchived() + "repeat/" + task.getId() + "_" + System.currentTimeMillis();
+            String newPath = fileSystemPath.archivedEvaluationTaskDir() + "repeat/" + task.getId() + "_" + System.currentTimeMillis();
             log.error("already exist task:{}, move to {}", JSONUtil.toJsonStr(task), newPath);
-            FileUtils.moveDirectoryToDirectory(new File(basePathOfTask(task.getId())), new File(newPath), true);
+            FileUtils.moveDirectoryToDirectory(new File(fileSystemPath.oneActiveEvaluationTaskDir(task.getId())), new File(newPath), true);
         }
 
     }
@@ -258,7 +171,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public String preloadingSWMP(EvaluationTask task) throws IOException {
         SWModelPackage model = task.getSwModelPackage();
 
-        String cachePathStr = pathOfSWMPDir(model.getName(), model.getVersion());
+        String cachePathStr = fileSystemPath.oneSwmpDir(model.getName(), model.getVersion());
 
         // check if exist todo check with md5
         if (Files.notExists(Path.of(cachePathStr))) {
@@ -279,11 +192,11 @@ public class FileSystemTaskPersistence implements TaskPersistence {
 
     @Override
     public void generateSWDSConfig(EvaluationTask task) throws IOException {
-        Path configDir = Path.of(pathOfSWDSConfigDir(task.getId()));
+        Path configDir = Path.of(fileSystemPath.oneActiveEvaluationTaskSwdsConfigDir(task.getId()));
         if (Files.notExists(configDir)) {
             Files.createDirectories(configDir);
         }
-        String configPathStr = pathOfSWDSConfigFile(task.getId());
+        String configPathStr = fileSystemPath.oneActiveEvaluationTaskSwdsConfigFile(task.getId());
         Path configPath = Path.of(configPathStr);
         JSONObject object = JSONUtil.createObj();
         object.set("backend", storageProperties.getType());
@@ -313,7 +226,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     @Override
     public void uploadResult(EvaluationTask task) throws IOException {
         // results is a set of files
-        Stream<Path> paths = Files.find(Path.of(pathOfResult(task.getId())), 1, (a, b) -> true);
+        Stream<Path> paths = Files.find(Path.of(fileSystemPath.oneActiveEvaluationTaskResultDir(task.getId())), 1, (a, b) -> true);
         List<Path> results = paths.filter(path -> !Files.isDirectory(path))
                 .collect(Collectors.toList());
         if (CollectionUtil.isNotEmpty(results)) {

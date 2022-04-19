@@ -14,6 +14,7 @@ import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.initializer.TaskPoolInitializer;
+import ai.starwhale.mlops.agent.task.persistence.FileSystemPath;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -34,6 +35,11 @@ public class TaskConfiguration {
     @Bean
     public TaskPool taskPool() {
         return new TaskPool();
+    }
+
+    @Bean
+    public FileSystemPath fileSystemPath(AgentProperties agentProperties) {
+        return new FileSystemPath(agentProperties.getBasePath());
     }
 
     @Bean

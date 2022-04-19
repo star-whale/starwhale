@@ -37,19 +37,19 @@ public class NodeConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "sw.node.sourcePool.gpu.nvidia.detect", havingValue = "cmd", matchIfMissing = true)
+    @ConditionalOnProperty(name = "sw.agent.node.sourcePool.gpu.nvidia.detect", havingValue = "cmd", matchIfMissing = true)
     public GPUDetect nvidiaGPUDetect() {
         return new NvidiaCmdDetect();
     }
 
     @Bean
-    @ConditionalOnProperty(name = "sw.node.sourcePool.cpu.detect", havingValue = "simple", matchIfMissing = true)
+    @ConditionalOnProperty(name = "sw.agent.node.sourcePool.cpu.detect", havingValue = "simple", matchIfMissing = true)
     public CPUDetect simpleCPUDetect() {
         return new SimpleCPUDetect();
     }
 
     @Bean
-    @ConditionalOnProperty(name = "sw.node.sourcePool.system.detect", havingValue = "simple", matchIfMissing = true)
+    @ConditionalOnProperty(name = "sw.agent.node.sourcePool.system.detect", havingValue = "simple", matchIfMissing = true)
     public SystemDetect simpleSystemDetect() {
         return new SimpleSystemDetect();
     }

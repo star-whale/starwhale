@@ -9,6 +9,7 @@ import ai.starwhale.mlops.agent.task.EvaluationTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.persistence.FileSystemPath;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
@@ -73,6 +74,9 @@ public class TaskActionTest {
 
     @Autowired
     private AgentProperties agentProperties;
+
+    @Autowired
+    private FileSystemPath fileSystemPath;
 
     @Test
     public void testPreparing2Running() throws IOException {
@@ -291,8 +295,8 @@ public class TaskActionTest {
         EvaluationTask task = EvaluationTask.builder()
                 .id(1234567890L)
                 .build();
-        assertFalse(Files.exists(Path.of(taskPersistence.pathOfArchived(task.getId()))));
+        assertFalse(Files.exists(Path.of(fileSystemPath.oneArchivedEvaluationTaskDir(task.getId()))));
         finishedOrCanceled2ArchivedAction.apply(task, null);
-        assertTrue(Files.exists(Path.of(taskPersistence.pathOfArchived(task.getId()))));
+        assertTrue(Files.exists(Path.of(fileSystemPath.oneArchivedEvaluationTaskDir(task.getId()))));
     }
 }
