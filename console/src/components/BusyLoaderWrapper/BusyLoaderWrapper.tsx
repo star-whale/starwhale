@@ -13,11 +13,13 @@ export interface IBusyLoaderWrapperProps {
     loaderConfig?: object
     width?: string
     height?: string
+    style?: React.CSSProperties
 }
 
 import './BusyLoaderWrapper.scss'
 
 function BusyLoaderWrapper({
+    style = {},
     isLoading = false,
     className = '',
     children,
@@ -59,7 +61,7 @@ function BusyLoaderWrapper({
                 </ErrorBoundary>
             ) : children ? (
                 <ErrorBoundary>
-                    <div style={{ width, height }} ref={mountCard}>
+                    <div style={{ width, height, ...style }} ref={mountCard}>
                         {children}
                     </div>
                 </ErrorBoundary>

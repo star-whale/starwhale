@@ -11,7 +11,7 @@ export default function Logo({ expanded = true }: ILogoProps) {
     return (
         <Link
             style={{
-                flex: '0 0 200px',
+                flex: `0 0 ${expanded ? 200 : 68}px`,
                 display: 'flex',
                 flexDirection: 'row',
                 textDecoration: 'none',

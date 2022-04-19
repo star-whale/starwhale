@@ -9,6 +9,7 @@ import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
 import { IIndicator, IMBCConfusionMetrics, IMCConfusionMetrics, INDICATOR_TYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
+import { usetHeatmapConfig } from '@/components/Indicator/utils'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -57,72 +58,7 @@ function JobResult() {
         return [metrics, maxValue]
     }, [dataMCConfusionMetrics])
 
-    const layout = {
-        title: 'MCConfusionMetrics',
-        annotations: [] as any[],
-        xaxis: {
-            ticks: '',
-        },
-        yaxis: {
-            ticks: '',
-            ticksuffix: ' ',
-            width: 500,
-            height: 500,
-        },
-        font: {
-            family: 'Inter',
-            size: 16,
-        },
-    }
-    // TODO: big datas
-    const xValues = labels
-    const yValues = labels
-    const zValues = heatmap
-
-    for (var i = 0; i < yValues.length; i++) {
-        for (var j = 0; j < xValues.length; j++) {
-            var currentValue = zValues[i][j]
-            if (currentValue != 0) {
-                var textColor = 'white'
-            } else {
-                var textColor = 'black'
-            }
-            const result = {
-                xref: 'x1',
-                yref: 'y1',
-                x: xValues[j],
-                y: yValues[i],
-                text: zValues[i][j],
-                font: {
-                    family: 'Inter',
-                    size: 14,
-                    color: textColor,
-                },
-                showarrow: false,
-            }
-            layout.annotations.push(result)
-        }
-    }
-    const heatmapData = {
-        data: [
-            {
-                x: xValues,
-                y: yValues,
-                z: zValues,
-                colorscale: [
-                    [0, '#3D9970'],
-                    [1, '#001f3f'],
-                ],
-                // showscale: false,
-                type: 'heatmap',
-                // colorscale: 'Blackbody',
-                // autocolorscale: true,
-            },
-        ],
-        layout: {
-            ...layout,
-        },
-    }
+    const heatmapData = usetHeatmapConfig(labels, heatmap)
 
     return (
         <>
@@ -136,16 +72,17 @@ function JobResult() {
                     placeItems: 'stretch',
                 }}
             >
-                <div
-                    style={{
-                        placeSelf: 'stretch',
-                        padding: '20px',
-                        background: '#fff',
-                        borderRadius: '12px',
-                    }}
-                >
-                    <MBCConfusionMetricsIndicator isLoading={jobResult.isLoading} data={dataMBCConfusionMetrics} />
-                </div>
+                {dataMBCConfusionMetrics && (
+                    <div
+                        style={{
+                            padding: '20px',
+                            background: '#fff',
+                            borderRadius: '12px',
+                        }}
+                    >
+                        <MBCConfusionMetricsIndicator isLoading={jobResult.isLoading} data={dataMBCConfusionMetrics} />
+                    </div>
+                )}
 
                 <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
                     <React.Suspense fallback={<Spinner />}>
