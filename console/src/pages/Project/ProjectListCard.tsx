@@ -67,7 +67,6 @@ export default function ProjectListCard() {
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('create sth', [t('Project')])}</ModalHeader>
                 <ModalBody>

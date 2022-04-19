@@ -110,7 +110,6 @@ export default function HeaderLeftMenu() {
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('Project')}</ModalHeader>
                 <ModalBody>

@@ -12,13 +12,16 @@ export interface IJobLayoutProps {
     children: React.ReactNode
 }
 
-export default function TaskLayout({ children }: IJobLayoutProps) {
+function TaskLayout({ children }: IJobLayoutProps) {
+    // console.log('TaskLayout')
+
     const { projectId, jobId } = useParams<{ jobId: string; projectId: string }>()
     const jobInfo = useQuery(`fetchJob:${projectId}:${jobId}`, () => fetchJob(projectId, jobId))
     const { job, setJob } = useJob()
-    const projectInfo = useFetchProject(projectId)
     const { setJobLoading } = useJobLoading()
+
     useEffect(() => {
+        // console.log('useEffect', job)
         setJobLoading(jobInfo.isLoading)
         if (jobInfo.isSuccess) {
             if (jobInfo.data.id !== job?.id) {
@@ -31,22 +34,22 @@ export default function TaskLayout({ children }: IJobLayoutProps) {
 
     const [t] = useTranslation()
     const uuid = job?.uuid ?? '-'
-    const project = projectInfo.data ?? {}
-    const projectName = project?.name ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
                 title: t('Jobs'),
-                path: `/projects/${project?.id}/jobs`,
+                path: `/projects/${projectId}/jobs`,
             },
             {
                 title: uuid,
-                path: `/projects/${project?.id}/jobs/${jobId}`,
+                path: `/projects/${projectId}/jobs/${jobId}`,
             },
         ]
         return items
-    }, [projectName, uuid, t])
+    }, [projectId, jobId, job])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }
+
+export default React.memo(TaskLayout)

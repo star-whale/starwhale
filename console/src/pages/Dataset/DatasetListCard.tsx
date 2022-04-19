@@ -70,7 +70,6 @@ export default function DatasetListCard() {
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('create sth', [t('Dataset')])}</ModalHeader>
                 <ModalBody>

@@ -116,14 +116,7 @@ export default function JobListCard() {
                         },
                     }}
                 />
-                <Modal
-                    isOpen={isCreateJobOpen}
-                    onClose={() => setIsCreateJobOpen(false)}
-                    closeable
-                    animate
-                    autoFocus
-                    unstable_ModalBackdropScroll
-                >
+                <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                     <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                     <ModalBody>
                         <JobForm onSubmit={handleCreateJob} />

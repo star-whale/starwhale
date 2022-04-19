@@ -247,6 +247,9 @@ const locales0 = {
     'Label': {
         en: 'Label',
     },
+    'Meta': {
+        en: 'Meta',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

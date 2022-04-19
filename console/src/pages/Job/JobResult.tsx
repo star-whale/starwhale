@@ -14,9 +14,9 @@ const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
 
-export default function JobResult() {
+function JobResult() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-    const jobResult = useQuery('fetchJobResult', () => fetchJobResult(jobId, projectId))
+    const jobResult = useQuery('fetchJobResult', () => fetchJobResult(projectId, jobId))
     useEffect(() => {
         if (jobResult.isSuccess) {
             console.log(jobResult.data)
@@ -156,3 +156,5 @@ export default function JobResult() {
         </>
     )
 }
+
+export default React.memo(JobResult)

@@ -33,7 +33,7 @@ function BusyLoaderWrapper({
                 return <Skeleton rows={5} height='100px' width='100%' animation {...loaderConfig} />
             }
             default: {
-                return <Spinner size={SIZE.large} {...loaderConfig} />
+                return <Spinner $size={SIZE.large} {...loaderConfig} />
             }
         }
     }

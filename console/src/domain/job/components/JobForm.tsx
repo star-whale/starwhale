@@ -6,7 +6,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { Button, SIZE as ButtonSize } from 'baseui/button'
 import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
-import { Label1, Label2 } from 'baseui/typography'
+import { LabelLarge } from 'baseui/typography'
 import Divider from '@/components/Divider'
 import { useParams } from 'react-router'
 import ModelVersionSelector from '@/domain/model/components/ModelVersionSelector'
@@ -81,7 +81,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <Divider orientation='left'>
-                <Label1>{t('Model Information')}</Label1>
+                <LabelLarge>{t('Model Information')}</LabelLarge>
             </Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 20 }}>
                 <FormItem label={t('sth name', [t('Model')])} name='modelId' required>
@@ -113,7 +113,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 )}
             </div>
             <Divider orientation='left'>
-                <Label1>{t('Datasets')}</Label1>
+                <LabelLarge>{t('Datasets')}</LabelLarge>
             </Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 20, flexWrap: 'wrap' }}>
                 <FormItem label={t('sth name', [t('Dataset')])} name='datasetId'>
@@ -155,7 +155,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 </FormItem>
             </div>
             <Divider orientation='left'>
-                <Label1>{t('Environment')}</Label1>
+                <LabelLarge>{t('Environment')}</LabelLarge>
             </Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 20, flexWrap: 'wrap' }}>
                 <FormItem label={t('BaseImage')} name='baseImageId'>

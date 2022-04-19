@@ -64,14 +64,7 @@ export default function ModelListCard() {
                     },
                 }}
             />
-            <Modal
-                isOpen={isCreateModelOpen}
-                onClose={() => setIsCreateModelOpen(false)}
-                closeable
-                animate
-                autoFocus
-                unstable_ModalBackdropScroll
-            >
+            <Modal isOpen={isCreateModelOpen} onClose={() => setIsCreateModelOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Model')])}</ModalHeader>
                 <ModalBody>
                     <ModelForm onSubmit={handleCreateModel} />

@@ -20,7 +20,7 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                       {
                           title: project?.name ?? t('sth name', [t('Project')]),
                           path: `/projects/${project?.id}`,
-                          //   icon: BsFolder2,
+                          icon: BsFolder2,
                       },
                       {
                           title: t('Model'),
