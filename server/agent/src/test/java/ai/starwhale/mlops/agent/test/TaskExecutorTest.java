@@ -24,7 +24,7 @@ import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.TaskStage;
+import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -77,9 +77,9 @@ public class TaskExecutorTest {
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(Optional.of(
             List.of(
                 InferenceTask.builder()
-                    .id(1234567890L).taskStage(TaskStage.PPL).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build(),
+                    .id(1234567890L).taskType(TaskType.PPL).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build(),
                 InferenceTask.builder()
-                    .id(2234567890L).taskStage(TaskStage.PPL).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build()
+                    .id(2234567890L).taskType(TaskType.PPL).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build()
             ))
         );
         Mockito.when(taskPersistence.save(any())).thenReturn(true);

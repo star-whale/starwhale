@@ -12,7 +12,7 @@ import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
 
-import ai.starwhale.mlops.domain.task.TaskStage;
+import ai.starwhale.mlops.domain.task.TaskType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,12 +32,12 @@ public class TaskTrigger {
      */
     Long id;
 
-    TaskStage taskStage;
+    TaskType taskType;
 
     /**
-     * input information at resulting stage: inference file path
+     * input information at resulting stage: CMP file path
      */
-    String todoPath;
+    List<String> cmpInputFilePaths;
 
     /**
      * the proper image to get swmp run
@@ -54,14 +54,15 @@ public class TaskTrigger {
      */
     private List<SWDSBlock> swdsBlocks;
 
+    private Integer deviceAmount;
+
+    private Device.Clazz deviceClass;
+
     /**
      * storage directory where task result is uploaded
      */
     private String resultPath;
 
-    private Integer deviceAmount;
-
-    private Device.Clazz deviceClass;
 
     public boolean equals(Object obj){
 

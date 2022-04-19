@@ -12,7 +12,7 @@ import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.TaskStage;
+import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -35,7 +35,7 @@ public class InferenceTask {
     /**
      * ppl or resulting
      */
-    TaskStage taskStage;
+    TaskType taskType;
 
     /**
      * the proper image to get swmp run
@@ -63,9 +63,9 @@ public class InferenceTask {
     Set<Device> devices;
 
     /**
-     * input information at resulting stage: inference file path todo
+     * input information at resulting stage: CMP file path
      */
-    String inferenceFilePath;
+    List<String> cmpInputFilePaths;
 
     /**
      * input information at ppl stage: SWDS(blocks may come from different SWDS)、device info
@@ -102,10 +102,10 @@ public class InferenceTask {
     public static InferenceTask fromTaskTrigger(TaskTrigger taskTrigger) {
         return InferenceTask.builder().id(taskTrigger.getId())
                 .imageId(taskTrigger.getImageId())
-                .taskStage(taskTrigger.getTaskStage())
+                .taskType(taskTrigger.getTaskType())
                 .status(TaskStatus.CREATED)
                 .actionStatus(ActionStatus.inProgress)
-                .inferenceFilePath(taskTrigger.getTodoPath())
+                .cmpInputFilePaths(taskTrigger.getCmpInputFilePaths())
                 .deviceAmount(taskTrigger.getDeviceAmount())
                 .deviceClass(taskTrigger.getDeviceClass())
                 .swdsBlocks(taskTrigger.getSwdsBlocks())
@@ -116,6 +116,6 @@ public class InferenceTask {
 
 
     public TaskReport toTaskReport() {
-        return TaskReport.builder().id(this.id).status(this.status).taskStage(this.taskStage).build();
+        return TaskReport.builder().id(this.id).status(this.status).taskType(this.taskType).build();
     }
 }

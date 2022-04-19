@@ -15,7 +15,7 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.TaskStage;
+import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.collection.CollectionUtil;
 import org.apache.commons.io.FileUtils;
@@ -226,7 +226,7 @@ public class TaskActionTest {
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
                         .id(1234567890L)
-                        .taskStage(TaskStage.PPL)
+                        .taskType(TaskType.PPL)
                         .status(TaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid")
                         .deviceClass(Device.Clazz.GPU)
@@ -254,7 +254,7 @@ public class TaskActionTest {
                         .build(),
                 InferenceTask.builder()
                         .id(1234567891L)
-                        .taskStage(TaskStage.PPL)
+                        .taskType(TaskType.PPL)
                         .status(TaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid2")
                         .deviceClass(Device.Clazz.GPU)

@@ -62,7 +62,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
                 .labels(Map.of("taskId", oldTask.getId().toString()))
                 .build();
 
-        switch (oldTask.getTaskStage()) {
+        switch (oldTask.getTaskType()) {
             case PPL:
                 Set<Device> allocated = null;
                 // allocate device(GPU or CPU) for task
@@ -94,9 +94,10 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
                 }
                 // allocate device to this task,if fail will throw exception, now it is blocked
                 oldTask.setDevices(allocated);
+                imageConfig.setEntrypoint(List.of("ppl"));
                 break;
-            case RESULTING:
-                imageConfig.setEntrypoint(List.of(""));
+            case CMP:
+                imageConfig.setEntrypoint(List.of("cmp"));
                 break;
         }
 

@@ -205,7 +205,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 .set("region", storageProperties.getS3Config().getRegion())
         );
         Path configPath = null;
-        switch (task.getTaskStage()) {
+        switch (task.getTaskType()) {
             case PPL:
                 configPath = Path.of(fileSystemPath.oneActiveTaskSwdsConfigFile(task.getId()));
 
@@ -222,19 +222,20 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 });
                 object.set("swds", swds);
                 break;
-            case RESULTING:
+            case CMP:
                 configPath = Path.of(fileSystemPath.oneActiveTaskTODOConfigFile(task.getId()));
-                // todo
-                JSONArray todo = JSONUtil.createArray();
+                JSONArray cmp = JSONUtil.createArray();
 
-                JSONObject ds = JSONUtil.createObj();
-                ds.set("bucket", storageProperties.getS3Config().getBucket());
-                ds.set("key", JSONUtil.createObj()
-                        .set("data", task.getInferenceFilePath())
-                );
-                todo.add(ds);
+                task.getCmpInputFilePaths().forEach(inputFilePath -> {
+                    JSONObject ds = JSONUtil.createObj();
+                    ds.set("bucket", storageProperties.getS3Config().getBucket());
+                    ds.set("key", JSONUtil.createObj()
+                            .set("data", inputFilePath)
+                    );
+                    cmp.add(ds);
+                });
 
-                object.set("todo", todo);
+                object.set("cmp", cmp);
         }
 
         Files.writeString(configPath, JSONUtil.toJsonStr(object), StandardOpenOption.CREATE);
