@@ -96,6 +96,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
                 oldTask.setDevices(allocated);
                 break;
             case RESULTING:
+                imageConfig.setEntrypoint(List.of(""));
                 break;
         }
 
