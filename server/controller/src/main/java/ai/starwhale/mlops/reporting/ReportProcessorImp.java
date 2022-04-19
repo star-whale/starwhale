@@ -10,6 +10,7 @@ package ai.starwhale.mlops.reporting;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
+import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.system.Agent;
 import ai.starwhale.mlops.domain.system.AgentEntity;
@@ -148,12 +149,18 @@ public class ReportProcessorImp implements ReportProcessor {
             TaskStatusStage.DOING));
     }
 
+    /**
+     * prevent send packet greater than @@GLOBAL.max_allowed_packet
+     */
+    static final Integer MAX_BATCH_SIZE = 1000;
     private void scheduledTaskStatusChange(List<Task> toAssignTasks,AgentEntity agentEntity) {
         if(CollectionUtils.isEmpty(toAssignTasks)){
             return;
         }
-        taskMapper.updateTaskAgent(toAssignTasks.parallelStream().map(Task::getId).collect(
-            Collectors.toList()), agentEntity.getId());
+        BatchOperateHelper.doBatch(toAssignTasks, agentEntity.getId(),
+            (tsks, agentid) -> taskMapper.updateTaskAgent(
+                tsks.parallelStream().map(Task::getId).collect(
+                    Collectors.toList()), agentid), MAX_BATCH_SIZE);
         toAssignTasks.parallelStream().forEach(task -> task.setAgent(Agent.fromEntity(agentEntity)));
         livingTaskStatusMachine.adopt(toAssignTasks, new StagingTaskStatus(TaskStatus.CREATED,TaskStatusStage.DOING));
     }

@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.job.split;
 
+import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -72,6 +73,11 @@ public class JobSpliteratorByIndex implements JobSpliterator {
      */
     @Value("${sw.taskSize}")
     Integer amountOfTasks =256;
+
+    /**
+     * prevent send packet greater than @@GLOBAL.max_allowed_packet
+     */
+    final static Integer MAX_MYSQL_INSERTION_SIZE=500;
     /**
      * get all data blocks and split them by a simple random number
      * transactional jobStatus->SPLIT taskStatus->NEW
@@ -93,7 +99,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
             log.error("error swds index ",e);
             throw new SWValidationException(ValidSubject.SWDS);
         }
-        taskMapper.addAll(taskList);
+        BatchOperateHelper.doBatch(taskList,ts->taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())),MAX_MYSQL_INSERTION_SIZE);
         jobMapper.updateJobStatus(List.of(job.getId()),JobStatus.RUNNING.getValue());
         return taskBoConverter.fromTaskEntity(taskList,job);
     }

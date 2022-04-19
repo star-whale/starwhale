@@ -11,6 +11,7 @@ import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -217,11 +218,20 @@ public class JobService {
 
     }
 
+    /**
+     * prevent send packet greater than @@GLOBAL.max_allowed_packet
+     */
+    static final Integer MAX_BATCH_SIZE = 1000;
     private void updateTaskStatus(Collection<Task> createdTasks,StagingTaskStatus stagingTaskStatus) {
         List<Long> toBeUpdateTasks = createdTasks.parallelStream().map(Task::getId).collect(
             Collectors.toList());
         if(!CollectionUtils.isEmpty(toBeUpdateTasks)){
-            taskMapper.updateTaskStatus(toBeUpdateTasks, stagingTaskStatus.getValue());
+            BatchOperateHelper.doBatch(toBeUpdateTasks
+                , stagingTaskStatus
+                , (tsks, status) -> taskMapper.updateTaskStatus(
+                    tsks.stream().collect(Collectors.toList()),
+                    status.getValue())
+                , MAX_BATCH_SIZE);
             livingTaskStatusMachine.update(createdTasks, stagingTaskStatus);
         }
     }
