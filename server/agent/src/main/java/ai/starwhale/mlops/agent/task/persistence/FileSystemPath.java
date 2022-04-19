@@ -25,42 +25,43 @@ public class FileSystemPath {
     interface FileName {
         String EvaluationTaskInfoFile = "taskInfo.json";
         String EvaluationTaskConfigFile = "swds.json";
+        String EvaluationTaskStatusFile = "current";
     }
 
     private final String basePath;
 
-    private static PathNode baseDir = new PathNode("%s", PathNode.Type.variable, (PathNode) null);
+    private static final PathNode baseDir = new PathNode("%s", PathNode.Type.variable, (PathNode) null);
 
 
-    private static PathNode tasksDir = new PathNode("tasks", PathNode.Type.value);
+    private static final PathNode tasksDir = new PathNode("tasks", PathNode.Type.value);
 
     // active evaluation task
-    private static PathNode activeTaskDir = new PathNode("active", PathNode.Type.value);
-    private static PathNode activeEvaluationTaskDir = new PathNode("evaluation", PathNode.Type.value);
-    private static PathNode oneActiveEvaluationTaskDir = new PathNode("%s", PathNode.Type.variable);
-    private static PathNode oneActiveEvaluationTaskInfoFile = new PathNode(FileName.EvaluationTaskInfoFile, PathNode.Type.value);
-    private static PathNode oneActiveEvaluationTaskStatusDir = new PathNode("status", PathNode.Type.value);
-    private static PathNode oneActiveEvaluationTaskStatusFile = new PathNode("current", PathNode.Type.value);
-    private static PathNode oneActiveEvaluationTaskSwdsConfigDir = new PathNode("config", PathNode.Type.value);
-    private static PathNode oneActiveEvaluationTaskSwdsConfigFile = new PathNode(FileName.EvaluationTaskConfigFile, PathNode.Type.value);
-    private static PathNode oneActiveEvaluationTaskResultDir = new PathNode("result", PathNode.Type.value);
-    private static PathNode oneActiveEvaluationTaskLogsDir = new PathNode("log", PathNode.Type.value);
+    private static final PathNode activeTaskDir = new PathNode("active", PathNode.Type.value);
+    private static final PathNode activeEvaluationTaskDir = new PathNode("evaluation", PathNode.Type.value);
+    private static final PathNode oneActiveEvaluationTaskDir = new PathNode("%s", PathNode.Type.variable);
+    private static final PathNode oneActiveEvaluationTaskInfoFile = new PathNode(FileName.EvaluationTaskInfoFile, PathNode.Type.value);
+    private static final PathNode oneActiveEvaluationTaskStatusDir = new PathNode("status", PathNode.Type.value);
+    private static final PathNode oneActiveEvaluationTaskStatusFile = new PathNode(FileName.EvaluationTaskStatusFile, PathNode.Type.value);
+    private static final PathNode oneActiveEvaluationTaskSwdsConfigDir = new PathNode("config", PathNode.Type.value);
+    private static final PathNode oneActiveEvaluationTaskSwdsConfigFile = new PathNode(FileName.EvaluationTaskConfigFile, PathNode.Type.value);
+    private static final PathNode oneActiveEvaluationTaskResultDir = new PathNode("result", PathNode.Type.value);
+    private static final PathNode oneActiveEvaluationTaskLogsDir = new PathNode("log", PathNode.Type.value);
 
     // active compare task
-    private static PathNode activeCompareTaskDir = new PathNode("compare", PathNode.Type.value);
-    private static PathNode oneActiveCompareTaskDir = new PathNode("%s", PathNode.Type.variable);
+    private static final PathNode activeCompareTaskDir = new PathNode("compare", PathNode.Type.value);
+    private static final PathNode oneActiveCompareTaskDir = new PathNode("%s", PathNode.Type.variable);
 
     // archived dir
-    private static PathNode archivedTaskDir = new PathNode("archived", PathNode.Type.value);
-    private static PathNode archivedEvaluationTaskDir = new PathNode("evaluation", PathNode.Type.value);
-    private static PathNode oneArchivedEvaluationTaskDir = new PathNode("%s", PathNode.Type.variable);
-    private static PathNode archivedCompareTaskDir = new PathNode("compare", PathNode.Type.value);
+    private static final PathNode archivedTaskDir = new PathNode("archived", PathNode.Type.value);
+    private static final PathNode archivedEvaluationTaskDir = new PathNode("evaluation", PathNode.Type.value);
+    private static final PathNode oneArchivedEvaluationTaskDir = new PathNode("%s", PathNode.Type.variable);
+    private static final PathNode archivedCompareTaskDir = new PathNode("compare", PathNode.Type.value);
 
 
     // swmp cache dir
-    private static PathNode swmpCacheDir = new PathNode("swmp", PathNode.Type.value);
-    private static PathNode swmpNameDir = new PathNode("%s", PathNode.Type.variable);
-    private static PathNode oneSwmpDir = new PathNode("%s", PathNode.Type.variable);
+    private static final PathNode swmpCacheDir = new PathNode("swmp", PathNode.Type.value);
+    private static final PathNode swmpNameDir = new PathNode("%s", PathNode.Type.variable);
+    private static final PathNode oneSwmpDir = new PathNode("%s", PathNode.Type.variable);
 
 
     static {
@@ -86,10 +87,6 @@ public class FileSystemPath {
                 .child(swmpCacheDir
                         .child(swmpNameDir.child(oneSwmpDir))
                 );
-    }
-
-    class TaskPath {
-
     }
 
     public FileSystemPath(String basePath) {

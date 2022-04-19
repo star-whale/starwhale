@@ -7,7 +7,6 @@
 
 package ai.starwhale.mlops.agent.test;
 
-import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
@@ -46,9 +45,6 @@ import static org.mockito.ArgumentMatchers.any;
         "sw.agent.node.sourcePool.init.enabled=false"},
     locations = "classpath:application-integrationtest.yaml")
 public class TaskExecutorTest {
-
-    @Autowired
-    private AgentProperties agentProperties;
 
     @MockBean
     private ReportApi reportApi;
