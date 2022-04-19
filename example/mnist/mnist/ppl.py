@@ -76,10 +76,10 @@ def load_test_env(fuse=True):
 
     fname = "swds_fuse.json" if fuse else "swds_s3.json"
     #fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
-    os.environ["SW_TASK_SWDS_CONFIG"] = _p(fname)
+    os.environ["SW_TASK_INPUT_CONFIG"] = _p(fname)
 
 
 if __name__ == "__main__":
     load_test_env(fuse=False)
     mnist = MNISTInference()
-    mnist.starwhale_internal_run()
+    mnist._starwhale_internal_run_ppl()

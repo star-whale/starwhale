@@ -81,6 +81,7 @@ def _extract(swmp, force):
     ModelPackageLocalStore().extract(swmp, force)
 
 
+#TODO: combine click option to one func for _ppl and _cmp
 @model_cmd.command("ppl", help="Run swmp pipeline")
 @click.argument("swmp")
 @click.option("-f", "--model-yaml", default=DEFAULT_MODEL_YAML_NAME,
@@ -88,14 +89,29 @@ def _extract(swmp, force):
 @click.option("--status-dir", envvar=SW_ENV.STATUS_D, help=f"ppl status dir, env is {SW_ENV.STATUS_D}")
 @click.option("--log-dir", envvar=SW_ENV.LOG_D, help=f"ppl log dir, env is {SW_ENV.LOG_D}")
 @click.option("--result-dir", envvar=SW_ENV.RESULT_D, help=f"ppl result dir, env is {SW_ENV.RESULT_D}")
-@click.option("--swds-config", envvar=SW_ENV.SWDS_CONFIG, help=f"ppl swds config.json path, env is {SW_ENV.SWDS_CONFIG}")
-def _ppl(swmp, model_yaml, status_dir, log_dir, result_dir, swds_config):
-    #TODO: add local mock swds_config
+@click.option("--input-config", envvar=SW_ENV.INTPUT_CONFIG, help=f"ppl swds config.json path, env is {SW_ENV.INTPUT_CONFIG}")
+def _ppl(swmp, model_yaml, status_dir, log_dir, result_dir, input_config):
+    #TODO: add local mock input_config
     ModelPackage.ppl(swmp, model_yaml,
                      {"status_dir": status_dir,
                       "log_dir": log_dir,
                       "result_dir": result_dir,
-                      "swds_config": swds_config})
+                      "input_config": input_config})
+
+@model_cmd.command("cmp", help="compare inference output with label, then generate result json")
+@click.argument("swmp")
+@click.option("-f", "--model-yaml", default=DEFAULT_MODEL_YAML_NAME,
+              help="mode yaml filename, default use ${workdir}/model.yaml file")
+@click.option("--status-dir", envvar=SW_ENV.STATUS_D, help=f"ppl status dir, env is {SW_ENV.STATUS_D}")
+@click.option("--log-dir", envvar=SW_ENV.LOG_D, help=f"ppl log dir, env is {SW_ENV.LOG_D}")
+@click.option("--result-dir", envvar=SW_ENV.RESULT_D, help=f"ppl result dir, env is {SW_ENV.RESULT_D}")
+@click.option("--input-config", envvar=SW_ENV.INTPUT_CONFIG, help=f"ppl swds config.json path, env is {SW_ENV.INTPUT_CONFIG}")
+def _cmp(swmp, model_yaml, status_dir, log_dir, result_dir, input_config):
+    ModelPackage.cmp(swmp, model_yaml,
+                     {"status_dir": status_dir,
+                      "log_dir": log_dir,
+                      "result_dir": result_dir,
+                      "input_config": input_config})
 
 @model_cmd.command("pre-activate", help="Prepare to restore and activate swmp runtime environment")
 @click.argument("swmp")

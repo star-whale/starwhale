@@ -23,8 +23,8 @@ pre_check() {
         exit 1
     fi
 
-    if [ ! -f "${SW_TASK_SWDS_CONFIG}" ]; then
-        echo "${SW_TASK_SWDS_CONFIG} not found, please set env and volume file into container"
+    if [ ! -f "${SW_TASK_INPUT_CONFIG}" ]; then
+        echo "${SW_TASK_INPUT_CONFIG} not found, please set env and volume file into container"
         exit 1
     fi
 }

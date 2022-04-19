@@ -63,7 +63,7 @@ class _RunConfig(object):
     def create_by_env(cls) -> "_RunConfig":
         _env = os.environ.get
         return _RunConfig(
-            swds_config_path=_env(SW_ENV.SWDS_CONFIG),
+            swds_config_path=_env(SW_ENV.INTPUT_CONFIG),
             status_dir=_env(SW_ENV.STATUS_D),
             log_dir=_env(SW_ENV.LOG_D),
             result_dir=_env(SW_ENV.RESULT_D),
@@ -79,7 +79,7 @@ class _RunConfig(object):
         _set("status_dir", SW_ENV.STATUS_D)
         _set("log_dir", SW_ENV.LOG_D)
         _set("result_dir", SW_ENV.RESULT_D)
-        _set("swds_config", SW_ENV.SWDS_CONFIG)
+        _set("input_config", SW_ENV.INTPUT_CONFIG)
 
 
 class PipelineHandler(object):
@@ -157,21 +157,24 @@ class PipelineHandler(object):
     def handle_label(self, label: bytes, batch_size: int, **kw) -> t.Any:
         return label.decode()
 
-    def starwhale_internal_run(self) -> None:
+    def _starwhale_internal_run_cmp(self) -> None:
+        pass
+
+    def _starwhale_internal_run_ppl(self) -> None:
         #TODO: forbid inherit object override this method
         self._sw_logger.info("start to run pipeline...")
 
         self._update_status(self.STATUS.RUNNING)
         try:
-            self.do_starwhale_internal_run()
+            self._do_starwhale_internal_run_ppl()
         except Exception as e:
             self._update_status(self.STATUS.FAILED)
-            self._sw_logger.exception(f"do_starwhale_internal_run abort, exception: {e}")
+            self._sw_logger.exception(f"_do_starwhale_internal_run_ppl abort, exception: {e}")
         else:
             self._update_status(self.STATUS.SUCCESS)
             self._sw_logger.info("finish pipeline")
 
-    def do_starwhale_internal_run(self) -> None:
+    def _do_starwhale_internal_run_ppl(self) -> None:
         for data, label in self._data_loader:
             self._sw_logger.info(f"[{data.index}]data-label loaded, data size:{pretty_bytes(data.data_size)}, label size:{pretty_bytes(label.data_size)} ,batch:{data.batch_size}")
 
