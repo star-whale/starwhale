@@ -88,7 +88,10 @@ public class DatasetController implements DatasetApi{
     @Override
     public ResponseEntity<ResponseMessage<DatasetVersionVO>> getDatasetInfo(String projectId,
         String datasetId) {
-        throw new UnsupportedOperationException();
+        DatasetVersionVO swdsInfo = swDatasetService.getSWDSInfo(
+            SWDSObject.builder().id(datasetId).projectId(projectId).build());
+
+        return ResponseEntity.ok(Code.success.asResponse(swdsInfo));
     }
 
     @Override

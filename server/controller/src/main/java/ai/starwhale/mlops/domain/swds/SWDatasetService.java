@@ -18,6 +18,8 @@ import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
 import java.util.List;
@@ -64,6 +66,18 @@ public class SWDatasetService {
         int res = swdsMapper.deleteDataset(id);
         log.info("SWDS has been deleted. ID={}", swds.getId());
         return res > 0;
+    }
+
+    public DatasetVersionVO getSWDSInfo(SWDSObject swds) {
+        Long dsID = idConvertor.revert(swds.getId());
+
+        SWDatasetVersionEntity entity = swdsVersionMapper.getLatestVersion(dsID);
+        if(entity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                .tip("Unable to find the latest version of swmp " + dsID), HttpStatus.BAD_REQUEST);
+        }
+
+        return versionConvertor.convert(entity);
     }
 
 
