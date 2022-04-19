@@ -26,6 +26,11 @@ class MNISTInference(PipelineHandler):
         output = self.model(data)
         return self._post(output)
 
+    def cmp(self, _data_loader):
+        for _results, _labels, _meta in _data_loader:
+
+
+
     def handle_label(self, label, batch_size, **kw):
         return [int(l) for l in label]
 

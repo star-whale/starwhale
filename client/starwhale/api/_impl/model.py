@@ -154,6 +154,10 @@ class PipelineHandler(object):
         #TODO: how to handle each batch element is not equal.
         raise NotImplementedError
 
+    @abstractmethod
+    def cmp(self):
+        raise NotImplementedError
+
     def handle_label(self, label: bytes, batch_size: int, **kw) -> t.Any:
         return label.decode()
 

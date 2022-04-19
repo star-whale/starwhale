@@ -1,4 +1,3 @@
-from email.policy import default
 import click
 
 from starwhale.consts import DEFAULT_MODEL_YAML_NAME

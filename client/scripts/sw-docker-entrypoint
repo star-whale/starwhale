@@ -52,11 +52,17 @@ run_ppl() {
     swcli model ppl ${WORKDIR}/src
 }
 
+run_cmp() {
+    echo "--> start to run swmp cmp, use $(which swcli) cli..."
+    swcli model cmp ${WORKDIR}/src
+}
+
 welcome() {
     echo "===================================="
     echo "StarWhale Docker Entrypoint"
     echo "Date: `date -u +%Y-%m-%dT%H:%M:%SZ`"
     echo "Version: `swcli --version`"
+    echo "Run: $1 "
     echo "Model: ${SW_SWMP_NAME}@${SW_SWMP_VERSION}"
     echo "===================================="
 }
@@ -66,7 +72,12 @@ main() {
     pre_check
     set_python
     activate_swmp_env
-    run_ppl
+
+    if [ "$1" = "cmp" ]; then
+        run_cmp
+    else
+        run_ppl
+    fi
 }
 
-main
+main $1
