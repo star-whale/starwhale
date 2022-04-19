@@ -5,9 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.action.normal;
+package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
@@ -17,21 +17,21 @@ import org.springframework.stereotype.Service;
 public class FinishedOrCanceled2ArchivedAction extends AbsBasePPLTaskAction {
 
     @Override
-    public PPLTask processing(PPLTask oldTask, Context context)
+    public InferenceTask processing(InferenceTask oldTask, Context context)
         throws Exception {
-        PPLTask newTask = BeanUtil.toBean(oldTask, PPLTask.class);
+        InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
         // move to the archived dir
         taskPersistence.move2Archived(newTask);
         newTask.setStatus(TaskStatus.ARCHIVED);
         return newTask;
     }
     @Override
-    public void post(PPLTask oldTask, PPLTask newTask, Context context) throws Exception {
+    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
         // just override super method
     }
 
     @Override
-    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
+    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
         // remove from origin list
         taskPool.finishedTasks.remove(oldTask);
         taskPool.canceledTasks.remove(oldTask);

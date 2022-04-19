@@ -5,9 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.initializer;
+package ai.starwhale.mlops.agent.task.inferencetask.initializer;
 
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ import java.util.List;
 @Order(0)
 public class TaskPoolInitializer implements CommandLineRunner {
     @Autowired
-    private Action<Void, List<PPLTask>> rebuildTasksAction;
+    private Action<Void, List<InferenceTask>> rebuildTasksAction;
 
     @Override
     public void run(String... args) throws Exception {

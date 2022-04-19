@@ -5,9 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.persistence;
+package ai.starwhale.mlops.agent.task.inferencetask.persistence;
 
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,14 +22,14 @@ public interface TaskPersistence {
      * get all tasks
      * @return all tasks
      */
-    Optional<List<PPLTask>> getAllActiveTasks();
+    Optional<List<InferenceTask>> getAllActiveTasks();
 
     /**
      * get task by id
      * @param id key
      * @return task
      */
-    Optional<PPLTask> getTaskById(Long id);
+    Optional<InferenceTask> getTaskById(Long id);
 
     /**
      * get task container status by id
@@ -60,34 +60,34 @@ public interface TaskPersistence {
      * @param task task
      * @return if success
      */
-    boolean save(PPLTask task);
+    boolean save(InferenceTask task);
 
     /**
      * move task to the archived state
      * @param task task
      * @return if success
      */
-    void move2Archived(PPLTask task) throws Exception;
+    void move2Archived(InferenceTask task) throws Exception;
 
     /**
      * preloading task's swmp tar,and untar it to the dir
      * @param task task
      * @return disk dir path
      */
-    String preloadingSWMP(PPLTask task) throws Exception;
+    String preloadingSWMP(InferenceTask task) throws Exception;
 
     /**
-     * pre generate swds config
+     * pre generate config file
      * @param task task
      * @return if success
      */
-    void generateSWDSConfig(PPLTask task) throws Exception;
+    void generateConfigFile(InferenceTask task) throws Exception;
 
     /**
      * upload result to storage
      * @param task task
      * @return oss path
      */
-    void uploadResult(PPLTask task) throws Exception;
+    void uploadResult(InferenceTask task) throws Exception;
 
 }

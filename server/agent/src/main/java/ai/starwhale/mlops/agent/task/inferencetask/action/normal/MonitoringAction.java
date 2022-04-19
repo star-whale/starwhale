@@ -5,11 +5,11 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.action.normal;
+package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
-import ai.starwhale.mlops.agent.task.ppltask.persistence.TaskPersistence.ExecuteStatus;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence.ExecuteStatus;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.stereotype.Service;
@@ -20,10 +20,10 @@ import java.util.Optional;
 public class MonitoringAction extends AbsBasePPLTaskAction {
 
     @Override
-    public PPLTask processing(PPLTask runningTask, Context context)
+    public InferenceTask processing(InferenceTask runningTask, Context context)
         throws Exception {
         // dominated by disk(see if other processes have modified)
-        PPLTask newTask = BeanUtil.toBean(runningTask, PPLTask.class);
+        InferenceTask newTask = BeanUtil.toBean(runningTask, InferenceTask.class);
 
         Optional<ExecuteStatus> executeStatus = taskPersistence.status(runningTask.getId());
         if (executeStatus.isPresent()) {
@@ -45,7 +45,7 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
     }
 
     @Override
-    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
+    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
 
         if (newTask.getStatus() == TaskStatus.UPLOADING) {
             taskPool.uploadingTasks.add(newTask);

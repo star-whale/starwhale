@@ -5,12 +5,12 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.action.normal.cancel;
+package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
 
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
-import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
-import ai.starwhale.mlops.agent.task.ppltask.action.normal.AbsBasePPLTaskAction;
+import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBasePPLTaskAction;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,19 +22,19 @@ public abstract class AbsBaseCancelPPLTaskAction extends AbsBasePPLTaskAction {
     protected TaskPool taskPool;
 
     @Override
-    public boolean valid(PPLTask PPLTask, Context context) {
-        return taskPool.needToCancel.contains(PPLTask.getId());
+    public boolean valid(InferenceTask InferenceTask, Context context) {
+        return taskPool.needToCancel.contains(InferenceTask.getId());
     }
 
     @Override
-    public PPLTask processing(PPLTask oldTask, Context context) {
-        PPLTask newTask = BeanUtil.toBean(oldTask, PPLTask.class);
+    public InferenceTask processing(InferenceTask oldTask, Context context) {
+        InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
         newTask.setStatus(TaskStatus.CANCELED);
         return newTask;
     }
 
     @Override
-    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
+    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
         if (Objects.nonNull(newTask)) {
             taskPool.canceledTasks.add(newTask);
             // cancel success

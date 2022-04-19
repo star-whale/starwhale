@@ -11,19 +11,20 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
-import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
-import ai.starwhale.mlops.agent.task.ppltask.executor.TaskExecutor;
-import ai.starwhale.mlops.agent.task.ppltask.persistence.TaskPersistence;
-import ai.starwhale.mlops.agent.task.ppltask.persistence.TaskPersistence.ExecuteStatus;
+import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence.ExecuteStatus;
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import ai.starwhale.mlops.domain.task.TaskStage;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -62,7 +63,7 @@ public class TaskExecutorTest {
     private TaskExecutor taskExecutor;
 
     @Autowired
-    Action<Void, List<PPLTask>> rebuildTasksAction;
+    Action<Void, List<InferenceTask>> rebuildTasksAction;
 
     @Autowired
     private TaskPool taskPool;
@@ -75,10 +76,10 @@ public class TaskExecutorTest {
             .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(Optional.of(
             List.of(
-                PPLTask.builder()
-                    .id(1234567890L).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build(),
-                PPLTask.builder()
-                    .id(2234567890L).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build()
+                InferenceTask.builder()
+                    .id(1234567890L).taskStage(TaskStage.PPL).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build(),
+                InferenceTask.builder()
+                    .id(2234567890L).taskStage(TaskStage.PPL).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build()
             ))
         );
         Mockito.when(taskPersistence.save(any())).thenReturn(true);
@@ -121,7 +122,7 @@ public class TaskExecutorTest {
         assertEquals(1, taskPool.runningTasks.size());
 
         // mockConfig
-        PPLTask runningTask = taskPool.runningTasks.get(0);
+        InferenceTask runningTask = taskPool.runningTasks.get(0);
         Long id = runningTask.getId();
         // mock taskContainer already change status to uploading
         // Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);

@@ -5,23 +5,23 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.action.normal;
+package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask.Stage;
-import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask.ActionStatus;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
-import ai.starwhale.mlops.agent.task.ppltask.persistence.FileSystemPath;
-import ai.starwhale.mlops.agent.task.ppltask.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
-public abstract class AbsBasePPLTaskAction implements Action<PPLTask, PPLTask> {
+public abstract class AbsBasePPLTaskAction implements Action<InferenceTask, InferenceTask> {
 
     @Autowired
     protected TaskPersistence taskPersistence;
@@ -39,19 +39,19 @@ public abstract class AbsBasePPLTaskAction implements Action<PPLTask, PPLTask> {
     protected ContainerClient containerClient;
 
     @Override
-    public void pre(PPLTask task, Context context) throws Exception {
-        task.setStage(Stage.inProgress);
+    public void pre(InferenceTask task, Context context) throws Exception {
+        task.setActionStatus(ActionStatus.inProgress);
         taskPersistence.save(task);
     }
 
     @Override
-    public void post(PPLTask oldTask, PPLTask newTask, Context context) throws Exception {
-        newTask.setStage(Stage.completed);
+    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
+        newTask.setActionStatus(ActionStatus.completed);
         taskPersistence.save(newTask);
     }
 
     @Override
-    public void fail(PPLTask task, Context context, Exception e) {
+    public void fail(InferenceTask task, Context context, Exception e) {
         log.error("execute task:{}, error:{}", JSONUtil.toJsonStr(task), e.getMessage(), e);
     }
 }

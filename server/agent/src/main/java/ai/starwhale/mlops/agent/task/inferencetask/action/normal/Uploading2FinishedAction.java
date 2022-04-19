@@ -5,9 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.action.normal;
+package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
@@ -17,8 +17,8 @@ import org.springframework.stereotype.Service;
 public class Uploading2FinishedAction extends AbsBasePPLTaskAction {
 
     @Override
-    public PPLTask processing(PPLTask oldTask, Context context) throws Exception {
-        PPLTask newTask = BeanUtil.toBean(oldTask, PPLTask.class);
+    public InferenceTask processing(InferenceTask oldTask, Context context) throws Exception {
+        InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
         // upload result file to the storage
         taskPersistence.uploadResult(oldTask);
         newTask.setStatus(TaskStatus.FINISHED);
@@ -27,7 +27,7 @@ public class Uploading2FinishedAction extends AbsBasePPLTaskAction {
     }
 
     @Override
-    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
+    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
         if (newTask.getStatus() == TaskStatus.FINISHED) {
             taskPool.uploadingTasks.remove(oldTask);
             taskPool.finishedTasks.add(newTask);

@@ -5,10 +5,10 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.persistence;
+package ai.starwhale.mlops.agent.task.inferencetask.persistence;
 
 import ai.starwhale.mlops.agent.exception.ErrorCode;
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.utils.TarUtil;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 
 /**
  * <ul>under the basePath,Eg:/var/starwhale/，there have serial path：</ul>
- * <li>task</li>
+ * <li>tasks</li>
  * <li>swmp</li>
  */
 @Slf4j
@@ -55,7 +55,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public Optional<List<PPLTask>> getAllActiveTasks() {
+    public Optional<List<InferenceTask>> getAllActiveTasks() {
         try {
             Path tasksPath = Path.of(fileSystemPath.activeTaskDir());
             if (!Files.exists(tasksPath)) {
@@ -68,11 +68,11 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                         (path, basicFileAttributes) -> true);
                 return Optional.of(
                         taskInfos
-                                .filter(path -> path.getFileName().toString().endsWith(FileSystemPath.FileName.EvaluationTaskInfoFile))
+                                .filter(path -> path.getFileName().toString().endsWith(FileSystemPath.FileName.InferenceTaskInfoFile))
                                 .map(path -> {
                                     try {
                                         String json = Files.readString(path);
-                                        return JSONUtil.toBean(json, PPLTask.class);
+                                        return JSONUtil.toBean(json, InferenceTask.class);
                                     } catch (IOException e) {
                                         log.error(e.getMessage(), e);
                                     }
@@ -90,12 +90,12 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public Optional<PPLTask> getTaskById(Long id) {
+    public Optional<InferenceTask> getTaskById(Long id) {
         try {
             // get the newest task info
-            Path taskPath = Path.of(fileSystemPath.oneActiveEvaluationTaskInfoFile(id));
+            Path taskPath = Path.of(fileSystemPath.oneActiveTaskInfoFile(id));
             String json = Files.readString(taskPath);
-            return Optional.of(JSONUtil.toBean(json, PPLTask.class));
+            return Optional.of(JSONUtil.toBean(json, InferenceTask.class));
         } catch (Exception e) {
             log.error("get task by id:{} occur error:{}", id, e.getMessage(), e);
             return Optional.empty();
@@ -107,7 +107,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public Optional<ExecuteStatus> status(Long id) {
         try {
             // get the newest task info
-            Path statusFilePath = Path.of(fileSystemPath.oneActiveEvaluationTaskStatusFile(id));
+            Path statusFilePath = Path.of(fileSystemPath.oneActiveTaskStatusFile(id));
             if (Files.exists(statusFilePath)) {
                 String status = Files.readString(statusFilePath);
                 if (StringUtils.hasText(status)) {
@@ -126,23 +126,23 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     @Override
     public boolean updateStatus(Long id, ExecuteStatus status) throws Exception {
         // get the newest task info
-        Path statusFilePath = Path.of(fileSystemPath.oneActiveEvaluationTaskStatusFile(id));
+        Path statusFilePath = Path.of(fileSystemPath.oneActiveTaskStatusFile(id));
         if (Files.notExists(statusFilePath)) {
-            Files.createDirectories(Path.of(fileSystemPath.oneActiveEvaluationTaskStatusDir(id)));
+            Files.createDirectories(Path.of(fileSystemPath.oneActiveTaskStatusDir(id)));
         }
         Files.writeString(statusFilePath, status.name(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         return true;
     }
 
     @Override
-    public boolean save(PPLTask task) {
+    public boolean save(InferenceTask task) {
         try {
-            Path taskDirPath = Path.of(fileSystemPath.oneActiveEvaluationTaskDir(task.getId()));
+            Path taskDirPath = Path.of(fileSystemPath.oneActiveTaskDir(task.getId()));
             if (Files.notExists(taskDirPath)) {
                 Files.createDirectories(taskDirPath);
             }
             // update info to the task file
-            Files.writeString(Path.of(fileSystemPath.oneActiveEvaluationTaskInfoFile(task.getId())), JSONUtil.toJsonStr(task), StandardOpenOption.CREATE);
+            Files.writeString(Path.of(fileSystemPath.oneActiveTaskInfoFile(task.getId())), JSONUtil.toJsonStr(task), StandardOpenOption.CREATE);
             return true;
         } catch (Exception e) {
             log.error("save task status occur error:{}", e.getMessage(), e);
@@ -152,20 +152,20 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public void move2Archived(PPLTask task) throws IOException {
+    public void move2Archived(InferenceTask task) throws IOException {
         // move to the archived task file
         try {
-            FileUtils.moveDirectoryToDirectory(new File(fileSystemPath.oneActiveEvaluationTaskDir(task.getId())), new File(fileSystemPath.archivedEvaluationTaskDir()), true);
+            FileUtils.moveDirectoryToDirectory(new File(fileSystemPath.oneActiveTaskDir(task.getId())), new File(fileSystemPath.archivedTaskDir()), true);
         } catch (FileExistsException e) {
-            String newPath = fileSystemPath.archivedEvaluationTaskDir() + "repeat/" + task.getId() + "_" + System.currentTimeMillis();
+            String newPath = fileSystemPath.archivedTaskDir() + "repeat/" + task.getId() + "_" + System.currentTimeMillis();
             log.error("already exist task:{}, move to {}", JSONUtil.toJsonStr(task), newPath);
-            FileUtils.moveDirectoryToDirectory(new File(fileSystemPath.oneActiveEvaluationTaskDir(task.getId())), new File(newPath), true);
+            FileUtils.moveDirectoryToDirectory(new File(fileSystemPath.oneActiveTaskDir(task.getId())), new File(newPath), true);
         }
 
     }
 
     @Override
-    public String preloadingSWMP(PPLTask task) throws IOException {
+    public String preloadingSWMP(InferenceTask task) throws IOException {
         SWModelPackage model = task.getSwModelPackage();
 
         String cachePathStr = fileSystemPath.oneSwmpDir(model.getName(), model.getVersion());
@@ -188,13 +188,12 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     private final String dataFormat = "%s:%s:%s";
 
     @Override
-    public void generateSWDSConfig(PPLTask task) throws IOException {
-        Path configDir = Path.of(fileSystemPath.oneActiveEvaluationTaskSwdsConfigDir(task.getId()));
+    public void generateConfigFile(InferenceTask task) throws IOException {
+
+        Path configDir = Path.of(fileSystemPath.oneActiveTaskConfigDir(task.getId()));
         if (Files.notExists(configDir)) {
             Files.createDirectories(configDir);
         }
-        String configPathStr = fileSystemPath.oneActiveEvaluationTaskSwdsConfigFile(task.getId());
-        Path configPath = Path.of(configPathStr);
         JSONObject object = JSONUtil.createObj();
         object.set("backend", storageProperties.getType());
         object.set("secret", JSONUtil.createObj()
@@ -205,30 +204,52 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 .set("endpoint", storageProperties.getS3Config().getEndpoint())
                 .set("region", storageProperties.getS3Config().getRegion())
         );
-        JSONArray swds = JSONUtil.createArray();
+        Path configPath = null;
+        switch (task.getTaskStage()) {
+            case PPL:
+                configPath = Path.of(fileSystemPath.oneActiveTaskSwdsConfigFile(task.getId()));
 
-        task.getSwdsBlocks().forEach(swdsBlock -> {
-            JSONObject ds = JSONUtil.createObj();
-            ds.set("bucket", storageProperties.getS3Config().getBucket());
-            ds.set("key", JSONUtil.createObj()
-                    .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getOffset() + swdsBlock.getLocationInput().getSize() - 1))
-                    .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
-            );
-            swds.add(ds);
-        });
-        object.set("swds", swds);
+                JSONArray swds = JSONUtil.createArray();
+
+                task.getSwdsBlocks().forEach(swdsBlock -> {
+                    JSONObject ds = JSONUtil.createObj();
+                    ds.set("bucket", storageProperties.getS3Config().getBucket());
+                    ds.set("key", JSONUtil.createObj()
+                            .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getOffset() + swdsBlock.getLocationInput().getSize() - 1))
+                            .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
+                    );
+                    swds.add(ds);
+                });
+                object.set("swds", swds);
+                break;
+            case RESULTING:
+                configPath = Path.of(fileSystemPath.oneActiveTaskTODOConfigFile(task.getId()));
+                // todo
+                JSONArray todo = JSONUtil.createArray();
+
+                JSONObject ds = JSONUtil.createObj();
+                ds.set("bucket", storageProperties.getS3Config().getBucket());
+                ds.set("key", JSONUtil.createObj()
+                        .set("data", task.getInferenceFilePath())
+                );
+                todo.add(ds);
+
+                object.set("todo", todo);
+        }
+
         Files.writeString(configPath, JSONUtil.toJsonStr(object), StandardOpenOption.CREATE);
     }
 
     @Override
-    public void uploadResult(PPLTask task) throws IOException {
+    public void uploadResult(InferenceTask task) throws IOException {
         // results is a set of files
-        Stream<Path> paths = Files.find(Path.of(fileSystemPath.oneActiveEvaluationTaskResultDir(task.getId())), 1, (a, b) -> true);
+        Stream<Path> paths = Files.find(Path.of(fileSystemPath.oneActiveTaskResultDir(task.getId())), 1, (a, b) -> true);
         List<Path> results = paths.filter(path -> !Files.isDirectory(path))
                 .collect(Collectors.toList());
         if (CollectionUtil.isNotEmpty(results)) {
             results.forEach(path -> {
                 try {
+                    // todo Whether the controller uses the same field in different stages
                     storageAccessService.put(task.getResultPath() + "/" + path.getFileName(),
                             new BufferedInputStream(new FileInputStream(String.valueOf(path))));
                 } catch (IOException e) {

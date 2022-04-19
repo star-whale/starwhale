@@ -5,15 +5,15 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask;
+package ai.starwhale.mlops.agent.task.inferencetask;
 
-import ai.starwhale.mlops.agent.task.ppltask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import org.springframework.scheduling.annotation.Scheduled;
 
-public class Scheduler {
+public class TaskScheduler {
     private final TaskExecutor executor;
 
-    public Scheduler(TaskExecutor executor) {
+    public TaskScheduler(TaskExecutor executor) {
         this.executor = executor;
     }
 

@@ -11,6 +11,8 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
+
+import ai.starwhale.mlops.domain.task.TaskStage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,6 +31,13 @@ public class TaskTrigger {
      * unique id for the task
      */
     Long id;
+
+    TaskStage taskStage;
+
+    /**
+     * input information at resulting stage: inference file path
+     */
+    String todoPath;
 
     /**
      * the proper image to get swmp run

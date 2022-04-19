@@ -5,14 +5,14 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.action.report;
+package ai.starwhale.mlops.agent.task.inferencetask.action.report;
 
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.base.SystemDetect;
 import ai.starwhale.mlops.agent.node.base.SystemInfo;
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
-import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.api.ReportApi;
@@ -54,36 +54,36 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
     private AgentProperties agentProperties;
 
     @Autowired
-    Action<PPLTask, PPLTask> init2PreparingAction;
+    Action<InferenceTask, InferenceTask> init2PreparingAction;
 
     @Autowired
-    Action<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction;
+    Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction;
 
     @Override
     public ReportResponse processing(ReportRequest reportRequest, Context context)
             throws Exception {
         // all tasks(exclude archived) should be report to the controller
         // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
-        List<PPLTask> finishedTasks = List.copyOf(taskPool.finishedTasks);
-        List<PPLTask> canceledTasks = List.copyOf(taskPool.canceledTasks);
+        List<InferenceTask> finishedTasks = List.copyOf(taskPool.finishedTasks);
+        List<InferenceTask> canceledTasks = List.copyOf(taskPool.canceledTasks);
 
         List<TaskReport> all = new ArrayList<>();
         // without stop the world
         all.addAll(new ArrayList<>(
-                taskPool.preparingTasks.stream().map(PPLTask::toTaskReport)
+                taskPool.preparingTasks.stream().map(InferenceTask::toTaskReport)
                         .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-                taskPool.runningTasks.stream().map(PPLTask::toTaskReport)
+                taskPool.runningTasks.stream().map(InferenceTask::toTaskReport)
                         .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-                taskPool.uploadingTasks.stream().map(PPLTask::toTaskReport)
+                taskPool.uploadingTasks.stream().map(InferenceTask::toTaskReport)
                         .collect(Collectors.toList())));
-        all.addAll(finishedTasks.stream().map(PPLTask::toTaskReport)
+        all.addAll(finishedTasks.stream().map(InferenceTask::toTaskReport)
                 .collect(Collectors.toList()));
         all.addAll(new ArrayList<>(
-                taskPool.errorTasks.stream().map(PPLTask::toTaskReport)
+                taskPool.errorTasks.stream().map(InferenceTask::toTaskReport)
                         .collect(Collectors.toList())));
-        all.addAll(canceledTasks.stream().map(PPLTask::toTaskReport)
+        all.addAll(canceledTasks.stream().map(InferenceTask::toTaskReport)
                 .collect(Collectors.toList()));
         reportRequest.setTasks(all);
 
@@ -131,21 +131,21 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
     public void success(ReportRequest reportRequest, ReportResponse response,
                         Context context) {
         if (response != null) {
-            @SuppressWarnings("unchecked") List<PPLTask> finishedTasks = context.get(
+            @SuppressWarnings("unchecked") List<InferenceTask> finishedTasks = context.get(
                     "finished", List.class);
-            @SuppressWarnings("unchecked") List<PPLTask> canceledTasks = context.get(
+            @SuppressWarnings("unchecked") List<InferenceTask> canceledTasks = context.get(
                     "canceled", List.class);
             // when success,archived the finished/canceled task,and rm to the archive dir
-            for (PPLTask finishedTask : finishedTasks) {
+            for (InferenceTask finishedTask : finishedTasks) {
                 finishedOrCanceled2ArchivedAction.apply(finishedTask, null);
             }
-            for (PPLTask canceledTask : canceledTasks) {
+            for (InferenceTask canceledTask : canceledTasks) {
                 finishedOrCanceled2ArchivedAction.apply(canceledTask, null);
             }
             // add controller's new tasks to current queue
             if (CollectionUtil.isNotEmpty(response.getTasksToRun())) {
                 for (TaskTrigger newTask : response.getTasksToRun()) {
-                    init2PreparingAction.apply(PPLTask.fromTaskTrigger(newTask), context);
+                    init2PreparingAction.apply(InferenceTask.fromTaskTrigger(newTask), context);
                 }
             }
             // add controller's wait to cancel tasks to current list

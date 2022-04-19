@@ -5,16 +5,16 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.action.normal.cancel;
+package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
 
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
 import org.springframework.stereotype.Service;
 
 @Service
 public class Uploading2CanceledAction extends AbsBaseCancelPPLTaskAction {
     @Override
-    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
+    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
         taskPool.uploadingTasks.remove(oldTask);
         super.success(oldTask, newTask, context);
     }

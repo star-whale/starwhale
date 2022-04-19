@@ -1,12 +1,12 @@
 package ai.starwhale.mlops.agent.test;
 
-import ai.starwhale.mlops.agent.task.ppltask.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TaskDirTest {
     @Test
-    public void main() {
+    public void simple_test() {
         FileSystemPath.PathNode baseDir = new FileSystemPath.PathNode("%s", FileSystemPath.PathNode.Type.variable, (FileSystemPath.PathNode) null);
 
 
@@ -71,13 +71,13 @@ public class TaskDirTest {
         Long taskId = 123L;
         // evaluation task test
         //Assertions.assertEquals("var/sw/tasks/active/evaluation", fileSystemPath.activeEvaluationTaskDir());
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123", fileSystemPath.oneActiveEvaluationTaskDir(taskId));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/taskInfo.json", fileSystemPath.oneActiveEvaluationTaskInfoFile(taskId));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/config", fileSystemPath.oneActiveEvaluationTaskSwdsConfigDir(taskId));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/config/swds.json", fileSystemPath.oneActiveEvaluationTaskSwdsConfigFile(taskId));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/status", fileSystemPath.oneActiveEvaluationTaskStatusDir(taskId));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/status/current", fileSystemPath.oneActiveEvaluationTaskStatusFile(taskId));
-        Assertions.assertEquals("var/sw/tasks/active/evaluation/123/result", fileSystemPath.oneActiveEvaluationTaskResultDir(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/123", fileSystemPath.oneActiveTaskDir(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/123/taskInfo.json", fileSystemPath.oneActiveTaskInfoFile(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/123/config", fileSystemPath.oneActiveTaskConfigDir(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/123/config/swds.json", fileSystemPath.oneActiveTaskSwdsConfigFile(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/123/status", fileSystemPath.oneActiveTaskStatusDir(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/123/status/current", fileSystemPath.oneActiveTaskStatusFile(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/123/result", fileSystemPath.oneActiveTaskResultDir(taskId));
 
         // compare task test
         //Assertions.assertEquals("var/sw/tasks/active/compare", fileSystemPath.activeCompareTaskDir());
@@ -85,7 +85,7 @@ public class TaskDirTest {
 
         // archived task test
         // Assertions.assertEquals("var/sw/tasks/archived", fileSystemPath.archivedTaskDir());
-        Assertions.assertEquals("var/sw/tasks/archived/evaluation", fileSystemPath.archivedEvaluationTaskDir());
+        Assertions.assertEquals("var/sw/tasks/archived", fileSystemPath.archivedTaskDir());
         // Assertions.assertEquals("var/sw/tasks/archived/compare", fileSystemPath.archivedCompareTaskDir());
 
 

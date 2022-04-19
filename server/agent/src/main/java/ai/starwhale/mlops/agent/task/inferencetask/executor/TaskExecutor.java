@@ -5,11 +5,11 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.executor;
+package ai.starwhale.mlops.agent.task.inferencetask.executor;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
-import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.agent.task.SelectOneToExecute;
@@ -35,54 +35,54 @@ public class TaskExecutor {
 
     /* task actions start */
     final
-    Action<Void, List<PPLTask>> rebuildTasksAction;
+    Action<Void, List<InferenceTask>> rebuildTasksAction;
 
     final
-    Action<PPLTask, PPLTask> init2PreparingAction;
+    Action<InferenceTask, InferenceTask> init2PreparingAction;
 
     final
-    Action<PPLTask, PPLTask> preparing2RunningAction;
+    Action<InferenceTask, InferenceTask> preparing2RunningAction;
 
     final
-    Action<PPLTask, PPLTask> preparing2CanceledAction;
+    Action<InferenceTask, InferenceTask> preparing2CanceledAction;
 
     final
-    Action<PPLTask, PPLTask> monitorRunningTaskAction;
+    Action<InferenceTask, InferenceTask> monitorRunningTaskAction;
 
     final
-    Action<PPLTask, PPLTask> running2CanceledAction;
+    Action<InferenceTask, InferenceTask> running2CanceledAction;
 
     final
-    Action<PPLTask, PPLTask> uploading2FinishedAction;
+    Action<InferenceTask, InferenceTask> uploading2FinishedAction;
 
     final
-    Action<PPLTask, PPLTask> uploading2CanceledAction;
+    Action<InferenceTask, InferenceTask> uploading2CanceledAction;
 
     final
     Action<ReportRequest, ReportResponse> reportAction;
 
     final
-    Action<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction;
+    Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction;
 
 
     /**
      * multiple choices operator
      */
-    SelectOneToExecute<PPLTask, PPLTask> execute = new SelectOneToExecute<>() {
+    SelectOneToExecute<InferenceTask, InferenceTask> execute = new SelectOneToExecute<>() {
     };
 
     public TaskExecutor(
             SourcePool sourcePool,
             TaskPool taskPool,
-            Action<Void, List<PPLTask>> rebuildTasksAction,
-            Action<PPLTask, PPLTask> init2PreparingAction,
-            Action<PPLTask, PPLTask> preparing2RunningAction,
-            Action<PPLTask, PPLTask> preparing2CanceledAction,
-            Action<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction,
-            Action<PPLTask, PPLTask> monitorRunningTaskAction,
-            Action<PPLTask, PPLTask> running2CanceledAction,
-            Action<PPLTask, PPLTask> uploading2FinishedAction,
-            Action<PPLTask, PPLTask> uploading2CanceledAction,
+            Action<Void, List<InferenceTask>> rebuildTasksAction,
+            Action<InferenceTask, InferenceTask> init2PreparingAction,
+            Action<InferenceTask, InferenceTask> preparing2RunningAction,
+            Action<InferenceTask, InferenceTask> preparing2CanceledAction,
+            Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction,
+            Action<InferenceTask, InferenceTask> monitorRunningTaskAction,
+            Action<InferenceTask, InferenceTask> running2CanceledAction,
+            Action<InferenceTask, InferenceTask> uploading2FinishedAction,
+            Action<InferenceTask, InferenceTask> uploading2CanceledAction,
             Action<ReportRequest, ReportResponse> reportAction) {
         this.rebuildTasksAction = rebuildTasksAction;
         this.sourcePool = sourcePool;
@@ -119,7 +119,7 @@ public class TaskExecutor {
      */
     public void monitorRunningTasks() {
         if (taskPool.isReady() && !taskPool.runningTasks.isEmpty()) {
-            for (PPLTask runningTask : new ArrayList<>(taskPool.runningTasks)) {
+            for (InferenceTask runningTask : new ArrayList<>(taskPool.runningTasks)) {
                 // could be async
                 execute.apply(
                         runningTask,
@@ -137,7 +137,7 @@ public class TaskExecutor {
      */
     public void uploadTaskResults() {
         if (taskPool.isReady() && !taskPool.uploadingTasks.isEmpty()) {
-            for (PPLTask uploadingTask : new ArrayList<>(taskPool.uploadingTasks)) {
+            for (InferenceTask uploadingTask : new ArrayList<>(taskPool.uploadingTasks)) {
                 execute.apply(uploadingTask,
                         Context.instance(),
                         task -> !taskPool.needToCancel.contains(task.getId()),

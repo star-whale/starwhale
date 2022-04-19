@@ -5,16 +5,17 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
-import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Action;
-import ai.starwhale.mlops.agent.task.ppltask.executor.TaskExecutor;
-import ai.starwhale.mlops.agent.task.ppltask.persistence.FileSystemPath;
-import ai.starwhale.mlops.agent.task.ppltask.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import ai.starwhale.mlops.domain.task.TaskStage;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.collection.CollectionUtil;
 import org.apache.commons.io.FileUtils;
@@ -61,10 +62,10 @@ public class TaskActionTest {
     private TaskExecutor taskExecutor;
 
     @Autowired
-    Action<Void, List<PPLTask>> rebuildTasksAction;
+    Action<Void, List<InferenceTask>> rebuildTasksAction;
 
     @Autowired
-    Action<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction;
+    Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction;
 
     @Autowired
     private TaskPool taskPool;
@@ -103,8 +104,8 @@ public class TaskActionTest {
                                 .build()
                 )
         ));
-        List<PPLTask> tasks = List.of(
-                PPLTask.builder()
+        List<InferenceTask> tasks = List.of(
+                InferenceTask.builder()
                         .id(1234567890L)
                         .status(TaskStatus.PREPARING)
                         .deviceClass(Device.Clazz.GPU)
@@ -146,8 +147,8 @@ public class TaskActionTest {
 
     @Test
     public void testMonitorTask() throws Exception {
-        List<PPLTask> tasks = List.of(
-                PPLTask.builder()
+        List<InferenceTask> tasks = List.of(
+                InferenceTask.builder()
                         .id(1234567890L)
                         .status(TaskStatus.RUNNING) // change to runnning
                         .containerId("test-containerid")
@@ -174,7 +175,7 @@ public class TaskActionTest {
                         ))
                         .resultPath("todo")
                         .build(),
-                PPLTask.builder()
+                InferenceTask.builder()
                         .id(1234567891L)
                         .status(TaskStatus.RUNNING) // change to runnning
                         .containerId("test-containerid2")
@@ -222,9 +223,10 @@ public class TaskActionTest {
 
     @Test
     public void testUpload() {
-        List<PPLTask> tasks = List.of(
-                PPLTask.builder()
+        List<InferenceTask> tasks = List.of(
+                InferenceTask.builder()
                         .id(1234567890L)
+                        .taskStage(TaskStage.PPL)
                         .status(TaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid")
                         .deviceClass(Device.Clazz.GPU)
@@ -250,8 +252,9 @@ public class TaskActionTest {
                         ))
                         .resultPath("todo")
                         .build(),
-                PPLTask.builder()
+                InferenceTask.builder()
                         .id(1234567891L)
+                        .taskStage(TaskStage.PPL)
                         .status(TaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid2")
                         .deviceClass(Device.Clazz.GPU)
@@ -292,11 +295,11 @@ public class TaskActionTest {
 
     @Test
     public void testArchived() {
-        PPLTask task = PPLTask.builder()
+        InferenceTask task = InferenceTask.builder()
                 .id(1234567890L)
                 .build();
-        assertFalse(Files.exists(Path.of(fileSystemPath.oneArchivedEvaluationTaskDir(task.getId()))));
+        assertFalse(Files.exists(Path.of(fileSystemPath.oneArchivedTaskDir(task.getId()))));
         finishedOrCanceled2ArchivedAction.apply(task, null);
-        assertTrue(Files.exists(Path.of(fileSystemPath.oneArchivedEvaluationTaskDir(task.getId()))));
+        assertTrue(Files.exists(Path.of(fileSystemPath.oneArchivedTaskDir(task.getId()))));
     }
 }

@@ -8,13 +8,13 @@
 package ai.starwhale.mlops.agent.configuration;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
-import ai.starwhale.mlops.agent.task.ppltask.Scheduler;
-import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskScheduler;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Action;
-import ai.starwhale.mlops.agent.task.ppltask.executor.TaskExecutor;
-import ai.starwhale.mlops.agent.task.ppltask.initializer.TaskPoolInitializer;
-import ai.starwhale.mlops.agent.task.ppltask.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.inferencetask.initializer.TaskPoolInitializer;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -46,15 +46,15 @@ public class TaskConfiguration {
     public TaskExecutor agentTaskExecutor(
             SourcePool sourcePool,
             TaskPool taskPool,
-            Action<Void, List<PPLTask>> rebuildTasksAction,
-            Action<PPLTask, PPLTask> init2PreparingAction,
-            Action<PPLTask, PPLTask> preparing2RunningAction,
-            Action<PPLTask, PPLTask> preparing2CanceledAction,
-            Action<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction,
-            Action<PPLTask, PPLTask> monitoringAction,
-            Action<PPLTask, PPLTask> running2CanceledAction,
-            Action<PPLTask, PPLTask> uploading2FinishedAction,
-            Action<PPLTask, PPLTask> uploading2CanceledAction,
+            Action<Void, List<InferenceTask>> rebuildTasksAction,
+            Action<InferenceTask, InferenceTask> init2PreparingAction,
+            Action<InferenceTask, InferenceTask> preparing2RunningAction,
+            Action<InferenceTask, InferenceTask> preparing2CanceledAction,
+            Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction,
+            Action<InferenceTask, InferenceTask> monitoringAction,
+            Action<InferenceTask, InferenceTask> running2CanceledAction,
+            Action<InferenceTask, InferenceTask> uploading2FinishedAction,
+            Action<InferenceTask, InferenceTask> uploading2CanceledAction,
             Action<ReportRequest, ReportResponse> reportAction) {
         return new TaskExecutor(sourcePool, taskPool,
                 rebuildTasksAction,
@@ -69,8 +69,8 @@ public class TaskConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "sw.agent.task.scheduler.enabled", havingValue = "true", matchIfMissing = true)
-    public Scheduler agentTaskScheduler(TaskExecutor agentTaskExecutor) {
-        return new Scheduler(agentTaskExecutor);
+    public TaskScheduler agentTaskScheduler(TaskExecutor agentTaskExecutor) {
+        return new TaskScheduler(agentTaskExecutor);
     }
 
 }

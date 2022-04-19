@@ -5,14 +5,14 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.action.init;
+package ai.starwhale.mlops.agent.task.inferencetask.action.init;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
-import ai.starwhale.mlops.agent.task.ppltask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
-import ai.starwhale.mlops.agent.task.ppltask.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class RebuildTasksAction implements Action<Void, List<PPLTask>> {
+public class RebuildTasksAction implements Action<Void, List<InferenceTask>> {
 
     @Autowired
     private TaskPool taskPool;
@@ -38,16 +38,16 @@ public class RebuildTasksAction implements Action<Void, List<PPLTask>> {
     }
 
     @Override
-    public List<PPLTask> processing(Void v, Context context)
+    public List<InferenceTask> processing(Void v, Context context)
             throws Exception {
         log.info("start to rebuild task pool");
-        List<PPLTask> tasks = taskPersistence.getAllActiveTasks().orElse(List.of());
+        List<InferenceTask> tasks = taskPersistence.getAllActiveTasks().orElse(List.of());
         tasks.forEach(taskPool::fill);
         return tasks;
     }
 
     @Override
-    public void success(Void v, List<PPLTask> tasks, Context context) {
+    public void success(Void v, List<InferenceTask> tasks, Context context) {
         taskPool.setToReady();
         log.info("rebuild task pool success, size:{}", tasks.size());
     }

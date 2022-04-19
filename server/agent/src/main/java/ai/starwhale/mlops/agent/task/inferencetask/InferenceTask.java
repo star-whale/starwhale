@@ -5,17 +5,17 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask;
+package ai.starwhale.mlops.agent.task.inferencetask;
 
-import ai.starwhale.mlops.agent.task.BaseTask;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import ai.starwhale.mlops.domain.task.TaskStage;
 import ai.starwhale.mlops.domain.task.TaskStatus;
+import lombok.Builder;
 import lombok.Data;
-import lombok.experimental.SuperBuilder;
 
 import java.util.List;
 import java.util.Set;
@@ -24,8 +24,8 @@ import java.util.Set;
  * sufficient information for an Agent to run a Task
  */
 @Data
-@SuperBuilder
-public class PPLTask extends BaseTask {
+@Builder
+public class InferenceTask {
 
     /**
      * unique id for the task
@@ -33,26 +33,14 @@ public class PPLTask extends BaseTask {
     Long id;
 
     /**
+     * ppl or resulting
+     */
+    TaskStage taskStage;
+
+    /**
      * the proper image to get swmp run
      */
     String imageId;
-
-    String resultPath;
-
-    /**
-     * task status
-     */
-    TaskStatus status;
-
-    /**
-     * the container id
-     */
-    String containerId;
-
-    /**
-     * the devices list which the task hold
-     */
-    Set<Device> devices;
 
     /**
      * swmp meta info
@@ -60,7 +48,27 @@ public class PPLTask extends BaseTask {
     SWModelPackage swModelPackage;
 
     /**
-     * blocks may come from different SWDS
+     * task status
+     */
+    TaskStatus status;
+
+    /**
+     * runtime information at all stage: the container id、the devices list which the task hold
+     */
+    String containerId;
+
+    /**
+     * runtime information at ppl stage: devices allocated by agent
+     */
+    Set<Device> devices;
+
+    /**
+     * input information at resulting stage: inference file path todo
+     */
+    String inferenceFilePath;
+
+    /**
+     * input information at ppl stage: SWDS(blocks may come from different SWDS)、device info
      */
     List<SWDSBlock> swdsBlocks;
 
@@ -69,38 +77,45 @@ public class PPLTask extends BaseTask {
     Device.Clazz deviceClass;
 
     /**
-     * every stage will have a status which represents completion
+     * output information at the end of stage: the single task's result
      */
-    Stage stage;
+    String resultPath;
 
-    public enum Stage {
+    /**
+     * every action will have a status which represents completion
+     */
+    ActionStatus actionStatus;
+
+    public enum ActionStatus {
         inProgress, completed
     }
 
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof PPLTask)) {
+        if (!(obj instanceof InferenceTask)) {
             return false;
         }
-        PPLTask tt = (PPLTask) obj;
+        InferenceTask tt = (InferenceTask) obj;
         return this.getId().equals(tt.getId());
     }
 
-    public static PPLTask fromTaskTrigger(TaskTrigger taskTrigger) {
-        return PPLTask.builder().id(taskTrigger.getId())
+    public static InferenceTask fromTaskTrigger(TaskTrigger taskTrigger) {
+        return InferenceTask.builder().id(taskTrigger.getId())
                 .imageId(taskTrigger.getImageId())
-                .resultPath(taskTrigger.getResultPath())
+                .taskStage(taskTrigger.getTaskStage())
                 .status(TaskStatus.CREATED)
-                .stage(Stage.inProgress)
+                .actionStatus(ActionStatus.inProgress)
+                .inferenceFilePath(taskTrigger.getTodoPath())
                 .deviceAmount(taskTrigger.getDeviceAmount())
                 .deviceClass(taskTrigger.getDeviceClass())
                 .swdsBlocks(taskTrigger.getSwdsBlocks())
+                .resultPath(taskTrigger.getResultPath())
                 .swModelPackage(taskTrigger.getSwModelPackage())
                 .build();
     }
 
 
     public TaskReport toTaskReport() {
-        return TaskReport.builder().id(this.id).status(this.status).build();
+        return TaskReport.builder().id(this.id).status(this.status).taskStage(this.taskStage).build();
     }
 }

@@ -5,9 +5,7 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask;
-
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+package ai.starwhale.mlops.agent.task.inferencetask;
 
 import java.util.ArrayDeque;
 import java.util.List;
@@ -16,16 +14,16 @@ import java.util.Vector;
 
 public class TaskPool {
 
-        public final Queue<PPLTask> preparingTasks = new ArrayDeque<>();
-        public final List<PPLTask> runningTasks = new Vector<>();
-        public final List<PPLTask> uploadingTasks = new Vector<>();
-        public final List<PPLTask> finishedTasks = new Vector<>();
-        public final List<PPLTask> archivedTasks = new Vector<>();
-        public final List<PPLTask> canceledTasks = new Vector<>();
-        public final List<PPLTask> errorTasks = new Vector<>();
+        public final Queue<InferenceTask> preparingTasks = new ArrayDeque<>();
+        public final List<InferenceTask> runningTasks = new Vector<>();
+        public final List<InferenceTask> uploadingTasks = new Vector<>();
+        public final List<InferenceTask> finishedTasks = new Vector<>();
+        public final List<InferenceTask> archivedTasks = new Vector<>();
+        public final List<InferenceTask> canceledTasks = new Vector<>();
+        public final List<InferenceTask> errorTasks = new Vector<>();
         public final List<Long> needToCancel = new Vector<>();
 
-        public void fill(PPLTask task) {
+        public void fill(InferenceTask task) {
             switch (task.getStatus()) {
                 case CREATED:
                     break;

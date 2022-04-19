@@ -5,9 +5,9 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.com.
  */
 
-package ai.starwhale.mlops.agent.task.ppltask.action.normal.cancel;
+package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
 
-import ai.starwhale.mlops.agent.task.ppltask.PPLTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +16,7 @@ import java.util.Objects;
 @Service
 public class Running2CanceledAction extends AbsBaseCancelPPLTaskAction {
     @Override
-    public PPLTask processing(PPLTask oldTask, Context context) {
+    public InferenceTask processing(InferenceTask oldTask, Context context) {
         // stop the container
         if (containerClient.stopAndRemoveContainer(oldTask.getContainerId(), true)){
             return super.processing(oldTask, context);
@@ -25,7 +25,7 @@ public class Running2CanceledAction extends AbsBaseCancelPPLTaskAction {
     }
 
     @Override
-    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
+    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
         if (Objects.nonNull(newTask)) {
             taskPool.runningTasks.remove(oldTask);
             super.success(oldTask, newTask, context);
