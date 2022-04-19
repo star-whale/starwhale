@@ -7,11 +7,8 @@
 
 package ai.starwhale.mlops.agent.task.persistence;
 
-import ai.starwhale.mlops.agent.task.EvaluationTask;
-import cn.hutool.core.collection.CollectionUtil;
+import ai.starwhale.mlops.agent.task.PPLTask;
 
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,14 +22,14 @@ public interface TaskPersistence {
      * get all tasks
      * @return all tasks
      */
-    Optional<List<EvaluationTask>> getAllActiveTasks();
+    Optional<List<PPLTask>> getAllActiveTasks();
 
     /**
      * get task by id
      * @param id key
      * @return task
      */
-    Optional<EvaluationTask> getTaskById(Long id);
+    Optional<PPLTask> getTaskById(Long id);
 
     /**
      * get task container status by id
@@ -63,34 +60,34 @@ public interface TaskPersistence {
      * @param task task
      * @return if success
      */
-    boolean save(EvaluationTask task);
+    boolean save(PPLTask task);
 
     /**
      * move task to the archived state
      * @param task task
      * @return if success
      */
-    void move2Archived(EvaluationTask task) throws Exception;
+    void move2Archived(PPLTask task) throws Exception;
 
     /**
      * preloading task's swmp tar,and untar it to the dir
      * @param task task
      * @return disk dir path
      */
-    String preloadingSWMP(EvaluationTask task) throws Exception;
+    String preloadingSWMP(PPLTask task) throws Exception;
 
     /**
      * pre generate swds config
      * @param task task
      * @return if success
      */
-    void generateSWDSConfig(EvaluationTask task) throws Exception;
+    void generateSWDSConfig(PPLTask task) throws Exception;
 
     /**
      * upload result to storage
      * @param task task
      * @return oss path
      */
-    void uploadResult(EvaluationTask task) throws Exception;
+    void uploadResult(PPLTask task) throws Exception;
 
 }

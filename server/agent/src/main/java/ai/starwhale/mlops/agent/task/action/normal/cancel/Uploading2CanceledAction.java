@@ -7,14 +7,14 @@
 
 package ai.starwhale.mlops.agent.task.action.normal.cancel;
 
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.action.Context;
 import org.springframework.stereotype.Service;
 
 @Service
 public class Uploading2CanceledAction extends AbsBaseCancelTaskTransition {
     @Override
-    public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
         taskPool.uploadingTasks.remove(oldTask);
         super.success(oldTask, newTask, context);
     }

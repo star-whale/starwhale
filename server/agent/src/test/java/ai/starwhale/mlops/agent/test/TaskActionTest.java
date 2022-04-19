@@ -5,7 +5,7 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
@@ -61,10 +61,10 @@ public class TaskActionTest {
     private TaskExecutor taskExecutor;
 
     @Autowired
-    DoTransition<Void, List<EvaluationTask>> rebuildTasksAction;
+    DoTransition<Void, List<PPLTask>> rebuildTasksAction;
 
     @Autowired
-    DoTransition<EvaluationTask, EvaluationTask> finishedOrCanceled2ArchivedAction;
+    DoTransition<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction;
 
     @Autowired
     private TaskPool taskPool;
@@ -103,8 +103,8 @@ public class TaskActionTest {
                                 .build()
                 )
         ));
-        List<EvaluationTask> tasks = List.of(
-                EvaluationTask.builder()
+        List<PPLTask> tasks = List.of(
+                PPLTask.builder()
                         .id(1234567890L)
                         .status(TaskStatus.PREPARING)
                         .deviceClass(Device.Clazz.GPU)
@@ -146,8 +146,8 @@ public class TaskActionTest {
 
     @Test
     public void testMonitorTask() throws Exception {
-        List<EvaluationTask> tasks = List.of(
-                EvaluationTask.builder()
+        List<PPLTask> tasks = List.of(
+                PPLTask.builder()
                         .id(1234567890L)
                         .status(TaskStatus.RUNNING) // change to runnning
                         .containerId("test-containerid")
@@ -174,7 +174,7 @@ public class TaskActionTest {
                         ))
                         .resultPath("todo")
                         .build(),
-                EvaluationTask.builder()
+                PPLTask.builder()
                         .id(1234567891L)
                         .status(TaskStatus.RUNNING) // change to runnning
                         .containerId("test-containerid2")
@@ -222,8 +222,8 @@ public class TaskActionTest {
 
     @Test
     public void testUpload() {
-        List<EvaluationTask> tasks = List.of(
-                EvaluationTask.builder()
+        List<PPLTask> tasks = List.of(
+                PPLTask.builder()
                         .id(1234567890L)
                         .status(TaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid")
@@ -250,7 +250,7 @@ public class TaskActionTest {
                         ))
                         .resultPath("todo")
                         .build(),
-                EvaluationTask.builder()
+                PPLTask.builder()
                         .id(1234567891L)
                         .status(TaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid2")
@@ -292,7 +292,7 @@ public class TaskActionTest {
 
     @Test
     public void testArchived() {
-        EvaluationTask task = EvaluationTask.builder()
+        PPLTask task = PPLTask.builder()
                 .id(1234567890L)
                 .build();
         assertFalse(Files.exists(Path.of(fileSystemPath.oneArchivedEvaluationTaskDir(task.getId()))));

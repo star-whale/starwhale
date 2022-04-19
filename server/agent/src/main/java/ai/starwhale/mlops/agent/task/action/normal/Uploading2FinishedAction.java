@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.agent.task.action.normal;
 
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
@@ -17,8 +17,8 @@ import org.springframework.stereotype.Service;
 public class Uploading2FinishedAction extends AbsBaseTaskTransition {
 
     @Override
-    public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
-        EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
+    public PPLTask processing(PPLTask oldTask, Context context) throws Exception {
+        PPLTask newTask = BeanUtil.toBean(oldTask, PPLTask.class);
         // upload result file to the storage
         taskPersistence.uploadResult(oldTask);
         newTask.setStatus(TaskStatus.FINISHED);
@@ -27,7 +27,7 @@ public class Uploading2FinishedAction extends AbsBaseTaskTransition {
     }
 
     @Override
-    public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
         if (newTask.getStatus() == TaskStatus.FINISHED) {
             taskPool.uploadingTasks.remove(oldTask);
             taskPool.finishedTasks.add(newTask);

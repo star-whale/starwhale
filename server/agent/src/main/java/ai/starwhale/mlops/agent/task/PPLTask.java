@@ -24,7 +24,7 @@ import java.util.Set;
  */
 @Data
 @Builder
-public class EvaluationTask {
+public class PPLTask {
 
     /**
      * unique id for the task
@@ -78,15 +78,15 @@ public class EvaluationTask {
 
     public boolean equals(Object obj) {
 
-        if (!(obj instanceof EvaluationTask)) {
+        if (!(obj instanceof PPLTask)) {
             return false;
         }
-        EvaluationTask tt = (EvaluationTask) obj;
+        PPLTask tt = (PPLTask) obj;
         return this.getId().equals(tt.getId());
     }
 
-    public static EvaluationTask fromTaskTrigger(TaskTrigger taskTrigger) {
-        return EvaluationTask.builder().id(taskTrigger.getId())
+    public static PPLTask fromTaskTrigger(TaskTrigger taskTrigger) {
+        return PPLTask.builder().id(taskTrigger.getId())
                 .imageId(taskTrigger.getImageId())
                 .resultPath(taskTrigger.getResultPath())
                 .status(TaskStatus.CREATED)

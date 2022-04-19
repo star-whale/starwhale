@@ -12,8 +12,8 @@ import ai.starwhale.mlops.agent.container.ImageConfig.GPUConfig;
 import ai.starwhale.mlops.agent.container.ImageConfig.Mount;
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool.AllocateRequest;
-import ai.starwhale.mlops.agent.task.EvaluationTask;
-import ai.starwhale.mlops.agent.task.EvaluationTask.Stage;
+import ai.starwhale.mlops.agent.task.PPLTask;
+import ai.starwhale.mlops.agent.task.PPLTask.Stage;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.TaskStatus;
@@ -40,13 +40,13 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     private static final String swdsFileEnv = "SW_TASK_SWDS_CONFIG";
 
     @Override
-    public boolean valid(EvaluationTask task, Context context) {
+    public boolean valid(PPLTask task, Context context) {
         // todo: Check if the previous steps have been prepared
         return task.getStage() != Stage.inProgress;
     }
 
     @Override
-    public void orElse(EvaluationTask task, Context context) {
+    public void orElse(PPLTask task, Context context) {
         // represent last step occurred some errors
         // todo:fault tolerance
         task.setStage(Stage.completed);
@@ -54,7 +54,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     }
 
     @Override
-    public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
+    public PPLTask processing(PPLTask oldTask, Context context) throws Exception {
         Set<Device> allocated = null;
         ImageConfig imageConfig = ImageConfig.builder()
                 .autoRemove(true)
@@ -115,7 +115,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
         Optional<String> containerId = containerClient.startContainer(imageConfig);
         // whether the container create and start success
         if (containerId.isPresent()) {
-            EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
+            PPLTask newTask = BeanUtil.toBean(oldTask, PPLTask.class);
             newTask.setContainerId(containerId.get());
             newTask.setStatus(TaskStatus.RUNNING);
             return newTask;
@@ -133,7 +133,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     }
 
     @Override
-    public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
         // rm from current
         taskPool.preparingTasks.remove(oldTask);
         // tail it to the running list
@@ -141,7 +141,7 @@ public class Preparing2RunningAction extends AbsBaseTaskTransition {
     }
 
     @Override
-    public void fail(EvaluationTask oldTask, Context context, Exception e) {
+    public void fail(PPLTask oldTask, Context context, Exception e) {
         log.error("execute task:{}, error:{}", JSONUtil.toJsonStr(oldTask), e.getMessage());
         // rollback and wait again until next time
         if (CollectionUtil.isNotEmpty(oldTask.getDevices())) {

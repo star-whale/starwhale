@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.agent.task.action.normal;
 
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
@@ -17,19 +17,19 @@ import org.springframework.stereotype.Service;
 public class Init2PreparingAction extends AbsBaseTaskTransition {
 
     @Override
-    public boolean valid(EvaluationTask obj, Context context) {
+    public boolean valid(PPLTask obj, Context context) {
         return obj.getStatus() == TaskStatus.CREATED;
     }
 
     @Override
-    public EvaluationTask processing(EvaluationTask oldTask, Context context) throws Exception {
-        EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
+    public PPLTask processing(PPLTask oldTask, Context context) throws Exception {
+        PPLTask newTask = BeanUtil.toBean(oldTask, PPLTask.class);
         newTask.setStatus(TaskStatus.PREPARING);
         return newTask;
     }
 
     @Override
-    public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
         // add the new task to the tail
         taskPool.preparingTasks.offer(newTask);
     }

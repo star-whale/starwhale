@@ -11,7 +11,7 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
@@ -62,7 +62,7 @@ public class TaskExecutorTest {
     private TaskExecutor taskExecutor;
 
     @Autowired
-    DoTransition<Void, List<EvaluationTask>> rebuildTasksAction;
+    DoTransition<Void, List<PPLTask>> rebuildTasksAction;
 
     @Autowired
     private TaskPool taskPool;
@@ -75,9 +75,9 @@ public class TaskExecutorTest {
             .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(Optional.of(
             List.of(
-                EvaluationTask.builder()
+                PPLTask.builder()
                     .id(1234567890L).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build(),
-                EvaluationTask.builder()
+                PPLTask.builder()
                     .id(2234567890L).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build()
             ))
         );
@@ -121,7 +121,7 @@ public class TaskExecutorTest {
         assertEquals(1, taskPool.runningTasks.size());
 
         // mockConfig
-        EvaluationTask runningTask = taskPool.runningTasks.get(0);
+        PPLTask runningTask = taskPool.runningTasks.get(0);
         Long id = runningTask.getId();
         // mock taskContainer already change status to uploading
         // Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);

@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.agent.task.action.normal;
 
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.persistence.TaskPersistence.ExecuteStatus;
 import ai.starwhale.mlops.domain.task.TaskStatus;
@@ -20,10 +20,10 @@ import java.util.Optional;
 public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
 
     @Override
-    public EvaluationTask processing(EvaluationTask runningTask, Context context)
+    public PPLTask processing(PPLTask runningTask, Context context)
         throws Exception {
         // dominated by disk(see if other processes have modified)
-        EvaluationTask newTask = BeanUtil.toBean(runningTask, EvaluationTask.class);
+        PPLTask newTask = BeanUtil.toBean(runningTask, PPLTask.class);
 
         Optional<ExecuteStatus> executeStatus = taskPersistence.status(runningTask.getId());
         if (executeStatus.isPresent()) {
@@ -45,7 +45,7 @@ public class MonitorRunningTaskAction extends AbsBaseTaskTransition {
     }
 
     @Override
-    public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
 
         if (newTask.getStatus() == TaskStatus.UPLOADING) {
             taskPool.uploadingTasks.add(newTask);

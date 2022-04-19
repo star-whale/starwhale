@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.agent.task.action.normal.cancel;
 
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.normal.AbsBaseTaskTransition;
@@ -22,19 +22,19 @@ public abstract class AbsBaseCancelTaskTransition extends AbsBaseTaskTransition 
     protected TaskPool taskPool;
 
     @Override
-    public boolean valid(EvaluationTask evaluationTask, Context context) {
-        return taskPool.needToCancel.contains(evaluationTask.getId());
+    public boolean valid(PPLTask PPLTask, Context context) {
+        return taskPool.needToCancel.contains(PPLTask.getId());
     }
 
     @Override
-    public EvaluationTask processing(EvaluationTask oldTask, Context context) {
-        EvaluationTask newTask = BeanUtil.toBean(oldTask, EvaluationTask.class);
+    public PPLTask processing(PPLTask oldTask, Context context) {
+        PPLTask newTask = BeanUtil.toBean(oldTask, PPLTask.class);
         newTask.setStatus(TaskStatus.CANCELED);
         return newTask;
     }
 
     @Override
-    public void success(EvaluationTask oldTask, EvaluationTask newTask, Context context) {
+    public void success(PPLTask oldTask, PPLTask newTask, Context context) {
         if (Objects.nonNull(newTask)) {
             taskPool.canceledTasks.add(newTask);
             // cancel success

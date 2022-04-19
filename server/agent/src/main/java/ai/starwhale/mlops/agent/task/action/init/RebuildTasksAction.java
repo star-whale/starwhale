@@ -8,7 +8,7 @@
 package ai.starwhale.mlops.agent.task.action.init;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
@@ -21,7 +21,7 @@ import java.util.List;
 
 @Service
 @Slf4j
-public class RebuildTasksAction implements DoTransition<Void, List<EvaluationTask>> {
+public class RebuildTasksAction implements DoTransition<Void, List<PPLTask>> {
 
     @Autowired
     private TaskPool taskPool;
@@ -38,16 +38,16 @@ public class RebuildTasksAction implements DoTransition<Void, List<EvaluationTas
     }
 
     @Override
-    public List<EvaluationTask> processing(Void v, Context context)
+    public List<PPLTask> processing(Void v, Context context)
             throws Exception {
         log.info("start to rebuild task pool");
-        List<EvaluationTask> tasks = taskPersistence.getAllActiveTasks().orElse(List.of());
+        List<PPLTask> tasks = taskPersistence.getAllActiveTasks().orElse(List.of());
         tasks.forEach(taskPool::fill);
         return tasks;
     }
 
     @Override
-    public void success(Void v, List<EvaluationTask> tasks, Context context) {
+    public void success(Void v, List<PPLTask> tasks, Context context) {
         taskPool.setToReady();
         log.info("rebuild task pool success, size:{}", tasks.size());
     }

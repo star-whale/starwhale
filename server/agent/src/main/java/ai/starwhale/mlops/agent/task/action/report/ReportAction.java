@@ -11,7 +11,7 @@ import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.base.SystemDetect;
 import ai.starwhale.mlops.agent.node.base.SystemInfo;
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.TaskPool;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
@@ -54,36 +54,36 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
     private AgentProperties agentProperties;
 
     @Autowired
-    DoTransition<EvaluationTask, EvaluationTask> init2PreparingAction;
+    DoTransition<PPLTask, PPLTask> init2PreparingAction;
 
     @Autowired
-    DoTransition<EvaluationTask, EvaluationTask> finishedOrCanceled2ArchivedAction;
+    DoTransition<PPLTask, PPLTask> finishedOrCanceled2ArchivedAction;
 
     @Override
     public ReportResponse processing(ReportRequest reportRequest, Context context)
             throws Exception {
         // all tasks(exclude archived) should be report to the controller
         // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
-        List<EvaluationTask> finishedTasks = List.copyOf(taskPool.finishedTasks);
-        List<EvaluationTask> canceledTasks = List.copyOf(taskPool.canceledTasks);
+        List<PPLTask> finishedTasks = List.copyOf(taskPool.finishedTasks);
+        List<PPLTask> canceledTasks = List.copyOf(taskPool.canceledTasks);
 
         List<TaskReport> all = new ArrayList<>();
         // without stop the world
         all.addAll(new ArrayList<>(
-                taskPool.preparingTasks.stream().map(EvaluationTask::toTaskReport)
+                taskPool.preparingTasks.stream().map(PPLTask::toTaskReport)
                         .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-                taskPool.runningTasks.stream().map(EvaluationTask::toTaskReport)
+                taskPool.runningTasks.stream().map(PPLTask::toTaskReport)
                         .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-                taskPool.uploadingTasks.stream().map(EvaluationTask::toTaskReport)
+                taskPool.uploadingTasks.stream().map(PPLTask::toTaskReport)
                         .collect(Collectors.toList())));
-        all.addAll(finishedTasks.stream().map(EvaluationTask::toTaskReport)
+        all.addAll(finishedTasks.stream().map(PPLTask::toTaskReport)
                 .collect(Collectors.toList()));
         all.addAll(new ArrayList<>(
-                taskPool.errorTasks.stream().map(EvaluationTask::toTaskReport)
+                taskPool.errorTasks.stream().map(PPLTask::toTaskReport)
                         .collect(Collectors.toList())));
-        all.addAll(canceledTasks.stream().map(EvaluationTask::toTaskReport)
+        all.addAll(canceledTasks.stream().map(PPLTask::toTaskReport)
                 .collect(Collectors.toList()));
         reportRequest.setTasks(all);
 
@@ -131,21 +131,21 @@ public class ReportAction implements DoTransition<ReportRequest, ReportResponse>
     public void success(ReportRequest reportRequest, ReportResponse response,
                         Context context) {
         if (response != null) {
-            @SuppressWarnings("unchecked") List<EvaluationTask> finishedTasks = context.get(
+            @SuppressWarnings("unchecked") List<PPLTask> finishedTasks = context.get(
                     "finished", List.class);
-            @SuppressWarnings("unchecked") List<EvaluationTask> canceledTasks = context.get(
+            @SuppressWarnings("unchecked") List<PPLTask> canceledTasks = context.get(
                     "canceled", List.class);
             // when success,archived the finished/canceled task,and rm to the archive dir
-            for (EvaluationTask finishedTask : finishedTasks) {
+            for (PPLTask finishedTask : finishedTasks) {
                 finishedOrCanceled2ArchivedAction.apply(finishedTask, null);
             }
-            for (EvaluationTask canceledTask : canceledTasks) {
+            for (PPLTask canceledTask : canceledTasks) {
                 finishedOrCanceled2ArchivedAction.apply(canceledTask, null);
             }
             // add controller's new tasks to current queue
             if (CollectionUtil.isNotEmpty(response.getTasksToRun())) {
                 for (TaskTrigger newTask : response.getTasksToRun()) {
-                    init2PreparingAction.apply(EvaluationTask.fromTaskTrigger(newTask), context);
+                    init2PreparingAction.apply(PPLTask.fromTaskTrigger(newTask), context);
                 }
             }
             // add controller's wait to cancel tasks to current list

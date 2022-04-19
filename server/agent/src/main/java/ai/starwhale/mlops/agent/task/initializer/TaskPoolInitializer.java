@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.agent.task.initializer;
 
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.task.action.Context;
 import ai.starwhale.mlops.agent.task.action.DoTransition;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ import java.util.List;
 @Order(0)
 public class TaskPoolInitializer implements CommandLineRunner {
     @Autowired
-    private DoTransition<Void, List<EvaluationTask>> rebuildTasksAction;
+    private DoTransition<Void, List<PPLTask>> rebuildTasksAction;
 
     @Override
     public void run(String... args) throws Exception {

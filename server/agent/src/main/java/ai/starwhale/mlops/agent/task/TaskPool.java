@@ -14,16 +14,16 @@ import java.util.Vector;
 
 public class TaskPool {
 
-        public final Queue<EvaluationTask> preparingTasks = new ArrayDeque<>();
-        public final List<EvaluationTask> runningTasks = new Vector<>();
-        public final List<EvaluationTask> uploadingTasks = new Vector<>();
-        public final List<EvaluationTask> finishedTasks = new Vector<>();
-        public final List<EvaluationTask> archivedTasks = new Vector<>();
-        public final List<EvaluationTask> canceledTasks = new Vector<>();
-        public final List<EvaluationTask> errorTasks = new Vector<>();
+        public final Queue<PPLTask> preparingTasks = new ArrayDeque<>();
+        public final List<PPLTask> runningTasks = new Vector<>();
+        public final List<PPLTask> uploadingTasks = new Vector<>();
+        public final List<PPLTask> finishedTasks = new Vector<>();
+        public final List<PPLTask> archivedTasks = new Vector<>();
+        public final List<PPLTask> canceledTasks = new Vector<>();
+        public final List<PPLTask> errorTasks = new Vector<>();
         public final List<Long> needToCancel = new Vector<>();
 
-        public void fill(EvaluationTask task) {
+        public void fill(PPLTask task) {
             switch (task.getStatus()) {
                 case CREATED:
                     break;

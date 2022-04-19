@@ -7,9 +7,8 @@
 
 package ai.starwhale.mlops.agent.task.persistence;
 
-import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.exception.ErrorCode;
-import ai.starwhale.mlops.agent.task.EvaluationTask;
+import ai.starwhale.mlops.agent.task.PPLTask;
 import ai.starwhale.mlops.agent.utils.TarUtil;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -58,7 +57,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public Optional<List<EvaluationTask>> getAllActiveTasks() {
+    public Optional<List<PPLTask>> getAllActiveTasks() {
         try {
             Path tasksPath = Path.of(fileSystemPath.activeTaskDir());
             if (!Files.exists(tasksPath)) {
@@ -75,7 +74,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                                 .map(path -> {
                                     try {
                                         String json = Files.readString(path);
-                                        return JSONUtil.toBean(json, EvaluationTask.class);
+                                        return JSONUtil.toBean(json, PPLTask.class);
                                     } catch (IOException e) {
                                         log.error(e.getMessage(), e);
                                     }
@@ -93,12 +92,12 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public Optional<EvaluationTask> getTaskById(Long id) {
+    public Optional<PPLTask> getTaskById(Long id) {
         try {
             // get the newest task info
             Path taskPath = Path.of(fileSystemPath.oneActiveEvaluationTaskInfoFile(id));
             String json = Files.readString(taskPath);
-            return Optional.of(JSONUtil.toBean(json, EvaluationTask.class));
+            return Optional.of(JSONUtil.toBean(json, PPLTask.class));
         } catch (Exception e) {
             log.error("get task by id:{} occur error:{}", id, e.getMessage(), e);
             return Optional.empty();
@@ -138,7 +137,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public boolean save(EvaluationTask task) {
+    public boolean save(PPLTask task) {
         try {
             Path taskDirPath = Path.of(fileSystemPath.oneActiveEvaluationTaskDir(task.getId()));
             if (Files.notExists(taskDirPath)) {
@@ -155,7 +154,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public void move2Archived(EvaluationTask task) throws IOException {
+    public void move2Archived(PPLTask task) throws IOException {
         // move to the archived task file
         try {
             FileUtils.moveDirectoryToDirectory(new File(fileSystemPath.oneActiveEvaluationTaskDir(task.getId())), new File(fileSystemPath.archivedEvaluationTaskDir()), true);
@@ -168,7 +167,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public String preloadingSWMP(EvaluationTask task) throws IOException {
+    public String preloadingSWMP(PPLTask task) throws IOException {
         SWModelPackage model = task.getSwModelPackage();
 
         String cachePathStr = fileSystemPath.oneSwmpDir(model.getName(), model.getVersion());
@@ -191,7 +190,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     private final String dataFormat = "%s:%s:%s";
 
     @Override
-    public void generateSWDSConfig(EvaluationTask task) throws IOException {
+    public void generateSWDSConfig(PPLTask task) throws IOException {
         Path configDir = Path.of(fileSystemPath.oneActiveEvaluationTaskSwdsConfigDir(task.getId()));
         if (Files.notExists(configDir)) {
             Files.createDirectories(configDir);
@@ -224,7 +223,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public void uploadResult(EvaluationTask task) throws IOException {
+    public void uploadResult(PPLTask task) throws IOException {
         // results is a set of files
         Stream<Path> paths = Files.find(Path.of(fileSystemPath.oneActiveEvaluationTaskResultDir(task.getId())), 1, (a, b) -> true);
         List<Path> results = paths.filter(path -> !Files.isDirectory(path))
