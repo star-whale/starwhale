@@ -15,6 +15,9 @@ from starwhale.utils.error import NoSupportError
 _SWDS_BACKEND_TYPE = namedtuple("_SWDS_BACKEND_TYPE", ["S3", "FUSE"])(
     "s3", "fuse"
 )
+_DATA_LOADER_KIND = namedtuple("_DATA_LOADER_KIND", ["SWDS", "PPL"])(
+    "swds", "ppl"
+)
 #TODO: config chunk size
 _CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 _FILE_END_POS = -1
@@ -23,6 +26,10 @@ DATA_FIELD = namedtuple("DATA_FIELD", ["index", "data_size", "batch_size", "data
 
 
 #TODO: use attr to simplify code
+
+class JSONLineDataLoader(object):
+    pass
+
 class DataLoader(object):
 
     __metaclass__ = ABCMeta
@@ -32,12 +39,14 @@ class DataLoader(object):
                  secret: dict={},
                  service: dict={},
                  swds: list=[],
-                 logger: t.Union[loguru.Logger, None]=None):
+                 logger: t.Union[loguru.Logger, None]=None,
+                 kind: str=_DATA_LOADER_KIND.SWDS):
         self.backend = backend
         self.secret = secret
         self.service = service
         self.swds = swds
         self.logger = logger or _logger
+        self.kind = kind
 
         self._do_validate()
 
@@ -57,13 +66,20 @@ class DataLoader(object):
                 not _s.get("endpoint") or not _s.get("region")):
                 raise Exception(f"s3_service({_s} format is invalid)")
 
+        if self.kind not in _DATA_LOADER_KIND:
+            raise Exception(f"{self.kind} no support")
+
     def __iter__(self):
         for _swds in self.swds:
-            for data, label in zip(
-                self._do_iter(_swds["bucket"], _swds["key"]["data"]),
-                self._do_iter(_swds["bucket"], _swds["key"]["label"])
-            ):
-                yield data, label
+            if self.kind == _DATA_LOADER_KIND.SWDS:
+                for data, label in zip(
+                    self._do_iter(_swds["bucket"], _swds["key"]["data"]),
+                    self._do_iter(_swds["bucket"], _swds["key"]["label"])
+                ):
+                    yield data, label
+            else:
+                for data in self._do_iter(_swds["bucket"], _swds["key"]["data"]):
+                    yield data, None
 
     def _do_iter(self, bucket: str, key_compose: str) -> t.Iterator[DATA_FIELD]:
         from .dataset import _header_struct, _header_size
@@ -102,10 +118,11 @@ class DataLoader(object):
         raise NotImplementedError
 
 
-class S3DataLoader(DataLoader):
+class S3StorageDataLoader(DataLoader):
 
-    def __init__(self, secret: dict = {}, service: dict = {}, swds: list = []):
-        super().__init__(backend=_SWDS_BACKEND_TYPE.S3, secret=secret, service=service, swds=swds)
+    def __init__(self, secret: dict = {}, service: dict = {}, swds: list = [],
+                 kind: str=_DATA_LOADER_KIND.SWDS):
+        super().__init__(backend=_SWDS_BACKEND_TYPE.S3, secret=secret, service=service, swds=swds, kind=kind)
 
         #TODO: region field empty?
         #TODO: add more s3 config, such as connect timeout
@@ -129,10 +146,10 @@ class S3DataLoader(DataLoader):
         )
 
 
-class FuseDataLoader(DataLoader):
+class FuseStorageDataLoader(DataLoader):
 
-    def __init__(self, swds: list = []):
-        super().__init__(backend=_SWDS_BACKEND_TYPE.FUSE, swds=swds)
+    def __init__(self, swds: list = [], kind: str=_DATA_LOADER_KIND.SWDS):
+        super().__init__(backend=_SWDS_BACKEND_TYPE.FUSE, swds=swds, kind=kind)
 
     def _make_file(self, bucket: str, key_compose: str) -> t.Any:
         _key, _start, _ = self._parse_key(key_compose)
@@ -262,10 +279,11 @@ def get_data_loader(swds_config:dict, logger: t.Union[loguru.Logger, None]=None)
     logger = logger or _logger
 
     _backend = swds_config["backend"]
+    _kind = swds_config.get("kind", _DATA_LOADER_KIND.SWDS)
 
     if _backend == _SWDS_BACKEND_TYPE.S3:
-        return S3DataLoader(swds_config["secret"], swds_config["service"], swds_config["swds"])
+        return S3StorageDataLoader(swds_config["secret"], swds_config["service"], swds_config["swds"], kind=_kind)
     elif _backend == _SWDS_BACKEND_TYPE.FUSE:
-        return FuseDataLoader(swds_config["swds"])
+        return FuseStorageDataLoader(swds_config["swds"], kind=_kind)
     else:
         raise NoSupportError(f"{_backend} no support")

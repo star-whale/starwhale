@@ -8,6 +8,7 @@ from pathlib import Path
 import json
 import logging
 from datetime import datetime
+from functools import wraps
 
 import loguru
 import jsonlines
@@ -161,24 +162,28 @@ class PipelineHandler(object):
     def handle_label(self, label: bytes, batch_size: int, **kw) -> t.Any:
         return label.decode()
 
+    def _record_status(func): #type: ignore
+        @wraps
+        def _wrapper(self: PipelineHandler, *args, **kwargs):
+            self._sw_logger.info(f"start to run {func}...")
+            self._update_status(self.STATUS.RUNNING)
+            try:
+                func(*args, **kwargs) #type: ignore
+            except Exception as e:
+                self._update_status(self.STATUS.FAILED)
+                self._sw_logger.exception(f"{func} abort, exception: {e}")
+            else:
+                self._update_status(self.STATUS.SUCCESS)
+                self._sw_logger.info("finish.")
+        return _wrapper
+
+    @_record_status #type: ignore
     def _starwhale_internal_run_cmp(self) -> None:
-        pass
+        for data, _ in self._data_loader:
+            self._sw_logger.info(f"{}")
 
+    @_record_status #type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
-        #TODO: forbid inherit object override this method
-        self._sw_logger.info("start to run pipeline...")
-
-        self._update_status(self.STATUS.RUNNING)
-        try:
-            self._do_starwhale_internal_run_ppl()
-        except Exception as e:
-            self._update_status(self.STATUS.FAILED)
-            self._sw_logger.exception(f"_do_starwhale_internal_run_ppl abort, exception: {e}")
-        else:
-            self._update_status(self.STATUS.SUCCESS)
-            self._sw_logger.info("finish pipeline")
-
-    def _do_starwhale_internal_run_ppl(self) -> None:
         for data, label in self._data_loader:
             self._sw_logger.info(f"[{data.index}]data-label loaded, data size:{pretty_bytes(data.data_size)}, label size:{pretty_bytes(label.data_size)} ,batch:{data.batch_size}")
 

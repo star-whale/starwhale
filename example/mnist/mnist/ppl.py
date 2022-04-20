@@ -6,6 +6,7 @@ from torchvision import transforms
 from PIL import Image
 
 from starwhale.api.model import PipelineHandler
+from starwhale.api.metric import multi_classification
 
 from .model import Net
 
@@ -26,13 +27,21 @@ class MNISTInference(PipelineHandler):
         output = self.model(data)
         return self._post(output)
 
-    def cmp(self, _data_loader):
-        for _results, _labels, _meta in _data_loader:
-
-
-
     def handle_label(self, label, batch_size, **kw):
         return [int(l) for l in label]
+
+    @multi_classification(
+        confusion_matrix_normalize="all",
+        show_hamming_loss=True,
+        show_cohen_kappa_score=True,
+        all_labels=[i for i in range(0, 10)]
+    )
+    def cmp(self, _data_loader):
+        y_true, y_pred = [], []
+        for _results, _labels, _ in _data_loader:
+            y_true.extend([int(l) for l in _labels])
+            y_pred.extend([int(l) for l in _results])
+        return y_true, y_pred
 
     def _pre(self, input: bytes, batch_size: int):
         images = []
@@ -61,15 +70,6 @@ class MNISTInference(PipelineHandler):
         model.eval()
         print("load mnist model, start to inference...")
         return model
-
-
-def local_smoketest():
-    mnist = MNISTInference()
-
-    tdir = ROOTDIR / "data/test"
-    for f in tdir.iterdir():
-        output = mnist.handle(f.open("rb").read(), 1)
-        print(f"{f.name} -> {output}")
 
 
 def load_test_env(fuse=True):
