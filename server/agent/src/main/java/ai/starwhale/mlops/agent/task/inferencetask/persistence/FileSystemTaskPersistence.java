@@ -204,11 +204,10 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 .set("endpoint", storageProperties.getS3Config().getEndpoint())
                 .set("region", storageProperties.getS3Config().getRegion())
         );
-        Path configPath = null;
+        Path configPath = Path.of(fileSystemPath.oneActiveTaskInputConfigFile(task.getId()));
+        // todo
         switch (task.getTaskType()) {
             case PPL:
-                configPath = Path.of(fileSystemPath.oneActiveTaskSwdsConfigFile(task.getId()));
-
                 JSONArray swds = JSONUtil.createArray();
 
                 task.getSwdsBlocks().forEach(swdsBlock -> {
@@ -223,7 +222,6 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 object.set("swds", swds);
                 break;
             case CMP:
-                configPath = Path.of(fileSystemPath.oneActiveTaskTODOConfigFile(task.getId()));
                 JSONArray cmp = JSONUtil.createArray();
 
                 task.getCmpInputFilePaths().forEach(inputFilePath -> {

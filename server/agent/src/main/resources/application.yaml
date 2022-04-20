@@ -13,6 +13,8 @@ sw:
   controller:
     name: swController
     url: ${SW_CONTROLLER_URL:http://10.131.0.1:8082/}
+  container:
+    host: ${DOCKER_HOST:tcp://127.0.0.1:2376}
   storage:
     type: s3
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}

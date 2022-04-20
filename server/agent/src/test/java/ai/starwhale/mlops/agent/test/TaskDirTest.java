@@ -74,7 +74,7 @@ public class TaskDirTest {
         Assertions.assertEquals("var/sw/tasks/active/123", fileSystemPath.oneActiveTaskDir(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/taskInfo.json", fileSystemPath.oneActiveTaskInfoFile(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/config", fileSystemPath.oneActiveTaskConfigDir(taskId));
-        Assertions.assertEquals("var/sw/tasks/active/123/config/swds.json", fileSystemPath.oneActiveTaskSwdsConfigFile(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/123/config/input.json", fileSystemPath.oneActiveTaskInputConfigFile(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/status", fileSystemPath.oneActiveTaskStatusDir(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/status/current", fileSystemPath.oneActiveTaskStatusFile(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/result", fileSystemPath.oneActiveTaskResultDir(taskId));

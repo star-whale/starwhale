@@ -24,8 +24,7 @@ public class FileSystemPath {
 
     interface FileName {
         String InferenceTaskInfoFile = "taskInfo.json";
-        String InferenceTaskSWDSConfigFile = "swds.json";
-        String InferenceTaskTODOConfigFile = "todo.json"; //todo
+        String InferenceTaskInputConfigFile = "input.json";
         String InferenceTaskStatusFile = "current";
     }
 
@@ -43,8 +42,7 @@ public class FileSystemPath {
     private static final PathNode oneActiveInferenceTaskStatusDir = new PathNode("status", PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskStatusFile = new PathNode(FileName.InferenceTaskStatusFile, PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskConfigDir = new PathNode("config", PathNode.Type.value);
-    private static final PathNode oneActiveInferenceTaskSwdsConfigFile = new PathNode(FileName.InferenceTaskSWDSConfigFile, PathNode.Type.value);
-    private static final PathNode oneActiveInferenceTaskTODOConfigFile = new PathNode(FileName.InferenceTaskTODOConfigFile, PathNode.Type.value);
+    private static final PathNode oneActiveInferenceTaskInputConfigFile = new PathNode(FileName.InferenceTaskInputConfigFile, PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskResultDir = new PathNode("result", PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskLogsDir = new PathNode("log", PathNode.Type.value);
 
@@ -67,8 +65,7 @@ public class FileSystemPath {
                                         .child(oneActiveInferenceTaskInfoFile)
                                         .child(oneActiveInferenceTaskStatusDir.child(oneActiveInferenceTaskStatusFile))
                                         .child(oneActiveInferenceTaskConfigDir
-                                                .child(oneActiveInferenceTaskSwdsConfigFile)
-                                                .child(oneActiveInferenceTaskTODOConfigFile)
+                                                .child(oneActiveInferenceTaskInputConfigFile)
                                         )
                                         .child(oneActiveInferenceTaskResultDir)
                                         .child(oneActiveInferenceTaskLogsDir)
@@ -128,17 +125,10 @@ public class FileSystemPath {
     }
 
     /**
-     * swds config file path,Eg:/var/starwhale/tasks/active/{taskId}/config/swds.json(format:json)
+     * swds config file path,Eg:/var/starwhale/tasks/active/{taskId}/config/input.json(format:json)
      */
-    public String oneActiveTaskSwdsConfigFile(Long id) {
-        return oneActiveInferenceTaskSwdsConfigFile.path(basePath, id);
-    }
-
-    /**
-     * swds config file path,Eg:/var/starwhale/tasks/active/{taskId}/config/todo.json(format:json)
-     */
-    public String oneActiveTaskTODOConfigFile(Long id) {
-        return oneActiveInferenceTaskTODOConfigFile.path(basePath, id);
+    public String oneActiveTaskInputConfigFile(Long id) {
+        return oneActiveInferenceTaskInputConfigFile.path(basePath, id);
     }
 
     /**
