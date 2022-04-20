@@ -225,10 +225,10 @@ class S3BufferedFileLike(object):
             self._iter_lines = self.obj.get()["Body"].iter_lines(chunk_size=_CHUNK_SIZE)  #type: ignore
 
         try:
-            line = next(self._iter_lines)
+            line: bytes = next(self._iter_lines)
         except StopIteration:
-            line = ""
-        return line
+            line = b""
+        return line.decode()
 
     def read(self, size: int) -> memoryview:
         #TODO: use smart_open 3rd lib?

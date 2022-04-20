@@ -22,7 +22,7 @@ class MNISTInference(PipelineHandler):
         self.device = torch.device(device)
         self.model = self._load_model(self.device)
 
-    def handle(self, data, batch_size, **kw):
+    def ppl(self, data, batch_size, **kw):
         data = self._pre(data, batch_size)
         output = self.model(data)
         return self._post(output)
@@ -37,11 +37,11 @@ class MNISTInference(PipelineHandler):
         all_labels=[i for i in range(0, 10)]
     )
     def cmp(self, _data_loader):
-        y_true, y_pred = [], []
-        for _results, _labels, _ in _data_loader:
-            y_true.extend([int(l) for l in _labels])
-            y_pred.extend([int(l) for l in _results])
-        return y_true, y_pred
+        _result, _label = [], []
+        for _data in _data_loader:
+            _label.extend([int(l) for l in _data["label"]])
+            _result.extend([int(l) for l in _data["result"]])
+        return _label, _result
 
     def _pre(self, input: bytes, batch_size: int):
         images = []

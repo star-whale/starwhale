@@ -20,7 +20,7 @@ def multi_classification(confusion_matrix_normalize: str="all",
 
     def _decorator(func):
 
-        @wraps
+        @wraps(func)
         def _wrapper(*args, **kwargs):
             y_true, y_pred = func(*args, **kwargs)
 
@@ -44,6 +44,6 @@ def multi_classification(confusion_matrix_normalize: str="all",
 
             #TODO: add roc/auc metric
             return _r
-
         return _wrapper
+
     return _decorator
