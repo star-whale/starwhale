@@ -3,7 +3,6 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
-import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
