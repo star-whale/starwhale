@@ -1,5 +1,6 @@
 {
     "backend": "s3",
+    "kind": "swds",
     "secret": {
         "access_key": "minioadmin",
         "secret_key": "minioadmin"
