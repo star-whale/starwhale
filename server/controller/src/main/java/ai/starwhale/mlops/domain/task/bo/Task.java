@@ -10,6 +10,8 @@ package ai.starwhale.mlops.domain.task.bo;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.system.Agent;
+import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import java.util.Objects;
@@ -45,7 +47,7 @@ public class Task {
     /**
      * storage directory path of results
      */
-    String resultPaths;
+    String resultDir;
 
     TaskRequest taskRequest;
 
@@ -66,7 +68,7 @@ public class Task {
             .id(this.id)
             .uuid(this.uuid)
             .status(new StagingTaskStatus(status.getStatus(), status.getStage()))
-            .resultPaths(this.resultPaths)
+            .resultDir(this.resultDir)
             .taskRequest(this.taskRequest.deepCopy())
             .job(this.job.deepCopy())
             .agent(null != this.agent ? this.agent.copy() : null)//agent is nullable
@@ -75,12 +77,16 @@ public class Task {
 
     public JobStatus getDesiredJobStatus(){
         switch (taskType){
-            case CMP:
-                if(status.getStage() == TaskStatusStage.DONE){
-                    return JobStatus.FINISHED;
-                }
             case PPL:
                 return this.status.getDesiredJobStatus();
+            case CMP:
+                if(status.getStatus() == TaskStatus.FINISHED || status.getStatus() == TaskStatus.ARCHIVED){
+                    return JobStatus.FINISHED;
+                }else if(status.getStatus() == TaskStatus.EXIT_ERROR){
+                    return JobStatus.EXIT_ERROR;
+                }else {
+                    return JobStatus.COLLECTING_RESULT;
+                }
             case UNKNOWN:
             default:
                 throw new SWValidationException(ValidSubject.TASK).tip("unknown task type ");

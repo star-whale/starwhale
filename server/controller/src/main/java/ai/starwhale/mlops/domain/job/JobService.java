@@ -17,6 +17,7 @@ import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
+import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
@@ -30,7 +31,7 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
-import ai.starwhale.mlops.resulting.ResultCollectManager;
+import ai.starwhale.mlops.resulting.ResultQuerier;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
@@ -83,13 +84,13 @@ public class JobService {
     private TaskMapper taskMapper;
 
     @Resource
-    private TaskBoConverter taskBoConverter;
-
-    @Resource
-    private ResultCollectManager resultCollectManager;
+    private ResultQuerier resultQuerier;
 
     @Resource
     private TaskJobStatusHelper taskJobStatusHelper;
+
+    @Resource
+    private StoragePathCoordinator storagePathCoordinator;
 
     public List<JobVO> listJobs(String projectId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -120,15 +121,16 @@ public class JobService {
     }
 
     public EvaluationResult getJobResult(String projectId, String jobId) {
-        return resultCollectManager.resultOfJob(
+        return resultQuerier.resultOfJob(
             idConvertor.revert(jobId));
     }
 
     public String createJob(JobRequest jobRequest, String projectId) {
         User user = userService.currentUserDetail();
+        String jobUuid = IdUtil.simpleUUID();
         JobEntity jobEntity = JobEntity.builder()
             .ownerId(idConvertor.revert(user.getId()))
-            .jobUuid(IdUtil.simpleUUID())
+            .jobUuid(jobUuid)
             .createdTime(LocalDateTime.now())
             //.finishedTime(LocalDateTime.now())
             .durationMs(0L)
@@ -137,7 +139,7 @@ public class JobService {
             .swmpVersionId(idConvertor.revert(jobRequest.getModelVersionId()))
             .deviceType(Integer.valueOf(jobRequest.getDeviceId()))
             .deviceAmount(jobRequest.getDeviceCount())
-            .resultOutputPath(jobRequest.getResultOutputPath())
+            .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
             .jobStatus(JobStatus.CREATED.getValue())
             .build();
 

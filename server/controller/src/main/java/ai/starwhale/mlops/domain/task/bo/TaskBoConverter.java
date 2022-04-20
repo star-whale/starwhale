@@ -7,13 +7,13 @@
 
 package ai.starwhale.mlops.domain.task.bo;
 
-import ai.starwhale.mlops.api.protocol.report.resp.ResultCompareTaskTrigger;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.system.Agent;
+import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.ppl.PPLRequest;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -57,15 +57,14 @@ public class TaskBoConverter {
     public Task fromId(Long id){
         final TaskEntity entity = taskMapper.findTaskById(id);
         final JobEntity jobById = jobMapper.findJobById(entity.getJobId());
-        return buildTask(jobBoConverter.fromEntity(jobById),entity);
+        return transformTask(jobBoConverter.fromEntity(jobById),entity);
     }
 
     public List<Task> fromTaskEntity(List<TaskEntity> entities,Job job){
-        return entities.parallelStream().map(entity -> buildTask(job, entity)).collect(Collectors.toList());
-
+        return entities.parallelStream().map(entity -> transformTask(job, entity)).collect(Collectors.toList());
     }
 
-    public Task buildTask(Job job, TaskEntity entity) {
+    public Task transformTask(Job job, TaskEntity entity) {
         try {
             TaskRequest taskRequest;
             TaskType taskType = TaskType.from(entity.getTaskType());
@@ -85,7 +84,7 @@ public class TaskBoConverter {
                 .job(job)
                 .agent(Agent.fromEntity(entity.getAgent()))
                 .status(StagingTaskStatus.from(entity.getTaskStatus()))
-                .resultPaths(entity.getResultPath())
+                .resultDir(entity.getResultPath())
                 .uuid(entity.getTaskUuid())
                 .taskRequest(taskRequest)
                 .taskType(taskType)
@@ -105,31 +104,28 @@ public class TaskBoConverter {
         if(t.getTaskType() != TaskType.PPL){
             throw new SWValidationException(ValidSubject.TASK).tip("task type can't be dispatched as evaluation task "+t.getTaskType());
         }
-
-        return TaskTrigger.builder()
-            .id(t.getId())
-            .imageId(t.getJob().getJobRuntime().getBaseImage())
-            .resultPath(t.getResultPaths())
-            .swdsBlocks(((PPLRequest)t.getTaskRequest()).getSwdsBlocks())
-            .deviceAmount(t.getJob().getJobRuntime().getDeviceAmount())
-            .deviceClass(t.getJob().getJobRuntime().getDeviceClass())
-            .swModelPackage(t.getJob().getSwmp()).build();
-    }
-
-    public List<ResultCompareTaskTrigger> toResultCompareTaskTrigger(List<Task> tasks){
-        return tasks.parallelStream()
-            .map(this::toResultCompareTaskTrigger).collect(Collectors.toList());
-    }
-
-    public ResultCompareTaskTrigger toResultCompareTaskTrigger(Task t){
-        if(t.getTaskType() != TaskType.CMP){
-            throw new SWValidationException(ValidSubject.TASK).tip("task type can't be dispatched as evaluation task "+t.getTaskType());
+        switch (t.getTaskType()){
+            case PPL:
+                return TaskTrigger.builder()
+                    .id(t.getId())
+                    .imageId(t.getJob().getJobRuntime().getBaseImage())
+                    .resultPath(t.getResultDir())
+                    .swdsBlocks(((PPLRequest)t.getTaskRequest()).getSwdsBlocks())
+                    .deviceAmount(t.getJob().getJobRuntime().getDeviceAmount())
+                    .deviceClass(t.getJob().getJobRuntime().getDeviceClass())
+                    .swModelPackage(t.getJob().getSwmp()).build();
+            case CMP:
+                return TaskTrigger.builder()
+                    .id(t.getId())
+                    .resultPath(t.getResultDir())
+                    .cmpInputFilePaths(((CMPRequest)t.getTaskRequest()).getPplResultPaths())
+                    .swModelPackage(t.getJob().getSwmp()).build();
+            case UNKNOWN:
+            default:
+                throw new SWValidationException(ValidSubject.TASK).tip("task type unknown "+t.getTaskType());
         }
 
-        return ResultCompareTaskTrigger.builder()
-            .id(t.getId())
-            .resultPath(t.getResultPaths())
-            .inferenceResultPaths(((CMPRequest)t.getTaskRequest()).getEvaluationTaskPaths()).build();
+
     }
 
     public List<TaskCommand> toTaskCommand(List<Task> tasks) {

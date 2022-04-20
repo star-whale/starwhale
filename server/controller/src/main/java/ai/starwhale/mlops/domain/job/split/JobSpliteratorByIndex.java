@@ -121,6 +121,6 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     }
 
     private String storagePath(String jobId,String taskId) {
-        return storagePathCoordinator.taskResultPath(jobId,taskId);
+        return storagePathCoordinator.generateTaskResultPath(jobId,taskId);
     }
 }

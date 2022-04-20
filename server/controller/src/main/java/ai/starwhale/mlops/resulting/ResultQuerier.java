@@ -17,10 +17,14 @@ import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.resulting.pipline.ResultingPPL;
-import ai.starwhale.mlops.resulting.pipline.ResultingPPLFinder;
+import ai.starwhale.mlops.resulting.repo.IndicatorRepo;
+import ai.starwhale.mlops.resulting.repo.IndicatorRepoFinder;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -29,21 +33,25 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-public class ResultCollectManager {
+public class ResultQuerier {
 
-    final ResultingPPLFinder resultingPPLFinder;
+    final IndicatorRepoFinder indicatorRepoFinder;
 
     final JobMapper jobMapper;
 
     final JobBoConverter jobBoConverter;
 
-    public ResultCollectManager(
-        ResultingPPLFinder resultingPPLFinder,
-        JobMapper jobMapper, JobBoConverter jobBoConverter) {
+    final StorageAccessService storageAccessService;
 
-        this.resultingPPLFinder = resultingPPLFinder;
+    public ResultQuerier(
+        IndicatorRepoFinder indicatorRepoFinder,
+        JobMapper jobMapper, JobBoConverter jobBoConverter,
+        StorageAccessService storageAccessService) {
+
+        this.indicatorRepoFinder = indicatorRepoFinder;
         this.jobMapper = jobMapper;
         this.jobBoConverter = jobBoConverter;
+        this.storageAccessService = storageAccessService;
     }
 
     public EvaluationResult resultOfJob(Long jobId){
@@ -55,11 +63,16 @@ public class ResultCollectManager {
             throw new SWValidationException(ValidSubject.JOB).tip("job is not finished yet");
         }
         Job job = jobBoConverter.fromEntity(jobEntity);
-        ResultingPPL resultingPPL = resultingPPLFinder.findForJob(job);
+        IndicatorRepo indicatorRepo = indicatorRepoFinder.find(job);
         try {
-            Collection<Indicator> indicators = resultingPPL.getIndicatorRepo()
-                .loadUILevel(job.getUuid());
-            return new EvaluationResult(resultingPPL.getUniqueName(),indicators);
+            List<String> results = storageAccessService.list(job.getResultDir()).collect(
+                Collectors.toList());
+            if(null == results || results.isEmpty()){
+                throw new SWValidationException(ValidSubject.JOB).tip("no result found of job");
+            }
+            Collection<Indicator> indicators = indicatorRepo
+                .loadResult(results.get(0));//results.size is expceted to be 1
+            return new EvaluationResult("mcResultCollector",indicators);//todo(determined by python)
         } catch (IOException e) {
             throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
         }

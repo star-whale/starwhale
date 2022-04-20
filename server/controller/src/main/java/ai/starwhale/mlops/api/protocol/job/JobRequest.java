@@ -29,8 +29,4 @@ public class JobRequest implements Serializable {
     @NotNull
     @JsonProperty("deviceCount")
     private Integer deviceCount;
-
-    @NotNull
-    @JsonProperty("resultOutputPath")
-    private String resultOutputPath;
 }

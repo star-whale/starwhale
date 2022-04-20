@@ -11,22 +11,22 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CMPRequest extends TaskRequest {
 
-    List<String> evaluationTaskPaths;
+    List<String> pplResultPaths;
 
     static final String LINE="\n";
 
     public CMPRequest(String txt){
-        evaluationTaskPaths = List.of(txt.split(LINE));
+        pplResultPaths = List.of(txt.split(LINE));
     }
 
     @Override
     public String toString() {
-        return String.join(LINE,evaluationTaskPaths);
+        return String.join(LINE, pplResultPaths);
     }
 
     @Override
     public TaskRequest deepCopy() {
-        return new CMPRequest(List.copyOf(evaluationTaskPaths));
+        return new CMPRequest(List.copyOf(pplResultPaths));
     }
 
 

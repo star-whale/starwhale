@@ -50,6 +50,11 @@ public class Job {
     JobStatus status;
 
     /**
+     * evaluation metrics holding dir
+     */
+    String resultDir;
+
+    /**
      * possible statuses of a job
      */
     public enum JobStatus{
@@ -60,14 +65,14 @@ public class Job {
         CREATED(10, false),
 
         /**
+         * paused by user
+         */
+        PAUSED(15, false),
+
+        /**
          * split but no task is assigned to an Agent
          */
         RUNNING(20, false),
-
-        /**
-         * paused by user
-         */
-        PAUSED(30, false),
 
         /**
          * CANCEL triggered by user( at least one task is TO_CANCEL)
@@ -82,7 +87,12 @@ public class Job {
         /**
          * all ppl tasks are finished, cmp task should be triggered
          */
-        COLLECT_RESULT(70, false),
+        TO_COLLECT_RESULT(70, false),
+
+        /**
+         *  cmp task created but not finished
+         */
+        COLLECTING_RESULT(71, false),
 
         /**
          * all the tasks are finished
