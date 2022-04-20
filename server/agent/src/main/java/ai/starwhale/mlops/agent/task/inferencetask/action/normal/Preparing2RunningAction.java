@@ -9,6 +9,7 @@ package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
 import ai.starwhale.mlops.agent.container.ImageConfig;
 import ai.starwhale.mlops.agent.container.ImageConfig.GPUConfig;
+import ai.starwhale.mlops.agent.container.ImageConfig.CPUConfig;
 import ai.starwhale.mlops.agent.container.ImageConfig.Mount;
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool.AllocateRequest;
@@ -66,23 +67,18 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
         // allocate device(GPU or CPU) for task
         switch (oldTask.getDeviceClass()) {
             case CPU:
-                allocated = sourcePool.allocate(
-                        AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
+                allocated = sourcePool.allocate(AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
                 imageConfig.setCpuConfig(
-                        ImageConfig.CPUConfig.builder()
-                                .cpuCount(Long.valueOf(oldTask.getDeviceAmount()))
-                                .build()
+                        CPUConfig.builder().cpuCount(Long.valueOf(oldTask.getDeviceAmount())).build()
                 );
                 break;
             case GPU:
-                allocated = sourcePool.allocate(
-                        AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
+                allocated = sourcePool.allocate(AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
                 imageConfig.setGpuConfig(
                         GPUConfig.builder()
                                 .count(oldTask.getDeviceAmount())
                                 .capabilities(List.of(List.of("gpu")))
-                                .deviceIds(
-                                        allocated.stream().map(Device::getId).collect(Collectors.toList()))
+                                .deviceIds(allocated.stream().map(Device::getId).collect(Collectors.toList()))
                                 .build()
                 );
                 break;
@@ -102,9 +98,6 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
                 break;
         }
 
-        // pull swmp(tar) and uncompress it to the swmp dir
-        String swmpDir = taskPersistence.preloadingSWMP(oldTask);
-
         imageConfig.setMounts(List.of(
                 Mount.builder()
                         .readOnly(false)
@@ -114,14 +107,13 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
                         .build(),
                 Mount.builder()
                         .readOnly(false)
-                        .source(swmpDir)
+                        .source(taskPersistence.preloadingSWMP(oldTask)) // pull swmp(tar) and uncompress it to the swmp dir
                         .target(containerBasePath + "swmp")
                         .type("BIND")
                         .build()
         ));
-
+        // generate the file used by container(default dir)
         taskPersistence.generateConfigFile(oldTask);
-
 
         // fill with task info
         Optional<String> containerId = containerClient.startContainer(imageConfig);
