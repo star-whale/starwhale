@@ -141,7 +141,7 @@ public interface JobApi {
                     schema = @Schema(implementation = EvaluationResult.class)))
         })
     @GetMapping(value = "/project/{projectId}/job/{jobId}/result")
-    ResponseEntity<ResponseMessage<EvaluationResult>> getJobResult(@Parameter(
+    ResponseEntity<ResponseMessage<String>> getJobResult(@Parameter(
         in = ParameterIn.PATH,
         description = "Project id",
         schema = @Schema())

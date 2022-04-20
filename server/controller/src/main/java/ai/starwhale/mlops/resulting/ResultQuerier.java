@@ -21,6 +21,7 @@ import ai.starwhale.mlops.resulting.repo.IndicatorRepo;
 import ai.starwhale.mlops.resulting.repo.IndicatorRepoFinder;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,26 +36,18 @@ import org.springframework.stereotype.Service;
 @Service
 public class ResultQuerier {
 
-    final IndicatorRepoFinder indicatorRepoFinder;
-
     final JobMapper jobMapper;
-
-    final JobBoConverter jobBoConverter;
 
     final StorageAccessService storageAccessService;
 
     public ResultQuerier(
-        IndicatorRepoFinder indicatorRepoFinder,
-        JobMapper jobMapper, JobBoConverter jobBoConverter,
+        JobMapper jobMapper,
         StorageAccessService storageAccessService) {
-
-        this.indicatorRepoFinder = indicatorRepoFinder;
         this.jobMapper = jobMapper;
-        this.jobBoConverter = jobBoConverter;
         this.storageAccessService = storageAccessService;
     }
 
-    public EvaluationResult resultOfJob(Long jobId){
+    public String resultOfJob(Long jobId){
         JobEntity jobEntity = jobMapper.findJobById(jobId);
         if(null == jobEntity){
             throw new SWValidationException(ValidSubject.JOB).tip("unknown jobid");
@@ -62,17 +55,16 @@ public class ResultQuerier {
         if(jobEntity.getJobStatus() != JobStatus.FINISHED.getValue()){
             throw new SWValidationException(ValidSubject.JOB).tip("job is not finished yet");
         }
-        Job job = jobBoConverter.fromEntity(jobEntity);
-        IndicatorRepo indicatorRepo = indicatorRepoFinder.find(job);
         try {
-            List<String> results = storageAccessService.list(job.getResultDir()).collect(
+            List<String> results = storageAccessService.list(jobEntity.getResultOutputPath()).collect(
                 Collectors.toList());
             if(null == results || results.isEmpty()){
                 throw new SWValidationException(ValidSubject.JOB).tip("no result found of job");
             }
-            Collection<Indicator> indicators = indicatorRepo
-                .loadResult(results.get(0));//results.size is expceted to be 1
-            return new EvaluationResult("mcResultCollector",indicators);//todo(determined by python)
+            try(InputStream inputStream = storageAccessService.get(results.get(0))){
+                return new String(inputStream.readAllBytes());
+            }
+
         } catch (IOException e) {
             throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
         }

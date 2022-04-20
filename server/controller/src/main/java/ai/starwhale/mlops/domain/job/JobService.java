@@ -120,7 +120,7 @@ public class JobService {
         return jobVO;
     }
 
-    public EvaluationResult getJobResult(String projectId, String jobId) {
+    public String getJobResult(String projectId, String jobId) {
         return resultQuerier.resultOfJob(
             idConvertor.revert(jobId));
     }
