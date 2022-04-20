@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS task_info
     agent_id        bigint           ,
     task_status     int              NOT NULL,
     result_path     text             NOT NULL,
-    swds_blocks     text,
+    task_request    longtext,
     created_time    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time   datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),

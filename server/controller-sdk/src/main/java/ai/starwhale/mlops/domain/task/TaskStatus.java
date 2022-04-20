@@ -48,14 +48,14 @@ public enum TaskStatus {
     CLOSING(0x160, JobStatus.RUNNING, false),
 
     /**
-     * garbage is cleared
+     * garbage is cleared task is finished
      */
-    FINISHED(0xf00, JobStatus.RUNNING, true),
+    FINISHED(0xf00, JobStatus.TO_COLLECT_RESULT, true),
 
     /**
      * when report successfully to the controller,it should be archived (Agent only status)
      */
-    ARCHIVED(0xf10, JobStatus.COLLECT_RESULT, true),
+    ARCHIVED(0xf10, JobStatus.TO_COLLECT_RESULT, true),
 
     /**
      * canceling triggered by the user
@@ -63,7 +63,7 @@ public enum TaskStatus {
     CANCEL(0x210, JobStatus.TO_CANCEL, false),
 
     /**
-     * canceling triggered by the user
+     * task canceled success by agent
      */
     CANCELED(0x220, JobStatus.CANCELED, true),
 

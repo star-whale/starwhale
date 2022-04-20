@@ -112,7 +112,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
             taskEntities.add(TaskEntity.builder()
                 .jobId(job.getId())
                 .resultPath(storagePath(job.getUuid(),taskUuid))
-                .swdsBlocks(swdsBlockSerializer.toString(entry.getValue()))
+                .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
                 .taskStatus(new StagingTaskStatus(TaskStatus.CREATED).getValue())
                 .taskUuid(taskUuid)
                 .build());
@@ -121,6 +121,6 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     }
 
     private String storagePath(String jobId,String taskId) {
-        return storagePathCoordinator.taskResultPath(jobId,taskId);
+        return storagePathCoordinator.generateTaskResultPath(jobId,taskId);
     }
 }

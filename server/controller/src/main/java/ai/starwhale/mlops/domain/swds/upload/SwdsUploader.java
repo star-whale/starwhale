@@ -256,7 +256,7 @@ public class SwdsUploader {
     private SWDatasetVersionEntity from(SWDatasetEntity swDatasetEntity, Manifest manifest) {
         return SWDatasetVersionEntity.builder().datasetId(swDatasetEntity.getId())
             .ownerId(getOwner())
-            .storagePath(storagePathCoordinator.swdsPath(swDatasetEntity.getDatasetName(),manifest.getVersion()))
+            .storagePath(storagePathCoordinator.generateSwdsPath(swDatasetEntity.getDatasetName(),manifest.getVersion()))
             .versionMeta(manifest.getRawYaml())
             .versionName(manifest.getVersion())
             .filesUploaded(EMPTY_YAML)

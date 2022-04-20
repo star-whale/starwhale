@@ -9,6 +9,7 @@ import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +38,7 @@ public class TestLivingTaskStatusMachine {
             of.add(Task.builder()
                 .status(new StagingTaskStatus(TaskStatus.CREATED))
                 .id(i)
-                .swdsBlocks(new ArrayList<>(0))
+                .taskRequest(new CMPRequest())
                 .job(job)
                 .build());
         }

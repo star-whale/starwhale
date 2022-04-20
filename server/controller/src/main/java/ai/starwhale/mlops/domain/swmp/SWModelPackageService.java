@@ -36,12 +36,10 @@ import com.github.pagehelper.PageHelper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -249,7 +247,7 @@ public class SWModelPackageService {
 
         //upload to storage
         final String swmpPath = storagePathCoordinator
-            .swmpPath(uploadRequest.getName(), uploadRequest.getVersion());
+            .generateSwmpPath(uploadRequest.getName(), uploadRequest.getVersion());
 
         try(final InputStream inputStream = dsFile.getInputStream()){
             storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),inputStream);

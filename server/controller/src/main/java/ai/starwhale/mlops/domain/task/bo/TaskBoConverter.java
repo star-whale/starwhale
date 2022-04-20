@@ -13,6 +13,9 @@ import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.system.Agent;
+import ai.starwhale.mlops.domain.task.TaskType;
+import ai.starwhale.mlops.domain.task.bo.ppl.PPLRequest;
+import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
@@ -54,24 +57,37 @@ public class TaskBoConverter {
     public Task fromId(Long id){
         final TaskEntity entity = taskMapper.findTaskById(id);
         final JobEntity jobById = jobMapper.findJobById(entity.getJobId());
-        return buildTask(jobBoConverter.fromEntity(jobById),entity);
+        return transformTask(jobBoConverter.fromEntity(jobById),entity);
     }
 
     public List<Task> fromTaskEntity(List<TaskEntity> entities,Job job){
-        return entities.parallelStream().map(entity -> buildTask(job, entity)).collect(Collectors.toList());
-
+        return entities.parallelStream().map(entity -> transformTask(job, entity)).collect(Collectors.toList());
     }
 
-    public Task buildTask(Job job, TaskEntity entity) {
+    public Task transformTask(Job job, TaskEntity entity) {
         try {
+            TaskRequest taskRequest;
+            TaskType taskType = TaskType.from(entity.getTaskType());
+            switch (taskType){
+                case PPL:
+                    taskRequest = new PPLRequest(swdsBlockSerializer.fromString(entity.getTaskRequest())) ;
+                    break;
+                case CMP:
+                    taskRequest = new CMPRequest(entity.getTaskRequest()) ;
+                    break;
+                case UNKNOWN:
+                default:
+                    throw new SWValidationException(ValidSubject.TASK).tip("unknown task type "+entity.getTaskType());
+            }
             return Task.builder()
                 .id(entity.getId())
                 .job(job)
                 .agent(Agent.fromEntity(entity.getAgent()))
                 .status(StagingTaskStatus.from(entity.getTaskStatus()))
-                .resultPaths(entity.getResultPath())
+                .resultDir(entity.getResultPath())
                 .uuid(entity.getTaskUuid())
-                .swdsBlocks(swdsBlockSerializer.fromString(entity.getSwdsBlocks()))
+                .taskRequest(taskRequest)
+                .taskType(taskType)
                 .build();
         } catch (JsonProcessingException e) {
             log.error("read swds blocks from db failed ",e);
@@ -85,14 +101,31 @@ public class TaskBoConverter {
     }
 
     public TaskTrigger toTaskTrigger(Task t){
-        return TaskTrigger.builder()
-            .id(t.getId())
-            .imageId(t.getJob().getJobRuntime().getBaseImage())
-            .resultPath(t.getResultPaths())
-            .swdsBlocks(t.getSwdsBlocks())
-            .deviceAmount(t.getJob().getJobRuntime().getDeviceAmount())
-            .deviceClass(t.getJob().getJobRuntime().getDeviceClass())
-            .swModelPackage(t.getJob().getSwmp()).build();
+        if(t.getTaskType() != TaskType.PPL){
+            throw new SWValidationException(ValidSubject.TASK).tip("task type can't be dispatched as evaluation task "+t.getTaskType());
+        }
+        switch (t.getTaskType()){
+            case PPL:
+                return TaskTrigger.builder()
+                    .id(t.getId())
+                    .imageId(t.getJob().getJobRuntime().getBaseImage())
+                    .resultPath(t.getResultDir())
+                    .swdsBlocks(((PPLRequest)t.getTaskRequest()).getSwdsBlocks())
+                    .deviceAmount(t.getJob().getJobRuntime().getDeviceAmount())
+                    .deviceClass(t.getJob().getJobRuntime().getDeviceClass())
+                    .swModelPackage(t.getJob().getSwmp()).build();
+            case CMP:
+                return TaskTrigger.builder()
+                    .id(t.getId())
+                    .resultPath(t.getResultDir())
+                    .cmpInputFilePaths(((CMPRequest)t.getTaskRequest()).getPplResultPaths())
+                    .swModelPackage(t.getJob().getSwmp()).build();
+            case UNKNOWN:
+            default:
+                throw new SWValidationException(ValidSubject.TASK).tip("task type unknown "+t.getTaskType());
+        }
+
+
     }
 
     public List<TaskCommand> toTaskCommand(List<Task> tasks) {
