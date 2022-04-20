@@ -62,38 +62,39 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
                 .labels(Map.of("taskId", oldTask.getId().toString()))
                 .build();
 
+        Set<Device> allocated = null;
+        // allocate device(GPU or CPU) for task
+        switch (oldTask.getDeviceClass()) {
+            case CPU:
+                allocated = sourcePool.allocate(
+                        AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
+                imageConfig.setCpuConfig(
+                        ImageConfig.CPUConfig.builder()
+                                .cpuCount(Long.valueOf(oldTask.getDeviceAmount()))
+                                .build()
+                );
+                break;
+            case GPU:
+                allocated = sourcePool.allocate(
+                        AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
+                imageConfig.setGpuConfig(
+                        GPUConfig.builder()
+                                .count(oldTask.getDeviceAmount())
+                                .capabilities(List.of(List.of("gpu")))
+                                .deviceIds(
+                                        allocated.stream().map(Device::getId).collect(Collectors.toList()))
+                                .build()
+                );
+                break;
+            case UNKNOWN:
+                log.error("unknown device class");
+                throw ErrorCode.allocateError.asException("unknown device class");
+        }
+        // allocate device to this task,if fail will throw exception, now it is blocked
+        oldTask.setDevices(allocated);
+
         switch (oldTask.getTaskType()) {
             case PPL:
-                Set<Device> allocated = null;
-                // allocate device(GPU or CPU) for task
-                switch (oldTask.getDeviceClass()) {
-                    case CPU:
-                        allocated = sourcePool.allocate(
-                                AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
-                        imageConfig.setCpuConfig(
-                                ImageConfig.CPUConfig.builder()
-                                        .cpuCount(Long.valueOf(oldTask.getDeviceAmount()))
-                                        .build()
-                        );
-                        break;
-                    case GPU:
-                        allocated = sourcePool.allocate(
-                                AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
-                        imageConfig.setGpuConfig(
-                                GPUConfig.builder()
-                                        .count(oldTask.getDeviceAmount())
-                                        .capabilities(List.of(List.of("gpu")))
-                                        .deviceIds(
-                                                allocated.stream().map(Device::getId).collect(Collectors.toList()))
-                                        .build()
-                        );
-                        break;
-                    case UNKNOWN:
-                        log.error("unknown device class");
-                        throw ErrorCode.allocateError.asException("unknown device class");
-                }
-                // allocate device to this task,if fail will throw exception, now it is blocked
-                oldTask.setDevices(allocated);
                 imageConfig.setEntrypoint(List.of("ppl"));
                 break;
             case CMP:
