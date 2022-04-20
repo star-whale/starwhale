@@ -8,7 +8,6 @@ package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
-import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
@@ -120,7 +119,7 @@ public class JobService {
         return jobVO;
     }
 
-    public String getJobResult(String projectId, String jobId) {
+    public Object getJobResult(String projectId, String jobId) {
         return resultQuerier.resultOfJob(
             idConvertor.revert(jobId));
     }

@@ -7,25 +7,19 @@
 
 package ai.starwhale.mlops.resulting;
 
-import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
-import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobEntity;
-import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.resulting.repo.IndicatorRepo;
-import ai.starwhale.mlops.resulting.repo.IndicatorRepoFinder;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -40,14 +34,18 @@ public class ResultQuerier {
 
     final StorageAccessService storageAccessService;
 
+    final ObjectMapper objectMapper;
+
     public ResultQuerier(
         JobMapper jobMapper,
-        StorageAccessService storageAccessService) {
+        StorageAccessService storageAccessService,
+        ObjectMapper objectMapper) {
         this.jobMapper = jobMapper;
         this.storageAccessService = storageAccessService;
+        this.objectMapper = objectMapper;
     }
 
-    public String resultOfJob(Long jobId){
+    public Object resultOfJob(Long jobId){
         JobEntity jobEntity = jobMapper.findJobById(jobId);
         if(null == jobEntity){
             throw new SWValidationException(ValidSubject.JOB).tip("unknown jobid");
@@ -62,7 +60,7 @@ public class ResultQuerier {
                 throw new SWValidationException(ValidSubject.JOB).tip("no result found of job");
             }
             try(InputStream inputStream = storageAccessService.get(results.get(0))){
-                return new String(inputStream.readAllBytes());
+                return objectMapper.readValue(inputStream,Object.class);
             }
 
         } catch (IOException e) {

@@ -84,10 +84,9 @@ public class JobController implements JobApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> getJobResult(String projectId,
+    public ResponseEntity<ResponseMessage<Object>> getJobResult(String projectId,
         String jobId) {
-
-        String jobResult = jobService.getJobResult(projectId, jobId);
+        Object jobResult = jobService.getJobResult(projectId, jobId);
         return ResponseEntity.ok(Code.success.asResponse(jobResult));
     }
 
