@@ -1,7 +1,7 @@
 BASE_IMAGE :=starwhaleai/base:0.1.0-nightly-2022041501
-SW_IMAGE := starwhaleai/starwhale:0.1.0-nightly-2022041501
+SW_IMAGE := starwhaleai/starwhale:0.1.0-nightly-202204201
 SW_TASKSET_IMAGE := starwhaleai/taskset:0.1.0-nightly-2022041601
-SW_VERSION := 0.1.0.dev9
+SW_VERSION := 0.1.0.dev10
 
 build-base:
 	docker build -f Dockerfile.base -t $(BASE_IMAGE) .
