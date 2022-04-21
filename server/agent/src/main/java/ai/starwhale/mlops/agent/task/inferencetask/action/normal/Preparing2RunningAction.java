@@ -91,10 +91,10 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
 
         switch (oldTask.getTaskType()) {
             case PPL:
-                imageConfig.setEntrypoint(List.of("ppl"));
+                imageConfig.setCmd(List.of("ppl"));
                 break;
             case CMP:
-                imageConfig.setEntrypoint(List.of("cmp"));
+                imageConfig.setCmd(List.of("cmp"));
                 break;
         }
 
