@@ -9,12 +9,36 @@ import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
 import { IIndicator, IMBCConfusionMetrics, IMCConfusionMetrics, INDICATOR_TYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
-import { usetHeatmapConfig } from '@/components/Indicator/utils'
+import { getHeatmapConfig } from '@/components/Indicator/utils'
+import { DisplayMedium, DisplayXSmall, LabelMedium } from 'baseui/typography'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
+function flattenObject(o: any, prefix = '', result: any = {}, keepNull = true) {
+    if (_.isString(o) || _.isNumber(o) || _.isBoolean(o) || (keepNull && _.isNull(o))) {
+        result[prefix] = o
+        return result
+    }
 
+    if (_.isArray(o) || _.isPlainObject(o)) {
+        for (let i in o) {
+            let pref = prefix
+            if (_.isArray(o)) {
+                pref = pref + `[${i}]`
+            } else {
+                if (_.isEmpty(prefix)) {
+                    pref = i
+                } else {
+                    pref = prefix + ' / ' + i
+                }
+            }
+            flattenObject(o[i] ?? {}, pref, result, keepNull)
+        }
+        return result
+    }
+    return result
+}
 function JobResult() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
     const jobResult = useQuery('fetchJobResult', () => fetchJobResult(projectId, jobId))
@@ -24,41 +48,87 @@ function JobResult() {
         }
     }, [jobResult])
 
-    const dataMBCConfusionMetrics = useMemo((): IMBCConfusionMetrics => {
-        const indicator = jobResult?.data?.indicators.find(
-            (v: IIndicator) => v.name === INDICATOR_TYPE.MBCConfusionMetrics
-        )
-        return indicator?.value ?? {}
-    }, [jobResult, jobResult.data, jobResult.isSuccess])
+    const indicators = useMemo(() => {
+        return _.map(jobResult?.data, (v, k) => {
+            let children = null
 
-    const dataMCConfusionMetrics = useMemo((): IMCConfusionMetrics => {
-        const indicator = jobResult?.data?.indicators.find(
-            (v: IIndicator) => v.name === INDICATOR_TYPE.MCConfusionMetrics
-        )
-        return indicator?.value ?? {}
-    }, [jobResult, jobResult.data, jobResult.isSuccess])
+            switch (k) {
+                case INDICATOR_TYPE.KIND:
+                    return (
+                        <div
+                            style={{
+                                width: 200,
+                                height: 50,
+                                padding: '20px',
+                                background: '#fff',
+                                borderRadius: '12px',
+                            }}
+                        >
+                            <LabelMedium
+                                $style={{
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                Kind: {v}
+                            </LabelMedium>
+                        </div>
+                    )
+                case INDICATOR_TYPE.SUMMARY:
+                    const data = _.isObject(v) ? flattenObject(v) : {}
+                    children = _.isObject(v) ? (
+                        <div>
+                            <LabelMedium
+                                $style={{
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    paddingBottom: '12px',
+                                    borderBottom: '1px solid #000',
+                                }}
+                            >
+                                Sumary
+                            </LabelMedium>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                                {_(data)
+                                    .map((v, k) => (
+                                        <>
+                                            <p>{k}</p>
+                                            <p>{v}</p>
+                                        </>
+                                    ))
+                                    .value()}
+                            </div>
+                        </div>
+                    ) : (
+                        <LabelMedium
+                            $style={{
+                                textOverflow: 'ellipsis',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            Sumary: {v}
+                        </LabelMedium>
+                    )
+                    break
+                case INDICATOR_TYPE.CONFUSION_MATRIX:
+                    const heatmapData = getHeatmapConfig(k, _.keys(v?.binarylabel), v?.binarylabel)
 
-    const labels = useMemo(() => {
-        return _.keys(dataMBCConfusionMetrics) ?? []
-    }, [dataMBCConfusionMetrics])
-
-    const [heatmap, maxValue] = useMemo(() => {
-        let metrics: number[][] = Array(labels.length)
-            .fill(0)
-            .map(() => Array(labels.length).fill(0))
-
-        let maxValue = 0
-
-        _.map(dataMCConfusionMetrics, (v, k) => {
-            metrics[_.toNumber(v.label)][_.toNumber(v.prediction)] = v.value
-            if (v.value > maxValue) {
-                maxValue = v.value
+                    children = (
+                        <React.Suspense fallback={<Spinner />}>
+                            <PlotlyVisualizer data={heatmapData} />
+                        </React.Suspense>
+                    )
+                    break
             }
-        })
-        return [metrics, maxValue]
-    }, [dataMCConfusionMetrics])
 
-    const heatmapData = usetHeatmapConfig(labels, heatmap)
+            return (
+                children && <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>{children}</div>
+            )
+        })
+    }, [jobResult.data, jobResult.isSuccess])
 
     return (
         <>
@@ -66,13 +136,13 @@ function JobResult() {
                 style={{
                     width: '100%',
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(700px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
                     // gridAutoRows: '460px',
                     gridGap: '16px',
-                    placeItems: 'stretch',
                 }}
             >
-                {dataMBCConfusionMetrics && (
+                {indicators}
+                {/* {dataMBCConfusionMetrics && (
                     <div
                         style={{
                             padding: '20px',
@@ -88,7 +158,7 @@ function JobResult() {
                     <React.Suspense fallback={<Spinner />}>
                         <PlotlyVisualizer data={heatmapData} />
                     </React.Suspense>
-                </div>
+                </div> */}
             </div>
         </>
     )

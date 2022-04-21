@@ -56,7 +56,4 @@ export interface ICreateJobFormSchema extends ICreateJobSchema {
     datasetVersionId: string
 }
 
-export interface IJobResultSchema {
-    evaluationType: string
-    indicators: Array<IIndicator>
-}
+export type IJobResultSchema = any

@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 
-export function usetHeatmapConfig(labels: string[], heatmap: number[][]) {
+export function getHeatmapConfig(title = '', labels: string[], heatmap: number[][]) {
     const layout = {
-        title: 'MCConfusionMetrics',
+        title: title,
         annotations: [] as any[],
         xaxis: {
             ticks: '',
@@ -23,35 +23,35 @@ export function usetHeatmapConfig(labels: string[], heatmap: number[][]) {
     const yValues = labels
     const zValues = heatmap
 
-    const annotations = useMemo(() => {
-        const annotations = []
-        for (var i = 0; i < yValues.length; i++) {
-            for (var j = 0; j < xValues.length; j++) {
-                var currentValue = zValues[i][j]
-                if (currentValue != 0) {
-                    var textColor = 'white'
-                } else {
-                    var textColor = 'black'
-                }
-                const result = {
-                    xref: 'x1',
-                    yref: 'y1',
-                    x: xValues[j],
-                    y: yValues[i],
-                    text: zValues[i][j],
-                    font: {
-                        family: 'Inter',
-                        size: 14,
-                        color: textColor,
-                    },
-                    showarrow: false,
-                }
-                annotations.push(result)
+    // const annotations = useMemo(() => {
+    const annotations = []
+    for (var i = 0; i < yValues.length; i++) {
+        for (var j = 0; j < xValues.length; j++) {
+            var currentValue = zValues[i][j]
+            if (currentValue != 0) {
+                var textColor = 'white'
+            } else {
+                var textColor = 'black'
             }
+            const result = {
+                xref: 'x1',
+                yref: 'y1',
+                x: xValues[j],
+                y: yValues[i],
+                text: zValues[i][j].toFixed(2) == '0.00' ? zValues[i][j].toFixed(2) : zValues[i][j].toFixed(3),
+                font: {
+                    family: 'Inter',
+                    size: 14,
+                    color: textColor,
+                },
+                showarrow: false,
+            }
+            annotations.push(result)
         }
+    }
 
-        return annotations
-    }, [labels, heatmap])
+    //     return annotations
+    // }, [labels, heatmap])
 
     layout.annotations = [...annotations]
 
