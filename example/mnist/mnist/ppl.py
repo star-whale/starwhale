@@ -6,6 +6,7 @@ from torchvision import transforms
 from PIL import Image
 
 from starwhale.api.model import PipelineHandler
+from starwhale.api.metric import multi_classification
 
 from .model import Net
 
@@ -21,13 +22,26 @@ class MNISTInference(PipelineHandler):
         self.device = torch.device(device)
         self.model = self._load_model(self.device)
 
-    def handle(self, data, batch_size, **kw):
+    def ppl(self, data, batch_size, **kw):
         data = self._pre(data, batch_size)
         output = self.model(data)
         return self._post(output)
 
     def handle_label(self, label, batch_size, **kw):
         return [int(l) for l in label]
+
+    @multi_classification(
+        confusion_matrix_normalize="all",
+        show_hamming_loss=True,
+        show_cohen_kappa_score=True,
+        all_labels=[i for i in range(0, 10)]
+    )
+    def cmp(self, _data_loader):
+        _result, _label = [], []
+        for _data in _data_loader:
+            _label.extend([int(l) for l in _data["label"]])
+            _result.extend([int(l) for l in _data["result"]])
+        return _label, _result
 
     def _pre(self, input: bytes, batch_size: int):
         images = []
@@ -58,15 +72,6 @@ class MNISTInference(PipelineHandler):
         return model
 
 
-def local_smoketest():
-    mnist = MNISTInference()
-
-    tdir = ROOTDIR / "data/test"
-    for f in tdir.iterdir():
-        output = mnist.handle(f.open("rb").read(), 1)
-        print(f"{f.name} -> {output}")
-
-
 def load_test_env(fuse=True):
     _p = lambda p : str((ROOTDIR / "test" / p).resolve())
 
@@ -76,10 +81,10 @@ def load_test_env(fuse=True):
 
     fname = "swds_fuse.json" if fuse else "swds_s3.json"
     #fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
-    os.environ["SW_TASK_SWDS_CONFIG"] = _p(fname)
+    os.environ["SW_TASK_INPUT_CONFIG"] = _p(fname)
 
 
 if __name__ == "__main__":
     load_test_env(fuse=False)
     mnist = MNISTInference()
-    mnist.starwhale_internal_run()
+    mnist._starwhale_internal_run_ppl()

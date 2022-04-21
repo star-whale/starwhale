@@ -2,3 +2,5 @@ numpy==1.21.0
 torch
 torchvision
 Pillow
+scikit-learn
+starwhale==0.1.0.dev10

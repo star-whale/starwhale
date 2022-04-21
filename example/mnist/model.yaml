@@ -8,11 +8,16 @@ config:
   - config/hyperparam.json
 
 run:
-  runtime: python3.8
+  runtime: python3.9
   ppl: mnist.ppl:MNISTInference
   pip_req: requirements.txt
+  exclude_pkg_data:
+    - venv
+    - .git
+    - .history
+    - .vscode
 
 desc: mnist by pytorch
 
 tag:
-  - classify
+  - multi_classification

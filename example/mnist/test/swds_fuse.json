@@ -1,5 +1,6 @@
 {
     "backend": "fuse",
+    "kind": "swds",
     "swds": [
         {
             "bucket": "~/.cache/starwhale/dataset/mnist/gbrggnldg44gcmrxgjswmzbyhb2da5i/data",

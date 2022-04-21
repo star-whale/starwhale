@@ -12,14 +12,14 @@ from starwhale.utils import fmt_http_server
 from starwhale.consts import SW_API_VERSION
 from starwhale.utils.http import wrap_sw_error_resp
 
-DEFAULT_HTTP_TIMEOUT = 5
+DEFAULT_HTTP_TIMEOUT = 90
 
 
 def login(username, password, server):
     server = fmt_http_server(server)
     url = f"{server}/api/{SW_API_VERSION}/login"
     r = requests.post(url, timeout=DEFAULT_HTTP_TIMEOUT,
-                      data={"username": username, "userpwd": password})
+                      data={"userName": username, "userPwd": password})
 
     if r.status_code == HTTPStatus.OK:
         rprint(f":man_cook: login {server} successfully!")
