@@ -38,7 +38,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
     private static final String statusFileEnv = "SW_TASK_STATUS_FILE";
     private static final String logDirEnv = "SW_TASK_LOG_DIR";
     private static final String resultDirEnv = "SW_TASK_RESULT_DIR";
-    private static final String swdsFileEnv = "SW_TASK_SWDS_CONFIG";
+    private static final String swdsFileEnv = "SW_TASK_INPUT_CONFIG";
 
     @Override
     public boolean valid(InferenceTask task, Context context) {
