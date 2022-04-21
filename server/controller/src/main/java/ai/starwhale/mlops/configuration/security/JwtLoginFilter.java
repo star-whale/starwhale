@@ -30,7 +30,7 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
 
-    private final ThreadLocal<Map<String, String>> threadLocal = new ThreadLocal<>();
+//    private final ThreadLocal<Map<String, String>> threadLocal = new ThreadLocal<>();
 
     public JwtLoginFilter() {
         this.setPostOnly(false);
@@ -46,7 +46,7 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
             String userName = this.obtainUsername(request);
             String password = this.obtainPassword(request);
 
-            threadLocal.remove();
+//            threadLocal.remove();
 
             //Create unauthenticated credentials
             JwtLoginToken jwtLoginToken = new JwtLoginToken(userName, password);
@@ -70,23 +70,24 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
     }
 
     private String getParameter(HttpServletRequest request, String param) {
-        return this.getBodyParams(request).get(param);
+        return request.getParameter(param);
+//        return this.getBodyParams(request).get(param);
     }
 
 
-    private Map<String, String> getBodyParams(HttpServletRequest request) {
-        Map<String, String> bodyParams = threadLocal.get();
-        if (bodyParams == null) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            try (InputStream is = request.getInputStream()) {
-                bodyParams = objectMapper.readValue(is, Map.class);
-            } catch (IOException e) {
-                log.error("get body params", e);
-            }
-            threadLocal.set(Optional.ofNullable(bodyParams).orElse(new HashMap<>()));
-        }
-
-        return bodyParams;
-    }
+//    private Map<String, String> getBodyParams(HttpServletRequest request) {
+//        Map<String, String> bodyParams = threadLocal.get();
+//        if (bodyParams == null) {
+//            ObjectMapper objectMapper = new ObjectMapper();
+//            try (InputStream is = request.getInputStream()) {
+//                bodyParams = objectMapper.readValue(is, Map.class);
+//            } catch (IOException e) {
+//                log.error("get body params", e);
+//            }
+//            threadLocal.set(Optional.ofNullable(bodyParams).orElse(new HashMap<>()));
+//        }
+//
+//        return bodyParams;
+//    }
 
 }
