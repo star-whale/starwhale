@@ -27,7 +27,7 @@ from starwhale.utils.venv import (
 from starwhale.utils.fs import ensure_dir, empty_dir
 from starwhale.base.store import LocalStorage
 from starwhale.utils.error import NotFoundError
-from starwhale.utils.http import wrap_sw_error_resp
+from starwhale.utils.http import wrap_sw_error_resp, upload_file
 
 TMP_FILE_BUFSIZE = 8192
 
@@ -77,20 +77,16 @@ class ModelPackageLocalStore(LocalStorage):
             rprint(f"[red]failed to push {swmp}[/], because of {_spath} not found")
             sys.exit(1)
 
-        #TODO: add progress bar and rich live
-        #TODO: add multi-part upload
-        #TODO: add more push log
-        #TODO: use head first to check swmp exists
-        #TODO: add timeout
         rprint(":fire: try to push swmp...")
-        r = requests.post(url, data={"swmp": swmp, "project": project, "force": 1 if force else 0},
-                          files={"file": _spath.open("rb")},
-                          headers={"Authorization": self._sw_token}
-                          )
-        if r.status_code == HTTPStatus.OK:
-            rprint(" :clap: push done.")
-        else:
-            wrap_sw_error_resp(r, "push failed!", exit=True)
+        upload_file(
+            url=url,
+            fpath=_spath,
+            fields={"swmp": swmp, "project": project,
+                    "force": "1" if force else "0"},
+            headers={"Authorization": self._sw_token},
+            exit=True,
+        )
+        rprint(" :clap: push done.")
 
     def pull(self, swmp: str, project:str="", server: str="", force: bool=False) -> None:
         server = server.strip() or self.sw_remote_addr
