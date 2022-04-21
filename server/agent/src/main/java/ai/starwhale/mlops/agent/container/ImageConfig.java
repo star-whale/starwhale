@@ -35,6 +35,8 @@ public class ImageConfig {
      */
     private String networkMode;
 
+    private List<String> cmd;
+
     private CPUConfig cpuConfig;
     private GPUConfig gpuConfig;
     private IOConfig ioConfig;

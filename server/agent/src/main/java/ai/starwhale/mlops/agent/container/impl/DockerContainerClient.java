@@ -74,7 +74,8 @@ public class DockerContainerClient implements ContainerClient {
 
             CreateContainerCmd createContainerCmd = client.createContainerCmd(imageConfig.getImage())
                     .withHostConfig(hostConfig)
-                    .withLabels(imageConfig.getLabels());
+                    .withLabels(imageConfig.getLabels())
+                    .withCmd(imageConfig.getCmd());
 
             if(CollectionUtil.isNotEmpty(imageConfig.getEntrypoint())) {
                 createContainerCmd.withEntrypoint(imageConfig.getEntrypoint());
