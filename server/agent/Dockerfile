@@ -1,0 +1,25 @@
+FROM ubuntu:20.04
+
+COPY external/sources.list /etc/apt/sources.list
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV TZ=Etc/UTC
+
+# nvidia driver version
+ENV NV_DRIVER_VERSION 470
+
+# Install os dependence\OpenJDK-11
+RUN apt-get update \
+    && apt-get install -y openjdk-11-jdk \
+    && apt-get install -y --no-install-recommends nvidia-driver-${NV_DRIVER_VERSION} \
+    && apt-get clean all \
+    && rm -rf /var/lib/apt/lists/* /tmp/*
+
+# agent
+VOLUME /tmp
+CMD pwd
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app.jar"]
