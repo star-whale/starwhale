@@ -11,6 +11,7 @@ import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
+import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.system.Agent;
 import ai.starwhale.mlops.domain.task.TaskType;
@@ -101,9 +102,6 @@ public class TaskBoConverter {
     }
 
     public TaskTrigger toTaskTrigger(Task t){
-        if(t.getTaskType() != TaskType.PPL){
-            throw new SWValidationException(ValidSubject.TASK).tip("task type can't be dispatched as evaluation task "+t.getTaskType());
-        }
         switch (t.getTaskType()){
             case PPL:
                 return TaskTrigger.builder()
@@ -113,12 +111,17 @@ public class TaskBoConverter {
                     .swdsBlocks(((PPLRequest)t.getTaskRequest()).getSwdsBlocks())
                     .deviceAmount(t.getJob().getJobRuntime().getDeviceAmount())
                     .deviceClass(t.getJob().getJobRuntime().getDeviceClass())
+                    .taskType(t.getTaskType())
                     .swModelPackage(t.getJob().getSwmp()).build();
             case CMP:
                 return TaskTrigger.builder()
                     .id(t.getId())
                     .resultPath(t.getResultDir())
                     .cmpInputFilePaths(((CMPRequest)t.getTaskRequest()).getPplResultPaths())
+                    .taskType(t.getTaskType())
+                    .deviceAmount(1)
+                    .deviceClass(Clazz.CPU)
+                    .imageId(t.getJob().getJobRuntime().getBaseImage())
                     .swModelPackage(t.getJob().getSwmp()).build();
             case UNKNOWN:
             default:

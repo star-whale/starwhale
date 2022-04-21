@@ -23,7 +23,6 @@ import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -74,7 +73,7 @@ public class JobService {
     private JobSpliterator jobSpliterator;
 
     @Resource
-    private SWTaskScheduler SWTaskScheduler;
+    private SWTaskScheduler swTaskScheduler;
 
     @Resource
     private LivingTaskStatusMachine livingTaskStatusMachine;
@@ -168,7 +167,7 @@ public class JobService {
         allNewJobs.parallel().forEach(job->{
             //one transaction
             final List<Task> tasks = jobSpliterator.split(job);
-            SWTaskScheduler.adoptTasks(tasks,job.getJobRuntime().getDeviceClass());
+            swTaskScheduler.adoptTasks(tasks,job.getJobRuntime().getDeviceClass());
             livingTaskStatusMachine.adopt(tasks, new StagingTaskStatus(TaskStatus.CREATED));
         });
 

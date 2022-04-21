@@ -22,7 +22,7 @@
                j.base_image_id,
                j.device_type,
                j.device_amount,
-               j.result_output_path,
+               j.result_output_path as job_result_output_path,
                p.id as project_id,
                p.project_name,
                u.id as user_id,
@@ -129,6 +129,7 @@
         <result property="jobStatus" column="job_status" />
         <result property="deviceType" column="device_type" />
         <result property="deviceAmount" column="device_amount" />
+        <result property="resultOutputPath" column="job_result_output_path" />
         <association property="project" resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
         <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper.swmpVersionResultMap" />
         <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />

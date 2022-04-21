@@ -229,6 +229,8 @@ public class SWModelPackageService {
     public void upload(MultipartFile dsFile,
         ClientSWMPRequest uploadRequest){
 
+        Long startTime = System.currentTimeMillis();
+        log.debug("access received at {}",startTime);
         SWModelPackageEntity entity = swmpMapper.findByNameForUpdate(uploadRequest.getName());
         if(null == entity){
             //create
@@ -239,12 +241,14 @@ public class SWModelPackageService {
                 .build();
             swmpMapper.addSWModelPackage(entity);
         }
+        log.debug("swmp checked time use {}",System.currentTimeMillis() - startTime);
         SWModelPackageVersionEntity swModelPackageVersionEntity = swmpVersionMapper.findByNameAndSwmpId(uploadRequest.getVersion(),entity.getId());
         if(null != swModelPackageVersionEntity){
+            log.debug("swmp version checked time use {}",System.currentTimeMillis() - startTime);
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip("swmp version duplicate"+uploadRequest.getVersion()),
                 HttpStatus.BAD_REQUEST);
         }
-
+        log.debug("swmp version checked time use {}",System.currentTimeMillis() - startTime);
         //upload to storage
         final String swmpPath = storagePathCoordinator
             .generateSwmpPath(uploadRequest.getName(), uploadRequest.getVersion());
