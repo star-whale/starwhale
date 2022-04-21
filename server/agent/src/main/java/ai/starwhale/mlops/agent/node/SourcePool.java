@@ -101,7 +101,47 @@ public class SourcePool {
                 }
             }
             // no available device will throw Exception
-            throw ErrorCode.allocateError.asException("allocate device error");
+            throw ErrorCode.allocateError.asException("allocate device fail, all busy");
+        }
+
+    }
+
+    public Set<Device> preAllocateWithoutThrow(AllocateRequest request) {
+        synchronized (lock) {
+            if (CollectionUtil.isNotEmpty(devices)) {
+                // determine whether the conditions are met
+                long idleGpuNum = devices.stream().filter(
+                        device -> device.getStatus().equals(Status.idle) && device.getClazz()
+                                .equals(Clazz.GPU)).count();
+                long idleCpuNum = devices.stream().filter(
+                        device -> device.getStatus().equals(Status.idle) && device.getClazz()
+                                .equals(Clazz.CPU)).count();
+                if (idleGpuNum >= request.getGpuNum() && idleCpuNum >= request.getCpuNum()) {
+                    int tmp = request.getGpuNum();
+                    Set<Device> results = new HashSet<>();
+
+                    for (Device device : devices) {
+                        if (device.getStatus().equals(Status.idle) && device.getClazz()
+                                .equals(Clazz.GPU) && tmp > 0) {
+                            device.setStatus(Status.busy);
+                            results.add(device);
+                            tmp--;
+                        }
+                    }
+
+                    tmp = request.getCpuNum();
+                    for (Device device : devices) {
+                        if (device.getStatus().equals(Status.idle) && device.getClazz()
+                                .equals(Clazz.CPU) && tmp > 0) {
+                            device.setStatus(Status.busy);
+                            results.add(device);
+                            tmp--;
+                        }
+                    }
+                    return results;
+                }
+            }
+            return null;
         }
 
     }

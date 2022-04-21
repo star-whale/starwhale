@@ -7,12 +7,19 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
+import ai.starwhale.mlops.agent.exception.ErrorCode;
+import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
+@Slf4j
 @Service
 public class Init2PreparingAction extends AbsBasePPLTaskAction {
 
@@ -25,6 +32,21 @@ public class Init2PreparingAction extends AbsBasePPLTaskAction {
     public InferenceTask processing(InferenceTask oldTask, Context context) throws Exception {
         InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
         newTask.setStatus(TaskStatus.PREPARING);
+        // todo try to allocate device for task, otherwise just wait to allocate
+        Set<Device> allocated = null;
+        // allocate device(GPU or CPU) for task
+        switch (oldTask.getDeviceClass()) {
+            case CPU:
+                allocated = sourcePool.preAllocateWithoutThrow(SourcePool.AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
+                break;
+            case GPU:
+                allocated = sourcePool.preAllocateWithoutThrow(SourcePool.AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
+                break;
+            case UNKNOWN:
+                log.error("unknown device class");
+                throw ErrorCode.allocateError.asException("unknown device class");
+        }
+        newTask.setDevices(allocated);
         return newTask;
     }
 

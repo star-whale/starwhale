@@ -72,7 +72,7 @@ public class TaskExecutorTest {
     private SourcePool sourcePool;
 
     void mockConfig() throws Exception {
-        Mockito.when(containerClient.startContainer(any()))
+        Mockito.when(containerClient.createAndStartContainer(any()))
             .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(Optional.of(
             List.of(

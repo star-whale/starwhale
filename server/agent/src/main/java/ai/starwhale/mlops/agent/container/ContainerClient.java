@@ -11,11 +11,12 @@ public interface ContainerClient {
      * @param config start param
      * @return container id
      */
-    Optional<String> startContainer(ImageConfig config);
+    Optional<String> createAndStartContainer(ImageConfig config);
     boolean stopAndRemoveContainer(String containerId, boolean deleteVolume);
+    boolean startContainer(String containerId);
     boolean stopContainer(String containerId);
     boolean removeContainer(String containerId, boolean deleteVolume);
-    Optional<ContainerStatus> status(String containerId);
+    ContainerStatus status(String containerId);
 
     /**
      * "created""running""paused""restarting""removing""exited""dead"
@@ -24,7 +25,11 @@ public interface ContainerClient {
         /**
          * normal life cycle
          */
-        CREATED, RUNNING, PAUSED, RESTARTING, REMOVING, EXITED, DEAD,
+        NORMAL,
+        /**
+         * occur some error
+         */
+        DEAD,
 
         /**
          * 404 no such container

@@ -164,6 +164,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
 
     }
 
+
     @Override
     public String preloadingSWMP(InferenceTask task) throws IOException {
         SWModelPackage model = task.getSwModelPackage();
@@ -172,17 +173,26 @@ public class FileSystemTaskPersistence implements TaskPersistence {
 
         // check if exist todo check with md5
         if (Files.notExists(Path.of(cachePathStr))) {
+            download(cachePathStr, model.getPath());
+        }
+        return cachePathStr;
+    }
+
+    /**
+     * lock avoid multi task download single file
+     */
+    private synchronized void download(String localPath, String remotePath) throws IOException {
+        if (Files.notExists(Path.of(localPath))) {
             // pull swmp(tar) and uncompress it to the swmp dir
-            Stream<String> paths = storageAccessService.list((task.getSwModelPackage().getPath()));
+            Stream<String> paths = storageAccessService.list((remotePath));
             paths.collect(Collectors.toList()).forEach(path -> {
                 try (InputStream swmpStream = storageAccessService.get(path)) {
-                    TarUtil.extractor(swmpStream, cachePathStr);
+                    TarUtil.extractor(swmpStream, localPath);
                 } catch (IOException e) {
                     log.error("download swmp file error", e);
                 }
             });
         }
-        return cachePathStr;
     }
 
     private final String dataFormat = "%s:%s:%s";

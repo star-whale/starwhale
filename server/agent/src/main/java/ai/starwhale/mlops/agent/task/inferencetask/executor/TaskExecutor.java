@@ -62,7 +62,7 @@ public class TaskExecutor {
     Action<ReportRequest, ReportResponse> reportAction;
 
     final
-    Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction;
+    Action<InferenceTask, InferenceTask> archivedAction;
 
 
     /**
@@ -78,7 +78,7 @@ public class TaskExecutor {
             Action<InferenceTask, InferenceTask> init2PreparingAction,
             Action<InferenceTask, InferenceTask> preparing2RunningAction,
             Action<InferenceTask, InferenceTask> preparing2CanceledAction,
-            Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction,
+            Action<InferenceTask, InferenceTask> archivedAction,
             Action<InferenceTask, InferenceTask> monitorRunningTaskAction,
             Action<InferenceTask, InferenceTask> running2CanceledAction,
             Action<InferenceTask, InferenceTask> uploading2FinishedAction,
@@ -90,7 +90,7 @@ public class TaskExecutor {
         this.init2PreparingAction = init2PreparingAction;
         this.preparing2RunningAction = preparing2RunningAction;
         this.preparing2CanceledAction = preparing2CanceledAction;
-        this.finishedOrCanceled2ArchivedAction = finishedOrCanceled2ArchivedAction;
+        this.archivedAction = archivedAction;
         this.monitorRunningTaskAction = monitorRunningTaskAction;
         this.running2CanceledAction = running2CanceledAction;
         this.uploading2FinishedAction = uploading2FinishedAction;
@@ -104,6 +104,7 @@ public class TaskExecutor {
     public void dealPreparingTasks() {
         if (sourcePool.isReady() && taskPool.isReady() && !taskPool.preparingTasks.isEmpty()) {
             // deal with the preparing task with FIFO sort
+            // todo whether async more fit
             execute.apply(
                     taskPool.preparingTasks.peek(),
                     Context.instance(),

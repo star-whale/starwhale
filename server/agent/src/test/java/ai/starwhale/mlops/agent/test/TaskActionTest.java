@@ -84,7 +84,7 @@ public class TaskActionTest {
         // clear local dir
         FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
 
-        Mockito.when(containerClient.startContainer(any()))
+        Mockito.when(containerClient.createAndStartContainer(any()))
                 .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(
                 List.of(

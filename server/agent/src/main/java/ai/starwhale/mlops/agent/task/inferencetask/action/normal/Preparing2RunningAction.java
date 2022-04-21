@@ -20,7 +20,6 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
-import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -58,36 +57,39 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
     public InferenceTask processing(InferenceTask oldTask, Context context) throws Exception {
 
         ImageConfig imageConfig = ImageConfig.builder()
-                .autoRemove(true)
+                .autoRemove(false) // todo
                 .image(oldTask.getImageId())
                 .labels(Map.of("taskId", oldTask.getId().toString()))
                 .build();
 
-        Set<Device> allocated = null;
-        // allocate device(GPU or CPU) for task
-        switch (oldTask.getDeviceClass()) {
-            case CPU:
-                allocated = sourcePool.allocate(AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
-                imageConfig.setCpuConfig(
-                        CPUConfig.builder().cpuCount(Long.valueOf(oldTask.getDeviceAmount())).build()
-                );
-                break;
-            case GPU:
-                allocated = sourcePool.allocate(AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
-                imageConfig.setGpuConfig(
-                        GPUConfig.builder()
-                                .count(oldTask.getDeviceAmount())
-                                .capabilities(List.of(List.of("gpu")))
-                                .deviceIds(allocated.stream().map(Device::getId).collect(Collectors.toList()))
-                                .build()
-                );
-                break;
-            case UNKNOWN:
-                log.error("unknown device class");
-                throw ErrorCode.allocateError.asException("unknown device class");
+        // preAllocate fail, try again
+        if(CollectionUtil.isEmpty(oldTask.getDevices())) {
+            Set<Device> allocated = null;
+            // allocate device(GPU or CPU) for task
+            switch (oldTask.getDeviceClass()) {
+                case CPU:
+                    allocated = sourcePool.allocate(AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
+                    imageConfig.setCpuConfig(
+                            CPUConfig.builder().cpuCount(Long.valueOf(oldTask.getDeviceAmount())).build()
+                    );
+                    break;
+                case GPU:
+                    allocated = sourcePool.allocate(AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
+                    imageConfig.setGpuConfig(
+                            GPUConfig.builder()
+                                    .count(oldTask.getDeviceAmount())
+                                    .capabilities(List.of(List.of("gpu")))
+                                    .deviceIds(allocated.stream().map(Device::getId).collect(Collectors.toList()))
+                                    .build()
+                    );
+                    break;
+                case UNKNOWN:
+                    log.error("unknown device class");
+                    throw ErrorCode.allocateError.asException("unknown device class");
+            }
+            // allocate device to this task,if fail will throw exception, now it is blocked
+            oldTask.setDevices(allocated);
         }
-        // allocate device to this task,if fail will throw exception, now it is blocked
-        oldTask.setDevices(allocated);
 
         switch (oldTask.getTaskType()) {
             case PPL:
@@ -115,8 +117,15 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
         // generate the file used by container(default dir)
         taskPersistence.generateConfigFile(oldTask);
 
+        // todo cache
+        imageConfig.setEnv(List.of(
+                env("SW_PYPI_INDEX_URL", "http://10.131.0.1:3141/root/pypi-douban/+simple/"),
+                env("SW_PYPI_EXTRA_INDEX_URL", ""),
+                env("SW_PYPI_TRUSTED_HOST", "10.131.0.1")
+        ));
+
         // fill with task info
-        Optional<String> containerId = containerClient.startContainer(imageConfig);
+        Optional<String> containerId = containerClient.createAndStartContainer(imageConfig);
         // whether the container create and start success
         if (containerId.isPresent()) {
             InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
@@ -146,7 +155,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
 
     @Override
     public void fail(InferenceTask oldTask, Context context, Exception e) {
-        log.error("execute task:{}, error:{}", JSONUtil.toJsonStr(oldTask), e.getMessage());
+        log.error("execute task:{}, error:{}", oldTask.getId(), e.getMessage());
         // rollback and wait again until next time
         if (CollectionUtil.isNotEmpty(oldTask.getDevices())) {
             sourcePool.release(oldTask.getDevices());
