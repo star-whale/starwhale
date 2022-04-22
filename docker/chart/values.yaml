@@ -1,0 +1,112 @@
+nameOverride: ""
+fullnameOverride: ""
+clusterDoman: cluster.local
+commonLables: {}
+commonAnnotations: {}
+
+image:
+  registry: docker.io
+  tag: "0.1.0-nightly-2022041601"
+  tasksetTag: "0.1.0-nightly-2022041601"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+mysql:
+  enable: true
+  username: root
+  password: 123456
+
+externalMySQL:
+  host: localhost
+  port: 3306
+  user: ""
+  password: ""
+  database: starwhale
+
+minio:
+  enable: true
+  accessKey: minioadmin
+  secretKey: minioadmin
+  region: local
+
+externalS3OSS:
+  host: localhost
+  port: 9000
+  accessKey: ""
+  secretKey: ""
+  region: local
+
+controller:
+  replicaCount: 1
+  updateStrategy:
+    type: RollingUpdate
+  podLabels: {}
+  podAnnotations: {}
+  containerPorts:
+    controller: 8082
+  nodeAffinityPreset:
+    type: ""
+    key: ""
+    values: []
+  affinity: {}
+  tolerations: []
+
+storage:
+  agentCPUHostPath: "/mnt/data/starwhale/agent-cpu"
+  agentGPUHostPath: "/mnt/data/starwhale/agent-gpu"
+
+nodeSelector:
+  controller: {}
+  agentCPU:
+    starwhale.ai/node-domain: cpu
+  agentGPU:
+    starwhale.ai/node-domain: gpu
+
+resources:
+  agentCPU:
+    limits:
+      cpu: 10000m
+      memory: 16Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+  agentGPU:
+    limits:
+      cpu: 10000m
+      memory: 16Gi
+      nvidia.com/gpu: 2
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+      nvidia.com/gpu: 2
+  controller:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+  automountServiceAccountToken: false
+
+service:
+  type: ClusterIP
+  clusterIP: ""
+  ports:
+    controller: 8082
+  nodePorts:
+    controller: 8082
+  loadBalancerIP: ""
+
+ingress:
+  enabled: false
+  className: starwhale-ingress
+  annotations: {}
+  hosts:
+    - host: starwhale.local
+      paths: []
+  tls: false

@@ -1,0 +1,9 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+{{ include "chart.agent" (merge (dict "role" "gpu") . )}}
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+{{ include "chart.agent" (merge (dict "role" "cpu") . )}}
