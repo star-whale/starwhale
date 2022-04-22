@@ -38,22 +38,24 @@ export interface IUpdateJobSchema {}
 
 export interface ICreateJobSchema {
     modelVersionId: string
-    datasetVersionIds?: Array<string>
+    datasetVersionIds?: string
     baseImageId?: string
     deviceId?: string
     deviceCount?: number
-    resultOutputPath?: string
+    // resultOutputPath?: string
 }
 
 export interface IJobFormSchema extends IJobSchema {
     modelId: string
     datasetId: string
     datasetVersionId: string
+    datasetVersionIdsArr?: Array<string>
 }
 export interface ICreateJobFormSchema extends ICreateJobSchema {
     modelId: string
     datasetId: string
     datasetVersionId: string
+    datasetVersionIdsArr?: Array<string>
 }
 
 export type IJobResultSchema = any

@@ -16,12 +16,13 @@ import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSe
 import BaseImageSelector from '@/domain/runtime/components/BaseImageSelector'
 import DeviceSelector from '../../runtime/components/DeviceSelector'
 import NumberInput from '@/components/Input/NumberInput'
+import _ from 'lodash'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
 export interface IJobFormProps {
     job?: IJobFormSchema
-    onSubmit: (data: ICreateJobFormSchema) => Promise<void>
+    onSubmit: (data: ICreateJobSchema) => Promise<void>
 }
 
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
@@ -44,19 +45,18 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [loading, setLoading] = useState(false)
 
     const handleValuesChange = useCallback((_changes, values_) => {
-        console.log(_changes, values_)
         setValues(values_)
         values_.modelId && setModelId(values_.modelId)
         values_.datasetId && setDatasetId(values_.datasetId)
     }, [])
 
     const handleFinish = useCallback(
-        async (values_) => {
+        async (values_: ICreateJobFormSchema) => {
             setLoading(true)
             try {
                 await onSubmit({
-                    ...values_,
-                    datasetVersionIds: values_.datasetVersionIds.join(','),
+                    ..._.omit(values_, ['modelId', 'datasetId', 'datasetVersionId', 'datasetVersionIdsArr']),
+                    datasetVersionIds: values_.datasetVersionIdsArr?.join(','),
                 })
                 history.back()
             } finally {
@@ -69,10 +69,10 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const handleAddDataset = useCallback(() => {
         const datasetVersionId = form.getFieldValue('datasetVersionId') as string
         if (!datasetVersionId) return
-        const datasetVersionIds = (form.getFieldValue('datasetVersionIds') ?? []) as Array<string>
-        const ids = new Set(...datasetVersionIds).add(datasetVersionId)
+        const datasetVersionIdsArr = (form.getFieldValue('datasetVersionIdsArr') ?? []) as Array<string>
+        const ids = new Set(...datasetVersionIdsArr).add(datasetVersionId)
         form.setFieldsValue({
-            datasetVersionIds: Array.from(ids),
+            datasetVersionIdsArr: Array.from(ids),
         })
     }, [])
 
@@ -104,7 +104,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             overrides={{
                                 Root: {
                                     style: {
-                                        width: '200px',
+                                        width: '400px',
                                     },
                                 },
                             }}
@@ -136,7 +136,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             overrides={{
                                 Root: {
                                     style: {
-                                        width: '200px',
+                                        width: '400px',
                                     },
                                 },
                             }}
@@ -149,8 +149,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     </Button>
                 </div>
             </div>
-            <div style={{ width: '420px' }}>
-                <FormItem label={t('Selected Dataset')} name='datasetVersionIds' required>
+            <div style={{ width: '400px' }}>
+                <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
                     <MultiTags placeholder={''} />
                 </FormItem>
             </div>
@@ -163,7 +163,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '200px',
+                                    width: '400px',
                                 },
                             },
                         }}
@@ -191,7 +191,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         }}
                     />
                 </FormItem>
-                <FormItem label={t('Result Output Path')} name='resultOutputPath'>
+                {/* <FormItem label={t('Result Output Path')} name='resultOutputPath'>
                     <Input
                         overrides={{
                             Root: {
@@ -201,7 +201,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             },
                         }}
                     />
-                </FormItem>
+                </FormItem> */}
             </div>
 
             <FormItem>

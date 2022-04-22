@@ -1,8 +1,6 @@
 import React, { useCallback, useRef } from 'react'
-
 import { Spinner, SIZE } from 'baseui/spinner'
 import { Skeleton } from 'baseui/skeleton'
-import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
 
 export interface IBusyLoaderWrapperProps {
     isLoading: boolean
@@ -17,6 +15,7 @@ export interface IBusyLoaderWrapperProps {
 }
 
 import './BusyLoaderWrapper.scss'
+import BusyPlaceholder from './BusyPlaceholder'
 
 function BusyLoaderWrapper({
     style = {},
@@ -35,7 +34,7 @@ function BusyLoaderWrapper({
                 return <Skeleton rows={5} height='100px' width='100%' animation {...loaderConfig} />
             }
             default: {
-                return <Spinner $size={SIZE.large} {...loaderConfig} />
+                return <BusyPlaceholder />
             }
         }
     }
@@ -54,17 +53,13 @@ function BusyLoaderWrapper({
     return (
         <>
             {isLoading ? (
-                <ErrorBoundary>
-                    <div className={`BusyLoaderWrapper ${className}`} style={{ width, height }}>
-                        {loaderComponent || loaderRender()}
-                    </div>
-                </ErrorBoundary>
+                <div className={`BusyLoaderWrapper ${className}`} style={{ width, height }}>
+                    {loaderComponent || loaderRender()}
+                </div>
             ) : children ? (
-                <ErrorBoundary>
-                    <div style={{ width, height, ...style }} ref={mountCard}>
-                        {children}
-                    </div>
-                </ErrorBoundary>
+                <div style={{ width, height, ...style }} ref={mountCard}>
+                    {children}
+                </div>
             ) : null}
         </>
     )

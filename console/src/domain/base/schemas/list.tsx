@@ -6,7 +6,7 @@ export interface IListSchema<T> {
 }
 
 export interface IListQuerySchema {
-    start: number
-    count: number
+    pageNum: number
+    pageSize: number
     search?: string
 }

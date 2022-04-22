@@ -16,8 +16,8 @@ export interface IModelSelectorProps {
 export default function ModelSelector({ projectId, value, onChange, overrides, disabled }: IModelSelectorProps) {
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
-    const modelsInfo = useQuery(`listModels:${keyword}`, () =>
-        listModels(projectId, { start: 0, count: 100, search: keyword })
+    const modelsInfo = useQuery(`listModels:${projectId}:${keyword}`, () =>
+        listModels(projectId, { pageNum: 1, pageSize: 100, search: keyword })
     )
 
     const handleModelInputChange = _.debounce((term: string) => {

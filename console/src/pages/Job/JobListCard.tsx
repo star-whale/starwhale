@@ -19,7 +19,6 @@ import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
 export default function JobListCard() {
     const [page] = usePage()
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-
     const jobsInfo = useFetchJobs(projectId, page)
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(

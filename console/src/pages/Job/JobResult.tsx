@@ -9,11 +9,13 @@ import _ from 'lodash'
 import { getHeatmapConfig } from '@/components/Indicator/utils'
 import { LabelLarge, LabelMedium } from 'baseui/typography'
 import { useStyletron } from 'baseui'
+import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
 // import ResponsiveReactGridLayout from 'react-grid-layout'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
+
 function flattenObject(o: any, prefix = '', result: any = {}, keepNull = true) {
     if (_.isString(o) || _.isNumber(o) || _.isBoolean(o) || (keepNull && _.isNull(o))) {
         result[prefix] = o
@@ -40,7 +42,7 @@ function flattenObject(o: any, prefix = '', result: any = {}, keepNull = true) {
 }
 function JobResult() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-    const jobResult = useQuery('fetchJobResult', () => fetchJobResult(projectId, jobId))
+    const jobResult = useQuery(`fetchJobResult:${projectId}:${jobId}`, () => fetchJobResult(projectId, jobId))
     useEffect(() => {
         if (jobResult.isSuccess) {
             console.log(jobResult.data)
@@ -98,7 +100,7 @@ function JobResult() {
                     const heatmapData = getHeatmapConfig(k, _.keys(v?.binarylabel), v?.binarylabel)
 
                     children = (
-                        <React.Suspense fallback={<Spinner />}>
+                        <React.Suspense fallback={<BusyPlaceholder />}>
                             <PlotlyVisualizer data={heatmapData} />
                         </React.Suspense>
                     )
@@ -109,8 +111,6 @@ function JobResult() {
                             jobResult?.data?.[INDICATOR_TYPE.CONFUSION_MATRIX]?.mutlilabel?.[Number(subK)]
                         )
 
-                        console.log(jobResult?.data?.[INDICATOR_TYPE.CONFUSION_MATRIX]?.mutlilabel, Number(subK))
-                        console.log(tp, fp, tn, fn)
                         subV = Object.assign(subV, {
                             tp,
                             fp,
@@ -137,30 +137,35 @@ function JobResult() {
     //     { i: 'confusion_matrix', x: 3, y: 0, w: 7, h: 12, minW: 2, maxW: 4 },
     //     { i: 'sumary', x: 4, y: 0, w: 1, h: 2 },
     // ]
+    if (jobResult.isFetching || 1) {
+        return <BusyPlaceholder />
+    }
 
     return (
         <div style={{ width: '100%', height: 'auto' }}>
-            <div
-                style={{
-                    width: '100%',
-                    lineHeight: 50,
-                    padding: '20px',
-                    background: '#fff',
-                    borderRadius: '12px',
-                    marginBottom: '16px',
-                    boxSizing: 'border-box',
-                }}
-            >
-                <LabelLarge
-                    $style={{
-                        textOverflow: 'ellipsis',
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
+            {jobResult.data?.kind && (
+                <div
+                    style={{
+                        width: '100%',
+                        lineHeight: 50,
+                        padding: '20px',
+                        background: '#fff',
+                        borderRadius: '12px',
+                        marginBottom: '16px',
+                        boxSizing: 'border-box',
                     }}
                 >
-                    Kind: {jobResult.data?.kind ?? ''}
-                </LabelLarge>
-            </div>
+                    <LabelLarge
+                        $style={{
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        Kind: {jobResult.data?.kind ?? ''}
+                    </LabelLarge>
+                </div>
+            )}
             {/* <ResponsiveReactGridLayout className='layout' cols={12} rowHeight={30} width={1200} layout={layout}>
                 {indicators}
             </ResponsiveReactGridLayout> */}

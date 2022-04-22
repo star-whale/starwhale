@@ -20,32 +20,37 @@ export function usePage(opt?: {
         updateQuery = updateQuery0
     }
 
-    const { page: pageStr = '1', search, q, sort_by: sortBy, sort_asc: sortAsc } = query
+    const { pageNum: pageStr = '1', pageSize: pageSizeStr, search, q, sort_by: sortBy, sort_asc: sortAsc } = query
     let pageNum = parseInt(pageStr, 10)
     // eslint-disable-next-line no-restricted-globals
     if (isNaN(pageNum) || pageNum <= 0) {
         pageNum = 1
     }
 
-    const start = (pageNum - 1) * defaultCount
+    let pageSize = parseInt(pageSizeStr, 10)
+    // eslint-disable-next-line no-restricted-globals
+    if (isNaN(pageSize) || pageSize <= 0) {
+        pageSize = 10
+    }
 
     return [
         useMemo(
             () => ({
-                start,
-                count: defaultCount,
+                pageNum,
+                pageSize,
                 search,
                 q,
                 sort_by: sortBy,
                 sort_asc: sortAsc === 'true',
             }),
-            [defaultCount, q, search, sortAsc, sortBy, start]
+            [defaultCount, q, search, sortAsc, sortBy]
         ),
         useCallback(
             (newPage) => {
                 updateQuery?.({
-                    page: Math.floor(newPage.start / newPage.count) + 1,
-                    search: newPage.search
+                    pageNum: newPage.pageNum,
+                    pageSize: newPage.pageSize,
+                    search: newPage.search,
                 })
             },
             [updateQuery]

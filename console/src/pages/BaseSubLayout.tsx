@@ -31,7 +31,7 @@ export default function BaseSubLayout({ header, extra, breadcrumbItems, navItems
                     </div>
                 </Card>
             ) : (
-                <div>{children}</div>
+                <>{children}</>
             )}
         </BaseLayout>
     )

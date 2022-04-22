@@ -25,9 +25,7 @@ import JobLayout from './pages/Job/JobLayout'
 import TaskLayout from './pages/Job/TaskLayout'
 import JobOverview from './pages/Job/Overview'
 import TaskListCard from './pages/Job/TaskListCard'
-import JobForm from './domain/job/components/JobForm'
 import JobNewCard from './pages/Project/JobNewCard'
-import axios from 'axios'
 import JobResult from './pages/Job/JobResult'
 
 const useStyles = createUseStyles({
