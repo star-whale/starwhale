@@ -34,10 +34,10 @@ public class JobController implements JobApi{
     private IDConvertor idConvertor;
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<JobVO>>> listJobs(String projectId,
+    public ResponseEntity<ResponseMessage<PageInfo<JobVO>>> listJobs(String projectId, String swmpId,
         Integer pageNum, Integer pageSize) {
 
-        List<JobVO> jobVOS = jobService.listJobs(projectId, new PageParams(pageNum, pageSize));
+        List<JobVO> jobVOS = jobService.listJobs(projectId, swmpId, new PageParams(pageNum, pageSize));
         PageInfo<JobVO> pageInfo = new PageInfo<>(jobVOS);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
