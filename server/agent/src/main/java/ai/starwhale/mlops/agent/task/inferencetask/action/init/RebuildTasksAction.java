@@ -7,17 +7,23 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.init;
 
+import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
+import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.task.TaskStatus;
+import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -48,6 +54,33 @@ public class RebuildTasksAction implements Action<Void, List<InferenceTask>> {
 
     @Override
     public void success(Void v, List<InferenceTask> tasks, Context context) {
+        // ensure by commandline runner order
+        if (sourcePool.isReady()) {
+            var running = taskPool.runningTasks.stream().filter(task -> task.getStatus() == TaskStatus.RUNNING).collect(Collectors.toList());
+            running.forEach(task -> {
+                Set<Device> allocated = null;
+                try {
+                    // allocate device(GPU or CPU) for task
+                    switch (task.getDeviceClass()) {
+                        case CPU:
+                            allocated = sourcePool.allocate(
+                                    SourcePool.AllocateRequest.builder().cpuNum(task.getDeviceAmount()).build());
+                            break;
+                        case GPU:
+                            allocated = sourcePool.allocate(
+                                    SourcePool.AllocateRequest.builder().gpuNum(task.getDeviceAmount()).build());
+                            break;
+                        case UNKNOWN:
+                            log.error("unknown device class");
+                            throw ErrorCode.allocateError.asException("unknown device class");
+                    }
+                    task.setDevices(allocated);
+                } catch (Exception e) {
+                    log.error("init task:{} error:{}", JSONUtil.toJsonStr(task), e.getMessage());
+                }
+
+            });
+        }
         taskPool.setToReady();
         log.info("rebuild task pool success, size:{}", tasks.size());
     }

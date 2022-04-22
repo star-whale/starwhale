@@ -29,18 +29,18 @@ public class Init2PreparingAction extends AbsBasePPLTaskAction {
     }
 
     @Override
-    public InferenceTask processing(InferenceTask oldTask, Context context) throws Exception {
-        InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
+    public InferenceTask processing(InferenceTask originTask, Context context) throws Exception {
+        InferenceTask newTask = BeanUtil.toBean(originTask, InferenceTask.class);
         newTask.setStatus(TaskStatus.PREPARING);
         // todo try to allocate device for task, otherwise just wait to allocate
         Set<Device> allocated = null;
         // allocate device(GPU or CPU) for task
-        switch (oldTask.getDeviceClass()) {
+        switch (originTask.getDeviceClass()) {
             case CPU:
-                allocated = sourcePool.preAllocateWithoutThrow(SourcePool.AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
+                allocated = sourcePool.preAllocateWithoutThrow(SourcePool.AllocateRequest.builder().cpuNum(originTask.getDeviceAmount()).build());
                 break;
             case GPU:
-                allocated = sourcePool.preAllocateWithoutThrow(SourcePool.AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
+                allocated = sourcePool.preAllocateWithoutThrow(SourcePool.AllocateRequest.builder().gpuNum(originTask.getDeviceAmount()).build());
                 break;
             case UNKNOWN:
                 log.error("unknown device class");
