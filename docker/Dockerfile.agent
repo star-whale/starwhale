@@ -23,6 +23,6 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
 # java jar
-COPY jar/agent.jar /agent.jar
+COPY jar/agent.jar opt/starwhale/agent.jar
 
-ENTRYPOINT ["sh", "-c", "java ${JAVA_AGENT_OPTS} -jar /agent.jar"]
+ENTRYPOINT ["sh", "-c", "java ${JAVA_AGENT_OPTS} -jar opt/starwhale/agent.jar"]
