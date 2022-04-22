@@ -9,6 +9,7 @@ package ai.starwhale.mlops.agent.task.inferencetask.action.end;
 
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBasePPLTaskAction;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
@@ -21,15 +22,15 @@ public class ArchivedAction extends AbsBasePPLTaskAction {
     public InferenceTask processing(InferenceTask oldTask, Context context)
         throws Exception {
         InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
-        newTask.setStatus(TaskStatus.ARCHIVED);
+        newTask.setStatus(InferenceTaskStatus.ARCHIVED);
         return newTask;
     }
 
     @Override
     public void success(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
         // remove from origin list
-        taskPool.errorTasks.remove(oldTask);
-        taskPool.finishedTasks.remove(oldTask);
+        taskPool.failedTasks.remove(oldTask);
+        taskPool.succeedTasks.remove(oldTask);
         taskPool.canceledTasks.remove(oldTask);
     }
 }

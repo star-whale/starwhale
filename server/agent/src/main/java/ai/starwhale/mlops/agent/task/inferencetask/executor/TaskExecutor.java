@@ -9,6 +9,7 @@ package ai.starwhale.mlops.agent.task.inferencetask.executor;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
@@ -108,7 +109,7 @@ public class TaskExecutor {
             execute.apply(
                     taskPool.preparingTasks.peek(),
                     Context.instance(),
-                    task -> !taskPool.needToCancel.contains(task.getId()),
+                    task -> !taskPool.needToCancel.contains(task.getId()) && task.getStatus() != InferenceTaskStatus.CANCELING,
                     preparing2RunningAction,
                     preparing2CanceledAction
             );
@@ -125,7 +126,7 @@ public class TaskExecutor {
                 execute.apply(
                         runningTask,
                         Context.instance(),
-                        task -> !taskPool.needToCancel.contains(task.getId()),
+                        task -> !taskPool.needToCancel.contains(task.getId()) && task.getStatus() != InferenceTaskStatus.CANCELING,
                         monitorRunningTaskAction,
                         running2CanceledAction
                 );
@@ -141,7 +142,7 @@ public class TaskExecutor {
             for (InferenceTask uploadingTask : new ArrayList<>(taskPool.uploadingTasks)) {
                 execute.apply(uploadingTask,
                         Context.instance(),
-                        task -> !taskPool.needToCancel.contains(task.getId()),
+                        task -> !taskPool.needToCancel.contains(task.getId()) && task.getStatus() != InferenceTaskStatus.CANCELING,
                         uploading2FinishedAction,
                         uploading2CanceledAction);
 

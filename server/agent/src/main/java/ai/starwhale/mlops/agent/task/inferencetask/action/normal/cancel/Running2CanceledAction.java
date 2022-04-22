@@ -7,21 +7,28 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
 
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceStage;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class Running2CanceledAction extends AbsBaseCancelPPLTaskAction {
     @Override
+    public Optional<InferenceStage> stage() {
+        return Optional.of(InferenceStage.RUNNING);
+    }
+
+    @Override
     public InferenceTask processing(InferenceTask oldTask, Context context) {
         // stop the container
-        if (containerClient.stopAndRemoveContainer(oldTask.getContainerId(), true)){
+        if (containerClient.stopAndRemoveContainer(oldTask.getContainerId(), true)) {
             return super.processing(oldTask, context);
         }
-       return null;
+        return null;
     }
 
     @Override

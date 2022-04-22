@@ -17,16 +17,14 @@ public class TaskPool {
         public final Queue<InferenceTask> preparingTasks = new ArrayDeque<>();
         public final List<InferenceTask> runningTasks = new Vector<>();
         public final List<InferenceTask> uploadingTasks = new Vector<>();
-        public final List<InferenceTask> finishedTasks = new Vector<>();
+        public final List<InferenceTask> succeedTasks = new Vector<>();
         public final List<InferenceTask> archivedTasks = new Vector<>();
         public final List<InferenceTask> canceledTasks = new Vector<>();
-        public final List<InferenceTask> errorTasks = new Vector<>();
+        public final List<InferenceTask> failedTasks = new Vector<>();
         public final List<Long> needToCancel = new Vector<>();
 
         public void fill(InferenceTask task) {
             switch (task.getStatus()) {
-                case CREATED:
-                    break;
                 case PREPARING:
                     preparingTasks.add(task);
                     break;
@@ -36,15 +34,27 @@ public class TaskPool {
                 case UPLOADING:
                     uploadingTasks.add(task);
                     break;
-                case FINISHED:
-                    finishedTasks.add(task);
+                case SUCCESS:
+                    succeedTasks.add(task);
+                    break;
+                case FAIL:
+                    failedTasks.add(task);
                     break;
                 case ARCHIVED:
                     archivedTasks.add(task);
                     break;
-                case EXIT_ERROR:
-                    errorTasks.add(task);
-                    break;
+                case CANCELING:
+                    switch (task.getStage()) {
+                        case PREPARING:
+                            preparingTasks.add(task);
+                            break;
+                        case RUNNING:
+                            runningTasks.add(task);
+                            break;
+                        case UPLOADING:
+                            uploadingTasks.add(task);
+                            break;
+                    }
                 case CANCELED:
                     canceledTasks.add(task);
             }

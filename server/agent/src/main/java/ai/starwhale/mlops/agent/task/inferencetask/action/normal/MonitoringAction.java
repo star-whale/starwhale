@@ -10,6 +10,7 @@ package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence.ExecuteStatus;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
@@ -37,10 +38,10 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
                     // nothing to do,just wait
                     break;
                 case success:
-                    newTask.setStatus(TaskStatus.UPLOADING);
+                    newTask.setStatus(InferenceTaskStatus.UPLOADING);
                     break;
                 case failed:
-                    newTask.setStatus(TaskStatus.EXIT_ERROR);
+                    newTask.setStatus(InferenceTaskStatus.FAIL);
                     break;
             }
         }
@@ -50,14 +51,14 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
     @Override
     public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
 
-        if (newTask.getStatus() == TaskStatus.UPLOADING) {
+        if (newTask.getStatus() == InferenceTaskStatus.UPLOADING) {
             taskPool.uploadingTasks.add(newTask);
             // if run success, release device to available device pool todo:is there anything else to do?
             sourcePool.release(newTask.getDevices());
             // only update memory list,there is no need to update the disk file(already update by taskContainer)
             taskPool.runningTasks.remove(oldTask);
-        } else if (newTask.getStatus() == TaskStatus.EXIT_ERROR) {
-            taskPool.errorTasks.add(newTask);
+        } else if (newTask.getStatus() == InferenceTaskStatus.FAIL) {
+            taskPool.failedTasks.add(newTask);
             // if run success, release device to available device pool todo:is there anything else to do?
             sourcePool.release(newTask.getDevices());
             // only update memory list,there is no need to update the disk file(already update by taskContainer)
@@ -77,8 +78,8 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
                 case NO_SUCH_CONTAINER:
                     // already be removed or any else error
                     log.error("container:{} may be removed, now will return error", newTask.getContainerId());
-                    newTask.setStatus(TaskStatus.EXIT_ERROR);
-                    taskPool.errorTasks.add(newTask);
+                    newTask.setStatus(InferenceTaskStatus.FAIL);
+                    taskPool.failedTasks.add(newTask);
                     // if run success, release device to available device pool
                     sourcePool.release(newTask.getDevices());
                     // only update memory list,there is no need to update the disk file(already update by taskContainer)

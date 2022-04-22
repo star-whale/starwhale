@@ -12,6 +12,7 @@ import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
@@ -77,9 +78,9 @@ public class TaskExecutorTest {
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(Optional.of(
                 List.of(
                         InferenceTask.builder()
-                                .id(1234567890L).taskType(TaskType.PPL).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build(),
+                                .id(1234567890L).taskType(TaskType.PPL).status(InferenceTaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build(),
                         InferenceTask.builder()
-                                .id(2234567890L).taskType(TaskType.PPL).status(TaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build()
+                                .id(2234567890L).taskType(TaskType.PPL).status(InferenceTaskStatus.PREPARING).deviceClass(Device.Clazz.GPU).deviceAmount(1).build()
                 ))
         );
         Mockito.when(taskPersistence.save(any())).thenReturn(true);
@@ -148,7 +149,7 @@ public class TaskExecutorTest {
         taskExecutor.uploadTaskResults();
         // check execute result
         assertEquals(0, taskPool.uploadingTasks.size());
-        assertEquals(1, taskPool.finishedTasks.size());
+        assertEquals(1, taskPool.succeedTasks.size());
 
         // mockConfig:mock controller report api
         Mockito.when(reportApi.report(any()))
@@ -172,7 +173,7 @@ public class TaskExecutorTest {
         // do report test
         taskExecutor.reportTasks();
         // check execute result
-        assertEquals(0, taskPool.finishedTasks.size());
+        assertEquals(0, taskPool.succeedTasks.size());
         assertEquals(1, taskPool.archivedTasks.size());
         assertEquals(2, taskPool.preparingTasks.size());
 

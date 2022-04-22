@@ -11,6 +11,7 @@ import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
@@ -24,14 +25,8 @@ import java.util.Set;
 public class Init2PreparingAction extends AbsBasePPLTaskAction {
 
     @Override
-    public boolean valid(InferenceTask obj, Context context) {
-        return obj.getStatus() == TaskStatus.CREATED;
-    }
-
-    @Override
     public InferenceTask processing(InferenceTask originTask, Context context) throws Exception {
         InferenceTask newTask = BeanUtil.toBean(originTask, InferenceTask.class);
-        newTask.setStatus(TaskStatus.PREPARING);
         // todo try to allocate device for task, otherwise just wait to allocate
         Set<Device> allocated = null;
         // allocate device(GPU or CPU) for task

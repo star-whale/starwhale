@@ -7,13 +7,13 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask;
 
+import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskType;
-import ai.starwhale.mlops.domain.task.TaskStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -50,7 +50,7 @@ public class InferenceTask {
     /**
      * task status
      */
-    TaskStatus status;
+    InferenceTaskStatus status;
 
     /**
      * runtime information at all stage: the container id、the devices list which the task hold
@@ -82,6 +82,11 @@ public class InferenceTask {
     String resultPath;
 
     /**
+     * task's execute stage
+     */
+    InferenceStage stage;
+
+    /**
      * every action will have a status which represents completion
      */
     ActionStatus actionStatus;
@@ -103,7 +108,7 @@ public class InferenceTask {
         return InferenceTask.builder().id(taskTrigger.getId())
                 .imageId(taskTrigger.getImageId())
                 .taskType(taskTrigger.getTaskType())
-                .status(TaskStatus.CREATED)
+                .status(InferenceTaskStatus.PREPARING)
                 .actionStatus(ActionStatus.inProgress)
                 .cmpInputFilePaths(taskTrigger.getCmpInputFilePaths())
                 .deviceAmount(taskTrigger.getDeviceAmount())
@@ -116,6 +121,27 @@ public class InferenceTask {
 
 
     public TaskReport toTaskReport() {
-        return TaskReport.builder().id(this.id).status(this.status).taskType(this.taskType).build();
+        TaskStatusInterface reportStatus = null;
+        switch (this.status) {
+            case PREPARING:
+            case RUNNING:
+            case UPLOADING:
+                reportStatus = TaskStatusInterface.RUNNING;
+                break;
+            case SUCCESS:
+            case ARCHIVED:
+                reportStatus = TaskStatusInterface.SUCCESS;
+                break;
+            case FAIL:
+                reportStatus = TaskStatusInterface.FAIL;
+                break;
+            case CANCELING:
+                reportStatus = TaskStatusInterface.CANCELING;
+                break;
+            case CANCELED:
+                reportStatus = TaskStatusInterface.CANCELED;
+                break;
+        }
+        return TaskReport.builder().id(this.id).statusInterface(reportStatus).taskType(this.taskType).build();
     }
 }

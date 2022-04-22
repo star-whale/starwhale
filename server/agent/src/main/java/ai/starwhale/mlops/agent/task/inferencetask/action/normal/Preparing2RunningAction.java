@@ -16,6 +16,7 @@ import ai.starwhale.mlops.agent.node.SourcePool.AllocateRequest;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask.ActionStatus;
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
@@ -130,7 +131,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
         if (containerId.isPresent()) {
             InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
             newTask.setContainerId(containerId.get());
-            newTask.setStatus(TaskStatus.RUNNING);
+            newTask.setStatus(InferenceTaskStatus.RUNNING);
             return newTask;
         } else {
             // todo: retry or take it to the tail of queue
