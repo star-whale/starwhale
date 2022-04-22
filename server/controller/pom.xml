@@ -146,7 +146,7 @@
                                     <version>${project.version}</version>
                                     <type>${project.packaging}</type>
                                     <overWrite>true</overWrite>
-                                    <outputDirectory>../../docker/tmp</outputDirectory>
+                                    <outputDirectory>../../docker/jar</outputDirectory>
                                     <destFileName>controller.jar</destFileName>
                                 </artifactItem>
                             </artifactItems>
