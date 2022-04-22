@@ -14,7 +14,7 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
             height: 500,
         },
         font: {
-            family: 'Inter',
+            family: 'Consolas',
             size: 16,
         },
     }
@@ -40,7 +40,6 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
                 y: yValues[i],
                 text: zValues[i][j].toFixed(2) == '0.00' ? zValues[i][j].toFixed(2) : zValues[i][j].toFixed(3),
                 font: {
-                    family: 'Inter',
                     size: 14,
                     color: textColor,
                 },

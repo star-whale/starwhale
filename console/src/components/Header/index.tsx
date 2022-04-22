@@ -37,7 +37,6 @@ const useHeaderStyles = createUseStyles({
         display: 'flex',
         flexFlow: 'row nowrap',
         alignItems: 'center',
-        fontFamily: 'InterUI-Regular',
         color: 'var(--color-contentPrimary)',
     }),
 })

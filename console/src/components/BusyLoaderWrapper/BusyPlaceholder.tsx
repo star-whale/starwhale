@@ -13,7 +13,7 @@ export default function BusyPlaceholder() {
                 height: '100%',
             }}
         >
-            <Spinner $size={SIZE.large} $style={{ alignSelf: 'center', position: 'relative', bottom: '100px' }} />
+            <Spinner $size={SIZE.large} $style={{ alignSelf: 'center' }} />
         </div>
     )
 }

@@ -115,7 +115,6 @@ export default function Card({
                                         style={{
                                             fontSize: 30,
                                             fontWeight: 400,
-                                            fontFamily: 'Inter',
                                         }}
                                     >
                                         {title}

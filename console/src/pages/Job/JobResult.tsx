@@ -10,6 +10,7 @@ import { getHeatmapConfig } from '@/components/Indicator/utils'
 import { LabelLarge, LabelMedium } from 'baseui/typography'
 import { useStyletron } from 'baseui'
 import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
+
 // import ResponsiveReactGridLayout from 'react-grid-layout'
 
 const PlotlyVisualizer = React.lazy(
@@ -42,10 +43,12 @@ function flattenObject(o: any, prefix = '', result: any = {}, keepNull = true) {
 }
 function JobResult() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-    const jobResult = useQuery(`fetchJobResult:${projectId}:${jobId}`, () => fetchJobResult(projectId, jobId))
+    const jobResult = useQuery(`fetchJobResult:${projectId}:${jobId}`, () => fetchJobResult(projectId, jobId), {
+        refetchOnWindowFocus: false,
+    })
     useEffect(() => {
         if (jobResult.isSuccess) {
-            console.log(jobResult.data)
+            // console.log(jobResult.data)
         }
     }, [jobResult])
 
@@ -61,7 +64,7 @@ function JobResult() {
                 case INDICATOR_TYPE.SUMMARY:
                     const data = _.isObject(v) ? flattenObject(v) : {}
                     children = _.isObject(v) ? (
-                        <div key='b'>
+                        <div>
                             <LabelMedium
                                 $style={{
                                     textOverflow: 'ellipsis',
@@ -121,7 +124,6 @@ function JobResult() {
                     children = <LabelsIndicator isLoading={jobResult.isLoading} data={v} />
                     break
             }
-
             return (
                 children && (
                     <div key={k} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
@@ -137,7 +139,7 @@ function JobResult() {
     //     { i: 'confusion_matrix', x: 3, y: 0, w: 7, h: 12, minW: 2, maxW: 4 },
     //     { i: 'sumary', x: 4, y: 0, w: 1, h: 2 },
     // ]
-    if (jobResult.isFetching || 1) {
+    if (jobResult.isFetching) {
         return <BusyPlaceholder />
     }
 
@@ -145,6 +147,7 @@ function JobResult() {
         <div style={{ width: '100%', height: 'auto' }}>
             {jobResult.data?.kind && (
                 <div
+                    key={'kind'}
                     style={{
                         width: '100%',
                         lineHeight: 50,

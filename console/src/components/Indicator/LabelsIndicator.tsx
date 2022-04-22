@@ -8,6 +8,7 @@ import {
     NUMERICAL_FORMATS,
     BatchActionT,
     RowActionT,
+    CustomColumn,
 } from 'baseui/data-table'
 import { Alert, Check } from 'baseui/icon'
 import useTranslation from '../../hooks/useTranslation'
@@ -16,6 +17,7 @@ import { useWindowResize } from '../../hooks/window/useWindowResize'
 import { ILabel, ILabels } from './types'
 import useResizeObserver from '../../hooks/window/useResizeObserver'
 import BusyLoaderWrapper from '../BusyLoaderWrapper/BusyLoaderWrapper'
+import { StatefulTooltip } from 'baseui/tooltip'
 
 export interface ILabelsProps {
     style?: React.CSSProperties
@@ -43,21 +45,32 @@ function LabelsIndicator({ data, style, isLoading }: ILabelsProps) {
         throttled.current()
     }, wrapperRef)
 
+    const renderCell = (props: any) => {
+        return (
+            <StatefulTooltip accessibilityType={'tooltip'} content={props.value}>
+                <span>{props?.value?.toFixed(4)}</span>
+            </StatefulTooltip>
+        )
+    }
+
     const columns = [
         StringColumn({
             title: t('Label'),
             mapDataToValue: (data: ILabel) => data['id'],
         }),
-        NumericalColumn({
+        CustomColumn({
             title: t('Precision'),
+            renderCell,
             mapDataToValue: (data: ILabel) => data['precision'],
         }),
-        NumericalColumn({
+        CustomColumn({
             title: t('Recall'),
+            renderCell,
             mapDataToValue: (data: ILabel) => data['recall'],
         }),
-        NumericalColumn({
+        CustomColumn({
             title: t('F1-score'),
+            renderCell,
             mapDataToValue: (data: ILabel) => data['f1-score'],
         }),
         NumericalColumn({

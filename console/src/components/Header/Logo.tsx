@@ -27,7 +27,6 @@ export default function Logo({ expanded = true }: ILogoProps) {
                     style={{
                         display: 'flex',
                         fontSize: '34px',
-                        fontFamily: 'Inter',
                         color: '#fff',
                     }}
                 >
