@@ -1,16 +1,15 @@
-import BusyLoaderWrapper from '@/components/BusyLoaderWrapper/BusyLoaderWrapper'
-import Card from '@/components/Card'
-import MBCConfusionMetricsIndicator from '@/components/Indicator/MBCConfusionMetricsIndicator'
+import LabelsIndicator from '@/components/Indicator/LabelsIndicator'
 import { Spinner } from 'baseui/spinner'
 import React, { useEffect, useMemo } from 'react'
-import Plot from 'react-plotly.js'
 import { useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
-import { IIndicator, IMBCConfusionMetrics, IMCConfusionMetrics, INDICATOR_TYPE } from '@/components/Indicator/types.d'
+import { ILabels, INDICATOR_TYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
 import { getHeatmapConfig } from '@/components/Indicator/utils'
-import { DisplayMedium, DisplayXSmall, LabelMedium } from 'baseui/typography'
+import { LabelLarge, LabelMedium } from 'baseui/typography'
+import { useStyletron } from 'baseui'
+// import ResponsiveReactGridLayout from 'react-grid-layout'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -48,54 +47,36 @@ function JobResult() {
         }
     }, [jobResult])
 
+    const [, theme] = useStyletron()
+
     const indicators = useMemo(() => {
         return _.map(jobResult?.data, (v, k) => {
             let children = null
 
             switch (k) {
                 case INDICATOR_TYPE.KIND:
-                    return (
-                        <div
-                            style={{
-                                width: 200,
-                                height: 50,
-                                padding: '20px',
-                                background: '#fff',
-                                borderRadius: '12px',
-                            }}
-                        >
-                            <LabelMedium
-                                $style={{
-                                    textOverflow: 'ellipsis',
-                                    overflow: 'hidden',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                Kind: {v}
-                            </LabelMedium>
-                        </div>
-                    )
+                    break
                 case INDICATOR_TYPE.SUMMARY:
                     const data = _.isObject(v) ? flattenObject(v) : {}
                     children = _.isObject(v) ? (
-                        <div>
+                        <div key='b'>
                             <LabelMedium
                                 $style={{
                                     textOverflow: 'ellipsis',
                                     overflow: 'hidden',
                                     whiteSpace: 'nowrap',
                                     paddingBottom: '12px',
-                                    borderBottom: '1px solid #000',
+                                    borderBottom: `1px solid ${theme.borders.border400}`,
                                 }}
                             >
                                 Sumary
                             </LabelMedium>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
                                 {_(data)
-                                    .map((v, k) => (
+                                    .map((subV, subK) => (
                                         <>
-                                            <p>{k}</p>
-                                            <p>{v}</p>
+                                            <p>{subK}</p>
+                                            <p>{subV}</p>
                                         </>
                                     ))
                                     .value()}
@@ -122,16 +103,67 @@ function JobResult() {
                         </React.Suspense>
                     )
                     break
+                case INDICATOR_TYPE.LABELS:
+                    _.forIn(v as ILabels, (subV, subK) => {
+                        const [tp, fp, tn, fn] = _.flatten(
+                            jobResult?.data?.[INDICATOR_TYPE.CONFUSION_MATRIX]?.mutlilabel?.[Number(subK)]
+                        )
+
+                        console.log(jobResult?.data?.[INDICATOR_TYPE.CONFUSION_MATRIX]?.mutlilabel, Number(subK))
+                        console.log(tp, fp, tn, fn)
+                        subV = Object.assign(subV, {
+                            tp,
+                            fp,
+                            tn,
+                            fn,
+                        })
+                    })
+                    children = <LabelsIndicator isLoading={jobResult.isLoading} data={v} />
+                    break
             }
 
             return (
-                children && <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>{children}</div>
+                children && (
+                    <div key={k} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
+                        {children}
+                    </div>
+                )
             )
         })
     }, [jobResult.data, jobResult.isSuccess])
 
+    // const layout = [
+    //     { i: 'kind', x: 0, y: 0, w: 2, h: 1, static: true },
+    //     { i: 'confusion_matrix', x: 3, y: 0, w: 7, h: 12, minW: 2, maxW: 4 },
+    //     { i: 'sumary', x: 4, y: 0, w: 1, h: 2 },
+    // ]
+
     return (
-        <>
+        <div style={{ width: '100%', height: 'auto' }}>
+            <div
+                style={{
+                    width: '100%',
+                    lineHeight: 50,
+                    padding: '20px',
+                    background: '#fff',
+                    borderRadius: '12px',
+                    marginBottom: '16px',
+                    boxSizing: 'border-box',
+                }}
+            >
+                <LabelLarge
+                    $style={{
+                        textOverflow: 'ellipsis',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    Kind: {jobResult.data?.kind ?? ''}
+                </LabelLarge>
+            </div>
+            {/* <ResponsiveReactGridLayout className='layout' cols={12} rowHeight={30} width={1200} layout={layout}>
+                {indicators}
+            </ResponsiveReactGridLayout> */}
             <div
                 style={{
                     width: '100%',
@@ -142,25 +174,8 @@ function JobResult() {
                 }}
             >
                 {indicators}
-                {/* {dataMBCConfusionMetrics && (
-                    <div
-                        style={{
-                            padding: '20px',
-                            background: '#fff',
-                            borderRadius: '12px',
-                        }}
-                    >
-                        <MBCConfusionMetricsIndicator isLoading={jobResult.isLoading} data={dataMBCConfusionMetrics} />
-                    </div>
-                )}
-
-                <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
-                    <React.Suspense fallback={<Spinner />}>
-                        <PlotlyVisualizer data={heatmapData} />
-                    </React.Suspense>
-                </div> */}
             </div>
-        </>
+        </div>
     )
 }
 

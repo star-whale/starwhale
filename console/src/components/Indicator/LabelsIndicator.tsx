@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
     StatefulDataTable,
     BooleanColumn,
@@ -13,18 +13,18 @@ import { Alert, Check } from 'baseui/icon'
 import useTranslation from '../../hooks/useTranslation'
 import _ from 'lodash'
 import { useWindowResize } from '../../hooks/window/useWindowResize'
-import { IMBCConfusionMetric, IMBCConfusionMetrics } from './types'
+import { ILabel, ILabels } from './types'
 import useResizeObserver from '../../hooks/window/useResizeObserver'
 import BusyLoaderWrapper from '../BusyLoaderWrapper/BusyLoaderWrapper'
 
-export interface IMBCConfusionMetricsProps {
+export interface ILabelsProps {
     style?: React.CSSProperties
-    data: IMBCConfusionMetrics
+    data: ILabels
     isLoading: boolean
     onSelectRows?: () => void
 }
 
-function MBCConfusionMetricsIndicator({ data, style, isLoading }: IMBCConfusionMetricsProps) {
+function LabelsIndicator({ data, style, isLoading }: ILabelsProps) {
     const [t] = useTranslation()
     const [key, setKey] = useState(0)
     const wrapperRef = useRef<HTMLDivElement>(null)
@@ -43,47 +43,69 @@ function MBCConfusionMetricsIndicator({ data, style, isLoading }: IMBCConfusionM
         throttled.current()
     }, wrapperRef)
 
-    console.log('MBCConfusionMetricsIndicator', data)
-
     const columns = [
         StringColumn({
             title: t('Label'),
-            mapDataToValue: (data: IMBCConfusionMetric) => data['id'],
-        }),
-        NumericalColumn({
-            title: t('TP'),
-            mapDataToValue: (data: IMBCConfusionMetric) => data['tp'],
-        }),
-        NumericalColumn({
-            title: t('TN'),
-            mapDataToValue: (data: IMBCConfusionMetric) => data['tn'],
-        }),
-        NumericalColumn({
-            title: t('FP'),
-            mapDataToValue: (data: IMBCConfusionMetric) => data['fp'],
-        }),
-        NumericalColumn({
-            title: t('FN'),
-            mapDataToValue: (data: IMBCConfusionMetric) => data['fn'],
-        }),
-        NumericalColumn({
-            title: t('Accuracy'),
-            mapDataToValue: (data: IMBCConfusionMetric) => data['accuracy'],
+            mapDataToValue: (data: ILabel) => data['id'],
         }),
         NumericalColumn({
             title: t('Precision'),
-            mapDataToValue: (data: IMBCConfusionMetric) => data['precision'],
+            mapDataToValue: (data: ILabel) => data['precision'],
         }),
         NumericalColumn({
             title: t('Recall'),
-            mapDataToValue: (data: IMBCConfusionMetric) => data['recall'],
+            mapDataToValue: (data: ILabel) => data['recall'],
+        }),
+        NumericalColumn({
+            title: t('F1-score'),
+            mapDataToValue: (data: ILabel) => data['f1-score'],
+        }),
+        NumericalColumn({
+            title: t('Support'),
+            mapDataToValue: (data: ILabel) => data['support'],
         }),
     ]
 
-    const [rows, setRows] = React.useState([] as Array<{ id: string; data: IMBCConfusionMetric }>)
+    const hasAttrbute = useCallback(
+        (k: string) => {
+            return _.values(data).find((item) => k in item)
+        },
+        [data]
+    )
+    hasAttrbute('tp') &&
+        columns.push(
+            NumericalColumn({
+                title: t('TP'),
+                mapDataToValue: (data: ILabel) => data['tp'],
+            })
+        )
+
+    hasAttrbute('tn') &&
+        columns.push(
+            NumericalColumn({
+                title: t('TN'),
+                mapDataToValue: (data: ILabel) => data['tn'],
+            })
+        )
+    hasAttrbute('fp') &&
+        columns.push(
+            NumericalColumn({
+                title: t('FP'),
+                mapDataToValue: (data: ILabel) => data['fp'],
+            })
+        )
+    hasAttrbute('fn') &&
+        columns.push(
+            NumericalColumn({
+                title: t('FN'),
+                mapDataToValue: (data: ILabel) => data['fn'],
+            })
+        )
+
+    const [rows, setRows] = React.useState([] as Array<{ id: string; data: ILabel }>)
 
     useEffect(() => {
-        const itemsToRowData: Array<{ id: string; data: IMBCConfusionMetric }> = _.values(
+        const itemsToRowData: Array<{ id: string; data: ILabel }> = _.values(
             _.map(data, function (value, key) {
                 return {
                     id: key,
@@ -134,6 +156,4 @@ function MBCConfusionMetricsIndicator({ data, style, isLoading }: IMBCConfusionM
     )
 }
 
-MBCConfusionMetricsIndicator.displayName = 'MBCConfusionMetricsIndicator'
-
-export default memo<IMBCConfusionMetricsProps>(MBCConfusionMetricsIndicator)
+export default memo<ILabelsProps>(LabelsIndicator)
