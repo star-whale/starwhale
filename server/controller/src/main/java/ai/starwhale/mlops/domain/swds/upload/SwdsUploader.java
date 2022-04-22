@@ -169,6 +169,10 @@ public class SwdsUploader {
         VersionMeta versionMeta = swdsVersionWithMeta.getVersionMeta();
         Map<String, String> signatures = versionMeta.getManifest().getSignature();
         String fileSignatureRaw = signatures.get(filename);
+        if(null == fileSignatureRaw){
+            log.warn("unexpected file uploaded {}",filename);
+            return;
+        }
         Matcher matcher = PATTERN_SIGNATURE.matcher(fileSignatureRaw);
         if(matcher.matches()){
             String fileSig = matcher.group(1);

@@ -146,7 +146,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     @Override
     public Optional<Task> ofId(Long taskId) {
-        return Optional.ofNullable(taskIdMap.get(taskId).deepCopy());
+        return Optional.ofNullable(taskIdMap.get(taskId)).map(t->t.deepCopy());
     }
 
     @Override
