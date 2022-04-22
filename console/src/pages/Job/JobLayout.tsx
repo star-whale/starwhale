@@ -36,14 +36,6 @@ export default function JobLayout({ children }: IJobLayoutProps) {
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
-            // {
-            //     title: t('projects'),
-            //     path: '/projects',
-            // },
-            // {
-            //     title: project?.name ?? '-',
-            //     path: `/projects/${project?.id}`,
-            // },
             {
                 title: t('Jobs'),
                 path: `/projects/${project?.id}/jobs`,
@@ -56,15 +48,5 @@ export default function JobLayout({ children }: IJobLayoutProps) {
         return items
     }, [projectName, uuid, t])
 
-    // const navItems: INavItem[] = useMemo(
-    //     () => [
-    //         // {
-    //         //     title: jobName ?? t('overview'),
-    //         //     path: `/jobs/${jobId}`,
-    //         //     icon: RiSurveyLine,
-    //         // },
-    //     ],
-    //     [jobName, t]
-    // )
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

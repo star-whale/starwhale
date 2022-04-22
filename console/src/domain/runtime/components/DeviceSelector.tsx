@@ -16,7 +16,9 @@ export interface IDeviceSelectorProps {
 export default function DeviceSelector({ value, onChange, overrides, disabled }: IDeviceSelectorProps) {
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
-    const devicesInfo = useQuery(`listDevices:${keyword}`, () => listDevices({ start: 0, count: 100, search: keyword }))
+    const devicesInfo = useQuery(`listDevices:${keyword}`, () =>
+        listDevices({ pageNum: 1, pageSize: 100, search: keyword })
+    )
 
     const handleDeviceInputChange = _.debounce((term: string) => {
         if (!term) {
@@ -29,7 +31,7 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
     useEffect(() => {
         if (devicesInfo.isSuccess) {
             setOptions(
-                devicesInfo.data?.list?.map((item) => ({
+                devicesInfo.data?.map((item) => ({
                     id: item.id,
                     label: item.name,
                 })) ?? []

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { ICreateJobSchema, IJobSchema, IUpdateJobSchema, IJobDetailSchema, JobActionType } from '../schemas/job'
+import { ICreateJobSchema, IJobSchema, IJobDetailSchema, JobActionType, IJobResultSchema } from '../schemas/job'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 
 export async function listJobs(projectId: string, query: IListQuerySchema): Promise<IListSchema<IJobSchema>> {
@@ -24,7 +24,7 @@ export async function doJobAction(projectId: string, jobId: string, action: JobA
     return resp.data
 }
 
-export async function fetchJobResult(projectId: string, jobId: string): Promise<IJobSchema> {
-    const resp = await axios.get<IJobSchema>(`/api/v1/project/${projectId}/job/${jobId}/result`)
+export async function fetchJobResult(projectId: string, jobId: string): Promise<IJobResultSchema> {
+    const resp = await axios.get<IJobResultSchema>(`/api/v1/project/${projectId}/job/${jobId}/result`)
     return resp.data
 }

@@ -247,6 +247,15 @@ const locales0 = {
     'Label': {
         en: 'Label',
     },
+    'Meta': {
+        en: 'Meta',
+    },
+    'Support': {
+        en: 'Support',
+    },
+    'F1-score': {
+        en: 'F1-score',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

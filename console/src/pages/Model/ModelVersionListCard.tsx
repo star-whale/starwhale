@@ -43,11 +43,11 @@ export default function ModelVersionListCard() {
             <Table
                 isLoading={modelsInfo.isLoading}
                 // t('sth name', [t('Model Version')]),
-                columns={[t('Tag'), t('Created'), t('Owner'), t('Action')]}
+                columns={[t('Meta'), t('Tag'), t('Created'), t('Owner'), t('Action')]}
                 data={
                     modelsInfo.data?.list.map((model) => {
                         return [
-                            // model.Version,
+                            model.meta,
                             model.tag,
                             model.createTime && formatTimestampDateTime(model.createTime),
                             model.owner && <User user={model.owner} />,
@@ -72,7 +72,6 @@ export default function ModelVersionListCard() {
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('create sth', [t('Model Version')])}</ModalHeader>
                 <ModalBody>

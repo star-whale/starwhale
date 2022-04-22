@@ -3,7 +3,7 @@ import _ from 'lodash'
 import qs from 'qs'
 
 const key = 'token'
-const store = window.sessionStorage ?? {
+const store = window.localStorage ?? {
     getItem: () => undefined,
     removeItem: () => undefined,
     setItem: () => undefined,

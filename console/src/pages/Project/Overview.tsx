@@ -53,7 +53,6 @@ export default function ProjectOverview() {
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('Project')}</ModalHeader>
                 <ModalBody>

@@ -72,7 +72,6 @@ export default function DatasetVersionListCard() {
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('create sth', [t('Dataset Version')])}</ModalHeader>
                 <ModalBody>

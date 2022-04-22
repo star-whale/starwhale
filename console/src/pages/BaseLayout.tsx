@@ -50,9 +50,12 @@ export default function BaseLayout({
             >
                 <div
                     style={{
-                        padding: '48px',
+                        padding: '32px',
                         height: '100%',
                         boxSizing: 'border-box',
+                        minWidth: '792px',
+                        display: 'flex',
+                        flexDirection: 'column',
                         ...contentStyle,
                     }}
                 >
@@ -113,7 +116,6 @@ export default function BaseLayout({
                             <div style={{ flexShrink: 0 }}>{extra}</div>
                         </div>
                     )}
-
                     {children}
                 </div>
             </div>

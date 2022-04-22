@@ -1,217 +1,177 @@
-import BusyLoaderWrapper from '@/components/BusyLoaderWrapper/BusyLoaderWrapper'
-import Card from '@/components/Card'
-import { MBCConfusionMetricsIndicator } from '@/components/Indicator/MBCConfusionMetricsIndicator'
+import LabelsIndicator from '@/components/Indicator/LabelsIndicator'
 import { Spinner } from 'baseui/spinner'
-import React, { useEffect } from 'react'
-import Plot from 'react-plotly.js'
+import React, { useEffect, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
+import { ILabels, INDICATOR_TYPE } from '@/components/Indicator/types.d'
+import _ from 'lodash'
+import { getHeatmapConfig } from '@/components/Indicator/utils'
+import { LabelLarge, LabelMedium } from 'baseui/typography'
+import { useStyletron } from 'baseui'
+import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
+
+// import ResponsiveReactGridLayout from 'react-grid-layout'
 
 const PlotlyVisualizer = React.lazy(
-    () => import(/* webpackChunkName: "AudiosVisualizer" */ '@/components/Indicator/PlotlyVisualizer')
+    () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
 
-type IDataType = 'MCConfusionMetrics' | 'CohenKappa' | 'MBCConfusionMetrics'
-
-interface IMCConfusionMetrics {
-    label: string
-    prediction: string
-    name: string
-    value: number
-}
-
-interface IMBCConfusionMetrics {
-    [s: string]: {
-        tp: number
-        tn: number
-        fp: number
-        fn: number
-        accuracy: number
-        precision: number
-        recall: number
+function flattenObject(o: any, prefix = '', result: any = {}, keepNull = true) {
+    if (_.isString(o) || _.isNumber(o) || _.isBoolean(o) || (keepNull && _.isNull(o))) {
+        result[prefix] = o
+        return result
     }
-}
 
-interface IIndicator {
-    name: IDataType
-    value: IMBCConfusionMetrics
-}
-
-interface IDataProps {
-    evaluationType: string
-    indicators: Array<IIndicator>
-    // IMCConfusionMetrics | IMBCConfusionMetrics | ICohenKappa
-}
-
-const data: IDataProps = {
-    evaluationType: 'MCResultCollector',
-    indicators: [
-        // {
-        //     name: 'MCConfusionMetrics',
-        //     value: [
-        //         {
-        //             label: 'A',
-        //             prediction: 'A',
-        //             name: 'A-A',
-        //             value: 3,
-        //         },
-        //         {
-        //             label: 'A',
-        //             prediction: 'B',
-        //             name: 'A-B',
-        //             value: 2,
-        //         },
-        //         {
-        //             label: 'A',
-        //             prediction: 'C',
-        //             name: 'A-C',
-        //             value: 0,
-        //         },
-        //     ],
-        // },
-        // {
-        //     name: 'CohenKappa',
-        //     value: 2.34,
-        // },
-        {
-            name: 'MBCConfusionMetrics',
-            value: {
-                A: {
-                    tp: 20,
-                    tn: 30,
-                    fp: 33,
-                    fn: 22,
-                    accuracy: 0.11,
-                    precision: 0.22,
-                    recall: 0.33,
-                },
-                B: {
-                    tp: 20,
-                    tn: 30,
-                    fp: 33,
-                    fn: 22,
-                    accuracy: 0.11,
-                    precision: 0.22,
-                    recall: 0.33,
-                },
-                C: {
-                    tp: 20,
-                    tn: 30,
-                    fp: 33,
-                    fn: 22,
-                    accuracy: 0.11,
-                    precision: 0.22,
-                    recall: 0.33,
-                },
-            },
-        },
-    ],
-}
-
-export default function JobResult() {
-    //TODO: waiting for api
-
-    // const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-    // const jobResult = useQuery('fetchJobResult', () => fetchJobResult(jobId, projectId))
-    // useEffect(() => {
-    //     if (jobResult.isSuccess) {
-    //         console.log(jobResult.data)
-    //     }
-    // }, [jobResult])
-
-    const plotlyData = {
-        data: [
-            {
-                x: [0, 1, 2, 3, 4],
-                y: [1, 5, 3, 7, 5],
-                mode: 'lines+markers',
-                type: 'scatter',
-                line: { color: '#36425D' },
-            },
-        ],
-        layout: {
-            title: 'A Graph',
-        },
-    }
-    const layout = {
-        title: 'MBCConfusionMetrics',
-        annotations: [] as any[],
-        xaxis: {
-            ticks: '',
-            side: 'top',
-        },
-        yaxis: {
-            ticks: '',
-            ticksuffix: ' ',
-            width: 700,
-            height: 700,
-            autosize: false,
-        },
-    }
-    const xValues = ['A', 'B', 'C']
-    const yValues = ['W', 'X', 'Y']
-    const zValues = [
-        [0.0, 0.0, 0.75, 0.75, 0.0],
-        [0.0, 0.0, 0.75, 0.75, 0.0],
-        [0.75, 0.75, 0.75, 0.75, 0.75],
-        [0.0, 0.0, 0.0, 0.75, 0.0],
-    ]
-
-    for (var i = 0; i < yValues.length; i++) {
-        for (var j = 0; j < xValues.length; j++) {
-            var currentValue = zValues[i][j]
-            if (currentValue != 0.0) {
-                var textColor = 'white'
+    if (_.isArray(o) || _.isPlainObject(o)) {
+        for (let i in o) {
+            let pref = prefix
+            if (_.isArray(o)) {
+                pref = pref + `[${i}]`
             } else {
-                var textColor = 'black'
+                if (_.isEmpty(prefix)) {
+                    pref = i
+                } else {
+                    pref = prefix + ' / ' + i
+                }
             }
-            const result = {
-                xref: 'x1',
-                yref: 'y1',
-                x: xValues[j],
-                y: yValues[i],
-                text: zValues[i][j],
-                font: {
-                    family: 'Arial',
-                    size: 12,
-                    color: textColor,
-                },
-                showarrow: false,
-            }
-            layout.annotations.push(result)
+            flattenObject(o[i] ?? {}, pref, result, keepNull)
         }
+        return result
     }
-    const heatmapData = {
-        data: [
-            {
-                x: xValues,
-                y: yValues,
-                z: zValues,
-                colorscale: [
-                    [0, '#3D9970'],
-                    [1, '#001f3f'],
-                ],
-                showscale: false,
-                type: 'heatmap',
-            },
-        ],
-        layout: {
-            ...layout,
-        },
-    }
-    const indicator: IIndicator | undefined = data.indicators.find((v) => v.name === 'MBCConfusionMetrics')
-    const MBCConfusionMetrics = indicator?.value || {}
+    return result
+}
+function JobResult() {
+    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    const jobResult = useQuery(`fetchJobResult:${projectId}:${jobId}`, () => fetchJobResult(projectId, jobId), {
+        refetchOnWindowFocus: false,
+    })
+    useEffect(() => {
+        if (jobResult.isSuccess) {
+            // console.log(jobResult.data)
+        }
+    }, [jobResult])
 
-    // if (!!!jobResult.isSuccess) {
-    //     return <div>loading</div>
-    // }
+    const [, theme] = useStyletron()
+
+    const indicators = useMemo(() => {
+        return _.map(jobResult?.data, (v, k) => {
+            let children = null
+
+            switch (k) {
+                case INDICATOR_TYPE.KIND:
+                    break
+                case INDICATOR_TYPE.SUMMARY:
+                    const data = _.isObject(v) ? flattenObject(v) : {}
+                    children = _.isObject(v) ? (
+                        <div>
+                            <LabelMedium
+                                $style={{
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    whiteSpace: 'nowrap',
+                                    paddingBottom: '12px',
+                                    borderBottom: `1px solid ${theme.borders.border400}`,
+                                }}
+                            >
+                                Sumary
+                            </LabelMedium>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                                {_(data)
+                                    .map((subV, subK) => (
+                                        <>
+                                            <p>{subK}</p>
+                                            <p>{subV}</p>
+                                        </>
+                                    ))
+                                    .value()}
+                            </div>
+                        </div>
+                    ) : (
+                        <LabelMedium
+                            $style={{
+                                textOverflow: 'ellipsis',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            Sumary: {v}
+                        </LabelMedium>
+                    )
+                    break
+                case INDICATOR_TYPE.CONFUSION_MATRIX:
+                    const heatmapData = getHeatmapConfig(k, _.keys(v?.binarylabel), v?.binarylabel)
+
+                    children = (
+                        <React.Suspense fallback={<BusyPlaceholder />}>
+                            <PlotlyVisualizer data={heatmapData} />
+                        </React.Suspense>
+                    )
+                    break
+                case INDICATOR_TYPE.LABELS:
+                    _.forIn(v as ILabels, (subV, subK) => {
+                        const [tp, fp, tn, fn] = _.flatten(
+                            jobResult?.data?.[INDICATOR_TYPE.CONFUSION_MATRIX]?.mutlilabel?.[Number(subK)]
+                        )
+
+                        subV = Object.assign(subV, {
+                            tp,
+                            fp,
+                            tn,
+                            fn,
+                        })
+                    })
+                    children = <LabelsIndicator isLoading={jobResult.isLoading} data={v} />
+                    break
+            }
+            return (
+                children && (
+                    <div key={k} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
+                        {children}
+                    </div>
+                )
+            )
+        })
+    }, [jobResult.data, jobResult.isSuccess])
+
+    // const layout = [
+    //     { i: 'kind', x: 0, y: 0, w: 2, h: 1, static: true },
+    //     { i: 'confusion_matrix', x: 3, y: 0, w: 7, h: 12, minW: 2, maxW: 4 },
+    //     { i: 'sumary', x: 4, y: 0, w: 1, h: 2 },
+    // ]
+    if (jobResult.isFetching) {
+        return <BusyPlaceholder />
+    }
 
     return (
-        <>
-            <div style={{ padding: '20px', background: '#fff', borderRadius: '12px', marginBottom: '16px' }}>
-                <MBCConfusionMetricsIndicator items={MBCConfusionMetrics} />
-            </div>
+        <div style={{ width: '100%', height: 'auto' }}>
+            {jobResult.data?.kind && (
+                <div
+                    key={'kind'}
+                    style={{
+                        width: '100%',
+                        lineHeight: 50,
+                        padding: '20px',
+                        background: '#fff',
+                        borderRadius: '12px',
+                        marginBottom: '16px',
+                        boxSizing: 'border-box',
+                    }}
+                >
+                    <LabelLarge
+                        $style={{
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        Kind: {jobResult.data?.kind ?? ''}
+                    </LabelLarge>
+                </div>
+            )}
+            {/* <ResponsiveReactGridLayout className='layout' cols={12} rowHeight={30} width={1200} layout={layout}>
+                {indicators}
+            </ResponsiveReactGridLayout> */}
             <div
                 style={{
                     width: '100%',
@@ -219,21 +179,12 @@ export default function JobResult() {
                     gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
                     // gridAutoRows: '460px',
                     gridGap: '16px',
-                    placeItems: 'stretch',
                 }}
             >
-                <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
-                    <React.Suspense fallback={<Spinner />}>
-                        <PlotlyVisualizer data={heatmapData} />
-                    </React.Suspense>
-                </div>
-
-                <div style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
-                    <React.Suspense fallback={<Spinner />}>
-                        <PlotlyVisualizer data={plotlyData} />
-                    </React.Suspense>
-                </div>
+                {indicators}
             </div>
-        </>
+        </div>
     )
 }
+
+export default React.memo(JobResult)
