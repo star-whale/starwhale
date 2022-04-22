@@ -3,10 +3,12 @@ package ai.starwhale.mlops.domain.task;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -28,13 +30,12 @@ public class TaskService {
     private TaskMapper taskMapper;
 
 
-    public List<TaskVO> listTasks(String jobId, PageParams pageParams) {
+    public PageInfo<TaskVO> listTasks(String jobId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<TaskEntity> tasks = taskMapper.listTasks(idConvertor.revert(jobId));
 
-        return tasks.stream()
-            .map(taskConvertor::convert)
-            .collect(Collectors.toList());
+        return PageUtil.toPageInfo(tasks, taskConvertor::convert);
+
     }
 
     public TaskVO findTask(Long taskId) {

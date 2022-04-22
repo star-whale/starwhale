@@ -9,8 +9,10 @@ package ai.starwhale.mlops.domain.system;
 
 import ai.starwhale.mlops.api.protocol.agent.AgentVO;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -26,12 +28,9 @@ public class SystemService {
     private AgentConvertor agentConvertor;
 
 
-    public List<AgentVO> listAgents(String ipPrefix, PageParams pageParams) {
+    public PageInfo<AgentVO> listAgents(String ipPrefix, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<AgentEntity> agentEntities = agentMapper.listAgents();
-
-        return agentEntities.stream()
-            .map(agentConvertor::convert)
-            .collect(Collectors.toList());
+        return PageUtil.toPageInfo(agentEntities, agentConvertor::convert);
     }
 }

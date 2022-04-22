@@ -39,13 +39,12 @@ public class ProjectController implements ProjectApi{
     public ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(String projectName,
         Integer pageNum, Integer pageSize) {
 
-        List<ProjectVO> projects = projectService.listProject(
+        PageInfo<ProjectVO> projects = projectService.listProject(
             Project.builder().name(projectName).build(),
             PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
 
-        PageInfo<ProjectVO> pageInfo = new PageInfo<>(projects);
 
-        return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+        return ResponseEntity.ok(Code.success.asResponse(projects));
     }
 
     @Override

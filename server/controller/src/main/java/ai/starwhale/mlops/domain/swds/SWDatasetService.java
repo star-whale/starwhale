@@ -11,6 +11,7 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
@@ -22,6 +23,7 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -51,14 +53,12 @@ public class SWDatasetService {
     @Resource
     private ProjectManager projectManager;
 
-    public List<DatasetVO> listSWDataset(SWDSObject swds, PageParams pageParams) {
+    public PageInfo<DatasetVO> listSWDataset(SWDSObject swds, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWDatasetEntity> entities = swdsMapper.listDatasets(
             idConvertor.revert(swds.getProjectId()), swds.getName());
 
-        return entities.stream()
-            .map(swdsConvertor::convert)
-            .collect(Collectors.toList());
+        return PageUtil.toPageInfo(entities, swdsConvertor::convert);
     }
 
     public Boolean deleteSWDS(SWDSObject swds) {
@@ -100,14 +100,11 @@ public class SWDatasetService {
         return res > 0;
     }
 
-    public List<DatasetVersionVO> listDatasetVersionHistory(SWDSObject swds, PageParams pageParams) {
+    public PageInfo<DatasetVersionVO> listDatasetVersionHistory(SWDSObject swds, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWDatasetVersionEntity> entities = swdsVersionMapper.listVersions(
             idConvertor.revert(swds.getId()), swds.getLatestVersion().getName());
-
-        return entities.stream()
-            .map(versionConvertor::convert)
-            .collect(Collectors.toList());
+        return PageUtil.toPageInfo(entities, versionConvertor::convert);
     }
 
     public String addDataset(SWDSObject swds) {
