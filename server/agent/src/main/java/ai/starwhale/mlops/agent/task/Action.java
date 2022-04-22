@@ -27,7 +27,7 @@ public interface Action<Old, New> {
     default void post(Old old, New n, Context context) throws Exception {
     }
 
-    default void success(Old old, New n, Context context) {
+    default void success(Old old, New n, Context context) throws Exception {
     }
 
     /**

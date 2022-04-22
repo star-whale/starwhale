@@ -22,24 +22,14 @@ public class ArchivedAction extends AbsBasePPLTaskAction {
         throws Exception {
         InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
         newTask.setStatus(TaskStatus.ARCHIVED);
-        taskPersistence.save(newTask);
-        // move to the archived dir
-        taskPersistence.move2Archived(newTask);
         return newTask;
-    }
-    @Override
-    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
-        // just override super method
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
         // remove from origin list
         taskPool.errorTasks.remove(oldTask);
         taskPool.finishedTasks.remove(oldTask);
         taskPool.canceledTasks.remove(oldTask);
-        // todo ensure whether the archived task need exist
-        taskPool.archivedTasks.add(newTask);
-
     }
 }
