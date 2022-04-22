@@ -1,5 +1,4 @@
 from collections import namedtuple
-from http import HTTPStatus
 from pathlib import Path
 import sys
 import yaml
@@ -19,7 +18,7 @@ from starwhale.base.store import LocalStorage
 from starwhale.consts import (
     DEFAULT_DATASET_YAML_NAME, DEFAULT_MANIFEST_NAME, SW_API_VERSION
 )
-from starwhale.utils.http import wrap_sw_error_resp
+from starwhale.utils.http import wrap_sw_error_resp, upload_file
 from starwhale.utils.fs import empty_dir
 from starwhale.utils import fmt_http_server, pretty_bytes
 from starwhale.utils.error import NotFoundError
@@ -86,15 +85,18 @@ class DataSetLocalStore(LocalStorage):
         _headers = {"Authorization": self._sw_token}
 
         #TODO: use rich progress
-        r = requests.post(
-            url,
-            data={"swds": _swds, "phase": _UPLOAD_PHASE.MANIFEST,
-                  "project": project, "force": 1 if force else 0},
-            files={"file": _manifest_path.open("rb")},
+        r = upload_file(
+            url=url,
+            fpath=_manifest_path,
+            fields={
+                "swds": _swds,
+                "phase": _UPLOAD_PHASE.MANIFEST,
+                "project": project,
+                "force": "1" if force else "0",
+            },
             headers=_headers,
+            exit=True,
         )
-        wrap_sw_error_resp(r, "push", exit=True)
-
         rprint(f"\t :arrow_up: {DEFAULT_MANIFEST_NAME} :ok:")
         upload_id = r.json().get("data", {}).get("upload_id")
         if not upload_id:
@@ -107,16 +109,17 @@ class DataSetLocalStore(LocalStorage):
             if not _fp.exists():
                 raise NotFoundError(f"{_fp} not found")
 
-            r = requests.post(
-                url,
-                data={"swds": _swds, "phase": _UPLOAD_PHASE.BLOB},
-                files={"file": _fp.open("rb")},
-                headers=_headers
+            upload_file(
+                url=url,
+                fpath=_fp,
+                fields={
+                    "swds": _swds,
+                    "phase": _UPLOAD_PHASE.BLOB,
+                },
+                headers=_headers,
+                use_raise=True,
             )
-            if r.status_code == HTTPStatus.OK:
-                rprint(f"\t :arrow_up: {_fp.name} :ok:")
-            else:
-                wrap_sw_error_resp(r, "upload", use_raise=True)
+            rprint(f"\t :arrow_up: {_fp.name} :ok:")
 
         #TODO: parallel upload
         try:
