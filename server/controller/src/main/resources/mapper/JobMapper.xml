@@ -64,6 +64,15 @@
     <select id="listJobs" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
          and j.project_id = #{projectId}
+        <choose>
+            <when test="swmpId != null">
+                and swmp_id = #{swmpId}
+            </when>
+            <otherwise>
+                order by swmp_id
+            </otherwise>
+        </choose>
+
     </select>
 
     <select id="findJobById" resultMap="jobResultMap" >

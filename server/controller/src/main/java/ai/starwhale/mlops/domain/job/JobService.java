@@ -90,9 +90,9 @@ public class JobService {
     @Resource
     private StoragePathCoordinator storagePathCoordinator;
 
-    public List<JobVO> listJobs(String projectId, PageParams pageParams) {
+    public List<JobVO> listJobs(String projectId, String swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<JobEntity> jobEntities = jobMapper.listJobs(idConvertor.revert(projectId));
+        List<JobEntity> jobEntities = jobMapper.listJobs(idConvertor.revert(projectId), idConvertor.revert(swmpId));
 
         return jobEntities.stream()
             .map(jobConvertor::convert)

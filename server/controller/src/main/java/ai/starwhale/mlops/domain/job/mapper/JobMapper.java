@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Param;
 
 public interface JobMapper {
 
-    List<JobEntity> listJobs(@Param("projectId") Long projectId);
+    List<JobEntity> listJobs(@Param("projectId") Long projectId, @Param("swmpId") Long swmpId);
 
     JobEntity findJobById(@Param("jobId") Long jobId);
 

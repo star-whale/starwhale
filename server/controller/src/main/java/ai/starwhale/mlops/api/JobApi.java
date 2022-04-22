@@ -42,6 +42,7 @@ public interface JobApi {
             schema = @Schema())
         @PathVariable("projectId")
             String projectId,
+        @Valid @RequestParam(value = "swmpId", required = false) String swmpId,
         @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
         @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
