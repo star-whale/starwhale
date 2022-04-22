@@ -10,6 +10,7 @@ package ai.starwhale.mlops.common;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -18,13 +19,17 @@ public class IDConvertor implements Convertor<Long, String>{
 
     @Override
     public String convert(Long id) throws ConvertException {
-        Objects.requireNonNull(id, "id");
+        if(id == null) {
+            return null;
+        }
         return String.valueOf(id);
     }
 
     @Override
     public Long revert(String strId) throws ConvertException {
-        Objects.requireNonNull(strId, "strId");
+        if(strId == null) {
+            return null;
+        }
         try {
             return Long.valueOf(strId);
         } catch(NumberFormatException e) {
