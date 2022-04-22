@@ -25,8 +25,8 @@ export default function DatasetVersionSelector({
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
     const datasetVersionsInfo = useQuery(
-        `listDatasetVersions:${keyword}`,
-        () => listDatasetVersions(projectId, datasetId, { start: 0, count: 100, search: keyword }),
+        `listDatasetVersions:${projectId}:${datasetId}:${keyword}`,
+        () => listDatasetVersions(projectId, datasetId, { pageNum: 1, pageSize: 100, search: keyword }),
         { enabled: !!datasetId }
     )
 
@@ -43,7 +43,7 @@ export default function DatasetVersionSelector({
             setOptions(
                 datasetVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: item.name + (item.tag ?? '/' + item.tag),
+                    label: item.name + (item.tag ? '/' + item.tag : ''),
                 })) ?? []
             )
         } else {

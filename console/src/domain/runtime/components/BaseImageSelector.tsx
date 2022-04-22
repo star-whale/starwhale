@@ -16,7 +16,7 @@ export default function BaseImageSelector({ value, onChange, overrides, disabled
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
     const baseImagesInfo = useQuery(`listBaseImages:${keyword}`, () =>
-        listBaseImages({ start: 0, count: 100, search: keyword })
+        listBaseImages({ pageNum: 1, pageSize: 100, search: keyword })
     )
 
     const handleBaseImageInputChange = _.debounce((term: string) => {
@@ -30,7 +30,7 @@ export default function BaseImageSelector({ value, onChange, overrides, disabled
     useEffect(() => {
         if (baseImagesInfo.isSuccess) {
             setOptions(
-                baseImagesInfo.data?.list?.map((item) => ({
+                baseImagesInfo.data?.map((item) => ({
                     id: item.id,
                     label: item.name,
                 })) ?? []

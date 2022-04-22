@@ -37,7 +37,6 @@ const useHeaderStyles = createUseStyles({
         display: 'flex',
         flexFlow: 'row nowrap',
         alignItems: 'center',
-        fontFamily: 'InterUI-Regular',
         color: 'var(--color-contentPrimary)',
     }),
 })
@@ -65,7 +64,7 @@ const useStyles = createUseStyles({
         'align-items': 'center',
     },
     userMenu: (props: IThemedStyleProps) => ({
-        'background': props.theme.colors.background,
+        // 'background': props.theme.colors.background,
         'position': 'absolute',
         'top': '100%',
         'display': 'none',
@@ -98,10 +97,10 @@ const useStyles = createUseStyles({
         'gap': '10px',
         'color': props.theme.colors.contentPrimary,
         '&:hover': {
-            background: color(props.theme.colors.background)
-                .darken(props.themeType === 'light' ? 0.06 : 0.2)
-                .rgb()
-                .string(),
+            // background: color(props.theme.colors.background)
+            //     .darken(props.themeType === 'light' ? 0.06 : 0.2)
+            //     .rgb()
+            //     .string(),
         },
     }),
 })
@@ -230,7 +229,6 @@ export default function Header() {
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('Change Password')}</ModalHeader>
                 <ModalBody>{/* <PasswordForm onSubmit={handleChangePassword} /> */}</ModalBody>

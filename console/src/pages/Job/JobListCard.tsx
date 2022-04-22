@@ -19,7 +19,6 @@ import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
 export default function JobListCard() {
     const [page] = usePage()
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-
     const jobsInfo = useFetchJobs(projectId, page)
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
@@ -96,8 +95,8 @@ export default function JobListCard() {
                                 <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}`}>
                                     {job.uuid}
                                 </Link>,
-                                job.modelName?.name,
-                                job.modelVersion?.name,
+                                job.modelName,
+                                job.modelVersion,
                                 job.owner && <User user={job.owner} />,
                                 job.createTime && formatTimestampDateTime(job.createTime),
                                 typeof job.duration == 'string' ? '-' : durationToStr(job.duration),
@@ -116,14 +115,7 @@ export default function JobListCard() {
                         },
                     }}
                 />
-                <Modal
-                    isOpen={isCreateJobOpen}
-                    onClose={() => setIsCreateJobOpen(false)}
-                    closeable
-                    animate
-                    autoFocus
-                    unstable_ModalBackdropScroll
-                >
+                <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                     <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                     <ModalBody>
                         <JobForm onSubmit={handleCreateJob} />

@@ -1,7 +1,7 @@
 import { listModelVersions } from '../services/modelVersion'
 import { Select, SelectProps } from 'baseui/select'
 import _ from 'lodash'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'react-query'
 import { useParams } from 'react-router-dom'
 
@@ -25,9 +25,8 @@ export default function ModelVersionSelector({
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
     const modelVersionsInfo = useQuery(
-        `listModelVersions:${keyword}`,
-        // TODO the right way of modelId ?? ''
-        () => listModelVersions(projectId, modelId ?? '', { start: 0, count: 100, search: keyword }),
+        `listModelVersions:${projectId}:${modelId}:${keyword}`,
+        () => listModelVersions(projectId, modelId as string, { pageNum: 1, pageSize: 100, search: keyword }),
         { enabled: !!modelId }
     )
 

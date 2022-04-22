@@ -27,10 +27,10 @@ export default function HeaderLeftMenu() {
         { label: t('Create Project'), type: 'create' },
         { label: t('Project List'), type: 'list' },
     ]
-    const USER_ITEMS = [
-        { label: t('Create User'), type: 'create' },
-        { label: t('User List'), type: 'list' },
-    ]
+    // const USER_ITEMS = [
+    //     { label: t('Create User'), type: 'create' },
+    //     { label: t('User List'), type: 'list' },
+    // ]
 
     return (
         <div>
@@ -49,7 +49,7 @@ export default function HeaderLeftMenu() {
                             close()
                         }}
                         overrides={{
-                            List: { style: { height: '150px', width: '138px' } },
+                            List: { style: { height: '150px', width: '150px' } },
                         }}
                     />
                 )}
@@ -70,7 +70,7 @@ export default function HeaderLeftMenu() {
                     {t('PROJECT')}
                 </Button>
             </StatefulPopover>
-            <StatefulPopover
+            {/* <StatefulPopover
                 placement={PLACEMENT.bottomLeft}
                 content={({ close }) => (
                     <StatefulMenu
@@ -103,14 +103,13 @@ export default function HeaderLeftMenu() {
                 >
                     {t('USER')}
                 </Button>
-            </StatefulPopover>
+            </StatefulPopover> */}
             <Modal
                 isOpen={isCreateProjectModalOpen}
                 onClose={() => setIsCreateProjectModalOpen(false)}
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('Project')}</ModalHeader>
                 <ModalBody>

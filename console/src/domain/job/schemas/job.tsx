@@ -4,6 +4,7 @@ import { IModelSchema } from '@model/schemas/model'
 import { IDatasetSchema } from '@dataset/schemas/dataset'
 import { IModelVersionSchema } from '@/domain/model/schemas/modelVersion'
 import { IBaseImageSchema, IDeviceSchema } from '../../runtime/schemas/runtime'
+import { IIndicator } from '@/components/Indicator/types'
 
 export type JobActionType = 'cancel' | 'suspend' | 'resume'
 export enum JobStatusType {
@@ -19,8 +20,8 @@ export interface IJobSchema extends IResourceSchema {
     uuid: string
     name: string
     owner?: IUserSchema
-    modelName?: IModelSchema
-    modelVersion?: IModelVersionSchema
+    modelName?: string
+    modelVersion?: string
     dataset?: IDatasetSchema
     baseImage?: IBaseImageSchema
     device?: IDeviceSchema
@@ -37,20 +38,24 @@ export interface IUpdateJobSchema {}
 
 export interface ICreateJobSchema {
     modelVersionId: string
-    datasetVersionIds?: Array<string>
+    datasetVersionIds?: string
     baseImageId?: string
     deviceId?: string
     deviceCount?: number
-    resultOutputPath?: string
+    // resultOutputPath?: string
 }
 
 export interface IJobFormSchema extends IJobSchema {
     modelId: string
     datasetId: string
     datasetVersionId: string
+    datasetVersionIdsArr?: Array<string>
 }
 export interface ICreateJobFormSchema extends ICreateJobSchema {
     modelId: string
     datasetId: string
     datasetVersionId: string
+    datasetVersionIdsArr?: Array<string>
 }
+
+export type IJobResultSchema = any

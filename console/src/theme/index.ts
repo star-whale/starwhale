@@ -49,7 +49,7 @@ export const colors = {
 }
 
 const primitives = {
-    primaryFontFamily: 'Inter',
+    primaryFontFamily: 'Consolas',
 }
 
 const overrides = {
