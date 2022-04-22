@@ -1,0 +1,23 @@
+FROM ubuntu:20.04
+
+COPY external/sources.list /etc/apt/sources.list
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV TZ=Etc/UTC
+
+# java opts
+ARG JAVA_CONTROLLER_OPTS ""
+ENV JAVA_CONTROLLER_OPTS=${JAVA_CONTROLLER_OPTS}
+
+# Install os dependence\OpenJDK-11
+RUN apt-get update \
+    && apt-get install -y openjdk-11-jdk \
+    && apt-get clean all \
+    && rm -rf /var/lib/apt/lists/* /tmp/*
+
+# java jar
+COPY jar/controller.jar /controller.jar
+
+ENTRYPOINT ["sh", "-c", "java ${JAVA_CONTROLLER_OPTS} -jar /controller.jar"]

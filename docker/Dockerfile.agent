@@ -7,8 +7,13 @@ ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ENV TZ=Etc/UTC
 
+# java opts
+ARG JAVA_AGENT_OPTS ""
+ENV JAVA_AGENT_OPTS=${JAVA_AGENT_OPTS}
+
 # nvidia driver version
-ENV NV_DRIVER_VERSION 470
+ARG NV_DRIVER_VERSION 470
+ENV NV_DRIVER_VERSION ${NV_DRIVER_VERSION}
 
 # Install os dependence\OpenJDK-11
 RUN apt-get update \
@@ -17,9 +22,7 @@ RUN apt-get update \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
-# agent
-VOLUME /tmp
-CMD pwd
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} app.jar
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar /app.jar"]
+# java jar
+COPY jar/agent.jar /agent.jar
+
+ENTRYPOINT ["sh", "-c", "java ${JAVA_AGENT_OPTS} -jar /agent.jar"]
