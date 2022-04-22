@@ -72,6 +72,7 @@ public class Task {
             .taskRequest(this.taskRequest.deepCopy())
             .job(this.job.deepCopy())
             .agent(null != this.agent ? this.agent.copy() : null)//agent is nullable
+            .taskType(this.getTaskType())
             .build();
     }
 

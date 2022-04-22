@@ -18,6 +18,7 @@ import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.domain.task.TaskEntity;
+import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
@@ -115,6 +116,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
                 .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
                 .taskStatus(new StagingTaskStatus(TaskStatus.CREATED).getValue())
                 .taskUuid(taskUuid)
+                .taskType(TaskType.PPL.getValue())
                 .build());
         }
         return taskEntities;

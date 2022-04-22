@@ -174,6 +174,7 @@ CREATE TABLE IF NOT EXISTS task_info
     job_id          bigint           NOT NULL,
     agent_id        bigint           ,
     task_status     int              NOT NULL,
+    task_type       tinyint          NOT NULL default 1,
     result_path     text             NOT NULL,
     task_request    longtext,
     created_time    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
