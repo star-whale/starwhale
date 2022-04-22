@@ -17,7 +17,8 @@ RUN apt-get update \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
+WORKDIR /opt/starwhale
 # java jar
-COPY jar/controller.jar opt/starwhale/controller.jar
+COPY jar/controller.jar controller.jar
 
-ENTRYPOINT ["sh", "-c", "java ${JAVA_CONTROLLER_OPTS} -jar opt/starwhale/controller.jar"]
+ENTRYPOINT ["sh", "-c", "java ${JAVA_CONTROLLER_OPTS} -jar controller.jar"]
