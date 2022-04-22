@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
     Action<InferenceTask, InferenceTask> init2PreparingAction;
 
     @Autowired
-    Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction;
+    Action<InferenceTask, InferenceTask> archivedAction;
 
     @Override
     public ReportResponse processing(ReportRequest reportRequest, Context context)
@@ -66,6 +67,7 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
         // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
         List<InferenceTask> finishedTasks = List.copyOf(taskPool.finishedTasks);
         List<InferenceTask> canceledTasks = List.copyOf(taskPool.canceledTasks);
+        List<InferenceTask> errorTasks = List.copyOf(taskPool.canceledTasks);
 
         List<TaskReport> all = new ArrayList<>();
         // without stop the world
@@ -110,8 +112,13 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
                 .build();
 
         reportRequest.setNodeInfo(node);
-        context.set("finished", finishedTasks);
-        context.set("canceled", canceledTasks);
+        context.set("waitArchivedTasks", new ArrayList<>() {
+            {
+                addAll(finishedTasks);
+                addAll(canceledTasks);
+                addAll(errorTasks);
+            }
+        });
 
         ResponseMessage<ReportResponse> response = reportApi.report(reportRequest);
         if (Objects.equals(response.getCode(),
@@ -131,17 +138,13 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
     public void success(ReportRequest reportRequest, ReportResponse response,
                         Context context) {
         if (response != null) {
-            @SuppressWarnings("unchecked") List<InferenceTask> finishedTasks = context.get(
-                    "finished", List.class);
-            @SuppressWarnings("unchecked") List<InferenceTask> canceledTasks = context.get(
-                    "canceled", List.class);
-            // when success,archived the finished/canceled task,and rm to the archive dir
-            for (InferenceTask finishedTask : finishedTasks) {
-                finishedOrCanceled2ArchivedAction.apply(finishedTask, null);
+            @SuppressWarnings("unchecked") List<InferenceTask> waitArchivedTasks = context.get(
+                    "waitArchivedTasks", List.class);
+            // when success,archived the finished/canceled/error task,and rm to the archive dir
+            for (InferenceTask finishedTask : waitArchivedTasks) {
+                archivedAction.apply(finishedTask, null);
             }
-            for (InferenceTask canceledTask : canceledTasks) {
-                finishedOrCanceled2ArchivedAction.apply(canceledTask, null);
-            }
+
             // add controller's new tasks to current queue
             if (CollectionUtil.isNotEmpty(response.getTasksToRun())) {
                 for (TaskTrigger newTask : response.getTasksToRun()) {

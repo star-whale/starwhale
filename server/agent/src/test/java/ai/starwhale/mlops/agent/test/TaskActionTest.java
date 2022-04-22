@@ -65,7 +65,7 @@ public class TaskActionTest {
     Action<Void, List<InferenceTask>> rebuildTasksAction;
 
     @Autowired
-    Action<InferenceTask, InferenceTask> finishedOrCanceled2ArchivedAction;
+    Action<InferenceTask, InferenceTask> archivedAction;
 
     @Autowired
     private TaskPool taskPool;
@@ -84,7 +84,7 @@ public class TaskActionTest {
         // clear local dir
         FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
 
-        Mockito.when(containerClient.startContainer(any()))
+        Mockito.when(containerClient.createAndStartContainer(any()))
                 .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(
                 List.of(
@@ -108,6 +108,7 @@ public class TaskActionTest {
                 InferenceTask.builder()
                         .id(1234567890L)
                         .status(TaskStatus.PREPARING)
+                        .taskType(TaskType.PPL)
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
                         .imageId("starwhaleai/starwhale:0.1.0-nightly-2022041203")
@@ -151,6 +152,7 @@ public class TaskActionTest {
                 InferenceTask.builder()
                         .id(1234567890L)
                         .status(TaskStatus.RUNNING) // change to runnning
+                        .taskType(TaskType.PPL)
                         .containerId("test-containerid")
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
@@ -178,6 +180,7 @@ public class TaskActionTest {
                 InferenceTask.builder()
                         .id(1234567891L)
                         .status(TaskStatus.RUNNING) // change to runnning
+                        .taskType(TaskType.PPL)
                         .containerId("test-containerid2")
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
@@ -299,7 +302,7 @@ public class TaskActionTest {
                 .id(1234567890L)
                 .build();
         assertFalse(Files.exists(Path.of(fileSystemPath.oneArchivedTaskDir(task.getId()))));
-        finishedOrCanceled2ArchivedAction.apply(task, null);
+        archivedAction.apply(task, null);
         assertTrue(Files.exists(Path.of(fileSystemPath.oneArchivedTaskDir(task.getId()))));
     }
 }

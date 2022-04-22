@@ -70,7 +70,6 @@ public class TaskDirTest {
         // Assertions.assertEquals("var/sw/tasks/active", fileSystemPath.archivedEvaluationTaskDiractiveTaskDir());
         Long taskId = 123L;
         // evaluation task test
-        //Assertions.assertEquals("var/sw/tasks/active/evaluation", fileSystemPath.activeEvaluationTaskDir());
         Assertions.assertEquals("var/sw/tasks/active/123", fileSystemPath.oneActiveTaskDir(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/taskInfo.json", fileSystemPath.oneActiveTaskInfoFile(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/config", fileSystemPath.oneActiveTaskConfigDir(taskId));
@@ -79,15 +78,9 @@ public class TaskDirTest {
         Assertions.assertEquals("var/sw/tasks/active/123/status/current", fileSystemPath.oneActiveTaskStatusFile(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/result", fileSystemPath.oneActiveTaskResultDir(taskId));
 
-        // compare task test
-        //Assertions.assertEquals("var/sw/tasks/active/compare", fileSystemPath.activeCompareTaskDir());
-        //Assertions.assertEquals("var/sw/tasks/active/compare/123", fileSystemPath.oneActiveCompareTaskDir(taskId));
-
         // archived task test
         // Assertions.assertEquals("var/sw/tasks/archived", fileSystemPath.archivedTaskDir());
         Assertions.assertEquals("var/sw/tasks/archived", fileSystemPath.archivedTaskDir());
-        // Assertions.assertEquals("var/sw/tasks/archived/compare", fileSystemPath.archivedCompareTaskDir());
-
 
         // swmp local cache dir test
         Assertions.assertEquals("var/sw/swmp/mnist/v1", fileSystemPath.oneSwmpDir( "mnist", "v1"));

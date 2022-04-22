@@ -63,13 +63,6 @@ public interface TaskPersistence {
     boolean save(InferenceTask task);
 
     /**
-     * move task to the archived state
-     * @param task task
-     * @return if success
-     */
-    void move2Archived(InferenceTask task) throws Exception;
-
-    /**
      * preloading task's swmp tar,and untar it to the dir
      * @param task task
      * @return disk dir path

@@ -11,6 +11,7 @@ import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.utils.TarUtil;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import cn.hutool.core.collection.CollectionUtil;
@@ -130,7 +131,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
         if (Files.notExists(statusFilePath)) {
             Files.createDirectories(Path.of(fileSystemPath.oneActiveTaskStatusDir(id)));
         }
-        Files.writeString(statusFilePath, status.name(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        Files.writeString(statusFilePath, status.name(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         return true;
     }
 
@@ -142,7 +143,11 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 Files.createDirectories(taskDirPath);
             }
             // update info to the task file
-            Files.writeString(Path.of(fileSystemPath.oneActiveTaskInfoFile(task.getId())), JSONUtil.toJsonStr(task), StandardOpenOption.CREATE);
+            Files.writeString(Path.of(fileSystemPath.oneActiveTaskInfoFile(task.getId())), JSONUtil.toJsonStr(task), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+            if (task.getStatus() == TaskStatus.ARCHIVED) {
+                move2Archived(task);
+            }
             return true;
         } catch (Exception e) {
             log.error("save task status occur error:{}", e.getMessage(), e);
@@ -151,8 +156,13 @@ public class FileSystemTaskPersistence implements TaskPersistence {
 
     }
 
-    @Override
-    public void move2Archived(InferenceTask task) throws IOException {
+    /**
+     * move task to the archived state
+     *
+     * @param task task
+     * @return if success
+     */
+    private void move2Archived(InferenceTask task) throws IOException {
         // move to the archived task file
         try {
             FileUtils.moveDirectoryToDirectory(new File(fileSystemPath.oneActiveTaskDir(task.getId())), new File(fileSystemPath.archivedTaskDir()), true);
@@ -164,6 +174,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
 
     }
 
+
     @Override
     public String preloadingSWMP(InferenceTask task) throws IOException {
         SWModelPackage model = task.getSwModelPackage();
@@ -172,17 +183,26 @@ public class FileSystemTaskPersistence implements TaskPersistence {
 
         // check if exist todo check with md5
         if (Files.notExists(Path.of(cachePathStr))) {
+            download(cachePathStr, model.getPath());
+        }
+        return cachePathStr;
+    }
+
+    /**
+     * lock avoid multi task download single file
+     */
+    private synchronized void download(String localPath, String remotePath) throws IOException {
+        if (Files.notExists(Path.of(localPath))) {
             // pull swmp(tar) and uncompress it to the swmp dir
-            Stream<String> paths = storageAccessService.list((task.getSwModelPackage().getPath()));
+            Stream<String> paths = storageAccessService.list((remotePath));
             paths.collect(Collectors.toList()).forEach(path -> {
                 try (InputStream swmpStream = storageAccessService.get(path)) {
-                    TarUtil.extractor(swmpStream, cachePathStr);
+                    TarUtil.extractor(swmpStream, localPath);
                 } catch (IOException e) {
                     log.error("download swmp file error", e);
                 }
             });
         }
-        return cachePathStr;
     }
 
     private final String dataFormat = "%s:%s:%s";
@@ -236,7 +256,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                 object.set("swds", cmp);
         }
 
-        Files.writeString(configPath, JSONUtil.toJsonStr(object), StandardOpenOption.CREATE);
+        Files.writeString(configPath, JSONUtil.toJsonStr(object), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     @Override

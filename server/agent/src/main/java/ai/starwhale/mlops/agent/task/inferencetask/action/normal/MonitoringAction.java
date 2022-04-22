@@ -7,15 +7,18 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
+import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence.ExecuteStatus;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class MonitoringAction extends AbsBasePPLTaskAction {
 
@@ -60,7 +63,28 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
             // only update memory list,there is no need to update the disk file(already update by taskContainer)
             taskPool.runningTasks.remove(oldTask);
         } else {
-            // seem like no other status
+            // try to detect container status
+            ContainerClient.ContainerStatus status = containerClient.status(newTask.getContainerId());
+            switch (status) {
+                case NORMAL:
+                    // nothing to do
+                    break;
+                case DEAD:
+                    // todo retry but with serial times
+                    log.error("container:{} is dead, now will restart it", newTask.getContainerId());
+                    containerClient.startContainer(newTask.getContainerId());
+                    break;
+                case NO_SUCH_CONTAINER:
+                    // already be removed or any else error
+                    log.error("container:{} may be removed, now will return error", newTask.getContainerId());
+                    newTask.setStatus(TaskStatus.EXIT_ERROR);
+                    taskPool.errorTasks.add(newTask);
+                    // if run success, release device to available device pool
+                    sourcePool.release(newTask.getDevices());
+                    // only update memory list,there is no need to update the disk file(already update by taskContainer)
+                    taskPool.runningTasks.remove(oldTask);
+                    break;
+            }
         }
     }
 

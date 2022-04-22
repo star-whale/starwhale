@@ -21,7 +21,7 @@ import java.util.List;
  * execute on every startup
  */
 @Slf4j
-@Order(0)
+@Order(1)
 public class TaskPoolInitializer implements CommandLineRunner {
     @Autowired
     private Action<Void, List<InferenceTask>> rebuildTasksAction;
