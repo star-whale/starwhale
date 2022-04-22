@@ -5,18 +5,14 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.api.protocol.swds.upload;
+package ai.starwhale.mlops.domain.system;
 
-import javax.validation.constraints.NotNull;
-import lombok.Data;
-import org.springframework.validation.annotation.Validated;
+import ai.starwhale.mlops.domain.job.Job.JobStatus;
 
-@Validated
-@Data
-public class UploadRequest {
-    @NotNull
-    String swds;
-    @NotNull
-    UploadPhase phase;
-
+/**
+ * manage status
+ */
+public interface StatusMachine<S> {
+    boolean couldTransfer(S statusNow,S statusNew);
+    boolean isFinal(S status);
 }

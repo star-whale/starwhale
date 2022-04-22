@@ -5,18 +5,11 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.api.protocol.swds.upload;
+package ai.starwhale.mlops.api.protocol;
 
-import javax.validation.constraints.NotNull;
-import lombok.Data;
-import org.springframework.validation.annotation.Validated;
-
-@Validated
-@Data
-public class UploadRequest {
-    @NotNull
-    String swds;
-    @NotNull
-    UploadPhase phase;
-
+/**
+ * the common statuses for Task
+ */
+public enum TaskStatusInterface {
+    PREPARING, RUNNING, SUCCESS, CANCELING, CANCELED, FAIL;
 }

@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS job_info
     created_time    datetime         NOT NULL,
     finished_time   datetime,
     duration_ms     bigint           NOT NULL,
-    job_status      tinyint UNSIGNED NOT NULL,
+    job_status      int              NOT NULL,
     base_image_id   bigint           NOT NULL,
     device_type     tinyint UNSIGNED NOT NULL,
     device_amount   int              NOT NULL,
