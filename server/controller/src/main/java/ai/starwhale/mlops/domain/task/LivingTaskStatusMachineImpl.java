@@ -220,7 +220,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             //filter these job who's current status is before desired status
             final List<Long> toBeUpdated = jobids.parallelStream().filter(jid -> {
                 final Job job = jobIdMap.get(jid);
-                return null != job && job.getStatus().before(desiredStatus);
+                return null != job;
             }).peek(jobId -> jobIdMap.get(jobId).setStatus(desiredStatus))
                 .collect(Collectors.toList());
             if(null != toBeUpdated && !toBeUpdated.isEmpty()){

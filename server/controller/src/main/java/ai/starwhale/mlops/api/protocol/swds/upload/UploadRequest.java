@@ -7,11 +7,16 @@
 
 package ai.starwhale.mlops.api.protocol.swds.upload;
 
+import javax.validation.constraints.NotNull;
 import lombok.Data;
+import org.springframework.validation.annotation.Validated;
 
+@Validated
 @Data
 public class UploadRequest {
+    @NotNull
     String swds;
+    @NotNull
     UploadPhase phase;
 
 }

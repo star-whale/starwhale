@@ -70,7 +70,7 @@ public enum TaskStatus {
     /**
      * task exit with unexpected error
      */
-    EXIT_ERROR(-0x10,JobStatus.EXIT_ERROR, true),
+    EXIT_ERROR(0xfff,JobStatus.EXIT_ERROR, true),
 
     /**
      * UNKNOWN from an Integer
