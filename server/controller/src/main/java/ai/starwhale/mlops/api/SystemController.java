@@ -31,8 +31,7 @@ public class SystemController implements SystemApi{
     public ResponseEntity<ResponseMessage<PageInfo<AgentVO>>> listAgent(String ip, Integer pageNum,
         Integer pageSize) {
         PageParams pageParams = PageParams.builder().pageNum(pageNum).pageSize(pageSize).build();
-        List<AgentVO> voList = systemService.listAgents(ip, pageParams);
-        PageInfo<AgentVO> pageInfo = new PageInfo<>(voList);
+        PageInfo<AgentVO> pageInfo = systemService.listAgents(ip, pageParams);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 

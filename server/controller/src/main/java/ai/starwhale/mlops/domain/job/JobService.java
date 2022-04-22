@@ -11,6 +11,7 @@ import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -19,6 +20,7 @@ import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
+import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
@@ -32,7 +34,10 @@ import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import cn.hutool.core.util.IdUtil;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.Page.Function;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
@@ -90,13 +95,10 @@ public class JobService {
     @Resource
     private StoragePathCoordinator storagePathCoordinator;
 
-    public List<JobVO> listJobs(String projectId, String swmpId, PageParams pageParams) {
+    public PageInfo<JobVO> listJobs(String projectId, String swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<JobEntity> jobEntities = jobMapper.listJobs(idConvertor.revert(projectId), idConvertor.revert(swmpId));
-
-        return jobEntities.stream()
-            .map(jobConvertor::convert)
-            .collect(Collectors.toList());
+        return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
 
     public JobVO findJob(String projectId, String jobId) {

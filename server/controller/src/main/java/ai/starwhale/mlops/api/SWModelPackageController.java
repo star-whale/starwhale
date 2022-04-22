@@ -53,15 +53,16 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(String projectId, String versionId,
         String modelName, Integer pageNum, Integer pageSize) {
-        List<SWModelPackageVO> voList;
+        PageInfo<SWModelPackageVO> pageInfo;
         if(StringUtils.hasText(versionId)) {
-            voList = swmpService.findModelByVersionId(List.of(versionId.split("[,;]")));
+            List<SWModelPackageVO> voList = swmpService.findModelByVersionId(
+                List.of(versionId.split("[,;]")));
+            pageInfo = PageInfo.of(voList);
         } else {
-            voList = swmpService.listSWMP(
+            pageInfo = swmpService.listSWMP(
                 SWMPObject.builder().projectId(projectId).name(modelName).build(),
                 PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
         }
-        PageInfo<SWModelPackageVO> pageInfo = new PageInfo<>(voList);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
@@ -102,7 +103,7 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(String projectId,
         String modelId, String modelVersionName, Integer pageNum, Integer pageSize) {
-        List<SWModelPackageVersionVO> voList = swmpService.listSWMPVersionHistory(
+        PageInfo<SWModelPackageVersionVO> pageInfo = swmpService.listSWMPVersionHistory(
             SWMPObject.builder()
                 .projectId(projectId)
                 .id(modelId)
@@ -112,7 +113,6 @@ public class SWModelPackageController implements SWModelPackageApi{
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .build());
-        PageInfo<SWModelPackageVersionVO> pageInfo = new PageInfo<>(voList);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 

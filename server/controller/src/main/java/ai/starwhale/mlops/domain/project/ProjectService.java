@@ -10,11 +10,13 @@ package ai.starwhale.mlops.domain.project;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -55,12 +57,10 @@ public class ProjectService {
      * @param pageParams Paging parameters.
      * @return A list of ProjectVO objects
      */
-    public List<ProjectVO> listProject(Project project, PageParams pageParams) {
+    public PageInfo<ProjectVO> listProject(Project project, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<ProjectEntity> entities = projectMapper.listProjects(project.getName());
-        return entities.stream()
-            .map(projectConvertor :: convert)
-            .collect(Collectors.toList());
+        return PageUtil.toPageInfo(entities, projectConvertor::convert);
     }
 
     /**

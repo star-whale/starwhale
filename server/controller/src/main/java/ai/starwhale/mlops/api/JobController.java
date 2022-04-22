@@ -37,9 +37,8 @@ public class JobController implements JobApi{
     public ResponseEntity<ResponseMessage<PageInfo<JobVO>>> listJobs(String projectId, String swmpId,
         Integer pageNum, Integer pageSize) {
 
-        List<JobVO> jobVOS = jobService.listJobs(projectId, swmpId, new PageParams(pageNum, pageSize));
-        PageInfo<JobVO> pageInfo = new PageInfo<>(jobVOS);
-        return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+        PageInfo<JobVO> jobVOS = jobService.listJobs(projectId, swmpId, new PageParams(pageNum, pageSize));
+        return ResponseEntity.ok(Code.success.asResponse(jobVOS));
     }
 
     @Override
@@ -52,8 +51,7 @@ public class JobController implements JobApi{
     public ResponseEntity<ResponseMessage<PageInfo<TaskVO>>> listTasks(String projectId,
         String jobId, Integer pageNum, Integer pageSize) {
 
-        List<TaskVO> taskVOS = taskService.listTasks(jobId, new PageParams(pageNum, pageSize));
-        PageInfo<TaskVO> pageInfo = new PageInfo<>(taskVOS);
+        PageInfo<TaskVO> pageInfo = taskService.listTasks(jobId, new PageParams(pageNum, pageSize));
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 

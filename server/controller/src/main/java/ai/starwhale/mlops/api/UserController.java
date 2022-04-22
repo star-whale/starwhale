@@ -34,9 +34,9 @@ public class UserController implements UserApi{
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<UserVO>>> listUser(String userName,
         Integer pageNum, Integer pageSize) {
-        List<UserVO> voList = userService.listUsers(User.builder().name(userName).build(),
+        PageInfo<UserVO> pageInfo = userService.listUsers(User.builder().name(userName).build(),
             new PageParams(pageNum, pageSize));
-        PageInfo<UserVO> pageInfo = new PageInfo<>(voList);
+
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 

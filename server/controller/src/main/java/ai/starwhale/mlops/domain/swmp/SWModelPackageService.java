@@ -14,6 +14,7 @@ import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
@@ -33,6 +34,7 @@ import ai.starwhale.mlops.storage.StorageObjectInfo;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -78,14 +80,11 @@ public class SWModelPackageService {
     private ProjectManager projectManager;
 
 
-    public List<SWModelPackageVO> listSWMP(SWMPObject swmp, PageParams pageParams) {
+    public PageInfo<SWModelPackageVO> listSWMP(SWMPObject swmp, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackages(
             idConvertor.revert(swmp.getProjectId()), swmp.getName());
-
-        return entities.stream()
-            .map(swmpConvertor::convert)
-            .collect(Collectors.toList());
+        return PageUtil.toPageInfo(entities, swmpConvertor::convert);
     }
 
     public Boolean deleteSWMP(SWMPObject swmp) {
@@ -161,14 +160,11 @@ public class SWModelPackageService {
         return res > 0;
     }
 
-    public List<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPObject swmp, PageParams pageParams) {
+    public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPObject swmp, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWModelPackageVersionEntity> entities = swmpVersionMapper.listVersions(
             idConvertor.revert(swmp.getId()), swmp.getLatestVersion().getName());
-
-        return entities.stream()
-            .map(versionConvertor::convert)
-            .collect(Collectors.toList());
+        return PageUtil.toPageInfo(entities, versionConvertor::convert);
     }
 
     public String addSWMP(SWMPObject swmp) {
