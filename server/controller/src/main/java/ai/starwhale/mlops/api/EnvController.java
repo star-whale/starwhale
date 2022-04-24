@@ -16,9 +16,11 @@ import ai.starwhale.mlops.domain.node.Device;
 import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("${apiPrefix}")
 public class EnvController implements EnvApi{
 
     @Resource

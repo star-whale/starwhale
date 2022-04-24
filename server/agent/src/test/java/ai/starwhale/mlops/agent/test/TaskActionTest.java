@@ -6,6 +6,7 @@ import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
@@ -107,7 +108,7 @@ public class TaskActionTest {
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
                         .id(1234567890L)
-                        .status(TaskStatus.PREPARING)
+                        .status(InferenceTaskStatus.PREPARING)
                         .taskType(TaskType.PPL)
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
@@ -151,7 +152,7 @@ public class TaskActionTest {
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
                         .id(1234567890L)
-                        .status(TaskStatus.RUNNING) // change to runnning
+                        .status(InferenceTaskStatus.RUNNING) // change to runnning
                         .taskType(TaskType.PPL)
                         .containerId("test-containerid")
                         .deviceClass(Device.Clazz.GPU)
@@ -179,7 +180,7 @@ public class TaskActionTest {
                         .build(),
                 InferenceTask.builder()
                         .id(1234567891L)
-                        .status(TaskStatus.RUNNING) // change to runnning
+                        .status(InferenceTaskStatus.RUNNING) // change to runnning
                         .taskType(TaskType.PPL)
                         .containerId("test-containerid2")
                         .deviceClass(Device.Clazz.GPU)
@@ -230,7 +231,7 @@ public class TaskActionTest {
                 InferenceTask.builder()
                         .id(1234567890L)
                         .taskType(TaskType.PPL)
-                        .status(TaskStatus.UPLOADING) // change to UPLOADING
+                        .status(InferenceTaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid")
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
@@ -258,7 +259,7 @@ public class TaskActionTest {
                 InferenceTask.builder()
                         .id(1234567891L)
                         .taskType(TaskType.PPL)
-                        .status(TaskStatus.UPLOADING) // change to UPLOADING
+                        .status(InferenceTaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid2")
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)

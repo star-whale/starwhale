@@ -54,3 +54,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 /docker/jar/
+/server/controller/src/main/resources/static/
