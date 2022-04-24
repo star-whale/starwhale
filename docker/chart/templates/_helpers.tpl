@@ -95,18 +95,28 @@ spec:
       volumes:
         - name: agent-storage
           hostPath:
+        {{ if .Values.minikube.enabled }}
           {{if eq .role "gpu"}}
-            path: {{ .Values.storage.agentGPUHostPath }}
+            path: {{ .Values.minikube.agentHostPath}}/agent-gpu
           {{else}}
-            path: {{ .Values.storage.agentCPUHostPath }}
+            path: {{ .Values.minikube.agentHostPath}}/agent-cpu
           {{end}}
+        {{ else }}
+          {{if eq .role "gpu"}}
+            path: {{ .Values.storage.agentHostPathRoot }}/agent-gpu
+          {{else}}
+            path: {{ .Values.storage.agentHostPathRoot }}/agent-cpu
+          {{end}}
+        {{ end}}
             type: DirectoryOrCreate
+    {{if not .Values.minikube.enabled }}
       nodeSelector:
       {{if eq .role "gpu"}}
         {{- toYaml .Values.nodeSelector.agentGPU | nindent 8}}
       {{else}}
         {{- toYaml .Values.nodeSelector.agentCPU | nindent 8}}
       {{end}}
+    {{end}}
       containers:
         - name: agent
           image: "{{ .Values.image.registry}}/starwhaleai/taskset:{{ .Values.image.tag | default .Chart.AppVersion }}"

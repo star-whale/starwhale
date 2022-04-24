@@ -12,7 +12,7 @@ image:
   pullSecrets: []
 
 mysql:
-  enable: true
+  enabled: true
   username: root
   password: 123456
 
@@ -24,7 +24,7 @@ externalMySQL:
   database: starwhale
 
 minio:
-  enable: true
+  enabled: true
   accessKey: minioadmin
   secretKey: minioadmin
   region: local
@@ -52,8 +52,7 @@ controller:
   tolerations: []
 
 storage:
-  agentCPUHostPath: "/mnt/data/starwhale/agent-cpu"
-  agentGPUHostPath: "/mnt/data/starwhale/agent-gpu"
+  agentHostPathRoot: "/mnt/data/starwhale"
 
 nodeSelector:
   controller: {}
@@ -62,18 +61,23 @@ nodeSelector:
   agentGPU:
     starwhale.ai/node-domain: gpu
 
+minikube:
+  enabled: false
+  agentHostPath: "/var/starwhale"
+  gpuEnabled: false
+
 resources:
   agentCPU:
     limits:
-      cpu: 10000m
-      memory: 16Gi
+      cpu: 2000m
+      memory: 2Gi
     requests:
-      cpu: 1000m
+      cpu: 2000m
       memory: 1Gi
   agentGPU:
     limits:
-      cpu: 10000m
-      memory: 16Gi
+      cpu: 2000m
+      memory: 2Gi
       nvidia.com/gpu: 2
     requests:
       cpu: 1000m
@@ -82,7 +86,7 @@ resources:
   controller:
     limits:
       cpu: 2000m
-      memory: 4Gi
+      memory: 2Gi
     requests:
       cpu: 1000m
       memory: 1Gi
