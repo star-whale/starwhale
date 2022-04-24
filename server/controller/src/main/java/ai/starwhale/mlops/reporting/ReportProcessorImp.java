@@ -16,15 +16,14 @@ import ai.starwhale.mlops.domain.system.Agent;
 import ai.starwhale.mlops.domain.system.AgentEntity;
 import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.TaskStatus;
-import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
-import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
+import ai.starwhale.mlops.domain.task.status.StatusAdapter;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -35,7 +34,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -61,10 +59,12 @@ public class ReportProcessorImp implements ReportProcessor {
 
     final TaskMapper taskMapper;
 
+    final StatusAdapter statusAdapter;
+
     public ReportProcessorImp(CommandingTasksChecker commandingTasksChecker,
         LivingTaskStatusMachine livingTaskStatusMachine, SWTaskScheduler swTaskScheduler,
         TaskBoConverter taskBoConverter, AgentMapper agentMapper, ObjectMapper jsonMapper,
-        TaskMapper taskMapper) {
+        TaskMapper taskMapper, StatusAdapter statusAdapter) {
         this.commandingTasksChecker = commandingTasksChecker;
         this.livingTaskStatusMachine = livingTaskStatusMachine;
         this.swTaskScheduler = swTaskScheduler;
@@ -72,6 +72,7 @@ public class ReportProcessorImp implements ReportProcessor {
         this.agentMapper = agentMapper;
         this.jsonMapper = jsonMapper;
         this.taskMapper = taskMapper;
+        this.statusAdapter = statusAdapter;
     }
 
     // 0.if node doesn't exists creat one 1. check commanding tasks;  2. change task status; 3. schedule task & cancel task;
@@ -96,7 +97,7 @@ public class ReportProcessorImp implements ReportProcessor {
                     livingTaskStatusMachine.adopt(List.of(task), task.getStatus());
                     return task;
                 });
-            tsk.setStatus(new StagingTaskStatus(taskReport.getStatus()));
+            tsk.setStatus(statusAdapter.from(taskReport.getStatus()));
             return tsk;
         }).collect(Collectors.toList());
         final List<TaskCommand> unProperTasks = commandingTasksChecker
@@ -107,7 +108,7 @@ public class ReportProcessorImp implements ReportProcessor {
         taskStatusChange(tasks);
         final List<Task> toAssignTasks = swTaskScheduler.schedule(nodeInfo);
         final Collection<Task> toCancelTasks = livingTaskStatusMachine
-            .ofStatus(new StagingTaskStatus(TaskStatus.CANCEL))
+            .ofStatus(TaskStatus.TO_CANCEL)
             .stream()
             .filter(t->t.getAgent().equals(Agent.fromNode(nodeInfo)))
             .collect(Collectors.toList());
@@ -145,8 +146,7 @@ public class ReportProcessorImp implements ReportProcessor {
     }
 
     private void canceledTaskStatusChange(Collection<Task> tasks) {
-        livingTaskStatusMachine.update(tasks, new StagingTaskStatus(TaskStatus.CANCEL,
-            TaskStatusStage.DOING));
+        livingTaskStatusMachine.update(tasks, TaskStatus.CANCELLING);
     }
 
     /**
@@ -162,7 +162,7 @@ public class ReportProcessorImp implements ReportProcessor {
                 tsks.parallelStream().map(Task::getId).collect(
                     Collectors.toList()), agentid), MAX_BATCH_SIZE);
         toAssignTasks.parallelStream().forEach(task -> task.setAgent(Agent.fromEntity(agentEntity)));
-        livingTaskStatusMachine.adopt(toAssignTasks, new StagingTaskStatus(TaskStatus.CREATED,TaskStatusStage.DOING));
+        livingTaskStatusMachine.adopt(toAssignTasks, TaskStatus.ASSIGNING);
     }
 
     private void taskStatusChange(List<Task> reportedTasks) {

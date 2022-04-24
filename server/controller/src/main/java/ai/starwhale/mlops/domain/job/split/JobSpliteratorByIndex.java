@@ -9,8 +9,8 @@ package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
@@ -20,10 +20,9 @@ import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.TaskStatus;
-import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -101,7 +100,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
             throw new SWValidationException(ValidSubject.SWDS);
         }
         BatchOperateHelper.doBatch(taskList,ts->taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())),MAX_MYSQL_INSERTION_SIZE);
-        jobMapper.updateJobStatus(List.of(job.getId()),JobStatus.RUNNING.getValue());
+        jobMapper.updateJobStatus(List.of(job.getId()), JobStatus.RUNNING);
         return taskBoConverter.fromTaskEntity(taskList,job);
     }
 
@@ -114,9 +113,9 @@ public class JobSpliteratorByIndex implements JobSpliterator {
                 .jobId(job.getId())
                 .resultPath(storagePath(job.getUuid(),taskUuid))
                 .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
-                .taskStatus(new StagingTaskStatus(TaskStatus.CREATED).getValue())
+                .taskStatus(TaskStatus.CREATED)
                 .taskUuid(taskUuid)
-                .taskType(TaskType.PPL.getValue())
+                .taskType(TaskType.PPL)
                 .build());
         }
         return taskEntities;

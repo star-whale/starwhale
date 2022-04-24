@@ -1,6 +1,7 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity;
@@ -44,7 +45,7 @@ public class JobEntity extends BaseEntity {
 
     private Long durationMs;
 
-    private Integer jobStatus;
+    private JobStatus jobStatus;
 
     private Long baseImageId;
 

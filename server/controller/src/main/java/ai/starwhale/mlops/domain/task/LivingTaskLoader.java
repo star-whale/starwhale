@@ -7,15 +7,15 @@
 
 package ai.starwhale.mlops.domain.task;
 
-import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
-import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
-import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import org.springframework.stereotype.Service;
@@ -36,7 +36,7 @@ public class LivingTaskLoader {
 
     final LivingTaskStatusMachine livingTaskStatusMachine;
 
-    final SWTaskScheduler SWTaskScheduler;
+    final SWTaskScheduler swTaskScheduler;
 
     final CommandingTasksChecker commandingTasksChecker;
 
@@ -48,14 +48,21 @@ public class LivingTaskLoader {
 
     final JobBoConverter jobBoConverter;
 
-    public LivingTaskLoader(LivingTaskStatusMachine livingTaskStatusMachine, SWTaskScheduler SWTaskScheduler, CommandingTasksChecker commandingTasksChecker, TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter, JobBoConverter jobBoConverter) {
+    final JobStatusMachine jobStatusMachine;
+
+    public LivingTaskLoader(LivingTaskStatusMachine livingTaskStatusMachine,
+        SWTaskScheduler swTaskScheduler, CommandingTasksChecker commandingTasksChecker,
+        TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter,
+        JobBoConverter jobBoConverter,
+        JobStatusMachine jobStatusMachine) {
         this.livingTaskStatusMachine = livingTaskStatusMachine;
-        this.SWTaskScheduler = SWTaskScheduler;
+        this.swTaskScheduler = swTaskScheduler;
         this.commandingTasksChecker = commandingTasksChecker;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.taskBoConverter = taskBoConverter;
         this.jobBoConverter = jobBoConverter;
+        this.jobStatusMachine = jobStatusMachine;
     }
 
     /**
@@ -67,7 +74,7 @@ public class LivingTaskLoader {
         Stream<TaskEntity> taskStream = livingTasksFromDB();
         final Map<Long, List<TaskEntity>> collectJob = taskStream.parallel()
             .collect(Collectors.groupingBy(TaskEntity::getJobId));
-        final Map<StagingTaskStatus, List<Task>> collectStatus = collectJob.entrySet().parallelStream()
+        final Map<TaskStatus, List<Task>> collectStatus = collectJob.entrySet().parallelStream()
             .map(entry -> {
                 final JobEntity job = jobMapper.findJobById(entry.getKey());
                 return taskBoConverter
@@ -78,19 +85,18 @@ public class LivingTaskLoader {
         collectStatus.entrySet().parallelStream()
             .forEach(entry -> livingTaskStatusMachine.adopt(entry.getValue(), entry.getKey()));
 
-        scheduleCreatedTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.CREATED)));
-        checkCommandingTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.CREATED,TaskStatusStage.DOING)));
-        checkCommandingTasks(collectStatus.get(new StagingTaskStatus(TaskStatus.CANCEL,TaskStatusStage.DOING)));
+        scheduleCreatedTasks(collectStatus.get(TaskStatus.CREATED));
+        checkCommandingTasks(collectStatus.get(TaskStatus.ASSIGNING));
+        checkCommandingTasks(collectStatus.get(TaskStatus.CANCELLING));
     }
 
     /**
      * @return tasks of jobs that are not FINISHED neither ERROR neither ERROR
      */
     private Stream<TaskEntity> livingTasksFromDB() {
-        List<Integer> hotJobStatuses = Arrays.asList(JobStatus.values())
+        List<JobStatus> hotJobStatuses = Arrays.asList(JobStatus.values())
             .parallelStream()
-            .filter(jobStatus -> !jobStatus.isFinalStatus())
-            .map(JobStatus::getValue)
+            .filter(jobStatus -> !jobStatusMachine.isFinal(jobStatus))
             .collect(Collectors.toList());
         return jobMapper.findJobByStatusIn(hotJobStatuses)
             .parallelStream()
@@ -109,7 +115,7 @@ public class LivingTaskLoader {
         tasks.parallelStream()
             .collect(Collectors.groupingBy(task -> task.getJob().getJobRuntime().getDeviceClass()))
             .forEach((deviceClass, taskList) ->
-                SWTaskScheduler.adoptTasks(taskList, deviceClass));
+                swTaskScheduler.adoptTasks(taskList, deviceClass));
     }
 
     /**
