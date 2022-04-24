@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS job_info
     created_time    datetime         NOT NULL,
     finished_time   datetime,
     duration_ms     bigint           NOT NULL,
-    job_status      int              NOT NULL,
+    job_status      varchar(50)      NOT NULL,
     base_image_id   bigint           NOT NULL,
     device_type     tinyint UNSIGNED NOT NULL,
     device_amount   int              NOT NULL,
@@ -152,7 +152,8 @@ CREATE TABLE IF NOT EXISTS job_info
     UNIQUE INDEX uk_job_uuid (job_uuid) USING BTREE,
     INDEX idx_swmp_version_id (swmp_version_id) USING BTREE,
     INDEX idx_owner_id (owner_id) USING BTREE,
-    INDEX idx_base_image (base_image_id) USING BTREE
+    INDEX idx_base_image (base_image_id) USING BTREE,
+    INDEX idx_job_status (job_status) USING BTREE
 );
 
 CREATE TABLE IF NOT EXISTS job_dataset_version_rel
@@ -173,8 +174,8 @@ CREATE TABLE IF NOT EXISTS task_info
     task_uuid       varchar(255)     NOT NULL,
     job_id          bigint           NOT NULL,
     agent_id        bigint           ,
-    task_status     int              NOT NULL,
-    task_type       tinyint          NOT NULL default 1,
+    task_status     varchar(50)      NOT NULL,
+    task_type       varchar(50)      NOT NULL,
     result_path     text             NOT NULL,
     task_request    longtext,
     created_time    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -182,5 +183,7 @@ CREATE TABLE IF NOT EXISTS task_info
     PRIMARY KEY (id),
     UNIQUE INDEX uk_task_uuid (task_uuid) USING BTREE,
     INDEX idx_job_id (job_id) USING BTREE,
-    INDEX idx_agent_id (agent_id) USING BTREE
+    INDEX idx_agent_id (agent_id) USING BTREE,
+    INDEX idx_task_status (task_status) USING BTREE,
+    INDEX idx_task_type (task_type) USING BTREE
 );
