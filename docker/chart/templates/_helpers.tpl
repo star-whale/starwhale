@@ -149,3 +149,32 @@ spec:
             {{- toYaml .Values.resources.agentCPU | nindent 12 }}
           {{end}}
 {{- end}}
+
+{{/*
+Create PV for minikube local environment
+*/}}
+{{- define "chart.minikubePV" -}}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "common.names.fullname" . }}-pv-{{ .backend }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  capacity:
+    storage: {{ .Values.minikube.pv.storage }}
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: {{ .Values.minikube.pv.rootPath }}/{{ .backend }}
+    type: DirectoryOrCreate
+  storageClassName: local-storage-{{ .backend }}
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: local-storage-{{ .backend }}
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+{{- end}}
