@@ -28,6 +28,11 @@ public interface SWTaskScheduler {
     void adoptTasks(Collection<Task> tasks, Device.Clazz deviceClass);
 
     /**
+     * @param taskIds tasks to be stop scheduled
+     */
+    void stopSchedule(Collection<Long> taskIds);
+
+    /**
      * pop tasks available to the node. if no task is available or the node is full, an empty list should be returned
      * TaskStatus -> Created.DOING
      * @param node the node load info

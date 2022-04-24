@@ -72,7 +72,7 @@ public class CommandingTasksChecker {
         final List<TaskCommand> properTasks = new LinkedList<>();
         taskCommands.forEach(taskCommand -> {
             final Task nodeTask = nodeTasks.get(taskCommand.getTask().getId());
-            final boolean unproperlyExed = taskStatusMachine.couldTransfer(taskCommand.getCommandType().getCorrespondStatus(),nodeTask.getStatus());
+            final boolean unproperlyExed = null == nodeTask || !taskStatusMachine.couldTransfer(taskCommand.getCommandType().getCorrespondStatus(),nodeTask.getStatus());
             if(unproperlyExed){
                 unProperTasks.add(taskCommand);
             }else {

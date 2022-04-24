@@ -20,7 +20,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
-import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
+import ai.starwhale.mlops.domain.task.LivingTaskCache;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.task.status.StatusAdapter;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -47,7 +47,7 @@ public class ReportProcessorImp implements ReportProcessor {
 
     final CommandingTasksChecker commandingTasksChecker;
 
-    final LivingTaskStatusMachine livingTaskStatusMachine;
+    final LivingTaskCache livingTaskCache;
 
     final SWTaskScheduler swTaskScheduler;
 
@@ -62,11 +62,11 @@ public class ReportProcessorImp implements ReportProcessor {
     final StatusAdapter statusAdapter;
 
     public ReportProcessorImp(CommandingTasksChecker commandingTasksChecker,
-        LivingTaskStatusMachine livingTaskStatusMachine, SWTaskScheduler swTaskScheduler,
+        LivingTaskCache livingTaskCache, SWTaskScheduler swTaskScheduler,
         TaskBoConverter taskBoConverter, AgentMapper agentMapper, ObjectMapper jsonMapper,
         TaskMapper taskMapper, StatusAdapter statusAdapter) {
         this.commandingTasksChecker = commandingTasksChecker;
-        this.livingTaskStatusMachine = livingTaskStatusMachine;
+        this.livingTaskCache = livingTaskCache;
         this.swTaskScheduler = swTaskScheduler;
         this.taskBoConverter = taskBoConverter;
         this.agentMapper = agentMapper;
@@ -88,29 +88,29 @@ public class ReportProcessorImp implements ReportProcessor {
             agentEntity = insertAgent(nodeInfo);
         }
         final List<TaskReport> taskReports = report.getTasks() == null? new ArrayList<>():report.getTasks();
-        final List<Task> tasks = taskReports.parallelStream().map(taskReport -> {
+        final List<Task> reportedTasks = taskReports.parallelStream().map(taskReport -> {
             final Long taskId = taskReport.getId();
-            final Task tsk = livingTaskStatusMachine.ofId(taskId)
+            final Task tsk = livingTaskCache.ofId(taskId)
                 .orElseGet(() -> {
                     log.warn("not hot task load into mem {}", taskId);
                     final Task task = taskBoConverter.fromId(taskId);
-                    livingTaskStatusMachine.adopt(List.of(task), task.getStatus());
-                    return task;
+                    livingTaskCache.adopt(List.of(task), task.getStatus());
+                    return livingTaskCache.ofId(taskId).get();
                 });
             tsk.setStatus(statusAdapter.from(taskReport.getStatus()));
             return tsk;
         }).collect(Collectors.toList());
         final List<TaskCommand> unProperTasks = commandingTasksChecker
-            .onNodeReporting(nodeInfo, tasks);
+            .onNodeReporting(nodeInfo, reportedTasks);
         if (!CollectionUtils.isEmpty(unProperTasks)) {
             return rebuildReportResponse(unProperTasks);
         }
-        taskStatusChange(tasks);
+        taskStatusChange(reportedTasks);
         final List<Task> toAssignTasks = swTaskScheduler.schedule(nodeInfo);
-        final Collection<Task> toCancelTasks = livingTaskStatusMachine
+        final Collection<Task> toCancelTasks = livingTaskCache
             .ofStatus(TaskStatus.TO_CANCEL)
             .stream()
-            .filter(t->t.getAgent().equals(Agent.fromNode(nodeInfo)))
+            .filter(t->null != t.getAgent() && t.getAgent().equals(Agent.fromNode(nodeInfo)))
             .collect(Collectors.toList());
         scheduledTaskStatusChange(toAssignTasks,agentEntity);
         canceledTaskStatusChange(toCancelTasks);
@@ -146,7 +146,7 @@ public class ReportProcessorImp implements ReportProcessor {
     }
 
     private void canceledTaskStatusChange(Collection<Task> tasks) {
-        livingTaskStatusMachine.update(tasks, TaskStatus.CANCELLING);
+        livingTaskCache.update(tasks, TaskStatus.CANCELLING);
     }
 
     /**
@@ -162,13 +162,13 @@ public class ReportProcessorImp implements ReportProcessor {
                 tsks.parallelStream().map(Task::getId).collect(
                     Collectors.toList()), agentid), MAX_BATCH_SIZE);
         toAssignTasks.parallelStream().forEach(task -> task.setAgent(Agent.fromEntity(agentEntity)));
-        livingTaskStatusMachine.adopt(toAssignTasks, TaskStatus.ASSIGNING);
+        livingTaskCache.update(toAssignTasks, TaskStatus.ASSIGNING);
     }
 
     private void taskStatusChange(List<Task> reportedTasks) {
         reportedTasks.parallelStream()
             .collect(Collectors.groupingBy(Task::getStatus))
-            .forEach((targetStatus, tasks) -> livingTaskStatusMachine.update(tasks, targetStatus));
+            .forEach((targetStatus, tasks) -> livingTaskCache.update(tasks, targetStatus));
     }
 
     ReportResponse rebuildReportResponse(List<TaskCommand> taskCommands) {

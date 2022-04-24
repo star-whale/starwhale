@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.*;
 
@@ -17,6 +18,7 @@ import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
+import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -39,7 +41,7 @@ import org.springframework.util.CollectionUtils;
  */
 @Slf4j
 @Service
-public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
+public class LivingTaskCacheImpl implements LivingTaskCache {
 
     /**
      * contains hot tasks
@@ -85,16 +87,24 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     final TaskStatusMachine taskStatusMachine;
 
+    final JobStatusMachine jobStatusMachine;
+
+    final SWTaskScheduler swTaskScheduler;
+
     final static Set<ai.starwhale.mlops.domain.task.status.TaskStatus> easyLostStatuses = Set.of(SUCCESS, FAIL,
         CANCELED,ASSIGNING,CANCELLING);
 
-    public LivingTaskStatusMachineImpl(TaskMapper taskMapper, JobMapper jobMapper,
+    public LivingTaskCacheImpl(TaskMapper taskMapper, JobMapper jobMapper,
         TaskJobStatusHelper taskJobStatusHelper,
-        TaskStatusMachine taskStatusMachine) {
+        TaskStatusMachine taskStatusMachine,
+        JobStatusMachine jobStatusMachine,
+        SWTaskScheduler swTaskScheduler) {
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.taskJobStatusHelper = taskJobStatusHelper;
         this.taskStatusMachine = taskStatusMachine;
+        this.jobStatusMachine = jobStatusMachine;
+        this.swTaskScheduler = swTaskScheduler;
         taskIdMap = new ConcurrentHashMap<>();
         jobIdMap = new ConcurrentHashMap<>();
         taskStatusMap = new ConcurrentHashMap<>();
@@ -236,7 +246,11 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
                 jobMapper.updateJobStatus(toBeUpdated, desiredStatus);
             }
 
-            if (desiredStatus == JobStatus.SUCCESS) {
+            if(desiredStatus == JobStatus.FAIL){
+                swTaskScheduler.stopSchedule(jobids.parallelStream().map(jid->jobTaskMap.get(jid)).flatMap(Collection::stream).collect(
+                    Collectors.toList()));
+            }
+            if (jobStatusMachine.isFinal(desiredStatus)) {
                 removeFinishedJobTasks(jobids);
             }
 
@@ -244,17 +258,16 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     }
 
     private void removeFinishedJobTasks(List<Long> jobids) {
-        if(CollectionUtils.isEmpty(jobids)){
-            return;
-        }
         jobids.parallelStream().forEach(jid->{
-            final Set<Long> toBeCleardTaskIds = jobTaskMap.get(jid);
-            final Set<Long> finishedTasks = safeGetTaskIdsFromStatus(SUCCESS);
+            final Set<Long> toBeClearedTaskIds = jobTaskMap.get(jid);
             jobIdMap.remove(jid);
             jobTaskMap.remove(jid);
-            toBeCleardTaskIds.parallelStream().forEach(tid->{
+            taskStatusMap.forEach((k,tskIds)->{
+                tskIds.removeAll(toBeClearedTaskIds);
+            });
+
+            toBeClearedTaskIds.parallelStream().forEach(tid->{
                 taskIdMap.remove(tid);
-                finishedTasks.remove(tid);
             });
 
         });
