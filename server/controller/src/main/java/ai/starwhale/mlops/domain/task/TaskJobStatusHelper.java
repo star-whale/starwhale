@@ -12,20 +12,29 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class TaskJobStatusHelper {
 
     public JobStatus desiredJobStatus(Collection<Task> tasks) {
         for (Entry<JobStatus, Set<TaskStatusRequirement>> entry : jobStatusRequirementSetMap.entrySet()) {
+            log.debug("now checking {}",entry.getKey());
             if (match(tasks, entry.getValue())) {
+                log.debug("job status {} passed",entry.getKey());
                 return entry.getKey();
             }
+            log.debug("job status {} not passed",entry.getKey());
         }
+        log.debug("job status UNKNOWN returned ");
         return JobStatus.UNKNOWN;
     }
 
+    /**
+     * set of TRs are and relationship
+     */
     Map<JobStatus, Set<TaskStatusRequirement>> jobStatusRequirementSetMap = Map.ofEntries(
         new SimpleEntry<>(JobStatus.RUNNING, Set.of(new TaskStatusRequirement(
                 Set.of(TaskStatus.ASSIGNING, TaskStatus.PREPARING, TaskStatus.RUNNING), TaskType.PPL,
@@ -50,7 +59,8 @@ public class TaskJobStatusHelper {
                 TaskType.CMP, RequireType.MUST)))
         , new SimpleEntry<>(JobStatus.SUCCESS,
             Set.of(new TaskStatusRequirement(Set.of(TaskStatus.SUCCESS), TaskType.PPL, RequireType.ALL)
-                , new TaskStatusRequirement(Set.of(TaskStatus.SUCCESS), TaskType.CMP, RequireType.ALL)))
+                , new TaskStatusRequirement(Set.of(TaskStatus.SUCCESS), TaskType.CMP, RequireType.ALL)
+                , new TaskStatusRequirement(Set.of(TaskStatus.SUCCESS), TaskType.CMP, RequireType.MUST)))
         , new SimpleEntry<>(JobStatus.CANCELING,
             Set.of(new TaskStatusRequirement(Set.of(TaskStatus.CANCELLING), null, RequireType.MUST)
                 , new TaskStatusRequirement(Set.of(TaskStatus.FAIL), null, RequireType.HAVE_NO)))
@@ -85,6 +95,7 @@ public class TaskJobStatusHelper {
                     return true;
                 }
             }
+            return false;
         }
 
         List<TaskStatusRequirement> negativeR = requireTypeListMap.get(false);
