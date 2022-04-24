@@ -39,6 +39,9 @@ spring:
     password: my-secret-pw
     schema: classpath:sql/schema.sql
     initialization-mode: always
+  mvc:
+     view:
+         suffix: .html
 
 mybatis:
   configuration:

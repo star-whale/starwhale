@@ -7,12 +7,6 @@
 
 package ai.starwhale.mlops.configuration.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +16,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.util.StringUtils;
 
 /**
  * User login authentication interceptor
@@ -30,11 +23,9 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
 
-//    private final ThreadLocal<Map<String, String>> threadLocal = new ThreadLocal<>();
-
     public JwtLoginFilter() {
         this.setPostOnly(false);
-        this.setRequiresAuthenticationRequestMatcher(new AntPathRequestMatcher("/login"));
+        this.setRequiresAuthenticationRequestMatcher(new AntPathRequestMatcher("/api/v1/login"));
     }
 
     @Override
@@ -45,8 +36,6 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
         } else {
             String userName = this.obtainUsername(request);
             String password = this.obtainPassword(request);
-
-//            threadLocal.remove();
 
             //Create unauthenticated credentials
             JwtLoginToken jwtLoginToken = new JwtLoginToken(userName, password);
@@ -71,23 +60,7 @@ public class JwtLoginFilter extends UsernamePasswordAuthenticationFilter {
 
     private String getParameter(HttpServletRequest request, String param) {
         return request.getParameter(param);
-//        return this.getBodyParams(request).get(param);
     }
 
-
-//    private Map<String, String> getBodyParams(HttpServletRequest request) {
-//        Map<String, String> bodyParams = threadLocal.get();
-//        if (bodyParams == null) {
-//            ObjectMapper objectMapper = new ObjectMapper();
-//            try (InputStream is = request.getInputStream()) {
-//                bodyParams = objectMapper.readValue(is, Map.class);
-//            } catch (IOException e) {
-//                log.error("get body params", e);
-//            }
-//            threadLocal.set(Optional.ofNullable(bodyParams).orElse(new HashMap<>()));
-//        }
-//
-//        return bodyParams;
-//    }
 
 }
