@@ -68,7 +68,7 @@ public class TaskBoConverter {
     public Task transformTask(Job job, TaskEntity entity) {
         try {
             TaskRequest taskRequest;
-            TaskType taskType = TaskType.from(entity.getTaskType());
+            TaskType taskType = entity.getTaskType();
             switch (taskType){
                 case PPL:
                     taskRequest = new PPLRequest(swdsBlockSerializer.fromString(entity.getTaskRequest())) ;
@@ -84,7 +84,7 @@ public class TaskBoConverter {
                 .id(entity.getId())
                 .job(job)
                 .agent(Agent.fromEntity(entity.getAgent()))
-                .status(StagingTaskStatus.from(entity.getTaskStatus()))
+                .status(entity.getTaskStatus())
                 .resultDir(entity.getResultPath())
                 .uuid(entity.getTaskUuid())
                 .taskRequest(taskRequest)

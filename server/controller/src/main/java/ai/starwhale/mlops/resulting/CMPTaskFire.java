@@ -1,19 +1,18 @@
 package ai.starwhale.mlops.resulting;
 
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskEntity;
-import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.domain.task.TaskType;
-import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
@@ -68,7 +67,7 @@ public class CMPTaskFire {
     @Transactional
     @Scheduled(fixedDelay = 1000*10)
     public void onJobCollect(){
-        jobMapper.findJobByStatusIn(List.of(JobStatus.TO_COLLECT_RESULT.getValue()))
+        jobMapper.findJobByStatusIn(List.of(JobStatus.TO_COLLECT_RESULT))
             .parallelStream()
             .forEach(jobEntity -> dispatchCMPTask(jobBoConverter.fromEntity(jobEntity)));
     }
@@ -87,13 +86,13 @@ public class CMPTaskFire {
         TaskEntity taskEntity = TaskEntity.builder()
             .jobId(job.getId())
             .taskRequest(new CMPRequest(allPPLTaskResults).toString())
-            .taskType(TaskType.CMP.getValue())
+            .taskType(TaskType.CMP)
             .resultPath(job.getResultDir())
-            .taskStatus(new StagingTaskStatus(TaskStatus.CREATED).getValue())
+            .taskStatus(TaskStatus.CREATED)
             .taskUuid(UUID.randomUUID().toString())
             .build();
         taskMapper.addTask(taskEntity);
-        jobMapper.updateJobStatus(List.of(job.getId()),JobStatus.COLLECTING_RESULT.getValue());
+        jobMapper.updateJobStatus(List.of(job.getId()),JobStatus.COLLECTING_RESULT);
 
         List<Task> cmpTasks = taskBoConverter.fromTaskEntity(List.of(taskEntity), job);
         swTaskScheduler.adoptTasks(cmpTasks, Clazz.CPU);

@@ -7,8 +7,6 @@
 
 package ai.starwhale.mlops.domain.system;
 
-import ai.starwhale.mlops.domain.job.Job.JobStatus;
-
 /**
  * manage status
  */

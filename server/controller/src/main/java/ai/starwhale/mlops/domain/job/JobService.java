@@ -12,7 +12,7 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.domain.job.Job.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
@@ -22,10 +22,9 @@ import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
-import ai.starwhale.mlops.domain.task.TaskStatus;
-import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -140,7 +139,7 @@ public class JobService {
             .deviceType(Integer.valueOf(jobRequest.getDeviceId()))
             .deviceAmount(jobRequest.getDeviceCount())
             .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
-            .jobStatus(JobStatus.CREATED.getValue())
+            .jobStatus(JobStatus.CREATED)
             .build();
 
         jobMapper.addJob(jobEntity);
@@ -170,13 +169,13 @@ public class JobService {
             //one transaction
             final List<Task> tasks = jobSpliterator.split(job);
             swTaskScheduler.adoptTasks(tasks,job.getJobRuntime().getDeviceClass());
-            livingTaskStatusMachine.adopt(tasks, new StagingTaskStatus(TaskStatus.CREATED));
+            livingTaskStatusMachine.adopt(tasks, TaskStatus.CREATED);
         });
 
     }
 
     Stream<Job> findAllNewJobs(){
-        final List<JobEntity> newJobs = jobMapper.findJobByStatusIn(List.of(JobStatus.CREATED.getValue()));
+        final List<JobEntity> newJobs = jobMapper.findJobByStatusIn(List.of(JobStatus.CREATED));
         return newJobs.stream().map(entity-> jobBoConverter.fromEntity(entity));
     }
 
@@ -195,8 +194,8 @@ public class JobService {
         if(desiredJobStatus != JobStatus.RUNNING){
             throw new SWValidationException(ValidSubject.JOB).tip("not running job can't be canceled ");
         }
-        jobMapper.updateJobStatus(List.of(jobId), JobStatus.TO_CANCEL.getValue());
-        updateTaskStatus(tasks,new StagingTaskStatus(TaskStatus.CANCEL));
+        jobMapper.updateJobStatus(List.of(jobId), JobStatus.TO_CANCEL);
+        updateTaskStatus(tasks,TaskStatus.TO_CANCEL);
     }
 
     /**
@@ -210,13 +209,13 @@ public class JobService {
             throw new SWValidationException(ValidSubject.JOB).tip("freezing job can't be paused ");
         }
         List<Task> createdTasks = tasks.parallelStream()
-            .filter(task -> task.getStatus().equals(new StagingTaskStatus(TaskStatus.CREATED))).collect(
+            .filter(task -> task.getStatus().equals(TaskStatus.CREATED)).collect(
                 Collectors.toList());
         if(null == createdTasks || createdTasks.isEmpty()){
             throw new SWValidationException(ValidSubject.JOB).tip("all tasks are assigned to agent, this job can't be paused now");
         }
-        jobMapper.updateJobStatus(List.of(jobId), JobStatus.PAUSED.getValue());
-        updateTaskStatus(createdTasks,new StagingTaskStatus(TaskStatus.PAUSED));
+        jobMapper.updateJobStatus(List.of(jobId), JobStatus.PAUSED);
+        updateTaskStatus(createdTasks,TaskStatus.PAUSED);
 
     }
 
@@ -224,7 +223,7 @@ public class JobService {
      * prevent send packet greater than @@GLOBAL.max_allowed_packet
      */
     static final Integer MAX_BATCH_SIZE = 1000;
-    private void updateTaskStatus(Collection<Task> createdTasks,StagingTaskStatus stagingTaskStatus) {
+    private void updateTaskStatus(Collection<Task> createdTasks,TaskStatus stagingTaskStatus) {
         List<Long> toBeUpdateTasks = createdTasks.parallelStream().map(Task::getId).collect(
             Collectors.toList());
         if(!CollectionUtils.isEmpty(toBeUpdateTasks)){
@@ -232,7 +231,7 @@ public class JobService {
                 , stagingTaskStatus
                 , (tsks, status) -> taskMapper.updateTaskStatus(
                     tsks.stream().collect(Collectors.toList()),
-                    status.getValue())
+                    status)
                 , MAX_BATCH_SIZE);
             livingTaskStatusMachine.update(createdTasks, stagingTaskStatus);
         }
@@ -245,22 +244,22 @@ public class JobService {
     @Transactional
     public void resumeJob(Long jobId){
         JobEntity jobEntity = jobMapper.findJobById(jobId);
-        if(JobStatus.from(jobEntity.getJobStatus()) != JobStatus.PAUSED){
+        if(jobEntity.getJobStatus() != JobStatus.PAUSED){
             throw new SWValidationException(ValidSubject.JOB).tip("unpaused job can't be resumed ");
         }
-        jobMapper.updateJobStatus(List.of(jobId), JobStatus.RUNNING.getValue());
+        jobMapper.updateJobStatus(List.of(jobId), JobStatus.RUNNING);
         Collection<Task> tasks = livingTaskStatusMachine.ofJob(jobId);
         if(null == tasks || tasks.isEmpty()){
             log.warn("no tasks found for job {} in task machine",jobId);
             return;
         }
         List<Task> pausedTasks = tasks.parallelStream()
-            .filter(task -> task.getStatus().equals(new StagingTaskStatus(TaskStatus.PAUSED))).collect(
+            .filter(task -> task.getStatus().equals(TaskStatus.PAUSED)).collect(
                 Collectors.toList());
         if(null == pausedTasks || pausedTasks.isEmpty()){
             return;
         }
-        updateTaskStatus(pausedTasks,new StagingTaskStatus(TaskStatus.CREATED));
+        updateTaskStatus(pausedTasks,TaskStatus.CREATED);
     }
 
 }

@@ -11,6 +11,7 @@ import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.system.Agent;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -35,9 +36,12 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class CommandingTasksChecker {
 
+    final TaskStatusMachine taskStatusMachine;
     final Map<Agent, Set<TaskCommand>> commandingTasks ;
 
-    public CommandingTasksChecker(){
+    public CommandingTasksChecker(
+        TaskStatusMachine taskStatusMachine){
+        this.taskStatusMachine = taskStatusMachine;
         commandingTasks = new ConcurrentHashMap<>();
     }
 
@@ -68,7 +72,7 @@ public class CommandingTasksChecker {
         final List<TaskCommand> properTasks = new LinkedList<>();
         taskCommands.forEach(taskCommand -> {
             final Task nodeTask = nodeTasks.get(taskCommand.getTask().getId());
-            final boolean unproperlyExed = !taskCommand.agentProper(nodeTask);
+            final boolean unproperlyExed = taskStatusMachine.couldTransfer(taskCommand.getCommandType().getCorrespondStatus(),nodeTask.getStatus());
             if(unproperlyExed){
                 unProperTasks.add(taskCommand);
             }else {

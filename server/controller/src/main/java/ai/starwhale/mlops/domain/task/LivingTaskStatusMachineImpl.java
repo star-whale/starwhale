@@ -7,14 +7,16 @@
 
 package ai.starwhale.mlops.domain.task;
 
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.*;
+
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.Job.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.task.bo.StagingTaskStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskStatusStage;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -57,7 +59,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
      * key: task.status
      * value: task.id
      */
-    final ConcurrentHashMap<StagingTaskStatus, Set<Long>> taskStatusMap;
+    final ConcurrentHashMap<ai.starwhale.mlops.domain.task.status.TaskStatus, Set<Long>> taskStatusMap;
 
     /**
      * key: task.jobId
@@ -81,11 +83,18 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     final TaskJobStatusHelper taskJobStatusHelper;
 
+    final TaskStatusMachine taskStatusMachine;
+
+    final static Set<ai.starwhale.mlops.domain.task.status.TaskStatus> easyLostStatuses = Set.of(SUCCESS, FAIL,
+        CANCELED,ASSIGNING,CANCELLING);
+
     public LivingTaskStatusMachineImpl(TaskMapper taskMapper, JobMapper jobMapper,
-        TaskJobStatusHelper taskJobStatusHelper) {
+        TaskJobStatusHelper taskJobStatusHelper,
+        TaskStatusMachine taskStatusMachine) {
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.taskJobStatusHelper = taskJobStatusHelper;
+        this.taskStatusMachine = taskStatusMachine;
         taskIdMap = new ConcurrentHashMap<>();
         jobIdMap = new ConcurrentHashMap<>();
         taskStatusMap = new ConcurrentHashMap<>();
@@ -95,7 +104,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     }
 
     @Override
-    public void adopt(Collection<Task> tasks, final StagingTaskStatus status) {
+    public void adopt(Collection<Task> tasks, final TaskStatus status) {
         tasks.parallelStream().forEach(task -> {
             updateCache(status, task);
         });
@@ -103,9 +112,9 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     @Override
     @Transactional
-    public void update(Collection<Task> livingTasks, StagingTaskStatus status) {
+    public void update(Collection<Task> livingTasks, TaskStatus newStatus) {
         if(null == livingTasks || livingTasks.isEmpty()){
-            log.debug("empty tasks to be updated for status{}",status.getValue());
+            log.debug("empty tasks to be updated for newStatus{}",newStatus);
             return;
         }
         final Stream<Task> toBeUpdateStream = livingTasks.parallelStream().filter(task -> {
@@ -114,9 +123,9 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
                 log.debug("no resident task of id {}", task.getId());
                 return true;
             }
-            final boolean statusBeforeNewStatus = taskResident.getStatus().before(status);
-            log.debug("task status change from {} to {} is valid? {}", taskResident.getStatus(),
-                status, statusBeforeNewStatus);
+            final boolean statusBeforeNewStatus = taskStatusMachine.couldTransfer(taskResident.getStatus(),newStatus);
+            log.debug("task newStatus change from {} to {} is valid? {}", taskResident.getStatus(),
+                newStatus, statusBeforeNewStatus);
             return statusBeforeNewStatus;
         });
 
@@ -124,12 +133,12 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             .map(task -> getOrInsert(task))
             .peek(task -> {
                 final Long jobId = task.getJob().getId();
-                updateCache(status, task);
+                updateCache(newStatus, task);
                 toBeCheckedJobs.offer(jobId);
             })
             .collect(Collectors.toList());
 
-        if (flushDB(status)) {
+        if (easyLost(newStatus)) {
             persistTaskStatus(toBeUpdatedTasks);
         } else {
             toBePersistentTasks.addAll(toBeUpdatedTasks.parallelStream()
@@ -139,7 +148,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
     }
 
     @Override
-    public Collection<Task> ofStatus(StagingTaskStatus taskStatus) {
+    public Collection<Task> ofStatus(TaskStatus taskStatus) {
         return safeGetTaskIdsFromStatus(taskStatus).stream().map(tskId->taskIdMap.get(tskId).deepCopy())
             .collect(Collectors.toList());
     }
@@ -203,7 +212,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
                     , taskStatus
                     , (tsks, status) -> taskMapper.updateTaskStatus(
                         tsks.stream().map(Task::getId).collect(Collectors.toList()),
-                        status.getValue())
+                        status)
                     , MAX_BATCH_SIZE));
     }
 
@@ -224,10 +233,10 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             }).peek(jobId -> jobIdMap.get(jobId).setStatus(desiredStatus))
                 .collect(Collectors.toList());
             if(null != toBeUpdated && !toBeUpdated.isEmpty()){
-                jobMapper.updateJobStatus(toBeUpdated, desiredStatus.getValue());
+                jobMapper.updateJobStatus(toBeUpdated, desiredStatus);
             }
 
-            if (desiredStatus == JobStatus.FINISHED) {
+            if (desiredStatus == JobStatus.SUCCESS) {
                 removeFinishedJobTasks(jobids);
             }
 
@@ -240,9 +249,7 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
         }
         jobids.parallelStream().forEach(jid->{
             final Set<Long> toBeCleardTaskIds = jobTaskMap.get(jid);
-            final Set<Long> finishedTasks = safeGetTaskIdsFromStatus(
-                new StagingTaskStatus(TaskStatus.FINISHED,
-                    TaskStatusStage.DONE));
+            final Set<Long> finishedTasks = safeGetTaskIdsFromStatus(SUCCESS);
             jobIdMap.remove(jid);
             jobTaskMap.remove(jid);
             toBeCleardTaskIds.parallelStream().forEach(tid->{
@@ -254,21 +261,14 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
 
     }
 
-
-    //easily lost statuses must be flush to db immediately
-    private boolean flushDB(StagingTaskStatus status) {
-        return status.getStatus().isFinalStatus()
-            || status.getStage() != TaskStatusStage.INIT;
-    }
-
-    private void updateCache(StagingTaskStatus newStatus, Task task) {
+    private void updateCache(TaskStatus newStatus, Task task) {
         //update jobIdMap
         Long jobId = task.getJob().getId();
         getOrInsertJob(task, jobId);
         //update taskStatusMap
         Set<Long> taskIdsOfNewStatus = safeGetTaskIdsFromStatus(newStatus);
         taskIdsOfNewStatus.add(task.getId());
-        StagingTaskStatus oldStatus = task.getStatus();
+        TaskStatus oldStatus = task.getStatus();
         if(!newStatus.equals(oldStatus)){
             Set<Long> taskIdsOfOldStatus = safeGetTaskIdsFromStatus(oldStatus);
             taskIdsOfOldStatus.remove(task.getId());
@@ -297,8 +297,12 @@ public class LivingTaskStatusMachineImpl implements LivingTaskStatusMachine {
             k -> Collections.synchronizedSet(new HashSet<>()));
     }
 
-    private Set<Long> safeGetTaskIdsFromStatus(StagingTaskStatus oldStatus) {
+    private Set<Long> safeGetTaskIdsFromStatus(TaskStatus oldStatus) {
         return taskStatusMap.computeIfAbsent(oldStatus, k -> Collections.synchronizedSet(new HashSet<>()));
+    }
+
+    private boolean easyLost(TaskStatus status){
+        return easyLostStatuses.contains(status);
     }
 
 }

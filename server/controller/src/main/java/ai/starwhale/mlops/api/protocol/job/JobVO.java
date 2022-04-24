@@ -9,6 +9,7 @@ package ai.starwhale.mlops.api.protocol.job;
 
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -61,6 +62,6 @@ public class JobVO implements Serializable {
     private Long stopTime;
 
     @JsonProperty("jobStatus")
-    private Integer jobStatus;
+    private JobStatus jobStatus;
 
 }

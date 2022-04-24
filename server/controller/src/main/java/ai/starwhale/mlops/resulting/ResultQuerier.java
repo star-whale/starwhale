@@ -7,9 +7,9 @@
 
 package ai.starwhale.mlops.resulting;
 
-import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -50,7 +50,7 @@ public class ResultQuerier {
         if(null == jobEntity){
             throw new SWValidationException(ValidSubject.JOB).tip("unknown jobid");
         }
-        if(jobEntity.getJobStatus() != JobStatus.FINISHED.getValue()){
+        if(jobEntity.getJobStatus() != JobStatus.SUCCESS){
             throw new SWValidationException(ValidSubject.JOB).tip("job is not finished yet");
         }
         try {

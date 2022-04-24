@@ -9,7 +9,6 @@ package ai.starwhale.mlops.api.protocol.report.req;
 
 import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
 import ai.starwhale.mlops.domain.task.TaskType;
-import ai.starwhale.mlops.domain.task.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,12 +27,7 @@ public class TaskReport {
     /**
      * status of the task
      */
-    TaskStatus status;
-
-    /**
-     * status of the task
-     */
-    TaskStatusInterface statusInterface;
+    TaskStatusInterface status;
 
     TaskType taskType;
 }
