@@ -30,7 +30,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -65,7 +64,7 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
             throws Exception {
         // all tasks(exclude archived) should be report to the controller
         // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
-        List<InferenceTask> finishedTasks = List.copyOf(taskPool.finishedTasks);
+        List<InferenceTask> finishedTasks = List.copyOf(taskPool.succeedTasks);
         List<InferenceTask> canceledTasks = List.copyOf(taskPool.canceledTasks);
         List<InferenceTask> errorTasks = List.copyOf(taskPool.canceledTasks);
 
@@ -83,7 +82,7 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
         all.addAll(finishedTasks.stream().map(InferenceTask::toTaskReport)
                 .collect(Collectors.toList()));
         all.addAll(new ArrayList<>(
-                taskPool.errorTasks.stream().map(InferenceTask::toTaskReport)
+                taskPool.failedTasks.stream().map(InferenceTask::toTaskReport)
                         .collect(Collectors.toList())));
         all.addAll(canceledTasks.stream().map(InferenceTask::toTaskReport)
                 .collect(Collectors.toList()));

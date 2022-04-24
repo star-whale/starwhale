@@ -7,15 +7,26 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
 
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceStage;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+import java.util.Optional;
+
 @Service
 public class Uploading2CanceledAction extends AbsBaseCancelPPLTaskAction {
     @Override
+    public Optional<InferenceStage> stage() {
+        return Optional.of(InferenceStage.UPLOADING);
+    }
+
+    @Override
     public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
-        taskPool.uploadingTasks.remove(oldTask);
-        super.success(oldTask, newTask, context);
+        if (Objects.nonNull(newTask)) {
+            taskPool.uploadingTasks.remove(oldTask);
+            super.success(oldTask, newTask, context);
+        }
     }
 }

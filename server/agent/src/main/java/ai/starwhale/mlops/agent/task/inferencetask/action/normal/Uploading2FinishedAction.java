@@ -9,6 +9,7 @@ package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.stereotype.Service;
@@ -21,16 +22,14 @@ public class Uploading2FinishedAction extends AbsBasePPLTaskAction {
         InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
         // upload result file to the storage
         taskPersistence.uploadResult(oldTask);
-        newTask.setStatus(TaskStatus.FINISHED);
+        newTask.setStatus(InferenceTaskStatus.SUCCESS);
         return newTask;
 
     }
 
     @Override
     public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
-        if (newTask.getStatus() == TaskStatus.FINISHED) {
-            taskPool.uploadingTasks.remove(oldTask);
-            taskPool.finishedTasks.add(newTask);
-        }
+        taskPool.uploadingTasks.remove(oldTask);
+        taskPool.succeedTasks.add(newTask);
     }
 }

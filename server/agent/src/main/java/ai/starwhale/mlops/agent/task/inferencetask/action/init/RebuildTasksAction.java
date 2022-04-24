@@ -10,6 +10,7 @@ package ai.starwhale.mlops.agent.task.inferencetask.action.init;
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
@@ -56,7 +57,7 @@ public class RebuildTasksAction implements Action<Void, List<InferenceTask>> {
     public void success(Void v, List<InferenceTask> tasks, Context context) {
         // ensure by commandline runner order
         if (sourcePool.isReady()) {
-            var running = taskPool.runningTasks.stream().filter(task -> task.getStatus() == TaskStatus.RUNNING).collect(Collectors.toList());
+            var running = taskPool.runningTasks.stream().filter(task -> task.getStatus() == InferenceTaskStatus.RUNNING).collect(Collectors.toList());
             running.forEach(task -> {
                 Set<Device> allocated = null;
                 try {
