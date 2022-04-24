@@ -19,8 +19,7 @@ import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
-import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
-import ai.starwhale.mlops.domain.task.TaskEntity;
+import ai.starwhale.mlops.domain.task.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -33,8 +32,6 @@ import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import cn.hutool.core.util.IdUtil;
-import com.github.pagehelper.Page;
-import com.github.pagehelper.Page.Function;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.time.LocalDateTime;
@@ -80,7 +77,7 @@ public class JobService {
     private SWTaskScheduler swTaskScheduler;
 
     @Resource
-    private LivingTaskStatusMachine livingTaskStatusMachine;
+    private LivingTaskCache livingTaskCache;
 
     @Resource
     private TaskMapper taskMapper;
@@ -169,7 +166,7 @@ public class JobService {
             //one transaction
             final List<Task> tasks = jobSpliterator.split(job);
             swTaskScheduler.adoptTasks(tasks,job.getJobRuntime().getDeviceClass());
-            livingTaskStatusMachine.adopt(tasks, TaskStatus.CREATED);
+            livingTaskCache.adopt(tasks, TaskStatus.CREATED);
         });
 
     }
@@ -185,7 +182,7 @@ public class JobService {
      */
     @Transactional
     public void cancelJob(Long jobId){
-        Collection<Task> tasks = livingTaskStatusMachine.ofJob(jobId);
+        Collection<Task> tasks = livingTaskCache.ofJob(jobId);
         if(null == tasks || tasks.isEmpty()){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB).tip("freezing job can't be canceled "),
                 HttpStatus.BAD_REQUEST);
@@ -195,7 +192,16 @@ public class JobService {
             throw new SWValidationException(ValidSubject.JOB).tip("not running job can't be canceled ");
         }
         jobMapper.updateJobStatus(List.of(jobId), JobStatus.TO_CANCEL);
-        updateTaskStatus(tasks,TaskStatus.TO_CANCEL);
+        updateTaskStatus(tasks.parallelStream().filter(task ->
+            task.getStatus() == TaskStatus.RUNNING
+            || task.getStatus() == TaskStatus.PREPARING
+            || task.getStatus() == TaskStatus.ASSIGNING).collect(Collectors.toList()), TaskStatus.TO_CANCEL);
+        List<Task> tobeCanceledTasks = tasks.parallelStream()
+            .filter(task -> task.getStatus() == TaskStatus.CREATED
+                || task.getStatus() == TaskStatus.UNKNOWN).collect(Collectors.toList());
+        swTaskScheduler.stopSchedule(tobeCanceledTasks.parallelStream().map(Task::getId).collect(
+            Collectors.toList()));
+        updateTaskStatus(tobeCanceledTasks, TaskStatus.CANCELED);
     }
 
     /**
@@ -204,7 +210,7 @@ public class JobService {
      */
     @Transactional
     public void pauseJob(Long jobId){
-        Collection<Task> tasks = livingTaskStatusMachine.ofJob(jobId);
+        Collection<Task> tasks = livingTaskCache.ofJob(jobId);
         if(null == tasks || tasks.isEmpty()){
             throw new SWValidationException(ValidSubject.JOB).tip("freezing job can't be paused ");
         }
@@ -214,6 +220,8 @@ public class JobService {
         if(null == createdTasks || createdTasks.isEmpty()){
             throw new SWValidationException(ValidSubject.JOB).tip("all tasks are assigned to agent, this job can't be paused now");
         }
+        swTaskScheduler.stopSchedule(createdTasks.parallelStream().map(Task::getId).collect(
+            Collectors.toList()));
         jobMapper.updateJobStatus(List.of(jobId), JobStatus.PAUSED);
         updateTaskStatus(createdTasks,TaskStatus.PAUSED);
 
@@ -223,17 +231,17 @@ public class JobService {
      * prevent send packet greater than @@GLOBAL.max_allowed_packet
      */
     static final Integer MAX_BATCH_SIZE = 1000;
-    private void updateTaskStatus(Collection<Task> createdTasks,TaskStatus stagingTaskStatus) {
-        List<Long> toBeUpdateTasks = createdTasks.parallelStream().map(Task::getId).collect(
+    private void updateTaskStatus(Collection<Task> toBeUpdatedTasks,TaskStatus taskStatus) {
+        List<Long> toBeUpdateTasks = toBeUpdatedTasks.parallelStream().map(Task::getId).collect(
             Collectors.toList());
         if(!CollectionUtils.isEmpty(toBeUpdateTasks)){
             BatchOperateHelper.doBatch(toBeUpdateTasks
-                , stagingTaskStatus
+                , taskStatus
                 , (tsks, status) -> taskMapper.updateTaskStatus(
                     tsks.stream().collect(Collectors.toList()),
                     status)
                 , MAX_BATCH_SIZE);
-            livingTaskStatusMachine.update(createdTasks, stagingTaskStatus);
+            livingTaskCache.update(toBeUpdatedTasks, taskStatus);
         }
     }
 
@@ -248,18 +256,22 @@ public class JobService {
             throw new SWValidationException(ValidSubject.JOB).tip("unpaused job can't be resumed ");
         }
         jobMapper.updateJobStatus(List.of(jobId), JobStatus.RUNNING);
-        Collection<Task> tasks = livingTaskStatusMachine.ofJob(jobId);
+        Collection<Task> tasks = livingTaskCache.ofJob(jobId);
         if(null == tasks || tasks.isEmpty()){
             log.warn("no tasks found for job {} in task machine",jobId);
             return;
         }
         List<Task> pausedTasks = tasks.parallelStream()
-            .filter(task -> task.getStatus().equals(TaskStatus.PAUSED)).collect(
+            .filter(task -> task.getStatus().equals(TaskStatus.PAUSED))
+            .peek(task -> task.setStatus(TaskStatus.CREATED))
+            .collect(
                 Collectors.toList());
         if(null == pausedTasks || pausedTasks.isEmpty()){
             return;
         }
+        Job job = jobBoConverter.fromEntity(jobEntity);
         updateTaskStatus(pausedTasks,TaskStatus.CREATED);
+        swTaskScheduler.adoptTasks(pausedTasks,job.getJobRuntime().getDeviceClass());
     }
 
 }

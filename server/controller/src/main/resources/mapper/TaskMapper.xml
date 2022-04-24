@@ -20,7 +20,7 @@
                t.created_time as task_created_time,
                t.modified_time as task_modified_time,
                a.id as agent_id,
-               a.agent_ip,
+               inet_ntoa(a.agent_ip) as agent_ip,
                a.agent_version,
                a.connect_time,
                a.created_time as agent_created_time,

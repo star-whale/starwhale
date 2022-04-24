@@ -34,7 +34,7 @@ import javax.annotation.PostConstruct;
 @Service
 public class LivingTaskLoader {
 
-    final LivingTaskStatusMachine livingTaskStatusMachine;
+    final LivingTaskCache livingTaskCache;
 
     final SWTaskScheduler swTaskScheduler;
 
@@ -50,12 +50,12 @@ public class LivingTaskLoader {
 
     final JobStatusMachine jobStatusMachine;
 
-    public LivingTaskLoader(LivingTaskStatusMachine livingTaskStatusMachine,
+    public LivingTaskLoader(LivingTaskCache livingTaskCache,
         SWTaskScheduler swTaskScheduler, CommandingTasksChecker commandingTasksChecker,
         TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter,
         JobBoConverter jobBoConverter,
         JobStatusMachine jobStatusMachine) {
-        this.livingTaskStatusMachine = livingTaskStatusMachine;
+        this.livingTaskCache = livingTaskCache;
         this.swTaskScheduler = swTaskScheduler;
         this.commandingTasksChecker = commandingTasksChecker;
         this.taskMapper = taskMapper;
@@ -83,7 +83,7 @@ public class LivingTaskLoader {
             .collect(Collectors.groupingBy(Task::getStatus));
 
         collectStatus.entrySet().parallelStream()
-            .forEach(entry -> livingTaskStatusMachine.adopt(entry.getValue(), entry.getKey()));
+            .forEach(entry -> livingTaskCache.adopt(entry.getValue(), entry.getKey()));
 
         scheduleCreatedTasks(collectStatus.get(TaskStatus.CREATED));
         checkCommandingTasks(collectStatus.get(TaskStatus.ASSIGNING));
