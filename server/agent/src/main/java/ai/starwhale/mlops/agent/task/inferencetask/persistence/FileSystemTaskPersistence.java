@@ -12,7 +12,6 @@ import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.utils.TarUtil;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.TaskStatus;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import cn.hutool.core.collection.CollectionUtil;
@@ -29,7 +28,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 

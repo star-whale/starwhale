@@ -7,10 +7,10 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
 
+import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
-import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBasePPLTaskAction;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;

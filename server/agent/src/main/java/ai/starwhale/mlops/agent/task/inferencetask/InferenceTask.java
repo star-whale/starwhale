@@ -142,6 +142,6 @@ public class InferenceTask {
                 reportStatus = TaskStatusInterface.CANCELED;
                 break;
         }
-        return TaskReport.builder().id(this.id).statusInterface(reportStatus).taskType(this.taskType).build();
+        return TaskReport.builder().id(this.id).status(reportStatus).taskType(this.taskType).build();
     }
 }

@@ -7,9 +7,6 @@ spring:
     multipart:
       max-file-size: 100MB
       max-request-size: 100MB
-logging:
-  level:
-    root: info
 sw:
   jwt:
     secret: wdxlG3UK66m6uTUgxXFjizli
@@ -35,11 +32,11 @@ spring:
   datasource:
     name: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/starwhale?useUnicode=true&characterEncoding=UTF-8
+    url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/starwhale?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true
     username: ${SW_METADATA_STORAGE_USER:root}
     password: ${SW_METADATA_STORAGE_PASSWORD:my-secret-pw}
-    schema: classpath:sql/schema.sql
-    initialization-mode: always
+  flyway:
+    locations: "classpath:db/migration"
   mvc:
      view:
          suffix: .html
@@ -54,4 +51,5 @@ server:
 
 logging:
   level:
+    root: info
     ai.starwhale.mlops: debug

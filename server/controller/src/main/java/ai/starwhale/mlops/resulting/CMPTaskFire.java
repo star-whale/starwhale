@@ -65,7 +65,7 @@ public class CMPTaskFire {
     }
 
     @Transactional
-    @Scheduled(fixedDelay = 1000*10)
+    @Scheduled(initialDelay = 10000,fixedDelay = 1000*10)
     public void onJobCollect(){
         jobMapper.findJobByStatusIn(List.of(JobStatus.TO_COLLECT_RESULT))
             .parallelStream()
