@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("${apiPrefix}")
+@RequestMapping("${sw.controller.apiPrefix}")
 public class ProjectController implements ProjectApi{
 
     @Resource

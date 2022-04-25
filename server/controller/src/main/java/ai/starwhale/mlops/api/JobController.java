@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping("${apiPrefix}")
+@RequestMapping("${sw.controller.apiPrefix}")
 public class JobController implements JobApi{
 
     @Resource

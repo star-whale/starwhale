@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.configuration.security;
 
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
+import ai.starwhale.mlops.configuration.ControllerProperties;
 import ai.starwhale.mlops.domain.user.UserService;
 
 import javax.annotation.Resource;
@@ -30,8 +31,6 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import java.util.regex.Pattern;
-
 @Slf4j
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(
@@ -41,6 +40,9 @@ import java.util.regex.Pattern;
 )
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+
+    @Resource
+    private ControllerProperties controllerProperties;
 
     @Resource
     private UserService userService;
@@ -73,7 +75,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(WebSecurity web) {
-        web.ignoring().regexMatchers("^(?!/api/v1/).*");
+        web.ignoring().regexMatchers(String.format("^(?!%s/).*", controllerProperties.getApiPrefix()));
     }
 
     @Override
@@ -106,21 +108,12 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
         http.authenticationProvider(jwtAuthenticationProvider)
                 .authorizeRequests()
-//            .antMatchers("/login/**").permitAll()
-//                // Swagger endpoints must be publicly accessible
-//            .antMatchers("/swagger-ui/**").permitAll()
-//            .antMatchers("/v3/api-docs/**").permitAll()
-                .antMatchers("/api/v1/**").authenticated()
-                .antMatchers("/**").permitAll()
+                .antMatchers(String.format("%s/**", controllerProperties.getApiPrefix())).authenticated()
                 .and()
                 .formLogin()
                 .and()
                 .addFilterAt(jwtLoginFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(jwtTokenFilter, JwtLoginFilter.class);
-//        http = http.addFilterAt(jwtLoginFilter, UsernamePasswordAuthenticationFilter.class)
-//            .addFilterAfter(jwtTokenFilter, JwtLoginFilter.class);
-
-        //http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
     // Expose authentication manager bean
