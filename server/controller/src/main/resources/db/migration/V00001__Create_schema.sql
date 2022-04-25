@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS agent_info
     agent_ip      int UNSIGNED NOT NULL,
     connect_time  datetime     NOT NULL,
     agent_version varchar(255) NOT NULL,
-    device_info   varchar(255) NOT NULL,
+    device_info   TEXT         NOT NULL,
     created_time  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),

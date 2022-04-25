@@ -114,7 +114,7 @@ public class SWDatasetService {
             .projectId(idConvertor.revert(swds.getProjectId()))
             .build();
         if(entity.getProjectId() == 0) {
-            ProjectEntity defaultProject = projectManager.findDefaultProject(entity.getOwnerId());
+            ProjectEntity defaultProject = projectManager.findDefaultProject();
             if(defaultProject == null) {
                 throw new StarWhaleApiException(new SWProcessException(ErrorType.DB)
                     .tip("Unable to find default project by user " + entity.getOwnerId()), HttpStatus.INTERNAL_SERVER_ERROR);

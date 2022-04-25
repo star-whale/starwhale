@@ -14,9 +14,22 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @Data
 public class UploadRequest {
+
     @NotNull
     String swds;
     @NotNull
     UploadPhase phase;
+    String force;
+    String project;
+
+    static final String FORCE = "1";
+
+    public boolean force() {
+        return FORCE.equals(force);
+    }
+
+    public String getProject() {
+        return null == project ? "" : project;
+    }
 
 }

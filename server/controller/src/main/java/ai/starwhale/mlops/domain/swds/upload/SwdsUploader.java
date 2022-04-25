@@ -9,13 +9,19 @@ package ai.starwhale.mlops.domain.swds.upload;
 
 import static ai.starwhale.mlops.domain.swds.upload.SWDSVersionWithMetaConverter.EMPTY_YAML;
 
+import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.common.util.Blake2bUtil;
+import ai.starwhale.mlops.domain.project.ProjectEntity;
+import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.SWDatasetEntity;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
+import ai.starwhale.mlops.domain.task.LivingTaskCache;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWAuthException;
@@ -30,11 +36,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -68,11 +77,17 @@ public class SwdsUploader {
 
     final ObjectMapper yamlMapper;
 
+    final LivingTaskCache livingTaskCache;
+
+    final ProjectManager projectManager;
+
     public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
         SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,
         StorageAccessService storageAccessService, UserService userService,
         ProjectMapper projectMapper,
-        @Qualifier("yamlMapper") ObjectMapper yamlMapper) {
+        @Qualifier("yamlMapper") ObjectMapper yamlMapper,
+        LivingTaskCache livingTaskCache,
+        ProjectManager projectManager) {
         this.hotSwdsHolder = hotSwdsHolder;
         this.swdsMapper = swdsMapper;
         this.swdsVersionMapper = swdsVersionMapper;
@@ -81,6 +96,8 @@ public class SwdsUploader {
         this.userService = userService;
         this.projectMapper = projectMapper;
         this.yamlMapper = yamlMapper;
+        this.livingTaskCache = livingTaskCache;
+        this.projectManager = projectManager;
     }
 
     public void cancel(String uploadId){
@@ -123,7 +140,7 @@ public class SwdsUploader {
         final SWDatasetVersionEntity swDatasetVersionEntity = swDatasetVersionWithMeta.getSwDatasetVersionEntity();
         synchronized (swDatasetVersionEntity){
             String digest = Blake2bUtil.digest(fileBytes);
-            digestCheck(swDatasetVersionWithMeta, filename, digest);
+            digestCheckWithManifest(swDatasetVersionWithMeta, filename, digest);
             if(fileUploaded(swDatasetVersionWithMeta, filename, digest)){
                 log.info("file for {} {} already uploaded",uploadId,filename);
                 return;
@@ -164,7 +181,7 @@ public class SwdsUploader {
         return digest.equals(uploadedFileBlake2bs.get(filename));
     }
 
-    private void digestCheck(SWDSVersionWithMeta swdsVersionWithMeta, String filename,
+    private void digestCheckWithManifest(SWDSVersionWithMeta swdsVersionWithMeta, String filename,
         String digest) {
         VersionMeta versionMeta = swdsVersionWithMeta.getVersionMeta();
         Map<String, String> signatures = versionMeta.getManifest().getSignature();
@@ -211,7 +228,7 @@ public class SwdsUploader {
 
 
     @Transactional
-    public String create(String yamlContent,String fileName) {
+    public String create(String yamlContent,String fileName, UploadRequest uploadRequest) {
         Manifest manifest;
         try {
             manifest = yamlMapper.readValue(yamlContent, Manifest.class);
@@ -228,7 +245,7 @@ public class SwdsUploader {
         SWDatasetEntity swDatasetEntity = swdsMapper.findByName(manifest.getName());
         if(null == swDatasetEntity){
             //create
-            swDatasetEntity = from(manifest);
+            swDatasetEntity = from(manifest,uploadRequest.getProject());
             swdsMapper.addDataset(swDatasetEntity);
         }
         SWDatasetVersionEntity swDatasetVersionEntity = swdsVersionMapper
@@ -241,7 +258,21 @@ public class SwdsUploader {
         }else{
             //swds version create dup
             if(swDatasetVersionEntity.getStatus() == SWDatasetVersionEntity.STATUS_AVAILABLE){
-                throw new SWValidationException(ValidSubject.SWDS).tip(" same swds version can't be uploaded twice");
+                if(uploadRequest.force()){
+                    Set<Long> runningDataSets = livingTaskCache.ofStatus(TaskStatus.RUNNING)
+                        .parallelStream().map(task -> task.getJob().getSwDataSets())
+                        .flatMap(Collection::stream)
+                        .map(SWDataSet::getId)
+                        .collect(Collectors.toSet());
+                    if(runningDataSets.contains(swDatasetVersionEntity.getId())){
+                        throw new SWValidationException(ValidSubject.SWDS).tip(" swds version is being hired by running job, force push is not allowed now");
+                    }else {
+                        swdsVersionMapper.updateStatus(swDatasetVersionEntity.getId(),SWDatasetVersionEntity.STATUS_UN_AVAILABLE);
+                    }
+                }else {
+                    throw new SWValidationException(ValidSubject.SWDS).tip(" same swds version can't be uploaded twice");
+                }
+
             }
             if(!yamlContent.equals(swDatasetVersionEntity.getVersionMeta())){
                 swDatasetVersionEntity.setVersionMeta(yamlContent);
@@ -267,12 +298,13 @@ public class SwdsUploader {
             .build();
     }
 
-    private SWDatasetEntity from(Manifest manifest) {
+    private SWDatasetEntity from(Manifest manifest,String project) {
+        ProjectEntity projectEntity = projectManager.findByName(project);
         return SWDatasetEntity.builder()
             .datasetName(manifest.getName())
             .isDeleted(0)
             .ownerId(getOwner())
-            .projectId(projectMapper.findDefaultProject(getOwner()).getId())
+            .projectId(projectEntity == null? null:projectEntity.getId())
             .build();
     }
 

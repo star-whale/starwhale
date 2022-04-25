@@ -163,6 +163,22 @@ public class SWModelPackageController implements SWModelPackageApi{
         return swmpService.pull(pullRequest);
     }
 
+    @Override
+    public ResponseEntity<ResponseMessage<String>> uploadModel(MultipartFile file,
+        ClientSWMPRequest uploadRequest) {
+        return upload(file,uploadRequest);
+    }
+
+    @Override
+    public byte[] pullModel(ClientSWMPRequest pullRequest) {
+        return pull(pullRequest);
+    }
+
+    @Override
+    public ResponseEntity<String> headModel(ClientSWMPRequest queryRequest) {
+        return ResponseEntity.ok(swmpService.query(queryRequest));
+    }
+
     private String createVersion(String projectId, String modelId, MultipartFile zipFile, String importPath, String userId) {
         String path = importPath;
         String meta = "";

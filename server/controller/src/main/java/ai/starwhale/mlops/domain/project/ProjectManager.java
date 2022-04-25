@@ -1,6 +1,7 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.user.UserService;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,11 @@ public class ProjectManager {
     @Resource
     private ProjectMapper projectMapper;
 
-    public ProjectEntity findDefaultProject(Long userId) {
+    @Resource
+    private UserService userService;
+
+    public ProjectEntity findDefaultProject() {
+        Long userId = userService.currentUserDetail().getIdTableKey();
         ProjectEntity defaultProject = projectMapper.findDefaultProject(userId);
         if(defaultProject == null) {
             List<ProjectEntity> entities = projectMapper.listProjectsByOwner(userId);
@@ -25,4 +30,14 @@ public class ProjectManager {
         }
         return defaultProject;
     }
+
+    public ProjectEntity findByName(String projectName){
+        List<ProjectEntity> projectEntities = projectMapper.listProjects(projectName);
+        if(null != projectEntities && !projectEntities.isEmpty()){
+            return projectEntities.get(0);
+        }
+        return findDefaultProject();
+    }
+
+
 }
