@@ -26,7 +26,6 @@ import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskType;
-import ai.starwhale.mlops.domain.task.TaskStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -9,6 +9,7 @@ package ai.starwhale.mlops.agent.task.inferencetask.persistence;
 
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.utils.TarUtil;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskStatus;
@@ -145,7 +146,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
             // update info to the task file
             Files.writeString(Path.of(fileSystemPath.oneActiveTaskInfoFile(task.getId())), JSONUtil.toJsonStr(task), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
-            if (task.getStatus() == TaskStatus.ARCHIVED) {
+            if (task.getStatus() == InferenceTaskStatus.ARCHIVED) {
                 move2Archived(task);
             }
             return true;

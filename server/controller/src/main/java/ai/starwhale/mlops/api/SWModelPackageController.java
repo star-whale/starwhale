@@ -37,11 +37,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
+@RequestMapping("${sw.controller.apiPrefix}")
 public class SWModelPackageController implements SWModelPackageApi{
 
     @Resource

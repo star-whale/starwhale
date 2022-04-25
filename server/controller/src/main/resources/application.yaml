@@ -23,6 +23,8 @@ sw:
       secretKey: ${SW_STORAGE_SECRETKEY:12345678}
       region: ${SW_STORAGE_REGION:local}
       endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
+  controller:
+    apiPrefix: /api/v1
 server:
   port: 80
 ---
@@ -39,6 +41,9 @@ spring:
     password: my-secret-pw
     schema: classpath:sql/schema.sql
     initialization-mode: always
+  mvc:
+     view:
+         suffix: .html
 
 mybatis:
   configuration:
@@ -47,9 +52,8 @@ mybatis:
 
 server:
   port: 8082
-  servlet:
-    context-path: /api/v1
-
-logging:
-  level:
-    ai.starwhale.mlops: debug
+#  servlet:
+#    context-path: /api/v1
+#logging:
+#  level:
+#    ai.starwhale.mlops: debug

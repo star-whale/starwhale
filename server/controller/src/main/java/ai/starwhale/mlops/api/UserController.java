@@ -20,9 +20,11 @@ import com.github.pagehelper.PageInfo;
 import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("${sw.controller.apiPrefix}")
 public class UserController implements UserApi{
 
     @Resource

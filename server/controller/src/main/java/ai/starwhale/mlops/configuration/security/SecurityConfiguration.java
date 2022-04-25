@@ -8,8 +8,11 @@
 package ai.starwhale.mlops.configuration.security;
 
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
+import ai.starwhale.mlops.configuration.ControllerProperties;
 import ai.starwhale.mlops.domain.user.UserService;
+
 import javax.annotation.Resource;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -37,6 +40,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 )
 @EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+
+    @Resource
+    private ControllerProperties controllerProperties;
 
     @Resource
     private UserService userService;
@@ -69,11 +75,7 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(WebSecurity web) {
-        web.ignoring().mvcMatchers("/static/**")
-//            .antMatchers("/login**")// ignore the swagger index html/""'/
-            .antMatchers("/swagger-ui/**")
-            .antMatchers("/v3/api-docs/**")
-            .antMatchers("/report");
+        web.ignoring().regexMatchers(String.format("^(?!%s/).*", controllerProperties.getApiPrefix()));
     }
 
     @Override
@@ -93,18 +95,6 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .authenticationEntryPoint(authenticationEntryPoint)
                 .and();
 
-        // Set permissions on endpoints
-//        http.authorizeRequests()
-//                // Login api must be publicly accessible
-//                .antMatchers("/login").permitAll()
-//                // Swagger endpoints must be publicly accessible
-//                .antMatchers("/swagger-ui/**").permitAll()
-//                .antMatchers("/v3/api-docs/**").permitAll()
-//                // endpoints with role control can place here:use annotation
-//
-//                // all of other endpoints should be authenticated
-//                .anyRequest().authenticated();
-
 
         // Add JWT token filter
         JwtLoginFilter jwtLoginFilter = new JwtLoginFilter();
@@ -116,22 +106,14 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
         JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(userService);
 
-        http = http.authenticationProvider(jwtAuthenticationProvider)
-            .authorizeRequests()
-//            .antMatchers("/login").permitAll()
-//                // Swagger endpoints must be publicly accessible
-//            .antMatchers("/swagger-ui/**").permitAll()
-//            .antMatchers("/v3/api-docs/**").permitAll()
-            .anyRequest().authenticated()
-            .and()
-            .formLogin()
-            .and()
-            .addFilterAt(jwtLoginFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterAfter(jwtTokenFilter, JwtLoginFilter.class);
-//        http = http.addFilterAt(jwtLoginFilter, UsernamePasswordAuthenticationFilter.class)
-//            .addFilterAfter(jwtTokenFilter, JwtLoginFilter.class);
-
-        //http.addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+        http.authenticationProvider(jwtAuthenticationProvider)
+                .authorizeRequests()
+                .antMatchers(String.format("%s/**", controllerProperties.getApiPrefix())).authenticated()
+                .and()
+                .formLogin()
+                .and()
+                .addFilterAt(jwtLoginFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(jwtTokenFilter, JwtLoginFilter.class);
     }
 
     // Expose authentication manager bean
