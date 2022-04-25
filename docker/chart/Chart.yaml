@@ -15,10 +15,10 @@ dependencies:
   - name: common
     repository: https://charts.bitnami.com/bitnami
     version: 1.x.x
-  #- name: mysql
-  #  condition: mysql.enabled
-  #  repository: https://charts.bitnami.com/bitnami
-  #  version: 8.x.x
+  - name: mysql
+    condition: mysql.enabled
+    repository: https://charts.bitnami.com/bitnami
+    version: 8.x.x
   - name: minio
     condition: minio.enabled
     repository: https://charts.bitnami.com/bitnami

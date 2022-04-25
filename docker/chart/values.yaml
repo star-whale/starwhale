@@ -19,9 +19,20 @@ mysql:
     username: starwhale
     password: starwhale
     database: starwhale
-  persistence:
-    storageClass: local-storage-mysql
-    size: 50Gi
+  volumePermissions:
+    enabled: true
+  primary:
+    persistence:
+      enabled: true
+      storageClass: local-storage-mysql
+      size: 8Gi
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 500m
+        memory: 250Mi
 
 externalMySQL:
   host: localhost
@@ -42,6 +53,13 @@ minio:
   persistence:
     storageClass: local-storage-minio
     size: 50Gi
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 250Mi
 
 externalS3OSS:
   host: localhost
