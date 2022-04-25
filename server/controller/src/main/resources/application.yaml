@@ -26,8 +26,6 @@ sw:
   controller:
     apiPrefix: /api/v1
     whiteList: /api/v1/report
-server:
-  port: 80
 ---
 #Development
 spring:
@@ -37,9 +35,9 @@ spring:
   datasource:
     name: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/starwhale?useUnicode=true&characterEncoding=UTF-8
-    username: root
-    password: my-secret-pw
+    url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/starwhale?useUnicode=true&characterEncoding=UTF-8
+    username: ${SW_METADATA_STORAGE_USER:root}
+    password: ${SW_METADATA_STORAGE_PASSWORD:my-secret-pw}
     schema: classpath:sql/schema.sql
     initialization-mode: always
   mvc:
@@ -52,9 +50,8 @@ mybatis:
   mapper-locations: classpath*:mapper/**/*.xml
 
 server:
-  port: 8082
-#  servlet:
-#    context-path: /api/v1
-#logging:
-#  level:
-#    ai.starwhale.mlops: debug
+  port: ${SW_CONTROLLER_PORT:8082}
+
+logging:
+  level:
+    ai.starwhale.mlops: debug
