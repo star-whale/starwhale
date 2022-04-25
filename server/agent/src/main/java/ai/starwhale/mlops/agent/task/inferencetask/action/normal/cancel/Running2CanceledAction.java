@@ -7,9 +7,9 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
 
+import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceStage;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
-import ai.starwhale.mlops.agent.task.Context;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;

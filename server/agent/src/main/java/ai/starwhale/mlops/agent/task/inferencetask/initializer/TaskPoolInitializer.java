@@ -7,9 +7,9 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.initializer;
 
-import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
-import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.Action;
+import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;

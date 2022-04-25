@@ -9,14 +9,13 @@ package ai.starwhale.mlops.agent.task.inferencetask.action.init;
 
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool;
+import ai.starwhale.mlops.agent.task.Action;
+import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
-import ai.starwhale.mlops.agent.task.Context;
-import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
 import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;

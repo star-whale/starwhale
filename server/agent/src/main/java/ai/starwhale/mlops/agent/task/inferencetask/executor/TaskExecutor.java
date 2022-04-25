@@ -8,12 +8,12 @@
 package ai.starwhale.mlops.agent.task.inferencetask.executor;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
+import ai.starwhale.mlops.agent.task.Action;
+import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.SelectOneToExecute;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
-import ai.starwhale.mlops.agent.task.Context;
-import ai.starwhale.mlops.agent.task.Action;
-import ai.starwhale.mlops.agent.task.SelectOneToExecute;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import lombok.extern.slf4j.Slf4j;

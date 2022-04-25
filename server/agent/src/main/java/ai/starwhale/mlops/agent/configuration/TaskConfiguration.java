@@ -8,10 +8,10 @@
 package ai.starwhale.mlops.agent.configuration;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
-import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
-import ai.starwhale.mlops.agent.task.inferencetask.TaskScheduler;
-import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.Action;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskScheduler;
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.inferencetask.initializer.TaskPoolInitializer;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;

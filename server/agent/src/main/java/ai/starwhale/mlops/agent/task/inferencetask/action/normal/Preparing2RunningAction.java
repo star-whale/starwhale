@@ -8,17 +8,16 @@
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
 import ai.starwhale.mlops.agent.container.ImageConfig;
-import ai.starwhale.mlops.agent.container.ImageConfig.GPUConfig;
 import ai.starwhale.mlops.agent.container.ImageConfig.CPUConfig;
+import ai.starwhale.mlops.agent.container.ImageConfig.GPUConfig;
 import ai.starwhale.mlops.agent.container.ImageConfig.Mount;
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool.AllocateRequest;
+import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask.ActionStatus;
-import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.task.TaskStatus;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import lombok.extern.slf4j.Slf4j;

@@ -159,7 +159,7 @@ public class JobService {
     /**
      * load created jobs from user at fixed delay
      */
-    @Scheduled(fixedDelay = 3000)
+    @Scheduled(initialDelay = 10000, fixedDelay = 3000)
     public void splitNewCreatedJobs(){
         final Stream<Job> allNewJobs = findAllNewJobs();
         allNewJobs.parallel().forEach(job->{

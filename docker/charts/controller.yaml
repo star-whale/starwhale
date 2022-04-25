@@ -1,114 +1,43 @@
 apiVersion: apps/v1
-kind: DaemonSet
+kind: Deployment
 metadata:
-  name: agent
+  name: controller-deployment
   namespace: starwhale
   labels:
-    role: agent
+    name: controller
 
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      name: agent
-
+      name: controller
   template:
     metadata:
       labels:
-        name: agent
+        name: controller
     spec:
-      nodeSelector:
-        starwhale.ai/node-domain: gpu
       containers:
-        - name: agent
-          image: starwhaleai/taskset:0.1.0-nightly-2022041601
-          command: ["sleep"]
-          args: ["3600000"]
+        - name: controller
+          image: gaoxinxing1992/first:controller-0.1.3
+          ports:
+            - containerPort: 8082
+              hostPort: 8082
           env:
-            - name: DOCKER_HOST
-              value: "127.0.0.1:2376"
-          volumeMounts:
-            - name: agent-storage
-              mountPath: "/opt/starwhale"
-              subPath: run
-        - name: taskset
-          image: starwhaleai/taskset:0.1.0-nightly-2022041601
-          resources:
-            requests:
-              memory: 20Gi
-              nvidia.com/gpu: 1
-            limits:
-              nvidia.com/gpu: 1
-              memory: 60Gi
-          securityContext:
-            privileged: true
-          stdin: true
-          tty: true
-          volumeMounts:
-            - name: agent-storage
-              mountPath: "/var/lib/docker"
-              subPath: dind
-            - name: agent-storage
-              mountPath: "/opt/starwhale"
-              subPath: run
-      volumes:
-        - name: agent-storage
-          hostPath:
-            path: /mnt/data/starwhale/agent
-            type: DirectoryOrCreate
-
----
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: agent-cpu
-  namespace: starwhale
-  labels:
-    role: agent-cpu
-
-spec:
-  selector:
-    matchLabels:
-      name: agent-cpu
-
-  template:
-    metadata:
-      labels:
-        name: agent-cpu
-    spec:
-      nodeSelector:
-        starwhale.ai/node-domain: cpu
-      containers:
-        - name: agent
-          image: starwhaleai/taskset:0.1.0-nightly-2022041601
-          command: ["sleep"]
-          args: ["3600000"]
-          env:
-            - name: DOCKER_HOST
-              value: "127.0.0.1:2376"
-          volumeMounts:
-            - name: agent-storage
-              mountPath: "/opt/starwhale"
-              subPath: run
-        - name: taskset
-          image: starwhaleai/taskset:0.1.0-nightly-2022041601
-          resources:
-            requests:
-              memory: 5Gi
-            limits:
-              memory: 60Gi
-          securityContext:
-            privileged: true
-          stdin: true
-          tty: true
-          volumeMounts:
-            - name: agent-storage
-              mountPath: "/var/lib/docker"
-              subPath: dind
-            - name: agent-storage
-              mountPath: "/opt/starwhale"
-              subPath: run
-      volumes:
-        - name: agent-storage
-          hostPath:
-            path: /mnt/data/starwhale/agent
-            type: DirectoryOrCreate
+            - name: SW_STORAGE_PREFIX
+              value: "StarWhale"
+            - name: SW_STORAGE_ENDPOINT
+              value: "http://starwhale-minio:9000"
+            - name: SW_STORAGE_BUCKET
+              value: "starwhale"
+            - name: SW_STORAGE_ACCESSKEY
+              value: "12345678"
+            - name: SW_STORAGE_SECRETKEY
+              value: "12345678"
+            - name: SW_STORAGE_REGION
+              value: "local"
+            - name: SW_METADATA_STORAGE_IP
+              value: "starwhale-mysql"
+            - name: SW_METADATA_STORAGE_PASSWORD # todo whether use secret
+              value: "root"
+            - name: SW_METADATA_STORAGE_USER
+              value: "root"

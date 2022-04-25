@@ -15,7 +15,6 @@ import ai.starwhale.mlops.agent.node.cpu.SimpleCPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.NvidiaCmdDetect;
 import ai.starwhale.mlops.agent.node.initializer.SourcePoolInitializer;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
