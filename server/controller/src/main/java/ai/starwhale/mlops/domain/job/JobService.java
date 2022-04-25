@@ -272,7 +272,7 @@ public class JobService {
         Job job = jobBoConverter.fromEntity(jobEntity);
         updateTaskStatus(pausedTasks,TaskStatus.CREATED);
         pausedTasks = livingTaskCache.ofJob(jobId).parallelStream()
-            .filter(task -> task.getStatus().equals(TaskStatus.PAUSED))
+            .filter(task -> task.getStatus().equals(TaskStatus.CREATED))
             .collect(
                 Collectors.toList());
         swTaskScheduler.adoptTasks(pausedTasks,job.getJobRuntime().getDeviceClass());

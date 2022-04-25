@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ParameterizedTypeReference;
@@ -40,6 +41,7 @@ import org.springframework.web.client.RestTemplate;
 /**
  * mock agent for Controller
  */
+@Slf4j
 public class AgentMocker {
 
     String serverAddress = "http://localhost:8082/api/v1";
@@ -93,11 +95,12 @@ public class AgentMocker {
 
         //PREPARING, RUNNING, SUCCESS, CANCELING, CANCELED, FAIL;
         TaskStatusInterface changeStatus(){
-            if(!deviceOccupied){
+            if(!cancel && !deviceOccupied){
                 return TaskStatusInterface.PREPARING;
             }
             Random r = new Random();
             if(r.nextInt(10000) > 99998){
+                log.warn("failure of task {}",tt.getId());
                 return TaskStatusInterface.FAIL;
             }
             long runningTime = System.currentTimeMillis() - startTime;
@@ -220,6 +223,7 @@ public class AgentMocker {
             Random random = new Random();
             if(random.nextInt(100)>98){
                 //percent of loss
+                log.warn("loss of task {}",taskTrigger.getId());
                 return;
             }
             RunningTask runningTask = new RunningTask(taskTrigger);
@@ -232,7 +236,7 @@ public class AgentMocker {
         Clazz deviceClass = runningTask.getTt().getDeviceClass();
         Optional<DeviceHolder> availabelDevice = deviceHolders.stream()
             .filter(deviceHolder ->deviceHolder.getDevice().getClazz() == deviceClass)
-            .sorted(Comparator.comparingInt(dh -> dh.getWaitingQueue().size()))
+            .sorted(Comparator.comparingInt(dh -> dh.getWaitingQueue().size() + (dh.getTaskId()==null?0:1)))
             .findFirst();
         DeviceHolder deviceHolder = availabelDevice.orElseThrow();
         if(deviceHolder.getTaskId() != null){

@@ -31,7 +31,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -87,10 +89,13 @@ public class ReportProcessorImp implements ReportProcessor {
         final List<ReportedTask> reportedTasks = taskReports.parallelStream().map(ReportedTask::from).collect(Collectors.toList());
         final List<TaskCommand> unProperTasks = commandingTasksChecker
             .onNodeReporting(nodeInfo, reportedTasks);
+        Set<Long> unProperTaskIds = unProperTasks.parallelStream()
+            .map(taskCommand -> taskCommand.getTask().getId()).collect(Collectors.toSet());
+        taskStatusChange(reportedTasks.parallelStream().filter(rt->!unProperTaskIds.contains(rt.getId())).collect(
+            Collectors.toList()));
         if (!CollectionUtils.isEmpty(unProperTasks)) {
             return rebuildReportResponse(unProperTasks);
         }
-        taskStatusChange(reportedTasks);
         final List<Task> toAssignTasks = swTaskScheduler.schedule(nodeInfo);
         final Collection<Task> toCancelTasks = livingTaskCache
             .ofStatus(TaskStatus.TO_CANCEL)
@@ -98,8 +103,10 @@ public class ReportProcessorImp implements ReportProcessor {
             .filter(t->null != t.getAgent() && t.getAgent().equals(Agent.fromNode(nodeInfo)))
             .collect(Collectors.toList());
         scheduledTaskStatusChange(toAssignTasks,agentEntity);
-        canceledTaskStatusChange(toCancelTasks);
         commandingTasksChecker.onTaskCommanding(taskBoConverter.toTaskCommand(toAssignTasks),
+            Agent.fromNode(nodeInfo));
+        canceledTaskStatusChange(toCancelTasks);
+        commandingTasksChecker.onTaskCommanding(taskBoConverter.toTaskCommand(List.copyOf(toCancelTasks)),
             Agent.fromNode(nodeInfo));
         return buidResponse(toAssignTasks, toCancelTasks);
     }
