@@ -13,6 +13,7 @@ import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +29,8 @@ public class TestLivingTaskCache {
         List<Task> mockedTasks = mockTask(job);
         livingTaskCache.adopt(
             mockedTasks, TaskStatus.CREATED);
-        livingTaskCache.update(mockedTasks.subList(10, 20),
+        livingTaskCache.update(mockedTasks.subList(10, 20).stream().map(Task::getId).collect(
+                Collectors.toList()),
             TaskStatus.RUNNING);
         Assertions.assertEquals(246,
             livingTaskCache.ofStatus(TaskStatus.CREATED).size());

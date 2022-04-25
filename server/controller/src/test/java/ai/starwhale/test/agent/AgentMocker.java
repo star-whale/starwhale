@@ -17,16 +17,19 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.node.Device.Status;
 import ai.starwhale.mlops.domain.node.Node;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ParameterizedTypeReference;
@@ -38,17 +41,18 @@ import org.springframework.web.client.RestTemplate;
 /**
  * mock agent for Controller
  */
+@Slf4j
 public class AgentMocker {
 
     String serverAddress = "http://localhost:8082/api/v1";
-    List<DeviceHolder> deviceHolders = List.of(new DeviceHolder(null,Device.builder().clazz(Clazz.GPU).build()),
-        new DeviceHolder(null,Device.builder().clazz(Clazz.GPU).build()),
-        new DeviceHolder(null,Device.builder().clazz(Clazz.GPU).build()),
-        new DeviceHolder(null,Device.builder().clazz(Clazz.GPU).build()),
-        new DeviceHolder(null,Device.builder().clazz(Clazz.CPU).build()),
-        new DeviceHolder(null,Device.builder().clazz(Clazz.CPU).build()),
-        new DeviceHolder(null,Device.builder().clazz(Clazz.CPU).build()),
-        new DeviceHolder(null,Device.builder().clazz(Clazz.CPU).build()));
+    List<DeviceHolder> deviceHolders = List.of(new DeviceHolder(Device.builder().clazz(Clazz.GPU).build()),
+        new DeviceHolder(Device.builder().clazz(Clazz.GPU).build()),
+        new DeviceHolder(Device.builder().clazz(Clazz.GPU).build()),
+        new DeviceHolder(Device.builder().clazz(Clazz.GPU).build()),
+        new DeviceHolder(Device.builder().clazz(Clazz.CPU).build()),
+        new DeviceHolder(Device.builder().clazz(Clazz.CPU).build()),
+        new DeviceHolder(Device.builder().clazz(Clazz.CPU).build()),
+        new DeviceHolder(Device.builder().clazz(Clazz.CPU).build()));
 
     RestTemplate restTemplate = new RestTemplate();
 
@@ -60,6 +64,10 @@ public class AgentMocker {
     static class DeviceHolder{
         Long taskId;
         Device device;
+        ConcurrentLinkedQueue<RunningTask> waitingQueue = new ConcurrentLinkedQueue();
+        DeviceHolder(Device d){
+            this.device = d;
+        }
     }
 
     @Data
@@ -69,19 +77,30 @@ public class AgentMocker {
         Long startTime;
         TaskTrigger tt;
         boolean cancel;
+        boolean deviceOccupied;
         TaskStatusInterface status;
 
         public RunningTask(TaskTrigger taskTrigger) {
             startTime = System.currentTimeMillis();
             tt = taskTrigger;
             cancel = false;
+            deviceOccupied = false;
             status = TaskStatusInterface.PREPARING;
+        }
+
+        public void deviceOccupied() {
+            startTime = System.currentTimeMillis();
+            deviceOccupied = true;
         }
 
         //PREPARING, RUNNING, SUCCESS, CANCELING, CANCELED, FAIL;
         TaskStatusInterface changeStatus(){
+            if(!cancel && !deviceOccupied){
+                return TaskStatusInterface.PREPARING;
+            }
             Random r = new Random();
             if(r.nextInt(10000) > 99998){
+                log.warn("failure of task {}",tt.getId());
                 return TaskStatusInterface.FAIL;
             }
             long runningTime = System.currentTimeMillis() - startTime;
@@ -127,8 +146,16 @@ public class AgentMocker {
         List<Long> finishedIds = finishedTaskIds();
         this.deviceHolders.stream().filter(deviceHolder -> finishedIds.contains(deviceHolder.getTaskId()))
             .forEach(deviceHolder -> {
-                deviceHolder.setTaskId(null);
-                deviceHolder.getDevice().setStatus(Status.idle);
+                RunningTask runningTask = deviceHolder.getWaitingQueue().poll();
+                if(null == runningTask){
+                    deviceHolder.setTaskId(null);
+                    deviceHolder.getDevice().setStatus(Status.idle);
+                }else {
+                    deviceHolder.setTaskId(runningTask.getTt().getId());
+                    runningTask.deviceOccupied();
+                }
+
+
             });
     }
 
@@ -196,21 +223,28 @@ public class AgentMocker {
             Random random = new Random();
             if(random.nextInt(100)>98){
                 //percent of loss
+                log.warn("loss of task {}",taskTrigger.getId());
                 return;
             }
-            allTasks.putIfAbsent(taskTrigger.getId(),new RunningTask(taskTrigger));
-            occupyDevice(taskTrigger);
+            RunningTask runningTask = new RunningTask(taskTrigger);
+            allTasks.putIfAbsent(taskTrigger.getId(), runningTask);
+            occupyDevice(runningTask);
         });
     }
 
-    private void occupyDevice(TaskTrigger taskTrigger) {
-        Clazz deviceClass = taskTrigger.getDeviceClass();
-        Optional<DeviceHolder> availabelDevice = deviceHolders.stream().filter(
-            deviceHolder -> null == deviceHolder.getTaskId()
-                && deviceHolder.getDevice().getClazz() == deviceClass).findFirst();
+    private void occupyDevice(RunningTask runningTask) {
+        Clazz deviceClass = runningTask.getTt().getDeviceClass();
+        Optional<DeviceHolder> availabelDevice = deviceHolders.stream()
+            .filter(deviceHolder ->deviceHolder.getDevice().getClazz() == deviceClass)
+            .sorted(Comparator.comparingInt(dh -> dh.getWaitingQueue().size() + (dh.getTaskId()==null?0:1)))
+            .findFirst();
         DeviceHolder deviceHolder = availabelDevice.orElseThrow();
-        deviceHolder.setTaskId(taskTrigger.getId());
-
+        if(deviceHolder.getTaskId() != null){
+            deviceHolder.getWaitingQueue().offer(runningTask);
+        }else {
+            deviceHolder.setTaskId(runningTask.getTt().getId());
+            runningTask.deviceOccupied();
+        }
     }
 
     private void cancel(List<Long> tasksToCancel) {

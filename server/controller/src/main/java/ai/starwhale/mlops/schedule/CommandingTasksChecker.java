@@ -9,9 +9,9 @@ package ai.starwhale.mlops.schedule;
 
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.system.Agent;
-import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
+import ai.starwhale.mlops.reporting.ReportedTask;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -37,12 +37,12 @@ import org.springframework.util.CollectionUtils;
 public class CommandingTasksChecker {
 
     final TaskStatusMachine taskStatusMachine;
-    final Map<Agent, Set<TaskCommand>> commandingTasks ;
+    final Map<Agent, Set<TaskCommand>> commandingTaskAgentMap;
 
     public CommandingTasksChecker(
         TaskStatusMachine taskStatusMachine){
         this.taskStatusMachine = taskStatusMachine;
-        commandingTasks = new ConcurrentHashMap<>();
+        commandingTaskAgentMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -54,7 +54,7 @@ public class CommandingTasksChecker {
         if(CollectionUtils.isEmpty(tasks)){
             return;
         }
-        commandingTasks.computeIfAbsent(agent,n->Collections.synchronizedSet(new HashSet<>())).addAll(tasks);
+        commandingTaskAgentMap.computeIfAbsent(agent,n->Collections.synchronizedSet(new HashSet<>())).addAll(tasks);
     }
 
     /**
@@ -63,16 +63,16 @@ public class CommandingTasksChecker {
      * @param node reporting node
      * @return not properly present tasks that are commanding to this node.
      */
-    public List<TaskCommand> onNodeReporting(Node node,List<Task> reportedTasks){
-        final Set<TaskCommand> taskCommands = commandingTasks.computeIfAbsent(Agent.fromNode(node),k->Collections.synchronizedSet(new HashSet<>()));
-        final Map<Long, Task> nodeTasks = reportedTasks.stream()
-            .collect(Collectors.toMap(Task::getId,
+    public List<TaskCommand> onNodeReporting(Node node,List<ReportedTask> reportedTasks){
+        final Set<TaskCommand> commandingTasks = commandingTaskAgentMap.computeIfAbsent(Agent.fromNode(node),k->Collections.synchronizedSet(new HashSet<>()));
+        final Map<Long, ReportedTask> reportedTaskMap = reportedTasks.stream()
+            .collect(Collectors.toMap(ReportedTask::getId,
                 Function.identity()));
         final List<TaskCommand> unProperTasks = new LinkedList<>();
         final List<TaskCommand> properTasks = new LinkedList<>();
-        taskCommands.forEach(taskCommand -> {
-            final Task nodeTask = nodeTasks.get(taskCommand.getTask().getId());
-            final boolean unproperlyExed = null == nodeTask || !taskStatusMachine.couldTransfer(taskCommand.getCommandType().getCorrespondStatus(),nodeTask.getStatus());
+        commandingTasks.forEach(taskCommand -> {
+            final ReportedTask rt = reportedTaskMap.get(taskCommand.getTask().getId());
+            final boolean unproperlyExed = null == rt || !taskStatusMachine.couldTransfer(taskCommand.getCommandType().getCorrespondStatus(),rt.getStatus());
             if(unproperlyExed){
                 unProperTasks.add(taskCommand);
             }else {
@@ -80,7 +80,7 @@ public class CommandingTasksChecker {
             }
         });
 
-        taskCommands.removeAll(properTasks);
+        commandingTasks.removeAll(properTasks);
 
         return unProperTasks;
     }

@@ -96,6 +96,7 @@ public class CMPTaskFire {
 
         List<Task> cmpTasks = taskBoConverter.fromTaskEntity(List.of(taskEntity), job);
         swTaskScheduler.adoptTasks(cmpTasks, Clazz.CPU);
+        livingTaskCache.adopt(cmpTasks,TaskStatus.CREATED);
     }
 
 }

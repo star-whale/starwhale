@@ -146,6 +146,17 @@ public class TestTaskJobStatusHelper {
         Assertions.assertEquals(JobStatus.RUNNING, taskJobStatusHelper.desiredJobStatus(
             tasks));
 
+        tasks = List.of(
+            mock(PPL, ASSIGNING),
+            mock(PPL, ASSIGNING),
+            mock(PPL, CREATED),
+            mock(PPL, CREATED),
+            mock(PPL, CREATED),
+            mock(PPL, CREATED));
+        logTasks(tasks);
+        Assertions.assertEquals(JobStatus.RUNNING, taskJobStatusHelper.desiredJobStatus(
+            tasks));
+
         List<Task> tasks1 = List.of(
             mock(PPL, RUNNING),
             mock(PPL, RUNNING), successPPL(), successPPL(), successPPL(), successPPL());
