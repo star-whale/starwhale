@@ -26,29 +26,29 @@ public interface LivingTaskCache {
 
     /**
      * do business logic caused by status change
-     * @param livingTasks
+     * @param livingTaskIds
      * @param status
      */
-    void update(Collection<Task> livingTasks, TaskStatus status);
+    void update(Collection<Long> livingTaskIds, TaskStatus status);
 
     /**
      *
      * @param taskStatus
-     * @return deep copy of the tasks cached
+     * @return better if the client can't modify the task returned
      */
     Collection<Task> ofStatus(TaskStatus taskStatus);
 
     /**
      *
      * @param taskId
-     * @return deep copy of the tasks cached
+     * @return better if the client can't modify the task returned
      */
     Optional<Task> ofId(Long taskId);
 
     /**
      *
      * @param jobId
-     * @return deep copy of the tasks cached
+     * @return better if the client can't modify the task returned
      */
     Collection<Task> ofJob(Long jobId);
 

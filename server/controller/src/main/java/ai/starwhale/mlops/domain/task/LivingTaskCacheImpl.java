@@ -122,16 +122,16 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
 
     @Override
     @Transactional
-    public void update(Collection<Task> livingTasks, TaskStatus newStatus) {
+    public void update(Collection<Long> livingTasks, TaskStatus newStatus) {
         if(null == livingTasks || livingTasks.isEmpty()){
             log.debug("empty tasks to be updated for newStatus{}",newStatus);
             return;
         }
-        final Stream<Task> toBeUpdateStream = livingTasks.parallelStream().filter(task -> {
-            final Task taskResident = taskIdMap.get(task.getId());
+        final Stream<Long> toBeUpdateStream = livingTasks.parallelStream().filter(task -> {
+            final Task taskResident = taskIdMap.get(task);
             if (null == taskResident) {
-                log.debug("no resident task of id {}", task.getId());
-                return true;
+                log.debug("no resident task of id {}", task);
+                return false;
             }
             final boolean statusBeforeNewStatus = taskStatusMachine.couldTransfer(taskResident.getStatus(),newStatus);
             log.debug("task newStatus change from {} to {} is valid? {}", taskResident.getStatus(),
@@ -140,7 +140,7 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
         });
 
         final List<Task> toBeUpdatedTasks = toBeUpdateStream
-            .map(task -> getOrInsert(task))
+            .map(taskId -> taskIdMap.get(taskId))
             .peek(task -> {
                 final Long jobId = task.getJob().getId();
                 updateCache(newStatus, task);
@@ -157,20 +157,35 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
         }
     }
 
+    /**
+     *
+     * @param taskStatus
+     * @return StatusUnModifiableTasks are returned.
+     */
     @Override
     public Collection<Task> ofStatus(TaskStatus taskStatus) {
-        return safeGetTaskIdsFromStatus(taskStatus).stream().map(tskId->taskIdMap.get(tskId).deepCopy())
+        return safeGetTaskIdsFromStatus(taskStatus).stream().map(tskId->taskIdMap.get(tskId).statusUnModifiable())
             .collect(Collectors.toList());
     }
 
+    /**
+     *
+     * @param taskId
+     * @return StatusUnModifiableTask is returned.
+     */
     @Override
     public Optional<Task> ofId(Long taskId) {
-        return Optional.ofNullable(taskIdMap.get(taskId)).map(t->t.deepCopy());
+        return Optional.ofNullable(taskIdMap.get(taskId)).map(t->t.statusUnModifiable());
     }
 
+    /**
+     *
+     * @param jobId
+     * @return StatusUnModifiableTasks are returned.
+     */
     @Override
     public Collection<Task> ofJob(Long jobId) {
-        return jobTaskMap.get(jobId).stream().map(tskId->taskIdMap.get(tskId).deepCopy())
+        return jobTaskMap.get(jobId).stream().map(tskId->taskIdMap.get(tskId).statusUnModifiable())
             .collect(Collectors.toList());
     }
 
@@ -277,7 +292,7 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
     private void updateCache(TaskStatus newStatus, Task task) {
         //update jobIdMap
         Long jobId = task.getJob().getId();
-        getOrInsertJob(task, jobId);
+        getOrInsertJob(task.getJob());
         //update taskStatusMap
         Set<Long> taskIdsOfNewStatus = safeGetTaskIdsFromStatus(newStatus);
         taskIdsOfNewStatus.add(task.getId());
@@ -301,8 +316,8 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
         return taskIdMap.computeIfAbsent(task.getId(), k -> task);
     }
 
-    private Job getOrInsertJob(Task task, Long jobId) {
-        return jobIdMap.computeIfAbsent(jobId, k -> task.getJob());
+    private Job getOrInsertJob(Job job) {
+        return jobIdMap.computeIfAbsent(job.getId(), k -> job);
     }
 
     private Set<Long> safeGetTaskIdsFromJob(Long jobId) {

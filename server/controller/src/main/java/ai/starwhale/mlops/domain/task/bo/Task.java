@@ -11,8 +11,6 @@ import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.system.Agent;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.TaskType;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -62,17 +60,8 @@ public class Task {
 
     TaskType taskType;
 
-    public Task deepCopy(){
-        return Task.builder()
-            .id(this.id)
-            .uuid(this.uuid)
-            .status(this.status)
-            .resultDir(this.resultDir)
-            .taskRequest(this.taskRequest.deepCopy())
-            .job(this.job.deepCopy())
-            .agent(null != this.agent ? this.agent.copy() : null)//agent is nullable
-            .taskType(this.getTaskType())
-            .build();
+    public Task statusUnModifiable(){
+        return new StatusUnModifiableTask(this);
     }
 
 
@@ -88,5 +77,95 @@ public class Task {
         }
         Task tsk = (Task)obj;
         return this.getUuid().equals(tsk.getUuid());
+    }
+
+
+
+    public static class StatusUnModifiableTask extends Task{
+
+        Task oTask;
+        public StatusUnModifiableTask(Task task){
+            this.oTask = task;
+        }
+
+        @Override
+        public Long getId() {
+            return oTask.id;
+        }
+
+        @Override
+        public String getUuid() {
+            return oTask.uuid;
+        }
+
+        @Override
+        public TaskStatus getStatus() {
+            return oTask.status;
+        }
+
+        @Override
+        public String getResultDir() {
+            return oTask.resultDir;
+        }
+
+        @Override
+        public TaskRequest getTaskRequest() {
+            return oTask.taskRequest;
+        }
+
+        @Override
+        public Job getJob() {
+            return oTask.job;
+        }
+
+        @Override
+        public Agent getAgent() {
+            return oTask.agent;
+        }
+
+        @Override
+        public TaskType getTaskType() {
+            return oTask.taskType;
+        }
+
+        @Override
+        public void setStatus(TaskStatus status){
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setId(Long id) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setUuid(String uuid) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setResultDir(String resultDir) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setTaskRequest(TaskRequest taskRequest) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setJob(Job job) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setAgent(Agent agent) {
+            oTask.agent = agent;
+        }
+
+        @Override
+        public void setTaskType(TaskType taskType) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

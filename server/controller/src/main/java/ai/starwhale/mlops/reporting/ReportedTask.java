@@ -5,19 +5,22 @@
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
 
-package ai.starwhale.mlops.domain.task.status;
+package ai.starwhale.mlops.reporting;
 
 import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
+import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
+import ai.starwhale.mlops.domain.task.TaskType;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.HashMap;
 import java.util.Map;
-import org.springframework.stereotype.Component;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
- * convert api status to bo status
+ * convert taskReport to
  */
-@Component
-public class StatusAdapter {
+@AllArgsConstructor
+public class ReportedTask {
 
     final static Map<TaskStatusInterface, TaskStatus> transferMapIn = Map.ofEntries(
         new SimpleEntry<>(TaskStatusInterface.CANCELED, TaskStatus.CANCELED)
@@ -27,22 +30,22 @@ public class StatusAdapter {
         , new SimpleEntry<>(TaskStatusInterface.FAIL, TaskStatus.FAIL)
         , new SimpleEntry<>(TaskStatusInterface.SUCCESS, TaskStatus.SUCCESS));
 
-    final Map<TaskStatus,TaskStatusInterface> transferMapOut;
-
-    public StatusAdapter(){
-        Map<TaskStatus,TaskStatusInterface> builder = new HashMap<>();
-        transferMapIn.forEach((key,v)->{
-            builder.put(v,key);
-        });
-        transferMapOut = Map.copyOf(builder);
+    final Long id;
+    final TaskStatus status;
+    final TaskType taskType;
+    public static ReportedTask from(TaskReport taskReport){
+        return new ReportedTask(taskReport.getId(),transferMapIn.get(taskReport.getStatus()),taskReport.getTaskType());
     }
 
-    public TaskStatus from(TaskStatusInterface tsi){
-        return transferMapIn.get(tsi);
+    public Long getId() {
+        return id;
     }
 
-    public TaskStatusInterface to(TaskStatus ts){
-        return transferMapOut.get(ts);
+    public TaskStatus getStatus() {
+        return status;
     }
 
+    public TaskType getTaskType() {
+        return taskType;
+    }
 }

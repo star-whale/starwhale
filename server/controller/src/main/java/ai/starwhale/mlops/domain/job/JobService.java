@@ -232,16 +232,16 @@ public class JobService {
      */
     static final Integer MAX_BATCH_SIZE = 1000;
     private void updateTaskStatus(Collection<Task> toBeUpdatedTasks,TaskStatus taskStatus) {
-        List<Long> toBeUpdateTasks = toBeUpdatedTasks.parallelStream().map(Task::getId).collect(
+        List<Long> toBeUpdateTaskIds = toBeUpdatedTasks.parallelStream().map(Task::getId).collect(
             Collectors.toList());
-        if(!CollectionUtils.isEmpty(toBeUpdateTasks)){
-            BatchOperateHelper.doBatch(toBeUpdateTasks
+        if(!CollectionUtils.isEmpty(toBeUpdateTaskIds)){
+            BatchOperateHelper.doBatch(toBeUpdateTaskIds
                 , taskStatus
                 , (tsks, status) -> taskMapper.updateTaskStatus(
                     tsks.stream().collect(Collectors.toList()),
                     status)
                 , MAX_BATCH_SIZE);
-            livingTaskCache.update(toBeUpdatedTasks, taskStatus);
+            livingTaskCache.update(toBeUpdateTaskIds, taskStatus);
         }
     }
 
@@ -261,9 +261,9 @@ public class JobService {
             log.warn("no tasks found for job {} in task machine",jobId);
             return;
         }
+
         List<Task> pausedTasks = tasks.parallelStream()
             .filter(task -> task.getStatus().equals(TaskStatus.PAUSED))
-            .peek(task -> task.setStatus(TaskStatus.CREATED))
             .collect(
                 Collectors.toList());
         if(null == pausedTasks || pausedTasks.isEmpty()){
@@ -271,6 +271,10 @@ public class JobService {
         }
         Job job = jobBoConverter.fromEntity(jobEntity);
         updateTaskStatus(pausedTasks,TaskStatus.CREATED);
+        pausedTasks = livingTaskCache.ofJob(jobId).parallelStream()
+            .filter(task -> task.getStatus().equals(TaskStatus.PAUSED))
+            .collect(
+                Collectors.toList());
         swTaskScheduler.adoptTasks(pausedTasks,job.getJobRuntime().getDeviceClass());
     }
 

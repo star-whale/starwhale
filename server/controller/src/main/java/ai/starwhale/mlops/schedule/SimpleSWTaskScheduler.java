@@ -16,6 +16,8 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import cn.hutool.core.collection.ConcurrentHashSet;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +36,7 @@ public class SimpleSWTaskScheduler implements SWTaskScheduler {
 
     final Map<Device.Clazz, ConcurrentLinkedQueue<Task>> taskQueueTable;
 
-    final Set<Long> stoppedTaskIds = new ConcurrentHashSet();
+    final List<Long> stoppedTaskIds = Collections.synchronizedList(new LinkedList<>());
 
     public SimpleSWTaskScheduler() {
         this.taskQueueTable = Map.of(Clazz.CPU, new ConcurrentLinkedQueue<>(),
@@ -44,7 +46,6 @@ public class SimpleSWTaskScheduler implements SWTaskScheduler {
     @Override
     public void adoptTasks(Collection<Task> tasks, Device.Clazz deviceClass) {
         taskQueueTable.get(deviceClass).addAll(tasks);
-        stoppedTaskIds.removeAll(tasks.parallelStream().map(Task::getId).collect(Collectors.toList()));
     }
 
     @Override
@@ -68,6 +69,7 @@ public class SimpleSWTaskScheduler implements SWTaskScheduler {
         if(tobeScheduledTask == null){
             return null;
         }
+
         Long taskId = tobeScheduledTask.getId();
         if(stoppedTaskIds.contains(taskId)){
             stoppedTaskIds.remove(taskId);
