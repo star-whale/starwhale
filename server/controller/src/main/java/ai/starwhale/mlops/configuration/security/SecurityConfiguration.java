@@ -75,7 +75,9 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(WebSecurity web) {
-        web.ignoring().regexMatchers(String.format("^(?!%s/).*", controllerProperties.getApiPrefix()));
+        web.ignoring()
+                .regexMatchers(String.format("^(?!%s/).*", controllerProperties.getApiPrefix()))
+                .antMatchers(controllerProperties.getWhiteList().toArray(new String[0]));
     }
 
     @Override

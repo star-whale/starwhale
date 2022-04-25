@@ -25,6 +25,7 @@ sw:
       endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
   controller:
     apiPrefix: /api/v1
+    whiteList: /api/v1/report
 server:
   port: 80
 ---
