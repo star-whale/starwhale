@@ -4,7 +4,7 @@ import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.LivingTaskStatusMachineImpl;
+import ai.starwhale.mlops.domain.task.LivingTaskCacheImpl;
 import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
@@ -16,22 +16,22 @@ import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestLivingTaskStatusMachine {
+public class TestLivingTaskCache {
 
     TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
 
     @Test
     public void test() {
-        LivingTaskStatusMachineImpl livingTaskStatusMachine = new LivingTaskStatusMachineImpl(null,
-            null, new TaskJobStatusHelper(), taskStatusMachine);
+        LivingTaskCacheImpl livingTaskCache = new LivingTaskCacheImpl(null,
+            null, new TaskJobStatusHelper(), taskStatusMachine, null, null);
         Job job = mockJob();
         List<Task> mockedTasks = mockTask(job);
-        livingTaskStatusMachine.adopt(
+        livingTaskCache.adopt(
             mockedTasks, TaskStatus.CREATED);
-        livingTaskStatusMachine.update(mockedTasks.subList(10, 20),
+        livingTaskCache.update(mockedTasks.subList(10, 20),
             TaskStatus.RUNNING);
         Assertions.assertEquals(246,
-            livingTaskStatusMachine.ofStatus(TaskStatus.CREATED).size());
+            livingTaskCache.ofStatus(TaskStatus.CREATED).size());
     }
 
     private List<Task> mockTask(Job job) {
@@ -40,7 +40,7 @@ public class TestLivingTaskStatusMachine {
             of.add(Task.builder()
                 .status(TaskStatus.CREATED)
                 .id(i)
-                .taskRequest(new CMPRequest())
+                .taskRequest(new CMPRequest("hi"))
                 .job(job)
                 .build());
         }

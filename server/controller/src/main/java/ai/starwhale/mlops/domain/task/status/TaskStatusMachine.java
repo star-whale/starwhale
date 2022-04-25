@@ -9,15 +9,16 @@ package ai.starwhale.mlops.domain.task.status;
 
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.*;
 
-import ai.starwhale.mlops.domain.system.StatusMachine;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
+@Component
 public class TaskStatusMachine {
 
     final static Map<TaskStatus, Set<TaskStatus>> transferMap = Map.ofEntries(
-        new SimpleEntry<>(CREATED, Set.of(ASSIGNING,PAUSED,PREPARING,RUNNING,SUCCESS,FAIL,TO_CANCEL))
+        new SimpleEntry<>(CREATED, Set.of(ASSIGNING,PAUSED,PREPARING,RUNNING,SUCCESS,FAIL,TO_CANCEL,CANCELED))
         , new SimpleEntry<>(PAUSED, Set.of(CREATED))
         , new SimpleEntry<>(ASSIGNING, Set.of(PREPARING,RUNNING,SUCCESS,FAIL,TO_CANCEL))
         , new SimpleEntry<>(PREPARING, Set.of(RUNNING,SUCCESS,FAIL,TO_CANCEL))

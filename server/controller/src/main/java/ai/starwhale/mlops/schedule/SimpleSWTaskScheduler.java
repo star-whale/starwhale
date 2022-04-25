@@ -14,10 +14,12 @@ import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import cn.hutool.core.collection.ConcurrentHashSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,8 @@ public class SimpleSWTaskScheduler implements SWTaskScheduler {
 
     final Map<Device.Clazz, ConcurrentLinkedQueue<Task>> taskQueueTable;
 
+    final Set<Long> stoppedTaskIds = new ConcurrentHashSet();
+
     public SimpleSWTaskScheduler() {
         this.taskQueueTable = Map.of(Clazz.CPU, new ConcurrentLinkedQueue<>(),
             Clazz.GPU, new ConcurrentLinkedQueue<>());
@@ -40,6 +44,12 @@ public class SimpleSWTaskScheduler implements SWTaskScheduler {
     @Override
     public void adoptTasks(Collection<Task> tasks, Device.Clazz deviceClass) {
         taskQueueTable.get(deviceClass).addAll(tasks);
+        stoppedTaskIds.removeAll(tasks.parallelStream().map(Task::getId).collect(Collectors.toList()));
+    }
+
+    @Override
+    public void stopSchedule(Collection<Long> taskIds) {
+        stoppedTaskIds.addAll(taskIds);
     }
 
     @Override
@@ -48,9 +58,22 @@ public class SimpleSWTaskScheduler implements SWTaskScheduler {
         return node.getDevices()
             .stream()
             .filter(device -> Status.idle == device.getStatus()) //only schedule devices that is free
-            .map(device -> taskQueueTable.get(device.getClazz()).poll())// pull task from the device corresponding queue
+            .map(this::pollTask)// pull task from the device corresponding queue
             .filter(Objects::nonNull)//remove null tasks got from empty queue
             .collect(Collectors.toList());
+    }
+
+    private Task pollTask(Device device) {
+        Task tobeScheduledTask = taskQueueTable.get(device.getClazz()).poll();
+        if(tobeScheduledTask == null){
+            return null;
+        }
+        Long taskId = tobeScheduledTask.getId();
+        if(stoppedTaskIds.contains(taskId)){
+            stoppedTaskIds.remove(taskId);
+            return pollTask(device);
+        }
+        return tobeScheduledTask;
     }
 
     private void validNode(Node node) {

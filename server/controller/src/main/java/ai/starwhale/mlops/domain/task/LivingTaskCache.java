@@ -15,17 +15,41 @@ import java.util.Optional;
 /**
  * manage status of Tasks or side effects caused by change of Task status (Job status change)
  */
-public interface LivingTaskStatusMachine {
+public interface LivingTaskCache {
 
+    /**
+     * simply adds to the cache
+     * @param livingTasks
+     * @param status
+     */
     void adopt(Collection<Task> livingTasks, TaskStatus status);
 
+    /**
+     * do business logic caused by status change
+     * @param livingTasks
+     * @param status
+     */
     void update(Collection<Task> livingTasks, TaskStatus status);
 
-
+    /**
+     *
+     * @param taskStatus
+     * @return deep copy of the tasks cached
+     */
     Collection<Task> ofStatus(TaskStatus taskStatus);
 
+    /**
+     *
+     * @param taskId
+     * @return deep copy of the tasks cached
+     */
     Optional<Task> ofId(Long taskId);
 
+    /**
+     *
+     * @param jobId
+     * @return deep copy of the tasks cached
+     */
     Collection<Task> ofJob(Long jobId);
 
 }

@@ -5,7 +5,7 @@ import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.task.LivingTaskStatusMachine;
+import ai.starwhale.mlops.domain.task.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -40,7 +40,7 @@ public class CMPTaskFire {
 
     final JobMapper jobMapper;
 
-    final LivingTaskStatusMachine livingTaskStatusMachine;
+    final LivingTaskCache livingTaskCache;
 
     final StorageAccessService storageAccessService;
 
@@ -51,14 +51,14 @@ public class CMPTaskFire {
     public CMPTaskFire(JobBoConverter jobBoConverter,
         TaskMapper taskMapper,
         JobMapper jobMapper,
-        LivingTaskStatusMachine livingTaskStatusMachine,
+        LivingTaskCache livingTaskCache,
         StorageAccessService storageAccessService,
         TaskBoConverter taskBoConverter,
         SWTaskScheduler swTaskScheduler) {
         this.jobBoConverter = jobBoConverter;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
-        this.livingTaskStatusMachine = livingTaskStatusMachine;
+        this.livingTaskCache = livingTaskCache;
         this.storageAccessService = storageAccessService;
         this.taskBoConverter = taskBoConverter;
         this.swTaskScheduler = swTaskScheduler;
@@ -73,7 +73,7 @@ public class CMPTaskFire {
     }
 
     private void dispatchCMPTask(Job job) {
-        Collection<Task> tasks = livingTaskStatusMachine.ofJob(job.getId());
+        Collection<Task> tasks = livingTaskCache.ofJob(job.getId());
         List<String> allPPLTaskResults = tasks.parallelStream().flatMap(task -> {
                 try {
                     return storageAccessService.list(task.getResultDir());
