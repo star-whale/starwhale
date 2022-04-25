@@ -43,6 +43,10 @@ externalMySQL:
 
 minio:
   enabled: true
+  ingress:
+    enabled: true
+    hostname: minio.pre.intra.starwhale.ai
+    ingressClassName: nginx
   mode: standalone
   auth:
     rootUser: minioadmin
@@ -60,7 +64,6 @@ minio:
     requests:
       cpu: 500m
       memory: 250Mi
-
 externalS3OSS:
   host: localhost
   port: 9000
