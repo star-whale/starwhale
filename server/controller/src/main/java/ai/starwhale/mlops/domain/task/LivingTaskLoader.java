@@ -18,6 +18,7 @@ import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -26,13 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.PostConstruct;
 
 /**
  * loading tasks
  */
 @Service
-public class LivingTaskLoader {
+public class LivingTaskLoader implements CommandLineRunner {
 
     final LivingTaskCache livingTaskCache;
 
@@ -68,8 +68,7 @@ public class LivingTaskLoader {
     /**
      * load tasks that are not FINISHED or ERROR into mem
      */
-    @PostConstruct
-    public void loadLivingTasks(){
+    void loadLivingTasks(){
         //load living tasks and assign them to livingTaskStatusMachine
         Stream<TaskEntity> taskStream = livingTasksFromDB();
         final Map<Long, List<TaskEntity>> collectJob = taskStream.parallel()
@@ -132,4 +131,8 @@ public class LivingTaskLoader {
 
     }
 
+    @Override
+    public void run(String... args) throws Exception {
+        loadLivingTasks();
+    }
 }
