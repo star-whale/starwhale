@@ -43,6 +43,15 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/*
+controller label
+*/}}
+{{- define "chart.controller.labels" -}}
+starwhale.ai/role: controller
+app.kubernetes.io/name: {{ include "common.names.fullname" . }}
+app.kubernetes.io/instance: {{ include "common.names.fullname" . }}-controller
+{{- end}}
+
+{{/*
 Selector labels
 */}}
 {{- define "chart.selectorLabels" -}}
@@ -87,10 +96,6 @@ spec:
         app.kubernetes.io/instance: {{ include "common.names.fullname" . }}-agent
         starwhale.ai/role: {{ .role }}
     spec:
-      {{- with .Values.image.pullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8}}
-      {{- end }}
       serviceAccountName: {{ include "chart.serviceAccountName" . }}
       volumes:
         - name: agent-storage
@@ -119,7 +124,7 @@ spec:
     {{end}}
       containers:
         - name: agent
-          image: "{{ .Values.image.registry}}/starwhaleai/taskset:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.registry}}/{{ .Values.image.agent.repo }}:{{ .Values.image.agent.tag | default .Chart.AppVersion }}"
           command: ["sleep"]
           args: ["3600000"]
           env:
@@ -130,7 +135,7 @@ spec:
               mountPath: "/opt/starwhale"
               subPath: run
         - name: taskset
-          image: "{{ .Values.image.registry}}/starwhaleai/taskset:{{ .Values.image.tasksetTag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.registry}}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag | default .Chart.AppVersion }}"
           volumeMounts:
             - name: agent-storage
               mountPath: "/opt/starwhale"

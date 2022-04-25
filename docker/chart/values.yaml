@@ -1,15 +1,20 @@
 nameOverride: ""
 fullnameOverride: ""
-clusterDoman: cluster.local
 commonLables: {}
 commonAnnotations: {}
 
 image:
-  registry: docker.io
-  tag: "0.1.0-nightly-2022041601"
-  tasksetTag: "0.1.0-nightly-2022041601"
+  registry: "docker.io"
+  agent:
+    repo: "starwhaleai/agent"
+    tag: "0.1.0-nightly-2022042501"
+  taskset:
+    repo: "starwhaleai/taskset"
+    tag: "0.1.0-nightly-2022041601"
+  controller:
+    repo: "starwhaleai/controller"
+    tag: "0.1.0-nightly-2022042501"
   pullPolicy: IfNotPresent
-  pullSecrets: []
 
 mysql:
   enabled: true
@@ -22,6 +27,8 @@ mysql:
   volumePermissions:
     enabled: true
   primary:
+    service:
+      port: 3306
     persistence:
       enabled: true
       storageClass: local-storage-mysql
@@ -37,12 +44,15 @@ mysql:
 externalMySQL:
   host: localhost
   port: 3306
-  user: ""
+  username: ""
   password: ""
   database: starwhale
 
 minio:
   enabled: true
+  containerPorts:
+    api: 9000
+    console: 9001
   ingress:
     enabled: true
     hostname: minio.pre.intra.starwhale.ai
@@ -53,7 +63,7 @@ minio:
     rootPassword: minioadmin
   volumePermissions:
     enabled: true
-  defaultBuckets: starwhale
+  defaultBucket: starwhale
   persistence:
     storageClass: local-storage-minio
     size: 50Gi
@@ -64,26 +74,24 @@ minio:
     requests:
       cpu: 500m
       memory: 250Mi
+
 externalS3OSS:
   host: localhost
   port: 9000
   accessKey: ""
   secretKey: ""
+  defaultBucket: starwhale
+  region: "local"
 
 controller:
-  replicaCount: 1
-  updateStrategy:
-    type: RollingUpdate
-  podLabels: {}
-  podAnnotations: {}
-  containerPorts:
-    controller: 8082
-  nodeAffinityPreset:
-    type: ""
-    key: ""
-    values: []
-  affinity: {}
-  tolerations: []
+  containerPort: 8082
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 1000m
+      memory: 500Mi
 
 storage:
   agentHostPathRoot: "/mnt/data/starwhale"
@@ -135,20 +143,8 @@ serviceAccount:
   name: ""
   automountServiceAccountToken: false
 
-service:
-  type: ClusterIP
-  clusterIP: ""
-  ports:
-    controller: 8082
-  nodePorts:
-    controller: 8082
-  loadBalancerIP: ""
-
 ingress:
-  enabled: false
-  className: starwhale-ingress
-  annotations: {}
-  hosts:
-    - host: starwhale.local
-      paths: []
-  tls: false
+  enabled: true
+  ingressClassName: nginx
+  host: console.pre.intra.starwhale.ai
+  path: /
