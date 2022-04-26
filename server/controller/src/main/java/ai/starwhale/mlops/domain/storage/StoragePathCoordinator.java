@@ -7,12 +7,16 @@
 
 package ai.starwhale.mlops.domain.storage;
 
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * coordinator all paths in this system
  */
+@Slf4j
 public class StoragePathCoordinator {
 
     final static String SYS_NAME="controller";
@@ -46,20 +50,18 @@ public class StoragePathCoordinator {
     /**
      * where swds is stored
      * %s1 = prefix
-     * %s2 = date
-     * %s3 = swds id
-     * %s4 = swds version id
+     * %s2 = swds name
+     * %s3 = swds version
      */
-    static final String STORAGE_PATH_FORMATTER_SWDS = "%s/swds/%s/%s/%s";
+    static final String STORAGE_PATH_FORMATTER_SWDS = "%s/swds/%s/%s";
 
     /**
      * where swmp is stored
      * %s1 = prefix
-     * %s2 = date
-     * %s3 = swmp id
-     * %s4 = swmp version id
+     * %s2 = swmp name
+     * %s3 = swmp version
      */
-    static final String STORAGE_PATH_FORMATTER_SWMP = "%s/swmp/%s/%s/%s";
+    static final String STORAGE_PATH_FORMATTER_SWMP = "%s/swmp/%s/%s";
 
     public StoragePathCoordinator(String systemStoragePathPrefix){
         this.systemStoragePathPrefix = systemStoragePathPrefix;
@@ -67,48 +69,59 @@ public class StoragePathCoordinator {
     }
 
     /**
-     * only used before path is persisted
+     * 
      * @param jobUUId
-     * @return consistency of path is not guaranteed among multiple method calls
+     * @return consistency of path is guaranteed among multiple method calls
      */
     public String generateResultMetricsPath(String jobUUId){
-        return String.format(STORAGE_PATH_FORMATTER_RESULT_COLLECTOR,prefix,currentDate(),jobUUId);
+        checkKeyWord(jobUUId,ValidSubject.JOB);
+        return String.format(STORAGE_PATH_FORMATTER_RESULT_COLLECTOR,prefix,firstTwoLetter(jobUUId),jobUUId);
     }
 
     /**
-     * only used before path is persisted
+     * 
      * @param jobUUId
      * @param taskUUId
-     * @return consistency of path is not guaranteed among multiple method calls
+     * @return consistency of path is guaranteed among multiple method calls
      */
     public String generateTaskResultPath(String jobUUId,String taskUUId){
-        return String.format(STORAGE_PATH_FORMATTER_RESULT,prefix,currentDate(),jobUUId,taskUUId);
+        checkKeyWord(jobUUId,ValidSubject.JOB);
+        return String.format(STORAGE_PATH_FORMATTER_RESULT,prefix,firstTwoLetter(jobUUId),jobUUId,taskUUId);
     }
 
     /**
-     * only used before path is persisted
+     * 
      * @param swdsName
      * @param swdsVersion
-     * @return consistency of path is not guaranteed among multiple method calls
+     * @return consistency of path is guaranteed among multiple method calls
      */
     public String generateSwdsPath(String swdsName,String swdsVersion){
-        return String.format(STORAGE_PATH_FORMATTER_SWDS,prefix,currentDate(),swdsName,swdsVersion);
+        checkKeyWord(swdsVersion,ValidSubject.SWDS);
+        return String.format(STORAGE_PATH_FORMATTER_SWDS,prefix,swdsName,swdsVersion);
     }
 
     /**
-     * only used before path is persisted
+     * 
      * @param swmpName
      * @param swmpVersion
-     * @return consistency of path is not guaranteed among multiple method calls
+     * @return consistency of path is guaranteed among multiple method calls
      */
     public String generateSwmpPath(String swmpName,String swmpVersion){
-        return String.format(STORAGE_PATH_FORMATTER_SWMP,prefix,currentDate(),swmpName,swmpVersion);
+        checkKeyWord(swmpVersion,ValidSubject.SWMP);
+        return String.format(STORAGE_PATH_FORMATTER_SWMP,prefix,swmpName,swmpVersion);
     }
 
-    static final String FORMAT_DATE="yyyyMMdd";
-    String currentDate(){
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(FORMAT_DATE);
-        return simpleDateFormat.format(new Date());
+    private void checkKeyWord(String kw, ValidSubject validSubject){
+        if(null == kw || kw.isBlank()){
+            throw new SWValidationException(validSubject).tip("allocated storage key word can't be empty");
+        }
+        if(kw.length()<2){
+            throw new SWValidationException(validSubject).tip("allocated storage key word too short");
+        }
+    }
+
+    private String firstTwoLetter(String s){
+        return s.substring(0,2);
     }
 
 }
