@@ -5,6 +5,9 @@ kind: Ingress
 metadata:
   name: {{ include "common.names.fullname" . }}-controller
   namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 30g
+
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   rules:
