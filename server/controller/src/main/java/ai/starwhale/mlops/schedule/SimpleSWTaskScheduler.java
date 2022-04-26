@@ -65,17 +65,22 @@ public class SimpleSWTaskScheduler implements SWTaskScheduler {
     }
 
     private Task pollTask(Device device) {
-        Task tobeScheduledTask = taskQueueTable.get(device.getClazz()).poll();
-        if(tobeScheduledTask == null){
-            return null;
-        }
+        ConcurrentLinkedQueue<Task> taskQueue = taskQueueTable.get(device.getClazz());
+        Task tobeScheduledTask;
+        do{
+            tobeScheduledTask = taskQueue.poll();
+            if(tobeScheduledTask == null){
+                return null;
+            }
 
-        Long taskId = tobeScheduledTask.getId();
-        if(stoppedTaskIds.contains(taskId)){
-            stoppedTaskIds.remove(taskId);
-            return pollTask(device);
-        }
-        return tobeScheduledTask;
+            Long taskId = tobeScheduledTask.getId();
+            if(stoppedTaskIds.contains(taskId)){
+                stoppedTaskIds.remove(taskId);
+                continue;
+            }
+            return tobeScheduledTask;
+        }while (true);
+
     }
 
     private void validNode(Node node) {
