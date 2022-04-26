@@ -25,11 +25,11 @@ DUMP_USER_PIP_REQ_FNAME = "pip-req.txt"
 SW_ACTIVATE_SCRIPT = "activate.sw"
 
 SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
-SW_PYPI_INDEX_URL = os.environ.get("SW_PYPI_INDEX_URL", "http://mirrors.aliyun.com/pypi/simple/")
+SW_PYPI_INDEX_URL = os.environ.get("SW_PYPI_INDEX_URL", "https://pypi.doubanio.com/simple/")
 SW_PYPI_EXTRA_INDEX_URL = os.environ.get("SW_PYPI_EXTRA_INDEX_URL",
-                                         "https://pypi.tuna.tsinghua.edu.cn/simple/ http://pypi.mirrors.ustc.edu.cn/simple/ https://pypi.doubanio.com/simple/ https://pypi.org/simple")
+                                         "https://pypi.tuna.tsinghua.edu.cn/simple/ http://pypi.mirrors.ustc.edu.cn/simple/ https://pypi.org/simple")
 SW_PYPI_TRUSTED_HOST = os.environ.get("SW_PYPI_TRUSTED_HOST",
-                                      "mirrors.aliyun.com pypi.tuna.tsinghua.edu.cn pypi.mirrors.ustc.edu.cn pypi.doubanio.com pypi.org")
+                                      "pypi.tuna.tsinghua.edu.cn pypi.mirrors.ustc.edu.cn pypi.doubanio.com pypi.org")
 
 
 def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
