@@ -1,0 +1,11 @@
+{{ if .Values.minikube.enabled}}
+
+{{if .Values.minio.enabled }}
+{{ include "chart.minikubePV" (merge (dict "backend" "minio") . )}}
+{{ end }}
+
+{{if .Values.mysql.enabled }}
+{{ include "chart.minikubePV" (merge (dict "backend" "mysql") . )}}
+{{ end }}
+
+{{ end }}

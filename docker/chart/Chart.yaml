@@ -1,0 +1,29 @@
+apiVersion: v2
+name: starwhale
+description: StarWhale Platform Helm chart
+type: application
+home: https://starwhale.ai
+keywords:
+  - "mlops"
+maintainers:
+  - name: "Starwhale Team"
+    email: developer@starwhale.ai
+    url: https://starwhale.ai/team
+icon: file://./logo.png
+
+dependencies:
+  - name: common
+    repository: https://charts.bitnami.com/bitnami
+    version: 1.x.x
+  - name: mysql
+    condition: mysql.enabled
+    repository: https://charts.bitnami.com/bitnami
+    version: 8.x.x
+  - name: minio
+    condition: minio.enabled
+    repository: https://charts.bitnami.com/bitnami
+    version: 11.x.x
+
+
+version: "0.1.0-alpha.1"
+appVersion: "0.1.0-alpha.1"
