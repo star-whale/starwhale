@@ -129,7 +129,7 @@ spec:
             - name: SW_CONTROLLER_URL
               value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}/"
             - name: SW_BASE_PATH
-              value: "/var/starwhale"
+              value: "/opt/starwhale"
             - name: DOCKER_HOST
               value: "tcp://127.0.0.1:2376"
             - name: SW_STORAGE_PREFIX
