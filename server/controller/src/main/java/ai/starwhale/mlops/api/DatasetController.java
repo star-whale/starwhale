@@ -136,7 +136,7 @@ public class DatasetController implements DatasetApi{
                     log.error("read manifest file failed",e);
                     throw new StarWhaleApiException(new SWProcessException(ErrorType.NETWORK),HttpStatus.INTERNAL_SERVER_ERROR);
                 }
-                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(swdsUploader.create(text,dsFile.getOriginalFilename()))));
+                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(swdsUploader.create(text,dsFile.getOriginalFilename(),uploadRequest))));
             case BLOB:
                 //get ds path and upload to the dest path
                 swdsUploader.uploadBody(uploadId,dsFile);
