@@ -60,7 +60,7 @@ spec:
               value: "{{ include "common.names.fullname" . }}"
             {{if .Values.minio.enabled}}
             - name: SW_STORAGE_ENDPOINT
-              value: "http://{{ include "common.names.fullname" . }}-mysql:{{ .Values.minio.containerPorts.api }}"
+              value: "http://{{ include "common.names.fullname" . }}-minio:{{ .Values.minio.containerPorts.api }}"
             - name: SW_STORAGE_BUCKET
               value: "{{ .Values.minio.defaultBucket }}"
             - name: SW_STORAGE_ACCESSKEY

@@ -128,8 +128,38 @@ spec:
           command: ["sleep"]
           args: ["3600000"]
           env:
+            - name: SW_CONTROLLER_URL
+              value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}/"
+            - name: SW_BASE_PATH
+              value: "/var/starwhale"
             - name: DOCKER_HOST
               value: "tcp://127.0.0.1:2376"
+            - name: SW_STORAGE_PREFIX
+              value: "{{ include "common.names.fullname" . }}"
+            {{if .Values.minio.enabled}}
+            - name: SW_STORAGE_ENDPOINT
+              value: "http://{{ include "common.names.fullname" . }}-minio:{{ .Values.minio.containerPorts.api }}"
+            - name: SW_STORAGE_BUCKET
+              value: "{{ .Values.minio.defaultBucket }}"
+            - name: SW_STORAGE_ACCESSKEY
+              value: "{{ .Values.minio.auth.rootUser }}"
+            - name: SW_STORAGE_SECRETKEY
+              value: "{{ .Values.minio.auth.rootPassword }}"
+            - name: SW_STORAGE_REGION
+              value: "local"
+            {{ else }}
+            - name: SW_STORAGE_ENDPOINT
+              value: "http://{{ .Values.externalS3OSS.host }}:{{ .Values.externalS3OSS.port }}"
+            - name: SW_STORAGE_BUCKET
+              value: "{{ .Values.externalS3OSS.defaultBucket }}"
+            - name: SW_STORAGE_ACCESSKEY
+              value: "{{ .Values.externalS3OSS.accessKey }}"
+            - name: SW_STORAGE_SECRETKEY
+              value: "{{ .Values.externalS3OSS.secretKey }}"
+            - name: SW_STORAGE_REGION
+              value: "{{ .Values.externalS3OSS.region }}"
+            {{end}}
+
           volumeMounts:
             - name: agent-storage
               mountPath: "/opt/starwhale"
