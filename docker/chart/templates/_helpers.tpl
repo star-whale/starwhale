@@ -100,33 +100,31 @@ spec:
       volumes:
         - name: agent-storage
           hostPath:
-        {{ if .Values.minikube.enabled }}
-          {{if eq .role "gpu"}}
+        {{- if .Values.minikube.enabled }}
+          {{- if eq .role "gpu"}}
             path: {{ .Values.minikube.agentHostPath}}/agent-gpu
-          {{else}}
+          {{- else}}
             path: {{ .Values.minikube.agentHostPath}}/agent-cpu
-          {{end}}
-        {{ else }}
-          {{if eq .role "gpu"}}
+          {{- end}}
+        {{- else }}
+          {{- if eq .role "gpu"}}
             path: {{ .Values.storage.agentHostPathRoot }}/agent-gpu
-          {{else}}
+          {{- else}}
             path: {{ .Values.storage.agentHostPathRoot }}/agent-cpu
-          {{end}}
-        {{ end}}
+          {{- end}}
+        {{- end}}
             type: DirectoryOrCreate
-    {{if not .Values.minikube.enabled }}
+    {{- if not .Values.minikube.enabled }}
       nodeSelector:
-      {{if eq .role "gpu"}}
+      {{- if eq .role "gpu"}}
         {{- toYaml .Values.nodeSelector.agentGPU | nindent 8}}
       {{else}}
         {{- toYaml .Values.nodeSelector.agentCPU | nindent 8}}
-      {{end}}
-    {{end}}
+      {{- end}}
+    {{- end}}
       containers:
         - name: agent
           image: "{{ .Values.image.registry}}/{{ .Values.image.agent.repo }}:{{ .Values.image.agent.tag | default .Chart.AppVersion }}"
-          command: ["sleep"]
-          args: ["3600000"]
           env:
             - name: SW_CONTROLLER_URL
               value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}/"
@@ -136,7 +134,7 @@ spec:
               value: "tcp://127.0.0.1:2376"
             - name: SW_STORAGE_PREFIX
               value: "{{ include "common.names.fullname" . }}"
-            {{if .Values.minio.enabled}}
+            {{- if .Values.minio.enabled}}
             - name: SW_STORAGE_ENDPOINT
               value: "http://{{ include "common.names.fullname" . }}-minio:{{ .Values.minio.containerPorts.api }}"
             - name: SW_STORAGE_BUCKET
@@ -147,7 +145,7 @@ spec:
               value: "{{ .Values.minio.auth.rootPassword }}"
             - name: SW_STORAGE_REGION
               value: "local"
-            {{ else }}
+            {{- else }}
             - name: SW_STORAGE_ENDPOINT
               value: "http://{{ .Values.externalS3OSS.host }}:{{ .Values.externalS3OSS.port }}"
             - name: SW_STORAGE_BUCKET
@@ -158,8 +156,7 @@ spec:
               value: "{{ .Values.externalS3OSS.secretKey }}"
             - name: SW_STORAGE_REGION
               value: "{{ .Values.externalS3OSS.region }}"
-            {{end}}
-
+            {{- end}}
           volumeMounts:
             - name: agent-storage
               mountPath: "/opt/starwhale"
@@ -178,11 +175,11 @@ spec:
           stdin: true
           tty: true
           resources:
-          {{if eq .role "gpu"}}
+          {{- if eq .role "gpu"}}
             {{- toYaml .Values.resources.agentGPU | nindent 12 }}
-          {{else}}
+          {{- else}}
             {{- toYaml .Values.resources.agentCPU | nindent 12 }}
-          {{end}}
+          {{- end}}
 {{- end}}
 
 {{/*

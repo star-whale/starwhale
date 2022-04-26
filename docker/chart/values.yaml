@@ -7,7 +7,7 @@ image:
   registry: "docker.io"
   agent:
     repo: "starwhaleai/agent"
-    tag: "0.1.0-nightly-2022042501"
+    tag: "0.1.0-nightly-2022042601"
   taskset:
     repo: "starwhaleai/taskset"
     tag: "0.1.0-nightly-2022041601"
@@ -84,6 +84,9 @@ externalS3OSS:
   region: "local"
 
 controller:
+  auth:
+    username: starwhale
+    password: abcd1234
   containerPort: 8082
   resources:
     limits:
