@@ -22,7 +22,7 @@ RUN apt-get update \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
-WORKDIR /opt/starwhale
+WORKDIR /opt/starwhale.java
 # java jar
 COPY jar/agent.jar agent.jar
 
