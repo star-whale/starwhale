@@ -43,6 +43,7 @@ example/mnist/test/task_volume
 
 # UI
 node_modules
+console/node/
 coverage
 build
 .DS_Store

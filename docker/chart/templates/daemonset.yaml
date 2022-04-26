@@ -1,0 +1,11 @@
+---
+{{ if or (not .Values.minikube.enabled ) ( and .Values.minikube.enabled .Values.minikube.gpuEnabled ) }}
+apiVersion: apps/v1
+kind: DaemonSet
+{{ include "chart.agent" (merge (dict "role" "gpu") . )}}
+{{ end }}
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+{{ include "chart.agent" (merge (dict "role" "cpu") . )}}
