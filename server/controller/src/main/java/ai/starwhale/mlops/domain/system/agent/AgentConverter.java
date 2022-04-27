@@ -42,7 +42,9 @@ public class AgentConverter {
         }
         NodeInfo nodeInfo = null;
         try {
-            nodeInfo = objectMapper.readValue(entity.getDeviceInfo(),NodeInfo.class);
+            String deviceInfo = entity.getDeviceInfo();
+            nodeInfo = objectMapper.readValue(deviceInfo == null ? "{}" : deviceInfo,
+                NodeInfo.class);
         } catch (JsonProcessingException e) {
             log.error("read devices from db failed {}",entity.getId(),e);
         }

@@ -41,7 +41,7 @@
 
     <update id="updateAgents">
         <foreach item="item" index="index" collection="agents"
-          open="(" separator="," close=")">
+          open=" " separator=";" close=" ">
             update agent_info set connect_time = #{item.connectTime},
             agent_version = #{item.agentVersion},
             device_info = #{item.deviceInfo} WHERE id = #{item.id}
