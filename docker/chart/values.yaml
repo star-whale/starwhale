@@ -84,6 +84,7 @@ externalS3OSS:
   region: "local"
 
 controller:
+  taskSplitSize: 2
   auth:
     username: starwhale
     password: abcd1234
