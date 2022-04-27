@@ -77,12 +77,13 @@ public class TaskDirTest {
         Assertions.assertEquals("var/sw/tasks/active/123/status", fileSystemPath.oneActiveTaskStatusDir(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/status/current", fileSystemPath.oneActiveTaskStatusFile(taskId));
         Assertions.assertEquals("var/sw/tasks/active/123/result", fileSystemPath.oneActiveTaskResultDir(taskId));
+        Assertions.assertEquals("var/sw/tasks/active/123/swmp", fileSystemPath.oneActiveTaskModelDir(taskId));
 
         // archived task test
         // Assertions.assertEquals("var/sw/tasks/archived", fileSystemPath.archivedTaskDir());
         Assertions.assertEquals("var/sw/tasks/archived", fileSystemPath.archivedTaskDir());
 
         // swmp local cache dir test
-        Assertions.assertEquals("var/sw/swmp/mnist/v1", fileSystemPath.oneSwmpDir( "mnist", "v1"));
+        Assertions.assertEquals("var/sw/swmp/mnist/v1", fileSystemPath.oneSwmpCacheDir( "mnist", "v1"));
     }
 }

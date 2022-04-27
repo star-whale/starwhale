@@ -44,6 +44,7 @@ public class FileSystemPath {
     private static final PathNode oneActiveInferenceTaskConfigDir = new PathNode("config", PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskInputConfigFile = new PathNode(FileName.InferenceTaskInputConfigFile, PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskResultDir = new PathNode("result", PathNode.Type.value);
+    private static final PathNode oneActiveInferenceTaskModelDir = new PathNode("swmp", PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskLogsDir = new PathNode("log", PathNode.Type.value);
 
     // archived dir
@@ -67,6 +68,7 @@ public class FileSystemPath {
                                         .child(oneActiveInferenceTaskConfigDir
                                                 .child(oneActiveInferenceTaskInputConfigFile)
                                         )
+                                        .child(oneActiveInferenceTaskModelDir)
                                         .child(oneActiveInferenceTaskResultDir)
                                         .child(oneActiveInferenceTaskLogsDir)
                                 )
@@ -124,6 +126,10 @@ public class FileSystemPath {
         return oneActiveInferenceTaskConfigDir.path(basePath, id);
     }
 
+    public String oneActiveTaskModelDir(Long id) {
+        return oneActiveInferenceTaskModelDir.path(basePath, id);
+    }
+
     /**
      * swds config file path,Eg:/var/starwhale/tasks/active/{taskId}/config/input.json(format:json)
      */
@@ -155,7 +161,7 @@ public class FileSystemPath {
     /**
      * swmp dir path,Eg:/var/starwhale/task/swmp/{name}/{version}(dir)
      */
-    public String oneSwmpDir(String name, String version) {
+    public String oneSwmpCacheDir(String name, String version) {
         return oneSwmpDir.path(basePath, name, version);
     }
 

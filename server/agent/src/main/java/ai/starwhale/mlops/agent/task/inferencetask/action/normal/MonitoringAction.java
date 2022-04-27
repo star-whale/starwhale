@@ -56,6 +56,8 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
             sourcePool.release(newTask.getDevices());
             // only update memory list,there is no need to update the disk file(already update by taskContainer)
             taskPool.runningTasks.remove(oldTask);
+            // todo release swmp space and copy it to origin swmp cache dir
+
         } else if (newTask.getStatus() == InferenceTaskStatus.FAIL) {
             taskPool.failedTasks.add(newTask);
             // if run success, release device to available device pool todo:is there anything else to do?
