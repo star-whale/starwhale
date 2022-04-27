@@ -13,7 +13,7 @@ import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
-import ai.starwhale.mlops.domain.system.Agent;
+import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.ppl.PPLRequest;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
@@ -43,11 +43,16 @@ public class TaskBoConverter {
 
     final JobBoConverter jobBoConverter;
 
-    public TaskBoConverter(SWDSBlockSerializer swdsBlockSerializer, TaskMapper taskMapper, JobMapper jobMapper, JobBoConverter jobBoConverter) {
+    final AgentConverter agentConverter;
+
+    public TaskBoConverter(SWDSBlockSerializer swdsBlockSerializer, TaskMapper taskMapper,
+        JobMapper jobMapper, JobBoConverter jobBoConverter,
+        AgentConverter agentConverter) {
         this.swdsBlockSerializer = swdsBlockSerializer;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.jobBoConverter = jobBoConverter;
+        this.agentConverter = agentConverter;
     }
 
     /**
@@ -83,7 +88,7 @@ public class TaskBoConverter {
             return Task.builder()
                 .id(entity.getId())
                 .job(job)
-                .agent(Agent.fromEntity(entity.getAgent()))
+                .agent(agentConverter.fromEntity(entity.getAgent()))
                 .status(entity.getTaskStatus())
                 .resultDir(entity.getResultPath())
                 .uuid(entity.getTaskUuid())

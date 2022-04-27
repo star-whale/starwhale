@@ -8,7 +8,7 @@
 package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.system.Agent;
+import ai.starwhale.mlops.domain.system.agent.Agent;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.TaskType;
 import java.util.Objects;
@@ -166,6 +166,16 @@ public class Task {
         @Override
         public void setTaskType(TaskType taskType) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int hashCode() {
+            return oTask.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj){
+            return oTask.equals(obj);
         }
     }
 }
