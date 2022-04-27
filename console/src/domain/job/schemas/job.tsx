@@ -6,14 +6,23 @@ import { IModelVersionSchema } from '@/domain/model/schemas/modelVersion'
 import { IBaseImageSchema, IDeviceSchema } from '../../runtime/schemas/runtime'
 import { IIndicator } from '@/components/Indicator/types'
 
-export type JobActionType = 'cancel' | 'suspend' | 'resume'
+export enum JobActionType {
+    CANCEL = 'cancel',
+    PAUSE = 'pause',
+    RESUME = 'resume',
+}
 export enum JobStatusType {
-    preparing = 0,
-    runnning,
-    completed,
-    cancelling,
-    cancelled,
-    failed,
+    CREATED = 'CREATED',
+    PAUSED = 'PAUSED',
+    RUNNING = 'RUNNING',
+    TO_CANCEL = 'TO_CANCEL',
+    CANCELING = 'CANCELING',
+    CANCELED = 'CANCELED',
+    TO_COLLECT_RESULT = 'TO_COLLECT_RESULT',
+    COLLECTING_RESULT = 'COLLECTING_RESULT',
+    SUCCESS = 'SUCCESS',
+    FAIL = 'FAIL',
+    UNKNOWN = 'UNKNOWN',
 }
 
 export interface IJobSchema extends IResourceSchema {

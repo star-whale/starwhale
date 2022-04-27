@@ -26,18 +26,18 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                           title: t('Model'),
                           path: `/projects/${project.id}/models`,
                           icon: BiLayer,
-                          activePathPattern: /^\/(models)\/?/,
+                          activePathPattern: /\/(models)\/?/,
                       },
                       {
                           title: t('Dataset'),
                           path: `/projects/${project.id}/datasets`,
-                          activePathPattern: /^\/(datasets)\/?/,
+                          activePathPattern: /\/(datasets)\/?/,
                           icon: BiBarChartSquare,
                       },
                       {
                           title: t('Job'),
                           path: `/projects/${project.id}/jobs`,
-                          activePathPattern: /^\/(jobs|new_job)\/?/,
+                          activePathPattern: /\/(jobs|new_job)\/?/,
                           icon: BiEqualizer,
                       },
                   ]

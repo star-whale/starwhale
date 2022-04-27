@@ -9,7 +9,7 @@ build-wheel: check clean
 	ls -alh dist
 
 upload-pypi:
-	python setup.py register sdist upload
+	twine upload dist/*
 
 build-dev-wheel:
 	pip install -e .

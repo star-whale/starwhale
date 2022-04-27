@@ -17,6 +17,10 @@ import BaseImageSelector from '@/domain/runtime/components/BaseImageSelector'
 import DeviceSelector from '../../runtime/components/DeviceSelector'
 import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
+import { useFetchDatasetVersionsByIds } from '../../dataset/hooks/useFetchDatasetVersions'
+import { usePage } from '@/hooks/usePage'
+import { useQuery } from 'react-query'
+import { listDatasetVersionsByIds } from '@/domain/dataset/services/datasetVersion'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -26,16 +30,19 @@ export interface IJobFormProps {
 }
 
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
+    const [page] = usePage()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const { projectId } = useParams<{ projectId: string }>()
     const [modelId, setModelId] = useState('')
     const [datasetId, setDatasetId] = useState('')
+    const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
     const [form] = useForm()
 
     useEffect(() => {
         if (!job) {
             return
         }
+
         // TODO job edit
         // setDatasetVersionIds(job.datasetVersionIds)
         // setValues({
@@ -74,7 +81,16 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         form.setFieldsValue({
             datasetVersionIdsArr: Array.from(ids),
         })
+        setDatasetVersionIds(Array.from(ids).join(','))
     }, [])
+
+    // let jobsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
+
+    // useEffect(() => {
+    //     if (!datasetVersionsByIds.length) return
+
+    //     console.log(jobsInfo.data)
+    // }, [jobsInfo, datasetVersionsByIds])
 
     const [t] = useTranslation()
 

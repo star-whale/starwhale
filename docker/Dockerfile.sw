@@ -11,6 +11,8 @@ RUN rm -rf /opt/starwhale.venv \
     && ln -s /opt/starwhale.venv/bin/swcli /usr/local/bin/swcli \
     && ln -s /opt/starwhale.venv/bin/sw-docker-entrypoint /usr/local/bin/sw-docker-entrypoint
 
+#TODO: add conda channel switch
+COPY external/condarc /root/.condarc
 WORKDIR /opt/starwhale/swmp
 
 ENV SW_SWMP_WORKDIR=/opt/starwhale/swmp

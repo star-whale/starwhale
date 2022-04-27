@@ -32,7 +32,7 @@ public class AgentConverter {
             .ip(node.getIpAddr())
             .nodeInfo(new NodeInfo(node.getMemorySizeGB(),node.getDevices()))
             .agentVersion(node.getAgentVersion())
-            .connectTime(System.currentTimeMillis())
+            .connectTime(Instant.now().toEpochMilli())
             .build();
     }
 

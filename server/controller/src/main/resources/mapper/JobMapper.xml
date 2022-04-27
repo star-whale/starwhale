@@ -97,6 +97,14 @@
         </foreach>
     </update>
 
+    <update id="updateJobFinishedTime">
+        update job_info set finished_time = #{finishedTime} WHERE id in
+        <foreach item="item" index="index" collection="jobIds"
+          open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
     <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.JobEntity" useGeneratedKeys="true" keyProperty="id">
         insert into job_info(job_uuid,
                              project_id,

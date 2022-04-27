@@ -70,7 +70,7 @@ export default function Login() {
                 >
                     <Card
                         bodyStyle={{
-                            padding: 24,
+                            padding: 0,
                             width: 480,
                             borderRadius: 12,
                             boxShadow: 'none',

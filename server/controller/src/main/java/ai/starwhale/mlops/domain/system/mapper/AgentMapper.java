@@ -18,7 +18,7 @@ public interface AgentMapper {
 
     Long addAgent(AgentEntity agent);
 
-    void updateAgents(Collection<AgentEntity> agents);
+    void updateAgents(List<AgentEntity> agents);
 
     AgentEntity findByIp(@Param("ip")String ip);
 

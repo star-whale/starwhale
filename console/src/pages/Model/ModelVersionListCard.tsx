@@ -42,13 +42,11 @@ export default function ModelVersionListCard() {
         >
             <Table
                 isLoading={modelsInfo.isLoading}
-                // t('sth name', [t('Model Version')]),
-                columns={[t('Meta'), t('Tag'), t('Created'), t('Owner'), t('Action')]}
+                columns={[t('Meta'), t('Created'), t('Owner'), t('Action')]}
                 data={
                     modelsInfo.data?.list.map((model) => {
                         return [
                             model.meta,
-                            model.tag,
                             model.createTime && formatTimestampDateTime(model.createTime),
                             model.owner && <User user={model.owner} />,
                             <Button size='mini' key={model.id} onClick={() => {}}>
