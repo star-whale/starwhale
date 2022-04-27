@@ -183,12 +183,14 @@ spec:
             privileged: true
           stdin: true
           tty: true
+        {{- if not .Values.minikube.enabled }}
           resources:
           {{- if eq .role "gpu"}}
             {{- toYaml .Values.resources.agentGPU | nindent 12 }}
           {{- else}}
             {{- toYaml .Values.resources.agentCPU | nindent 12 }}
           {{- end}}
+        {{- end }}
 {{- end}}
 
 {{/*
