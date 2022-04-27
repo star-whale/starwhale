@@ -5,7 +5,7 @@ export interface IDatasetVersionSchema extends IResourceSchema {
     name: string
     tag: string
     createTime: number
-    meta: object
+    meta: string
     owner?: IUserSchema
 }
 

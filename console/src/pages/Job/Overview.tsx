@@ -26,13 +26,13 @@ export default function JobOverview() {
                         }}
                     >
                         <div>
-                            {t('Job ID')}: {job?.uuid}
+                            {t('Job ID')}: {job?.uuid ?? '-'}
                         </div>
                         <div>
                             {t('Created time')}: {job?.createTime && formatTimestampDateTime(job.createTime)}
                         </div>
                         <div>
-                            {t('Owner')}: {job?.owner?.name}
+                            {t('Owner')}: {job?.owner?.name ?? '-'}
                         </div>
                         <div>
                             {t('Run time')}:&nbsp;

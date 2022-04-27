@@ -250,11 +250,17 @@ const locales0 = {
     'Meta': {
         en: 'Meta',
     },
+    'show meta': {
+        en: 'show meta',
+    },
     'Support': {
         en: 'Support',
     },
     'F1-score': {
         en: 'F1-score',
+    },
+    'Pause': {
+        en: 'Pause',
     },
 }
 
