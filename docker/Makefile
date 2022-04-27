@@ -24,10 +24,9 @@ build-taskset:
 	docker build --build-arg BASE_IMAGE=$(BASE_IMAGE) -f Dockerfile.taskset -t $(SW_TASKSET_IMAGE) .
 
 build-jar:
-	docker volume create --name maven-repo; docker run -it -v maven-repo:/root/.m2 -v /mnt/c/Users/gaoxinxing/IdeaProjects/starwhale/:/opt/starwhale maven:3.8.5-openjdk-11 mvn clean package -f /opt/starwhale/server/pom.xml -DskipTests;
+	docker volume create --name maven-repo; docker run --rm -it -v maven-repo:/root/.m2 -v $(ROOT_DIR):/opt/starwhale maven:3.8.5-openjdk-11 mvn clean package -f /opt/starwhale/server/pom.xml -DskipTests;
 
 build-controller:
 	docker build -f Dockerfile.controller -t $(SW_CONTROLLER_IMAGE) .
 build-agent:
-	docker volume create --name maven-repo; docker run --rm -it -v maven-repo:/root/.m2 -v $(ROOT_DIR):/opt/starwhale maven:3.8.5-openjdk-11 mvn clean package -f /opt/starwhale/server/pom.xml -DskipTests;
 	docker build -f Dockerfile.agent -t $(SW_AGENT_IMAGE) .
