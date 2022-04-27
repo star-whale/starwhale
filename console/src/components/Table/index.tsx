@@ -92,7 +92,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                         size={PaginationSize.mini}
                         numPages={
                             paginationProps.total && paginationProps.count
-                                ? Math.floor(paginationProps.total / Math.max(paginationProps.count, 1))
+                                ? Math.ceil(paginationProps.total / Math.max(paginationProps.count, 1))
                                 : 0
                         }
                         currentPage={paginationProps.start ?? 1}
@@ -101,7 +101,6 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                                 paginationProps.onPageChange(nextPage)
                             }
                             if (paginationProps.afterPageChange) {
-                                console.log(page, nextPage)
                                 setPage({
                                     ...page,
                                     pageNum: nextPage,

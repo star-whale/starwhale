@@ -42,7 +42,6 @@ export default function ProjectListCard() {
                 columns={[t('Project Name'), t('Owner'), t('Created')]}
                 data={
                     projectsInfo.data?.list?.map((project) => {
-                        console.log(project)
                         return [
                             <Link key={project.id} to={`/projects/${project.id}`}>
                                 {project.name}

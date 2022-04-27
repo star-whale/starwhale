@@ -11,8 +11,6 @@ import { LabelLarge, LabelMedium } from 'baseui/typography'
 import { useStyletron } from 'baseui'
 import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
 
-// import ResponsiveReactGridLayout from 'react-grid-layout'
-
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
@@ -134,11 +132,6 @@ function JobResult() {
         })
     }, [jobResult.data, jobResult.isSuccess])
 
-    // const layout = [
-    //     { i: 'kind', x: 0, y: 0, w: 2, h: 1, static: true },
-    //     { i: 'confusion_matrix', x: 3, y: 0, w: 7, h: 12, minW: 2, maxW: 4 },
-    //     { i: 'sumary', x: 4, y: 0, w: 1, h: 2 },
-    // ]
     if (jobResult.isFetching) {
         return <BusyPlaceholder />
     }
@@ -169,15 +162,11 @@ function JobResult() {
                     </LabelLarge>
                 </div>
             )}
-            {/* <ResponsiveReactGridLayout className='layout' cols={12} rowHeight={30} width={1200} layout={layout}>
-                {indicators}
-            </ResponsiveReactGridLayout> */}
             <div
                 style={{
                     width: '100%',
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-                    // gridAutoRows: '460px',
                     gridGap: '16px',
                 }}
             >

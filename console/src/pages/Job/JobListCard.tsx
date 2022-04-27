@@ -60,7 +60,7 @@ export default function JobListCard() {
                 <Table
                     isLoading={jobsInfo.isLoading}
                     columns={[
-                        t('Job ID'),
+                        // t('Job ID'),
                         t('sth name', [t('Model')]),
                         t('Version'),
                         t('Owner'),
@@ -73,35 +73,50 @@ export default function JobListCard() {
                     data={
                         jobsInfo.data?.list.map((job) => {
                             const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
-                                [JobStatusType.preparing]: (
-                                    <StyledLink onClick={() => handleAction(job.id, 'cancel')}>
+                                [JobStatusType.CREATED]: (
+                                    <>
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                            {t('Cancel')}
+                                        </StyledLink>
+                                        &nbsp;&nbsp;
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.PAUSE)}>
+                                            {t('Pause')}
+                                        </StyledLink>
+                                    </>
+                                ),
+                                [JobStatusType.RUNNING]: (
+                                    <>
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                            {t('Cancel')}
+                                        </StyledLink>
+                                        &nbsp;&nbsp;
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.PAUSE)}>
+                                            {t('Pause')}
+                                        </StyledLink>
+                                    </>
+                                ),
+                                [JobStatusType.PAUSED]: (
+                                    <StyledLink onClick={() => handleAction(job.id, JobActionType.RESUME)}>
                                         {t('Cancel')}
                                     </StyledLink>
                                 ),
-                                [JobStatusType.runnning]: (
-                                    <StyledLink onClick={() => handleAction(job.id, 'cancel')}>
-                                        {t('Cancel')}
-                                    </StyledLink>
-                                ),
-                                [JobStatusType.completed]: (
+                                [JobStatusType.SUCCESS]: (
                                     <Link to={`/projects/${projectId}/jobs/${job.id}/results`}>
                                         {t('View Results')}
                                     </Link>
                                 ),
                             }
-                            job.jobStatus = JobStatusType.completed
 
                             return [
                                 <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}`}>
-                                    {job.uuid}
+                                    {job.modelName}
                                 </Link>,
-                                job.modelName,
                                 job.modelVersion,
                                 job.owner && <User user={job.owner} />,
                                 job.createTime && formatTimestampDateTime(job.createTime),
                                 typeof job.duration == 'string' ? '-' : durationToStr(job.duration),
                                 job.stopTime > 0 ? formatTimestampDateTime(job.stopTime) : '-',
-                                job.jobStatus && JobStatusType[job.jobStatus],
+                                job.jobStatus,
                                 actions[job.jobStatus] ?? '',
                             ]
                         }) ?? []

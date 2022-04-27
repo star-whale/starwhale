@@ -21,6 +21,20 @@ export async function listDatasetVersions(
     return resp.data
 }
 
+export async function listDatasetVersionsByIds(
+    projectId: string,
+    datasetVersionIds: string,
+    query: IListQuerySchema
+): Promise<IListSchema<IDatasetVersionSchema>> {
+    const resp = await axios.get<IListSchema<IDatasetVersionSchema>>(
+        `/api/v1/project/${projectId}/dataset/${datasetVersionIds}`,
+        {
+            params: query,
+        }
+    )
+    return resp.data
+}
+
 export async function fetchDatasetVersion(
     projectId: string,
     datasetId: string,
