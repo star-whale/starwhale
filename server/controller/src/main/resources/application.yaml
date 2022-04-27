@@ -10,8 +10,7 @@ spring:
 sw:
   jwt:
     secret: wdxlG3UK66m6uTUgxXFjizli
-  taskSize:
-    256
+  taskSize: ${SW_TASK_SPLIT_SIZE:256}
   storage:
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
     s3-config:

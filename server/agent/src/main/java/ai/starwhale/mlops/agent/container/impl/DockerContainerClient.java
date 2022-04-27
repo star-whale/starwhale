@@ -102,8 +102,6 @@ public class DockerContainerClient implements ContainerClient {
                 this.createAndStartContainer(imageConfig);
             } catch (InterruptedException ex) {
                 log.error("unknown error:{}", ex.getMessage(), ex);
-                // todo: one more again
-                this.createAndStartContainer(imageConfig);
             }
         }
         return Optional.empty();

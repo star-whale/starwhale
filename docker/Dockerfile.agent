@@ -7,28 +7,18 @@ ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ENV TZ=Etc/UTC
 
-# java opts
-ARG JAVA_AGENT_OPTS ""
-ENV JAVA_AGENT_OPTS=${JAVA_AGENT_OPTS}
-
 # nvidia driver version
 ARG NV_DRIVER_VERSION 470
 ENV NV_DRIVER_VERSION ${NV_DRIVER_VERSION}
 
-# Install os dependence\OpenJDK-11
+# Install os dependence\OpenJDK-11\nvidia-smi
 RUN apt-get update \
     && apt-get install -y openjdk-11-jdk \
     && apt-get install -y --no-install-recommends nvidia-driver-${NV_DRIVER_VERSION} \
-    && apt-get clean all \
-    && rm -rf /var/lib/apt/lists/* /tmp/*
-#os dependence
-RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         wget locales make cmake build-essential software-properties-common curl sudo ca-certificates apt-transport-https iputils-ping net-tools openssh-server net-tools gcc-aarch64-linux-gnu \
         zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils gpg-agent \
-    && locale-gen en_US.UTF-8 \
-    && apt-get clean all \
-    && rm -rf /var/lib/apt/lists/* /tmp/*
+    && locale-gen en_US.UTF-8
 
 # cuda runtime
 ENV NVARCH x86_64
@@ -54,8 +44,13 @@ ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
+# java opts
+ENV JAVA_AGENT_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005
+ENV JAVA_JAR=agent
+
 WORKDIR /opt/starwhale.java
 # java jar
 COPY jar/agent.jar agent.jar
+#COPY jar/controller.jar controller.jar
 
-ENTRYPOINT ["sh", "-c", "java ${JAVA_AGENT_OPTS} -jar agent.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_AGENT_OPTS -jar $JAVA_JAR.jar"]
