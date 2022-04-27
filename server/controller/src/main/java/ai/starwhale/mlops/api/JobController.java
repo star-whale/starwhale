@@ -13,7 +13,6 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
-import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -69,11 +68,12 @@ public class JobController implements JobApi{
     public ResponseEntity<ResponseMessage<String>> action(String projectId, String jobId,
         String action) {
         Long iJobId = idConvertor.revert(jobId);
-        if("cancel".equals(action)) {
+        if("cancel".equalsIgnoreCase(action)) {
             jobService.cancelJob(iJobId);
-        } else if ("suspend".equals(action)) {
+        } else if ("suspend".equalsIgnoreCase(action)
+            || "pause".equalsIgnoreCase(action)) {
             jobService.pauseJob(iJobId);
-        } else if ("resume".equals(action)) {
+        } else if ("resume".equalsIgnoreCase(action)) {
             jobService.resumeJob(iJobId);
         } else {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
