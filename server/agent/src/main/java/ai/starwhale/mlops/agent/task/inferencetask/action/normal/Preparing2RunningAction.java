@@ -99,20 +99,20 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
                 imageConfig.setCmd(List.of("cmp"));
                 break;
         }
-
+        taskPersistence.preloadingSWMP(oldTask);
         imageConfig.setMounts(List.of(
                 Mount.builder()
                         .readOnly(false)
                         .source(fileSystemPath.oneActiveTaskDir(oldTask.getId()))
                         .target(containerBasePath)
                         .type("BIND")
-                        .build(),
-                Mount.builder()
+                        .build()
+                /*Mount.builder()
                         .readOnly(false)
                         .source(taskPersistence.preloadingSWMP(oldTask)) // pull swmp(tar) and uncompress it to the swmp dir
                         .target(containerBasePath + "swmp")
                         .type("BIND")
-                        .build()
+                        .build()*/
         ));
         // generate the file used by container(default dir)
         taskPersistence.generateConfigFile(oldTask);

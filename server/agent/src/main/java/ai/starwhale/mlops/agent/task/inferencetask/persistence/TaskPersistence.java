@@ -67,7 +67,7 @@ public interface TaskPersistence {
      * @param task task
      * @return disk dir path
      */
-    String preloadingSWMP(InferenceTask task) throws Exception;
+    void preloadingSWMP(InferenceTask task) throws Exception;
 
     /**
      * pre generate config file

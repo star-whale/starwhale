@@ -114,7 +114,7 @@ public class TaskExecutorTest {
         // check rebuild state
         assertEquals(2, taskPool.preparingTasks.size());
 
-        Mockito.when(taskPersistence.preloadingSWMP(any())).thenReturn("basepath/swmp/testmodel/v1/");
+        //Mockito.when(taskPersistence.preloadingSWMP(any())).thenReturn("basepath/swmp/testmodel/v1/");
         // do prepare test
         taskExecutor.dealPreparingTasks();
         // check execute result

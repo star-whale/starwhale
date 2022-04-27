@@ -167,7 +167,8 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     private void move2Archived(InferenceTask task) throws IOException {
         // move to the archived task file
         try {
-            FileUtils.moveDirectoryToDirectory(new File(fileSystemPath.oneActiveTaskDir(task.getId())), new File(fileSystemPath.archivedTaskDir()), true);
+            FileUtils.moveDirectoryToDirectory(
+                    new File(fileSystemPath.oneActiveTaskDir(task.getId())), new File(fileSystemPath.archivedTaskDir()), true);
         } catch (FileExistsException e) {
             String newPath = fileSystemPath.archivedTaskDir() + "repeat/" + task.getId() + "_" + System.currentTimeMillis();
             log.error("already exist task:{}, move to {}", JSONUtil.toJsonStr(task), newPath);
@@ -178,16 +179,27 @@ public class FileSystemTaskPersistence implements TaskPersistence {
 
 
     @Override
-    public String preloadingSWMP(InferenceTask task) throws IOException {
+    public void preloadingSWMP(InferenceTask task) throws IOException {
         SWModelPackage model = task.getSwModelPackage();
 
-        String cachePathStr = fileSystemPath.oneSwmpDir(model.getName(), model.getVersion());
+        String cachePathStr = fileSystemPath.oneSwmpCacheDir(model.getName(), model.getVersion());
 
         // check if exist todo check with md5
         if (Files.notExists(Path.of(cachePathStr))) {
             download(cachePathStr, model.getPath());
         }
-        return cachePathStr;
+        File targetDir = new File(fileSystemPath.oneActiveTaskModelDir(task.getId()));
+        Files.find(Path.of(cachePathStr), 1, (t,u)->true).forEach(path -> {
+            try {
+                if (Files.isDirectory(path)) {
+                    FileUtils.copyDirectoryToDirectory(path.toFile(), targetDir);
+                } else {
+                    FileUtils.copyFileToDirectory(path.toFile(), targetDir);
+                }
+            } catch (IOException e) {
+                log.error("copy swmp:{} to {} error", path, targetDir.getPath());
+            }
+        });
     }
 
     /**
