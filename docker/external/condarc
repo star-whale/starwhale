@@ -7,3 +7,4 @@ channels:
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/bioconda/
 show_channel_urls: true
 ssl_verify: false
+default_threads: 8
