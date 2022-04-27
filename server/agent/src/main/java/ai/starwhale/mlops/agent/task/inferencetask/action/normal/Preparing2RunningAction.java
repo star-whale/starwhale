@@ -39,11 +39,11 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
     private static final String resultDirEnv = "SW_TASK_RESULT_DIR";
     private static final String swdsFileEnv = "SW_TASK_INPUT_CONFIG";
 
-    @Override
+    /*@Override
     public boolean valid(InferenceTask task, Context context) {
         // todo: Check if the previous steps have been prepared
         return task.getActionStatus() != ActionStatus.inProgress;
-    }
+    }*/
 
     @Override
     public void orElse(InferenceTask task, Context context) {
@@ -136,7 +136,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
             // todo: retry or take it to the tail of queue
             // should release, throw exception and handled by the fail method
             throw ErrorCode.containerError.asException(
-                    String.format("start task container by image:%s fail", ""));
+                    String.format("start task container by image:%s fail", oldTask.getImageId()));
         }
 
     }
@@ -157,10 +157,10 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
     public void fail(InferenceTask oldTask, Context context, Exception e) {
         log.error("execute task:{}, error:{}", oldTask.getId(), e.getMessage());
         // rollback and wait again until next time
-        if (CollectionUtil.isNotEmpty(oldTask.getDevices())) {
+        /*if (CollectionUtil.isNotEmpty(oldTask.getDevices())) {
             sourcePool.release(oldTask.getDevices());
             oldTask.setDevices(null);
-        }
+        }*/
         oldTask.setActionStatus(ActionStatus.completed);
     }
 }
