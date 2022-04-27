@@ -67,7 +67,8 @@ public class AgentCache implements CommandLineRunner {
         if(null == agentEntities || agentEntities.isEmpty()){
             return;
         }
-        BatchOperateHelper.doBatch(agentEntities,entities->agentMapper.updateAgents(entities),100);;
+        BatchOperateHelper.doBatch(agentEntities,entities->agentMapper.updateAgents(entities.parallelStream().collect(
+            Collectors.toList())),100);;
     }
 
     private Agent save(Agent agentReported) {

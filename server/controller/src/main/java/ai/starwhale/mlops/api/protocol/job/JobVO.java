@@ -55,13 +55,18 @@ public class JobVO implements Serializable {
     @JsonProperty("createTime")
     private Long createTime;
 
-    @JsonProperty("duration")
-    private Long duration;
-
     @JsonProperty("stopTime")
     private Long stopTime;
 
     @JsonProperty("jobStatus")
     private JobStatus jobStatus;
+
+    @JsonProperty("duration")
+    public Long getDuration(){
+        if(null == stopTime || stopTime <=0){
+            return System.currentTimeMillis() - createTime;
+        }
+        return stopTime - createTime;
+    }
 
 }
