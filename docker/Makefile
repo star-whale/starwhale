@@ -28,5 +28,6 @@ build-jar:
 
 build-controller:
 	docker build -f Dockerfile.controller -t $(SW_CONTROLLER_IMAGE) .
+
 build-agent:
 	docker build -f Dockerfile.agent -t $(SW_AGENT_IMAGE) .
