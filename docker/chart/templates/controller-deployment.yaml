@@ -25,8 +25,10 @@ spec:
           image: "{{ .Values.image.registry}}/{{ .Values.image.controller.repo }}:{{ .Values.image.controller.tag | default .Chart.AppVersion }}"
           ports:
             - containerPort: {{ .Values.controller.containerPort }}
+          {{- if not .Values.minikube.enabled }}
           resources:
-            {{- toYaml .Values.controller.resources | nindent 12}}
+            {{- toYaml .Values.resources.controller | nindent 12}}
+          {{- end }}
           livenessProbe:
             httpGet:
               path: /
@@ -58,6 +60,12 @@ spec:
               value: "{{ .Values.controller.containerPort }}"
             - name: SW_STORAGE_PREFIX
               value: "{{ include "common.names.fullname" . }}"
+            - name: SW_TASK_SPLIT_SIZE
+              value: "{{ .Values.controller.taskSplitSize }}"
+            - name: SW_HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
             {{if .Values.minio.enabled}}
             - name: SW_STORAGE_ENDPOINT
               value: "http://{{ include "common.names.fullname" . }}-minio:{{ .Values.minio.containerPorts.api }}"

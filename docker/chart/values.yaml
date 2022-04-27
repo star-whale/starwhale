@@ -7,13 +7,13 @@ image:
   registry: "docker.io"
   agent:
     repo: "starwhaleai/agent"
-    tag: "0.1.0-nightly-2022042601"
+    tag: "0.1.0-nightly-2022042701"
   taskset:
     repo: "starwhaleai/taskset"
     tag: "0.1.0-nightly-2022041601"
   controller:
     repo: "starwhaleai/controller"
-    tag: "0.1.0-nightly-2022042602"
+    tag: "0.1.0-nightly-2022042701"
   pullPolicy: IfNotPresent
 
 mysql:
@@ -84,17 +84,11 @@ externalS3OSS:
   region: "local"
 
 controller:
+  taskSplitSize: 2
   auth:
     username: starwhale
     password: abcd1234
   containerPort: 8082
-  resources:
-    limits:
-      cpu: 2000m
-      memory: 4Gi
-    requests:
-      cpu: 1000m
-      memory: 500Mi
 
 storage:
   agentHostPathRoot: "/mnt/data/starwhale"
@@ -118,27 +112,21 @@ minikube:
 resources:
   agentCPU:
     limits:
-      cpu: 2000m
-      memory: 2Gi
+      memory: 20Gi
     requests:
-      cpu: 2000m
-      memory: 1Gi
+      memory: 6Gi
   agentGPU:
     limits:
-      cpu: 2000m
-      memory: 2Gi
+      memory: 40Gi
       nvidia.com/gpu: 2
     requests:
-      cpu: 1000m
-      memory: 1Gi
+      memory: 6Gi
       nvidia.com/gpu: 2
   controller:
     limits:
-      cpu: 2000m
-      memory: 2Gi
+      memory: 4Gi
     requests:
-      cpu: 1000m
-      memory: 1Gi
+      memory: 2Gi
 
 serviceAccount:
   create: true
