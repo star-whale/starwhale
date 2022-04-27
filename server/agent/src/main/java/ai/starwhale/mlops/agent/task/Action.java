@@ -16,7 +16,7 @@ public interface Action<Old, New> {
     default void orElse(Old old, Context context) {
     }
 
-    default void pre(Old old, Context context) throws Exception {
+    default void pre(Old old, Context context) {
 
     }
 
@@ -24,7 +24,7 @@ public interface Action<Old, New> {
         return null;
     }
 
-    default void post(Old old, New n, Context context) throws Exception {
+    default void post(Old old, New n, Context context) {
     }
 
     default void success(Old old, New n, Context context) throws Exception {
@@ -41,11 +41,11 @@ public interface Action<Old, New> {
 
     default void apply(Old old, Context context) {
         if (valid(old, context)) {
+            pre(old, context);
             try {
-                pre(old, context);
                 New o = processing(old, context);
-                post(old, o, context);
                 success(old, o, context);
+                post(old, o, context);
             } catch (Exception e) {
                 //log.error(e.getMessage(), e);
                 fail(old, context, e);

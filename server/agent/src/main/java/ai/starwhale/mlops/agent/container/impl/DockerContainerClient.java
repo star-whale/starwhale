@@ -151,7 +151,9 @@ public class DockerContainerClient implements ContainerClient {
     public ContainerStatus status(String containerId) {
         try {
             InspectContainerResponse response = client.inspectContainerCmd(containerId).exec();
-            if (Boolean.TRUE.equals(response.getState().getDead()) || Boolean.TRUE.equals(response.getState().getOOMKilled())) {
+            if (Boolean.TRUE.equals(response.getState().getDead()) ||
+                    Boolean.TRUE.equals(response.getState().getOOMKilled()) ||
+                    Boolean.FALSE.equals(response.getState().getRunning())) {
                 return ContainerStatus.DEAD;
             } else {
                 return ContainerStatus.NORMAL;

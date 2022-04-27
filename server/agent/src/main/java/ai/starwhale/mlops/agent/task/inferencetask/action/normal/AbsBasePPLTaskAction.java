@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
+import ai.starwhale.mlops.agent.configuration.AgentProperties;
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.Action;
@@ -38,14 +39,17 @@ public abstract class AbsBasePPLTaskAction implements Action<InferenceTask, Infe
     @Autowired
     protected ContainerClient containerClient;
 
+    @Autowired
+    protected AgentProperties agentProperties;
+
     @Override
-    public void pre(InferenceTask task, Context context) throws Exception {
+    public void pre(InferenceTask task, Context context) {
         task.setActionStatus(ActionStatus.inProgress);
         taskPersistence.save(task);
     }
 
     @Override
-    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
+    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) {
         newTask.setActionStatus(ActionStatus.completed);
         taskPersistence.save(newTask);
     }

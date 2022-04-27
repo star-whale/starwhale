@@ -63,7 +63,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
                 .build();
 
         // preAllocate fail, try again
-        if(CollectionUtil.isEmpty(oldTask.getDevices())) {
+        if (CollectionUtil.isEmpty(oldTask.getDevices())) {
             Set<Device> allocated = null;
             // allocate device(GPU or CPU) for task
             switch (oldTask.getDeviceClass()) {
@@ -134,6 +134,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
             return newTask;
         } else {
             // todo: retry or take it to the tail of queue
+            oldTask.retryStart();
             // should release, throw exception and handled by the fail method
             throw ErrorCode.containerError.asException(
                     String.format("start task container by image:%s fail", oldTask.getImageId()));
@@ -162,5 +163,14 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
             oldTask.setDevices(null);
         }*/
         oldTask.setActionStatus(ActionStatus.completed);
+        if (oldTask.getRetryStartNum() >= agentProperties.getTask().getRetryStartMaxNum()) {
+            log.error("task:{} maximum number of failed retries:{} has been reached, task failed",
+                    oldTask.getId(), agentProperties.getTask().getRetryStartMaxNum());
+            sourcePool.release(oldTask.getDevices());
+            oldTask.setStatus(InferenceTaskStatus.FAIL);
+            taskPool.preparingTasks.remove(oldTask);
+            taskPool.failedTasks.add(oldTask);
+            taskPersistence.save(oldTask);
+        }
     }
 }

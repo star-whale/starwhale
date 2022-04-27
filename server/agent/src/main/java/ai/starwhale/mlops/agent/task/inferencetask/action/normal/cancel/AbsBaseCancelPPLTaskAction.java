@@ -27,7 +27,7 @@ public abstract class AbsBaseCancelPPLTaskAction extends AbsBasePPLTaskAction im
     }
 
     @Override
-    public void pre(InferenceTask task, Context context) throws Exception {
+    public void pre(InferenceTask task, Context context) {
         task.setStage(stage().orElse(task.getStage()));
         task.setStatus(InferenceTaskStatus.CANCELING);
         super.pre(task, context);
@@ -39,7 +39,7 @@ public abstract class AbsBaseCancelPPLTaskAction extends AbsBasePPLTaskAction im
     }
 
     @Override
-    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
+    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) {
         newTask.setStatus(InferenceTaskStatus.CANCELED);
         super.post(oldTask, newTask, context);
     }

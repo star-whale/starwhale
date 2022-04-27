@@ -57,6 +57,15 @@ public class InferenceTask {
      */
     String containerId;
 
+    int retryStartNum;
+    public void retryStart() {
+        retryStartNum ++;
+    }
+    int retryRestartNum;
+    public void retryRestart() {
+        retryRestartNum ++;
+    }
+
     /**
      * runtime information at ppl stage: devices allocated by agent
      */

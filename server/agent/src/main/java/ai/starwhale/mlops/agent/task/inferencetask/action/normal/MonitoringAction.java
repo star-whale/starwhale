@@ -24,7 +24,7 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
 
     @Override
     public InferenceTask processing(InferenceTask runningTask, Context context)
-        throws Exception {
+            throws Exception {
         // dominated by disk(see if other processes have modified)
         InferenceTask newTask = BeanUtil.toBean(runningTask, InferenceTask.class);
 
@@ -71,8 +71,18 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
                     break;
                 case DEAD:
                     // todo retry but with serial times
-                    log.error("container:{} is dead, now will restart it", newTask.getContainerId());
-                    containerClient.startContainer(newTask.getContainerId());
+                    if (newTask.getRetryStartNum() >= agentProperties.getTask().getRetryRestartMaxNum()) {
+                        log.error("task:{} maximum number of restart retries:{} has been reached, task failed",
+                                newTask.getId(), agentProperties.getTask().getRetryRestartMaxNum());
+                        sourcePool.release(newTask.getDevices());
+                        newTask.setStatus(InferenceTaskStatus.FAIL);
+                        taskPool.runningTasks.remove(oldTask);
+                        taskPool.failedTasks.add(newTask);
+                    } else {
+                        log.warn("container:{} is dead, now will restart it", newTask.getContainerId());
+                        newTask.retryRestart();
+                        containerClient.startContainer(newTask.getContainerId());
+                    }
                     break;
                 case NO_SUCH_CONTAINER:
                     // already be removed or any else error
@@ -87,5 +97,4 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
             }
         }
     }
-
 }
