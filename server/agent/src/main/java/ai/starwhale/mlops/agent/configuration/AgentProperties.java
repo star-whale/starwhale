@@ -21,6 +21,8 @@ public class AgentProperties {
      */
     private String basePath;
 
+    private String hostIP;
+
     private Task task;
 
     private Container container;

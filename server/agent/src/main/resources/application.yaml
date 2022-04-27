@@ -4,6 +4,7 @@ sw:
   agent:
     version: ${SW_AGENT_VERSION:0.1.0}
     basePath: ${SW_BASE_PATH:/opt/starwhale}
+    hostIP: ${SW_HOST_IP:127.0.0.1}
 #      infoPath: ${SW_TASK_INFO_PATH:/var/starwhale/task/info/}
 #      statusPath: ${SW_TASK_STATUS_PATH:/var/starwhale/task/status/}
 #      swmpPath: ${SW_TASK_SWMP_PATH:/var/starwhale/task/swmp/}
