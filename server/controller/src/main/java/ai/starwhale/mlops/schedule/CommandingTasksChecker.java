@@ -7,8 +7,7 @@
 
 package ai.starwhale.mlops.schedule;
 
-import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.system.Agent;
+import ai.starwhale.mlops.domain.system.agent.Agent;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.reporting.ReportedTask;
@@ -58,13 +57,13 @@ public class CommandingTasksChecker {
     }
 
     /**
-     * if the commanding task is not present properly in the node, then command the tasks again
+     * if the commanding task is not present properly in the agent, then command the tasks again
      * else return empty
-     * @param node reporting node
-     * @return not properly present tasks that are commanding to this node.
+     * @param agent reporting agent
+     * @return not properly present tasks that are commanding to this agent.
      */
-    public List<TaskCommand> onNodeReporting(Node node,List<ReportedTask> reportedTasks){
-        final Set<TaskCommand> commandingTasks = commandingTaskAgentMap.computeIfAbsent(Agent.fromNode(node),k->Collections.synchronizedSet(new HashSet<>()));
+    public List<TaskCommand> onNodeReporting(Agent agent,List<ReportedTask> reportedTasks){
+        final Set<TaskCommand> commandingTasks = commandingTaskAgentMap.computeIfAbsent(agent,k->Collections.synchronizedSet(new HashSet<>()));
         final Map<Long, ReportedTask> reportedTaskMap = reportedTasks.stream()
             .collect(Collectors.toMap(ReportedTask::getId,
                 Function.identity()));

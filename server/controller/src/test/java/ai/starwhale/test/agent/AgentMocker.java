@@ -202,7 +202,7 @@ public class AgentMocker {
 
     private Node nodeInfo() {
         return Node.builder().devices(
-            deviceInfo()).agentVersion("1").ipAddr("123.0.0.8").build();
+            deviceInfo()).agentVersion("1").ipAddr("123.0.0.9").build();
     }
 
     private List<Device> deviceInfo() {
