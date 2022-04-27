@@ -117,7 +117,7 @@ public class Agent {
 
         @Override
         public String toString() {
-            throw new UnsupportedOperationException();
+            return agent.toString();
         }
 
         @Override

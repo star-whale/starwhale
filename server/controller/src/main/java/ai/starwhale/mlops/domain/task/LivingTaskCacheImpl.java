@@ -19,6 +19,8 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -266,6 +268,7 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
                     Collectors.toList()));
             }
             if (jobStatusMachine.isFinal(desiredStatus)) {
+                jobMapper.updateJobFinishedTime(jobids, Instant.now().atZone(ZoneId.systemDefault()).toLocalDateTime());
                 removeFinishedJobTasks(jobids);
             }
 
