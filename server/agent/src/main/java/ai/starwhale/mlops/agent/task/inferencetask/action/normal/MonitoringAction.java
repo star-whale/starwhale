@@ -71,17 +71,17 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
                     break;
                 case DEAD:
                     // todo retry but with serial times
-                    if (newTask.getRetryStartNum() >= agentProperties.getTask().getRetryRestartMaxNum()) {
+                    if (oldTask.getRetryRestartNum() >= agentProperties.getTask().getRetryRestartMaxNum()) {
                         log.error("task:{} maximum number of restart retries:{} has been reached, task failed",
-                                newTask.getId(), agentProperties.getTask().getRetryRestartMaxNum());
+                                oldTask.getId(), agentProperties.getTask().getRetryRestartMaxNum());
                         sourcePool.release(newTask.getDevices());
                         newTask.setStatus(InferenceTaskStatus.FAIL);
                         taskPool.runningTasks.remove(oldTask);
                         taskPool.failedTasks.add(newTask);
                     } else {
-                        log.warn("container:{} is dead, now will restart it", newTask.getContainerId());
-                        newTask.retryRestart();
-                        containerClient.startContainer(newTask.getContainerId());
+                        log.warn("container:{} is dead, now will restart it", oldTask.getContainerId());
+                        oldTask.retryRestart();
+                        containerClient.startContainer(oldTask.getContainerId());
                     }
                     break;
                 case NO_SUCH_CONTAINER:
