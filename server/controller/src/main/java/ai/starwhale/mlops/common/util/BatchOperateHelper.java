@@ -15,7 +15,6 @@ public class BatchOperateHelper {
      */
     public static <T,U> void doBatch(Collection<T> batchObject,U param, BiConsumer<Collection<T>,U> batchOperate,final Integer maxBatchSize){
         if(batchObject.size()>maxBatchSize){
-            Random r=new Random();
             batchObject.parallelStream()
                 .collect(Collectors.groupingBy(s -> ThreadLocalRandom.current().nextInt(1,3)>1))
                 .forEach((k,smallerBatch)->{

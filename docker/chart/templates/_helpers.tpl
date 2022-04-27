@@ -126,6 +126,10 @@ spec:
         - name: agent
           image: "{{ .Values.image.registry}}/{{ .Values.image.agent.repo }}:{{ .Values.image.agent.tag | default .Chart.AppVersion }}"
           env:
+            - name: SW_HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
             - name: SW_CONTROLLER_URL
               value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}/"
             - name: SW_BASE_PATH
@@ -163,6 +167,11 @@ spec:
               subPath: run
         - name: taskset
           image: "{{ .Values.image.registry}}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag | default .Chart.AppVersion }}"
+          env:
+            - name: SW_HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
           volumeMounts:
             - name: agent-storage
               mountPath: "/opt/starwhale"
@@ -174,12 +183,14 @@ spec:
             privileged: true
           stdin: true
           tty: true
+        {{- if not .Values.minikube.enabled }}
           resources:
           {{- if eq .role "gpu"}}
             {{- toYaml .Values.resources.agentGPU | nindent 12 }}
           {{- else}}
             {{- toYaml .Values.resources.agentCPU | nindent 12 }}
           {{- end}}
+        {{- end }}
 {{- end}}
 
 {{/*

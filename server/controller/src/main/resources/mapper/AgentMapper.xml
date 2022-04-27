@@ -34,13 +34,19 @@
         and a.agent_ip = inet_aton(#{ip}) for update
     </select>
 
-    <insert id="addAgent" parameterType="ai.starwhale.mlops.domain.system.AgentEntity" >
+    <insert id="addAgent" parameterType="ai.starwhale.mlops.domain.system.AgentEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into agent_info(agent_ip, connect_time, agent_version, device_info)
         values (inet_aton(#{agentIp}), #{connectTime}, #{agentVersion}, #{deviceInfo})
-        on duplicate key update connect_time = #{connectTime},
-                                agent_version = #{agentVersion},
-                                device_info = #{deviceInfo}
     </insert>
+
+    <update id="updateAgents">
+        <foreach item="item" index="index" collection="agents"
+          open=" " separator=";" close=" ">
+            update agent_info set connect_time = #{item.connectTime},
+            agent_version = #{item.agentVersion},
+            device_info = #{item.deviceInfo} WHERE id = #{item.id}
+        </foreach>
+    </update>
 
     <resultMap id="agentResultMap" type="ai.starwhale.mlops.domain.system.AgentEntity" >
         <id property="id" column="agent_id" />

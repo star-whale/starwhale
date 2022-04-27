@@ -5,7 +5,8 @@ ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"
 WORKDIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
-RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}')
+_MANIFEST_RUNTIME=$(cat ${WORKDIR}/_manifest.yaml| grep "python:" | awk '{print $2}' | awk -F '.' '{print $1"."$2}') || true
+_MODEL_RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}') || true
 
 _update_python_alter() {
     echo "--> set python/python3 to $1 ..."
@@ -30,7 +31,14 @@ pre_check() {
 }
 
 set_python() {
-    if [ "$RUNTIME" = "python3.7" ] || [ "$RUNTIME" = "python3.9" ] ; then
+    _RUNTIME="${_MANIFEST_RUNTIME}"
+    if [ "$_RUNTIME" = "" ]; then
+      _RUNTIME="${_MODEL_RUNTIME}"
+    fi
+
+    echo "**** DETECT RUNTIME: ${_RUNTIME}"
+
+    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] ; then
         _update_python_alter "$RUNTIME"
     else
         _update_python_alter "python3.8"
