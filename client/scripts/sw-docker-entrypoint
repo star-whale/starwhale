@@ -31,7 +31,7 @@ pre_check() {
 }
 
 set_python() {
-    _RUNTIME="${_MANIFEST_RUNTIME}"
+    _RUNTIME="python${_MANIFEST_RUNTIME}"
     if [ "$_RUNTIME" = "" ]; then
       _RUNTIME="${_MODEL_RUNTIME}"
     fi
@@ -39,7 +39,7 @@ set_python() {
     echo "**** DETECT RUNTIME: ${_RUNTIME}"
 
     if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] ; then
-        _update_python_alter "$RUNTIME"
+        _update_python_alter "$_RUNTIME"
     else
         _update_python_alter "python3.8"
     fi
