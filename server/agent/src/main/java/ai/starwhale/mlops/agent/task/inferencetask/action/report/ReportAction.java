@@ -8,7 +8,6 @@
 package ai.starwhale.mlops.agent.task.inferencetask.action.report;
 
 import ai.starwhale.mlops.agent.configuration.AgentProperties;
-import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.base.SystemDetect;
 import ai.starwhale.mlops.agent.node.base.SystemInfo;
@@ -25,15 +24,11 @@ import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Node;
 import cn.hutool.core.collection.CollectionUtil;
-import com.github.dockerjava.api.async.ResultCallback;
-import com.github.dockerjava.api.model.Frame;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -163,7 +158,7 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
             }
 
             if (CollectionUtil.isNotEmpty(response.getLogReaders())) {
-                logRecorder.addRecord(response.getLogReaders());
+                logRecorder.addRecords(response.getLogReaders());
             }
         }
     }

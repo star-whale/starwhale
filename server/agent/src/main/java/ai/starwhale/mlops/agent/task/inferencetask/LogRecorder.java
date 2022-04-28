@@ -39,7 +39,7 @@ public class LogRecorder {
         this.taskPersistence = taskPersistence;
     }
 
-    public void addRecord(List<LogReader> logReaders) {
+    public void addRecords(List<LogReader> logReaders) {
         for (LogReader logReader : logReaders) {
             if (!logCache.containsKey(logReader.getTaskId())) {
                 List<String> cache = new ArrayList<>();
@@ -65,7 +65,7 @@ public class LogRecorder {
         List<TaskLog> taskLogs = new ArrayList<>();
         List<String> logs = logCache.getOrDefault(taskId, new ArrayList<>());
 
-        offsets.get(taskId).forEach((readerId, offset) -> {
+        offsets.getOrDefault(taskId, Map.of()).forEach((readerId, offset) -> {
             ListIterator<String> iterator = logs.listIterator(offset);
             StringBuilder stringBuilder = new StringBuilder();
             while (iterator.hasNext()) {
@@ -91,7 +91,7 @@ public class LogRecorder {
                 new LogRecord(taskId, containerId, logCache.get(taskId)));
     }
 
-    // todo scheduled
+    // scheduled
     public void waitQueueScheduler() {
         for (Long taskId : new ArrayList<>(waiting)) {
             Optional<InferenceTask> taskOptional = taskPersistence.getActiveTaskById(taskId);

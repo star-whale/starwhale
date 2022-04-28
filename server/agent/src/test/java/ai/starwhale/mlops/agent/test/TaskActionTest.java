@@ -149,6 +149,9 @@ public class TaskActionTest {
 
     @Test
     public void testMonitorTask() throws Exception {
+        // clear local dir
+        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
                         .id(1234567890L)
@@ -212,6 +215,7 @@ public class TaskActionTest {
             taskPool.setToReady();
         }
 
+        Mockito.when(containerClient.status(any())).thenReturn(ContainerClient.ContainerStatus.NORMAL);
         // first to monitor
         taskExecutor.monitorRunningTasks();
         assertEquals(2, taskPool.runningTasks.size());
@@ -226,7 +230,10 @@ public class TaskActionTest {
     }
 
     @Test
-    public void testUpload() {
+    public void testUpload() throws IOException {
+        // clear local dir
+        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
                         .id(1234567890L)
