@@ -63,7 +63,7 @@ minio:
     rootPassword: minioadmin
   volumePermissions:
     enabled: true
-  defaultBucket: starwhale
+  defaultBuckets: starwhale
   persistence:
     storageClass: local-storage-minio
     size: 50Gi
@@ -80,7 +80,7 @@ externalS3OSS:
   port: 9000
   accessKey: ""
   secretKey: ""
-  defaultBucket: starwhale
+  defaultBuckets: starwhale
   region: "local"
 
 controller:
@@ -107,7 +107,8 @@ minikube:
   pv:
     storage: 100Gi
     rootPath: "/var/starwhale/local-storage"
-  hostname: minikube
+  hostname:
+    controller: console.minikube.local
 
 resources:
   agentCPU:
