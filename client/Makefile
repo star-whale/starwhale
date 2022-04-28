@@ -1,15 +1,18 @@
 check:
-	python setup.py check
+	python3 setup.py check
 
 clean:
 	rm -rf dist/*
 
 build-wheel: check clean
-	python setup.py sdist bdist_wheel
+	python3 setup.py sdist bdist_wheel
 	ls -alh dist
 
 upload-pypi:
 	twine upload dist/*
 
 build-dev-wheel:
-	pip install -e .
+	python3 -m pip install -e .
+
+dev-dep:
+	python3 -m pip install -r requirements-dev.txt
