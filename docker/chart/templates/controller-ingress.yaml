@@ -11,7 +11,11 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   rules:
+  {{- if .Values.minikube.enabled }}
+    - host: {{ .Values.minikube.hostname.controller }}
+  {{- else }}
     - host: {{ .Values.ingress.host }}
+  {{- end}}
       http:
         paths:
           - path: {{ .Values.ingress.path }}

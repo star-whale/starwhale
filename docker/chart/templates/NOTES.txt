@@ -10,11 +10,16 @@ Starwhale Image:
 ******************************************
 {{- if .Values.ingress.enabled }}
 Web Visit:
+  {{- if .Values.minikube.enabled }}
+  - starwhale controller: http://{{.Values.minikube.hostname.controller }}
+  {{- else }}
   - starwhale controller: http://{{.Values.ingress.host}}
+  {{- end}}
   {{- if .Values.minio.enabled}}
   - minio admin: http://{{.Values.minio.ingress.hostname}}
   {{- end}}
-{{- else}}
+{{- end }}
+
 Port Forward Visist:
   - starwhale controller:
     - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }}-controller {{ .Values.controller.containerPort }}:{{ .Values.controller.containerPort }}
@@ -24,7 +29,11 @@ Port Forward Visist:
     - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }}-minio {{ .Values.minio.containerPorts.console }}:{{ .Values.minio.containerPorts.console }}
     - visit: http://localhost:{{.Values.minio.containerPorts.console}}
   {{- end}}
-{{- end }}
+  {{- if and .Values.mysql.enabled .Values.minikube.enabled }}
+  - mysql:
+    - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }}-mysql {{ .Values.mysql.primary.service.port }}:{{ .Values.mysql.primary.service.port }}
+    - visit: mysql -h 127.0.0.1 -P {{ .Values.mysql.primary.service.port }} -u{{ .Values.mysql.auth.username }} -p{{ .Values.mysql.auth.password }}
+  {{- end}}
 
 ******************************************
 Login Info:
