@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.task.bo;
 
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.system.agent.Agent;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -44,7 +45,7 @@ public class Task {
     /**
      * storage directory path of results
      */
-    String resultDir;
+    ResultPath resultRootPath;
 
     TaskRequest taskRequest;
 
@@ -104,8 +105,8 @@ public class Task {
         }
 
         @Override
-        public String getResultDir() {
-            return oTask.resultDir;
+        public ResultPath getResultRootPath() {
+            return oTask.resultRootPath;
         }
 
         @Override
@@ -144,7 +145,7 @@ public class Task {
         }
 
         @Override
-        public void setResultDir(String resultDir) {
+        public void setResultRootPath(ResultPath resultDir) {
             throw new UnsupportedOperationException();
         }
 

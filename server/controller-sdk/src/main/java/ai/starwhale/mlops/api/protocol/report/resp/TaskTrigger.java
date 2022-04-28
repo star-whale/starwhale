@@ -61,7 +61,7 @@ public class TaskTrigger {
     /**
      * storage directory where task result is uploaded
      */
-    private String resultPath;
+    private ResultPath resultPath;
 
 
     public boolean equals(Object obj){

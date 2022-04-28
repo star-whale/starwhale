@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.task.bo;
 
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -23,6 +24,7 @@ import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -45,14 +47,17 @@ public class TaskBoConverter {
 
     final AgentConverter agentConverter;
 
+    final ResultPathConverter resultPathConverter;
+
     public TaskBoConverter(SWDSBlockSerializer swdsBlockSerializer, TaskMapper taskMapper,
         JobMapper jobMapper, JobBoConverter jobBoConverter,
-        AgentConverter agentConverter) {
+        AgentConverter agentConverter, ResultPathConverter resultPathConverter) {
         this.swdsBlockSerializer = swdsBlockSerializer;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.jobBoConverter = jobBoConverter;
         this.agentConverter = agentConverter;
+        this.resultPathConverter = resultPathConverter;
     }
 
     /**
@@ -90,13 +95,13 @@ public class TaskBoConverter {
                 .job(job)
                 .agent(agentConverter.fromEntity(entity.getAgent()))
                 .status(entity.getTaskStatus())
-                .resultDir(entity.getResultPath())
+                .resultRootPath(resultPathConverter.fromString(entity.getResultPath()))
                 .uuid(entity.getTaskUuid())
                 .taskRequest(taskRequest)
                 .taskType(taskType)
                 .build();
         } catch (JsonProcessingException e) {
-            log.error("read swds blocks from db failed ",e);
+            log.error("read swds blocks or resultPath from db failed ",e);
             throw new SWValidationException(ValidSubject.TASK);
         }
     }
@@ -112,7 +117,7 @@ public class TaskBoConverter {
                 return TaskTrigger.builder()
                     .id(t.getId())
                     .imageId(t.getJob().getJobRuntime().getBaseImage())
-                    .resultPath(t.getResultDir())
+                    .resultPath(t.getResultRootPath())
                     .swdsBlocks(((PPLRequest)t.getTaskRequest()).getSwdsBlocks())
                     .deviceAmount(t.getJob().getJobRuntime().getDeviceAmount())
                     .deviceClass(t.getJob().getJobRuntime().getDeviceClass())
@@ -121,7 +126,7 @@ public class TaskBoConverter {
             case CMP:
                 return TaskTrigger.builder()
                     .id(t.getId())
-                    .resultPath(t.getResultDir())
+                    .resultPath(t.getResultRootPath())
                     .cmpInputFilePaths(((CMPRequest)t.getTaskRequest()).getPplResultPaths())
                     .taskType(t.getTaskType())
                     .deviceAmount(1)
