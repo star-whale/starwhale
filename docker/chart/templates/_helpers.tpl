@@ -71,6 +71,27 @@ Create the name of the service account to use
 {{- end }}
 
 {{/*
+Config mirror environment
+*/}}
+{{- define "chart.mirror.env" -}}
+- name: SW_RESET_CONDA_CONFIG
+{{- if .Values.mirror.conda.enabled }}
+  value: "0"
+{{- else }}
+  value: "1"
+{{- end }}
+
+{{- if .Values.mirror.pypi.enabled }}
+- name: SW_PYPI_INDEX_URL
+  value: "{{ .Values.mirror.pypi.indexUrl }}"
+- name: SW_PYPI_EXTRA_INDEX_URL
+  value: "{{ .Values.mirror.pypi.extraIndexUrl }}"
+- name: SW_PYPI_TRUSTED_HOST
+  value: "{{ .Values.mirror.pypi.trustedHost }}"
+{{- end}}
+{{- end}}
+
+{{/*
 Create Agent Daemonset
 */}}
 {{- define "chart.agent" -}}
@@ -126,6 +147,7 @@ spec:
         - name: agent
           image: "{{ .Values.image.registry}}/{{ .Values.image.agent.repo }}:{{ .Values.image.agent.tag | default .Chart.AppVersion }}"
           env:
+            {{ include "chart.mirror.env" . | nindent 12 }}
             - name: SW_HOST_IP
               valueFrom:
                 fieldRef:
@@ -171,6 +193,7 @@ spec:
         - name: taskset
           image: "{{ .Values.image.registry}}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag | default .Chart.AppVersion }}"
           env:
+            {{ include "chart.mirror.env" . | nindent 12 }}
             - name: SW_HOST_IP
               valueFrom:
                 fieldRef:
