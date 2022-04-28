@@ -1,12 +1,12 @@
-import moment from 'moment'
+import moment from 'moment-timezone'
 import { dateTimeFormat } from '@/consts'
 
 export function formatDateTime(s: string, format = 'YYYY-MM-DDTHH:mm:ssZ'): string {
-    return moment(s, format).format(dateTimeFormat)
+    return moment(s, format).tz(moment.tz.guess()).format(dateTimeFormat)
 }
 
 export function formatTimestampDateTime(s: number, format = 'YYYY-MM-DDTHH:mm:ssZ'): string {
-    return moment.unix(s / 1000).format(dateTimeFormat)
+    return moment.tz(s, moment.tz.guess()).format(dateTimeFormat)
 }
 
 export function durationToStr(v: number) {
