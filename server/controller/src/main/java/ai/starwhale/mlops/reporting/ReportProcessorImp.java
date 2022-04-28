@@ -76,7 +76,7 @@ public class ReportProcessorImp implements ReportProcessor {
         final Node nodeInfo = report.getNodeInfo();
         if(null == nodeInfo){
             log.error("node info reported is null");
-            return new ReportResponse(new ArrayList<>(),new ArrayList<>());
+            return new ReportResponse(new ArrayList<>(),new ArrayList<>(), new ArrayList<>());
         }
         Agent agent = agentCache.nodeReport(nodeInfo);
         final List<TaskReport> taskReports = report.getTasks() == null? new ArrayList<>():report.getTasks();
@@ -112,7 +112,7 @@ public class ReportProcessorImp implements ReportProcessor {
             .collect(
                 Collectors.toList());
         return new ReportResponse(
-            taskIdsToCancel, taskBoConverter.toTaskTrigger(toAssignTasks));
+            taskIdsToCancel, taskBoConverter.toTaskTrigger(toAssignTasks), new ArrayList<>());
     }
 
     private void canceledTaskStatusChange(Collection<Task> tasks) {
@@ -153,7 +153,7 @@ public class ReportProcessorImp implements ReportProcessor {
             .map(TaskCommand::getTask)
             .map(task -> taskBoConverter.toTaskTrigger(task)).collect(Collectors.toList());
 
-        return new ReportResponse(taskIdsToCancel, tasksToRun);
+        return new ReportResponse(taskIdsToCancel, tasksToRun, new ArrayList<>());
     }
 
 }
