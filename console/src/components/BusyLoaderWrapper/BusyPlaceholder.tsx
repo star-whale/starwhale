@@ -17,19 +17,12 @@ export default function BusyPlaceholder({ type }: IBusyPlaceholderProps) {
             break
         case 'notfound':
             children = (
-                <div
-                    style={{
-                        minHeight: '500px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'center',
-                    }}
-                >
+                <>
                     <div style={{ alignSelf: 'center', fontSize: '50px' }}>
                         <MdQueryStats />
                     </div>
                     <div style={{ alignSelf: 'center' }}>Not Found</div>
-                </div>
+                </>
             )
             break
     }
@@ -43,6 +36,7 @@ export default function BusyPlaceholder({ type }: IBusyPlaceholderProps) {
                 flexDirection: 'column',
                 width: '100%',
                 height: '100%',
+                minHeight: '500px',
             }}
         >
             {children}
