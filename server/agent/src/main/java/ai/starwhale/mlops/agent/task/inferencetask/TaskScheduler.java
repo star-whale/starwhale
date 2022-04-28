@@ -12,9 +12,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 public class TaskScheduler {
     private final TaskExecutor executor;
+    private final LogRecorder logRecorder;
 
-    public TaskScheduler(TaskExecutor executor) {
+    public TaskScheduler(TaskExecutor executor, LogRecorder logRecorder) {
         this.executor = executor;
+        this.logRecorder = logRecorder;
     }
 
     /**
@@ -45,5 +47,10 @@ public class TaskScheduler {
     @Scheduled(fixedDelayString = "${sw.agent.task.schedule.fixedDelay.in.milliseconds:5000}")
     public void reportTasks() {
         this.executor.reportTasks();
+    }
+
+    @Scheduled(fixedDelayString = "${sw.agent.task.container.log.schedule.fixedDelay.in.milliseconds:5000}")
+    public void logScheduler() {
+        this.logRecorder.waitQueueScheduler();
     }
 }

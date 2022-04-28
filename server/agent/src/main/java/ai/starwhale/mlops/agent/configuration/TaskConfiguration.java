@@ -77,8 +77,8 @@ public class TaskConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "sw.agent.task.scheduler.enabled", havingValue = "true", matchIfMissing = true)
-    public TaskScheduler agentTaskScheduler(TaskExecutor agentTaskExecutor) {
-        return new TaskScheduler(agentTaskExecutor);
+    public TaskScheduler agentTaskScheduler(TaskExecutor agentTaskExecutor, LogRecorder logRecorder) {
+        return new TaskScheduler(agentTaskExecutor, logRecorder);
     }
 
 }
