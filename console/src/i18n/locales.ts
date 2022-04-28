@@ -253,6 +253,9 @@ const locales0 = {
     'show meta': {
         en: 'show meta',
     },
+    'View Log': {
+        en: 'View Log',
+    },
     'Support': {
         en: 'Support',
     },
