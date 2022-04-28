@@ -21,6 +21,8 @@ public class Uploading2FinishedAction extends AbsBasePPLTaskAction {
         InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
         // upload result file to the storage
         taskPersistence.uploadResult(oldTask);
+        // todo container log upload
+
         newTask.setStatus(InferenceTaskStatus.SUCCESS);
         return newTask;
 

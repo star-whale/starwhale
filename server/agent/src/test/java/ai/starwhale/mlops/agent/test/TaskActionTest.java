@@ -12,6 +12,7 @@ import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
@@ -130,7 +131,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build()
         );
         if (CollectionUtil.isNotEmpty(tasks)) {
@@ -175,7 +176,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build(),
                 InferenceTask.builder()
                         .id(1234567891L)
@@ -203,7 +204,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build()
         );
         if (CollectionUtil.isNotEmpty(tasks)) {
@@ -253,7 +254,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build(),
                 InferenceTask.builder()
                         .id(1234567891L)
@@ -281,7 +282,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build()
         );
         if (CollectionUtil.isNotEmpty(tasks)) {

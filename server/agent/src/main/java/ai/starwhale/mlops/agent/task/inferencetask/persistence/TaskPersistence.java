@@ -29,7 +29,7 @@ public interface TaskPersistence {
      * @param id key
      * @return task
      */
-    Optional<InferenceTask> getTaskById(Long id);
+    Optional<InferenceTask> getActiveTaskById(Long id);
 
     /**
      * get task container status by id

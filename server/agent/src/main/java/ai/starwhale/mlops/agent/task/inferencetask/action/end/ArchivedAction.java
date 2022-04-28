@@ -10,12 +10,17 @@ package ai.starwhale.mlops.agent.task.inferencetask.action.end;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
+import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBasePPLTaskAction;
 import cn.hutool.core.bean.BeanUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ArchivedAction extends AbsBasePPLTaskAction {
+
+    @Autowired
+    private LogRecorder logRecorder;
 
     @Override
     public InferenceTask processing(InferenceTask oldTask, Context context)
@@ -31,5 +36,6 @@ public class ArchivedAction extends AbsBasePPLTaskAction {
         taskPool.failedTasks.remove(oldTask);
         taskPool.succeedTasks.remove(oldTask);
         taskPool.canceledTasks.remove(oldTask);
+        logRecorder.remove(oldTask.getId());
     }
 }

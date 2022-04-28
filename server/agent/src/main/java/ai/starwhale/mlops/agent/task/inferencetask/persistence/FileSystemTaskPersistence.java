@@ -93,7 +93,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     @Override
-    public Optional<InferenceTask> getTaskById(Long id) {
+    public Optional<InferenceTask> getActiveTaskById(Long id) {
         try {
             // get the newest task info
             Path taskPath = Path.of(fileSystemPath.oneActiveTaskInfoFile(id));
@@ -283,7 +283,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
             results.forEach(path -> {
                 try {
                     // todo Whether the controller uses the same field in different stages
-                    storageAccessService.put(task.getResultPath() + "/" + path.getFileName(),
+                    storageAccessService.put(task.getResultPath().getResultDir() + "/" + path.getFileName(),
                             new BufferedInputStream(new FileInputStream(String.valueOf(path))));
                 } catch (IOException e) {
                     log.error("upload result:{} occur error:{}", path.getFileName(), e.getMessage(), e);
