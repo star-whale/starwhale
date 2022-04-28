@@ -67,7 +67,7 @@ const Routes = () => {
                     <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
                         <TaskLayout>
                             <Switch>
-                                <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={TaskListCard} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={JobOverview} />
                                 <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResult} />
                             </Switch>
                         </TaskLayout>
