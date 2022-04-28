@@ -57,7 +57,7 @@ export default function DatasetListCard() {
                 }
                 paginationProps={{
                     start: datasetsInfo.data?.pageNum,
-                    count: datasetsInfo.data?.size,
+                    count: datasetsInfo.data?.pageSize,
                     total: datasetsInfo.data?.total,
                     afterPageChange: () => {
                         datasetsInfo.refetch()

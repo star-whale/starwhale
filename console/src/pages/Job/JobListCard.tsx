@@ -60,7 +60,7 @@ export default function JobListCard() {
                 <Table
                     isLoading={jobsInfo.isLoading}
                     columns={[
-                        // t('Job ID'),
+                        t('Job ID'),
                         t('sth name', [t('Model')]),
                         t('Version'),
                         t('Owner'),
@@ -108,9 +108,10 @@ export default function JobListCard() {
                             }
 
                             return [
-                                <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}`}>
-                                    {job.modelName}
+                                <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}/tasks`}>
+                                    {job.uuid}
                                 </Link>,
+                                job.modelName,
                                 job.modelVersion,
                                 job.owner && <User user={job.owner} />,
                                 job.createTime && formatTimestampDateTime(job.createTime),
@@ -123,7 +124,7 @@ export default function JobListCard() {
                     }
                     paginationProps={{
                         start: jobsInfo.data?.pageNum,
-                        count: jobsInfo.data?.size,
+                        count: jobsInfo.data?.pageSize,
                         total: jobsInfo.data?.total,
                         afterPageChange: () => {
                             jobsInfo.refetch()

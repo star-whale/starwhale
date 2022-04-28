@@ -1,7 +1,39 @@
 import React from 'react'
 import { Spinner, SIZE } from 'baseui/spinner'
 
-export default function BusyPlaceholder() {
+import { MdQueryStats } from 'react-icons/md'
+
+interface IBusyPlaceholderProps {
+    type?: 'spinner' | 'loading' | 'notfound'
+}
+
+export default function BusyPlaceholder({ type }: IBusyPlaceholderProps) {
+    let children = null
+
+    switch (type) {
+        default:
+        case 'spinner':
+            children = <Spinner $size={SIZE.large} $style={{ alignSelf: 'center' }} />
+            break
+        case 'notfound':
+            children = (
+                <div
+                    style={{
+                        minHeight: '500px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <div style={{ alignSelf: 'center', fontSize: '50px' }}>
+                        <MdQueryStats />
+                    </div>
+                    <div style={{ alignSelf: 'center' }}>Not Found</div>
+                </div>
+            )
+            break
+    }
+
     return (
         <div
             style={{
@@ -13,7 +45,7 @@ export default function BusyPlaceholder() {
                 height: '100%',
             }}
         >
-            <Spinner $size={SIZE.large} $style={{ alignSelf: 'center' }} />
+            {children}
         </div>
     )
 }

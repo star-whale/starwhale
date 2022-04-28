@@ -136,6 +136,10 @@ function JobResult() {
         return <BusyPlaceholder />
     }
 
+    if (jobResult.isError) {
+        return <BusyPlaceholder type='notfound' />
+    }
+
     return (
         <div style={{ width: '100%', height: 'auto' }}>
             {jobResult.data?.kind && (

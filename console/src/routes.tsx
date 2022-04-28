@@ -23,7 +23,7 @@ import DatasetLayout from './pages/Dataset/DatasetLayout'
 import DatasetOverview from './pages/Dataset/Overview'
 import JobLayout from './pages/Job/JobLayout'
 import TaskLayout from './pages/Job/TaskLayout'
-import JobOverview from './pages/Job/Overview'
+import JobOverview from './pages/Job/JobOverview'
 import TaskListCard from './pages/Job/TaskListCard'
 import JobNewCard from './pages/Project/JobNewCard'
 import JobResult from './pages/Job/JobResult'
@@ -64,7 +64,7 @@ const Routes = () => {
                         </ProjectLayout>
                     </Route>
                     {/* job & task */}
-                    <Route exact path='/projects/:projectId/jobs/:jobId/:path'>
+                    <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
                         <TaskLayout>
                             <Switch>
                                 <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={TaskListCard} />
@@ -72,13 +72,11 @@ const Routes = () => {
                             </Switch>
                         </TaskLayout>
                     </Route>
-                    <Route exact path='/projects/:projectId/jobs/:jobId'>
+                    {/* <Route exact path='/projects/:projectId/jobs/:jobId'>
                         <JobLayout>
-                            <Switch>
-                                <Route exact path='/projects/:projectId/jobs/:jobId' component={JobOverview} />
-                            </Switch>
+                            <Switch></Switch>
                         </JobLayout>
-                    </Route>
+                    </Route> */}
                     {/* datasets */}
                     <Route exact path='/projects/:projectId/datasets/:datasetId/versions'>
                         <DatasetVersionLayout>

@@ -262,6 +262,12 @@ const locales0 = {
     'Pause': {
         en: 'Pause',
     },
+    'Tasks': {
+        en: 'Tasks',
+    },
+    'Results': {
+        en: 'Results',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

@@ -53,7 +53,7 @@ export default function ProjectListCard() {
                 }
                 paginationProps={{
                     start: projectsInfo.data?.pageNum,
-                    count: projectsInfo.data?.size,
+                    count: projectsInfo.data?.pageSize,
                     total: projectsInfo.data?.total,
                     afterPageChange: () => {
                         projectsInfo.refetch()
