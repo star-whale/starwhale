@@ -49,8 +49,8 @@ public class Agent {
             return false;
         }
         Agent agent = (Agent) o;
-        return Objects.equals(id, agent.id) ||
-            ip.equals(agent.ip);
+        return Objects.equals(id, agent.getId()) ||
+            ip.equals(agent.getIp());
     }
 
     @Override

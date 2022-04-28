@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.domain.job.split;
 
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -19,6 +20,7 @@ import ai.starwhale.mlops.domain.swds.index.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskType;
+import ai.starwhale.mlops.domain.task.bo.ResultPathConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
@@ -26,13 +28,14 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -59,13 +62,19 @@ public class JobSpliteratorByIndex implements JobSpliterator {
 
     private final TaskBoConverter taskBoConverter;
 
-    public JobSpliteratorByIndex(StoragePathCoordinator storagePathCoordinator, SWDSIndexLoader swdsIndexLoader, SWDSBlockSerializer swdsBlockSerializer, TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter) {
+    private final ResultPathConverter resultPathConverter;
+
+    public JobSpliteratorByIndex(StoragePathCoordinator storagePathCoordinator,
+        SWDSIndexLoader swdsIndexLoader, SWDSBlockSerializer swdsBlockSerializer,
+        TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter,
+        ResultPathConverter resultPathConverter) {
         this.storagePathCoordinator = storagePathCoordinator;
         this.swdsIndexLoader = swdsIndexLoader;
         this.swdsBlockSerializer = swdsBlockSerializer;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.taskBoConverter = taskBoConverter;
+        this.resultPathConverter = resultPathConverter;
     }
 
     /**
@@ -86,17 +95,16 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     @Transactional
     public List<Task> split(Job job) {
         final List<SWDataSet> swDataSets = job.getSwDataSets();
-        Random r=new Random();
         final Map<Integer,List<SWDSBlock>> swdsBlocks = swDataSets.parallelStream()
             .map(swDataSet -> swdsIndexLoader.load(swDataSet.getIndexPath(),swDataSet.getPath()))
             .map(SWDSIndex::getSwdsBlockList)
             .flatMap(Collection::stream)
-            .collect(Collectors.groupingBy(blk->r.nextInt(amountOfTasks)));//one block on task
+            .collect(Collectors.groupingBy(blk-> ThreadLocalRandom.current().nextInt(amountOfTasks)));//one block on task
         List<TaskEntity> taskList;
         try {
             taskList = buildTaskEntities(job, swdsBlocks);
         } catch (JsonProcessingException e) {
-            log.error("error swds index ",e);
+            log.error("error swds index  ",e);
             throw new SWValidationException(ValidSubject.SWDS);
         }
         BatchOperateHelper.doBatch(taskList,ts->taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())),MAX_MYSQL_INSERTION_SIZE);
@@ -111,7 +119,7 @@ public class JobSpliteratorByIndex implements JobSpliterator {
             final String taskUuid = UUID.randomUUID().toString();
             taskEntities.add(TaskEntity.builder()
                 .jobId(job.getId())
-                .resultPath(storagePath(job.getUuid(),taskUuid))
+                .resultPath(resultPathConverter.toString(new ResultPath(storagePath(job.getUuid(), taskUuid))))
                 .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
                 .taskStatus(TaskStatus.CREATED)
                 .taskUuid(taskUuid)

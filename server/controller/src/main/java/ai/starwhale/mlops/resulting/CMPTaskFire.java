@@ -1,5 +1,6 @@
 package ai.starwhale.mlops.resulting;
 
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -8,6 +9,7 @@ import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.task.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskType;
+import ai.starwhale.mlops.domain.task.bo.ResultPathConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
@@ -15,8 +17,11 @@ import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
@@ -48,13 +53,16 @@ public class CMPTaskFire {
 
     final SWTaskScheduler swTaskScheduler;
 
+    final ResultPathConverter resultPathConverter;
+
     public CMPTaskFire(JobBoConverter jobBoConverter,
         TaskMapper taskMapper,
         JobMapper jobMapper,
         LivingTaskCache livingTaskCache,
         StorageAccessService storageAccessService,
         TaskBoConverter taskBoConverter,
-        SWTaskScheduler swTaskScheduler) {
+        SWTaskScheduler swTaskScheduler,
+        ResultPathConverter resultPathConverter) {
         this.jobBoConverter = jobBoConverter;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
@@ -62,6 +70,7 @@ public class CMPTaskFire {
         this.storageAccessService = storageAccessService;
         this.taskBoConverter = taskBoConverter;
         this.swTaskScheduler = swTaskScheduler;
+        this.resultPathConverter = resultPathConverter;
     }
 
     @Transactional
@@ -76,18 +85,25 @@ public class CMPTaskFire {
         Collection<Task> tasks = livingTaskCache.ofJob(job.getId());
         List<String> allPPLTaskResults = tasks.parallelStream().flatMap(task -> {
                 try {
-                    return storageAccessService.list(task.getResultDir());
+                    return storageAccessService.list(task.getResultRootPath().getResultDir());
                 } catch (IOException e) {
                     throw new SWProcessException(ErrorType.STORAGE).tip("list task result dir failed");
                 }
             })
             .collect(Collectors.toList());
 
+        String resultPathStr = null;
+        try {
+            resultPathStr = resultPathConverter.toString(new ResultPath(job.getResultDir()));
+        } catch (JsonProcessingException e) {
+            log.error("convert job result path failed {}",job.getId(),e);
+            throw new SWValidationException(ValidSubject.TASK).tip("convert result path failed");
+        }
         TaskEntity taskEntity = TaskEntity.builder()
             .jobId(job.getId())
             .taskRequest(new CMPRequest(allPPLTaskResults).toString())
             .taskType(TaskType.CMP)
-            .resultPath(job.getResultDir())
+            .resultPath(resultPathStr)
             .taskStatus(TaskStatus.CREATED)
             .taskUuid(UUID.randomUUID().toString())
             .build();

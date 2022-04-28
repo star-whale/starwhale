@@ -221,7 +221,7 @@ public class AgentMocker {
     private void run(List<TaskTrigger> tasksToRun) {
         tasksToRun.stream().forEach(taskTrigger -> {
             Random random = new Random();
-            if(random.nextInt(100)>98){
+            if(random.nextInt(100)>90){
                 //percent of loss
                 log.warn("loss of task {}",taskTrigger.getId());
                 return;
