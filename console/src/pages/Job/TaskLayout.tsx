@@ -1,12 +1,14 @@
 import { useJob, useJobLoading } from '@job/hooks/useJob'
 import useTranslation from '@/hooks/useTranslation'
-import React, { useEffect, useMemo } from 'react'
+import React, { useContext, useEffect, useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
+import { SidebarContext } from '@/contexts/SidebarContext'
+import { FaTasks } from 'react-icons/fa'
+import { AiTwotoneExperiment } from 'react-icons/ai'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -19,6 +21,12 @@ function TaskLayout({ children }: IJobLayoutProps) {
     const jobInfo = useQuery(`fetchJob:${projectId}:${jobId}`, () => fetchJob(projectId, jobId))
     const { job, setJob } = useJob()
     const { setJobLoading } = useJobLoading()
+    const { setExpanded } = useContext(SidebarContext)
+
+    useEffect(() => {
+        console.log('set expended')
+        setExpanded(false)
+    }, [])
 
     useEffect(() => {
         // console.log('useEffect', job)
@@ -49,7 +57,28 @@ function TaskLayout({ children }: IJobLayoutProps) {
         return items
     }, [projectId, jobId, job])
 
-    return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
+    const navItems: INavItem[] = useMemo(() => {
+        const items = [
+            {
+                title: t('Tasks'),
+                path: `/projects/${projectId}/jobs/${jobId}/tasks`,
+                pattern: '/\\/tasks\\/?',
+                icon: FaTasks,
+            },
+            {
+                title: t('Results'),
+                path: `/projects/${projectId}/jobs/${jobId}/results`,
+                icon: AiTwotoneExperiment,
+            },
+        ]
+        return items
+    }, [projectId, jobId, job])
+
+    return (
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} navItems={navItems}>
+            {children}
+        </BaseSubLayout>
+    )
 }
 
 export default React.memo(TaskLayout)

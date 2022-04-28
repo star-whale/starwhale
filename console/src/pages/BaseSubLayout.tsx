@@ -19,17 +19,19 @@ export default function BaseSubLayout({ header, extra, breadcrumbItems, navItems
         <BaseLayout extra={extra} breadcrumbItems={breadcrumbItems} sidebar={ProjectSidebar}>
             {header}
             {navItems ? (
-                <Card bodyStyle={{ padding: 0 }}>
+                <>
                     <BaseNavTabs navItems={navItems} />
-                    <div
-                        style={{
-                            paddingTop: 5,
-                            paddingBottom: 15,
-                        }}
-                    >
-                        {children}
-                    </div>
-                </Card>
+                    <Card bodyStyle={{ padding: 0 }}>
+                        <div
+                            style={{
+                                paddingTop: 5,
+                                paddingBottom: 15,
+                            }}
+                        >
+                            {children}
+                        </div>
+                    </Card>
+                </>
             ) : (
                 <>{children}</>
             )}

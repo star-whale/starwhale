@@ -57,7 +57,7 @@ export default function ModelVersionListCard() {
                 }
                 paginationProps={{
                     start: modelsInfo.data?.pageNum,
-                    count: modelsInfo.data?.size,
+                    count: modelsInfo.data?.pageSize,
                     total: modelsInfo.data?.total,
                     afterPageChange: () => {
                         modelsInfo.refetch()

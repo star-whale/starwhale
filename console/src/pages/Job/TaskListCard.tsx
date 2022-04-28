@@ -37,7 +37,7 @@ export default function TaskListCard({ header }: ITaskListCardProps) {
                 }
                 paginationProps={{
                     start: tasksInfo.data?.pageNum,
-                    count: tasksInfo.data?.size,
+                    count: tasksInfo.data?.pageSize,
                     total: tasksInfo.data?.total,
                     afterPageChange: () => {
                         tasksInfo.refetch()

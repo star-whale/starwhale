@@ -43,7 +43,7 @@ export function usePage(opt?: {
                 sort_by: sortBy,
                 sort_asc: sortAsc === 'true',
             }),
-            [defaultCount, q, search, sortAsc, sortBy]
+            [defaultCount, q, search, sortAsc, sortBy, pageNum, pageSize]
         ),
         useCallback(
             (newPage) => {
