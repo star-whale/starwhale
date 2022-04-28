@@ -29,7 +29,7 @@ public class AgentProperties {
 
     @Data
     public static class Task {
-        private int retryStartMaxNum = 10;
+        private int retryRunMaxNum = 10;
         private int retryRestartMaxNum = 10;
     }
 

@@ -133,9 +133,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
             newTask.setStatus(InferenceTaskStatus.RUNNING);
             return newTask;
         } else {
-            // todo: retry or take it to the tail of queue
-            oldTask.retryStart();
-            // should release, throw exception and handled by the fail method
+            // should throw exception and handled by the fail method
             throw ErrorCode.containerError.asException(
                     String.format("start task container by image:%s fail", oldTask.getImageId()));
         }
@@ -163,13 +161,18 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
             oldTask.setDevices(null);
         }*/
         oldTask.setActionStatus(ActionStatus.completed);
-        if (oldTask.getRetryStartNum() >= agentProperties.getTask().getRetryStartMaxNum()) {
+        if (oldTask.getRetryRunNum() >= agentProperties.getTask().getRetryRunMaxNum()) {
+            // release device and move to failed list
             log.error("task:{} maximum number of failed retries:{} has been reached, task failed",
-                    oldTask.getId(), agentProperties.getTask().getRetryStartMaxNum());
+                    oldTask.getId(), agentProperties.getTask().getRetryRunMaxNum());
             sourcePool.release(oldTask.getDevices());
             oldTask.setStatus(InferenceTaskStatus.FAIL);
             taskPool.preparingTasks.remove(oldTask);
             taskPool.failedTasks.add(oldTask);
+            taskPersistence.save(oldTask);
+        } else {
+            // todo: retry or take it to the tail of queue
+            oldTask.retryRun();
             taskPersistence.save(oldTask);
         }
     }

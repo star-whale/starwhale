@@ -165,6 +165,9 @@ spec:
             - name: agent-storage
               mountPath: "/opt/starwhale"
               subPath: run
+            - name: agent-storage
+              mountPath: "/var/lib/docker"
+              subPath: dind
         - name: taskset
           image: "{{ .Values.image.registry}}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag | default .Chart.AppVersion }}"
           env:

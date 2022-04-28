@@ -6,7 +6,7 @@ sw:
     basePath: ${SW_BASE_PATH:/opt/starwhale}
     hostIP: ${SW_HOST_IP:127.0.0.1}
     task:
-      retryStartMaxNum: 10
+      retryRunMaxNum: 10
       retryRestartMaxNum: 10
 #      infoPath: ${SW_TASK_INFO_PATH:/var/starwhale/task/info/}
 #      statusPath: ${SW_TASK_STATUS_PATH:/var/starwhale/task/status/}
