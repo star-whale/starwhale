@@ -57,9 +57,9 @@ public class InferenceTask {
      */
     String containerId;
 
-    int retryStartNum;
-    public void retryStart() {
-        retryStartNum ++;
+    int retryRunNum;
+    public void retryRun() {
+        retryRunNum++;
     }
     int retryRestartNum;
     public void retryRestart() {
