@@ -15,9 +15,4 @@ public class TaskLog {
 
     private String log;
 
-    private Status status;
-
-    public enum Status {
-        RUNNING, FINISHED
-    }
 }
