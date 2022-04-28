@@ -139,3 +139,12 @@ ingress:
   ingressClassName: nginx
   host: console.pre.intra.starwhale.ai
   path: /
+
+mirror:
+  conda:
+    enabled: true
+  pypi:
+    enabled: true
+    indexUrl: "http://10.131.0.1:3141/root/pypi-douban/+simple/"
+    extraIndexUrl: "https://pypi.tuna.tsinghua.edu.cn/simple/"
+    trustedHost: "10.131.0.1 pypi.tuna.tsinghua.edu.cn"
