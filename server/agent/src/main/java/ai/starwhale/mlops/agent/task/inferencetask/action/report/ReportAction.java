@@ -14,6 +14,7 @@ import ai.starwhale.mlops.agent.node.base.SystemInfo;
 import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
@@ -29,9 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,6 +42,9 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
 
     @Autowired
     protected SourcePool sourcePool;
+
+    @Autowired
+    protected LogRecorder logRecorder;
 
     @Autowired
     private ReportApi reportApi;
@@ -71,20 +73,20 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
         List<TaskReport> all = new ArrayList<>();
         // without stop the world
         all.addAll(new ArrayList<>(
-                taskPool.preparingTasks.stream().map(InferenceTask::toTaskReport)
+                taskPool.preparingTasks.stream().map(task -> task.toTaskReport(logRecorder.generateLogs(task.getId())))
                         .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-                taskPool.runningTasks.stream().map(InferenceTask::toTaskReport)
+                taskPool.runningTasks.stream().map(task -> task.toTaskReport(logRecorder.generateLogs(task.getId())))
                         .collect(Collectors.toList())));
         all.addAll(new ArrayList<>(
-                taskPool.uploadingTasks.stream().map(InferenceTask::toTaskReport)
+                taskPool.uploadingTasks.stream().map(task -> task.toTaskReport(logRecorder.generateLogs(task.getId())))
                         .collect(Collectors.toList())));
-        all.addAll(finishedTasks.stream().map(InferenceTask::toTaskReport)
+        all.addAll(finishedTasks.stream().map(task -> task.toTaskReport(logRecorder.generateLogs(task.getId())))
                 .collect(Collectors.toList()));
         all.addAll(new ArrayList<>(
-                taskPool.failedTasks.stream().map(InferenceTask::toTaskReport)
+                taskPool.failedTasks.stream().map(task -> task.toTaskReport(logRecorder.generateLogs(task.getId())))
                         .collect(Collectors.toList())));
-        all.addAll(canceledTasks.stream().map(InferenceTask::toTaskReport)
+        all.addAll(canceledTasks.stream().map(task -> task.toTaskReport(logRecorder.generateLogs(task.getId())))
                 .collect(Collectors.toList()));
         reportRequest.setTasks(all);
 
@@ -153,6 +155,10 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
             // add controller's wait to cancel tasks to current list
             if (CollectionUtil.isNotEmpty(response.getTaskIdsToCancel())) {
                 taskPool.needToCancel.addAll(response.getTaskIdsToCancel());
+            }
+
+            if (CollectionUtil.isNotEmpty(response.getLogReaders())) {
+                logRecorder.addRecords(response.getLogReaders());
             }
         }
     }

@@ -18,7 +18,7 @@ public class TaskPool {
         public final List<InferenceTask> runningTasks = new Vector<>();
         public final List<InferenceTask> uploadingTasks = new Vector<>();
         public final List<InferenceTask> succeedTasks = new Vector<>();
-        public final List<InferenceTask> archivedTasks = new Vector<>();
+        //public final List<InferenceTask> archivedTasks = new Vector<>();
         public final List<InferenceTask> canceledTasks = new Vector<>();
         public final List<InferenceTask> failedTasks = new Vector<>();
         public final List<Long> needToCancel = new Vector<>();
@@ -41,7 +41,7 @@ public class TaskPool {
                     failedTasks.add(task);
                     break;
                 case ARCHIVED:
-                    archivedTasks.add(task);
+                    //archivedTasks.add(task);
                     break;
                 case CANCELING:
                     switch (task.getStage()) {

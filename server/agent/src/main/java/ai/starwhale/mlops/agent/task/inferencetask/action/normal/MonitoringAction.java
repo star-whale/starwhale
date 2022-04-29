@@ -11,9 +11,11 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
+import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence.ExecuteStatus;
 import cn.hutool.core.bean.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -21,6 +23,9 @@ import java.util.Optional;
 @Slf4j
 @Service
 public class MonitoringAction extends AbsBasePPLTaskAction {
+
+    @Autowired
+    private LogRecorder logRecorder;
 
     @Override
     public InferenceTask processing(InferenceTask runningTask, Context context)
@@ -84,6 +89,7 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
                         log.warn("container:{} is dead, now will restart it", oldTask.getContainerId());
                         oldTask.retryRestart();
                         containerClient.startContainer(oldTask.getContainerId());
+                        logRecorder.restart(oldTask.getId(), oldTask.getContainerId());
                     }
                     break;
                 case NO_SUCH_CONTAINER:

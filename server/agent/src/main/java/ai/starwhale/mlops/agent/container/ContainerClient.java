@@ -1,5 +1,8 @@
 package ai.starwhale.mlops.agent.container;
 
+import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.model.Frame;
+
 import java.util.Optional;
 
 /**
@@ -16,6 +19,7 @@ public interface ContainerClient {
     boolean startContainer(String containerId);
     boolean stopContainer(String containerId);
     boolean removeContainer(String containerId, boolean deleteVolume);
+    void logContainer(String containerId, ResultCallback<Frame> resultCallback);
     ContainerStatus status(String containerId);
 
     /**

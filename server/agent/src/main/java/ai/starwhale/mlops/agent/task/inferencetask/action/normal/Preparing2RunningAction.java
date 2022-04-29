@@ -59,7 +59,14 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
         ImageConfig imageConfig = ImageConfig.builder()
                 .autoRemove(false) // todo
                 .image(oldTask.getImageId())
-                .labels(Map.of("taskId", oldTask.getId().toString()))
+                .labels(Map.of(
+                        "task-id", oldTask.getId().toString(),
+                        "task-type", oldTask.getTaskType().name(),
+                        "swmp-name", oldTask.getSwModelPackage().getName(),
+                        "swmp-version", oldTask.getSwModelPackage().getVersion(),
+                        "device-type", oldTask.getDeviceClass().name(),
+                        "device-num", oldTask.getDeviceAmount().toString()
+                ))
                 .build();
 
         // preAllocate fail, try again
@@ -117,11 +124,13 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
         // generate the file used by container(default dir)
         taskPersistence.generateConfigFile(oldTask);
 
-        // todo cache
+        // task container env
         imageConfig.setEnv(List.of(
-                env("SW_PYPI_INDEX_URL", "http://10.131.0.1:3141/root/pypi-douban/+simple/"),
-                env("SW_PYPI_EXTRA_INDEX_URL", ""),
-                env("SW_PYPI_TRUSTED_HOST", "10.131.0.1")
+                env("SW_PYPI_INDEX_URL", agentProperties.getTask().getPypiIndexUrl()),
+                env("SW_PYPI_EXTRA_INDEX_URL", agentProperties.getTask().getPypiExtraIndexUrl()),
+                env("SW_PYPI_TRUSTED_HOST", agentProperties.getTask().getPypiTrustedHost()),
+                env("SW_SWMP_NAME", oldTask.getSwModelPackage().getName()),
+                env("SW_SWMP_VERSION", oldTask.getSwModelPackage().getVersion())
         ));
 
         // fill with task info

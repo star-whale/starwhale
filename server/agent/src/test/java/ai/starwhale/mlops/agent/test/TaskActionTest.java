@@ -12,6 +12,7 @@ import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
@@ -130,7 +131,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build()
         );
         if (CollectionUtil.isNotEmpty(tasks)) {
@@ -148,6 +149,9 @@ public class TaskActionTest {
 
     @Test
     public void testMonitorTask() throws Exception {
+        // clear local dir
+        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
                         .id(1234567890L)
@@ -175,7 +179,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build(),
                 InferenceTask.builder()
                         .id(1234567891L)
@@ -203,7 +207,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build()
         );
         if (CollectionUtil.isNotEmpty(tasks)) {
@@ -211,6 +215,7 @@ public class TaskActionTest {
             taskPool.setToReady();
         }
 
+        Mockito.when(containerClient.status(any())).thenReturn(ContainerClient.ContainerStatus.NORMAL);
         // first to monitor
         taskExecutor.monitorRunningTasks();
         assertEquals(2, taskPool.runningTasks.size());
@@ -225,7 +230,10 @@ public class TaskActionTest {
     }
 
     @Test
-    public void testUpload() {
+    public void testUpload() throws IOException {
+        // clear local dir
+        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
                         .id(1234567890L)
@@ -253,7 +261,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build(),
                 InferenceTask.builder()
                         .id(1234567891L)
@@ -281,7 +289,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build()
         );
         if (CollectionUtil.isNotEmpty(tasks)) {

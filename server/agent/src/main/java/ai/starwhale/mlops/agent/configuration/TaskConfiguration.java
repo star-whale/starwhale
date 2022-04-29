@@ -7,14 +7,17 @@
 
 package ai.starwhale.mlops.agent.configuration;
 
+import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskScheduler;
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.inferencetask.initializer.TaskPoolInitializer;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -35,6 +38,11 @@ public class TaskConfiguration {
     @Bean
     public TaskPool taskPool() {
         return new TaskPool();
+    }
+
+    @Bean
+    public LogRecorder logRecorder(ContainerClient containerClient, TaskPersistence taskPersistence) {
+        return new LogRecorder(containerClient, taskPersistence);
     }
 
     @Bean
@@ -69,8 +77,8 @@ public class TaskConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "sw.agent.task.scheduler.enabled", havingValue = "true", matchIfMissing = true)
-    public TaskScheduler agentTaskScheduler(TaskExecutor agentTaskExecutor) {
-        return new TaskScheduler(agentTaskExecutor);
+    public TaskScheduler agentTaskScheduler(TaskExecutor agentTaskExecutor, LogRecorder logRecorder) {
+        return new TaskScheduler(agentTaskExecutor, logRecorder);
     }
 
 }

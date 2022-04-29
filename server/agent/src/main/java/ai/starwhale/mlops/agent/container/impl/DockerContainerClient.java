@@ -147,6 +147,10 @@ public class DockerContainerClient implements ContainerClient {
         return false;
     }
 
+    public void logContainer(String containerId, ResultCallback<Frame> resultCallback) {
+        client.logContainerCmd(containerId).exec(resultCallback);
+    }
+
     @Override
     public ContainerStatus status(String containerId) {
         try {

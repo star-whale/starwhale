@@ -8,7 +8,9 @@
 package ai.starwhale.mlops.agent.task.inferencetask;
 
 import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
+import ai.starwhale.mlops.api.protocol.report.req.TaskLog;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
@@ -88,7 +90,7 @@ public class InferenceTask {
     /**
      * output information at the end of stage: the single task's result
      */
-    String resultPath;
+    ResultPath resultPath;
 
     /**
      * task's execute stage
@@ -129,7 +131,7 @@ public class InferenceTask {
     }
 
 
-    public TaskReport toTaskReport() {
+    public TaskReport toTaskReport(List<TaskLog> logs) {
         TaskStatusInterface reportStatus = null;
         switch (this.status) {
             case PREPARING:
@@ -151,6 +153,6 @@ public class InferenceTask {
                 reportStatus = TaskStatusInterface.CANCELED;
                 break;
         }
-        return TaskReport.builder().id(this.id).status(reportStatus).taskType(this.taskType).build();
+        return TaskReport.builder().id(this.id).readerLogs(logs).status(reportStatus).taskType(this.taskType).build();
     }
 }
