@@ -55,7 +55,7 @@ public class TaskService {
     public List<String> offLineLogFiles(Long taskId){
         ResultPath resultPath = resultPathOfTask(taskId);
         try {
-            String logDir = resultPath.getLogDir();
+            String logDir = resultPath.logDir();
             return storageAccessService.list(logDir)
                 .map(path-> trimPath(path,logDir))
                 .collect(Collectors.toList());
@@ -68,7 +68,7 @@ public class TaskService {
 
     public String logContent(Long taskId,String logFileName){
         ResultPath resultPath = resultPathOfTask(taskId);
-        String logDir = resultPath.getLogDir();
+        String logDir = resultPath.logDir();
         try(InputStream inputStream = storageAccessService.get(
             logDir + PATH_SPLITERATOR + logFileName);) {
             return new String(inputStream.readAllBytes());
