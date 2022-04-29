@@ -7,13 +7,13 @@ image:
   registry: "docker.io"
   agent:
     repo: "starwhaleai/agent"
-    tag: "0.1.0-nightly-2022042707"
+    tag: "0.1.0-nightly-2022042901"
   taskset:
     repo: "starwhaleai/taskset"
     tag: "0.1.0-nightly-2022041601"
   controller:
     repo: "starwhaleai/controller"
-    tag: "0.1.0-nightly-2022042702"
+    tag: "0.1.0-nightly-2022042901"
   pullPolicy: IfNotPresent
 
 mysql:

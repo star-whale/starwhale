@@ -10,6 +10,7 @@ package ai.starwhale.mlops.agent.task.inferencetask.persistence;
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
+import ai.starwhale.mlops.agent.utils.FileUtil;
 import ai.starwhale.mlops.agent.utils.TarUtil;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -189,12 +190,13 @@ public class FileSystemTaskPersistence implements TaskPersistence {
             download(cachePathStr, model.getPath());
         }
         File targetDir = new File(fileSystemPath.oneActiveTaskModelDir(task.getId()));
-        Files.find(Path.of(cachePathStr), 1, (t,u)->true).forEach(path -> {
+        Files.find(Path.of(cachePathStr), 1, (p, u) -> !p.toString().equals(cachePathStr)).forEach(path -> {
             try {
+                File src = path.toFile();
                 if (Files.isDirectory(path)) {
-                    FileUtils.copyDirectoryToDirectory(path.toFile(), targetDir);
+                    FileUtil.copyDirectoryToDirectory(src, targetDir);
                 } else {
-                    FileUtils.copyFileToDirectory(path.toFile(), targetDir);
+                    FileUtil.copyFileToDirectory(src, targetDir);
                 }
             } catch (IOException e) {
                 log.error("copy swmp:{} to {} error", path, targetDir.getPath());
