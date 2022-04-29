@@ -1,8 +1,8 @@
 BASE_IMAGE :=starwhaleai/base:0.1.0-nightly-2022042701
 SW_IMAGE := starwhaleai/starwhale:0.1.0-nightly-2022042801
 SW_TASKSET_IMAGE := starwhaleai/taskset:0.1.0-nightly-2022041601
-SW_CONTROLLER_IMAGE := starwhaleai/controller:0.1.0-nightly-2022042902
-SW_AGENT_IMAGE := starwhaleai/agent:0.1.0-nightly-2022042907
+SW_CONTROLLER_IMAGE := starwhaleai/controller:0.1.0-nightly-2022042906
+SW_AGENT_IMAGE := starwhaleai/agent:0.1.0-nightly-2022042908
 SW_VERSION := 0.1.0.dev15
 DOCKER_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := $(dir $(abspath $(DOCKER_DIR)))
