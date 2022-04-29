@@ -7,6 +7,7 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.end;
 
+import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
@@ -32,10 +33,18 @@ public class ArchivedAction extends AbsBasePPLTaskAction {
 
     @Override
     public void success(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
+        // upload log
+        ContainerClient.ContainerInfo info = containerClient.containerInfo(oldTask.getContainerId());
+        taskPersistence.uploadContainerLog(oldTask, info.getLogPath());
+
         // remove from origin list
         taskPool.failedTasks.remove(oldTask);
         taskPool.succeedTasks.remove(oldTask);
         taskPool.canceledTasks.remove(oldTask);
+
         logRecorder.remove(oldTask.getId());
+
+        // remove container
+        containerClient.removeContainer(oldTask.getContainerId(), true);
     }
 }

@@ -155,6 +155,12 @@ public class DockerContainerClient implements ContainerClient {
     }
 
     @Override
+    public ContainerInfo containerInfo(String containerId) {
+        InspectContainerResponse response = client.inspectContainerCmd(containerId).exec();
+        return ContainerInfo.builder().logPath(response.getLogPath()).build();
+    }
+
+    @Override
     public ContainerStatus status(String containerId) {
         try {
             InspectContainerResponse response = client.inspectContainerCmd(containerId).exec();

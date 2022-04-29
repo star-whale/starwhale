@@ -168,7 +168,7 @@ public class FileSystemPath {
     /**
      * task runtime log dir path,Eg:/var/starwhale/[active or archived]/tasks/{taskId}/log
      */
-    public String pathOfLog(Long id) {
+    public String oneActiveTaskLogDir(Long id) {
         return oneActiveInferenceTaskLogsDir.path(basePath, id);
     }
 
