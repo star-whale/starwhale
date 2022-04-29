@@ -38,11 +38,11 @@ public class ResultPath {
         this.logDir = DIR_LOG;
     }
 
-    public String getResultDir() {
+    public String resultDir() {
         return this.root +  resultDir;
     }
 
-    public String getLogDir() {
+    public String logDir(){
         return this.root +  logDir;
     }
 }

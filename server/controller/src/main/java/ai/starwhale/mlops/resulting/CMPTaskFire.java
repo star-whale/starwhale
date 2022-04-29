@@ -85,7 +85,7 @@ public class CMPTaskFire {
         Collection<Task> tasks = livingTaskCache.ofJob(job.getId());
         List<String> allPPLTaskResults = tasks.parallelStream().flatMap(task -> {
                 try {
-                    return storageAccessService.list(task.getResultRootPath().getResultDir());
+                    return storageAccessService.list(task.getResultRootPath().resultDir());
                 } catch (IOException e) {
                     throw new SWProcessException(ErrorType.STORAGE).tip("list task result dir failed");
                 }
