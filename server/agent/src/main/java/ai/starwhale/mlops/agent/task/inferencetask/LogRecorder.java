@@ -69,7 +69,7 @@ public class LogRecorder {
             ListIterator<String> iterator = logs.listIterator(offset);
             StringBuilder stringBuilder = new StringBuilder();
             while (iterator.hasNext()) {
-                stringBuilder.append(iterator.next()).append(System.lineSeparator());
+                stringBuilder.append(iterator.next());
             }
             taskLogs.add(TaskLog.builder()
                     .readerId(readerId)

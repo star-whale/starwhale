@@ -190,12 +190,13 @@ public class FileSystemTaskPersistence implements TaskPersistence {
             download(cachePathStr, model.getPath());
         }
         File targetDir = new File(fileSystemPath.oneActiveTaskModelDir(task.getId()));
-        Files.find(Path.of(cachePathStr), 1, (t, u) -> true).forEach(path -> {
+        Files.find(Path.of(cachePathStr), 1, (p, u) -> !p.toString().equals(cachePathStr)).forEach(path -> {
             try {
+                File src = path.toFile();
                 if (Files.isDirectory(path)) {
-                    FileUtil.copyDirectoryToDirectory(path.toFile(), targetDir);
+                    FileUtil.copyDirectoryToDirectory(src, targetDir);
                 } else {
-                    FileUtil.copyFileToDirectory(path.toFile(), targetDir);
+                    FileUtil.copyFileToDirectory(src, targetDir);
                 }
             } catch (IOException e) {
                 log.error("copy swmp:{} to {} error", path, targetDir.getPath());

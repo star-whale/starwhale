@@ -721,21 +721,8 @@ public class FileUtil {
         }
 
         try (FileInputStream fis = new FileInputStream(srcFile);
-             FileChannel input = fis.getChannel();
-             FileOutputStream fos = new FileOutputStream(destFile);
-             FileChannel output = fos.getChannel()) {
-            final long size = input.size(); // TODO See IO-386
-            long pos = 0;
-            long count = 0;
-            while (pos < size) {
-                final long remain = size - pos;
-                count = remain > FILE_COPY_BUFFER_SIZE ? FILE_COPY_BUFFER_SIZE : remain;
-                final long bytesCopied = output.transferFrom(input, pos, count);
-                if (bytesCopied == 0) { // IO-385 - can happen if file is truncated after caching the size
-                    break; // ensure we don't loop forever
-                }
-                pos += bytesCopied;
-            }
+             FileOutputStream fos = new FileOutputStream(destFile)) {
+                IOUtils.copy(fis, fos);
         }
 
         final long srcLen = srcFile.length(); // TODO See IO-386
@@ -1019,12 +1006,14 @@ public class FileUtil {
         }
         for (final File srcFile : srcFiles) {
             final File dstFile = new File(destDir, srcFile.getName());
-            // set executable
-            if(srcFile.canExecute()) dstFile.setExecutable(true);
             if (exclusionList == null || !exclusionList.contains(srcFile.getCanonicalPath())) {
                 if (srcFile.isDirectory()) {
                     doCopyDirectory(srcFile, dstFile, filter, preserveFileDate, exclusionList);
                 } else {
+                    dstFile.createNewFile();
+                    // set executable
+                    if(srcFile.canExecute())
+                        dstFile.setExecutable(true);
                     doCopyFile(srcFile, dstFile, preserveFileDate);
                 }
             }
