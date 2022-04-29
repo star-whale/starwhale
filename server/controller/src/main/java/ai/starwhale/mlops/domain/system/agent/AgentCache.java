@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 /**
  * release pain of agent reporting
  */
+@Slf4j
 @Service
 public class AgentCache implements CommandLineRunner {
 
@@ -45,6 +47,7 @@ public class AgentCache implements CommandLineRunner {
     }
 
     public Agent nodeReport(Node node){
+        log.debug("node reported {}",node.getIpAddr());
         Agent agentReported = agentConverter.fromNode(node);
         Agent residentAgent = agents.get(node.getIpAddr());
         if(null == residentAgent){
