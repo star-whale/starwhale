@@ -148,7 +148,10 @@ public class DockerContainerClient implements ContainerClient {
     }
 
     public void logContainer(String containerId, ResultCallback<Frame> resultCallback) {
-        client.logContainerCmd(containerId).exec(resultCallback);
+        client.logContainerCmd(containerId)
+                .withTailAll()
+                .withFollowStream(true).withStdOut(true).withStdErr(true)
+                .exec(resultCallback);
     }
 
     @Override
