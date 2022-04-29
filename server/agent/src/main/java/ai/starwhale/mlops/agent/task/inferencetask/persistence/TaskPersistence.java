@@ -82,5 +82,7 @@ public interface TaskPersistence {
      * @return oss path
      */
     void uploadResult(InferenceTask task) throws Exception;
+    void uploadLog(InferenceTask task) throws Exception;
+    void uploadContainerLog(InferenceTask task, String logPath);
 
 }

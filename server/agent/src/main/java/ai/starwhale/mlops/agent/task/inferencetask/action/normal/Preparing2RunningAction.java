@@ -57,7 +57,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
     public InferenceTask processing(InferenceTask oldTask, Context context) throws Exception {
 
         ImageConfig imageConfig = ImageConfig.builder()
-                .autoRemove(false) // todo
+                .autoRemove(false) // finally rm
                 .image(oldTask.getImageId())
                 .labels(Map.of(
                         "task-id", oldTask.getId().toString(),

@@ -32,6 +32,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -278,20 +279,43 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     @Override
     public void uploadResult(InferenceTask task) throws IOException {
         // results is a set of files
-        Stream<Path> paths = Files.find(Path.of(fileSystemPath.oneActiveTaskResultDir(task.getId())), 1, (a, b) -> true);
-        List<Path> results = paths.filter(path -> !Files.isDirectory(path))
-                .collect(Collectors.toList());
+        uploadLocalDir2Storage(fileSystemPath.oneActiveTaskResultDir(task.getId()), task.getResultPath().resultDir());
+    }
+
+    @Override
+    public void uploadLog(InferenceTask task) throws IOException {
+        // results is a set of files
+        uploadLocalDir2Storage(fileSystemPath.oneActiveTaskLogDir(task.getId()), task.getResultPath().logDir());
+    }
+
+    private void uploadLocalDir2Storage(String srcDir, String destDir) throws IOException {
+        // results is a set of files
+        List<Path> results = Files.find(
+                Path.of(srcDir), 1, (path, b) -> !Files.isDirectory(path)
+        ).collect(Collectors.toList());
+
         if (CollectionUtil.isNotEmpty(results)) {
             results.forEach(path -> {
                 try {
-                    storageAccessService.put(task.getResultPath().resultDir() + "/" + path.getFileName(),
+                    storageAccessService.put(destDir + "/" + path.getFileName(),
                             new BufferedInputStream(new FileInputStream(String.valueOf(path))));
                 } catch (IOException e) {
                     log.error("upload result:{} occur error:{}", path.getFileName(), e.getMessage(), e);
                 }
             });
         } else {
-            throw ErrorCode.uploadError.asException(String.format("task:%s has no result to upload", task.getId()));
+            log.error("dir:{} has no log to upload", srcDir);
+        }
+    }
+
+    @Override
+    public void uploadContainerLog(InferenceTask task, String logPath) {
+        try {
+            File logFile = new File(logPath);
+            storageAccessService.put(task.getResultPath().logDir() + "/" + logFile.getName(),
+                    new BufferedInputStream(new FileInputStream(logPath)));
+        } catch (IOException e) {
+            log.error("upload container log :{} occur error:{}", logPath, e.getMessage(), e);
         }
 
     }

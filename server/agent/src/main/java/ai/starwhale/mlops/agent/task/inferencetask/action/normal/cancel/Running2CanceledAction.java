@@ -25,7 +25,7 @@ public class Running2CanceledAction extends AbsBaseCancelPPLTaskAction {
     @Override
     public InferenceTask processing(InferenceTask oldTask, Context context) {
         // stop the container
-        if (containerClient.stopAndRemoveContainer(oldTask.getContainerId(), true)) {
+        if (containerClient.stopContainer(oldTask.getContainerId())) {
             return super.processing(oldTask, context);
         }
         return null;

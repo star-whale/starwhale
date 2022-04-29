@@ -2,6 +2,8 @@ package ai.starwhale.mlops.agent.container;
 
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.model.Frame;
+import lombok.Builder;
+import lombok.Data;
 
 import java.util.Optional;
 
@@ -20,7 +22,14 @@ public interface ContainerClient {
     boolean stopContainer(String containerId);
     boolean removeContainer(String containerId, boolean deleteVolume);
     void logContainer(String containerId, ResultCallback<Frame> resultCallback);
+    ContainerInfo containerInfo(String containerId);
     ContainerStatus status(String containerId);
+
+    @Data
+    @Builder
+    class ContainerInfo{
+        String logPath;
+    }
 
     /**
      * "created""running""paused""restarting""removing""exited""dead"
