@@ -22,6 +22,7 @@
 
     <select id="listAgents" resultMap="agentResultMap">
         <include refid="select_agents"/>
+        order by connect_time desc
     </select>
 
     <select id="findByIp" resultMap="agentResultMap">

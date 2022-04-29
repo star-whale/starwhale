@@ -69,7 +69,7 @@
                 and swmp_id = #{swmpId}
             </when>
             <otherwise>
-                order by swmp_id
+                order by swmp_id,j.id desc
             </otherwise>
         </choose>
 

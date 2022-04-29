@@ -36,6 +36,7 @@
         <if test="namePrefix != null and namePrefix != ''">
             and s.swmp_name like concat(#{namePrefix}, '%')
         </if>
+        order by s.id desc
     </select>
 
     <select id="findSWModelPackageById" resultMap="swmpResultMap" >
