@@ -284,8 +284,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
         if (CollectionUtil.isNotEmpty(results)) {
             results.forEach(path -> {
                 try {
-                    // todo Whether the controller uses the same field in different stages
-                    storageAccessService.put(task.getResultPath().getResultDir() + "/" + path.getFileName(),
+                    storageAccessService.put(task.getResultPath().resultDir() + "/" + path.getFileName(),
                             new BufferedInputStream(new FileInputStream(String.valueOf(path))));
                 } catch (IOException e) {
                     log.error("upload result:{} occur error:{}", path.getFileName(), e.getMessage(), e);
