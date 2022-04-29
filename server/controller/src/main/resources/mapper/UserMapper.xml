@@ -64,6 +64,7 @@
         <if test = "userNamePrefix != null and userNamePrefix != ''">
             and u.user_name like concat(#{userNamePrefix}, '%')
         </if>
+        order by u.user_name
     </select>
 
     <update id="changePassword" parameterType="ai.starwhale.mlops.domain.user.UserEntity">

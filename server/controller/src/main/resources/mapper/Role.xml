@@ -13,6 +13,7 @@
                role_name,
                role_name_en
         from user_role
+        order by role_name
     </select>
     <resultMap id="roleResultMap" type="ai.starwhale.mlops.domain.user.RoleEntity" >
         <id property="id" column="role_id" />

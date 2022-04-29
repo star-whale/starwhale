@@ -34,6 +34,7 @@
     <select id="listTasks" resultMap="taskResultMap">
         <include refid="select_task" />
         and t.job_id = #{jobId}
+        order by t.id desc
     </select>
 
     <select id="findTaskById" resultMap="taskResultMap" >
