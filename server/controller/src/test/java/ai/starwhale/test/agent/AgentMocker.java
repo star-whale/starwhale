@@ -58,6 +58,12 @@ public class AgentMocker {
 
     Map<Long,RunningTask> allTasks = new ConcurrentHashMap<>();
 
+    String ip = "127.0.0.1";
+
+    public AgentMocker(String ip){
+        this.ip = ip;
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -128,7 +134,7 @@ public class AgentMocker {
     static final String reportPath="/report";
 
     @Test
-    public void test() throws InterruptedException {
+    public void start() throws InterruptedException {
 
         while (true){
             statusChange();
@@ -202,7 +208,7 @@ public class AgentMocker {
 
     private Node nodeInfo() {
         return Node.builder().devices(
-            deviceInfo()).agentVersion("1").ipAddr("123.0.0.9").build();
+            deviceInfo()).agentVersion("1").ipAddr(ip).build();
     }
 
     private List<Device> deviceInfo() {
