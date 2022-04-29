@@ -69,8 +69,7 @@ class DataSetLocalStore(LocalStorage):
                 )
 
     def push(self, sw_name: str, project: str="", force: bool=False) -> None:
-        server = fmt_http_server(self.sw_remote_addr)
-        url = f"{server}/api/{SW_API_VERSION}/project/dataset/push"
+        url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/project/dataset/push"
 
         _name, _version = self._parse_swobj(sw_name)
         _dir = self._guess(self.dataset_dir / _name, _version)

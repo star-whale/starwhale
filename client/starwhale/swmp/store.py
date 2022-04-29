@@ -68,9 +68,8 @@ class ModelPackageLocalStore(LocalStorage):
             return yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
 
     def push(self, swmp: str, project: str="", force: bool=False) -> None:
-        server= fmt_http_server(self.sw_remote_addr)
         #TODO: add more restful api for project, /api/v1/project/{project_id}/model/push
-        url = f"{server}/api/{SW_API_VERSION}/project/model/push"
+        url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/project/model/push"
 
         _spath = self.swmp_path(swmp)
         if not _spath.exists():

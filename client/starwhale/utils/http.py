@@ -2,7 +2,9 @@ from http import HTTPStatus
 import sys
 import typing as t
 from pathlib import Path
+from functools import wraps
 
+from loguru import logger
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
@@ -56,3 +58,16 @@ def upload_file(url: str, fpath: t.Union[str, Path], fields: dict={}, headers: d
     if r.status_code != HTTPStatus.OK:
         wrap_sw_error_resp(r, "upload failed", exit=exit)
     return r
+
+
+def ignore_error(default_ret: t.Any=""):
+    def _decorator(func):
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                logger.warning(f"{func} error: {e}")
+                return default_ret
+        return _wrapper
+    return _decorator
