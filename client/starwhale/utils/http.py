@@ -14,12 +14,16 @@ from rich.panel import Panel
 _UPLOAD_CHUNK_SIZE = 20 * 1024 * 1024
 
 
-def wrap_sw_error_resp(r :requests.Response, header: str, exit: bool=False, use_raise: bool=False) -> None:
+def wrap_sw_error_resp(r :requests.Response, header: str,
+                       exit: bool=False, use_raise: bool=False,
+                       slient: bool=False) -> None:
+
+    _rprint = lambda x:x if slient else rprint
     if r.status_code == HTTPStatus.OK:
-        rprint(f" :clap: {header} success")
+        _rprint(f" :clap: {header} success")
         return
 
-    rprint(f":fearful: {header} failed")
+    _rprint(f":fearful: {header} failed")
     msg = f"http status code: {r.status_code} \n"
 
     try:
@@ -30,7 +34,7 @@ def wrap_sw_error_resp(r :requests.Response, header: str, exit: bool=False, use_
         msg += f"starwhale code: {_resp['code']} \n"
         msg += f"error message: {_resp['message']}"
     finally:
-        rprint(Panel.fit(msg, title=":space_invader: error details"))
+        _rprint(Panel.fit(msg, title=":space_invader: error details"))
         if exit:
             sys.exit(1)
 

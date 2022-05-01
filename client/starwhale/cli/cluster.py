@@ -1,5 +1,6 @@
 import click
 from rich import print as rprint
+from starwhale.cluster import Cluster
 
 
 @click.group("cluster", help="starwhale cluster info and terminal ui")
@@ -9,7 +10,7 @@ def cluster_cmd():
 
 @cluster_cmd.command("info", help="show controller cluster info")
 def _info():
-    pass
+    Cluster().info()
 
 
 @cluster_cmd.command("tui", help="basic terminal ui for starwhale controller")
