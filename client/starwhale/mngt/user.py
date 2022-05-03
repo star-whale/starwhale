@@ -28,9 +28,14 @@ def login(username, password, server):
             rprint(f":do_not_litter: cannot get token, please contract starwhale.")
             sys.exit(1)
 
+        _d = r.json()["data"]
+        role = _d.get("role") if isinstance(_d, dict) else None
+
         update_swcli_config(
             controller=dict(
-                remote_addr=server, sw_token=token
+                remote_addr=server, sw_token=token,
+                user_name=username,
+                user_role=role or "normal",
             )
         )
     else:
@@ -40,7 +45,7 @@ def login(username, password, server):
 def logout():
     update_swcli_config(
             controller=dict(
-                remote_addr="", sw_token=""
+                remote_addr="", sw_token="", user_name="", user_role="",
             )
         )
     rprint(f":wink: bye.")

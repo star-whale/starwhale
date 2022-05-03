@@ -36,6 +36,8 @@ def render_default_swcli_config(fpath: str) -> dict:
         controller=dict(
             remote_addr=DEFAULT_LOCAL_SW_CONTROLLER_ADDR,
             sw_token="",
+            username="",
+            user_role="",
         ),
         storage=dict(
             root=str(SW_LOCAL_STORAGE.resolve())
@@ -90,9 +92,21 @@ class SWCliConfigMixed(object):
 
     @property
     def sw_remote_addr(self) -> str:
-        addr = self._config.get("controller", {}).get("remote_addr", "")
+        addr = self._controller.get("remote_addr", "")
         return fmt_http_server(addr)
 
     @property
+    def user_name(self) -> str:
+        return self._controller.get("user_name", "")
+
+    @property
     def _sw_token(self) -> str:
-        return self._config.get("controller", {}).get("sw_token", "")
+        return self._controller.get("sw_token", "")
+
+    @property
+    def _controller(self) -> dict:
+        return self._config.get("controller", {})
+
+    @property
+    def user_role(self) -> str:
+        return self._controller.get("user_role", "")
