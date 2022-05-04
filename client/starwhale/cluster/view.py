@@ -1,7 +1,6 @@
 
 import typing as t
 from functools import wraps
-from collections import defaultdict, namedtuple
 
 from loguru import logger
 from rich.layout import Layout
@@ -58,7 +57,50 @@ class ClusterView(ClusterModel):
 
     @_pager #type: ignore
     @_header #type: ignore
-    def list(self, all_users: bool=False, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE, fullname: bool=False):
+    def list_jobs(self, project: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
+        jobs, pager = self._fetch_jobs(project, page, size)
+
+        table = Table(
+            title=f"Project({project}) Jobs", box=box.SIMPLE,
+            expand=True
+        )
+        table.add_column("ID", justify="left", style="cyan", no_wrap=True)
+        table.add_column("Model", style="magenta")
+        table.add_column("Version", style="magenta")
+        table.add_column("State", style="magenta")
+        table.add_column("Resource", style="blue")
+        table.add_column("Duration")
+        table.add_column("Created")
+        table.add_column("Finished")
+
+        for j in jobs:
+            status = j["jobStatus"]
+            style = ""
+            icon = ":thinking:"
+            if status == "SUCCESS":
+                style = "green"
+                icon = ":clap:"
+            elif status == "FAIL":
+                style = "red"
+                icon = ":fearful:"
+
+            table.add_row(
+                j["id"],
+                j["modelName"],
+                j["short_model_version"],
+                f"[{style}]{icon}{status}[/]",
+                f"{j['device']}:{j['deviceAmount']}",
+                j["duration_str"],
+                j["created_at"],
+                j["finished_at"],
+            )
+
+        rprint(table)
+        return jobs, pager
+
+    @_pager #type: ignore
+    @_header #type: ignore
+    def list_projects(self, all_users: bool=False, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE, fullname: bool=False):
         user_name = "" if all_users else self.user_name
         projects, pager = self._fetch_projects(user_name, page, size)
 

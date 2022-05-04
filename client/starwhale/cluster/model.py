@@ -1,6 +1,6 @@
 
 import typing as t
-from datetime import datetime
+from datetime import datetime, timedelta
 import yaml
 from collections import namedtuple
 
@@ -17,8 +17,10 @@ _DEFAULT_TIMEOUT_SECS = 90
 _SHOW_ALL = 100
 DEFAULT_PAGE_NUM = 1
 DEFAULT_PAGE_SIZE = 20
+SHORT_VERSION_CNT = 12
 
 _fmt_timestamp = lambda x: datetime.fromtimestamp(float(x) / 1000.0).strftime(FMT_DATETIME)
+_fmt_duration = lambda x: str(timedelta(milliseconds=float(x)))
 PROJECT_OBJ_TYPE = namedtuple("PROJECT_OBJ_TYPE", ["MODEL", "DATASET"])(
     "model", "dataset"
 )
@@ -111,7 +113,7 @@ class ClusterModel(SWCliConfigMixed):
             mvr = self.request(f"/project/{pid}/{typ}/{_m['id']}/version", params={"pageSize": versions_size})
             versions = []
             for _v in mvr.json()["data"]["list"]:
-                _v["short_name"] = _v["name"][:12]
+                _v["short_name"] = _v["name"][:SHORT_VERSION_CNT]
                 _v["created_at"] = _fmt_timestamp(_v.pop("createTime"))
                 _v.pop("owner", None)
                 if typ == PROJECT_OBJ_TYPE.DATASET:
@@ -124,3 +126,19 @@ class ClusterModel(SWCliConfigMixed):
             ret.append(_m)
 
         return ret
+
+    @ignore_error(([], {}))
+    def _fetch_jobs(self, project: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
+        r = self.request(f"/project/{project}/job", params={"pageNum": page, "pageSize": size}).json()
+        jobs = []
+
+        for j in r["data"]["list"]:
+            j.pop("owner", None)
+            j["created_at"] = _fmt_timestamp(j['createTime'])
+            j["finished_at"] = _fmt_timestamp(j['stopTime'])
+            j["duration_str"] = _fmt_duration(j['duration'])
+            j["short_model_version"] = j["modelVersion"][:SHORT_VERSION_CNT]
+
+            jobs.append(j)
+
+        return jobs, self._parse_pager(r)

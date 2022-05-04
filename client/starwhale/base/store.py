@@ -43,7 +43,7 @@ class LocalStorage(SWCliConfigMixed):
         title = title or "List StarWhale obj[swmp|swds] in local storage"
         caption = caption or f"@{self.rootdir}"
 
-        table = Table(title=title, caption=caption, box=box.SIMPLE)
+        table = Table(title=title, caption=caption, box=box.SIMPLE, expand=True)
         table.add_column("Name", justify="right", style="cyan", no_wrap=False)
         table.add_column("Version", style="magenta")
         table.add_column("Tag", style="magenta")

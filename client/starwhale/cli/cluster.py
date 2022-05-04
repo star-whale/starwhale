@@ -12,6 +12,9 @@ def cluster_cmd():
 def _info():
     ClusterView().info()
 
+@cluster_cmd.command("open", help="open web brower for starwhale controller")
+def _open():
+    pass
 
 @cluster_cmd.command("tui", help="basic terminal ui for starwhale controller")
 def _tui():
