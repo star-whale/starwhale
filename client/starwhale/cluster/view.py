@@ -57,33 +57,66 @@ class ClusterView(ClusterModel):
 
     @_pager #type: ignore
     @_header #type: ignore
+    def inspect_job(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
+        tasks, pager = self._fetch_tasks(project, job, page, size)
+
+        table = Table(
+            title=f"Project({project} Job({job}) Tasks List)", box=box.SIMPLE,
+            expand=True
+        )
+        table.add_column("ID", justify="left", style="cyan", no_wrap=True)
+        table.add_column("UUID")
+        table.add_column("Status", style="magenta")
+        table.add_column("Agent")
+        table.add_column("Duration")
+        table.add_column("Created")
+        table.add_column("Finished")
+
+        for t in tasks:
+            status, style, icon = self._pretty_status(t["taskStatus"])
+            table.add_row(
+                t["id"],
+                t["uuid"],
+                f"[{style}]{icon}{status}[/]",
+                t["agent"]["ip"],
+                "",
+                t["created_at"],
+                "",
+            )
+        rprint(table)
+        return tasks, pager
+
+    def _pretty_status(self, status: str) -> t.Tuple[str, str, str]:
+        style = ""
+        icon = ":thinking:"
+        if status == "SUCCESS":
+            style = "green"
+            icon = ":clap:"
+        elif status == "FAIL":
+            style = "red"
+            icon = ":fearful:"
+        return status, style, icon
+
+    @_pager #type: ignore
+    @_header #type: ignore
     def list_jobs(self, project: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
         jobs, pager = self._fetch_jobs(project, page, size)
 
         table = Table(
-            title=f"Project({project}) Jobs", box=box.SIMPLE,
+            title=f"Project({project}) Jobs List", box=box.SIMPLE,
             expand=True
         )
         table.add_column("ID", justify="left", style="cyan", no_wrap=True)
         table.add_column("Model", style="magenta")
         table.add_column("Version", style="magenta")
-        table.add_column("State", style="magenta")
+        table.add_column("Status", style="magenta")
         table.add_column("Resource", style="blue")
         table.add_column("Duration")
         table.add_column("Created")
         table.add_column("Finished")
 
         for j in jobs:
-            status = j["jobStatus"]
-            style = ""
-            icon = ":thinking:"
-            if status == "SUCCESS":
-                style = "green"
-                icon = ":clap:"
-            elif status == "FAIL":
-                style = "red"
-                icon = ":fearful:"
-
+            status, style, icon = self._pretty_status(j["jobStatus"])
             table.add_row(
                 j["id"],
                 j["modelName"],

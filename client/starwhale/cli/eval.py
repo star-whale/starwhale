@@ -17,9 +17,13 @@ def _list(project, page, size):
     ClusterView().list_jobs(project, page, size)
 
 
-@eval_cmd.command("info", help="inspect job info with job id")
-def _info():
-    pass
+@eval_cmd.command("inspect", help="inspect job info with job id")
+@click.argument("project", type=int)
+@click.argument("job", type=int)
+@click.option("-p", "--page", type=int, default=DEFAULT_PAGE_NUM, help="page number for projects list")
+@click.option("-s", "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for projects list")
+def _inspect(project, job, page, size):
+    ClusterView().inspect_job(project, job, page, size)
 
 
 @eval_cmd.command("run", help="run evaluation in local or remote controller cluster")

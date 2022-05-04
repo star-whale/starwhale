@@ -142,3 +142,14 @@ class ClusterModel(SWCliConfigMixed):
             jobs.append(j)
 
         return jobs, self._parse_pager(r)
+
+    @ignore_error(([], {}))
+    def _fetch_tasks(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
+        r = self.request(f"/project/{project}/job/{job}/task").json()
+
+        tasks = []
+        for t in r["data"]["list"]:
+            t["created_at"] = _fmt_timestamp(t["startTime"])
+            tasks.append(t)
+
+        return tasks, self._parse_pager(r)
