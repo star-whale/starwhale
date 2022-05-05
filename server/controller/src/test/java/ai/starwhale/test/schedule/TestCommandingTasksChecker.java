@@ -27,7 +27,7 @@ public class TestCommandingTasksChecker {
 
     @Test
     public void test(){
-        Agent agent = new Agent(1L,"1","10.199.2.2",null,null);
+        Agent agent = new Agent(1L,"1","10.199.2.2","10.199.2.2",null,null);
         List<TaskCommand> taskCommands = List.of(
             new TaskCommand(CommandType.TRIGGER,Task.builder().id(1L).uuid("uu1").build()),
             new TaskCommand(CommandType.TRIGGER,Task.builder().id(2L).uuid("uu2").build()));

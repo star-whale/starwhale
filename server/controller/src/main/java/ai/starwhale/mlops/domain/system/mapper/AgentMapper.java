@@ -20,8 +20,4 @@ public interface AgentMapper {
 
     void updateAgents(@Param("agents")List<AgentEntity> agents);
 
-    AgentEntity findByIp(@Param("ip")String ip);
-
-    AgentEntity findByIpForUpdate(@Param("ip")String ip);
-
 }

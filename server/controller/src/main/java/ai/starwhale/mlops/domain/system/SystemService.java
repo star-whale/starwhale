@@ -17,6 +17,7 @@ import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -31,10 +32,17 @@ public class SystemService {
     @Resource
     private AgentConverter agentConverter;
 
+    @Value("${sw.version}")
+    private String controllerVersion;
+
     public PageInfo<AgentVO> listAgents(String ipPrefix, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<AgentEntity> agents = agentCache.agents().stream().map(agentConverter::toEntity).collect(
             Collectors.toList());
         return PageUtil.toPageInfo(agents, agentConvertor::convert);
+    }
+
+    public String controllerVersion(){
+        return controllerVersion;
     }
 }

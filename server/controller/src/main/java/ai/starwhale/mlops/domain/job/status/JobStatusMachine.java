@@ -8,12 +8,17 @@
 package ai.starwhale.mlops.domain.job.status;
 
 
-import ai.starwhale.mlops.common.Reduceable;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.*;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.CANCELED;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.CANCELING;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.CREATED;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.FAIL;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.PAUSED;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.RUNNING;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.SUCCESS;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.TO_CANCEL;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.UNKNOWN;
 
-import ai.starwhale.mlops.domain.system.StatusMachine;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Component;

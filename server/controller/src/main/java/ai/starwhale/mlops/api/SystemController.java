@@ -45,7 +45,7 @@ public class SystemController implements SystemApi{
     @Override
     public ResponseEntity<ResponseMessage<SystemVersionVO>> getCurrentVersion() {
         SystemVersionVO version = SystemVersionVO.builder()
-            .version("mvp")
+            .version(systemService.controllerVersion())
             .id("")
             .build();
         return ResponseEntity.ok(Code.success.asResponse(version));
