@@ -38,7 +38,7 @@ public class SWDSVersionConvertor implements Convertor<SWDatasetVersionEntity, D
             .owner(userConvertor.convert(entity.getOwner()))
             .tag(entity.getVersionTag())
             .meta(entity.getVersionMeta())
-            .createTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+            .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
             .build();
     }
 

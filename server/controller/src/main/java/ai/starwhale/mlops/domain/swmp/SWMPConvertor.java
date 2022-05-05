@@ -36,7 +36,7 @@ public class SWMPConvertor implements Convertor<SWModelPackageEntity, SWModelPac
             .id(idConvertor.convert(entity.getId()))
             .name(entity.getSwmpName())
             .owner(userConvertor.convert(entity.getOwner()))
-            .createTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+            .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
             .build();
     }
 

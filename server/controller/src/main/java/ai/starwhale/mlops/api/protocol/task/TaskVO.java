@@ -31,8 +31,8 @@ public class TaskVO implements Serializable {
     @JsonProperty("agent")
     private AgentVO agent;
 
-    @JsonProperty("startTime")
-    private Long startTime;
+    @JsonProperty("createdTime")
+    private Long createdTime;
 
     @JsonProperty("taskStatus")
     private TaskStatus taskStatus;

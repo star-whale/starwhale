@@ -68,7 +68,7 @@ public interface SWModelPackageApi {
         @RequestParam(value = "versionId", required = false)
             String versionId,
         @Parameter(
-            in = ParameterIn.PATH,
+            in = ParameterIn.QUERY,
             description = "Model name prefix to search for",
             schema = @Schema())
         @Valid

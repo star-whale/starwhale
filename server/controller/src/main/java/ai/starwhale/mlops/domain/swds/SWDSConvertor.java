@@ -35,7 +35,7 @@ public class SWDSConvertor implements Convertor<SWDatasetEntity, DatasetVO> {
             .id(idConvertor.convert(entity.getId()))
             .name(entity.getDatasetName())
             .owner(userConvertor.convert(entity.getOwner()))
-            .createTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+            .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
             .build();
     }
 
