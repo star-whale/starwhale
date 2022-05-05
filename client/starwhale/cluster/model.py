@@ -102,7 +102,7 @@ class ClusterModel(SWCliConfigMixed):
         return r.json()["data"]["files"]
 
     @ignore_error([])
-    def _fetch_project_objects(self, pid: int, typ: str, versions_size: int=10) -> t.List:
+    def _fetch_project_objects(self, pid: int, typ: str, versions_size: int=10) -> t.List[dict]:
         r = self.request(f"/project/{pid}/{typ}", params={"pageSize": _SHOW_ALL})
 
         ret = []
@@ -128,7 +128,7 @@ class ClusterModel(SWCliConfigMixed):
         return ret
 
     @ignore_error(([], {}))
-    def _fetch_jobs(self, project: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
+    def _fetch_jobs(self, project: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE) -> t.Tuple[t.List[dict], dict]:
         r = self.request(f"/project/{project}/job", params={"pageNum": page, "pageSize": size}).json()
         jobs = []
 
@@ -144,8 +144,8 @@ class ClusterModel(SWCliConfigMixed):
         return jobs, self._parse_pager(r)
 
     @ignore_error(([], {}))
-    def _fetch_tasks(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
-        r = self.request(f"/project/{project}/job/{job}/task").json()
+    def _fetch_tasks(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE) -> t.Tuple[t.List[dict], dict]:
+        r = self.request(f"/project/{project}/job/{job}/task", params={"pageNum": page, "pageSize": size}).json()
 
         tasks = []
         for t in r["data"]["list"]:
@@ -153,3 +153,8 @@ class ClusterModel(SWCliConfigMixed):
             tasks.append(t)
 
         return tasks, self._parse_pager(r)
+
+    @ignore_error({})
+    def _fetch_job_report(self, project: int, job: int) -> dict:
+        r = self.request(f"/project/{project}/job/{job}/result").json()
+        return r["data"]
