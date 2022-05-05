@@ -19,4 +19,6 @@ public interface JobMapper {
     void updateJobStatus(@Param("jobIds") List<Long> jobIds,@Param("jobStatus") JobStatus jobStatus);
 
     void updateJobFinishedTime(@Param("jobIds") List<Long> jobIds,@Param("finishedTime")LocalDateTime finishedTime);
+
+    void updateJobResultPath(@Param("jobId")Long jobId, @Param("resultDir")String resultDir);
 }

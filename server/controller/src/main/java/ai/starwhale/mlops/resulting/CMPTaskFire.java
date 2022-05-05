@@ -94,11 +94,14 @@ public class CMPTaskFire {
 
         String resultPathStr = null;
         try {
-            resultPathStr = resultPathConverter.toString(new ResultPath(job.getResultDir()));
+            ResultPath taskResultPath = new ResultPath(job.getResultDir());
+            resultPathStr = resultPathConverter.toString(taskResultPath);
+            jobMapper.updateJobResultPath(job.getId(),taskResultPath.resultDir());
         } catch (JsonProcessingException e) {
             log.error("convert job result path failed {}",job.getId(),e);
             throw new SWValidationException(ValidSubject.TASK).tip("convert result path failed");
         }
+
         TaskEntity taskEntity = TaskEntity.builder()
             .jobId(job.getId())
             .taskRequest(new CMPRequest(allPPLTaskResults).toString())
