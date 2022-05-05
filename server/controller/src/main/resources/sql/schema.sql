@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS agent_info
 (
     id            bigint       NOT NULL AUTO_INCREMENT COMMENT 'PK',
     agent_ip      int UNSIGNED NOT NULL,
+    serial_number varchar(255) NOT NULL,
     connect_time  datetime     NOT NULL,
     agent_version varchar(255) NOT NULL,
     device_info   varchar(255) NOT NULL,

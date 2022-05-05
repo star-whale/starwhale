@@ -30,6 +30,8 @@ public class AgentEntity extends BaseEntity {
 
     private String agentVersion;
 
+    private String serialNumber;
+
     private String deviceInfo;
 
 }

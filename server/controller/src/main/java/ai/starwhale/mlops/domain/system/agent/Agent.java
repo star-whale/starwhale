@@ -34,6 +34,11 @@ public class Agent {
     String ip;
 
     /**
+     * the unique number to identify this node
+     */
+    String serialNumber;
+
+    /**
      * memory and device info
      */
     NodeInfo nodeInfo;
@@ -50,12 +55,12 @@ public class Agent {
         }
         Agent agent = (Agent) o;
         return Objects.equals(id, agent.getId()) ||
-            ip.equals(agent.getIp());
+            serialNumber.equals(agent.getSerialNumber());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ip);
+        return Objects.hash(serialNumber);
     }
 
     public static class AgentUnModifiable extends Agent{
@@ -81,6 +86,11 @@ public class Agent {
         }
 
         @Override
+        public String getSerialNumber() {
+            return agent.getSerialNumber();
+        }
+
+        @Override
         public NodeInfo getNodeInfo() {
             return agent.getNodeInfo();
         }
@@ -97,6 +107,11 @@ public class Agent {
 
         @Override
         public void setAgentVersion(String agentVersion) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void setSerialNumber(String  serialNumber) {
             throw new UnsupportedOperationException();
         }
 

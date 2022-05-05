@@ -30,6 +30,7 @@ public class AgentConverter {
     public Agent fromNode(Node node){
         return Agent.builder()
             .ip(node.getIpAddr())
+            .serialNumber(node.getSerialNumber())
             .nodeInfo(new NodeInfo(node.getMemorySizeGB(),node.getDevices()))
             .agentVersion(node.getAgentVersion())
             .connectTime(Instant.now().toEpochMilli())
@@ -51,6 +52,7 @@ public class AgentConverter {
         return Agent.builder()
             .id(entity.getId())
             .ip(entity.getAgentIp())
+            .serialNumber(entity.getSerialNumber())
             .agentVersion(entity.getAgentVersion())
             .nodeInfo(nodeInfo)
             .connectTime(entity.getConnectTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
@@ -62,10 +64,11 @@ public class AgentConverter {
         try {
             deviceInfo = objectMapper.writeValueAsString(agent.getNodeInfo());
         } catch (JsonProcessingException e) {
-            log.error("write devices to db failed {}",agent.getIp(),e);
+            log.error("write devices to db failed {}",agent.getSerialNumber(),e);
         }
         return AgentEntity.builder()
             .id(agent.getId())
+            .serialNumber(agent.getSerialNumber())
             .agentIp(agent.getIp())
             .agentVersion(agent.getAgentVersion())
             .connectTime(Instant.ofEpochMilli(agent.getConnectTime()).atZone(ZoneId.systemDefault()).toLocalDateTime())

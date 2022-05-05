@@ -60,8 +60,11 @@ public class AgentMocker {
 
     String ip = "127.0.0.1";
 
+    final String serialNumber;
+
     public AgentMocker(String ip){
         this.ip = ip;
+        this.serialNumber = ip;
     }
 
     @Data
@@ -208,7 +211,11 @@ public class AgentMocker {
 
     private Node nodeInfo() {
         return Node.builder().devices(
-            deviceInfo()).agentVersion("1").ipAddr(ip).build();
+            deviceInfo())
+            .agentVersion("1")
+            .ipAddr(ip)
+            .serialNumber(this.serialNumber)
+            .build();
     }
 
     private List<Device> deviceInfo() {
