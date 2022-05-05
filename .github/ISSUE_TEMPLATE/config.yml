@@ -1,5 +1,12 @@
-blank_issues_enabled: true
 contact_links:
-  - name: Discussions
-    url: starwhale.ai
+  - name: Ask a question, get help, or present an idea
+    url: https://github.com/star-whale/starwhale/discussions
+    about: Ask everything
+
+  - name: About Starwhale
+    url: https://starwhale.ai
+    about: Starwhale Homepage
+
+  - name: Chart In Slack
+    url: https://starwhale.slack.com/
     about: Ask questions and discuss with other starwhale community members
