@@ -36,7 +36,7 @@
           open=" " separator=";" close=" ">
             update agent_info set connect_time = #{item.connectTime},
             agent_version = #{item.agentVersion},
-            agent_ip = inet_aton(#{item.agentIp})
+            agent_ip = inet_aton(#{item.agentIp}),
             device_info = #{item.deviceInfo} WHERE id = #{item.id}
         </foreach>
     </update>
