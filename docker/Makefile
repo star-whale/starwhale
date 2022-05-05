@@ -41,10 +41,10 @@ build-ui:
 build-jar-with-ui: build-ui build-jar
 
 build-jar:
-	docker volume create --name maven-repo; docker run --rm -it -v maven-repo:/root/.m2 -v $(ROOT_DIR)server:/opt/starwhale maven:3.8.5-openjdk-11 mvn clean package -f /opt/starwhale/pom.xml -DskipTests;
+	docker volume create --name maven-repo; docker run --rm -it -v maven-repo:/root/.m2 -v $(ROOT_DIR)server:/app -w /app maven:3.8.5-openjdk-11 mvn clean package -DskipTests;
 
 build-controller: build-jar-with-ui
-	docker build -f Dockerfile.mvn -t $(SW_CONTROLLER_IMAGE) .
+	docker build -f Dockerfile.controller -t $(SW_CONTROLLER_IMAGE) .
 
 build-agent: build-jar
 	docker build -f Dockerfile.agent -t $(SW_AGENT_IMAGE) .
