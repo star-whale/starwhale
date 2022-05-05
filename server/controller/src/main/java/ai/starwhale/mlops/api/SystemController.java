@@ -16,7 +16,6 @@ import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO.PhaseEnum;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.system.SystemService;
 import com.github.pagehelper.PageInfo;
-import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -53,6 +53,7 @@
         <if test="projectName != null and projectName != ''">
             and p.project_name like concat(#{projectName}, '%')
         </if>
+        order by p.id desc
     </select>
 
     <select id="listProjectsByOwner" parameterType="java.lang.Long" resultMap="projectResultMap">

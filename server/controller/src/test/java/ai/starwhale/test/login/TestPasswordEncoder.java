@@ -9,6 +9,7 @@ package ai.starwhale.test.login;
 
 import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
 import ai.starwhale.mlops.domain.user.SaltGenerator;
+import cn.hutool.core.lang.Dict;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +21,9 @@ public class TestPasswordEncoder {
         SaltGenerator saltGenerator = new SaltGenerator();
         String salt = saltGenerator.salt();
         PasswordEncoder encoder = SWPasswordEncoder.getEncoder(salt);
+
+        Dict dict = Dict.create();
+
 
         //String raw = "abcd1234";
         String raw = "asdf7890";

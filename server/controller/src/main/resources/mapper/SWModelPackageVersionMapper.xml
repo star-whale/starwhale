@@ -39,6 +39,10 @@
         order by mv.id desc
     </select>
 
+    <select id="findVersionById" resultMap="swmpVersionResultMap" >
+        and mv.id = #{id}
+    </select>
+
     <select id="findVersionsByIds" resultMap="swmpVersionResultMap" >
         <include refid="select_swmp_version" />
         and mv.id in
