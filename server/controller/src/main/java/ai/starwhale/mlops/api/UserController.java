@@ -17,7 +17,6 @@ import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageInfo;
-import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;

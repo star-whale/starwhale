@@ -142,7 +142,11 @@ public interface SWModelPackageApi {
             String projectId,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("modelId")
-            String modelId);
+            String modelId,
+        @Parameter(in = ParameterIn.QUERY, description = "Model versionId. (Return the current version as default when the versionId is not set.)", schema = @Schema())
+        @Valid
+        @RequestParam(value = "versionId", required = false)
+        String versionId);
 
     @Operation(summary = "Get the list of model versions")
     @ApiResponses(

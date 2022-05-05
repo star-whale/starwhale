@@ -103,19 +103,32 @@ public class SWModelPackageService {
     public SWModelPackageInfoVO getSWMPInfo(SWMPObject swmp) {
         Long modelID = idConvertor.revert(swmp.getId());
         SWModelPackageEntity model = swmpMapper.findSWModelPackageById(modelID);
-        if(model == null) {
+        if (model == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                 .tip("Unable to find swmp " + modelID), HttpStatus.BAD_REQUEST);
         }
-        SWModelPackageVersionEntity latestVersion = swmpVersionMapper.getLatestVersion(modelID);
-        if(latestVersion == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip("Unable to find the latest version of swmp " + modelID), HttpStatus.BAD_REQUEST);
+
+        SWModelPackageVersionEntity versionEntity;
+        if(swmp.getVersion() != null) {
+            // find version by versionId
+            Long versionId = idConvertor.revert(swmp.getVersion().getId());
+            versionEntity = swmpVersionMapper.findVersionById(versionId);
+            if(versionEntity == null) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                    .tip("Unable to find the version of id " + versionId), HttpStatus.BAD_REQUEST);
+            }
+        } else {
+            // find current version
+            versionEntity = swmpVersionMapper.getLatestVersion(modelID);
+            if(versionEntity == null) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                    .tip("Unable to find the latest version of swmp " + modelID), HttpStatus.BAD_REQUEST);
+            }
         }
 
         //Get file list in storage
         try {
-            String storagePath = latestVersion.getStoragePath();
+            String storagePath = versionEntity.getStoragePath();
             Stream<String> list = storageAccessService.list(storagePath);
             List<ModelFile> collect = list.map(filePath -> {
                 long length = 0L;
@@ -160,7 +173,7 @@ public class SWModelPackageService {
     }
 
     public Boolean revertVersionTo(SWMPObject swmp) {
-        Long vid = idConvertor.revert(swmp.getLatestVersion().getId());
+        Long vid = idConvertor.revert(swmp.getVersion().getId());
         int res = swmpVersionMapper.revertTo(vid);
         log.info("SWMP Version has been revert to {}", vid);
         return res > 0;
@@ -169,7 +182,7 @@ public class SWModelPackageService {
     public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPObject swmp, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWModelPackageVersionEntity> entities = swmpVersionMapper.listVersions(
-            idConvertor.revert(swmp.getId()), swmp.getLatestVersion().getName());
+            idConvertor.revert(swmp.getId()), swmp.getVersion().getName());
         return PageUtil.toPageInfo(entities, versionConvertor::convert);
     }
 
@@ -193,11 +206,11 @@ public class SWModelPackageService {
     public String addVersion(SWMPObject swmp) {
         SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
             .swmpId(idConvertor.revert(swmp.getId()))
-            .ownerId(idConvertor.revert(swmp.getLatestVersion().getOwnerId()))
-            .versionTag(swmp.getLatestVersion().getTag())
-            .versionName(swmp.getLatestVersion().getName())
-            .versionMeta(swmp.getLatestVersion().getMeta())
-            .storagePath(swmp.getLatestVersion().getStoragePath())
+            .ownerId(idConvertor.revert(swmp.getVersion().getOwnerId()))
+            .versionTag(swmp.getVersion().getTag())
+            .versionName(swmp.getVersion().getName())
+            .versionMeta(swmp.getVersion().getMeta())
+            .storagePath(swmp.getVersion().getStoragePath())
             .build();
         swmpVersionMapper.addNewVersion(entity);
         log.info("SWMP Version has been created. ID={}", entity.getId());

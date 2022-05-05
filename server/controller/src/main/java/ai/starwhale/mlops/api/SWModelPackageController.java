@@ -29,6 +29,7 @@ import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
+import io.jsonwebtoken.lang.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -74,7 +75,7 @@ public class SWModelPackageController implements SWModelPackageApi{
         SWMPObject swmp = SWMPObject.builder()
             .id(modelId)
             .projectId(projectId)
-            .latestVersion(Version.builder().id(revertRequest.getVersionId()).build())
+            .version(Version.builder().id(revertRequest.getVersionId()).build())
             .build();
         Boolean res = swmpService.revertVersionTo(swmp);
         if(!res) {
@@ -96,7 +97,11 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(String projectId,String modelId) {
+    public ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(String projectId,String modelId, String versionId) {
+        SWMPObject swmp = SWMPObject.builder().projectId(projectId).id(modelId).build();
+        if(Strings.hasText(versionId)) {
+            swmp.setVersion(Version.builder().id(versionId).build());
+        }
         SWModelPackageInfoVO swmpInfo = swmpService.getSWMPInfo(
             SWMPObject.builder().projectId(projectId).id(modelId).build());
         return ResponseEntity.ok(Code.success.asResponse(swmpInfo));
@@ -109,7 +114,7 @@ public class SWModelPackageController implements SWModelPackageApi{
             SWMPObject.builder()
                 .projectId(projectId)
                 .id(modelId)
-                .latestVersion(Version.builder().name(modelVersionName).build())
+                .version(Version.builder().name(modelVersionName).build())
                 .build(),
             PageParams.builder()
                 .pageNum(pageNum)
@@ -197,7 +202,7 @@ public class SWModelPackageController implements SWModelPackageApi{
         }
         SWMPObject swmp = SWMPObject.builder()
             .id(modelId)
-            .latestVersion(Version.builder()
+            .version(Version.builder()
                 .storagePath(path)
                 .meta(meta)
                 .name(RandomUtil.randomHexString(8))
