@@ -52,8 +52,8 @@ public class JobVO implements Serializable {
     @JsonProperty("owner")
     private UserVO owner;
 
-    @JsonProperty("createTime")
-    private Long createTime;
+    @JsonProperty("createdTime")
+    private Long createdTime;
 
     @JsonProperty("stopTime")
     private Long stopTime;
@@ -64,9 +64,9 @@ public class JobVO implements Serializable {
     @JsonProperty("duration")
     public Long getDuration(){
         if(null == stopTime || stopTime <=0){
-            return System.currentTimeMillis() - createTime;
+            return System.currentTimeMillis() - createdTime;
         }
-        return stopTime - createTime;
+        return stopTime - createdTime;
     }
 
 }
