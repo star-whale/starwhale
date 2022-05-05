@@ -6,6 +6,7 @@ import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.InvokerManager;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.task.TaskService;
@@ -33,6 +34,13 @@ public class JobController implements JobApi{
 
     @Resource
     private IDConvertor idConvertor;
+
+
+    private final InvokerManager<String, Long> JOB_ACTIONS = InvokerManager.<String, Long>create()
+        .addInvoker("cancel", (Long id) -> jobService.cancelJob(id))
+        .addInvoker("pause", (Long id) -> jobService.pauseJob(id))
+        .addInvoker("resume", (Long id) -> jobService.resumeJob(id))
+        .unmodifiable();
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<JobVO>>> listJobs(String projectId, String swmpId,
@@ -68,16 +76,11 @@ public class JobController implements JobApi{
     public ResponseEntity<ResponseMessage<String>> action(String projectId, String jobId,
         String action) {
         Long iJobId = idConvertor.revert(jobId);
-        if("cancel".equalsIgnoreCase(action)) {
-            jobService.cancelJob(iJobId);
-        } else if ("suspend".equalsIgnoreCase(action)
-            || "pause".equalsIgnoreCase(action)) {
-            jobService.pauseJob(iJobId);
-        } else if ("resume".equalsIgnoreCase(action)) {
-            jobService.resumeJob(iJobId);
-        } else {
+        try {
+            JOB_ACTIONS.invoke(action, iJobId);
+        } catch (UnsupportedOperationException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
-                .tip(String.format("Unknown action: %s", action)), HttpStatus.BAD_REQUEST);
+                .tip(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
 
         return ResponseEntity.ok(Code.success.asResponse("Success: " + action));
