@@ -2,7 +2,9 @@ from http import HTTPStatus
 import sys
 import typing as t
 from pathlib import Path
+from functools import wraps
 
+from loguru import logger
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
@@ -12,12 +14,16 @@ from rich.panel import Panel
 _UPLOAD_CHUNK_SIZE = 20 * 1024 * 1024
 
 
-def wrap_sw_error_resp(r :requests.Response, header: str, exit: bool=False, use_raise: bool=False) -> None:
+def wrap_sw_error_resp(r :requests.Response, header: str,
+                       exit: bool=False, use_raise: bool=False,
+                       slient: bool=False) -> None:
+
+    _rprint = lambda x:x if slient else rprint
     if r.status_code == HTTPStatus.OK:
-        rprint(f" :clap: {header} success")
+        _rprint(f" :clap: {header} success")
         return
 
-    rprint(f":fearful: {header} failed")
+    _rprint(f":fearful: {header} failed")
     msg = f"http status code: {r.status_code} \n"
 
     try:
@@ -28,7 +34,7 @@ def wrap_sw_error_resp(r :requests.Response, header: str, exit: bool=False, use_
         msg += f"starwhale code: {_resp['code']} \n"
         msg += f"error message: {_resp['message']}"
     finally:
-        rprint(Panel.fit(msg, title=":space_invader: error details"))
+        _rprint(Panel.fit(msg, title=":space_invader: error details"))
         if exit:
             sys.exit(1)
 
@@ -56,3 +62,16 @@ def upload_file(url: str, fpath: t.Union[str, Path], fields: dict={}, headers: d
     if r.status_code != HTTPStatus.OK:
         wrap_sw_error_resp(r, "upload failed", exit=exit)
     return r
+
+
+def ignore_error(default_ret: t.Any=""):
+    def _decorator(func):
+        @wraps(func)
+        def _wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                logger.warning(f"{func} error: {e}")
+                return default_ret
+        return _wrapper
+    return _decorator
