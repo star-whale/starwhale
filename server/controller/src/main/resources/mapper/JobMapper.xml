@@ -104,6 +104,9 @@
             #{item}
         </foreach>
     </update>
+    <update id="updateJobResultPath">
+        update job_info set result_output_path = #{resultDir} WHERE id = #{jobId}
+    </update>
 
     <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.JobEntity" useGeneratedKeys="true" keyProperty="id">
         insert into job_info(job_uuid,
