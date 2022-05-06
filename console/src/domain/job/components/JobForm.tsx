@@ -17,10 +17,8 @@ import BaseImageSelector from '@/domain/runtime/components/BaseImageSelector'
 import DeviceSelector from '../../runtime/components/DeviceSelector'
 import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
-import { useFetchDatasetVersionsByIds } from '../../dataset/hooks/useFetchDatasetVersions'
 import { usePage } from '@/hooks/usePage'
 import { useQuery } from 'react-query'
-import { listDatasetVersionsByIds } from '@/domain/dataset/services/datasetVersion'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 

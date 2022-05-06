@@ -17,6 +17,9 @@ export function apiInit() {
     })
 }
 
+export const getToken = () => {
+    return store?.token
+}
 export const setToken = (token: string | undefined) => {
     if (!token) return store.removeItem(key)
     store.setItem(key, token)

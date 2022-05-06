@@ -17,3 +17,13 @@ export async function fetchTask(projectId: string, jobId: string, taskId: string
     const resp = await axios.get<ITaskDetailSchema>(`/api/v1/project/${projectId}/job/${jobId}/task/${taskId}`)
     return resp.data
 }
+
+export async function fetchTaskOfflineLogFiles(taskId: string): Promise<any> {
+    const resp = await axios.get<string[]>(`/api/v1/log/offline/${taskId}`)
+    return resp.data
+}
+
+export async function fetchTaskOfflineFileLog(taskId: string, fileId: string): Promise<any> {
+    const resp = await axios.get<string>(`/api/v1/log/offline/${taskId}/${fileId}`)
+    return resp.data
+}
