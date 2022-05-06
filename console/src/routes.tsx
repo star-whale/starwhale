@@ -27,6 +27,9 @@ import JobOverview from './pages/Job/JobOverview'
 import TaskListCard from './pages/Job/TaskListCard'
 import JobNewCard from './pages/Project/JobNewCard'
 import JobResult from './pages/Job/JobResult'
+import JobsLayout from './pages/Job/JobsLayout'
+import JobGridCard from './pages/Job/JobGridCard'
+import JobTest from './pages/Job/JobTest'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -51,6 +54,14 @@ const Routes = () => {
             <div className={styles.root}>
                 <Header />
                 <Switch>
+                    <Route exact path='/projects/:projectId/jobgrids'>
+                        <JobsLayout>
+                            <Switch>
+                                <Route exact path='/projects/:projectId/jobgrids' component={JobGridCard} />
+                                <Route exact path='/projects/:projectId/jobgrids/test' component={JobTest} />
+                            </Switch>
+                        </JobsLayout>
+                    </Route>
                     {/* project */}
                     <Route exact path='/projects/:projectId/:path?'>
                         <ProjectLayout>

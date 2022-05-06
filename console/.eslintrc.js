@@ -97,7 +97,7 @@ module.exports = {
         'baseui/no-deep-imports': 'warn',
     },
     settings: {
-        react: {
+        'react': {
             version: 'detect',
         },
         'import/resolver': {

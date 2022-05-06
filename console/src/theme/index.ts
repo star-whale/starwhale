@@ -1,14 +1,6 @@
-import { Theme, Colors } from 'baseui/theme'
+import { Theme } from 'baseui/theme'
 import color from 'color'
-// import { components } from "./components";
-import {
-    createDarkTheme,
-    createLightTheme,
-    createTheme,
-    DarkTheme as BaseDarkTheme,
-    lightThemePrimitives,
-    darkThemePrimitives,
-} from 'baseui'
+import { createDarkTheme, createLightTheme, DarkTheme as BaseDarkTheme } from 'baseui'
 
 export type BaseThemeType = 'light' | 'dark' | 'deep'
 export type ThemeType = BaseThemeType | 'followTheSystem'
@@ -18,7 +10,7 @@ export interface IThemedStyleProps {
     themeType: BaseThemeType
 }
 
-//TODO: type support
+// TODO: type support
 // export interface IColors extends Partial<Colors>  {
 //     brand1: string
 //     brand2: string

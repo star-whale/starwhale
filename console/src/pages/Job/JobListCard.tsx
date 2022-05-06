@@ -1,3 +1,6 @@
+// @ts-nocheck
+/* eslint-disable react/prop-types */
+
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createJob, doJobAction } from '@job/services/job'
@@ -14,11 +17,12 @@ import { Link, useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
-import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
+import Table from '@/components/Table'
+import './Runs.scss'
 
 export default function JobListCard() {
     const [page] = usePage()
-    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    const { projectId } = useParams<{ projectId: string }>()
     const jobsInfo = useFetchJobs(projectId, page)
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
@@ -42,7 +46,7 @@ export default function JobListCard() {
     const history = useHistory()
 
     return (
-        <ErrorBoundary>
+        <>
             <Card
                 title={t('Jobs')}
                 extra={
@@ -138,6 +142,6 @@ export default function JobListCard() {
                     </ModalBody>
                 </Modal>
             </Card>
-        </ErrorBoundary>
+        </>
     )
 }

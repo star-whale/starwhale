@@ -1,9 +1,7 @@
 import { useProject, useProjectLoading } from '@project/hooks/useProject'
-import useTranslation from '@/hooks/useTranslation'
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { useQuery } from 'react-query'
 import { useParams } from 'react-router-dom'
-import { INavItem } from '@/components/BaseSidebar'
 import { fetchProject } from '@project/services/project'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 
@@ -27,32 +25,5 @@ export default function ProjectLayout({ children }: IProjectLayoutProps) {
         }
     }, [project?.id, projectInfo.data, projectInfo.isLoading, projectInfo.isSuccess, setProject, setProjectLoading])
 
-    const [t] = useTranslation()
-    const projectName = project?.name ?? '-'
-
-    const breadcrumbItems: INavItem[] = useMemo(
-        () => [
-            {
-                title: t('projects'),
-                path: '/projects',
-            },
-            {
-                title: projectName,
-                path: `/projects/${projectName}`,
-            },
-        ],
-        [projectName, t]
-    )
-
-    // const navItems: INavItem[] = useMemo(
-    //     () => [
-    //         // {
-    //         //     title: projectName ?? t('overview'),
-    //         //     path: `/projects/${projectId}`,
-    //         //     icon: RiSurveyLine,
-    //         // },
-    //     ],
-    //     [projectName, t]
-    // )
     return <BaseSubLayout>{children}</BaseSubLayout>
 }
