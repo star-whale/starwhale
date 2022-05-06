@@ -49,7 +49,7 @@ public class UserController implements UserApi{
         //create default project
         projectService.createProject(Project.builder()
                 .name(request.getUserName())
-                .ownerId(id)
+                .owner(User.builder().id(id).build())
                 .isDefault(true)
                 .build());
         return ResponseEntity.ok(Code.success.asResponse(id));

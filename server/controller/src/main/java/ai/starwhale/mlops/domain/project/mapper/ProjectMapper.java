@@ -20,6 +20,7 @@ public interface ProjectMapper {
     List<ProjectEntity> listProjects(@Param("projectName") String projectName);
 
     List<ProjectEntity> listProjectsByOwner(@Param("userId") Long userId);
+    List<ProjectEntity> listProjectsByOwnerName(@Param("userName") String userName);
 
     ProjectEntity findProject(@Param("id") Long id);
 

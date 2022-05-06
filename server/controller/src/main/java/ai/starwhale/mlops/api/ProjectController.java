@@ -38,10 +38,13 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(String projectName,
-        Integer pageNum, Integer pageSize) {
+        String ownerId, String ownerName, Integer pageNum, Integer pageSize) {
 
         PageInfo<ProjectVO> projects = projectService.listProject(
-            Project.builder().name(projectName).build(),
+            Project.builder()
+                .name(projectName)
+                .owner(User.builder().id(ownerId).name(ownerName).build())
+                .build(),
             PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
 
 
@@ -55,7 +58,7 @@ public class ProjectController implements ProjectApi{
         String projectId = projectService
             .createProject(Project.builder()
                 .name(projectRequest.getProjectName())
-                .ownerId(user.getId())
+                .owner(User.builder().id(user.getId()).build())
                 .isDefault(false)
                 .build());
 
