@@ -14,10 +14,10 @@ module.exports = (app) => {
             secure: false,
         })
     )
-    app.use(
-        proxy.createProxyMiddleware('/ws', {
-            target: process.env.PROXY || 'ws://127.0.0.1:8082',
-            ws: true,
-        })
-    )
+    // app.use(
+    //     proxy.createProxyMiddleware('/ws', {
+    //         target: process.env.PROXY.replace('https', 'wss').replace('http', 'ws') || 'ws://127.0.0.1:8082',
+    //         ws: true,
+    //     })
+    // )
 }
