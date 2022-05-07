@@ -42,10 +42,12 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install project dependencies
+        working-directory: ./console
         if: steps.yarn-cache.outputs.cache-hit != 'true' # Over here!
         run: yarn
 
       - name: Yarn lint
+        working-directory: ./console
         run: |
           yarn lint
           yarn typecheck
