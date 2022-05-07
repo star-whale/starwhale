@@ -5,6 +5,7 @@ from pathlib import Path
 import platform
 from datetime import datetime
 import tarfile
+from collections import namedtuple
 
 from loguru import logger
 from fs.copy import copy_fs, copy_file

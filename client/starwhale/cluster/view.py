@@ -56,6 +56,9 @@ class ClusterView(ClusterModel):
             return func(*args, **kwargs) #type: ignore
         return _wrapper
 
+    def run_job(self, model: int, datasets: t.List[int], project: int, baseimage: int, resource: str, name: str, desc: str):
+        pass
+
     @_pager #type: ignore
     @_header #type: ignore
     def inspect_job(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
