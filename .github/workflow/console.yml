@@ -26,8 +26,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Build
+        env:
+          - TOKEN_OF_GITHUB: ${{ secrets.TOKEN_OF_GITHUB }}
+          - FOLDER: console
         run: |
-          cd console
           npm install -g yarn
           yarn
           yarn lint
