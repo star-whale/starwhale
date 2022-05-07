@@ -17,12 +17,14 @@ import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.google.common.base.Strings;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -59,7 +61,15 @@ public class ProjectService {
      */
     public PageInfo<ProjectVO> listProject(Project project, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ProjectEntity> entities = projectMapper.listProjects(project.getName());
+        List<ProjectEntity> entities;
+        if(StringUtils.hasText(project.getOwner().getId())) {
+            entities = projectMapper.listProjectsByOwner(idConvertor.revert(project.getOwner().getId()));
+        } else if (StringUtils.hasText(project.getOwner().getName())) {
+            entities = projectMapper.listProjectsByOwnerName(project.getOwner().getName());
+        } else {
+            entities = projectMapper.listProjects(project.getName());
+        }
+
         return PageUtil.toPageInfo(entities, projectConvertor::convert);
     }
 
@@ -71,7 +81,7 @@ public class ProjectService {
     public String createProject(Project project) {
         ProjectEntity entity = ProjectEntity.builder()
             .projectName(project.getName())
-            .ownerId(idConvertor.revert(project.getOwnerId()))
+            .ownerId(idConvertor.revert(project.getOwner().getId()))
             .isDefault(project.isDefault() ? 1 : 0)
             .build();
         projectMapper.createProject(entity);

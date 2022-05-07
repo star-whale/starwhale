@@ -8,6 +8,7 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.user.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,24 +24,8 @@ public class Project {
 
     private String name;
 
-    private String ownerId;
+    private User owner;
 
     private boolean isDefault;
-
-    public Project fromEntity(ProjectEntity entity) {
-        return fromEntity(entity, null);
-    }
-
-    public Project fromEntity(ProjectEntity entity, IDConvertor idConvertor) {
-        if(entity == null) {
-            return this;
-        }
-        if (idConvertor != null) {
-            setId(idConvertor.convert(entity.getId()));
-            setOwnerId(idConvertor.convert(entity.getOwner().getId()));
-        }
-        setName(entity.getProjectName());
-        return this;
-    }
 
 }

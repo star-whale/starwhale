@@ -59,7 +59,13 @@
     <select id="listProjectsByOwner" parameterType="java.lang.Long" resultMap="projectResultMap">
         <include refid="select_project"/>
         and p.owner_id = #{userId}
-        order by p.id
+        order by p.id desc
+    </select>
+
+    <select id="listProjectsByOwnerName" parameterType="java.lang.String" resultMap="projectResultMap">
+        <include refid="select_project"/>
+        and u.user_name like concat(#{userName}, '%')
+        order by p.id desc
     </select>
 
     <select id="findProject" parameterType="java.lang.Long" resultMap="projectResultMap">

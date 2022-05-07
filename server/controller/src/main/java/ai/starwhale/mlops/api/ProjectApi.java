@@ -12,6 +12,8 @@ import ai.starwhale.mlops.api.protocol.project.ProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -39,7 +41,11 @@ public interface ProjectApi {
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
     @GetMapping(value = "/project")
     ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(
-        @Valid @RequestParam(value = "projectName", required = false, defaultValue = "") String projectName,
+        @Valid @RequestParam(value = "projectName", required = false) String projectName,
+        @Parameter(in = ParameterIn.QUERY, description = "Id of the project owner", schema = @Schema())
+        @Valid @RequestParam(value = "ownerId", required = false) String ownerId,
+        @Parameter(in = ParameterIn.QUERY, description = "Name of the project owner", schema = @Schema())
+        @Valid @RequestParam(value = "ownerName", required = false) String ownerName,
         @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
         @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
