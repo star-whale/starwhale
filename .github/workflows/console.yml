@@ -1,5 +1,4 @@
 name: Console With Typescript
-
 on:
   push:
     branches:
@@ -8,29 +7,25 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [16.x]
-
     steps:
       - uses: actions/checkout@v3
-
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Build
-        env:
-          FOLDER: console
+      - name: install
+        working-directory: ./console
         run: |
-          cd console
           npm install -g yarn
           yarn
+    - name: lint
+        working-directory: ./console
+        run: |
           yarn lint
           yarn typecheck
