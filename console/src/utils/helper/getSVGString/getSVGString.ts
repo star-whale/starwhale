@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 /**
  * [Svg node element to serialized string](http://bl.ocks.org/Rokotyan/0556f8facbaf344507cdc45dc3622177)
  *

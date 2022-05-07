@@ -1,3 +1,4 @@
+/* eslint-disable import/no-named-as-default */
 import getValue from './getValue/getValue'
 import getPathSegments from './getPathSegments/getPathSegments'
 import inIframe from './inIframe/inIframe'

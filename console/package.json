@@ -1,5 +1,5 @@
 {
-  "name": "console",
+  "name": "starwhale",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -98,8 +98,8 @@
     "test": "craco test",
     "eject": "craco eject",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint './src/**/*.{ts,tsx}'",
-    "lint:fix": "eslint --fix './src/**/*.{ts,tsx}'",
+    "lint": "eslint -c .eslintrc.js './src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint --fix -c .eslintrc.js './src/**/*.{ts,tsx}'",
     "storybook": "start-storybook -p 6006 -s public",
     "build-storybook": "build-storybook -s public"
   },
@@ -138,7 +138,6 @@
     "eslint-config-prettier": "^8.3.0",
     "eslint-config-react": "^1.1.7",
     "eslint-import-resolver-alias": "^1.1.2",
-    "eslint-plugin-autofix": "^1.1.0",
     "eslint-plugin-baseui": "^10.0.0",
     "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-jest": "^24.4.0",
