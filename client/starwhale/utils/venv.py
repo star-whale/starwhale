@@ -7,6 +7,7 @@ import shutil
 from loguru import logger
 import conda_pack
 from rich import print as rprint
+from rich.console import Console
 
 from starwhale.utils import (
     get_python_run_env, get_python_version,
@@ -134,9 +135,11 @@ def get_conda_bin() -> str:
 
 def dump_python_dep_env(dep_dir: t.Union[str, Path],
                         pip_req_fpath: str,
-                        skip_gen_env: bool = False) -> dict:
+                        skip_gen_env: bool = False,
+                        console: t.Optional[Console] = None) -> dict:
     #TODO: smart dump python dep by starwhale sdk-api, pip ast analysis?
     dep_dir = Path(dep_dir)
+    console = console or Console()
 
     pr_env = get_python_run_env()
     sys_name = platform.system()
@@ -162,6 +165,7 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
     ensure_dir(_python_dir)
 
     logger.info(f"[info:dep]python env({pr_env}), os({sys_name}, python({py_ver}))")
+    console.print(f":dizzy: python{py_ver}@{pr_env}, try to export environment...")
 
     if os.path.exists(pip_req_fpath):
         shutil.copyfile(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
@@ -194,6 +198,7 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
             logger.info("[info:dep]try to pack conda...")
             conda_pack.pack(name=cenv, force=True, output=dest, ignore_editable_packages=True)
             logger.info(f"[info:dep]finish conda pack {dest})")
+            console.print(f":beer_mug: conda pack @ [underline]{dest}[/]")
         else:
             #TODO: tune venv create performance, use clone?
             logger.info(f"[info:dep]build venv dir: {_venv_dir}")
@@ -203,6 +208,8 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
             if os.path.exists(pip_req_fpath):
                 logger.info(f"[info:dep]install custom pip({pip_req_fpath}) to venv: {_venv_dir}")
                 install_req(_venv_dir, pip_req_fpath)
+            console.print(f":beer_mug: venv @ [underline]{_venv_dir}[/]")
+
     else:
         raise NoSupportError(f"no support {sys_name} system")
 
