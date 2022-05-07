@@ -37,6 +37,7 @@
         <if test="namePrefix != null and namePrefix != ''">
             and s.dataset_name like concat(#{namePrefix}, '%')
         </if>
+        order by s.id desc
     </select>
 
     <select id="findDatasetById" resultMap="swdsResultMap" >

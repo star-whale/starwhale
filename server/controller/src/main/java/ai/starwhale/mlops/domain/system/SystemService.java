@@ -9,29 +9,40 @@ package ai.starwhale.mlops.domain.system;
 
 import ai.starwhale.mlops.api.protocol.agent.AgentVO;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
+import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.system.agent.AgentCache;
+import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SystemService {
 
     @Resource
-    private AgentMapper agentMapper;
+    private AgentCache agentCache;
 
     @Resource
     private AgentConvertor agentConvertor;
 
+    @Resource
+    private AgentConverter agentConverter;
 
-    public List<AgentVO> listAgents(String ipPrefix, PageParams pageParams) {
+    @Value("${sw.version}")
+    private String controllerVersion;
+
+    public PageInfo<AgentVO> listAgents(String ipPrefix, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<AgentEntity> agentEntities = agentMapper.listAgents();
+        List<AgentEntity> agents = agentCache.agents().stream().map(agentConverter::toEntity).collect(
+            Collectors.toList());
+        return PageUtil.toPageInfo(agents, agentConvertor::convert);
+    }
 
-        return agentEntities.stream()
-            .map(agentConvertor::convert)
-            .collect(Collectors.toList());
+    public String controllerVersion(){
+        return controllerVersion;
     }
 }

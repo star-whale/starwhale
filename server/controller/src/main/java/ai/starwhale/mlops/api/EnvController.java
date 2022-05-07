@@ -9,16 +9,17 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
 import ai.starwhale.mlops.domain.job.EnvService;
-import ai.starwhale.mlops.domain.node.Device;
 import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("${sw.controller.apiPrefix}")
 public class EnvController implements EnvApi{
 
     @Resource

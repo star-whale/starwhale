@@ -7,7 +7,7 @@
 
 package ai.starwhale.mlops.domain.task.bo;
 
-import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,15 +19,17 @@ import lombok.NoArgsConstructor;
 public class TaskCommand {
 
     public enum CommandType{
-        CANCEL(new StagingTaskStatus(TaskStatus.CANCEL,TaskStatusStage.DOING)),TRIGGER(new StagingTaskStatus(TaskStatus.CREATED,TaskStatusStage.DOING)),UNKNOWN(new StagingTaskStatus(TaskStatus.UNKNOWN));
-        final StagingTaskStatus correspondStatus;
-        CommandType(StagingTaskStatus status){
+        CANCEL(TaskStatus.CANCELLING),TRIGGER(TaskStatus.ASSIGNING),UNKNOWN(TaskStatus.UNKNOWN);
+        final TaskStatus correspondStatus;
+        CommandType(TaskStatus status){
             correspondStatus = status;
         }
-        public StagingTaskStatus getCorrespondStatus(){
-            return this.correspondStatus;
+
+        public TaskStatus getCorrespondStatus() {
+            return correspondStatus;
         }
-        public static CommandType from(StagingTaskStatus status){
+
+        public static CommandType from(TaskStatus status){
             for(CommandType commandType:CommandType.values()){
                 if(commandType.correspondStatus.equals(status)){
                     return commandType;
@@ -41,11 +43,6 @@ public class TaskCommand {
     CommandType commandType;
 
     Task task;
-
-    public boolean agentProper(Task nodeTask){
-        return null != nodeTask
-            && this.commandType.correspondStatus.clearStage().compareTo(nodeTask.getStatus()) <= 0;
-    }
 
     @Override
     public boolean equals(Object o) {

@@ -14,13 +14,15 @@
                t.job_id,
                t.agent_id,
                t.task_status,
+               t.task_type,
                t.result_path as task_result_path,
-               t.swds_blocks as task_swds_blocks,
+               t.task_request as task_task_request,
                t.created_time as task_created_time,
                t.modified_time as task_modified_time,
                a.id as agent_id,
-               a.agent_ip,
+               inet_ntoa(a.agent_ip) as agent_ip,
                a.agent_version,
+               a.serial_number as agent_serial_number,
                a.connect_time,
                a.created_time as agent_created_time,
                a.modified_time as agent_modified_time
@@ -28,10 +30,12 @@
         left join
             agent_info as a
         on t.agent_id = a.id
+        where 1=1
     </sql>
     <select id="listTasks" resultMap="taskResultMap">
         <include refid="select_task" />
         and t.job_id = #{jobId}
+        order by t.id desc
     </select>
 
     <select id="findTaskById" resultMap="taskResultMap" >
@@ -40,20 +44,21 @@
     </select>
 
     <insert id="addTask" parameterType="ai.starwhale.mlops.domain.task.TaskEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        insert into task_info(task_uuid, job_id, agent_id, task_status, result_path, swds_blocks)
-        values(#{taskUuid}, #{jobId}, #{agentId}, #{taskStatus}, #{resultPath}, #{swdsBlocks})
+        insert into task_info(task_uuid, job_id, agent_id, task_status, task_type,result_path, task_request)
+        values(#{taskUuid}, #{jobId}, #{agentId}, #{taskStatus}, #{taskType}, #{resultPath}, #{taskRequest})
     </insert>
 
     <insert id="addAll" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        INSERT INTO task_info(task_uuid, job_id, agent_id, task_status, result_path, swds_blocks)
+        INSERT INTO task_info(task_uuid, job_id, agent_id, task_status, task_type, result_path, task_request)
         VALUES
         <foreach collection="taskList" item="task" index="index" open="(" separator="),("  close=")">
             #{task.taskUuid},
             #{task.jobId},
             #{task.agentId},
             #{task.taskStatus},
+            #{task.taskType},
             #{task.resultPath},
-            #{task.swdsBlocks}
+            #{task.taskRequest}
         </foreach>
     </insert>
 
@@ -93,8 +98,9 @@
         <result property="jobId" column="job_id" />
         <result property="agentId" column="agent_id" />
         <result property="taskStatus" column="task_status" />
+        <result property="taskType" column="task_type" />
         <result property="resultPath" column="task_result_path" />
-        <result property="swdsBlocks" column="task_swds_blocks" />
+        <result property="taskRequest" column="task_task_request" />
         <result property="createdTime" column="task_created_time" />
         <result property="modifiedTime" column="task_modified_time" />
         <association property="agent" resultMap="ai.starwhale.mlops.domain.system.mapper.AgentMapper.agentResultMap" />

@@ -5,17 +5,17 @@ import ai.starwhale.mlops.agent.container.ImageConfig;
 import cn.hutool.core.collection.CollectionUtil;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.PullImageCmd;
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.*;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.StringUtils;
 
 /**
  * Docker client
@@ -30,7 +30,7 @@ public class DockerContainerClient implements ContainerClient {
     }
 
     @Override
-    public Optional<String> startContainer(ImageConfig imageConfig) {
+    public Optional<String> createAndStartContainer(ImageConfig imageConfig) {
         try {
             HostConfig hostConfig = HostConfig.newHostConfig()
                     .withNetworkMode(imageConfig.getNetworkMode())
@@ -73,15 +73,23 @@ public class DockerContainerClient implements ContainerClient {
                                 .collect(Collectors.toList()));
             }
 
-            CreateContainerResponse response = client.createContainerCmd(imageConfig.getImage())
+            CreateContainerCmd createContainerCmd = client.createContainerCmd(imageConfig.getImage())
                     .withHostConfig(hostConfig)
-                    //.withEnv(imageConfig.getEnv())
                     .withLabels(imageConfig.getLabels())
-                    // .withVolumes()
-                    // .withEntrypoint(imageConfig.getEntrypoint())
-                    .exec();
+                    .withCmd(imageConfig.getCmd());
+
+            if (CollectionUtil.isNotEmpty(imageConfig.getEntrypoint())) {
+                createContainerCmd.withEntrypoint(imageConfig.getEntrypoint());
+            }
+
+            if (CollectionUtil.isNotEmpty(imageConfig.getEnv())) {
+                createContainerCmd.withEnv(imageConfig.getEnv());
+            }
+            // exec create cmd
+            CreateContainerResponse response = createContainerCmd.exec();
+
             if (StringUtils.hasText(response.getId())) {
-                client.startContainerCmd(response.getId()).exec();
+                this.startContainer(response.getId());
                 return Optional.of(response.getId());
             }
 
@@ -91,7 +99,7 @@ public class DockerContainerClient implements ContainerClient {
             try {
                 resultCallback.awaitCompletion();
                 // one more again
-                this.startContainer(imageConfig);
+                this.createAndStartContainer(imageConfig);
             } catch (InterruptedException ex) {
                 log.error("unknown error:{}", ex.getMessage(), ex);
             }
@@ -107,6 +115,12 @@ public class DockerContainerClient implements ContainerClient {
         }
 
         return false;
+    }
+
+    @Override
+    public boolean startContainer(String containerId) {
+        client.startContainerCmd(containerId).exec();
+        return true;
     }
 
     @Override
@@ -133,8 +147,33 @@ public class DockerContainerClient implements ContainerClient {
         return false;
     }
 
+    public void logContainer(String containerId, ResultCallback<Frame> resultCallback) {
+        client.logContainerCmd(containerId)
+                .withTailAll()
+                .withFollowStream(true).withStdOut(true).withStdErr(true)
+                .exec(resultCallback);
+    }
+
     @Override
-    public Optional<ContainerStatus> status(String containerId) {
-        return Optional.empty();
+    public ContainerInfo containerInfo(String containerId) {
+        InspectContainerResponse response = client.inspectContainerCmd(containerId).exec();
+        return ContainerInfo.builder().logPath(response.getLogPath()).build();
+    }
+
+    @Override
+    public ContainerStatus status(String containerId) {
+        try {
+            InspectContainerResponse response = client.inspectContainerCmd(containerId).exec();
+            if (Boolean.TRUE.equals(response.getState().getDead()) ||
+                    Boolean.TRUE.equals(response.getState().getOOMKilled()) ||
+                    Boolean.FALSE.equals(response.getState().getRunning())) {
+                return ContainerStatus.DEAD;
+            } else {
+                return ContainerStatus.NORMAL;
+            }
+        } catch (NotFoundException e) {
+            log.error("container:{} not found ", containerId, e);
+            return ContainerStatus.NO_SUCH_CONTAINER;
+        }
     }
 }

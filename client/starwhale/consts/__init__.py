@@ -26,6 +26,10 @@ PYTHON_RUN_ENV = namedtuple("PYTHON_RUN_ENV", ["CONDA", "VENV", "SYSTEM"])(
     "conda", "venv", "system"
 )
 
+HTTP_METHOD = namedtuple("HTTP_METHOD", ["GET", "OPTIONS", "HEAD", "POST", "PUT", "DELETE", "PATCH"])(
+    "GET", "OPTIONS", "HEAD", "POST", "PUT", "DELETE", "PATCH"
+)
+
 FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 
 #TODO: use better DEFAULT words?

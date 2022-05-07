@@ -1,0 +1,20 @@
+{
+    "backend": "s3",
+    "kind": "jsonl",
+    "secret": {
+        "access_key": "minioadmin",
+        "secret_key": "minioadmin"
+    },
+    "service": {
+        "endpoint": "http://localhost:9000",
+        "region": "local"
+    },
+    "swds": [
+        {
+            "bucket": "starwhale",
+            "key": {
+                "data": "result/current"
+            }
+        }
+    ]
+}

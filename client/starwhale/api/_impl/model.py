@@ -8,6 +8,7 @@ from pathlib import Path
 import json
 import logging
 from datetime import datetime
+from functools import wraps
 
 import loguru
 import jsonlines
@@ -17,7 +18,7 @@ from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils import pretty_bytes, in_production
-from .loader import DATA_FIELD, get_data_loader
+from .loader import DATA_FIELD, DataLoader, get_data_loader
 
 _TASK_ROOT_DIR = "/var/starwhale" if  in_production() else "/tmp/starwhale"
 
@@ -28,6 +29,7 @@ _LOG_TYPE = namedtuple("LOG_TYPE", ["SW", "USER"])(
     "starwhale", "user"
 )
 _jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
+_now = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
 
 class _RunConfig(object):
 
@@ -63,7 +65,7 @@ class _RunConfig(object):
     def create_by_env(cls) -> "_RunConfig":
         _env = os.environ.get
         return _RunConfig(
-            swds_config_path=_env(SW_ENV.SWDS_CONFIG),
+            swds_config_path=_env(SW_ENV.INTPUT_CONFIG),
             status_dir=_env(SW_ENV.STATUS_D),
             log_dir=_env(SW_ENV.LOG_D),
             result_dir=_env(SW_ENV.RESULT_D),
@@ -79,7 +81,7 @@ class _RunConfig(object):
         _set("status_dir", SW_ENV.STATUS_D)
         _set("log_dir", SW_ENV.LOG_D)
         _set("result_dir", SW_ENV.RESULT_D)
-        _set("swds_config", SW_ENV.SWDS_CONFIG)
+        _set("input_config", SW_ENV.INTPUT_CONFIG)
 
 
 class PipelineHandler(object):
@@ -150,28 +152,51 @@ class PipelineHandler(object):
         self._sw_logger.remove()
 
     @abstractmethod
-    def handle(self, data: bytes, batch_size: int, **kw) -> t.Any:
+    def ppl(self, data: bytes, batch_size: int, **kw) -> t.Any:
         #TODO: how to handle each batch element is not equal.
+        raise NotImplementedError
+
+    @abstractmethod
+    def cmp(self, _data_loader: DataLoader):
         raise NotImplementedError
 
     def handle_label(self, label: bytes, batch_size: int, **kw) -> t.Any:
         return label.decode()
 
-    def starwhale_internal_run(self) -> None:
-        #TODO: forbid inherit object override this method
-        self._sw_logger.info("start to run pipeline...")
+    def _record_status(func): #type: ignore
+        @wraps(func) #type: ignore
+        def _wrapper(*args, **kwargs):
+            self: PipelineHandler = args[0]
+            self._sw_logger.info(f"start to run {func}...")
+            self._update_status(self.STATUS.RUNNING)
+            try:
+                func(*args, **kwargs) #type: ignore
+            except Exception as e:
+                self._update_status(self.STATUS.FAILED)
+                self._sw_logger.exception(f"{func} abort, exception: {e}")
+            else:
+                self._update_status(self.STATUS.SUCCESS)
+                self._sw_logger.info("finish.")
+        return _wrapper
 
-        self._update_status(self.STATUS.RUNNING)
+    @_record_status #type: ignore
+    def _starwhale_internal_run_cmp(self) -> None:
+        ex = None
         try:
-            self.do_starwhale_internal_run()
+            output = self.cmp(self._data_loader)
         except Exception as e:
-            self._update_status(self.STATUS.FAILED)
-            self._sw_logger.exception(f"do_starwhale_internal_run abort, exception: {e}")
-        else:
-            self._update_status(self.STATUS.SUCCESS)
-            self._sw_logger.info("finish pipeline")
+            ex = e
+            self._sw_logger.exception(f"cmp exception: {e}")
+            raise
 
-    def do_starwhale_internal_run(self) -> None:
+        try:
+            self._status_writer.write({"time": _now(), "status": ex is None, "exception": ex})
+            self._result_writer.write(output)
+        except Exception as e:
+            self._sw_logger.exception(f"cmp record exception: {e}")
+
+    @_record_status #type: ignore
+    def _starwhale_internal_run_ppl(self) -> None:
         for data, label in self._data_loader:
             self._sw_logger.info(f"[{data.index}]data-label loaded, data size:{pretty_bytes(data.data_size)}, label size:{pretty_bytes(label.data_size)} ,batch:{data.batch_size}")
 
@@ -185,7 +210,7 @@ class PipelineHandler(object):
             exception = None
             try:
                 #TODO: inspect profiling
-                output = self.handle(
+                output = self.ppl(
                     data.data, data.batch_size,
                     data_index=data.index, data_size=data.data_size,
                     label_content=label.data, label_size=label.data_size,
@@ -207,7 +232,7 @@ class PipelineHandler(object):
 
     def _do_record(self, output: t.Any, data: DATA_FIELD, label: DATA_FIELD, exception: t.Union[None, Exception]):
         self._status_writer.write({
-            "time": datetime.now().astimezone().strftime(FMT_DATETIME),
+            "time": _now(),
             "status": exception is None,
             "exception": str(exception),
             "index": data.index,

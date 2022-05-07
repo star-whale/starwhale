@@ -26,7 +26,7 @@ public class SWMPObject {
 
     private String ownerId;
 
-    private Version latestVersion;
+    private Version version;
 
     @Data
     @Builder

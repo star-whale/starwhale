@@ -7,10 +7,11 @@
 
 package ai.starwhale.mlops.agent.container;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Singular;
 
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -34,11 +35,13 @@ public class ImageConfig {
      */
     private String networkMode;
 
+    private List<String> cmd;
+
     private CPUConfig cpuConfig;
     private GPUConfig gpuConfig;
     private IOConfig ioConfig;
 
-    private List<Mount> mounts;
+    @Singular private List<Mount> mounts;
 
     @Data
     @Builder

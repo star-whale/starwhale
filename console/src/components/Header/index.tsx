@@ -7,7 +7,7 @@ import { toaster } from 'baseui/toast'
 import { getErrMsg, setToken } from '@/api'
 import qs from 'qs'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams, useHistory } from 'react-router-dom'
 import { useStyletron } from 'baseui'
 import { headerHeight } from '@/consts'
 import { SidebarContext } from '@/contexts/SidebarContext'
@@ -37,7 +37,6 @@ const useHeaderStyles = createUseStyles({
         display: 'flex',
         flexFlow: 'row nowrap',
         alignItems: 'center',
-        fontFamily: 'InterUI-Regular',
         color: 'var(--color-contentPrimary)',
     }),
 })
@@ -65,7 +64,7 @@ const useStyles = createUseStyles({
         'align-items': 'center',
     },
     userMenu: (props: IThemedStyleProps) => ({
-        'background': props.theme.colors.background,
+        // 'background': props.theme.colors.background,
         'position': 'absolute',
         'top': '100%',
         'display': 'none',
@@ -98,10 +97,10 @@ const useStyles = createUseStyles({
         'gap': '10px',
         'color': props.theme.colors.contentPrimary,
         '&:hover': {
-            background: color(props.theme.colors.background)
-                .darken(props.themeType === 'light' ? 0.06 : 0.2)
-                .rgb()
-                .string(),
+            // background: color(props.theme.colors.background)
+            //     .darken(props.themeType === 'light' ? 0.06 : 0.2)
+            //     .rgb()
+            //     .string(),
         },
     }),
 })
@@ -116,12 +115,8 @@ export default function Header() {
     const lastErrMsgRef = useRef<Record<string, number>>({})
     const lastLocationPathRef = useRef(location.pathname)
 
-    useEffect(() => {
-        if (lastLocationPathRef.current !== location.pathname) {
-            lastErrMsgRef.current = {}
-        }
-        lastLocationPathRef.current = location.pathname
-    }, [location.pathname])
+    const { currentUser, setCurrentUser } = useCurrentUser()
+    const userInfo = useQuery('currentUser', fetchCurrentUser, { enabled: false })
 
     //TODO:  refact move to sep file
     useEffect(() => {
@@ -161,13 +156,25 @@ export default function Header() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    const { currentUser, setCurrentUser } = useCurrentUser()
-    const userInfo = useQuery('currentUser', fetchCurrentUser)
     useEffect(() => {
         if (userInfo.isSuccess) {
             setCurrentUser(userInfo.data)
         }
     }, [userInfo.data, userInfo.isSuccess, setCurrentUser])
+
+    useEffect(() => {
+        console.log(location.pathname, currentUser)
+        if (location.pathname !== '/login' && location.pathname !== '/login/') {
+            currentUser || userInfo.refetch()
+        }
+    }, [location.pathname, currentUser])
+
+    useEffect(() => {
+        if (lastLocationPathRef.current !== location.pathname) {
+            lastErrMsgRef.current = {}
+        }
+        lastLocationPathRef.current = location.pathname
+    }, [location.pathname])
 
     const ctx = useContext(SidebarContext)
     const [t] = useTranslation()
@@ -182,11 +189,7 @@ export default function Header() {
     //     [t]
     // )
 
-    // const currentThemeType = useCurrentThemeType()
-    if (!!!currentUser) {
-        return <></>
-    }
-
+    console.log(currentUser)
     return (
         <header className={headerStyles.headerWrapper}>
             <Logo expanded={ctx.expanded}></Logo>
@@ -230,14 +233,10 @@ export default function Header() {
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('Change Password')}</ModalHeader>
                 <ModalBody>{/* <PasswordForm onSubmit={handleChangePassword} /> */}</ModalBody>
             </Modal>
         </header>
     )
-}
-function setProjectLoading(isLoading: boolean) {
-    throw new Error('Function not implemented.')
 }

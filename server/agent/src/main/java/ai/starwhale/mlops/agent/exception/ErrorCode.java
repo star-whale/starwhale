@@ -7,8 +7,6 @@
 
 package ai.starwhale.mlops.agent.exception;
 
-import ai.starwhale.mlops.api.protocol.ResponseMessage;
-
 /**
  * error of agent
  */

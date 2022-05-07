@@ -31,6 +31,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     private final JwtTokenUtil jwtTokenUtil;
     private final UserService userService;
 
+    private static final String AUTH_HEADER = "Authorization";
+
     public JwtTokenFilter(JwtTokenUtil jwtTokenUtil, UserService userService) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.userService = userService;
@@ -40,11 +42,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest httpServletRequest,
                                     HttpServletResponse httpServletResponse,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String header = httpServletRequest.getHeader("Authorization");
+        String header = httpServletRequest.getHeader(AUTH_HEADER);
 
-        if (!StringUtils.hasText(header) || !header.startsWith("Bearer ")) {
-            error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied, "Not logged in.");
-            return;
+        if (!checkHeader(header)) {
+            header = httpServletRequest.getParameter(AUTH_HEADER);
+            if(!checkHeader(header)) {
+                error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied,
+                    "Not logged in.");
+                return;
+            }
         }
 
         String token = header.split(" ")[1].trim();
@@ -68,5 +74,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     }
 
-
+    private boolean checkHeader(String header) {
+        return StringUtils.hasText(header) && header.startsWith("Bearer ");
+    }
 }

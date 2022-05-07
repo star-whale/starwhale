@@ -1,5 +1,5 @@
 import React from 'react'
-import { Table as BaseTable, TableProps as BaseTableProps } from 'baseui/table-semantic'
+import { Table as TableSemantic, TableProps as BaseTableProps } from 'baseui/table-semantic'
 import { Pagination, SIZE as PaginationSize } from 'baseui/pagination'
 import { Skeleton } from 'baseui/skeleton'
 import { FiInbox } from 'react-icons/fi'
@@ -21,7 +21,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
 
     return (
         <>
-            <BaseTable
+            <TableSemantic
                 isLoading={isLoading}
                 columns={columns}
                 data={data}
@@ -91,15 +91,11 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     <Pagination
                         size={PaginationSize.mini}
                         numPages={
-                            paginationProps.total !== undefined && paginationProps.count !== undefined
-                                ? Math.floor(paginationProps.total / paginationProps.count) + 1
+                            paginationProps.total && paginationProps.count
+                                ? Math.ceil(paginationProps.total / Math.max(paginationProps.count, 1))
                                 : 0
                         }
-                        currentPage={
-                            paginationProps.start !== undefined && paginationProps.count !== undefined
-                                ? Math.floor(paginationProps.start / paginationProps.count) + 1
-                                : 0
-                        }
+                        currentPage={paginationProps.start ?? 1}
                         onPageChange={({ nextPage }) => {
                             if (paginationProps.onPageChange) {
                                 paginationProps.onPageChange(nextPage)
@@ -107,7 +103,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             if (paginationProps.afterPageChange) {
                                 setPage({
                                     ...page,
-                                    start: (nextPage - 1) * page.count,
+                                    pageNum: nextPage,
                                 })
                                 paginationProps.afterPageChange(nextPage)
                             }

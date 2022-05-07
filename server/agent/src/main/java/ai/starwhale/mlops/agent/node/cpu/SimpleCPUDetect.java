@@ -8,8 +8,9 @@
 package ai.starwhale.mlops.agent.node.cpu;
 
 import cn.hutool.system.oshi.OshiUtil;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Optional;
 
 /**
  * detect CPU of the machine,by native image(dependency direct running on the host)

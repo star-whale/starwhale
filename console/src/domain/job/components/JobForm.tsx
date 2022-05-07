@@ -6,7 +6,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { Button, SIZE as ButtonSize } from 'baseui/button'
 import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
-import { Label1, Label2 } from 'baseui/typography'
+import { LabelLarge } from 'baseui/typography'
 import Divider from '@/components/Divider'
 import { useParams } from 'react-router'
 import ModelVersionSelector from '@/domain/model/components/ModelVersionSelector'
@@ -16,25 +16,31 @@ import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSe
 import BaseImageSelector from '@/domain/runtime/components/BaseImageSelector'
 import DeviceSelector from '../../runtime/components/DeviceSelector'
 import NumberInput from '@/components/Input/NumberInput'
+import _ from 'lodash'
+import { usePage } from '@/hooks/usePage'
+import { useQuery } from 'react-query'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
 export interface IJobFormProps {
     job?: IJobFormSchema
-    onSubmit: (data: ICreateJobFormSchema) => Promise<void>
+    onSubmit: (data: ICreateJobSchema) => Promise<void>
 }
 
 export default function JobForm({ job, onSubmit }: IJobFormProps) {
+    const [page] = usePage()
     const [values, setValues] = useState<ICreateJobFormSchema | undefined>(undefined)
     const { projectId } = useParams<{ projectId: string }>()
     const [modelId, setModelId] = useState('')
     const [datasetId, setDatasetId] = useState('')
+    const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
     const [form] = useForm()
 
     useEffect(() => {
         if (!job) {
             return
         }
+
         // TODO job edit
         // setDatasetVersionIds(job.datasetVersionIds)
         // setValues({
@@ -44,19 +50,18 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [loading, setLoading] = useState(false)
 
     const handleValuesChange = useCallback((_changes, values_) => {
-        console.log(_changes, values_)
         setValues(values_)
         values_.modelId && setModelId(values_.modelId)
         values_.datasetId && setDatasetId(values_.datasetId)
     }, [])
 
     const handleFinish = useCallback(
-        async (values_) => {
+        async (values_: ICreateJobFormSchema) => {
             setLoading(true)
             try {
                 await onSubmit({
-                    ...values_,
-                    datasetVersionIds: values_.datasetVersionIds.join(','),
+                    ..._.omit(values_, ['modelId', 'datasetId', 'datasetVersionId', 'datasetVersionIdsArr']),
+                    datasetVersionIds: values_.datasetVersionIdsArr?.join(','),
                 })
                 history.back()
             } finally {
@@ -69,19 +74,28 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const handleAddDataset = useCallback(() => {
         const datasetVersionId = form.getFieldValue('datasetVersionId') as string
         if (!datasetVersionId) return
-        const datasetVersionIds = (form.getFieldValue('datasetVersionIds') ?? []) as Array<string>
-        const ids = new Set(...datasetVersionIds).add(datasetVersionId)
+        const datasetVersionIdsArr = (form.getFieldValue('datasetVersionIdsArr') ?? []) as Array<string>
+        const ids = new Set(...datasetVersionIdsArr).add(datasetVersionId)
         form.setFieldsValue({
-            datasetVersionIds: Array.from(ids),
+            datasetVersionIdsArr: Array.from(ids),
         })
+        setDatasetVersionIds(Array.from(ids).join(','))
     }, [])
+
+    // let jobsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
+
+    // useEffect(() => {
+    //     if (!datasetVersionsByIds.length) return
+
+    //     console.log(jobsInfo.data)
+    // }, [jobsInfo, datasetVersionsByIds])
 
     const [t] = useTranslation()
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <Divider orientation='left'>
-                <Label1>{t('Model Information')}</Label1>
+                <LabelLarge>{t('Model Information')}</LabelLarge>
             </Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 20 }}>
                 <FormItem label={t('sth name', [t('Model')])} name='modelId' required>
@@ -104,7 +118,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             overrides={{
                                 Root: {
                                     style: {
-                                        width: '200px',
+                                        width: '400px',
                                     },
                                 },
                             }}
@@ -113,7 +127,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 )}
             </div>
             <Divider orientation='left'>
-                <Label1>{t('Datasets')}</Label1>
+                <LabelLarge>{t('Datasets')}</LabelLarge>
             </Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 20, flexWrap: 'wrap' }}>
                 <FormItem label={t('sth name', [t('Dataset')])} name='datasetId'>
@@ -136,7 +150,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             overrides={{
                                 Root: {
                                     style: {
-                                        width: '200px',
+                                        width: '400px',
                                     },
                                 },
                             }}
@@ -149,13 +163,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     </Button>
                 </div>
             </div>
-            <div style={{ width: '420px' }}>
-                <FormItem label={t('Selected Dataset')} name='datasetVersionIds' required>
+            <div style={{ width: '400px' }}>
+                <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
                     <MultiTags placeholder={''} />
                 </FormItem>
             </div>
             <Divider orientation='left'>
-                <Label1>{t('Environment')}</Label1>
+                <LabelLarge>{t('Environment')}</LabelLarge>
             </Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 20, flexWrap: 'wrap' }}>
                 <FormItem label={t('BaseImage')} name='baseImageId'>
@@ -163,7 +177,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '200px',
+                                    width: '400px',
                                 },
                             },
                         }}
@@ -191,7 +205,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         }}
                     />
                 </FormItem>
-                <FormItem label={t('Result Output Path')} name='resultOutputPath'>
+                {/* <FormItem label={t('Result Output Path')} name='resultOutputPath'>
                     <Input
                         overrides={{
                             Root: {
@@ -201,7 +215,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             },
                         }}
                     />
-                </FormItem>
+                </FormItem> */}
             </div>
 
             <FormItem>

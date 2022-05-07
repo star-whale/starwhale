@@ -1,0 +1,111 @@
+apiVersion: {{ include "common.capabilities.deployment.apiVersion" . }}
+kind: Deployment
+metadata:
+  name: {{ include "common.names.fullname" . }}-controller
+  labels: {{ include "common.labels.standard" . | nindent 4 }}
+  {{- if .Values.commonLabels }}
+  {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+  {{- end }}
+    starwhale.ai/role: controller
+
+spec:
+  replicas: 1
+  strategy:
+    type: "Recreate"
+  selector:
+    matchLabels:
+      {{ include "chart.controller.labels" . | nindent 6}}
+  template:
+    metadata:
+      labels:
+        {{ include "chart.controller.labels" . | nindent 8}}
+    spec:
+      containers:
+        - name: controller
+          image: "{{ .Values.image.registry}}/{{ .Values.image.controller.repo }}:{{ .Values.image.controller.tag | default .Chart.AppVersion }}"
+          ports:
+            - containerPort: {{ .Values.controller.containerPort }}
+          {{- if not .Values.minikube.enabled }}
+          resources:
+            {{- toYaml .Values.resources.controller | nindent 12}}
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.controller.containerPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 90
+            successThreshold: 1
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.controller.containerPort }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 90
+            successThreshold: 1
+            failureThreshold: 5
+          startupProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.controller.containerPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 90
+            failureThreshold: 15
+          env:
+            {{ include "chart.mirror.env" . | nindent 12 }}
+            - name: SW_CONTROLLER_PORT
+              value: "{{ .Values.controller.containerPort }}"
+            - name: SW_STORAGE_PREFIX
+              value: "{{ include "common.names.fullname" . }}"
+            - name: SW_TASK_SPLIT_SIZE
+              value: "{{ .Values.controller.taskSplitSize }}"
+            - name: SW_HOST_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            {{- if .Values.minio.enabled }}
+            - name: SW_STORAGE_ENDPOINT
+              value: "http://{{ include "common.names.fullname" . }}-minio:{{ .Values.minio.containerPorts.api }}"
+            - name: SW_STORAGE_BUCKET
+              value: "{{ .Values.minio.defaultBuckets }}"
+            - name: SW_STORAGE_ACCESSKEY
+              value: "{{ .Values.minio.auth.rootUser }}"
+            - name: SW_STORAGE_SECRETKEY
+              value: "{{ .Values.minio.auth.rootPassword }}"
+            - name: SW_STORAGE_REGION
+              value: "local"
+            {{- else }}
+            - name: SW_STORAGE_ENDPOINT
+              value: "http://{{ .Values.externalS3OSS.host }}:{{ .Values.externalS3OSS.port }}"
+            - name: SW_STORAGE_BUCKET
+              value: "{{ .Values.externalS3OSS.defaultBuckets }}"
+            - name: SW_STORAGE_ACCESSKEY
+              value: "{{ .Values.externalS3OSS.accessKey }}"
+            - name: SW_STORAGE_SECRETKEY
+              value: "{{ .Values.externalS3OSS.secretKey }}"
+            - name: SW_STORAGE_REGION
+              value: "{{ .Values.externalS3OSS.region }}"
+            {{- end }}
+            {{- if .Values.mysql.enabled }}
+            - name: SW_METADATA_STORAGE_IP
+              value: "{{ include "common.names.fullname" . }}-mysql"
+            - name: SW_METADATA_STORAGE_PORT
+              value: "{{ .Values.mysql.primary.service.port }}"
+            - name: SW_METADATA_STORAGE_PASSWORD # todo whether use secret
+              value: "{{ .Values.mysql.auth.password }}"
+            - name: SW_METADATA_STORAGE_USER
+              value: "{{ .Values.mysql.auth.username }}"
+            {{- else }}
+            - name: SW_METADATA_STORAGE_IP
+              value: "{{ .Values.externalMySQL.host }}"
+            - name: SW_METADATA_STORAGE_PORT
+              value: "{{ .Values.externalMySQL.port }}"
+            - name: SW_METADATA_STORAGE_PASSWORD # todo whether use secret
+              value: "{{ .Values.externalMySQL.password }}"
+            - name: SW_METADATA_STORAGE_USER
+              value: "{{ .Values.externalMySQL.username }}"
+            {{- end }}

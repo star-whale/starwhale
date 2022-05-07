@@ -10,6 +10,7 @@ package ai.starwhale.mlops.domain.user;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
 import ai.starwhale.mlops.domain.user.mapper.UserMapper;
 import ai.starwhale.mlops.exception.SWAuthException;
@@ -18,10 +19,12 @@ import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +32,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class UserService implements UserDetailsService {
 
@@ -81,12 +85,11 @@ public class UserService implements UserDetailsService {
     }
 
 
-    public List<UserVO> listUsers(User user, PageParams pageParams) {
+    public PageInfo<UserVO> listUsers(User user, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<UserEntity> userEntities = userMapper.listUsers(user.getName());
-        return userEntities.stream()
-            .map(entity -> userConvertor.convert(entity))
-            .collect(Collectors.toList());
+
+        return PageUtil.toPageInfo(userEntities, userConvertor::convert);
     }
 
     public String createUser(User user, String rawPassword) {
@@ -99,6 +102,7 @@ public class UserService implements UserDetailsService {
             .userEnabled(1)
             .build();
         userMapper.createUser(userEntity);
+        log.info("User has been created. ID={}, NAME={}", userEntity.getId(), userEntity.getUserName());
         return idConvertor.convert(userEntity.getId());
     }
 
@@ -112,6 +116,7 @@ public class UserService implements UserDetailsService {
             .userPwd(SWPasswordEncoder.getEncoder(salt).encode(newPassword))
             .userPwdSalt(salt)
             .build();
+        log.info("User password has been changed. ID={}", user.getId());
         return userMapper.changePassword(userEntity) > 0;
     }
 
@@ -120,6 +125,7 @@ public class UserService implements UserDetailsService {
             .id(idConvertor.revert(user.getId()))
             .userEnabled(Optional.of(isEnabled).orElse(false) ? 1 : 0)
             .build();
+        log.info("User has been {}.", isEnabled ? "enabled" : "disabled");
         return userMapper.enableUser(userEntity) > 0;
     }
 

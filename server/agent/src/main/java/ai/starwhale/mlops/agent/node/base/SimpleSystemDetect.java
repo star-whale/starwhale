@@ -9,9 +9,10 @@ package ai.starwhale.mlops.agent.node.base;
 
 import cn.hutool.system.SystemUtil;
 import cn.hutool.system.oshi.OshiUtil;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import oshi.hardware.GlobalMemory;
+
+import java.util.Optional;
 
 @Slf4j
 public class SimpleSystemDetect implements SystemDetect {

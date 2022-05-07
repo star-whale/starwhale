@@ -7,6 +7,8 @@ import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
+import ProjectSidebar from '../Project/ProjectSidebar'
+import BaseLayout from '../BaseLayout'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -30,41 +32,23 @@ export default function JobLayout({ children }: IJobLayoutProps) {
     }, [job?.id, jobInfo.data, jobInfo.isLoading, jobInfo.isSuccess, setJob, setJobLoading])
 
     const [t] = useTranslation()
-    const jobName = job?.name ?? '-'
+    const uuid = job?.uuid ?? '-'
     const project = projectInfo.data ?? {}
     const projectName = project?.name ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
-            // {
-            //     title: t('projects'),
-            //     path: '/projects',
-            // },
-            // {
-            //     title: project?.name ?? '-',
-            //     path: `/projects/${project?.id}`,
-            // },
             {
                 title: t('Jobs'),
                 path: `/projects/${project?.id}/jobs`,
             },
             {
-                title: jobName,
+                title: uuid ?? '-',
                 path: `/projects/${project?.id}/jobs/${jobId}`,
             },
         ]
         return items
-    }, [projectName, jobName, t])
+    }, [projectName, uuid, t])
 
-    // const navItems: INavItem[] = useMemo(
-    //     () => [
-    //         // {
-    //         //     title: jobName ?? t('overview'),
-    //         //     path: `/jobs/${jobId}`,
-    //         //     icon: RiSurveyLine,
-    //         // },
-    //     ],
-    //     [jobName, t]
-    // )
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

@@ -17,6 +17,7 @@
         <if test="imageName != null and imageName != ''">
             where image_name like concat(#{imageName}, '%')
         </if>
+        order by image_name
     </select>
 
 

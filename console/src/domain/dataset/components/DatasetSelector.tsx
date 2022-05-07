@@ -15,8 +15,8 @@ export interface IDatasetSelectorProps {
 export default function DatasetSelector({ projectId, value, onChange, overrides, disabled }: IDatasetSelectorProps) {
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
-    const datasetsInfo = useQuery(`listDatasets:${keyword}`, () =>
-        listDatasets(projectId, { start: 0, count: 100, search: keyword })
+    const datasetsInfo = useQuery(`listDatasets:${projectId}:${keyword}`, () =>
+        listDatasets(projectId, { pageNum: 1, pageSize: 100, search: keyword })
     )
 
     const handleDatasetInputChange = _.debounce((term: string) => {

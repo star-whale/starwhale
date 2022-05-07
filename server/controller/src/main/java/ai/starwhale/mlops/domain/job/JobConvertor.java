@@ -35,13 +35,12 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
             .owner(userConvertor.convert(jobEntity.getOwner()))
             .modelName(jobEntity.getModelName())
             .modelVersion(jobEntity.getSwmpVersion().getVersionName())
-            .createTime(localDateTimeConvertor.convert(jobEntity.getCreatedTime()))
+            .createdTime(localDateTimeConvertor.convert(jobEntity.getCreatedTime()))
             .baseImage(baseImageConvertor.convert(jobEntity.getBaseImage()))
             .device(getDeviceName(jobEntity.getDeviceType()))
             .deviceAmount(jobEntity.getDeviceAmount())
             .jobStatus(jobEntity.getJobStatus())
             .stopTime(localDateTimeConvertor.convert(jobEntity.getFinishedTime()))
-            .duration(jobEntity.getDurationMs())
             .build();
     }
 

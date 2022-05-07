@@ -29,6 +29,11 @@ public class Node {
     String agentVersion;
 
     /**
+     * the unique number to identify this node
+     */
+    String serialNumber;
+
+    /**
      * the ip address of this node
      */
     String ipAddr;
@@ -36,7 +41,7 @@ public class Node {
     /**
      * memory size in GB unit
      */
-    Long memorySizeGB;
+    Integer memorySizeGB;
 
     /**
      * the device holding information
@@ -48,7 +53,7 @@ public class Node {
             return false;
         }
         Node node = (Node)obj;
-        return this.ipAddr.equals(node.getIpAddr());
+        return this.serialNumber.equals(node.getSerialNumber());
     }
 
 }

@@ -17,6 +17,7 @@ import java.util.stream.Stream;
  */
 public interface StorageAccessService {
 
+    StorageObjectInfo head(String path) throws IOException;
     void put(String path,InputStream inputStream) throws IOException;
     void put(String path,byte[] body) throws IOException;
     InputStream get(String path) throws IOException;

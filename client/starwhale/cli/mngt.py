@@ -1,5 +1,4 @@
 import click
-import codecs
 
 from starwhale.mngt.user import login, logout
 from starwhale.consts import DEFAULT_LOCAL_SW_CONTROLLER_ADDR

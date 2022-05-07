@@ -23,21 +23,16 @@ import DatasetLayout from './pages/Dataset/DatasetLayout'
 import DatasetOverview from './pages/Dataset/Overview'
 import JobLayout from './pages/Job/JobLayout'
 import TaskLayout from './pages/Job/TaskLayout'
-import JobOverview from './pages/Job/Overview'
+import JobOverview from './pages/Job/JobOverview'
 import TaskListCard from './pages/Job/TaskListCard'
-import JobForm from './domain/job/components/JobForm'
 import JobNewCard from './pages/Project/JobNewCard'
-import axios from 'axios'
+import JobResult from './pages/Job/JobResult'
+import JobsLayout from './pages/Job/JobsLayout'
+import JobGridCard from './pages/Job/JobGridCard'
+import JobTest from './pages/Job/JobTest'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 1,
-        minHeight: '100vh',
-        position: 'relative',
-        minWidth: 'fit-content',
-        width: '100%',
         background: 'var(--color-brandRootBackground)',
         color: 'var(--color-contentPrimary)',
         ...Object.entries(theme.colors).reduce((p, [k, v]) => {
@@ -59,6 +54,14 @@ const Routes = () => {
             <div className={styles.root}>
                 <Header />
                 <Switch>
+                    <Route exact path='/projects/:projectId/jobgrids'>
+                        <JobsLayout>
+                            <Switch>
+                                <Route exact path='/projects/:projectId/jobgrids' component={JobGridCard} />
+                                <Route exact path='/projects/:projectId/jobgrids/test' component={JobTest} />
+                            </Switch>
+                        </JobsLayout>
+                    </Route>
                     {/* project */}
                     <Route exact path='/projects/:projectId/:path?'>
                         <ProjectLayout>
@@ -72,20 +75,19 @@ const Routes = () => {
                         </ProjectLayout>
                     </Route>
                     {/* job & task */}
-                    <Route exact path='/projects/:projectId/jobs/:jobId/tasks'>
+                    <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
                         <TaskLayout>
                             <Switch>
-                                <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={TaskListCard} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={JobOverview} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResult} />
                             </Switch>
                         </TaskLayout>
                     </Route>
-                    <Route exact path='/projects/:projectId/jobs/:jobId/:path?/:path?'>
+                    {/* <Route exact path='/projects/:projectId/jobs/:jobId'>
                         <JobLayout>
-                            <Switch>
-                                <Route exact path='/projects/:projectId/jobs/:jobId' component={JobOverview} />
-                            </Switch>
+                            <Switch></Switch>
                         </JobLayout>
-                    </Route>
+                    </Route> */}
                     {/* datasets */}
                     <Route exact path='/projects/:projectId/datasets/:datasetId/versions'>
                         <DatasetVersionLayout>

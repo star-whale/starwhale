@@ -21,13 +21,19 @@ public class AgentProperties {
      */
     private String basePath;
 
+    private String hostIP;
+
     private Task task;
 
     private Container container;
 
     @Data
     public static class Task {
-
+        private int retryRunMaxNum = 10;
+        private int retryRestartMaxNum = 10;
+        private String pypiIndexUrl;
+        private String pypiExtraIndexUrl;
+        private String pypiTrustedHost;
     }
 
     @Data

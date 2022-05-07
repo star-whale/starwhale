@@ -29,6 +29,7 @@ import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
+import io.jsonwebtoken.lang.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -37,11 +38,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
+@RequestMapping("${sw.controller.apiPrefix}")
 public class SWModelPackageController implements SWModelPackageApi{
 
     @Resource
@@ -53,15 +56,16 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(String projectId, String versionId,
         String modelName, Integer pageNum, Integer pageSize) {
-        List<SWModelPackageVO> voList;
+        PageInfo<SWModelPackageVO> pageInfo;
         if(StringUtils.hasText(versionId)) {
-            voList = swmpService.findModelByVersionId(List.of(versionId.split("[,;]")));
+            List<SWModelPackageVO> voList = swmpService.findModelByVersionId(
+                List.of(versionId.split("[,;]")));
+            pageInfo = PageInfo.of(voList);
         } else {
-            voList = swmpService.listSWMP(
+            pageInfo = swmpService.listSWMP(
                 SWMPObject.builder().projectId(projectId).name(modelName).build(),
                 PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
         }
-        PageInfo<SWModelPackageVO> pageInfo = new PageInfo<>(voList);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
@@ -71,7 +75,7 @@ public class SWModelPackageController implements SWModelPackageApi{
         SWMPObject swmp = SWMPObject.builder()
             .id(modelId)
             .projectId(projectId)
-            .latestVersion(Version.builder().id(revertRequest.getVersionId()).build())
+            .version(Version.builder().id(revertRequest.getVersionId()).build())
             .build();
         Boolean res = swmpService.revertVersionTo(swmp);
         if(!res) {
@@ -93,7 +97,11 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(String projectId,String modelId) {
+    public ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(String projectId,String modelId, String versionId) {
+        SWMPObject swmp = SWMPObject.builder().projectId(projectId).id(modelId).build();
+        if(Strings.hasText(versionId)) {
+            swmp.setVersion(Version.builder().id(versionId).build());
+        }
         SWModelPackageInfoVO swmpInfo = swmpService.getSWMPInfo(
             SWMPObject.builder().projectId(projectId).id(modelId).build());
         return ResponseEntity.ok(Code.success.asResponse(swmpInfo));
@@ -102,17 +110,16 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(String projectId,
         String modelId, String modelVersionName, Integer pageNum, Integer pageSize) {
-        List<SWModelPackageVersionVO> voList = swmpService.listSWMPVersionHistory(
+        PageInfo<SWModelPackageVersionVO> pageInfo = swmpService.listSWMPVersionHistory(
             SWMPObject.builder()
                 .projectId(projectId)
                 .id(modelId)
-                .latestVersion(Version.builder().name(modelVersionName).build())
+                .version(Version.builder().name(modelVersionName).build())
                 .build(),
             PageParams.builder()
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .build());
-        PageInfo<SWModelPackageVersionVO> pageInfo = new PageInfo<>(voList);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
@@ -161,6 +168,22 @@ public class SWModelPackageController implements SWModelPackageApi{
         return swmpService.pull(pullRequest);
     }
 
+    @Override
+    public ResponseEntity<ResponseMessage<String>> uploadModel(MultipartFile file,
+        ClientSWMPRequest uploadRequest) {
+        return upload(file,uploadRequest);
+    }
+
+    @Override
+    public byte[] pullModel(ClientSWMPRequest pullRequest) {
+        return pull(pullRequest);
+    }
+
+    @Override
+    public ResponseEntity<String> headModel(ClientSWMPRequest queryRequest) {
+        return ResponseEntity.ok(swmpService.query(queryRequest));
+    }
+
     private String createVersion(String projectId, String modelId, MultipartFile zipFile, String importPath, String userId) {
         String path = importPath;
         String meta = "";
@@ -179,7 +202,7 @@ public class SWModelPackageController implements SWModelPackageApi{
         }
         SWMPObject swmp = SWMPObject.builder()
             .id(modelId)
-            .latestVersion(Version.builder()
+            .version(Version.builder()
                 .storagePath(path)
                 .meta(meta)
                 .name(RandomUtil.randomHexString(8))

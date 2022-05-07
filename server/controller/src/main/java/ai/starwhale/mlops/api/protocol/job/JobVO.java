@@ -7,9 +7,9 @@
 
 package ai.starwhale.mlops.api.protocol.job;
 
-import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -52,18 +52,21 @@ public class JobVO implements Serializable {
     @JsonProperty("owner")
     private UserVO owner;
 
-    @JsonProperty("createTime")
-    private Long createTime;
-
-    @JsonProperty("duration")
-    private Long duration;
+    @JsonProperty("createdTime")
+    private Long createdTime;
 
     @JsonProperty("stopTime")
     private Long stopTime;
 
     @JsonProperty("jobStatus")
-    private Integer jobStatus;
+    private JobStatus jobStatus;
 
-    @JsonProperty("evaluationResult")
-    private EvaluationResult evaluationResult;
+    @JsonProperty("duration")
+    public Long getDuration(){
+        if(null == stopTime || stopTime <=0){
+            return System.currentTimeMillis() - createdTime;
+        }
+        return stopTime - createdTime;
+    }
+
 }

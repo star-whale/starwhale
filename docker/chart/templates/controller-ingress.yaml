@@ -1,0 +1,42 @@
+
+{{ if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "common.names.fullname" . }}-controller
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 30g
+
+spec:
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  rules:
+  {{- if .Values.minikube.enabled }}
+    - host: {{ .Values.minikube.hostname.controller }}
+  {{- else }}
+    - host: {{ .Values.ingress.host }}
+  {{- end}}
+      http:
+        paths:
+          - path: {{ .Values.ingress.path }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "common.names.fullname" . }}-controller
+                port:
+                  number: {{ .Values.controller.containerPort }}
+{{ end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "common.names.fullname" . }}-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "chart.controller.labels" . | nindent 4}}
+spec:
+  ports:
+    - port: {{ .Values.controller.containerPort }}
+      protocol: TCP
+  selector:
+    {{ include "chart.controller.labels" . | nindent 4}}

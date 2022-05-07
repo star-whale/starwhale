@@ -1,3 +1,6 @@
+// @ts-nocheck
+/* eslint-disable react/prop-types */
+
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createJob, doJobAction } from '@job/services/job'
@@ -14,12 +17,12 @@ import { Link, useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
-import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
+import Table from '@/components/Table'
+import './Runs.scss'
 
 export default function JobListCard() {
     const [page] = usePage()
-    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-
+    const { projectId } = useParams<{ projectId: string }>()
     const jobsInfo = useFetchJobs(projectId, page)
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
@@ -43,7 +46,7 @@ export default function JobListCard() {
     const history = useHistory()
 
     return (
-        <ErrorBoundary>
+        <>
             <Card
                 title={t('Jobs')}
                 extra={
@@ -74,59 +77,71 @@ export default function JobListCard() {
                     data={
                         jobsInfo.data?.list.map((job) => {
                             const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
-                                [JobStatusType.preparing]: (
-                                    <StyledLink onClick={() => handleAction(job.id, 'cancel')}>
+                                [JobStatusType.CREATED]: (
+                                    <>
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                            {t('Cancel')}
+                                        </StyledLink>
+                                        &nbsp;&nbsp;
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.PAUSE)}>
+                                            {t('Pause')}
+                                        </StyledLink>
+                                    </>
+                                ),
+                                [JobStatusType.RUNNING]: (
+                                    <>
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                            {t('Cancel')}
+                                        </StyledLink>
+                                        &nbsp;&nbsp;
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.PAUSE)}>
+                                            {t('Pause')}
+                                        </StyledLink>
+                                    </>
+                                ),
+                                [JobStatusType.PAUSED]: (
+                                    <StyledLink onClick={() => handleAction(job.id, JobActionType.RESUME)}>
                                         {t('Cancel')}
                                     </StyledLink>
                                 ),
-                                [JobStatusType.runnning]: (
-                                    <StyledLink onClick={() => handleAction(job.id, 'cancel')}>
-                                        {t('Cancel')}
-                                    </StyledLink>
-                                ),
-                                [JobStatusType.completed]: (
-                                    <Link to={`/projects/${projectId}/jobs/${job.id}`}>{t('View Results')}</Link>
+                                [JobStatusType.SUCCESS]: (
+                                    <Link to={`/projects/${projectId}/jobs/${job.id}/results`}>
+                                        {t('View Results')}
+                                    </Link>
                                 ),
                             }
 
                             return [
-                                <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}`}>
+                                <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}/tasks`}>
                                     {job.uuid}
                                 </Link>,
-                                job.modelName?.name,
-                                job.modelVersion?.name,
+                                job.modelName,
+                                job.modelVersion,
                                 job.owner && <User user={job.owner} />,
                                 job.createTime && formatTimestampDateTime(job.createTime),
                                 typeof job.duration == 'string' ? '-' : durationToStr(job.duration),
                                 job.stopTime > 0 ? formatTimestampDateTime(job.stopTime) : '-',
-                                job.jobStatus && JobStatusType[job.jobStatus],
+                                job.jobStatus,
                                 actions[job.jobStatus] ?? '',
                             ]
                         }) ?? []
                     }
                     paginationProps={{
                         start: jobsInfo.data?.pageNum,
-                        count: jobsInfo.data?.size,
+                        count: jobsInfo.data?.pageSize,
                         total: jobsInfo.data?.total,
                         afterPageChange: () => {
                             jobsInfo.refetch()
                         },
                     }}
                 />
-                <Modal
-                    isOpen={isCreateJobOpen}
-                    onClose={() => setIsCreateJobOpen(false)}
-                    closeable
-                    animate
-                    autoFocus
-                    unstable_ModalBackdropScroll
-                >
+                <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                     <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                     <ModalBody>
                         <JobForm onSubmit={handleCreateJob} />
                     </ModalBody>
                 </Modal>
             </Card>
-        </ErrorBoundary>
+        </>
     )
 }

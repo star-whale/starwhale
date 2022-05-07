@@ -1,5 +1,10 @@
 package ai.starwhale.mlops.agent.container;
 
+import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.model.Frame;
+import lombok.Builder;
+import lombok.Data;
+
 import java.util.Optional;
 
 /**
@@ -11,11 +16,20 @@ public interface ContainerClient {
      * @param config start param
      * @return container id
      */
-    Optional<String> startContainer(ImageConfig config);
+    Optional<String> createAndStartContainer(ImageConfig config);
     boolean stopAndRemoveContainer(String containerId, boolean deleteVolume);
+    boolean startContainer(String containerId);
     boolean stopContainer(String containerId);
     boolean removeContainer(String containerId, boolean deleteVolume);
-    Optional<ContainerStatus> status(String containerId);
+    void logContainer(String containerId, ResultCallback<Frame> resultCallback);
+    ContainerInfo containerInfo(String containerId);
+    ContainerStatus status(String containerId);
+
+    @Data
+    @Builder
+    class ContainerInfo{
+        String logPath;
+    }
 
     /**
      * "created""running""paused""restarting""removing""exited""dead"
@@ -24,7 +38,11 @@ public interface ContainerClient {
         /**
          * normal life cycle
          */
-        CREATED, RUNNING, PAUSED, RESTARTING, REMOVING, EXITED, DEAD,
+        NORMAL,
+        /**
+         * occur some error
+         */
+        DEAD,
 
         /**
          * 404 no such container

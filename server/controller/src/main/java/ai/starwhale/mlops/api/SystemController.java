@@ -16,12 +16,13 @@ import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO.PhaseEnum;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.system.SystemService;
 import com.github.pagehelper.PageInfo;
-import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("${sw.controller.apiPrefix}")
 public class SystemController implements SystemApi{
 
     @Resource
@@ -31,8 +32,7 @@ public class SystemController implements SystemApi{
     public ResponseEntity<ResponseMessage<PageInfo<AgentVO>>> listAgent(String ip, Integer pageNum,
         Integer pageSize) {
         PageParams pageParams = PageParams.builder().pageNum(pageNum).pageSize(pageSize).build();
-        List<AgentVO> voList = systemService.listAgents(ip, pageParams);
-        PageInfo<AgentVO> pageInfo = new PageInfo<>(voList);
+        PageInfo<AgentVO> pageInfo = systemService.listAgents(ip, pageParams);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
@@ -44,7 +44,7 @@ public class SystemController implements SystemApi{
     @Override
     public ResponseEntity<ResponseMessage<SystemVersionVO>> getCurrentVersion() {
         SystemVersionVO version = SystemVersionVO.builder()
-            .version("mvp")
+            .version(systemService.controllerVersion())
             .id("")
             .build();
         return ResponseEntity.ok(Code.success.asResponse(version));

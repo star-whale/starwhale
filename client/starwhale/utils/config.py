@@ -1,13 +1,14 @@
 import yaml
 import os
-
-from loguru import logger
+import typing as t
+from pathlib import Path
 
 from starwhale.consts import (
     SW_CLI_CONFIG, DEFAULT_LOCAL_SW_CONTROLLER_ADDR,
     SW_LOCAL_STORAGE, ENV_SW_CLI_CONFIG,
 )
 from starwhale.utils.fs import ensure_dir
+from starwhale.utils import fmt_http_server
 
 _config = {}
 
@@ -35,6 +36,8 @@ def render_default_swcli_config(fpath: str) -> dict:
         controller=dict(
             remote_addr=DEFAULT_LOCAL_SW_CONTROLLER_ADDR,
             sw_token="",
+            username="",
+            user_role="",
         ),
         storage=dict(
             root=str(SW_LOCAL_STORAGE.resolve())
@@ -64,3 +67,46 @@ def render_swcli_config(c: dict, path: str="") -> None:
     with open(fpath, "w") as f:
         #TODO: use sw_cli_config class
         yaml.dump(c, f, default_flow_style=False)
+
+
+#TODO: abstract better common base or mixed class
+class SWCliConfigMixed(object):
+    def __init__(self, swcli_config: t.Union[dict, None]=None) -> None:
+        self._config = swcli_config or load_swcli_config()
+
+    @property
+    def rootdir(self) -> Path:
+        return Path(self._config["storage"]["root"])
+
+    @property
+    def workdir(self) -> Path:
+        return self.rootdir / "workdir"
+
+    @property
+    def pkgdir(self) -> Path:
+        return self.rootdir / "pkg"
+
+    @property
+    def dataset_dir(self) -> Path:
+        return self.rootdir / "dataset"
+
+    @property
+    def sw_remote_addr(self) -> str:
+        addr = self._controller.get("remote_addr", "")
+        return fmt_http_server(addr)
+
+    @property
+    def user_name(self) -> str:
+        return self._controller.get("user_name", "")
+
+    @property
+    def _sw_token(self) -> str:
+        return self._controller.get("sw_token", "")
+
+    @property
+    def _controller(self) -> dict:
+        return self._config.get("controller", {})
+
+    @property
+    def user_role(self) -> str:
+        return self._controller.get("user_role", "")

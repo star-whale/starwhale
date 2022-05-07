@@ -2,6 +2,7 @@ package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.system.AgentEntity;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,10 +26,12 @@ public class TaskEntity extends BaseEntity {
 
     private AgentEntity agent;
 
-    private Integer taskStatus;
+    private TaskStatus taskStatus;
 
     private String resultPath;
 
-    private String swdsBlocks;
+    private String taskRequest;
+
+    private TaskType taskType;
 
 }

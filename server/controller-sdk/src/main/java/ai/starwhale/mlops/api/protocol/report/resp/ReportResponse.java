@@ -27,4 +27,5 @@ public class ReportResponse {
 
     List<TaskTrigger> tasksToRun;
 
+    List<LogReader> logReaders;
 }

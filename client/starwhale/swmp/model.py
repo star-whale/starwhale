@@ -142,7 +142,7 @@ class ModelPackage(object):
                 os.environ[_k] = _v
 
     @classmethod
-    def ppl(cls, swmp: str=".", _model_yaml_fname: str=DEFAULT_MODEL_YAML_NAME, kw: dict={}) -> None:
+    def _load_runnable_mp(cls, swmp: str=".", _model_yaml_fname: str=DEFAULT_MODEL_YAML_NAME, kw: dict={}) -> "ModelPackage":
         if swmp.count(":") == 1:
             _name, _version = swmp.split(":")
             #TODO: tune model package local store init twice
@@ -158,18 +158,30 @@ class ModelPackage(object):
 
         mp = ModelPackage(str(_workdir.resolve()), _model_yaml_fname, skip_gen_env=True)
         mp._do_validate()
-        mp._do_run_ppl(kw)
+        return mp
 
-    def _do_run_ppl(self, kw: dict={}):
+    @classmethod
+    def cmp(cls, swmp: str=".", _model_yaml_fname: str=DEFAULT_MODEL_YAML_NAME, kw: dict={}) -> None:
+        mp = cls._load_runnable_mp(swmp, _model_yaml_fname, kw)
+        _obj = mp._load_user_ppl_obj(kw)
+        _obj._starwhale_internal_run_cmp()
+        logger.info(f"finish run cmp: {_obj}")
+
+    @classmethod
+    def ppl(cls, swmp: str=".", _model_yaml_fname: str=DEFAULT_MODEL_YAML_NAME, kw: dict={}) -> None:
+        mp = cls._load_runnable_mp(swmp, _model_yaml_fname, kw)
+        _obj = mp._load_user_ppl_obj(kw)
+        _obj._starwhale_internal_run_ppl()
+        logger.info(f"finish run ppl: {_obj}")
+
+    def _load_user_ppl_obj(self, kw: dict={}):
         from starwhale.api._impl.model import _RunConfig
         _RunConfig.set_env(kw)
 
         _s = f"{self._swmp_config.run.ppl}@{self.workdir}"
         logger.info(f"try to import {_s}...")
         _cls = import_cls(self.workdir, self._swmp_config.run.ppl)
-        _obj = _cls()
-        _obj.starwhale_internal_run()
-        logger.info(f"finish run ppl {_s}, {_obj}")
+        return _cls()
 
     @classmethod
     def build(cls, workdir: str, mname: str, skip_gen_env: bool) -> None:

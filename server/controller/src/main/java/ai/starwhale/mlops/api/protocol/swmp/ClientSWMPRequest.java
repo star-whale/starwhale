@@ -27,13 +27,24 @@ public class ClientSWMPRequest {
      */
     String swmp;
 
+    String project;
 
-    public String getName(){
+    String force;
+
+    public String name(){
         return swmp.split(SEPERATOR)[0];
     }
 
-    public String getVersion(){
+    public String version(){
         return swmp.split(SEPERATOR)[1];
     }
 
+    static final String FORCE="1";
+    public boolean force(){
+        return FORCE.equals(force);
+    }
+
+    public String getProject() {
+        return null == project ? "":project;
+    }
 }

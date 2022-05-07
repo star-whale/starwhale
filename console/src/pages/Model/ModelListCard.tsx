@@ -57,21 +57,14 @@ export default function ModelListCard() {
                 }
                 paginationProps={{
                     start: modelsInfo.data?.pageNum,
-                    count: modelsInfo.data?.size,
+                    count: modelsInfo.data?.pageSize,
                     total: modelsInfo.data?.total,
                     afterPageChange: () => {
                         modelsInfo.refetch()
                     },
                 }}
             />
-            <Modal
-                isOpen={isCreateModelOpen}
-                onClose={() => setIsCreateModelOpen(false)}
-                closeable
-                animate
-                autoFocus
-                unstable_ModalBackdropScroll
-            >
+            <Modal isOpen={isCreateModelOpen} onClose={() => setIsCreateModelOpen(false)} closeable animate autoFocus>
                 <ModalHeader>{t('create sth', [t('Model')])}</ModalHeader>
                 <ModalBody>
                     <ModelForm onSubmit={handleCreateModel} />

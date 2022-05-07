@@ -38,7 +38,7 @@ public class SWMPVersionConvertor implements Convertor<SWModelPackageVersionEnti
             .owner(userConvertor.convert(entity.getOwner()))
             .tag(entity.getVersionTag())
             .meta(entity.getVersionMeta())
-            .createTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+            .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
             .build();
     }
 

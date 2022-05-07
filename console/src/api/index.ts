@@ -3,7 +3,7 @@ import _ from 'lodash'
 import qs from 'qs'
 
 const key = 'token'
-const store = window.sessionStorage ?? {
+const store = window.localStorage ?? {
     getItem: () => undefined,
     removeItem: () => undefined,
     setItem: () => undefined,
@@ -17,6 +17,9 @@ export function apiInit() {
     })
 }
 
+export const getToken = () => {
+    return store?.token
+}
 export const setToken = (token: string | undefined) => {
     if (!token) return store.removeItem(key)
     store.setItem(key, token)

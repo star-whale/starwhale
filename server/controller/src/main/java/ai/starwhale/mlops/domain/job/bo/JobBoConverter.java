@@ -9,7 +9,6 @@ package ai.starwhale.mlops.domain.job.bo;
 
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobEntity;
-import ai.starwhale.mlops.domain.job.Job.JobStatus;
 import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.node.Device;
@@ -50,7 +49,7 @@ public class JobBoConverter {
             .id(jobEntity.getId())
             .jobRuntime(JobRuntime.builder().baseImage(jobEntity.getBaseImage().getImageName()).deviceAmount(jobEntity.getDeviceAmount()).deviceClass(
                 Device.Clazz.from(jobEntity.getDeviceType())).build())
-            .status(JobStatus.from(jobEntity.getJobStatus()))
+            .status(jobEntity.getJobStatus())
             .swmp(SWModelPackage
                 .builder()
                 .id(jobEntity.getSwmpVersionId())
@@ -58,6 +57,7 @@ public class JobBoConverter {
                 .version(jobEntity.getSwmpVersion().getVersionName())
                 .path(jobEntity.getSwmpVersion().getStoragePath()).build())
             .swDataSets(swDataSets)
+            .resultDir(jobEntity.getResultOutputPath())
             .uuid(jobEntity.getJobUuid())
             .build();
     }

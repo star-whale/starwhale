@@ -7,9 +7,16 @@
 
 package ai.starwhale.mlops.domain.storage;
 
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * coordinator all paths in this system
  */
+@Slf4j
 public class StoragePathCoordinator {
 
     final static String SYS_NAME="controller";
@@ -25,64 +32,96 @@ public class StoragePathCoordinator {
 
     /**
      * where collected result metrics is stored
-     * %s1 = prefix %s2 = id
+     * %s1 = prefix
+     * %s2 = data
+     * %s3 = id
      */
-    static final String STORAGE_PATH_FORMATTER_RESULT_COLLECTOR = "%s/resultMetrics/%s";
-
-    /**
-     * where collected result metrics is stored
-     * %s1 = prefix %s2 = id
-     */
-    static final String STORAGE_PATH_FORMATTER_RESULT_METRICS = "%s/resultMetrics";
+    static final String STORAGE_PATH_FORMATTER_RESULT_COLLECTOR = "%s/resultMetrics/%s/%s";
 
     /**
      * where task result is stored
      * %s1 = prefix
-     * %s2 = jobUUID
-     * %s3 = taskUUID
+     * %s2 = date
+     * %s3 = jobUUID
+     * %s4 = taskUUID
      */
-    static final String STORAGE_PATH_FORMATTER_RESULT = "%s/result/%s/%s";
+    static final String STORAGE_PATH_FORMATTER_RESULT = "%s/result/%s/%s/%s";
 
     /**
      * where swds is stored
      * %s1 = prefix
-     * %s2 = swds id
-     * %s3 = swds version id
+     * %s2 = swds name
+     * %s3 = swds version
      */
     static final String STORAGE_PATH_FORMATTER_SWDS = "%s/swds/%s/%s";
 
     /**
      * where swmp is stored
      * %s1 = prefix
-     * %s2 = swmp id
-     * %s3 = swmp version id
+     * %s2 = swmp name
+     * %s3 = swmp version
      */
     static final String STORAGE_PATH_FORMATTER_SWMP = "%s/swmp/%s/%s";
 
     public StoragePathCoordinator(String systemStoragePathPrefix){
         this.systemStoragePathPrefix = systemStoragePathPrefix;
-        //todo(renyanda) add date to path
         this.prefix = String.format(STORAGE_PATH_FORMATTER_PREFIX,systemStoragePathPrefix,SYS_NAME);
     }
 
-    public String resultMetricsPath(String metricsId){
-        return String.format(STORAGE_PATH_FORMATTER_RESULT_COLLECTOR,prefix,metricsId);
+    /**
+     * 
+     * @param jobUUId
+     * @return consistency of path is guaranteed among multiple method calls
+     */
+    public String generateResultMetricsPath(String jobUUId){
+        checkKeyWord(jobUUId,ValidSubject.JOB);
+        return String.format(STORAGE_PATH_FORMATTER_RESULT_COLLECTOR,prefix,firstTwoLetter(jobUUId),jobUUId);
     }
 
-    public String resultMetricsPath(){
-        return String.format(STORAGE_PATH_FORMATTER_RESULT_METRICS,prefix);
+    /**
+     * 
+     * @param jobUUId
+     * @param taskUUId
+     * @return consistency of path is guaranteed among multiple method calls
+     */
+    public String generateTaskResultPath(String jobUUId,String taskUUId){
+        checkKeyWord(jobUUId,ValidSubject.JOB);
+        return String.format(STORAGE_PATH_FORMATTER_RESULT,prefix,firstTwoLetter(jobUUId),jobUUId,taskUUId);
     }
 
-    public String taskResultPath(String jobId,String taskId){
-        return String.format(STORAGE_PATH_FORMATTER_RESULT,prefix,jobId,taskId);
+    /**
+     * 
+     * @param swdsName
+     * @param swdsVersion
+     * @return consistency of path is guaranteed among multiple method calls
+     */
+    public String generateSwdsPath(String swdsName,String swdsVersion){
+        checkKeyWord(swdsVersion,ValidSubject.SWDS);
+        return String.format(STORAGE_PATH_FORMATTER_SWDS,prefix,swdsName,swdsVersion);
     }
 
-    public String swdsPath(String swdsId,String swdsVersionId){
-        return String.format(STORAGE_PATH_FORMATTER_SWDS,prefix,swdsId,swdsVersionId);
+    /**
+     * 
+     * @param swmpName
+     * @param swmpVersion
+     * @return consistency of path is guaranteed among multiple method calls
+     */
+    public String generateSwmpPath(String swmpName,String swmpVersion){
+        checkKeyWord(swmpVersion,ValidSubject.SWMP);
+        return String.format(STORAGE_PATH_FORMATTER_SWMP,prefix,swmpName,swmpVersion);
     }
 
-    public String swmpPath(String swmpId,String swmpVersionId){
-        return String.format(STORAGE_PATH_FORMATTER_SWMP,prefix,swmpId,swmpVersionId);
+    private void checkKeyWord(String kw, ValidSubject validSubject){
+        if(null == kw || kw.isBlank()){
+            throw new SWValidationException(validSubject).tip("allocated storage key word can't be empty");
+        }
+        if(kw.length()<2){
+            throw new SWValidationException(validSubject).tip("allocated storage key word too short");
+        }
+    }
+
+    private String firstTwoLetter(String s){
+        return s.substring(0,2);
     }
 
 }

@@ -3,7 +3,6 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
-import ai.starwhale.mlops.api.protocol.resulting.EvaluationResult;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +42,7 @@ public interface JobApi {
             schema = @Schema())
         @PathVariable("projectId")
             String projectId,
+        @Valid @RequestParam(value = "swmpId", required = false) String swmpId,
         @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
         @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
@@ -138,10 +138,10 @@ public interface JobApi {
                 content =
                 @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = EvaluationResult.class)))
+                    schema = @Schema(implementation = Object.class)))
         })
     @GetMapping(value = "/project/{projectId}/job/{jobId}/result")
-    ResponseEntity<ResponseMessage<EvaluationResult>> getJobResult(@Parameter(
+    ResponseEntity<ResponseMessage<Object>> getJobResult(@Parameter(
         in = ParameterIn.PATH,
         description = "Project id",
         schema = @Schema())

@@ -20,12 +20,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
@@ -40,7 +35,7 @@ public class SourcePool {
     private final Set<Device> devices = new CopyOnWriteArraySet<>();
 
     public SourcePool(
-        Map<String, GPUDetect> gpuDetect, CPUDetect cpuDetect) {
+            Map<String, GPUDetect> gpuDetect, CPUDetect cpuDetect) {
         this.gpuDetect = gpuDetect;
         this.cpuDetect = cpuDetect;
     }
@@ -71,6 +66,18 @@ public class SourcePool {
 
 
     public Set<Device> allocate(AllocateRequest request) throws Exception {
+        Set<Device> allocates = internalAllocate(request);
+        if (CollectionUtil.isEmpty(allocates))
+            // no available device will throw Exception
+            throw ErrorCode.allocateError.asException("allocate device fail, all busy");
+        return allocates;
+    }
+
+    public Set<Device> preAllocateWithoutThrow(AllocateRequest request) {
+        return internalAllocate(request);
+    }
+
+    private Set<Device> internalAllocate(AllocateRequest request) {
         synchronized (lock) {
             if (CollectionUtil.isNotEmpty(devices)) {
                 // determine whether the conditions are met
@@ -105,17 +112,15 @@ public class SourcePool {
                     return results;
                 }
             }
-            // no available device will throw Exception
-            throw ErrorCode.allocateError.asException("allocate device error");
+            return null;
         }
-
     }
 
     public void release(Set<Device> releaseDevices) {
         synchronized (lock) {
             if (CollectionUtil.isNotEmpty(devices)) {
                 for (Device device : releaseDevices) {
-                    Optional<Device> find = devices.stream().filter(d-> d.getId().equals(device.getId())).findFirst();
+                    Optional<Device> find = devices.stream().filter(d -> d.getId().equals(device.getId())).findFirst();
                     find.ifPresent(value -> value.setStatus(Status.idle));
                 }
             }
@@ -134,38 +139,38 @@ public class SourcePool {
 
     private Set<Device> detectDevices() {
         List<GPUInfo> gpuInfos = gpuDetect.values().stream()
-            // realtime detect
-            .map(GPUDetect::detect)
-            // filter the empty result
-            .filter(Optional::isPresent)
-            // get the result
-            .map(Optional::get)
-            // flat from list to single object
-            .flatMap(Collection::stream)
-            // reduce these results
-            .collect(Collectors.toList());
+                // realtime detect
+                .map(GPUDetect::detect)
+                // filter the empty result
+                .filter(Optional::isPresent)
+                // get the result
+                .map(Optional::get)
+                // flat from list to single object
+                .flatMap(Collection::stream)
+                // reduce these results
+                .collect(Collectors.toList());
         Set<Device> deviceSet = gpuInfos.stream()
-            .map(gpuInfo ->
-                Device.builder()
-                    .id(gpuInfo.getId())
-                    .clazz(Clazz.GPU)
-                    .driver(gpuInfo.getDriverInfo())
-                    .type(gpuInfo.getName())
-                    .status(CollectionUtil.isNotEmpty(gpuInfo.getProcessInfos()) ? Status.busy
-                        : Status.idle)
-                    .build())
-            .collect(Collectors.toSet());
+                .map(gpuInfo ->
+                        Device.builder()
+                                .id(gpuInfo.getId())
+                                .clazz(Clazz.GPU)
+                                .driver(gpuInfo.getDriverInfo())
+                                .type(gpuInfo.getName())
+                                .status(CollectionUtil.isNotEmpty(gpuInfo.getProcessInfos()) ? Status.busy
+                                        : Status.idle)
+                                .build())
+                .collect(Collectors.toSet());
         Optional<CPUInfo> cpuInfo = cpuDetect.detect();
-        if(cpuInfo.isPresent()) {
+        if (cpuInfo.isPresent()) {
             CPUInfo cpu = cpuInfo.get();
-            for(int i = cpu.getCpuNum() - 1 ; i >= 0;i--){
+            for (int i = cpu.getCpuNum() - 1; i >= 0; i--) {
                 deviceSet.add(
-                    Device.builder()
-                        .id(String.valueOf(i))
-                        .status(Status.idle) // todo how to check one is idle, is "--cpu-period and --cpu-quota" more fit?
-                        .clazz(Clazz.CPU)
-                        .type(cpu.getCpuModel())
-                        .build()
+                        Device.builder()
+                                .id(String.valueOf(i))
+                                .status(Status.idle) // todo how to check one is idle, is "--cpu-period and --cpu-quota" more fit?
+                                .clazz(Clazz.CPU)
+                                .type(cpu.getCpuModel())
+                                .build()
                 );
             }
         }

@@ -20,13 +20,14 @@ import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
-import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("${sw.controller.apiPrefix}")
 public class ProjectController implements ProjectApi{
 
     @Resource
@@ -39,13 +40,12 @@ public class ProjectController implements ProjectApi{
     public ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(String projectName,
         Integer pageNum, Integer pageSize) {
 
-        List<ProjectVO> projects = projectService.listProject(
+        PageInfo<ProjectVO> projects = projectService.listProject(
             Project.builder().name(projectName).build(),
             PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
 
-        PageInfo<ProjectVO> pageInfo = new PageInfo<>(projects);
 
-        return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+        return ResponseEntity.ok(Code.success.asResponse(projects));
     }
 
     @Override

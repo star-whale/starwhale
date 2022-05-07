@@ -47,10 +47,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
+@RequestMapping("${sw.controller.apiPrefix}")
 @Slf4j
 public class DatasetController implements DatasetApi{
 
@@ -88,13 +90,16 @@ public class DatasetController implements DatasetApi{
     @Override
     public ResponseEntity<ResponseMessage<DatasetVersionVO>> getDatasetInfo(String projectId,
         String datasetId) {
-        throw new UnsupportedOperationException();
+        DatasetVersionVO swdsInfo = swDatasetService.getSWDSInfo(
+            SWDSObject.builder().id(datasetId).projectId(projectId).build());
+
+        return ResponseEntity.ok(Code.success.asResponse(swdsInfo));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVO>>> listDatasetVersion(
         String projectId, String datasetId, String dsVersionName, Integer pageNum, Integer pageSize) {
-        List<DatasetVersionVO> voList = swDatasetService.listDatasetVersionHistory(
+        PageInfo<DatasetVersionVO> pageInfo = swDatasetService.listDatasetVersionHistory(
             SWDSObject.builder()
                 .projectId(projectId)
                 .id(datasetId)
@@ -104,7 +109,6 @@ public class DatasetController implements DatasetApi{
                 .pageNum(pageNum)
                 .pageSize(pageSize)
                 .build());
-        PageInfo<DatasetVersionVO> pageInfo = new PageInfo<>(voList);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
@@ -132,7 +136,7 @@ public class DatasetController implements DatasetApi{
                     log.error("read manifest file failed",e);
                     throw new StarWhaleApiException(new SWProcessException(ErrorType.NETWORK),HttpStatus.INTERNAL_SERVER_ERROR);
                 }
-                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(swdsUploader.create(text,dsFile.getOriginalFilename()))));
+                return ResponseEntity.ok(Code.success.asResponse(new UploadResult(swdsUploader.create(text,dsFile.getOriginalFilename(),uploadRequest))));
             case BLOB:
                 //get ds path and upload to the dest path
                 swdsUploader.uploadBody(uploadId,dsFile);
@@ -160,15 +164,15 @@ public class DatasetController implements DatasetApi{
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(String projectId, String versionId,
         Integer pageNum, Integer pageSize) {
-        List<DatasetVO> voList;
+        PageInfo<DatasetVO> pageInfo;
         if(StringUtils.hasText(versionId)) {
-            voList = swDatasetService.findDatasetsByVersionIds(List.of(versionId.split("[,;]")));
+            List<DatasetVO> voList = swDatasetService.findDatasetsByVersionIds(List.of(versionId.split("[,;]")));
+            pageInfo = PageInfo.of(voList);
         } else {
-            voList = swDatasetService.listSWDataset(
+            pageInfo = swDatasetService.listSWDataset(
                 SWDSObject.builder().projectId(projectId).build(),
                 PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
         }
-        PageInfo<DatasetVO> pageInfo = new PageInfo<>(voList);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 

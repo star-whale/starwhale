@@ -1,7 +1,7 @@
 import typing as t
+from functools import wraps
 
 from loguru import logger
-from functools import wraps
 
 
 class Dict2Obj(object):

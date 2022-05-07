@@ -1,0 +1,151 @@
+nameOverride: ""
+fullnameOverride: ""
+commonLables: {}
+commonAnnotations: {}
+
+image:
+  registry: "docker.io"
+  agent:
+    repo: "starwhaleai/agent"
+    tag: "0.1.0-nightly-2022042908"
+  taskset:
+    repo: "starwhaleai/taskset"
+    tag: "0.1.0-nightly-2022041601"
+  controller:
+    repo: "starwhaleai/controller"
+    tag: "0.1.0-nightly-2022042906"
+  pullPolicy: IfNotPresent
+
+mysql:
+  enabled: true
+  architecture: standalone
+  auth:
+    rootPassword: root
+    username: starwhale
+    password: starwhale
+    database: starwhale
+  volumePermissions:
+    enabled: true
+  primary:
+    service:
+      port: 3306
+    persistence:
+      enabled: true
+      storageClass: local-storage-mysql
+      size: 8Gi
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 500m
+        memory: 250Mi
+
+externalMySQL:
+  host: localhost
+  port: 3306
+  username: ""
+  password: ""
+  database: starwhale
+
+minio:
+  enabled: true
+  containerPorts:
+    api: 9000
+    console: 9001
+  ingress:
+    enabled: true
+    hostname: minio.pre.intra.starwhale.ai
+    ingressClassName: nginx
+  mode: standalone
+  auth:
+    rootUser: minioadmin
+    rootPassword: minioadmin
+  volumePermissions:
+    enabled: true
+  defaultBuckets: starwhale
+  persistence:
+    storageClass: local-storage-minio
+    size: 50Gi
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+    requests:
+      cpu: 500m
+      memory: 250Mi
+
+externalS3OSS:
+  host: localhost
+  port: 9000
+  accessKey: ""
+  secretKey: ""
+  defaultBuckets: starwhale
+  region: "local"
+
+controller:
+  taskSplitSize: 2
+  auth:
+    username: starwhale
+    password: abcd1234
+  containerPort: 8082
+
+storage:
+  agentHostPathRoot: "/mnt/data/starwhale"
+
+nodeSelector:
+  controller: {}
+  agentCPU:
+    starwhale.ai/node-domain: cpu
+  agentGPU:
+    starwhale.ai/node-domain: gpu
+
+minikube:
+  enabled: false
+  agentHostPath: "/var/starwhale"
+  gpuEnabled: false
+  pv:
+    storage: 100Gi
+    rootPath: "/var/starwhale/local-storage"
+  hostname:
+    controller: console.minikube.local
+
+resources:
+  agentCPU:
+    limits:
+      memory: 20Gi
+    requests:
+      memory: 6Gi
+  agentGPU:
+    limits:
+      memory: 40Gi
+      nvidia.com/gpu: 2
+    requests:
+      memory: 6Gi
+      nvidia.com/gpu: 2
+  controller:
+    limits:
+      memory: 4Gi
+    requests:
+      memory: 2Gi
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+  automountServiceAccountToken: false
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  host: console.pre.intra.starwhale.ai
+  path: /
+
+mirror:
+  conda:
+    enabled: true
+  pypi:
+    enabled: true
+    indexUrl: "http://10.131.0.1:3141/root/pypi-douban/+simple/"
+    extraIndexUrl: "https://pypi.tuna.tsinghua.edu.cn/simple/"
+    trustedHost: "10.131.0.1 pypi.tuna.tsinghua.edu.cn"

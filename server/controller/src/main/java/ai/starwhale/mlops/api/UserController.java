@@ -17,12 +17,13 @@ import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import com.github.pagehelper.PageInfo;
-import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("${sw.controller.apiPrefix}")
 public class UserController implements UserApi{
 
     @Resource
@@ -34,9 +35,9 @@ public class UserController implements UserApi{
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<UserVO>>> listUser(String userName,
         Integer pageNum, Integer pageSize) {
-        List<UserVO> voList = userService.listUsers(User.builder().name(userName).build(),
+        PageInfo<UserVO> pageInfo = userService.listUsers(User.builder().name(userName).build(),
             new PageParams(pageNum, pageSize));
-        PageInfo<UserVO> pageInfo = new PageInfo<>(voList);
+
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 

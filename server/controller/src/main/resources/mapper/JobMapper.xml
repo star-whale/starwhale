@@ -22,7 +22,9 @@
                j.base_image_id,
                j.device_type,
                j.device_amount,
-               j.result_output_path,
+               j.result_output_path as job_result_output_path,
+               p.id as project_id,
+               p.project_name,
                u.id as user_id,
                u.user_name,
                u.user_enabled,
@@ -52,6 +54,7 @@
              base_image as b,
              user_role as r
         where u.id = j.owner_id
+          and p.id = j.project_id
           and r.id = u.role_id
           and mv.id = j.swmp_version_id
           and m.id = mv.swmp_id
@@ -61,6 +64,15 @@
     <select id="listJobs" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
          and j.project_id = #{projectId}
+        <choose>
+            <when test="swmpId != null">
+                and swmp_id = #{swmpId}
+            </when>
+            <otherwise>
+                order by swmp_id,j.id desc
+            </otherwise>
+        </choose>
+
     </select>
 
     <select id="findJobById" resultMap="jobResultMap" >
@@ -83,6 +95,17 @@
           open="(" separator="," close=")">
             #{item}
         </foreach>
+    </update>
+
+    <update id="updateJobFinishedTime">
+        update job_info set finished_time = #{finishedTime} WHERE id in
+        <foreach item="item" index="index" collection="jobIds"
+          open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+    <update id="updateJobResultPath">
+        update job_info set result_output_path = #{resultDir} WHERE id = #{jobId}
     </update>
 
     <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.JobEntity" useGeneratedKeys="true" keyProperty="id">
@@ -126,6 +149,8 @@
         <result property="jobStatus" column="job_status" />
         <result property="deviceType" column="device_type" />
         <result property="deviceAmount" column="device_amount" />
+        <result property="resultOutputPath" column="job_result_output_path" />
+        <association property="project" resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
         <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper.swmpVersionResultMap" />
         <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
         <association property="baseImage" resultMap="ai.starwhale.mlops.domain.job.mapper.BaseImageMapper.baseImageResultMap" />

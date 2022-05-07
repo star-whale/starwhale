@@ -33,7 +33,7 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
             onChange={({ activeKey }) => {
                 history.push(activeKey as string)
             }}
-            fill='fixed'
+            fill='intrinsic'
             activateOnFocus
         >
             {navItems.map((item) => {
@@ -44,6 +44,11 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
                             TabPanel: {
                                 style: {
                                     padding: '0px !important',
+                                },
+                            },
+                            Tab: {
+                                style: {
+                                    background: 'transparent',
                                 },
                             },
                         }}

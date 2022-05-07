@@ -42,7 +42,6 @@ export default function ProjectListCard() {
                 columns={[t('Project Name'), t('Owner'), t('Created')]}
                 data={
                     projectsInfo.data?.list?.map((project) => {
-                        console.log(project)
                         return [
                             <Link key={project.id} to={`/projects/${project.id}`}>
                                 {project.name}
@@ -54,7 +53,7 @@ export default function ProjectListCard() {
                 }
                 paginationProps={{
                     start: projectsInfo.data?.pageNum,
-                    count: projectsInfo.data?.size,
+                    count: projectsInfo.data?.pageSize,
                     total: projectsInfo.data?.total,
                     afterPageChange: () => {
                         projectsInfo.refetch()
@@ -67,7 +66,6 @@ export default function ProjectListCard() {
                 closeable
                 animate
                 autoFocus
-                unstable_ModalBackdropScroll
             >
                 <ModalHeader>{t('create sth', [t('Project')])}</ModalHeader>
                 <ModalBody>

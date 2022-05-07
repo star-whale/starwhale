@@ -33,8 +33,8 @@ public class SWModelPackageVersionVO implements Serializable {
     @JsonProperty("meta")
     private Object meta;
 
-    @JsonProperty("createTime")
-    private Long createTime;
+    @JsonProperty("createdTime")
+    private Long createdTime;
 
     @JsonProperty("owner")
     private UserVO owner;

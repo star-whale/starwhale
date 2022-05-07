@@ -24,7 +24,7 @@ public class ProjectVO implements Serializable {
 
     private String name;
 
-    private Long createTime;
+    private Long createdTime;
 
     private UserVO owner;
 

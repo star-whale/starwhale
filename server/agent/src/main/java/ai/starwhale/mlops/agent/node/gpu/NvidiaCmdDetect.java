@@ -32,11 +32,7 @@ public class NvidiaCmdDetect implements GPUDetect {
 
     private final static String detectCmd = "nvidia-smi -q -x";
 
-    private final XmlMapper xmlMapper;
-
-    public NvidiaCmdDetect(XmlMapper xmlMapper) {
-        this.xmlMapper = xmlMapper;
-    }
+    private final XmlMapper xmlMapper = new XmlMapper();
 
     @Override
     public Optional<List<GPUInfo>> detect() {
@@ -54,6 +50,7 @@ public class NvidiaCmdDetect implements GPUDetect {
 
     /**
      * get gpu info by cmd
+     *
      * @return xml text
      * @throws IOException IO error
      */
@@ -75,6 +72,7 @@ public class NvidiaCmdDetect implements GPUDetect {
 
     /**
      * Nvidia gpu info（by nvidia-smi）
+     *
      * @return gpu usage info
      * @throws JsonProcessingException xml parse error
      */

@@ -5,16 +5,19 @@ import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
-import ai.starwhale.mlops.agent.task.EvaluationTask;
-import ai.starwhale.mlops.agent.task.TaskPool;
-import ai.starwhale.mlops.agent.task.action.DoTransition;
-import ai.starwhale.mlops.agent.task.executor.TaskExecutor;
-import ai.starwhale.mlops.agent.task.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.Action;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.TaskStatus;
+import ai.starwhale.mlops.domain.task.TaskType;
 import cn.hutool.core.collection.CollectionUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
@@ -38,9 +41,9 @@ import static org.mockito.ArgumentMatchers.any;
         classes = StarWhaleAgentTestApplication.class)
 @TestPropertySource(
         properties = {
-                "sw.task.rebuild.enabled=false",
-                "sw.task.scheduler.enabled=false",
-                "sw.node.sourcePool.init.enabled=false",
+                "sw.agent.task.rebuild.enabled=false",
+                "sw.agent.task.scheduler.enabled=false",
+                "sw.agent.node.sourcePool.init.enabled=false",
                 // when test,please set these properties with debug configuration
                 /*"sw.storage.s3-config.endpoint=http://10.131.0.1:9000",
                 "sw.agent.basePath=C:/\\Users/\\gaoxinxing/\\swtest" //*/
@@ -60,10 +63,10 @@ public class TaskActionTest {
     private TaskExecutor taskExecutor;
 
     @Autowired
-    DoTransition<Void, List<EvaluationTask>> rebuildTasksAction;
+    Action<Void, List<InferenceTask>> rebuildTasksAction;
 
     @Autowired
-    DoTransition<EvaluationTask, EvaluationTask> finishedOrCanceled2ArchivedAction;
+    Action<InferenceTask, InferenceTask> archivedAction;
 
     @Autowired
     private TaskPool taskPool;
@@ -74,12 +77,15 @@ public class TaskActionTest {
     @Autowired
     private AgentProperties agentProperties;
 
+    @Autowired
+    private FileSystemPath fileSystemPath;
+
     @Test
     public void testPreparing2Running() throws IOException {
         // clear local dir
         FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
 
-        Mockito.when(containerClient.startContainer(any()))
+        Mockito.when(containerClient.createAndStartContainer(any()))
                 .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(
                 List.of(
@@ -99,10 +105,11 @@ public class TaskActionTest {
                                 .build()
                 )
         ));
-        List<EvaluationTask> tasks = List.of(
-                EvaluationTask.builder()
+        List<InferenceTask> tasks = List.of(
+                InferenceTask.builder()
                         .id(1234567890L)
-                        .status(TaskStatus.PREPARING)
+                        .status(InferenceTaskStatus.PREPARING)
+                        .taskType(TaskType.PPL)
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
                         .imageId("starwhaleai/starwhale:0.1.0-nightly-2022041203")
@@ -124,7 +131,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build()
         );
         if (CollectionUtil.isNotEmpty(tasks)) {
@@ -142,10 +149,14 @@ public class TaskActionTest {
 
     @Test
     public void testMonitorTask() throws Exception {
-        List<EvaluationTask> tasks = List.of(
-                EvaluationTask.builder()
+        // clear local dir
+        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+
+        List<InferenceTask> tasks = List.of(
+                InferenceTask.builder()
                         .id(1234567890L)
-                        .status(TaskStatus.RUNNING) // change to runnning
+                        .status(InferenceTaskStatus.RUNNING) // change to runnning
+                        .taskType(TaskType.PPL)
                         .containerId("test-containerid")
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
@@ -168,11 +179,12 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build(),
-                EvaluationTask.builder()
+                InferenceTask.builder()
                         .id(1234567891L)
-                        .status(TaskStatus.RUNNING) // change to runnning
+                        .status(InferenceTaskStatus.RUNNING) // change to runnning
+                        .taskType(TaskType.PPL)
                         .containerId("test-containerid2")
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
@@ -195,7 +207,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build()
         );
         if (CollectionUtil.isNotEmpty(tasks)) {
@@ -203,12 +215,13 @@ public class TaskActionTest {
             taskPool.setToReady();
         }
 
+        Mockito.when(containerClient.status(any())).thenReturn(ContainerClient.ContainerStatus.NORMAL);
         // first to monitor
         taskExecutor.monitorRunningTasks();
         assertEquals(2, taskPool.runningTasks.size());
 
         // change status to ok
-        taskPersistence.updateStatus(1234567890L, TaskPersistence.ExecuteStatus.OK);
+        taskPersistence.updateStatus(1234567890L, TaskPersistence.ExecuteStatus.success);
         // container has changed status to OK
         taskExecutor.monitorRunningTasks();
 
@@ -217,11 +230,15 @@ public class TaskActionTest {
     }
 
     @Test
-    public void testUpload() {
-        List<EvaluationTask> tasks = List.of(
-                EvaluationTask.builder()
+    public void testUpload() throws IOException {
+        // clear local dir
+        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+
+        List<InferenceTask> tasks = List.of(
+                InferenceTask.builder()
                         .id(1234567890L)
-                        .status(TaskStatus.UPLOADING) // change to UPLOADING
+                        .taskType(TaskType.PPL)
+                        .status(InferenceTaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid")
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
@@ -244,11 +261,12 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build(),
-                EvaluationTask.builder()
+                InferenceTask.builder()
                         .id(1234567891L)
-                        .status(TaskStatus.UPLOADING) // change to UPLOADING
+                        .taskType(TaskType.PPL)
+                        .status(InferenceTaskStatus.UPLOADING) // change to UPLOADING
                         .containerId("test-containerid2")
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
@@ -271,7 +289,7 @@ public class TaskActionTest {
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
                                 ).build()
                         ))
-                        .resultPath("todo")
+                        .resultPath(new ResultPath("todo"))
                         .build()
         );
         if (CollectionUtil.isNotEmpty(tasks)) {
@@ -288,11 +306,11 @@ public class TaskActionTest {
 
     @Test
     public void testArchived() {
-        EvaluationTask task = EvaluationTask.builder()
+        InferenceTask task = InferenceTask.builder()
                 .id(1234567890L)
                 .build();
-        assertFalse(Files.exists(Path.of(taskPersistence.pathOfArchived(task.getId()))));
-        finishedOrCanceled2ArchivedAction.apply(task, null);
-        assertTrue(Files.exists(Path.of(taskPersistence.pathOfArchived(task.getId()))));
+        assertFalse(Files.exists(Path.of(fileSystemPath.oneArchivedTaskDir(task.getId()))));
+        archivedAction.apply(task, null);
+        assertTrue(Files.exists(Path.of(fileSystemPath.oneArchivedTaskDir(task.getId()))));
     }
 }
