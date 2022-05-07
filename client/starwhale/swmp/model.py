@@ -10,7 +10,6 @@ from loguru import logger
 from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
 from fs import open_fs
-from rich.progress import BarColumn, Progress, SpinnerColumn, TimeElapsedColumn, TextColumn
 from rich.console import Console
 
 from starwhale import __version__
@@ -29,6 +28,7 @@ from starwhale.consts import (
     DEFAULT_COPY_WORKERS, SHORT_VERSION_CNT
 )
 from .store import ModelPackageLocalStore
+from starwhale.utils.progress import run_with_progress_bar
 
 
 class ModelRunConfig(object):
@@ -207,7 +207,7 @@ class ModelPackage(object):
 
     @logger.catch
     def _do_build(self):
-        _operations = (
+        operations = [
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),
             (self._copy_src, 15, "copy src"),
@@ -215,22 +215,8 @@ class ModelPackage(object):
             (self._render_docker_script, 1, "render docker script"),
             (self._render_manifest, 5, "render manifest"),
             (self._make_swmp_tar, 20, "build swmp"),
-        )
-
-        with Progress(
-            SpinnerColumn(),
-            *Progress.get_default_columns(),
-            TimeElapsedColumn(),
-            console=self.console,
-            refresh_per_second=1,
-        ) as progress:
-            task = progress.add_task("[red]swmp building...", total=sum([o[1] for o in _operations]))
-
-            for idx, op in enumerate(_operations):
-                progress.update(task, description=f"[red]{op[2]}...")
-                op[0]()
-                progress.update(task, advance=op[1],
-                                description=f"[green]{idx+1} out of {len(_operations)} steps finished")
+        ]
+        run_with_progress_bar("swmp building...", operations, self.console)
 
     def _gen_version(self) -> None:
         logger.info("[step:version]create swmp version...")
@@ -339,7 +325,7 @@ class ModelPackage(object):
 
         ensure_link(out, self._swmp_store / "latest")
         logger.info(f"[step:tar]finish to make swmp")
-        self.console.print(f":hibiscus: congratulation! you can run [red bold] swcli model info {self._name}:{self._version}[/]")
+        self.console.print(f":hibiscus: congratulation! you can run [blink red bold] swcli model info {self._name}:{self._version}[/]")
 
     def _render_docker_script(self):
         #TODO: agent run and smoketest step
