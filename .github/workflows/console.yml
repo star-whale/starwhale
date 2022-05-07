@@ -27,7 +27,7 @@ jobs:
 
       - name: Build
         env:
-          - FOLDER: console
+          FOLDER: console
         run: |
           cd console
           npm install -g yarn
