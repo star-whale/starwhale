@@ -1,4 +1,4 @@
-//@flow
+// @flow
 import React from 'react'
 import { Client as Styletron } from 'styletron-engine-atomic'
 import { Provider as StyletronProvider } from 'styletron-react'
@@ -17,6 +17,7 @@ const engine = new Styletron()
 const queryClient = new QueryClient()
 
 export default function App(): any {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const sidebarData = useSidebar()
     const themeType = useCurrentThemeType()
     const theme = themes[themeType]

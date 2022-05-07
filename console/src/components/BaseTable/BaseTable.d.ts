@@ -149,6 +149,7 @@ export class Column<T = unknown> extends React.Component<ColumnShape<T>> {
         readonly CENTER: 'center'
         readonly RIGHT: 'right'
     }
+
     static readonly FrozenDirection: {
         readonly LEFT: 'left'
         readonly RIGHT: 'right'
@@ -527,8 +528,11 @@ export interface TableComponents<T = any> {
 
 export default class BaseTable<T = unknown> extends React.Component<BaseTableProps<T>, any> {
     static readonly Column: typeof Column
+
     static readonly PlaceholderKey = '__placeholder__'
+
     static defaultProps: Partial<BaseTableProps>
+
     static propTypes: React.WeakValidationMap<BaseTableProps>
 
     /**

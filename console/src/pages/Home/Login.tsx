@@ -1,18 +1,15 @@
 import Card from '@/components/Card'
 import { createForm } from '@/components/Form'
-import LoginLayout from './LoginLayout'
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import useTranslation from '@/hooks/useTranslation'
 import { ILoginUserSchema } from '@user/schemas/user'
 import { loginUser } from '@user/services/user'
-import { Button } from 'baseui/button'
 import { Input } from 'baseui/input'
 import qs from 'qs'
 import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router-dom'
 import { useStyletron } from 'baseui'
-import Text from '@/components/Text'
 import ZButton from '@/components/Button'
+import LoginLayout from './LoginLayout'
 
 const { Form, FormItem } = createForm<ILoginUserSchema>()
 

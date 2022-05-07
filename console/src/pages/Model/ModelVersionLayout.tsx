@@ -1,6 +1,5 @@
 import { useModel, useModelLoading } from '@model/hooks/useModel'
 import useTranslation from '@/hooks/useTranslation'
-import { RiSurveyLine } from 'react-icons/ri'
 import React, { useEffect, useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { useParams } from 'react-router-dom'
@@ -33,7 +32,6 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
     const [t] = useTranslation()
     const modelName = model?.name ?? '-'
     const project = projectInfo.data ?? {}
-    const projectName = project?.name ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -51,7 +49,7 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
             },
         ]
         return items
-    }, [projectName, modelName, t])
+    }, [modelName, t, project?.id, modelId])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

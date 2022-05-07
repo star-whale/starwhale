@@ -1,25 +1,30 @@
-import React, { useCallback, useRef, forwardRef } from 'react'
-import Table, { Column, SortOrder, AutoResizer } from '@/components/BaseTable'
+import React, { useCallback, useRef } from 'react'
+import Table, { AutoResizer } from '@/components/BaseTable'
 import _ from 'lodash'
 import { useTableGridState, ITableGridState } from './useTableGridState'
 
 export interface ITableGridProps extends Partial<ITableGridState> {
     data: any[]
     columns: any[]
-    dataConfigMap?: {}
-    tableConfigMap?: {}
+    dataConfigMap?: Record<string, any>
+    tableConfigMap?: Record<string, any>
 }
 
-export default function TableGrid(props: ITableGridProps) {
-    const { gridState, handleColumnSort, handleRowSelect, columns, data, tableConfigMap } = useTableGridState({
-        data: props.data || [],
-        columns: props.columns || [],
-        dataConfigMap: props.dataConfigMap || {},
-        tableConfigMap: props.tableConfigMap || {},
+export default function TableGrid({
+    data: rawData = [],
+    columns: rawColumns = [],
+    dataConfigMap: rawDataConfigMap = {},
+    tableConfigMap: rawTabelConfigMap = {},
+}: ITableGridProps) {
+    const { gridState, handleColumnSort, columns, tableConfigMap } = useTableGridState({
+        data: rawData,
+        columns: rawColumns,
+        dataConfigMap: rawDataConfigMap,
+        tableConfigMap: rawTabelConfigMap,
     })
 
     const getRowClassName = useCallback(
-        ({ rowData, rowIndex }: any) => {
+        ({ rowData }: any) => {
             const selected = _.get(gridState.dataConfigMap, [rowData?.id, 'selected'])
             return selected ? 'selected' : ''
         },
@@ -27,8 +32,6 @@ export default function TableGrid(props: ITableGridProps) {
     )
 
     const tableRef = useRef(null)
-
-    console.log(gridState, tableConfigMap?.sortBy)
 
     return (
         <div
@@ -58,9 +61,7 @@ export default function TableGrid(props: ITableGridProps) {
                                   }
                                 : undefined
                         }
-                        onColumnSort={({ column, key, order }) =>
-                            handleColumnSort({ sortBy: { key: key as string, order } })
-                        }
+                        onColumnSort={({ key, order }) => handleColumnSort({ sortBy: { key: key as string, order } })}
                     />
                 )}
             </AutoResizer>

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import useGlobalState from '@/hooks/global'
-import  { ThemeType } from '@/theme'
+import { ThemeType } from '@/theme'
+
 export const useThemeType = () => {
     const [themeType, setThemeType_] = useGlobalState('themeType')
 

@@ -1,6 +1,5 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IAgentSchema } from './agent'
-import { JobStatusType } from './job'
 
 export enum TaskStatusType {
     CREATED = 'CREATED',
@@ -21,11 +20,6 @@ export interface ITaskSchema extends IResourceSchema {
     agent: IAgentSchema
     startTime: number
     taskStatus: TaskStatusType
-    // JobStatusType
 }
 
-export interface ITaskDetailSchema extends ITaskSchema {}
-
-export interface IUpdateTaskSchema {}
-
-export interface ICreateTaskSchema {}
+export type ITaskDetailSchema = ITaskSchema

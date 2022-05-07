@@ -1,9 +1,8 @@
-import { listBaseImages } from '../services/runtime'
 import { Select, SelectProps } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
-import { useParams } from 'react-router-dom'
+import { listBaseImages } from '../services/runtime'
 
 export interface IBaseImageSelectorProps {
     value?: string
@@ -50,7 +49,6 @@ export default function BaseImageSelector({ value, onChange, overrides, disabled
                 if (!params.option) {
                     return
                 }
-                console.log('-', params)
                 onChange?.(params.option.id as string)
             }}
             onInputChange={(e) => {

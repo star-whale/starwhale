@@ -1,6 +1,3 @@
-// @ts-nocheck
-/* eslint-disable react/prop-types */
-
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createJob, doJobAction } from '@job/services/job'
@@ -17,10 +14,11 @@ import { Link, useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
-import Table from '@/components/Table'
 import './Runs.scss'
 
 export default function JobListCard() {
+    const [t] = useTranslation()
+    const history = useHistory()
     const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
     const jobsInfo = useFetchJobs(projectId, page)
@@ -31,7 +29,7 @@ export default function JobListCard() {
             await jobsInfo.refetch()
             setIsCreateJobOpen(false)
         },
-        [jobsInfo]
+        [jobsInfo, projectId]
     )
     const handleAction = useCallback(
         async (jobId, type: JobActionType) => {
@@ -40,10 +38,8 @@ export default function JobListCard() {
             await jobsInfo.refetch()
             setIsCreateJobOpen(false)
         },
-        [jobsInfo]
+        [jobsInfo, projectId, t]
     )
-    const [t] = useTranslation()
-    const history = useHistory()
 
     return (
         <>
@@ -119,7 +115,7 @@ export default function JobListCard() {
                                 job.modelVersion,
                                 job.owner && <User user={job.owner} />,
                                 job.createTime && formatTimestampDateTime(job.createTime),
-                                typeof job.duration == 'string' ? '-' : durationToStr(job.duration),
+                                typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
                                 job.stopTime > 0 ? formatTimestampDateTime(job.stopTime) : '-',
                                 job.jobStatus,
                                 actions[job.jobStatus] ?? '',

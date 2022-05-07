@@ -7,7 +7,7 @@ export function usePage(opt?: {
     updateQuery?: IUpdateQueryArgs
     defaultCount?: number
 }): [IListQuerySchema, (page: IListQuerySchema) => void] {
-    const { query: query_, updateQuery: updateQuery_, defaultCount = 20 } = opt ?? {}
+    const { query: query_, updateQuery: updateQuery_ } = opt ?? {}
     const { query: query0, updateQuery: updateQuery0 } = useQueryArgs()
 
     let query = query_
@@ -43,7 +43,7 @@ export function usePage(opt?: {
                 sort_by: sortBy,
                 sort_asc: sortAsc === 'true',
             }),
-            [defaultCount, q, search, sortAsc, sortBy, pageNum, pageSize]
+            [q, search, sortAsc, sortBy, pageNum, pageSize]
         ),
         useCallback(
             (newPage) => {

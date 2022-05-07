@@ -6,7 +6,7 @@ export function formatDateTime(s: string, format = 'YYYY-MM-DDTHH:mm:ssZ'): stri
 }
 
 export function formatTimestampDateTime(s: number, format = 'YYYY-MM-DDTHH:mm:ssZ'): string {
-    return moment.tz(s, moment.tz.guess()).format(dateTimeFormat)
+    return moment.tz(s, moment.tz.guess()).format(format ?? dateTimeFormat)
 }
 
 export function durationToStr(v: number) {

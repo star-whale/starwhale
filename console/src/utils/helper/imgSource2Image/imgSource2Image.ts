@@ -1,5 +1,4 @@
-// import { FORMAT_ENUM } from 'components/ExportPreview/config';
-
+/* eslint-disable @typescript-eslint/naming-convention */
 enum FORMAT_ENUM {
     SVG = 'svg',
     JPEG = 'jpeg',
@@ -36,7 +35,7 @@ function imgSource2Image({
         canvas.width = width
         canvas.height = height
         const image = new Image()
-        image.onload = function () {
+        image.onload = () => {
             if (context) {
                 context.clearRect(0, 0, width, height)
                 context.drawImage(image, 0, 0, width, height)
@@ -46,7 +45,7 @@ function imgSource2Image({
                             callback(blob)
                         }
                     },
-                    'image/' + format,
+                    `image/${format}`,
                     1
                 )
             }

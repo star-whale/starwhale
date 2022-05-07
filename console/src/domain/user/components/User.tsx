@@ -8,7 +8,7 @@ export interface IUserProps {
 }
 
 export default function User({ user, style }: IUserProps) {
-    const name = user.name
+    const { name } = user
 
     return (
         <div

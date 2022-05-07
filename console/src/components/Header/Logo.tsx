@@ -1,18 +1,17 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import Text from '../Text'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { createUseStyles } from 'react-jss'
+import Text from '../Text'
 
 export interface ILogoProps {
     expanded?: boolean
-    className?: string
 }
 
 export default function Logo({ expanded = true }: ILogoProps) {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
 
-    const Logo = expanded ? (
+    const LogoText = expanded ? (
         <Text
             size='large'
             style={{
@@ -49,7 +48,7 @@ export default function Logo({ expanded = true }: ILogoProps) {
                     transition: 'width 200ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
                 }}
             >
-                {Logo}
+                {LogoText}
             </div>
         )
 
@@ -66,7 +65,7 @@ export default function Logo({ expanded = true }: ILogoProps) {
             }}
             to='/'
         >
-            {Logo}
+            {LogoText}
         </Link>
     )
 }

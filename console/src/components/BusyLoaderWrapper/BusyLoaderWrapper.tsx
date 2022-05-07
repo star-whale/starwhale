@@ -1,6 +1,8 @@
-import React, { useCallback, useRef } from 'react'
-import { Spinner, SIZE } from 'baseui/spinner'
+import React, { useCallback } from 'react'
 import { Skeleton } from 'baseui/skeleton'
+
+import './BusyLoaderWrapper.scss'
+import BusyPlaceholder from './BusyPlaceholder'
 
 export interface IBusyLoaderWrapperProps {
     isLoading: boolean
@@ -8,14 +10,11 @@ export interface IBusyLoaderWrapperProps {
     children?: React.ReactElement | any
     loaderComponent?: React.ReactElement
     loaderType?: string
-    loaderConfig?: object
+    loaderConfig?: Record<string, unknown>
     width?: string
     height?: string
     style?: React.CSSProperties
 }
-
-import './BusyLoaderWrapper.scss'
-import BusyPlaceholder from './BusyPlaceholder'
 
 function BusyLoaderWrapper({
     style = {},
@@ -31,6 +30,7 @@ function BusyLoaderWrapper({
     function loaderRender() {
         switch (loaderType) {
             case 'skeleton': {
+                // eslint-disable-next-line
                 return <Skeleton rows={5} height='100px' width='100%' animation {...loaderConfig} />
             }
             default: {
@@ -50,13 +50,17 @@ function BusyLoaderWrapper({
         []
     )
 
+    if (isLoading) {
+        return (
+            <div className={`BusyLoaderWrapper ${className}`} style={{ width, height }}>
+                {loaderComponent || loaderRender()}
+            </div>
+        )
+    }
+
     return (
         <>
-            {isLoading ? (
-                <div className={`BusyLoaderWrapper ${className}`} style={{ width, height }}>
-                    {loaderComponent || loaderRender()}
-                </div>
-            ) : children ? (
+            {children ? (
                 <div style={{ width, height, ...style }} ref={mountCard}>
                     {children}
                 </div>

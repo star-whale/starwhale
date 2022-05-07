@@ -1,17 +1,14 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import useTranslation from '@/hooks/useTranslation'
-import { useJob, useJobLoading } from '@job/hooks/useJob'
-import TaskListCard from './TaskListCard'
-import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
+import { useJob } from '@job/hooks/useJob'
+import { formatTimestampDateTime } from '@/utils/datetime'
 import Card from '@/components/Card'
 import { ScrollFollow, LazyLog } from 'react-lazylog'
 import { Accordion, Panel } from 'baseui/accordion'
-import { Grid, Cell } from 'baseui/layout-grid'
-import useWebSocket from '../../hooks/useWebSocket'
-import { useQuery } from 'react-query'
 import { fetchTaskOfflineFileLog, fetchTaskOfflineLogFiles } from '@/domain/job/services/task'
-import { ITaskSchema, TaskStatusType } from '../../domain/job/schemas/task'
 import { getToken } from '@/api'
+import { ITaskSchema, TaskStatusType } from '../../domain/job/schemas/task'
+import TaskListCard from './TaskListCard'
 
 export default function JobOverview() {
     const { job } = useJob()
@@ -34,7 +31,6 @@ export default function JobOverview() {
             label: t('Created time'),
             value: job?.createTime && formatTimestampDateTime(job.createTime),
         },
-        ,
         {
             label: t('End time'),
             value: job?.createTime && formatTimestampDateTime(job.createTime),
@@ -42,15 +38,15 @@ export default function JobOverview() {
     ]
 
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
-    const [expanded, setExpanded] = useState(false)
+    const [, setExpanded] = useState(false)
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, string>>({})
     const onAction = useCallback(async (type, task: ITaskSchema) => {
         setCurrentTask(task)
         if ([TaskStatusType.SUCCESS, TaskStatusType.SUCCESS].includes(task.taskStatus)) {
             const data = await fetchTaskOfflineLogFiles(task?.id)
 
-            let files: Record<string, string> = {}
-            data.map(async (v: string, k: number) => {
+            const files: Record<string, string> = {}
+            data.map(async (v: string) => {
                 const content = await fetchTaskOfflineFileLog(task?.id, v)
                 files[v] = content
                 setCurrentLogFiles({
@@ -69,7 +65,7 @@ export default function JobOverview() {
         return `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//${window.location.host}/api/v1/log/online/${
             currentTask?.id
         }?Authorization=${getToken()}`
-    }, [currentTask, currentTask?.id])
+    }, [currentTask])
 
     // useWebSocket({
     //     debug: true,
@@ -112,7 +108,6 @@ export default function JobOverview() {
                                 <ScrollFollow
                                     startFollowing
                                     render={({ follow }) => {
-                                        console.log(fileName)
                                         if (content) {
                                             return (
                                                 <LazyLog
@@ -186,8 +181,7 @@ export default function JobOverview() {
                                                 websocket
                                                 websocketOptions={{
                                                     formatMessage: (e): any => {
-                                                        const msg = JSON.parse(e) as any
-                                                        console.log(msg)
+                                                        // const msg = JSON.parse(e) as any
                                                         return e
                                                     },
                                                 }}

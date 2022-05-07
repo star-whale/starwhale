@@ -27,7 +27,7 @@
     "src"
   ],
   "exclude": [
-    "src/stories"
+    "src/stories",
   ],
   "extends": "./tsconfig.paths.json"
 }

@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unused-prop-types */
+
 import { Item, Navigation } from 'baseui/side-navigation'
 import _ from 'lodash'
 import React, { useCallback, useContext, useMemo } from 'react'
@@ -8,9 +10,7 @@ import type { IconBaseProps } from 'react-icons/lib'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import { sidebarExpandedWidth, sidebarFoldedWidth } from '@/consts'
 import { AiOutlineDoubleLeft, AiOutlineDoubleRight } from 'react-icons/ai'
-import color from 'color'
 import Text from '@/components/Text'
-import useTranslation from '@/hooks/useTranslation'
 
 export interface IComposedSidebarProps {
     style?: React.CSSProperties
@@ -63,6 +63,7 @@ export interface IBaseSideBarProps extends IComposedSidebarProps {
 }
 
 export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideBarProps) {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const width = useSidebarWidth()
     const ctx = useContext(SidebarContext)
 
@@ -101,8 +102,6 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
             ctx.setExpanded(true)
         }
     }, [ctx])
-
-    const [t] = useTranslation()
 
     return (
         <div
@@ -188,7 +187,7 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
                             flexGrow: 1,
                             width: ctx.expanded ? sidebarExpandedWidth - sidebarFoldedWidth : sidebarFoldedWidth,
                         }}
-                    ></div>
+                    />
                     <div
                         role='button'
                         tabIndex={0}

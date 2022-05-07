@@ -21,6 +21,7 @@ const useResizeObserver = (
                 }
             }
         }
+        return () => {}
     }, [resizeObserverCallback, returnCallback, target])
 }
 

@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unused-prop-types */
+
 import React, { useMemo } from 'react'
 import { Tabs, Tab } from 'baseui/tabs-motion'
 import { useHistory, useLocation } from 'react-router-dom'

@@ -2,3 +2,5 @@ build/
 dist/
 node_modules/
 *.min.js
+BaseTable/
+stories/

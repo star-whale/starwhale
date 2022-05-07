@@ -10,19 +10,17 @@ import { Button, SIZE as ButtonSize } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
-import { useDataset } from '@dataset/hooks/useDataset'
 import { Drawer } from 'baseui/drawer'
 import { JSONTree } from 'react-json-tree'
 
-//@ts-ignore
+// eslint-disable-next-line
 import yaml from 'js-yaml'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
     const { datasetId, projectId } = useParams<{ datasetId: string; projectId: string }>()
-    const { dataset } = useDataset()
     const [isOpen, setIsOpen] = useState(false)
     const [drawerData, setDrawerData] = useState('')
 
@@ -34,7 +32,7 @@ export default function DatasetVersionListCard() {
             await datasetsInfo.refetch()
             setIsCreateDatasetVersionOpen(false)
         },
-        [datasetsInfo]
+        [datasetsInfo, datasetId, projectId]
     )
     const [t] = useTranslation()
 
@@ -63,13 +61,12 @@ export default function DatasetVersionListCard() {
             >
                 <Table
                     isLoading={datasetsInfo.isLoading}
-                    // t('sth name', [t('Dataset Version')]),
                     columns={[t('Meta'), t('Created'), t('Owner'), t('Action')]}
                     data={
                         datasetsInfo.data?.list.map((dataset) => {
                             return [
-                                // dataset.Version,
                                 <Button
+                                    key={dataset.id}
                                     size='mini'
                                     onClick={() => {
                                         setDrawerData(dataset.meta)

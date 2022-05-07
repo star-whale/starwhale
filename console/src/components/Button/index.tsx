@@ -1,5 +1,4 @@
 import React from 'react'
-import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import { Button as BaseButton, ButtonProps } from 'baseui/button'
 
@@ -14,8 +13,8 @@ const useStyles = createUseStyles({
     },
 })
 
+/* eslint-disable react/jsx-props-no-spreading */
 export default function Button({ children, ...props }: IButtonProps) {
-    const [css, theme] = useStyletron()
     const styles = useStyles()
 
     return (

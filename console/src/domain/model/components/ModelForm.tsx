@@ -1,13 +1,11 @@
-import { ICreateModelSchema, IModelSchema } from '../schemas/model'
 import React, { useCallback, useEffect, useState } from 'react'
 import { createForm } from '@/components/Form'
 import { Input } from 'baseui/input'
-import { Textarea } from 'baseui/textarea'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
+import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
 import { RadioGroup, Radio, ALIGN } from 'baseui/radio'
-import { FileUploader } from 'baseui/file-uploader'
+import { ICreateModelSchema, IModelSchema } from '../schemas/model'
 
 const { Form, FormItem } = createForm<ICreateModelSchema>()
 
@@ -32,7 +30,6 @@ export default function ModelForm({ model, onSubmit }: IModelFormProps) {
     const [loading, setLoading] = useState(false)
 
     const handleValuesChange = useCallback((_changes, values_) => {
-        console.log(values_)
         setValues(values_)
     }, [])
 
@@ -49,7 +46,6 @@ export default function ModelForm({ model, onSubmit }: IModelFormProps) {
     )
 
     const [t] = useTranslation()
-    console.log(importBy)
 
     return (
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -67,13 +63,13 @@ export default function ModelForm({ model, onSubmit }: IModelFormProps) {
                     <Radio value='upload'>{t('Upload')}</Radio>
                 </RadioGroup>
             </div>
-            {importBy == 'server' && (
+            {importBy === 'server' && (
                 <FormItem name='importPath' label={t('Import Path')}>
                     <Input disabled={model !== undefined ? true : undefined} />
                 </FormItem>
             )}
-            {importBy == 'upload' && (
-                //TODO: beauty file upload plugin
+            {importBy === 'upload' && (
+                // TODO: beauty file upload plugin
                 <FormItem name='zipFile' label={t('Upload')} valuePropName='files'>
                     <Input name='files' disabled={model !== undefined ? true : undefined} type='file' />
 
