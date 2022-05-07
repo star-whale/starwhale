@@ -34,7 +34,6 @@ jobs:
         run: echo "::set-output name=dir::$(yarn cache dir)"
 
       - uses: actions/cache@v3
-        working-directory: ./console
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
@@ -43,12 +42,10 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install project dependencies
-        working-directory: ./console
         if: steps.yarn-cache.outputs.cache-hit != 'true' # Over here!
         run: yarn
 
       - name: Yarn lint
-        working-directory: ./console
         run: |
           yarn lint
           yarn typecheck
