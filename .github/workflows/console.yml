@@ -22,6 +22,7 @@ jobs:
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
+        working-directory: ./console
         with:
           node-version: ${{ matrix.node-version }}
           cache: "yarn"
