@@ -22,20 +22,20 @@ function getCSSStyles(parentElement: SVGSVGElement): string {
     const selectorTextArr = []
 
     // Add Parent element Id and Classes to the list
-    selectorTextArr.push('#' + parentElement.id)
+    selectorTextArr.push(`#${parentElement.id}`)
     for (let c = 0; c < parentElement.classList.length; c++)
-        if (!contains('.' + parentElement.classList[c], selectorTextArr))
-            selectorTextArr.push('.' + parentElement.classList[c])
+        if (!contains(`.${parentElement.classList[c]}`, selectorTextArr))
+            selectorTextArr.push(`.${parentElement.classList[c]}`)
 
     // Add Children element Ids and Classes to the list
     const nodes = parentElement.getElementsByTagName('*')
     for (let i = 0; i < nodes.length; i++) {
-        const id = nodes[i].id
-        if (!contains('#' + id, selectorTextArr)) selectorTextArr.push('#' + id)
+        const { id } = nodes[i]
+        if (!contains(`#${id}`, selectorTextArr)) selectorTextArr.push(`#${id}`)
 
         const classes = nodes[i].classList
         for (let c = 0; c < classes.length; c++)
-            if (!contains('.' + classes[c], selectorTextArr)) selectorTextArr.push('.' + classes[c])
+            if (!contains(`.${classes[c]}`, selectorTextArr)) selectorTextArr.push(`.${classes[c]}`)
     }
 
     // Extract CSS Rules
@@ -50,7 +50,7 @@ function getCSSStyles(parentElement: SVGSVGElement): string {
             continue
         }
 
-        const cssRules = s.cssRules
+        const { cssRules } = s
         for (let r = 0; r < cssRules.length; r++) {
             if (contains((cssRules[r] as any).selectorText, selectorTextArr)) extractedCSSText += cssRules[r].cssText
         }
@@ -59,15 +59,15 @@ function getCSSStyles(parentElement: SVGSVGElement): string {
     return extractedCSSText
 
     function contains(str: string, arr: string[]) {
-        return arr.indexOf(str) === -1 ? false : true
+        return arr.indexOf(str) !== -1
     }
 }
 
 function appendCSS(cssText: string, element: SVGSVGElement): void {
-    let styleElement = document.createElement('style')
+    const styleElement = document.createElement('style')
     styleElement.setAttribute('type', 'text/css')
     styleElement.innerHTML = cssText
-    let refNode = element.hasChildNodes() ? element.children[0] : null
+    const refNode = element.hasChildNodes() ? element.children[0] : null
     element.insertBefore(styleElement, refNode)
 }
 

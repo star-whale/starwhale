@@ -7,8 +7,6 @@ import useTranslation from '@/hooks/useTranslation'
 import Text from '@/components/Text'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
-import { createUseStyles } from 'react-jss'
-import { useStyletron } from 'baseui'
 
 export interface ITableProps extends BaseTableProps {
     paginationProps?: IPaginationProps
@@ -17,7 +15,6 @@ export interface ITableProps extends BaseTableProps {
 export default function Table({ isLoading, columns, data, overrides, paginationProps }: ITableProps) {
     const [t] = useTranslation()
     const [page, setPage] = usePage()
-    const [css] = useStyletron()
 
     return (
         <>
@@ -31,9 +28,9 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             cursor: 'pointer',
                         },
                         props: {
-                            onClick: (e: React.MouseEvent) => {
-                                // e.currentTarget.querySelector('a')?.click()
-                            },
+                            //     onClick: (e: React.MouseEvent) => {
+                            //         e.currentTarget.querySelector('a')?.click()
+                            //     },
                         },
                     },
                     TableHeadCell: {

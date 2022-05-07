@@ -32,18 +32,9 @@ export default function DatasetLayout({ children }: IDatasetLayoutProps) {
     const [t] = useTranslation()
     const datasetName = dataset?.name ?? '-'
     const project = projectInfo.data ?? {}
-    const projectName = project?.name ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
-            // {
-            //     title: t('projects'),
-            //     path: '/projects',
-            // },
-            // {
-            //     title: project?.name ?? '-',
-            //     path: `/projects/${project?.id}`,
-            // },
             {
                 title: t('Datasets'),
                 path: `/projects/${project?.id}/datasets`,
@@ -54,7 +45,7 @@ export default function DatasetLayout({ children }: IDatasetLayoutProps) {
             },
         ]
         return items
-    }, [projectName, datasetName, t])
+    }, [datasetId, project?.id, datasetName, t])
 
     // const navItems: INavItem[] = useMemo(
     //     () => [

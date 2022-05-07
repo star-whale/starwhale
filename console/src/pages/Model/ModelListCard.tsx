@@ -15,7 +15,7 @@ import { useFetchModels } from '@model/hooks/useFetchModels'
 
 export default function ModelListCard() {
     const [page] = usePage()
-    const { modelId, projectId } = useParams<{ modelId: string; projectId: string }>()
+    const { projectId } = useParams<{ modelId: string; projectId: string }>()
 
     const modelsInfo = useFetchModels(projectId, page)
     const [isCreateModelOpen, setIsCreateModelOpen] = useState(false)
@@ -25,7 +25,7 @@ export default function ModelListCard() {
             await modelsInfo.refetch()
             setIsCreateModelOpen(false)
         },
-        [modelsInfo]
+        [modelsInfo, projectId]
     )
     const [t] = useTranslation()
 

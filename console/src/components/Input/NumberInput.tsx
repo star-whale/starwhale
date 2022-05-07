@@ -7,7 +7,6 @@ export interface INumberInputProps {
     min?: number
     max?: number
     step?: number
-    label?: string
     disabled?: boolean
     type?: 'int' | 'float'
     overrides?: InputProps['overrides']

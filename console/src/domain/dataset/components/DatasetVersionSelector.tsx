@@ -1,9 +1,8 @@
-import { listDatasetVersions } from '../services/datasetVersion'
-import { Select, SelectProps, OnChangeParams } from 'baseui/select'
+import { Select, SelectProps } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
-import { useParams } from 'react-router-dom'
+import { listDatasetVersions } from '../services/datasetVersion'
 
 export interface IDatasetVersionSelectorProps {
     projectId: string
@@ -43,7 +42,7 @@ export default function DatasetVersionSelector({
             setOptions(
                 datasetVersionsInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: item.name + (item.tag ? '/' + item.tag : ''),
+                    label: item.name + (item.tag ? `/${item.tag}` : ''),
                 })) ?? []
             )
         } else {

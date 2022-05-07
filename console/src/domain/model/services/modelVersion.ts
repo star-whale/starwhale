@@ -1,11 +1,11 @@
 import axios from 'axios'
+import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import {
     ICreateModelVersionSchema,
     IModelVersionSchema,
     IUpdateModelVersionSchema,
     IModelVersionDetailSchema,
 } from '../schemas/modelVersion'
-import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 
 export async function listModelVersions(
     projectId: string,
@@ -33,7 +33,7 @@ export async function createModelVersion(
     modelId: string,
     data: ICreateModelVersionSchema
 ): Promise<IModelVersionSchema> {
-    var bodyFormData = new FormData()
+    const bodyFormData = new FormData()
     bodyFormData.append('importPath', data.importPath ?? '')
     if (data.zipFile && data.zipFile.length > 0) bodyFormData.append('zipFile', data.zipFile[0] as File)
 

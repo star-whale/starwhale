@@ -1,4 +1,4 @@
-import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
+import { IListQuerySchema } from '@/domain/base/schemas/list'
 import axios from 'axios'
 import { IBaseImageSchema, IDeviceSchema } from '../schemas/runtime'
 

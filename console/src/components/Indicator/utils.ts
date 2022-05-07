@@ -1,8 +1,6 @@
-import { useMemo } from 'react'
-
 export function getHeatmapConfig(title = '', labels: string[], heatmap: number[][]) {
     const layout = {
-        title: title,
+        title,
         annotations: [] as any[],
         xaxis: {
             ticks: '',
@@ -23,22 +21,22 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
     const yValues = labels
     const zValues = heatmap
 
-    // const annotations = useMemo(() => {
     const annotations = []
-    for (var i = 0; i < yValues.length; i++) {
-        for (var j = 0; j < xValues.length; j++) {
-            var currentValue = zValues[i][j]
-            if (currentValue != 0) {
-                var textColor = 'white'
+    for (let i = 0; i < yValues.length; i++) {
+        for (let j = 0; j < xValues.length; j++) {
+            const currentValue = zValues[i][j]
+            let textColor = ''
+            if (currentValue !== 0) {
+                textColor = 'white'
             } else {
-                var textColor = 'black'
+                textColor = 'black'
             }
             const result = {
                 xref: 'x1',
                 yref: 'y1',
                 x: xValues[j],
                 y: yValues[i],
-                text: zValues[i][j].toFixed(2) == '0.00' ? zValues[i][j].toFixed(2) : zValues[i][j].toFixed(3),
+                text: zValues[i][j].toFixed(2) === '0.00' ? zValues[i][j].toFixed(2) : zValues[i][j].toFixed(3),
                 font: {
                     size: 14,
                     color: textColor,
@@ -48,9 +46,6 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
             annotations.push(result)
         }
     }
-
-    //     return annotations
-    // }, [labels, heatmap])
 
     layout.annotations = [...annotations]
 

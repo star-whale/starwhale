@@ -1,12 +1,11 @@
-import { ICreateModelVersionSchema, IModelVersionSchema } from '../schemas/modelVersion'
 import React, { useCallback, useEffect, useState } from 'react'
 import { createForm } from '@/components/Form'
 import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
+import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
 import { RadioGroup, Radio, ALIGN } from 'baseui/radio'
-import { FileUploader } from 'baseui/file-uploader'
+import { ICreateModelVersionSchema, IModelVersionSchema } from '../schemas/modelVersion'
 
 const { Form, FormItem } = createForm<ICreateModelVersionSchema>()
 
@@ -47,7 +46,6 @@ export default function ModelVersionForm({ model, onSubmit }: IModelVersionFormP
     )
 
     const [t] = useTranslation()
-    console.log(importBy)
 
     return (
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -66,13 +64,13 @@ export default function ModelVersionForm({ model, onSubmit }: IModelVersionFormP
                     <Radio value='upload'>{t('Upload')}</Radio>
                 </RadioGroup>
             </div>
-            {importBy == 'server' && (
+            {importBy === 'server' && (
                 <FormItem name='importPath' label={t('Import Path')}>
                     <Input disabled={model !== undefined ? true : undefined} />
                 </FormItem>
             )}
-            {importBy == 'upload' && (
-                //TODO: beauty file upload plugin
+            {importBy === 'upload' && (
+                // TODO: beauty file upload plugin
                 <FormItem name='zipFile' label={t('Upload')} valuePropName='files'>
                     <Input name='files' disabled={model !== undefined ? true : undefined} type='file' />
 

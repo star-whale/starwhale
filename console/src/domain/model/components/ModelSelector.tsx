@@ -1,9 +1,8 @@
-import { listModels } from '../services/model'
 import { Select, SelectProps } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
-import { useParams } from 'react-router-dom'
+import { listModels } from '../services/model'
 
 export interface IModelSelectorProps {
     projectId: string
@@ -51,7 +50,6 @@ export default function ModelSelector({ projectId, value, onChange, overrides, d
                 if (!params.option) {
                     return
                 }
-                console.log('-', params)
                 onChange?.(params.option.id as string)
             }}
             onInputChange={(e) => {

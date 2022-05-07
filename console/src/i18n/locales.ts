@@ -1,4 +1,3 @@
-import en from 'javascript-time-ago/locale/en.json'
 export interface ILocaleItem {
     en: string
 }

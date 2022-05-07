@@ -3,13 +3,13 @@ import React from 'react'
 import { Button, Icon } from '@/components'
 import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
 
+import { StatefulTooltip as Tooltip } from 'baseui/tooltip'
+
 export interface ICopyToClipBoardProps {
     contentRef: React.RefObject<any>
     showSuccessDelay?: number
     className?: string
 }
-
-import { StatefulTooltip as Tooltip } from 'baseui/tooltip'
 
 function CopyToClipboard({
     contentRef,

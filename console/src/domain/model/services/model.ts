@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { ICreateModelSchema, IModelSchema, IUpdateModelSchema, IModelDetailSchema } from '../schemas/model'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
+import { ICreateModelSchema, IModelSchema, IModelDetailSchema } from '../schemas/model'
 
 export async function listModels(projectId: string, query: IListQuerySchema): Promise<IListSchema<IModelSchema>> {
     const resp = await axios.get<IListSchema<IModelSchema>>(`/api/v1/project/${projectId}/model`, {
@@ -15,7 +15,7 @@ export async function fetchModel(projectId: string, modelId: string): Promise<an
 }
 
 export async function createModel(projectId: string, data: ICreateModelSchema): Promise<IModelSchema> {
-    var bodyFormData = new FormData()
+    const bodyFormData = new FormData()
     bodyFormData.append('modelName', data.modelName)
     bodyFormData.append('importPath', data.importPath ?? '')
     if (data.zipFile && data.zipFile.length > 0) bodyFormData.append('zipFile', data.zipFile[0] as File)

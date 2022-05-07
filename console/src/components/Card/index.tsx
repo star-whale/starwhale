@@ -4,23 +4,17 @@ import classNames from 'classnames'
 import { useStyletron } from 'baseui'
 import { Skeleton } from 'baseui/skeleton'
 import { createUseStyles } from 'react-jss'
-import { Theme } from 'baseui/theme'
 import { IThemedStyleProps } from '@/theme'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import Text from '@/components/Text'
 import type { IconType } from 'react-icons/lib'
-
 import styles from './index.module.scss'
-
-const getLinkStyle = (theme: Theme) => {
-    return {
-        color: 'var(--color-brandLink)',
-    }
-}
 
 const useStyles = createUseStyles({
     card: (props: IThemedStyleProps) => {
-        const linkStyle = getLinkStyle(props.theme)
+        const linkStyle = {
+            color: 'var(--color-brandLink)',
+        }
 
         return {
             'background': props.theme.colors.backgroundPrimary,
@@ -33,7 +27,6 @@ const useStyles = createUseStyles({
 
 export interface ICardProps {
     title?: string | React.ReactNode
-    onTitleChange?: (title: string) => Promise<void>
     titleIcon?: IconType
     titleTail?: React.ReactNode
     style?: React.CSSProperties

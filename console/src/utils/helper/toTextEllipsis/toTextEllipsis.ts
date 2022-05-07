@@ -36,7 +36,8 @@ function toTextEllipsis({
 
     if (recourseIndex === 0 && width > currentTextWidth) {
         return text
-    } else if (currentTextWidth > width) {
+    }
+    if (currentTextWidth > width) {
         return toTextEllipsis({
             text: text.slice(0, -1),
             width,
@@ -46,7 +47,7 @@ function toTextEllipsis({
             recourseIndex: ++recourseIndex,
         })
     }
-    return text.slice(0, -3) + '...'
+    return `${text.slice(0, -3)}...`
 }
 
 export default toTextEllipsis

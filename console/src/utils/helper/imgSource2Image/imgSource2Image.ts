@@ -46,7 +46,7 @@ function imgSource2Image({
                             callback(blob)
                         }
                     },
-                    'image/' + format,
+                    `image/${format}`,
                     1
                 )
             }

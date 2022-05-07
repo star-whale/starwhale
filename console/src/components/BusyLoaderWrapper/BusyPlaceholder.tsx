@@ -1,4 +1,5 @@
 import React from 'react'
+// eslint-disable-next-line baseui/deprecated-component-api
 import { Spinner, SIZE } from 'baseui/spinner'
 
 import { MdQueryStats } from 'react-icons/md'

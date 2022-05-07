@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { fetchCurrentUser } from '@user/services/user'
 import { useQuery } from 'react-query'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -7,25 +7,22 @@ import { toaster } from 'baseui/toast'
 import { getErrMsg, setToken } from '@/api'
 import qs from 'qs'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import { Link, useLocation, useParams, useHistory } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useStyletron } from 'baseui'
 import { headerHeight } from '@/consts'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import useTranslation from '@/hooks/useTranslation'
-import color from 'color'
 import { createUseStyles } from 'react-jss'
 import { IThemedStyleProps } from '@/theme'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
-import classNames from 'classnames'
 import User from '@/domain/user/components/User'
-import Text from '@/components/Text'
 import { simulationJump } from '@/utils'
 import { FiLogOut } from 'react-icons/fi'
 import HeaderLeftMenu from './HeaderLeftMenu'
 import Logo from './Logo'
 
 const useHeaderStyles = createUseStyles({
-    headerWrapper: (props: IThemedStyleProps) => ({
+    headerWrapper: {
         padding: '0 32px 0 0',
         position: 'fixed',
         background: 'var(--color-brandHeaderBackground)',
@@ -38,7 +35,7 @@ const useHeaderStyles = createUseStyles({
         flexFlow: 'row nowrap',
         alignItems: 'center',
         color: 'var(--color-contentPrimary)',
-    }),
+    },
 })
 
 const useStyles = createUseStyles({
@@ -64,7 +61,6 @@ const useStyles = createUseStyles({
         'align-items': 'center',
     },
     userMenu: (props: IThemedStyleProps) => ({
-        // 'background': props.theme.colors.background,
         'position': 'absolute',
         'top': '100%',
         'display': 'none',
@@ -106,19 +102,19 @@ const useStyles = createUseStyles({
 })
 
 export default function Header() {
-    const [css, theme] = useStyletron()
+    const [, theme] = useStyletron()
     const themeType = useCurrentThemeType()
     const styles = useStyles({ theme, themeType })
-    const headerStyles = useHeaderStyles({ theme, themeType })
+    const headerStyles = useHeaderStyles({ theme })
     const location = useLocation()
     const errMsgExpireTimeSeconds = 5
     const lastErrMsgRef = useRef<Record<string, number>>({})
     const lastLocationPathRef = useRef(location.pathname)
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser, setCurrentUser } = useCurrentUser()
     const userInfo = useQuery('currentUser', fetchCurrentUser, { enabled: false })
 
-    //TODO:  refact move to sep file
+    // TODO:  refact move to sep file
     useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((axios.interceptors.response as any).handlers.length > 0) {
@@ -126,7 +122,7 @@ export default function Header() {
         }
         axios.interceptors.response.use(
             (response) => {
-                response.headers.authorization && setToken(response.headers.authorization)
+                if (response.headers.authorization) setToken(response.headers.authorization)
                 return response.data?.data ? response.data : response
             },
             (error) => {
@@ -163,11 +159,10 @@ export default function Header() {
     }, [userInfo.data, userInfo.isSuccess, setCurrentUser])
 
     useEffect(() => {
-        console.log(location.pathname, currentUser)
-        if (location.pathname !== '/login' && location.pathname !== '/login/') {
-            currentUser || userInfo.refetch()
+        if (location.pathname !== '/login' && location.pathname !== '/login/' && !currentUser) {
+            userInfo.refetch()
         }
-    }, [location.pathname, currentUser])
+    }, [userInfo, location.pathname, currentUser])
 
     useEffect(() => {
         if (lastLocationPathRef.current !== location.pathname) {
@@ -189,10 +184,9 @@ export default function Header() {
     //     [t]
     // )
 
-    console.log(currentUser)
     return (
         <header className={headerStyles.headerWrapper}>
-            <Logo expanded={ctx.expanded}></Logo>
+            <Logo expanded={ctx.expanded} />
             <div>{currentUser && <HeaderLeftMenu />}</div>
             <div style={{ flexGrow: 1 }} />
             {currentUser && (

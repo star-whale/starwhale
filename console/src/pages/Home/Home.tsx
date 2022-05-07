@@ -20,5 +20,5 @@ export default function Home() {
     const [t] = useTranslation()
     const [, theme] = useStyletron()
 
-    return <div className={styles.root}></div>
+    return <div className={styles.root} />
 }

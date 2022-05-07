@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { ICreateDatasetSchema, IDatasetSchema, IDatasetDetailSchema } from '../schemas/dataset'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
+import { ICreateDatasetSchema, IDatasetSchema, IDatasetDetailSchema } from '../schemas/dataset'
 
 export async function listDatasets(projectId: string, query: IListQuerySchema): Promise<IListSchema<IDatasetSchema>> {
     const resp = await axios.get<IListSchema<IDatasetSchema>>(`/api/v1/project/${projectId}/dataset`, {
@@ -15,7 +15,7 @@ export async function fetchDataset(projectId: string, datasetId: string): Promis
 }
 
 export async function createDataset(projectId: string, data: ICreateDatasetSchema): Promise<IDatasetSchema> {
-    var bodyFormData = new FormData()
+    const bodyFormData = new FormData()
     bodyFormData.append('datasetName', data.datasetName)
     bodyFormData.append('importPath', data.importPath ?? '')
     if (data.zipFile && data.zipFile.length > 0) bodyFormData.append('zipFile', data.zipFile[0] as File)

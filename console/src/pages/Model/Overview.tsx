@@ -1,10 +1,9 @@
-import React, { useCallback, useState } from 'react'
-import { RiSurveyLine } from 'react-icons/ri'
+import React from 'react'
 import Table from '@/components/Table/index'
 import useTranslation from '@/hooks/useTranslation'
 import { useModel, useModelLoading } from '@model/hooks/useModel'
 import Card from '@/components/Card'
-import { ICreateModelSchema, IModelFileSchema } from '@model/schemas/model'
+import { IModelFileSchema } from '@model/schemas/model'
 
 export default function ModelOverview() {
     const { model } = useModel()

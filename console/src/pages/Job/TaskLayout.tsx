@@ -15,8 +15,6 @@ export interface IJobLayoutProps {
 }
 
 function TaskLayout({ children }: IJobLayoutProps) {
-    // console.log('TaskLayout')
-
     const { projectId, jobId } = useParams<{ jobId: string; projectId: string }>()
     const jobInfo = useQuery(`fetchJob:${projectId}:${jobId}`, () => fetchJob(projectId, jobId))
     const { job, setJob } = useJob()
@@ -24,12 +22,10 @@ function TaskLayout({ children }: IJobLayoutProps) {
     const { setExpanded } = useContext(SidebarContext)
 
     useEffect(() => {
-        console.log('set expended')
         setExpanded(false)
-    }, [])
+    }, [setExpanded])
 
     useEffect(() => {
-        // console.log('useEffect', job)
         setJobLoading(jobInfo.isLoading)
         if (jobInfo.isSuccess) {
             if (jobInfo.data.id !== job?.id) {
@@ -55,7 +51,7 @@ function TaskLayout({ children }: IJobLayoutProps) {
             },
         ]
         return items
-    }, [projectId, jobId, job])
+    }, [projectId, jobId, t, uuid])
 
     const navItems: INavItem[] = useMemo(() => {
         const items = [
@@ -72,7 +68,7 @@ function TaskLayout({ children }: IJobLayoutProps) {
             },
         ]
         return items
-    }, [projectId, jobId, job])
+    }, [projectId, jobId, t])
 
     return (
         <BaseSubLayout breadcrumbItems={breadcrumbItems} navItems={navItems}>

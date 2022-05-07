@@ -32,7 +32,6 @@ export default function DatasetVersionLayout({ children }: IDatasetLayoutProps) 
     const [t] = useTranslation()
     const datasetName = dataset?.name ?? '-'
     const project = projectInfo.data ?? {}
-    const projectName = project?.name ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -50,7 +49,7 @@ export default function DatasetVersionLayout({ children }: IDatasetLayoutProps) 
             },
         ]
         return items
-    }, [projectName, datasetName, t])
+    }, [project?.id, datasetId, datasetName, t])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

@@ -23,8 +23,10 @@ module.exports = {
         'plugin:prettier/recommended',
         'prettier',
     ],
-    plugins: ['@typescript-eslint', 'react', 'react-hooks', 'baseui'],
+    plugins: ['@typescript-eslint', 'react', 'react-hooks', 'baseui', 'autofix'],
     rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        'autofix/no-debugger': 'error',
         'quotes': ['error', 'single', { avoidEscape: true }],
         'require-atomic-updates': 'off',
         'react-hooks/rules-of-hooks': 'error',

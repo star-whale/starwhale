@@ -1,10 +1,9 @@
 import LabelsIndicator from '@/components/Indicator/LabelsIndicator'
-import { Spinner } from 'baseui/spinner'
-import React, { useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
-import { ILabels, INDICATOR_TYPE } from '@/components/Indicator/types.d'
+import { ILabels, INDICATORTYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
 import { getHeatmapConfig } from '@/components/Indicator/utils'
 import { LabelLarge, LabelMedium } from 'baseui/typography'
@@ -17,24 +16,23 @@ const PlotlyVisualizer = React.lazy(
 
 function flattenObject(o: any, prefix = '', result: any = {}, keepNull = true) {
     if (_.isString(o) || _.isNumber(o) || _.isBoolean(o) || (keepNull && _.isNull(o))) {
+        /* eslint-disable no-param-reassign */
         result[prefix] = o
         return result
     }
 
     if (_.isArray(o) || _.isPlainObject(o)) {
-        for (let i in o) {
+        Object.keys(o).forEach((i) => {
             let pref = prefix
             if (_.isArray(o)) {
-                pref = pref + `[${i}]`
+                pref += `[${i}]`
+            } else if (_.isEmpty(prefix)) {
+                pref = i
             } else {
-                if (_.isEmpty(prefix)) {
-                    pref = i
-                } else {
-                    pref = prefix + ' / ' + i
-                }
+                pref = `${prefix} / ${i}`
             }
             flattenObject(o[i] ?? {}, pref, result, keepNull)
-        }
+        })
         return result
     }
     return result
@@ -44,11 +42,6 @@ function JobResult() {
     const jobResult = useQuery(`fetchJobResult:${projectId}:${jobId}`, () => fetchJobResult(projectId, jobId), {
         refetchOnWindowFocus: false,
     })
-    useEffect(() => {
-        if (jobResult.isSuccess) {
-            // console.log(jobResult.data)
-        }
-    }, [jobResult])
 
     const [, theme] = useStyletron()
 
@@ -57,9 +50,12 @@ function JobResult() {
             let children = null
 
             switch (k) {
-                case INDICATOR_TYPE.KIND:
+                default:
+                    return <></>
                     break
-                case INDICATOR_TYPE.SUMMARY:
+                case INDICATORTYPE.KIND:
+                    break
+                case INDICATORTYPE.SUMMARY: {
                     const data = _.isObject(v) ? flattenObject(v) : {}
                     children = _.isObject(v) ? (
                         <div>
@@ -97,7 +93,8 @@ function JobResult() {
                         </LabelMedium>
                     )
                     break
-                case INDICATOR_TYPE.CONFUSION_MATRIX:
+                }
+                case INDICATORTYPE.CONFUSION_MATRIX: {
                     const heatmapData = getHeatmapConfig(k, _.keys(v?.binarylabel), v?.binarylabel)
 
                     children = (
@@ -106,12 +103,14 @@ function JobResult() {
                         </React.Suspense>
                     )
                     break
-                case INDICATOR_TYPE.LABELS:
+                }
+                case INDICATORTYPE.LABELS:
                     _.forIn(v as ILabels, (subV, subK) => {
                         const [tp, fp, tn, fn] = _.flatten(
-                            jobResult?.data?.[INDICATOR_TYPE.CONFUSION_MATRIX]?.mutlilabel?.[Number(subK)]
+                            jobResult?.data?.[INDICATORTYPE.CONFUSION_MATRIX]?.mutlilabel?.[Number(subK)]
                         )
 
+                        /* eslint-disable no-param-reassign */
                         subV = Object.assign(subV, {
                             tp,
                             fp,
@@ -130,7 +129,7 @@ function JobResult() {
                 )
             )
         })
-    }, [jobResult.data, jobResult.isSuccess])
+    }, [jobResult.data, jobResult.isLoading, theme])
 
     if (jobResult.isFetching) {
         return <BusyPlaceholder />
@@ -144,7 +143,7 @@ function JobResult() {
         <div style={{ width: '100%', height: 'auto' }}>
             {jobResult.data?.kind && (
                 <div
-                    key={'kind'}
+                    key='kind'
                     style={{
                         width: '100%',
                         lineHeight: 50,

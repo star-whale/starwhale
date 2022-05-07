@@ -4,10 +4,9 @@ import { toaster } from 'baseui/toast'
 import { StatefulPopover, PLACEMENT } from 'baseui/popover'
 import { StatefulMenu } from 'baseui/menu'
 import { AiFillCaretDown } from 'react-icons/ai'
-import { createUseStyles } from 'react-jss'
 import useTranslation from '@/hooks/useTranslation'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
-import ProjectFrom, { IProjectFormProps } from '@project/components/ProjectForm'
+import ProjectFrom from '@project/components/ProjectForm'
 import { createProject } from '@project/services/project'
 import { ICreateProjectSchema } from '@project/schemas/project'
 import { useHistory } from 'react-router-dom'
@@ -15,11 +14,14 @@ import { useHistory } from 'react-router-dom'
 export default function HeaderLeftMenu() {
     const [t] = useTranslation()
     const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
-    const handleCreateProject = useCallback(async (data: ICreateProjectSchema) => {
-        await createProject(data)
-        setIsCreateProjectModalOpen(false)
-        toaster.positive(t('project created'), { autoHideDuration: 2000 })
-    }, [])
+    const handleCreateProject = useCallback(
+        async (data: ICreateProjectSchema) => {
+            await createProject(data)
+            setIsCreateProjectModalOpen(false)
+            toaster.positive(t('project created'), { autoHideDuration: 2000 })
+        },
+        [t]
+    )
 
     const history = useHistory()
 
@@ -41,9 +43,9 @@ export default function HeaderLeftMenu() {
                     <StatefulMenu
                         items={PROJECT_ITEMS}
                         onItemSelect={({ item }) => {
-                            if (item.type == 'create') {
+                            if (item.type === 'create') {
                                 setIsCreateProjectModalOpen(true)
-                            } else if (item.type == 'list') {
+                            } else if (item.type === 'list') {
                                 history.push('/projects')
                             }
                             close()
@@ -57,12 +59,12 @@ export default function HeaderLeftMenu() {
                 <Button
                     overrides={{
                         BaseButton: {
-                            style: ({ $theme }) => ({
+                            style: {
                                 'backgroundColor': 'transparent',
                                 ':hover': {
                                     backgroundColor: 'transparent',
                                 },
-                            }),
+                            },
                         },
                     }}
                     endEnhancer={() => <AiFillCaretDown size={24} />}

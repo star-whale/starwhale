@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from 'react'
-import { RiSurveyLine } from 'react-icons/ri'
 import Table from '@/components/Table'
 import useTranslation from '@/hooks/useTranslation'
 import { useProject, useProjectLoading } from '@project/hooks/useProject'
@@ -11,12 +10,10 @@ import { ICreateProjectSchema } from '@project/schemas/project'
 import { createProject } from '@project/services/project'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import ProjectForm from '@project/components/ProjectForm'
-import { usePage } from '@/hooks/usePage'
 
 export default function ProjectOverview() {
     const { project } = useProject()
     const { projectLoading } = useProjectLoading()
-    const [page] = usePage()
 
     const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
     const handleCreateProject = useCallback(async (data: ICreateProjectSchema) => {

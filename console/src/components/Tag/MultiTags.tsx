@@ -1,11 +1,6 @@
 import { Select, SelectProps } from 'baseui/select'
 import React from 'react'
 
-type Item = {
-    id: string
-    label: string
-}
-
 export interface IMultiTagsProps {
     value?: string[]
     placeholder?: string
@@ -33,9 +28,9 @@ export default function MultiTags({ value, placeholder, onChange, getValueLabel 
                     },
                 },
                 Dropdown: {
-                    style: ({ $theme }) => ({
+                    style: {
                         display: 'none',
-                    }),
+                    },
                 },
             }}
             getValueLabel={getValueLabel}

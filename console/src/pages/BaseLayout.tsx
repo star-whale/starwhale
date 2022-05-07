@@ -3,10 +3,6 @@ import React from 'react'
 import { Breadcrumbs } from 'baseui/breadcrumbs'
 import { useHistory } from 'react-router-dom'
 import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
-import { createUseStyles } from 'react-jss'
-import { IThemedStyleProps } from '@/theme'
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
-import { useStyletron } from 'baseui'
 
 export interface IBaseLayoutProps {
     children: React.ReactNode
@@ -26,8 +22,6 @@ export default function BaseLayout({
     contentStyle,
 }: IBaseLayoutProps) {
     const history = useHistory()
-    const themeType = useCurrentThemeType()
-    const [, theme] = useStyletron()
 
     return (
         <main

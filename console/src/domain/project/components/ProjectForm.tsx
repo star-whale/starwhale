@@ -1,11 +1,10 @@
-import { ICreateProjectSchema, IProjectSchema } from '../schemas/project'
 import React, { useCallback, useEffect, useState } from 'react'
 import { createForm } from '@/components/Form'
 import { Input } from 'baseui/input'
-import { Textarea } from 'baseui/textarea'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
+import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
+import { ICreateProjectSchema, IProjectSchema } from '../schemas/project'
 
 const { Form, FormItem } = createForm<ICreateProjectSchema>()
 
@@ -56,11 +55,7 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
             <FormItem>
                 <div style={{ display: 'flex' }}>
                     <div style={{ flexGrow: 1 }} />
-                    <Button
-                        isLoading={loading}
-                        // size={ButtonSize.compact}
-                        disabled={!isModified(project, values)}
-                    >
+                    <Button isLoading={loading} disabled={!isModified(project, values)}>
                         {t('submit')}
                     </Button>
                 </div>

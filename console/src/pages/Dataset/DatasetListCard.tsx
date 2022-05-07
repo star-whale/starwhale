@@ -15,7 +15,7 @@ import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
 
 export default function DatasetListCard() {
     const [page] = usePage()
-    const { datasetId, projectId } = useParams<{ datasetId: string; projectId: string }>()
+    const { projectId } = useParams<{ datasetId: string; projectId: string }>()
 
     const datasetsInfo = useFetchDatasets(projectId, page)
     const [isCreateDatasetOpen, setIsCreateDatasetOpen] = useState(false)
@@ -25,7 +25,7 @@ export default function DatasetListCard() {
             await datasetsInfo.refetch()
             setIsCreateDatasetOpen(false)
         },
-        [datasetsInfo]
+        [datasetsInfo, projectId]
     )
     const [t] = useTranslation()
 

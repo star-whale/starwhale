@@ -1,11 +1,9 @@
-import { listDevices } from '../services/runtime'
 import { Select, SelectProps } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
-import { useParams } from 'react-router-dom'
+import { listDevices } from '../services/runtime'
 
-//TODO: refact runtime/env as baseSelector
 export interface IDeviceSelectorProps {
     value?: string
     onChange?: (newValue: string) => void
@@ -51,7 +49,6 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
                 if (!params.option) {
                     return
                 }
-                console.log('-', params)
                 onChange?.(params.option.id as string)
             }}
             onInputChange={(e) => {

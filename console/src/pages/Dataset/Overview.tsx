@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 import Table from '@/components/Table'
 import useTranslation from '@/hooks/useTranslation'
 import { useDataset, useDatasetLoading } from '@dataset/hooks/useDataset'
 import Card from '@/components/Card'
-import { ICreateDatasetSchema, IDatasetFileSchema } from '@dataset/schemas/dataset'
+import { IDatasetFileSchema } from '@dataset/schemas/dataset'
 
 export default function DatasetOverview() {
     const { dataset } = useDataset()
