@@ -11,7 +11,7 @@
     <select id="listSWDSVersionsByJobId" resultMap="ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper.dsVersionResultMap">
         select dsv.id as dsv_id,
                dataset_id,
-               owner_id,
+               dsv.owner_id,
                version_name as dsv_version_name,
                ds.dataset_name as ds_dataset_name,
                version_tag as dsv_version_tag,

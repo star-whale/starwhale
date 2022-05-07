@@ -10,7 +10,7 @@
     <sql id="select_swds_version">
         select dsv.id as dsv_id,
                dataset_id,
-               owner_id,
+               dsv.owner_id,
                version_name as dsv_version_name,
                version_tag as dsv_version_tag,
                version_meta as dsv_version_meta,
@@ -30,7 +30,7 @@
              dataset_info as ds,
              user_info as u,
              user_role as r
-        where owner_id = u.id
+        where dsv.owner_id = u.id
           and r.id = u.role_id
           and ds.id = dsv.dataset_id
     </sql>

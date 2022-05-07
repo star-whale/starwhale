@@ -145,7 +145,6 @@ public class AgentMocker {
 
     static final String reportPath="/report";
 
-    @Test
     public void start() throws InterruptedException {
 
         while (true){
