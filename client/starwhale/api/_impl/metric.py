@@ -35,7 +35,7 @@ def multi_classification(confusion_matrix_normalize: str="all",
             mcm = multilabel_confusion_matrix(y_true, y_pred, labels=all_labels)
             _r["confusion_matrix"] = {
                 "binarylabel": cm.tolist(),
-                "mutlilabel": mcm.tolist(),
+                "multilabel": mcm.tolist(),
             }
             if show_hamming_loss:
                 _r["summary"]["hamming_loss"] = hamming_loss(y_true, y_pred)

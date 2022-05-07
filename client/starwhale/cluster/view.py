@@ -146,7 +146,7 @@ class ClusterView(ClusterModel):
             mtable.add_column("Label", style="cyan")
             for n in ("TP", "TN", "FP", "FN"):
                 mtable.add_column(n)
-            for idx, ml in enumerate(cm.get("mutlilabel", [])):
+            for idx, ml in enumerate(cm.get("multilabel", [])):
                 mtable.add_row(sort_label_names[idx], *[str(_) for _ in ml[0] + ml[1]])
 
             console.rule(f"[bold green]{report['kind'].upper()} Confusion Matrix")

@@ -107,7 +107,7 @@ function JobResult() {
                 case INDICATORTYPE.LABELS:
                     _.forIn(v as ILabels, (subV, subK) => {
                         const [tp, fp, tn, fn] = _.flatten(
-                            jobResult?.data?.[INDICATORTYPE.CONFUSION_MATRIX]?.mutlilabel?.[Number(subK)]
+                            jobResult?.data?.[INDICATORTYPE.CONFUSION_MATRIX]?.multilabel?.[Number(subK)]
                         )
 
                         /* eslint-disable no-param-reassign */
