@@ -23,7 +23,7 @@ function PlotlyVisualizer(props: IPlotlyVisualizerProps) {
                             data={props.data?.data}
                             layout={props.data?.layout}
                             frames={props.data?.frames}
-                            config={{ responsive: true }}
+                            // config={{ responsive: true }}
                             // onInitialized={(figure) => this.setState(figure)}
                             // onUpdate={(figure) => this.setState(figure)}
                             useResizeHandler={true}

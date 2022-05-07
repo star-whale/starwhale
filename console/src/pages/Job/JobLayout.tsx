@@ -7,6 +7,8 @@ import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
+import ProjectSidebar from '../Project/ProjectSidebar'
+import BaseLayout from '../BaseLayout'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
