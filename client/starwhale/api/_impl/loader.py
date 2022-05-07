@@ -92,8 +92,8 @@ class SWDSDataLoader(DataLoader):
     def __iter__(self):
         for _swds in self.swds:
             for data, label in zip(
-                self._do_iter(_swds["bucket"], _swds["key"]["data"], _swds["ext_attr"]),
-                self._do_iter(_swds["bucket"], _swds["key"]["label"], _swds["ext_attr"])
+                self._do_iter(_swds["bucket"], _swds["key"]["data"], _swds.get('ext_attr', {})),
+                self._do_iter(_swds["bucket"], _swds["key"]["label"], _swds.get('ext_attr', {}))
             ):
                 yield data, label
 

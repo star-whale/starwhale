@@ -215,7 +215,7 @@ class PipelineHandler(object):
                     data_index=data.index, data_size=data.data_size,
                     label_content=label.data, label_size=label.data_size,
                     label_batch=label.batch_size, label_index=label.index,
-                    ds_name=data.ext_attr["ds_name"], ds_version=data.ext_attr["ds_version"])
+                    ds_name=data.ext_attr.get('ds_name', ""), ds_version=data.ext_attr.get('ds_version', ""))
             except Exception as e:
                 exception = e
                 self._sw_logger.exception(f"[{data.index}] data handle -> failed")
