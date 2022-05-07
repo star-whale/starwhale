@@ -54,3 +54,4 @@ jobs:
         run: |
           yarn lint
           yarn typecheck
+          echo 'test'
