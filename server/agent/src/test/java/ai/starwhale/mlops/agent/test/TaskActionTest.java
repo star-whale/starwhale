@@ -29,8 +29,8 @@ import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
 import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskType;
@@ -136,12 +136,12 @@ public class TaskActionTest {
                                 .path("StarWhale/controller/swmp/mnist/meytmy3dge4gcnrtmftdgyjzoazxg3y")
                                 .build())
                         .swdsBlocks(List.of(
-                                SWDSBlock.builder().id(123456L).locationInput(
+                                SWDSBlockVO.builder().id(123456L).locationInput(
                                         SWDSDataLocation.builder().file("test-data").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label").offset(100).size(100).build()
                                 ).build(),
-                                SWDSBlock.builder().id(123466L).locationInput(
+                            SWDSBlockVO.builder().id(123466L).locationInput(
                                         SWDSDataLocation.builder().file("test-data2").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
@@ -184,12 +184,12 @@ public class TaskActionTest {
                                 .path("StarWhale/controller/swmp/mnist/meytmy3dge4gcnrtmftdgyjzoazxg3y")
                                 .build())
                         .swdsBlocks(List.of(
-                                SWDSBlock.builder().id(123456L).locationInput(
+                            SWDSBlockVO.builder().id(123456L).locationInput(
                                         SWDSDataLocation.builder().file("test-data").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label").offset(100).size(100).build()
                                 ).build(),
-                                SWDSBlock.builder().id(123466L).locationInput(
+                            SWDSBlockVO.builder().id(123466L).locationInput(
                                         SWDSDataLocation.builder().file("test-data2").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
@@ -212,12 +212,12 @@ public class TaskActionTest {
                                 .path("StarWhale/controller/swmp/mnist/meytmy3dge4gcnrtmftdgyjzoazxg3y")
                                 .build())
                         .swdsBlocks(List.of(
-                                SWDSBlock.builder().id(123456L).locationInput(
+                            SWDSBlockVO.builder().id(123456L).locationInput(
                                         SWDSDataLocation.builder().file("test-data").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label").offset(100).size(100).build()
                                 ).build(),
-                                SWDSBlock.builder().id(123466L).locationInput(
+                            SWDSBlockVO.builder().id(123466L).locationInput(
                                         SWDSDataLocation.builder().file("test-data2").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
@@ -266,12 +266,12 @@ public class TaskActionTest {
                                 .path("StarWhale/controller/swmp/mnist/meytmy3dge4gcnrtmftdgyjzoazxg3y")
                                 .build())
                         .swdsBlocks(List.of(
-                                SWDSBlock.builder().id(123456L).locationInput(
+                            SWDSBlockVO.builder().id(123456L).locationInput(
                                         SWDSDataLocation.builder().file("test-data").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label").offset(100).size(100).build()
                                 ).build(),
-                                SWDSBlock.builder().id(123466L).locationInput(
+                            SWDSBlockVO.builder().id(123466L).locationInput(
                                         SWDSDataLocation.builder().file("test-data2").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()
@@ -294,12 +294,12 @@ public class TaskActionTest {
                                 .path("StarWhale/controller/swmp/mnist/meytmy3dge4gcnrtmftdgyjzoazxg3y")
                                 .build())
                         .swdsBlocks(List.of(
-                                SWDSBlock.builder().id(123456L).locationInput(
+                            SWDSBlockVO.builder().id(123456L).locationInput(
                                         SWDSDataLocation.builder().file("test-data").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label").offset(100).size(100).build()
                                 ).build(),
-                                SWDSBlock.builder().id(123466L).locationInput(
+                            SWDSBlockVO.builder().id(123466L).locationInput(
                                         SWDSDataLocation.builder().file("test-data2").offset(0).size(100).build()
                                 ).locationLabel(
                                         SWDSDataLocation.builder().file("test-label2").offset(100).size(100).build()

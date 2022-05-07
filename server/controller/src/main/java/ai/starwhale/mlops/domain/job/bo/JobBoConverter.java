@@ -48,10 +48,15 @@ public class JobBoConverter {
     }
 
     public Job fromEntity(JobEntity jobEntity){
-        List<SWDataSet> swDataSets = jobSWDSVersionMapper.listSWDSVersionsByJobId(jobEntity.getId()).stream().map(swDatasetVersionEntity -> SWDataSet.builder().id(swDatasetVersionEntity.getId())
+        List<SWDataSet> swDataSets = jobSWDSVersionMapper.listSWDSVersionsByJobId(jobEntity.getId())
+            .stream().map(swDatasetVersionEntity -> SWDataSet.builder()
+                .id(swDatasetVersionEntity.getId())
                 .indexPath(getIndexPath(swDatasetVersionEntity))
                 .path(swDatasetVersionEntity.getStoragePath())
-                .build()).collect(Collectors.toList());
+                .version(swDatasetVersionEntity.getVersionName())
+                .name(swDatasetVersionEntity.getDatasetName())
+                .build())
+            .collect(Collectors.toList());
         SWModelPackageEntity modelPackageEntity = swModelPackageMapper.findSWModelPackageById(
             jobEntity.getSwmpVersion().getSwmpId());
         return Job.builder()

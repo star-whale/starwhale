@@ -17,27 +17,26 @@
 package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
-import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.ResultPathConverter;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,8 +45,8 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -104,9 +103,8 @@ public class JobSpliteratorByIndex implements JobSpliterator {
     @Transactional
     public List<Task> split(Job job) {
         final List<SWDataSet> swDataSets = job.getSwDataSets();
-        final Map<Integer,List<SWDSBlock>> swdsBlocks = swDataSets.parallelStream()
-            .map(swDataSet -> swdsIndexLoader.load(swDataSet.getIndexPath(),swDataSet.getPath()))
-            .map(SWDSIndex::getSwdsBlockList)
+        final Map<Integer,List<SWDSBlockVO>> swdsBlocks = swDataSets.parallelStream()
+            .map(this::extractSWDS)
             .flatMap(Collection::stream)
             .collect(Collectors.groupingBy(blk-> ThreadLocalRandom.current().nextInt(amountOfTasks)));//one block on task
         List<TaskEntity> taskList;
@@ -121,10 +119,22 @@ public class JobSpliteratorByIndex implements JobSpliterator {
         return taskBoConverter.fromTaskEntity(taskList,job);
     }
 
-    private List<TaskEntity> buildTaskEntities(Job job, Map<Integer, List<SWDSBlock>> swdsBlocks)
+    private List<SWDSBlockVO>  extractSWDS(SWDataSet swDataSet){
+        SWDSIndex swdsIndex = swdsIndexLoader.load(swDataSet.getIndexPath());
+        return swdsIndex.getSwdsBlockList().parallelStream().map(swdsBlock -> {
+            SWDSBlockVO swdsBlockVO = new SWDSBlockVO();
+            BeanUtils.copyProperties(swdsBlock,swdsBlockVO);
+            swdsBlockVO.prependDSPath(swDataSet.getPath());
+            swdsBlockVO.setDsName(swDataSet.getName());
+            swdsBlockVO.setDsVersion(swDataSet.getVersion());
+            return swdsBlockVO;
+        }).collect(Collectors.toList());
+    }
+
+    private List<TaskEntity> buildTaskEntities(Job job, Map<Integer, List<SWDSBlockVO>> swdsBlocks)
         throws JsonProcessingException {
         List<TaskEntity> taskEntities = new LinkedList<>();
-        for(Entry<Integer, List<SWDSBlock>> entry:swdsBlocks.entrySet()) {
+        for(Entry<Integer, List<SWDSBlockVO>> entry:swdsBlocks.entrySet()) {
             final String taskUuid = UUID.randomUUID().toString();
             taskEntities.add(TaskEntity.builder()
                 .jobId(job.getId())

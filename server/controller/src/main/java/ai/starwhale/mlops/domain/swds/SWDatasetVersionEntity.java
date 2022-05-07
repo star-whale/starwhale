@@ -35,6 +35,8 @@ public class SWDatasetVersionEntity extends BaseEntity {
 
     private Long datasetId;
 
+    private String datasetName;
+
     private Long ownerId;
 
     private UserEntity owner;

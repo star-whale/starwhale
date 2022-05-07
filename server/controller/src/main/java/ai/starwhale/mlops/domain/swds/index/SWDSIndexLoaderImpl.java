@@ -45,14 +45,13 @@ public class SWDSIndexLoaderImpl implements SWDSIndexLoader {
     }
 
     @Override
-    public SWDSIndex load(String storagePath, String swdsPath) {
+    public SWDSIndex load(String storagePath) {
 
         try(final InputStream inputStream = storageAccessService.get(storagePath)){
             List<SWDSBlock> lines = new LinkedList<>();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             while (reader.ready()) {
                 SWDSBlock swdsBlock = objectMapper.readValue(reader.readLine(), SWDSBlock.class);
-                swdsBlock.prependDSPath(swdsPath);
                 lines.add(swdsBlock);
             }
             return SWDSIndex.builder().storagePath(storagePath).swdsBlockList(lines).build();

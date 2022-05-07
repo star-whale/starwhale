@@ -263,6 +263,10 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                             .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getOffset() + swdsBlock.getLocationInput().getSize() - 1))
                             .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
                     );
+                    ds.set("ext_attr", JSONUtil.createObj()
+                        .set("swds_name", swdsBlock.getDsName())
+                        .set("swds_version", swdsBlock.getDsVersion())
+                    );
                     swds.add(ds);
                 });
                 object.set("swds", swds);

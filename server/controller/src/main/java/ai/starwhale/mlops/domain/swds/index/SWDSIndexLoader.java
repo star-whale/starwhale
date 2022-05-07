@@ -17,5 +17,5 @@
 package ai.starwhale.mlops.domain.swds.index;
 
 public interface SWDSIndexLoader {
-    SWDSIndex load(String storagePath, String swdsPath);
+    SWDSIndex load(String storagePath);
 }
