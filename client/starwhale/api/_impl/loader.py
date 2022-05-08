@@ -11,14 +11,8 @@ import boto3
 from botocore.client import Config as S3Config
 
 from starwhale.utils.error import NoSupportError
+from starwhale.consts import SWDS_BACKEND_TYPE, DATA_LOADER_KIND
 
-
-_SWDS_BACKEND_TYPE = namedtuple("_SWDS_BACKEND_TYPE", ["S3", "FUSE"])(
-    "s3", "fuse"
-)
-_DATA_LOADER_KIND = namedtuple("_DATA_LOADER_KIND", ["SWDS", "JSONL"])(
-    "swds", "jsonl"
-)
 #TODO: config chunk size
 _CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 _FILE_END_POS = -1
@@ -36,7 +30,7 @@ class DataLoader(object):
                  storage: StorageBackend,
                  swds: list=[],
                  logger: t.Union[loguru.Logger, None]=None,
-                 kind: str=_DATA_LOADER_KIND.SWDS):
+                 kind: str=DATA_LOADER_KIND.SWDS):
         self.storage = storage
         self.swds = swds
         self.logger = logger or _logger
@@ -45,7 +39,7 @@ class DataLoader(object):
         self._do_validate()
 
     def _do_validate(self):
-        if self.kind not in _DATA_LOADER_KIND:
+        if self.kind not in DATA_LOADER_KIND:
             raise Exception(f"{self.kind} no support")
 
     @abstractmethod
@@ -62,7 +56,7 @@ class DataLoader(object):
 class JSONLineDataLoader(DataLoader):
 
     def __init__(self, storage: StorageBackend, swds: list=[], logger: t.Union[loguru.Logger, None]=None) -> None:
-        super().__init__(storage, swds, logger, _DATA_LOADER_KIND.JSONL)
+        super().__init__(storage, swds, logger, DATA_LOADER_KIND.JSONL)
 
     def __iter__(self):
         for _swds in self.swds:
@@ -87,7 +81,7 @@ class JSONLineDataLoader(DataLoader):
 class SWDSDataLoader(DataLoader):
 
     def __init__(self, storage: StorageBackend, swds: list=[], logger: t.Union[loguru.Logger, None]=None) -> None:
-        super().__init__(storage, swds, logger, _DATA_LOADER_KIND.SWDS)
+        super().__init__(storage, swds, logger, DATA_LOADER_KIND.SWDS)
 
     def __iter__(self):
         for _swds in self.swds:
@@ -131,10 +125,10 @@ class StorageBackend(object):
 
     def _do_validate(self):
         #TODO: add more validator
-        if self.backend not in _SWDS_BACKEND_TYPE:
+        if self.backend not in SWDS_BACKEND_TYPE:
             raise NoSupportError(f"{self.backend} no support")
 
-        if self.backend == _SWDS_BACKEND_TYPE.S3:
+        if self.backend == SWDS_BACKEND_TYPE.S3:
             _s = self.secret
             if (not _s or not isinstance(_s, dict) or
                 not _s.get("access_key") or not _s.get("secret_key")):
@@ -165,7 +159,7 @@ class StorageBackend(object):
 class S3StorageBackend(StorageBackend):
 
     def __init__(self, secret: dict = {}, service: dict = {}):
-        super().__init__(backend=_SWDS_BACKEND_TYPE.S3, secret=secret, service=service)
+        super().__init__(backend=SWDS_BACKEND_TYPE.S3, secret=secret, service=service)
 
         #TODO: region field empty?
         #TODO: add more s3 config, such as connect timeout
@@ -192,7 +186,7 @@ class S3StorageBackend(StorageBackend):
 class FuseStorageBackend(StorageBackend):
 
     def __init__(self):
-        super().__init__(backend=_SWDS_BACKEND_TYPE.FUSE)
+        super().__init__(backend=SWDS_BACKEND_TYPE.FUSE)
 
     def _make_file(self, bucket: str, key_compose: str) -> t.Any:
         _key, _start, _ = self._parse_key(key_compose)
@@ -334,17 +328,17 @@ def get_data_loader(swds_config:dict, logger: t.Union[loguru.Logger, None]=None)
     logger = logger or _logger
 
     _backend = swds_config["backend"]
-    if _backend == _SWDS_BACKEND_TYPE.S3:
+    if _backend == SWDS_BACKEND_TYPE.S3:
         _storage = S3StorageBackend(swds_config["secret"], swds_config["service"])
-    elif _backend == _SWDS_BACKEND_TYPE.FUSE:
+    elif _backend == SWDS_BACKEND_TYPE.FUSE:
         _storage = FuseStorageBackend()
     else:
         raise NoSupportError(f"{_backend} backend storage, no support")
 
-    _kind = swds_config.get("kind", _DATA_LOADER_KIND.SWDS)
-    if _kind == _DATA_LOADER_KIND.JSONL:
+    _kind = swds_config.get("kind", DATA_LOADER_KIND.SWDS)
+    if _kind == DATA_LOADER_KIND.JSONL:
         return JSONLineDataLoader(_storage, swds_config["swds"], logger)
-    elif _kind == _DATA_LOADER_KIND.SWDS:
+    elif _kind == DATA_LOADER_KIND.SWDS:
         return SWDSDataLoader(_storage, swds_config["swds"], logger)
     else:
         raise NoSupportError(f"{_kind} data loader, no support")

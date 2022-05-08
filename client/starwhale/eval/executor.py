@@ -10,9 +10,10 @@ from loguru import logger
 from starwhale.utils import gen_uniq_version
 
 from .store import EvalLocalStorage
-from starwhale.consts import FMT_DATETIME
+from starwhale.consts import FMT_DATETIME, DEFAULT_MANIFEST_NAME, LOCAL_FUSE_JSON_NAME
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
+from starwhale.swds.dataset import DataSet
 
 DEFAULT_SW_TASK_RUN_IMAGE = "starwhaleai/starwhale:latest"
 EVAL_TASK_TYPE = namedtuple("EVAL_TASK_TYPE", ["ALL", "PPL", "CMP"])(
@@ -37,6 +38,7 @@ class EvalExecutor(object):
         self._manifest = {}
         self._workdir = Path()
         self._model_dir = Path()
+        self._fuse_jsons = []
 
         self._validator()
 
@@ -124,8 +126,14 @@ class EvalExecutor(object):
             with tarfile.open(_swmp_path, "r") as tar:
                 tar.extractall(path=str(self._model_dir.resolve()))
 
+        if not (self._model_dir / DEFAULT_MANIFEST_NAME).exists():
+            raise Exception("invalid swmp model dir")
+
     def _gen_swds_fuse_json(self) -> None:
-        pass
+        for ds in self.datasets:
+            fname = DataSet.render_fuse_json(ds, force=False)
+            self._fuse_jsons.append(fname)
+            logger.debug(f"[gen fuse.json]{fname}")
 
     def _do_run_ppl(self) -> None:
         pass

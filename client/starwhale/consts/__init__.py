@@ -15,6 +15,7 @@ DEFAULT_MODEL_YAML_NAME = "model.yaml"
 DEFAULT_MANIFEST_NAME = "_manifest.yaml"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:6543"
 DEFAULT_DATASET_YAML_NAME = "dataset.yaml"
+LOCAL_FUSE_JSON_NAME = "local_fuse.json"
 
 #TODO: use ~/.starwhale or ~/.cache/starwhale?
 SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
@@ -38,3 +39,14 @@ DEFAULT_COPY_WORKERS = 4
 SW_API_VERSION = "v1"
 
 SHORT_VERSION_CNT = 12
+SWDS_BACKEND_TYPE = namedtuple("SWDS_BACKEND_TYPE", ["S3", "FUSE"])(
+    "s3", "fuse"
+)
+DATA_LOADER_KIND = namedtuple("DATA_LOADER_KIND", ["SWDS", "JSONL"])(
+    "swds", "jsonl"
+)
+SWDS_SUBFILE_TYPE = namedtuple("SWDS_SUBFILE_TYPE", ["BIN", "META"])(
+    "swds_bin", "swds_meta"
+)
+SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDS_SUBFILE_TYPE.BIN
+SWDS_LABEL_FNAME_FMT = "label_ubyte_{index}.%s" % SWDS_SUBFILE_TYPE.BIN

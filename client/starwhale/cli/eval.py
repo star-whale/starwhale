@@ -12,7 +12,7 @@ def eval_cmd():
 
 @eval_cmd.command("list", help="list remote starwhale controller job")
 @click.option("--local/--remote", default=False, help="local mode or remote cluster mode, different mode will use different executor")
-@click.argument("project", type=int, help="[remote]project id in remote starwhale cluster")
+@click.argument("project", type=int)
 @click.option("-p", "--page", type=int, default=DEFAULT_PAGE_NUM, help="page number for projects list")
 @click.option("-s", "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for projects list")
 def _list(local, project, page, size):
@@ -41,7 +41,7 @@ def _inspect(project, job, page, size):
 @click.option("--name", help="evaluation job name")
 @click.option("--desc", help="evaluation job description")
 @click.option("--gencmd", is_flag=True, help="[local]gen docker run command")
-@click.option("--phase", type=click.Choice(EVAL_TASK_TYPE), case_sensitive=False, default=EVAL_TASK_TYPE.ALL)
+@click.option("--phase", type=click.Choice(EVAL_TASK_TYPE), default=EVAL_TASK_TYPE.ALL)
 def _run(local, model, dataset, project, baseimage, resource, name, desc, gencmd, phase):
     if local:
         EvalExecutor(model, dataset, baseimage, name, desc).run(phase)
