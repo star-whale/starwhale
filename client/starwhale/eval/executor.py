@@ -1,5 +1,6 @@
-from turtle import pen
 import typing as t
+import json
+import os
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
@@ -10,10 +11,15 @@ from loguru import logger
 from starwhale.utils import gen_uniq_version
 
 from .store import EvalLocalStorage
-from starwhale.consts import FMT_DATETIME, DEFAULT_MANIFEST_NAME, LOCAL_FUSE_JSON_NAME
+from starwhale.consts import (
+    DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, FMT_DATETIME, DEFAULT_MANIFEST_NAME,
+    JSON_INDENT, LOCAL_FUSE_JSON_NAME, SWDS_BACKEND_TYPE,
+)
+
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
 from starwhale.swds.dataset import DataSet
+from starwhale.utils.process import check_call
 
 DEFAULT_SW_TASK_RUN_IMAGE = "starwhaleai/starwhale:latest"
 EVAL_TASK_TYPE = namedtuple("EVAL_TASK_TYPE", ["ALL", "PPL", "CMP"])(
@@ -24,13 +30,14 @@ EVAL_TASK_TYPE = namedtuple("EVAL_TASK_TYPE", ["ALL", "PPL", "CMP"])(
 class EvalExecutor(object):
 
     def __init__(self, model: str, datasets: t.List[str], baseimage: str=DEFAULT_SW_TASK_RUN_IMAGE,
-                 name: str="", desc: str="", gencmd: bool=False) -> None:
+                 name: str="", desc: str="", gencmd: bool=False, docker_verbose: bool=False) -> None:
         self.name = name
         self.desc = desc
         self.model = model
         self.datasets = datasets
         self.baseimage = baseimage
         self.gencmd = gencmd
+        self.docker_verbose = docker_verbose
         self._store = EvalLocalStorage()
 
         self._console = Console()
@@ -93,26 +100,19 @@ class EvalExecutor(object):
     def _cmp_workdir(self) -> Path:
         return self._workdir / EVAL_TASK_TYPE.CMP
 
-    def _render_manifest(self) -> None:
-        pass
-
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
         self._workdir = self._store.rootdir / "run" / "eval" / self._version
 
         ensure_dir(self._workdir)
-        ensure_dir(self._ppl_workdir / "result")
-        ensure_dir(self._ppl_workdir / "log")
-        ensure_dir(self._ppl_workdir / "status")
-        ensure_dir(self._cmp_workdir / "result")
-        ensure_dir(self._cmp_workdir / "log")
-        ensure_dir(self._cmp_workdir / "status")
+        for _w in (self._ppl_workdir, self._cmp_workdir):
+            for _n in ("result", "log", "status", "config"):
+                ensure_dir(_w / _n)
 
         logger.info(f"[step:prepare]eval workdir: {self._workdir}")
 
     def _extract_swmp(self) -> None:
         #TODO: support to guess short version
-
         name, version = self.model.split(":")
         self._model_dir = self._store.workdir / name / version
         logger.info(f"[step:extract]model @ {self._model_dir}")
@@ -129,17 +129,81 @@ class EvalExecutor(object):
         if not (self._model_dir / DEFAULT_MANIFEST_NAME).exists():
             raise Exception("invalid swmp model dir")
 
-    def _gen_swds_fuse_json(self) -> None:
+    def _gen_swds_fuse_json(self) -> Path:
         for ds in self.datasets:
             fname = DataSet.render_fuse_json(ds, force=False)
             self._fuse_jsons.append(fname)
             logger.debug(f"[gen fuse.json]{fname}")
 
-    def _do_run_ppl(self) -> None:
-        pass
+        _base = json.load(open(self._fuse_jsons[0], "r"))
+        for _f in self._fuse_jsons[0:]:
+            _config = json.load(open(_f, "r"))
+            _base["swds"].extend(_config["swds"])
+
+        _f = self._workdir / EVAL_TASK_TYPE.PPL / "config" / DEFAULT_INPUT_JSON_FNAME
+        ensure_file(_f, json.dumps(_f, indent=JSON_INDENT))
+        return _f
+
+    def _gen_jsonl_fuse_json(self) -> Path:
+        _fuse = dict(
+            backend=SWDS_BACKEND_TYPE.FUSE,
+            kind=DATA_LOADER_KIND.JSONL,
+            swds=[
+                dict(
+                    bucket= str((self._workdir / EVAL_TASK_TYPE.PPL / "result").resolve()),
+                    key=dict(
+                        data="current",
+                    )
+                )
+            ]
+        )
+        _f = self._workdir / EVAL_TASK_TYPE.CMP / "config" / DEFAULT_INPUT_JSON_FNAME
+        ensure_file(_f, json.dumps(_f, indent=JSON_INDENT))
+        return _f
 
     def _do_run_cmp(self) -> None:
-        pass
+        self._gen_jsonl_fuse_json()
+        self._do_run_cmd(EVAL_TASK_TYPE.CMP)
+
+    def _do_run_ppl(self) -> None:
+        self._do_run_cmd(EVAL_TASK_TYPE.PPL)
+
+    def _do_run_cmd(self, typ: str) -> None:
+        cmd = self._gen_docker_cmd(typ)
+        logger.info(f"[run {typ}] docker run command output...")
+        self._console.print(cmd)
+        if not self.gencmd:
+            check_call(cmd, shell=True)
+
+    def _gen_docker_cmd(self, typ: str) -> str:
+        if typ not in (EVAL_TASK_TYPE.PPL, EVAL_TASK_TYPE.CMP):
+            raise Exception(f"no support {typ} to gen docker cmd")
+
+        rootdir = "/opt/starwhale"
+        rundir = self._workdir / typ
+
+        cmd = ["docker", "run", "-it", "--net=host"]
+        cmd += [
+            "-v", f"{rundir}:{rootdir}",
+            "-v", f"{self._model_dir}:{rootdir}/swmp",
+        ]
+
+        if self.docker_verbose:
+            cmd += ["-e", "DEBUG=1"]
+
+        _env = os.environ
+        cmd += [
+            "-e", f"SW_PYPI_INDEX_URL={_env.get('SW_PYPI_INDEX_URL', '')}",
+            "-e", f"SW_PYPI_EXTRA_INDEX_URL={_env.get('SW_PYPI_EXTRA_INDEX_URL', '')}",
+            "-e", f"SW_PYPI_TRUSTED_HOST={_env.get('SW_PYPI_TRUSTED_HOST', '')}",
+            "-e", f"SW_RESET_CONDA_CONFIG={_env.get('SW_RESET_CONDA_CONFIG', '0')}",
+        ]
+
+        cmd += [typ]
+        return " ".join(cmd)
 
     def _render_report(self) -> None:
+        pass
+
+    def _render_manifest(self) -> None:
         pass

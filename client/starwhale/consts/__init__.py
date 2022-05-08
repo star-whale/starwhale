@@ -16,6 +16,7 @@ DEFAULT_MANIFEST_NAME = "_manifest.yaml"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:6543"
 DEFAULT_DATASET_YAML_NAME = "dataset.yaml"
 LOCAL_FUSE_JSON_NAME = "local_fuse.json"
+DEFAULT_INPUT_JSON_FNAME = "input.json"
 
 #TODO: use ~/.starwhale or ~/.cache/starwhale?
 SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
@@ -35,6 +36,8 @@ FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 
 #TODO: use better DEFAULT words?
 DEFAULT_COPY_WORKERS = 4
+
+JSON_INDENT = 4
 
 SW_API_VERSION = "v1"
 

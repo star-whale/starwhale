@@ -42,8 +42,9 @@ def _inspect(project, job, page, size):
 @click.option("--desc", help="evaluation job description")
 @click.option("--gencmd", is_flag=True, help="[local]gen docker run command")
 @click.option("--phase", type=click.Choice(EVAL_TASK_TYPE), default=EVAL_TASK_TYPE.ALL)
-def _run(local, model, dataset, project, baseimage, resource, name, desc, gencmd, phase):
+@click.option("--docker-verbose", is_flag=True, help="docker run verbose output")
+def _run(local, model, dataset, project, baseimage, resource, name, desc, gencmd, phase, docker_verbose):
     if local:
-        EvalExecutor(model, dataset, baseimage, name, desc).run(phase)
+        EvalExecutor(model, dataset, baseimage, name, desc, gencmd=gencmd, docker_verbose=docker_verbose).run(phase)
     else:
         ClusterView().run_job(model, dataset, project, baseimage, resource, name, desc)
