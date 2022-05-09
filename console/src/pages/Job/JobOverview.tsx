@@ -42,42 +42,37 @@ export default function JobOverview() {
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
     const [, setExpanded] = useState(false)
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, string>>({})
-    const onAction = useCallback(async (type, task: ITaskSchema) => {
-        setCurrentTask(task)
-        if ([TaskStatusType.RUNNING, TaskStatusType.PREPARING].includes(task.taskStatus)) {
-            setCurrentLogFiles({
-                [task?.uuid]: 'ws',
-            })
-        } else {
-            const data = await fetchTaskOfflineLogFiles(task?.id)
-            if (_.isEmpty(data)) {
-                toaster.negative(t('no logs found'), { autoHideDuration: 2000 })
-            }
-            const files: Record<string, string> = {}
-            data.map(async (v: string) => {
-                const content = await fetchTaskOfflineFileLog(task?.id, v)
-                files[v] = content
+    const onAction = useCallback(
+        async (type, task: ITaskSchema) => {
+            setCurrentTask(task)
+            if ([TaskStatusType.RUNNING, TaskStatusType.PREPARING].includes(task.taskStatus)) {
                 setCurrentLogFiles({
-                    ...files,
+                    [task?.uuid]: 'ws',
                 })
-            })
-        }
-        setExpanded(true)
-    }, [])
+            } else {
+                const data = await fetchTaskOfflineLogFiles(task?.id)
+                if (_.isEmpty(data)) {
+                    toaster.negative(t('no logs found'), { autoHideDuration: 2000 })
+                }
+                const files: Record<string, string> = {}
+                data.map(async (v: string) => {
+                    const content = await fetchTaskOfflineFileLog(task?.id, v)
+                    files[v] = content
+                    setCurrentLogFiles({
+                        ...files,
+                    })
+                })
+            }
+            setExpanded(true)
+        },
+        [t]
+    )
 
     const currentOnlineLogUrl = useMemo(() => {
         return `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//${window.location.host}/api/v1/log/online/${
             currentTask?.id
         }?Authorization=${getToken()}`
     }, [currentTask])
-
-    // useWebSocket({
-    //     debug: true,
-    //     wsUrl: currentOnlineLogUrl,
-    //     onMessage: (e) => {
-    //         console.log('self', e)
-    //     },
-    // })
 
     return (
         <>
