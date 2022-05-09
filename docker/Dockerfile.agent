@@ -8,7 +8,7 @@ ENV LC_ALL=en_US.UTF-8
 ENV TZ=Etc/UTC
 
 # nvidia driver version
-ARG NV_DRIVER_VERSION 470
+ARG NV_DRIVER_VERSION=470
 ENV NV_DRIVER_VERSION ${NV_DRIVER_VERSION}
 
 # Install os dependence\OpenJDK-11\nvidia-smi
