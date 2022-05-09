@@ -116,6 +116,8 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
 
         Node node = Node.builder()
                 .ipAddr(agentProperties.getHostIP().equals("127.0.0.1") ? systemInfo.getHostAddress() : agentProperties.getHostIP())
+                // todo by machine id
+                .serialNumber(agentProperties.getHostIP().equals("127.0.0.1") ? systemInfo.getHostAddress() : agentProperties.getHostIP())
                 .agentVersion(agentProperties.getVersion())
                 .memorySizeGB(BigInteger.valueOf(systemInfo.getTotalMemory()).divide(FileUtils.ONE_GB_BI).intValue())
                 .devices(List.copyOf(sourcePool.getDevices()))
