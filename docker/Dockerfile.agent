@@ -30,7 +30,6 @@ ENV CUDA_VERSION 11.4.0
 ENV NV_ML_REPO_ENABLED 1
 ENV NV_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
 
-COPY external/cuda-keyring_1.0-1_all.deb cuda-keyring_1.0-1_all.deb
 RUN apt install -y --no-install-recommends dirmngr \
     && wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb \
     && dpkg -i cuda-keyring_1.0-1_all.deb \
@@ -39,6 +38,7 @@ RUN apt install -y --no-install-recommends dirmngr \
     && apt-get install -y --no-install-recommends cuda-cudart-11-4=${NV_CUDA_CUDART_VERSION} ${NV_CUDA_COMPAT_PACKAGE} \
     && ln -s cuda-11.4 /usr/local/cuda \
     && apt-get clean all \
+    && rm cuda-keyring_1.0-1_all.deb \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
 ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
