@@ -39,9 +39,9 @@ ENV NV_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learnin
 #    && apt-get clean all \
 #    && rm -rf /var/lib/apt/lists/* /tmp/*
 
-## wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb |
 COPY external/cuda-keyring_1.0-1_all.deb cuda-keyring_1.0-1_all.deb
 RUN apt install -y --no-install-recommends dirmngr \
+    && wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb \
     && dpkg -i cuda-keyring_1.0-1_all.deb \
     && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub \
     && apt-get update \
