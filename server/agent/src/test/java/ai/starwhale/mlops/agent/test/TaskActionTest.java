@@ -41,6 +41,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
 import java.io.File;
@@ -61,11 +62,12 @@ import static org.mockito.ArgumentMatchers.any;
                 "sw.agent.task.scheduler.enabled=false",
                 "sw.agent.node.sourcePool.init.enabled=false",
                 // when test,please set these properties with debug configuration
-                /*"sw.storage.s3-config.endpoint=http://10.131.0.1:9000",
-                "sw.agent.basePath=C:/\\Users/\\gaoxinxing/\\swtest" //*/
+                //"sw.storage.s3-config.endpoint=http://${ip}:9000",
+                //"sw.agent.basePath=""
         },
         locations = "classpath:application-integrationtest.yaml"
 )
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class TaskActionTest {
     @MockBean
     private GPUDetect nvidiaDetect;
@@ -324,7 +326,10 @@ public class TaskActionTest {
     public void testArchived() {
         InferenceTask task = InferenceTask.builder()
                 .id(1234567890L)
+                .containerId("container-1")
+                .resultPath(new ResultPath("todo"))
                 .build();
+        Mockito.when(containerClient.containerInfo(any())).thenReturn(ContainerClient.ContainerInfo.builder().logPath("log-path").build());
         assertFalse(Files.exists(Path.of(fileSystemPath.oneArchivedTaskDir(task.getId()))));
         archivedAction.apply(task, null);
         assertTrue(Files.exists(Path.of(fileSystemPath.oneArchivedTaskDir(task.getId()))));
