@@ -172,9 +172,28 @@ class ModelPackageLocalStore(LocalStorage):
 
         _remove_workdir(_version)
 
-    def extract(self, swmp: str, force: bool=False) -> None:
-        #TODO: extract swmp into workdir
-        ...
+    def extract(self, swmp: str, force: bool=False, _target: t.Optional[Path]=None) -> None:
+        _name, _version = swmp.split(":")
+        if not _target:
+            _target = self.workdir / _name / _version
+
+        if _target.exists() and (_target / DEFAULT_MANIFEST_NAME).exists() and not force:
+            logger.info(f"[extract] {_target} is already existed, skip extract")
+        else:
+            empty_dir(_target)
+            ensure_dir(_target)
+            logger.info("[extract]try to extract ...")
+            _swmp_path = self._get_swmp_path(swmp)
+            with tarfile.open(_swmp_path, "r") as tar:
+                tar.extractall(path=str(_target.resolve()))
+
+        if not (_target / DEFAULT_MANIFEST_NAME).exists():
+            raise Exception("invalid swmp model dir")
+        logger.info(f"[extract] extracted swmp @ {_target}")
+
+    def _get_swmp_path(self, swmp: str) -> Path:
+        _name, _version = swmp.split(":")
+        return self.pkgdir / _name / f"{_version}.swmp"
 
     def pre_activate(self, swmp: str) -> None:
         if swmp.count(":") == 1:

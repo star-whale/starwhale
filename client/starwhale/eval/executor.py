@@ -5,6 +5,7 @@ from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
 import tarfile
+import jsonlines
 
 from rich.console import Console
 from loguru import logger
@@ -13,12 +14,13 @@ from starwhale.utils import gen_uniq_version
 from .store import EvalLocalStorage
 from starwhale.consts import (
     DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, FMT_DATETIME, DEFAULT_MANIFEST_NAME,
-    JSON_INDENT, LOCAL_FUSE_JSON_NAME, SWDS_BACKEND_TYPE,
+    JSON_INDENT, SWDS_BACKEND_TYPE,
 )
 
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
 from starwhale.swds.dataset import DataSet
+from starwhale.swmp.store import ModelPackageLocalStore
 from starwhale.utils.process import check_call
 
 DEFAULT_SW_TASK_RUN_IMAGE = "starwhaleai/starwhale:latest"
@@ -78,10 +80,8 @@ class EvalExecutor(object):
         elif phase == EVAL_TASK_TYPE.CMP:
             self._do_run_cmp()
 
-        if phase != EVAL_TASK_TYPE.PPL:
+        if phase != EVAL_TASK_TYPE.PPL and not self.gencmd:
             self._render_report()
-
-        self._render_manifest()
 
     def _gen_version(self) -> None:
         #TODO: abstract base class or mixin class for swmp/swds/
@@ -112,22 +112,7 @@ class EvalExecutor(object):
         logger.info(f"[step:prepare]eval workdir: {self._workdir}")
 
     def _extract_swmp(self) -> None:
-        #TODO: support to guess short version
-        name, version = self.model.split(":")
-        self._model_dir = self._store.workdir / name / version
-        logger.info(f"[step:extract]model @ {self._model_dir}")
-
-        if self._model_dir.exists():
-            logger.info(f"[step:extract]use existed {self._model_dir}, skip extract swmp")
-        else:
-            #TODO: call swmp method
-            _swmp_path = self._store.pkgdir / name / f"{version}.swmp"
-            logger.info(f"[step:extract]try to extract {_swmp_path} -> {self._model_dir}")
-            with tarfile.open(_swmp_path, "r") as tar:
-                tar.extractall(path=str(self._model_dir.resolve()))
-
-        if not (self._model_dir / DEFAULT_MANIFEST_NAME).exists():
-            raise Exception("invalid swmp model dir")
+        ModelPackageLocalStore().extract(self.model)
 
     def _gen_swds_fuse_json(self) -> Path:
         for ds in self.datasets:
@@ -141,7 +126,7 @@ class EvalExecutor(object):
             _base["swds"].extend(_config["swds"])
 
         _f = self._workdir / EVAL_TASK_TYPE.PPL / "config" / DEFAULT_INPUT_JSON_FNAME
-        ensure_file(_f, json.dumps(_f, indent=JSON_INDENT))
+        ensure_file(_f, json.dumps(_base, indent=JSON_INDENT))
         return _f
 
     def _gen_jsonl_fuse_json(self) -> Path:
@@ -158,7 +143,7 @@ class EvalExecutor(object):
             ]
         )
         _f = self._workdir / EVAL_TASK_TYPE.CMP / "config" / DEFAULT_INPUT_JSON_FNAME
-        ensure_file(_f, json.dumps(_f, indent=JSON_INDENT))
+        ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
         return _f
 
     def _do_run_cmp(self) -> None:
@@ -199,11 +184,22 @@ class EvalExecutor(object):
             "-e", f"SW_RESET_CONDA_CONFIG={_env.get('SW_RESET_CONDA_CONFIG', '0')}",
         ]
 
+        _mname, _mver = self.model.split(":")
+        cmd += [
+            "-e", f"SW_SWMP_NAME={_mname}",
+            "-e", f"SW_SWMP_VERSION={_mver}",
+        ]
+
         cmd += [typ]
         return " ".join(cmd)
 
     def _render_report(self) -> None:
-        pass
+        from starwhale.cluster.view import ClusterView
+        _cv = ClusterView()
+        _f = self._cmp_workdir / "result" / "current"
 
-    def _render_manifest(self) -> None:
-        pass
+        with jsonlines.open(str(_f.resolve()), "r") as _reader:
+            for _report in _reader:
+                if not _report or not isinstance(_report, dict):
+                    continue
+                _cv.render_job_report(self._console, _report)

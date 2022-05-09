@@ -56,11 +56,6 @@ def _list():
     ModelPackageLocalStore().list()
 
 
-@model_cmd.command("smoketest", help="Run smoketest for predictor with swmp and swds")
-def _smoketest():
-    pass
-
-
 @model_cmd.command("gendep", help="Generate venv or conda by swmp")
 def _gendep():
     pass
@@ -75,9 +70,10 @@ def _gc(dry_run):
 
 @model_cmd.command("extract", help="Extract local swmp tar file into workdir")
 @click.argument("swmp")
-@click.option("-f", "--force", is_flag=True, help="force pull swmp")
-def _extract(swmp, force):
-    ModelPackageLocalStore().extract(swmp, force)
+@click.option("-f", "--force", is_flag=True, help="force extract swmp")
+@click.option("-t", "--target", default=None, help="extract target dir, if omitted, sw will use starwhale default workdir")
+def _extract(swmp, force, target):
+    ModelPackageLocalStore().extract(swmp, force, target)
 
 
 #TODO: combine click option to one func for _ppl and _cmp

@@ -84,7 +84,7 @@ set_python() {
 activate_swmp_env() {
     echo '--> prepare activate swmp env ...'
     export PYTHONWARNINGS="ignore:Unverified HTTPS request"
-    swcli model pre-activate .
+    swcli ${VERBOSE} model pre-activate .
     unset PYTHONWARNINGS
 
     echo '--> source activate ...'

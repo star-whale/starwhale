@@ -65,8 +65,6 @@ class ClusterView(ClusterModel):
         console = Console()
         tasks, pager = self._fetch_tasks(project, job, page, size)
         report = self._fetch_job_report(project, job)
-        labels: dict = report.get("labels", {})
-        sort_label_names = sorted(list(labels.keys()))
 
         def _print_tasks():
             table = Table(box=box.SIMPLE, expand=True)
@@ -92,6 +90,15 @@ class ClusterView(ClusterModel):
 
             console.rule(f"[bold green]Project({project} Job({job}) Tasks List")
             console.print(table)
+
+        _print_tasks()
+        self.render_job_report(console, report)
+
+        return tasks, pager
+
+    def render_job_report(self, console: Console, report: dict) -> None:
+        labels: dict = report.get("labels", {})
+        sort_label_names = sorted(list(labels.keys()))
 
         def _print_report():
             #TODO: add other kind report
@@ -156,12 +163,9 @@ class ClusterView(ClusterModel):
             console.print(
                 self.comparsion(mtable, btable)
             )
-
-        _print_tasks()
         _print_report()
         _print_confusion_matrix()
 
-        return tasks, pager
 
     def _pretty_status(self, status: str) -> t.Tuple[str, str, str]:
         style = ""
