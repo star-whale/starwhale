@@ -80,9 +80,10 @@ public class TaskExecutorTest {
     @Autowired
     private SourcePool sourcePool;
 
-    void mockConfig() throws Exception {
+    void mockConfig() {
         Mockito.when(containerClient.createAndStartContainer(any()))
                 .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
+        Mockito.when(containerClient.containerInfo(any())).thenReturn(ContainerClient.ContainerInfo.builder().logPath("log-path").build());
         Mockito.when(taskPersistence.getAllActiveTasks()).thenReturn(Optional.of(
                 List.of(
                         InferenceTask.builder()
@@ -126,7 +127,7 @@ public class TaskExecutorTest {
     }
 
     @Test
-    public void fullFlowTest() throws Exception {
+    public void fullFlowTest() {
         mockConfig();
 
         rebuildTasksAction.apply(Void.TYPE.cast(null), Context.builder().build());

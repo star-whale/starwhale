@@ -41,7 +41,7 @@ build-ui:
 build-jar-with-ui: build-ui build-jar
 
 build-jar:
-	docker volume create --name maven-repo; docker run --rm -it -v maven-repo:/root/.m2 -v $(ROOT_DIR)server:/app -w /app maven:3.8.5-openjdk-11 mvn clean package -DskipTests;
+	docker volume create --name maven-repo; docker run --rm -it -v maven-repo:/root/.m2 -v $(ROOT_DIR):/app -w /app maven:3.8.5-openjdk-11 mvn clean package -f server/pom.xml -DskipTests;
 
 build-controller: build-jar-with-ui
 	docker build -f Dockerfile.controller -t $(SW_CONTROLLER_IMAGE) .
