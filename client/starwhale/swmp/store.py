@@ -7,7 +7,6 @@ import tarfile
 
 import click
 import requests
-from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
 from rich import print as rprint
@@ -119,7 +118,7 @@ class ModelPackageLocalStore(LocalStorage):
     def info(self, swmp: str) -> None:
         _manifest = self.get_swmp_info(*self._parse_swobj(swmp))
         _config_panel = Panel(Pretty(_manifest, expand_all=True), title="inspect _manifest.yaml / model.yaml info")
-        Console().print(_config_panel)
+        self.console.print(_config_panel)
         #TODO: add workdir tree
 
     def get_swmp_info(self, _name: str, _version: str) -> dict:
@@ -174,22 +173,25 @@ class ModelPackageLocalStore(LocalStorage):
 
     def extract(self, swmp: str, force: bool=False, _target: t.Optional[Path]=None) -> None:
         _name, _version = swmp.split(":")
-        if not _target:
+        if _target:
+            _target = Path(_target) / _version
+        else:
             _target = self.workdir / _name / _version
 
         if _target.exists() and (_target / DEFAULT_MANIFEST_NAME).exists() and not force:
-            logger.info(f"[extract] {_target} is already existed, skip extract")
+            self.console.print(f":joy_cat: {_target} existed, skip extract swmp")
         else:
             empty_dir(_target)
             ensure_dir(_target)
-            logger.info("[extract]try to extract ...")
+            self.console.print(":oncoming_police_car: try to extract swmp...")
             _swmp_path = self._get_swmp_path(swmp)
             with tarfile.open(_swmp_path, "r") as tar:
                 tar.extractall(path=str(_target.resolve()))
 
         if not (_target / DEFAULT_MANIFEST_NAME).exists():
             raise Exception("invalid swmp model dir")
-        logger.info(f"[extract] extracted swmp @ {_target}")
+
+        self.console.print(f":clap: extracted-swmp @ {_target.resolve()}")
 
     def _get_swmp_path(self, swmp: str) -> Path:
         _name, _version = swmp.split(":")

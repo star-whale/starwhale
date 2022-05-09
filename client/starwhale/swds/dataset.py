@@ -142,7 +142,7 @@ class DataSet(object):
 
     def _validator(self):
         if not (self.workdir / self._swds_config.data_dir).exists():
-            raise FileNotFoundError(f"{self._swds_config.data_dir} is not existed")
+            raise FileNotFoundError(f"{self._swds_config.data_dir} no existed")
 
     @logger.catch
     def _do_build(self):
@@ -287,7 +287,7 @@ class DataSet(object):
         self._snapshot_workdir = self._store.dataset_dir / self._name / self._version
 
         if self._snapshot_workdir.exists():
-            raise Exception(f"{self._snapshot_workdir} has already exists, will abort")
+            raise Exception(f"{self._snapshot_workdir} was already existed, will abort")
 
         ensure_dir(self._data_dir)
         ensure_dir(self._src_dir)
@@ -361,7 +361,6 @@ class DataSet(object):
 
         _f = self.workdir / LOCAL_FUSE_JSON_NAME
         if _f.exists() and not force:
-            logger.info(f"[render:fuse] {_f} was already existed, skip render file")
             self.console.print(f":joy_cat: {LOCAL_FUSE_JSON_NAME} existed, skip render")
             self.console.print(_fuse)
         else:

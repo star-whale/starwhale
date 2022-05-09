@@ -71,7 +71,8 @@ def _gc(dry_run):
 @model_cmd.command("extract", help="Extract local swmp tar file into workdir")
 @click.argument("swmp")
 @click.option("-f", "--force", is_flag=True, help="force extract swmp")
-@click.option("-t", "--target", default=None, help="extract target dir, if omitted, sw will use starwhale default workdir")
+@click.option("-t", "--target", type=click.Path(), default=None,
+              help="extract target dir.if omitted, sw will use starwhale default workdir")
 def _extract(swmp, force, target):
     ModelPackageLocalStore().extract(swmp, force, target)
 

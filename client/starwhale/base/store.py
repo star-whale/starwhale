@@ -16,6 +16,10 @@ class LocalStorage(SWCliConfigMixed):
 
     __metaclass__ = ABCMeta
 
+    def __init__(self, swcli_config: t.Union[dict, None] = None) -> None:
+        super().__init__(swcli_config)
+        self.console = Console()
+
     def _parse_swobj(self, sw_name:str) -> t.Tuple[str, str]:
         if ":" not in sw_name:
             _name, _version = sw_name, self.LATEST_TAG
