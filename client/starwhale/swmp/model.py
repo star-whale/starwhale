@@ -15,14 +15,14 @@ from starwhale import __version__
 from starwhale.utils.error import (
     FileTypeError, FileFormatError, NotFoundError
 )
-from starwhale.utils import gen_uniq_version, console
+from starwhale.utils import gen_uniq_version, console, now_str
 from starwhale.utils.fs import ensure_dir, ensure_file, ensure_link
 from starwhale.utils.venv import (
     detect_pip_req, dump_python_dep_env, SUPPORTED_PIP_REQ
 )
 from starwhale.utils.load import import_cls
 from starwhale.consts import (
-    DEFAULT_STARWHALE_API_VERSION, FMT_DATETIME,
+    DEFAULT_STARWHALE_API_VERSION,
     DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME,
     DEFAULT_COPY_WORKERS, SHORT_VERSION_CNT
 )
@@ -223,7 +223,7 @@ class ModelPackage(object):
             self._version = gen_uniq_version(self._swmp_config.name)
 
         self._manifest["version"] = self._version
-        self._manifest["created_at"] = datetime.now().astimezone().strftime(FMT_DATETIME)
+        self._manifest["created_at"] = now_str()
         logger.info(f"[step:version]swmp version is {self._version}")
         self._console.print(f":new: swmp version {self._version[:SHORT_VERSION_CNT]}")
 

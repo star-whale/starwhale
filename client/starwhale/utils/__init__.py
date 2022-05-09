@@ -8,12 +8,17 @@ import sys
 import platform
 import subprocess
 import typing as t
+from datetime import datetime
 
 from rich.console import Console
 
-from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX, PYTHON_RUN_ENV
+from starwhale.consts import (
+    ENV_CONDA, ENV_CONDA_PREFIX, PYTHON_RUN_ENV,
+    FMT_DATETIME
+)
 
 console = Console(soft_wrap=True)
+now_str = lambda : datetime.now().astimezone().strftime(FMT_DATETIME)
 
 
 def gen_uniq_version(feature: str = "") -> str:

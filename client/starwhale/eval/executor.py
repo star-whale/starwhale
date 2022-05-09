@@ -3,16 +3,15 @@ import yaml
 import json
 import os
 from collections import namedtuple
-from datetime import datetime
 from pathlib import Path
 import jsonlines
 
 from loguru import logger
 
-from starwhale.utils import gen_uniq_version, console
+from starwhale.utils import gen_uniq_version, console, now_str
 from .store import EvalLocalStorage
 from starwhale.consts import (
-    DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, DEFAULT_MANIFEST_NAME, FMT_DATETIME,
+    DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, DEFAULT_MANIFEST_NAME,
     JSON_INDENT, SWDS_BACKEND_TYPE,
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -105,7 +104,7 @@ class EvalExecutor(object):
         if not self._version:
             self._version = gen_uniq_version(self.name)
         self._manifest["version"] = self._version
-        self._manifest["created_at"] = datetime.now().astimezone().strftime(FMT_DATETIME)
+        self._manifest["created_at"] = now_str()
         logger.info(f"[step:version]eval job version is {self._version}")
 
     @property
@@ -245,6 +244,7 @@ class EvalExecutor(object):
                 model=self.model,
                 datasets=self.datasets,
                 baseimage=self.baseimage,
+                finished_at=now_str(),
             )
         )
         _f = self._workdir / DEFAULT_MANIFEST_NAME

@@ -3,7 +3,6 @@ import typing as t
 import yaml
 from pathlib import Path
 from collections import namedtuple
-from datetime import datetime
 import platform
 import json
 
@@ -11,7 +10,6 @@ from loguru import logger
 from fs import open_fs
 from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
-from rich import print as rprint
 
 from starwhale.utils.fs import (
     ensure_dir, ensure_file, blake2b_file,
@@ -19,13 +17,13 @@ from starwhale.utils.fs import (
 )
 from starwhale import __version__
 from starwhale.utils import (
-    convert_to_bytes, gen_uniq_version, console
+    convert_to_bytes, gen_uniq_version, console, now_str,
 )
 from starwhale.utils.load import import_cls
 from starwhale.utils.venv import SUPPORTED_PIP_REQ, dump_python_dep_env, detect_pip_req
 from starwhale.utils.error import FileTypeError, NoSupportError
 from starwhale.consts import (
-    DEFAULT_STARWHALE_API_VERSION, FMT_DATETIME,
+    DEFAULT_STARWHALE_API_VERSION,
     DEFAULT_MANIFEST_NAME, DEFAULT_DATASET_YAML_NAME,
     DEFAULT_COPY_WORKERS, SHORT_VERSION_CNT, JSON_INDENT,
     LOCAL_FUSE_JSON_NAME, SWDS_BACKEND_TYPE, DATA_LOADER_KIND,
@@ -276,7 +274,7 @@ class DataSet(object):
 
         #TODO: abstract with ModelPackage
         self._manifest["version"] = self._version
-        self._manifest["created_at"] = datetime.now().astimezone().strftime(FMT_DATETIME)
+        self._manifest["created_at"] = now_str()
         logger.info(f"[step:version] dataset swds version: {self._version}")
         self._console.print(f":new: swmp version {self._version[:SHORT_VERSION_CNT]}")
         return self._version
