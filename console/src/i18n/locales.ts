@@ -264,11 +264,17 @@ const locales0 = {
     'Pause': {
         en: 'Pause',
     },
+    'Resume': {
+        en: 'Resume',
+    },
     'Tasks': {
         en: 'Tasks',
     },
     'Results': {
         en: 'Results',
+    },
+    'no logs found': {
+        en: 'no logs found',
     },
 }
 

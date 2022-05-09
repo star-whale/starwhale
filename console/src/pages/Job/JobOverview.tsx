@@ -1,4 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
+import _ from 'lodash'
+import { toaster } from 'baseui/toast'
 import useTranslation from '@/hooks/useTranslation'
 import { useJob } from '@job/hooks/useJob'
 import { formatTimestampDateTime } from '@/utils/datetime'
@@ -7,8 +9,8 @@ import { ScrollFollow, LazyLog } from 'react-lazylog'
 import { Accordion, Panel } from 'baseui/accordion'
 import { fetchTaskOfflineFileLog, fetchTaskOfflineLogFiles } from '@/domain/job/services/task'
 import { getToken } from '@/api'
-import { ITaskSchema, TaskStatusType } from '../../domain/job/schemas/task'
 import TaskListCard from './TaskListCard'
+import { ITaskSchema, TaskStatusType } from '../../domain/job/schemas/task'
 
 export default function JobOverview() {
     const { job } = useJob()
@@ -42,9 +44,15 @@ export default function JobOverview() {
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, string>>({})
     const onAction = useCallback(async (type, task: ITaskSchema) => {
         setCurrentTask(task)
-        if ([TaskStatusType.SUCCESS, TaskStatusType.SUCCESS].includes(task.taskStatus)) {
+        if ([TaskStatusType.RUNNING, TaskStatusType.PREPARING].includes(task.taskStatus)) {
+            setCurrentLogFiles({
+                [task?.uuid]: 'ws',
+            })
+        } else {
             const data = await fetchTaskOfflineLogFiles(task?.id)
-
+            if (_.isEmpty(data)) {
+                toaster.negative(t('no logs found'), { autoHideDuration: 2000 })
+            }
             const files: Record<string, string> = {}
             data.map(async (v: string) => {
                 const content = await fetchTaskOfflineFileLog(task?.id, v)
@@ -52,10 +60,6 @@ export default function JobOverview() {
                 setCurrentLogFiles({
                     ...files,
                 })
-            })
-        } else if ([TaskStatusType.RUNNING, TaskStatusType.PREPARING].includes(task.taskStatus)) {
-            setCurrentLogFiles({
-                [task?.uuid]: 'ws',
             })
         }
         setExpanded(true)
