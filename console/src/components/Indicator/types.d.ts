@@ -63,4 +63,4 @@ export type IMultiLabel = {
 export type ILabel = IBinaryLabel & IMultiLabel
 export type ILabels = Record<string, ILabel>
 export type IConfusionMatrixBinarylabel = number[]
-export type IConfusionMatrixMutlilabel = number[][] // 2*2
+export type IConfusionMatrixMultilabel = number[][] // 2*2
