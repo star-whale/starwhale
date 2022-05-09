@@ -61,7 +61,7 @@ class ClusterView(ClusterModel):
 
     @_pager #type: ignore
     @_header #type: ignore
-    def inspect_job(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
+    def info_job(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
         console = Console()
         tasks, pager = self._fetch_tasks(project, job, page, size)
         report = self._fetch_job_report(project, job)

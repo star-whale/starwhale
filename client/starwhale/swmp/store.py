@@ -171,7 +171,7 @@ class ModelPackageLocalStore(LocalStorage):
 
         _remove_workdir(_version)
 
-    def extract(self, swmp: str, force: bool=False, _target: t.Optional[Path]=None) -> None:
+    def extract(self, swmp: str, force: bool=False, _target: t.Optional[Path]=None) -> Path:
         _name, _version = swmp.split(":")
         if _target:
             _target = Path(_target) / _version
@@ -192,6 +192,7 @@ class ModelPackageLocalStore(LocalStorage):
             raise Exception("invalid swmp model dir")
 
         self.console.print(f":clap: extracted-swmp @ {_target.resolve()}")
+        return _target
 
     def _get_swmp_path(self, swmp: str) -> Path:
         _name, _version = swmp.split(":")

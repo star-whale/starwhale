@@ -1,3 +1,4 @@
+from ctypes import alignment
 import typing as t
 import json
 import os
@@ -7,6 +8,7 @@ from pathlib import Path
 import jsonlines
 
 from rich.console import Console
+from rich.panel import Panel
 from loguru import logger
 from starwhale.utils import gen_uniq_version
 
@@ -111,7 +113,7 @@ class EvalExecutor(object):
         logger.info(f"[step:prepare]eval workdir: {self._workdir}")
 
     def _extract_swmp(self) -> None:
-        ModelPackageLocalStore().extract(self.model)
+        self._model_dir = ModelPackageLocalStore().extract(self.model)
 
     def _gen_swds_fuse_json(self) -> Path:
         for ds in self.datasets:
@@ -155,7 +157,9 @@ class EvalExecutor(object):
     def _do_run_cmd(self, typ: str) -> None:
         cmd = self._gen_docker_cmd(typ)
         logger.info(f"[run {typ}] docker run command output...")
-        self._console.print(cmd)
+        self._console.rule(f":elephant: {typ} docker cmd", align="left")
+        self._console.print(f"{cmd}\n")
+        self._console.print(f":fish: eval run dir @ [green blink]{self._workdir}/{typ}[/]")
         if not self.gencmd:
             check_call(cmd, shell=True)
 
@@ -176,12 +180,11 @@ class EvalExecutor(object):
             cmd += ["-e", "DEBUG=1"]
 
         _env = os.environ
-        cmd += [
-            "-e", f"SW_PYPI_INDEX_URL={_env.get('SW_PYPI_INDEX_URL', '')}",
-            "-e", f"SW_PYPI_EXTRA_INDEX_URL={_env.get('SW_PYPI_EXTRA_INDEX_URL', '')}",
-            "-e", f"SW_PYPI_TRUSTED_HOST={_env.get('SW_PYPI_TRUSTED_HOST', '')}",
-            "-e", f"SW_RESET_CONDA_CONFIG={_env.get('SW_RESET_CONDA_CONFIG', '0')}",
-        ]
+        for _ee in ("SW_PYPI_INDEX_URL", "SW_PYPI_EXTRA_INDEX_URL", "SW_PYPI_TRUSTED_HOST",
+                    "SW_RESET_CONDA_CONFIG"):
+            if _ee not in _env:
+                continue
+            cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
 
         _mname, _mver = self.model.split(":")
         cmd += [
@@ -189,7 +192,10 @@ class EvalExecutor(object):
             "-e", f"SW_SWMP_VERSION={_mver}",
         ]
 
-        cmd += [typ]
+        cmd += [
+            self.baseimage,
+            typ
+        ]
         return " ".join(cmd)
 
     def _render_report(self) -> None:

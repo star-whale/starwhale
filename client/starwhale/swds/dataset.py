@@ -362,11 +362,11 @@ class DataSet(object):
         _f = self.workdir / LOCAL_FUSE_JSON_NAME
         if _f.exists() and not force:
             self.console.print(f":joy_cat: {LOCAL_FUSE_JSON_NAME} existed, skip render")
-            self.console.print(_fuse)
         else:
             ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
             self.console.print(f":clap: render swds {ds_name}:{ds_version} {LOCAL_FUSE_JSON_NAME}")
-            self.console.print(f":mag: {_f}")
+
+        self.console.print(f":mag: {_f}")
         return str(_f.resolve())
 
     @classmethod
