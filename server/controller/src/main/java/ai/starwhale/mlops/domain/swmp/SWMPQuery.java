@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.swmp;
 
-import ai.starwhale.mlops.domain.project.Project;
-import ai.starwhale.mlops.domain.user.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,37 +23,19 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class SWMPObject {
+@AllArgsConstructor
+public class SWMPQuery {
 
-    private Long id;
+    private String swmpId;
 
-    private String name;
+    private String swmpName;
 
-    private Project project;
+    private String projectId;
 
-    private User owner;
+    private String projectName;
 
-    private Version version;
+    private String ownerId;
 
-    @Data
-    @Builder
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class Version {
-
-        private Long id;
-
-        private String name;
-
-        private Long ownerId;
-
-        private String tag;
-
-        private String meta;
-
-        private String storagePath;
-
-    }
+    private String ownerName;
 }

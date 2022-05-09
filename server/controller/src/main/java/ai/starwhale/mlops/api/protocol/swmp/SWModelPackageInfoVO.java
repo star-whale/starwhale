@@ -33,6 +33,9 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class SWModelPackageInfoVO implements Serializable {
 
+    @JsonProperty("swmpId")
+    private String swmpId;
+
     @JsonProperty("swmpName")
     private String swmpName;
 
@@ -53,7 +56,9 @@ public class SWModelPackageInfoVO implements Serializable {
     private List<StorageFileVO> files;
 
     public static SWModelPackageInfoVO empty() {
-        return new SWModelPackageInfoVO("", "", "", "", 0L , new ArrayList<>());
+        return new SWModelPackageInfoVO("","",
+            "", "", "",
+            0L , new ArrayList<>());
     }
 
 }

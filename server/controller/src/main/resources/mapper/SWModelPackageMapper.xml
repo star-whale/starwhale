@@ -22,22 +22,48 @@
                u.created_time as user_created_time,
                u.user_enabled,
                r.role_name,
-               r.role_name_en
+               r.role_name_en,
+               p.project_name
         from swmp_info as s,
              user_info as u,
-             user_role as r
+             user_role as r,
+             project_info as p
         where s.is_deleted = 0
         and u.id = s.owner_id
         and r.id = u.role_id
+        and p.id = s.project_id
     </sql>
-    <select id="listSWModelPackages" resultMap="swmpResultMap">
+
+    <select id="listSWModelPackagesByQuery" parameterType="ai.starwhale.mlops.domain.swmp.SWMPQuery" resultMap="swmpResultMap">
         <include refid="select_swmp"/>
-        and project_id = #{projectId}
-        <if test="namePrefix != null and namePrefix != ''">
-            and s.swmp_name like concat(#{namePrefix}, '%')
+        <if test="projectId != null and projectId != ''">
+            and s.project_id = #{projectId}
         </if>
-        order by s.id desc
+        <if test="projectName != null and projectName != ''">
+            and p.project_name like concat(#{projectName}, '%')
+        </if>
+        <if test="swmpId != null and swmpId != ''">
+            and s.id = #{swmpId}
+        </if>
+        <if test="swmpName != null and swmpName != ''">
+            and s.swmp_name like concat(#{swmpName}, '%')
+        </if>
+        <if test="ownerId != null and ownerId != ''">
+            and s.owner_id = #{ownerId}
+        </if>
+        <if test="ownerName != null and ownerName != ''">
+            and u.user_name like concat(#{ownerName}, '%')
+        </if>
     </select>
+
+<!--    <select id="listSWModelPackages" resultMap="swmpResultMap">-->
+<!--        <include refid="select_swmp"/>-->
+<!--        and project_id = #{projectId}-->
+<!--        <if test="namePrefix != null and namePrefix != ''">-->
+<!--            and s.swmp_name like concat(#{namePrefix}, '%')-->
+<!--        </if>-->
+<!--        order by s.id desc-->
+<!--    </select>-->
 
     <select id="findSWModelPackageById" resultMap="swmpResultMap" >
         <include refid="select_swmp"/>
