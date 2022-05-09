@@ -28,8 +28,8 @@ from starwhale.utils.error import FileTypeError, NoSupportError
 from starwhale.consts import (
     DEFAULT_STARWHALE_API_VERSION, FMT_DATETIME,
     DEFAULT_MANIFEST_NAME, DEFAULT_DATASET_YAML_NAME,
-    DEFAULT_COPY_WORKERS, SHORT_VERSION_CNT,
-    DEFAULT_COPY_WORKERS, LOCAL_FUSE_JSON_NAME, SWDS_BACKEND_TYPE, DATA_LOADER_KIND,
+    DEFAULT_COPY_WORKERS, SHORT_VERSION_CNT, JSON_INDENT,
+    LOCAL_FUSE_JSON_NAME, SWDS_BACKEND_TYPE, DATA_LOADER_KIND,
     SWDS_LABEL_FNAME_FMT, SWDS_DATA_FNAME_FMT, SWDS_SUBFILE_TYPE
 )
 from starwhale.utils.config import load_swcli_config
@@ -362,9 +362,12 @@ class DataSet(object):
         _f = self.workdir / LOCAL_FUSE_JSON_NAME
         if _f.exists() and not force:
             logger.info(f"[render:fuse] {_f} was already existed, skip render file")
-            rprint(_fuse)
+            self.console.print(f":joy_cat: {LOCAL_FUSE_JSON_NAME} existed, skip render")
+            self.console.print(_fuse)
         else:
-            ensure_file(_f, json.dumps(_fuse, indent=4))
+            ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
+            self.console.print(f":clap: render swds {ds_name}:{ds_version} {LOCAL_FUSE_JSON_NAME}")
+            self.console.print(f":mag: {_f}")
         return str(_f.resolve())
 
     @classmethod

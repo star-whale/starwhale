@@ -4,7 +4,6 @@ import os
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
-import tarfile
 import jsonlines
 
 from rich.console import Console
@@ -13,7 +12,7 @@ from starwhale.utils import gen_uniq_version
 
 from .store import EvalLocalStorage
 from starwhale.consts import (
-    DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, FMT_DATETIME, DEFAULT_MANIFEST_NAME,
+    DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, FMT_DATETIME,
     JSON_INDENT, SWDS_BACKEND_TYPE,
 )
 

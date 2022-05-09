@@ -52,8 +52,8 @@ def _gc(dry_run):
     DataSetLocalStore().gc(dry_run)
 
 
-@dataset_cmd.command("render-fuse", help="render fuse input.json for local swds")
+@dataset_cmd.command("render-fuse", help="Render fuse input.json for local swds")
 @click.argument("swds")
-@click.option("-f", "--force", help=f"force render if {LOCAL_FUSE_JSON_NAME} was already existed")
+@click.option("-f", "--force", is_flag=True, help=f"Force to render, if {LOCAL_FUSE_JSON_NAME} was already existed")
 def _render_fuse(swds, force):
     DataSet.render_fuse_json(swds, force)
