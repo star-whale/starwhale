@@ -85,15 +85,15 @@
 
     <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity" useGeneratedKeys="true" keyProperty="id">
         insert into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, storage_path, files_uploaded)
-        values(#{datasetId}, #{ownerId}, #{versionName}, #{versionTag}, #{versionMeta}, #{storagePath}, #{filesUploaded})
+        values(#{version.datasetId}, #{version.ownerId}, #{version.versionName}, #{version.versionTag}, #{version.versionMeta}, #{version.storagePath}, #{version.filesUploaded})
     </insert>
 
     <update id="update" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity">
-        update dataset_version set version_tag = #{versionTag} where id = #{id}
+        update dataset_version set version_tag = #{version.versionTag} where id = #{version.id}
     </update>
 
     <update id="updateFilesUploaded" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity">
-        update dataset_version set files_uploaded = #{filesUploaded} where id = #{id}
+        update dataset_version set files_uploaded = #{version.filesUploaded} where id = #{version.id}
     </update>
 
     <update id="updateStatus">

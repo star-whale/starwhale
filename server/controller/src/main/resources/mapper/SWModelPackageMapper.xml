@@ -36,23 +36,23 @@
 
     <select id="listSWModelPackagesByQuery" parameterType="ai.starwhale.mlops.domain.swmp.SWMPQuery" resultMap="swmpResultMap">
         <include refid="select_swmp"/>
-        <if test="projectId != null and projectId != ''">
-            and s.project_id = #{projectId}
+        <if test="query.projectId != null and query.projectId != ''">
+            and s.project_id = #{query.projectId}
         </if>
-        <if test="projectName != null and projectName != ''">
-            and p.project_name like concat(#{projectName}, '%')
+        <if test="query.projectName != null and query.projectName != ''">
+            and p.project_name like concat(#{query.projectName}, '%')
         </if>
-        <if test="swmpId != null and swmpId != ''">
-            and s.id = #{swmpId}
+        <if test="query.swmpId != null and query.swmpId != ''">
+            and s.id = #{query.swmpId}
         </if>
-        <if test="swmpName != null and swmpName != ''">
-            and s.swmp_name like concat(#{swmpName}, '%')
+        <if test="query.swmpName != null and query.swmpName != ''">
+            and s.swmp_name like concat(#{query.swmpName}, '%')
         </if>
-        <if test="ownerId != null and ownerId != ''">
-            and s.owner_id = #{ownerId}
+        <if test="query.ownerId != null and query.ownerId != ''">
+            and s.owner_id = #{query.ownerId}
         </if>
-        <if test="ownerName != null and ownerName != ''">
-            and u.user_name like concat(#{ownerName}, '%')
+        <if test="query.ownerName != null and query.ownerName != ''">
+            and u.user_name like concat(#{query.ownerName}, '%')
         </if>
     </select>
 
@@ -92,7 +92,7 @@
 
     <insert id="addSWModelPackage" useGeneratedKeys="true" keyProperty="id">
         insert into swmp_info(swmp_name, project_id, owner_id)
-        values(#{swmpName}, #{projectId}, #{ownerId})
+        values(#{entity.swmpName}, #{entity.projectId}, #{entity.ownerId})
     </insert>
 
     <delete id="deleteSWModelPackage" >

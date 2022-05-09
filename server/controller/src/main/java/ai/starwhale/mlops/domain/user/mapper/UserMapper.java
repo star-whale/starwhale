@@ -22,7 +22,7 @@ import org.apache.ibatis.annotations.Param;
 
 public interface UserMapper {
 
-    int createUser(UserEntity user);
+    int createUser(@Param("user")UserEntity user);
 
     UserEntity findUser(@Param("id") Long id);
 
@@ -30,7 +30,7 @@ public interface UserMapper {
 
     List<UserEntity> listUsers(@Param("userNamePrefix") String userNamePrefix);
 
-    int changePassword(UserEntity user);
+    int changePassword(@Param("user")UserEntity user);
 
-    int enableUser(UserEntity user);
+    int enableUser(@Param("user")UserEntity user);
 }

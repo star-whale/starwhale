@@ -36,11 +36,11 @@ public interface SWDatasetVersionMapper {
 
     int revertTo(@Param("dsId")Long dsId, @Param("dsVersionId")Long dsVersionId);
 
-    int addNewVersion(SWDatasetVersionEntity entity);
+    int addNewVersion(@Param("version")SWDatasetVersionEntity version);
 
-    int update(SWDatasetVersionEntity entity);
+    int update(@Param("version")SWDatasetVersionEntity version);
 
-    int updateFilesUploaded(SWDatasetVersionEntity entity);
+    int updateFilesUploaded(@Param("version")SWDatasetVersionEntity version);
 
     int updateStatus(@Param("id")Long id ,@Param("status")Integer status);
 

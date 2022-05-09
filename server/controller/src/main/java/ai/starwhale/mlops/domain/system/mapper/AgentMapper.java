@@ -25,7 +25,7 @@ public interface AgentMapper {
 
     List<AgentEntity> listAgents();
 
-    Long addAgent(AgentEntity agent);
+    Long addAgent(@Param("agent")AgentEntity agent);
 
     void updateAgents(@Param("agents")List<AgentEntity> agents);
 

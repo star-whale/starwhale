@@ -24,9 +24,9 @@ import org.apache.ibatis.annotations.Param;
 public interface SWModelPackageMapper {
 
 //    List<SWModelPackageEntity> listSWModelPackages(@Param("projectId")Long projectId, @Param("namePrefix")String namePrefix);
-    List<SWModelPackageEntity> listSWModelPackagesByQuery(SWMPQuery query);
+    List<SWModelPackageEntity> listSWModelPackagesByQuery(@Param("query")SWMPQuery query);
 
-    int addSWModelPackage(SWModelPackageEntity entity);
+    int addSWModelPackage(@Param("entity")SWModelPackageEntity entity);
 
     int deleteSWModelPackage(@Param("id")Long id);
 

@@ -24,7 +24,7 @@ public interface SWDatasetMapper {
 
     List<SWDatasetEntity> listDatasets(@Param("projectId") Long projectId, @Param("namePrefix")String namePrefix);
 
-    int addDataset(SWDatasetEntity entity);
+    int addDataset(@Param("swds")SWDatasetEntity swds);
 
     int deleteDataset(@Param("id")Long id);
 

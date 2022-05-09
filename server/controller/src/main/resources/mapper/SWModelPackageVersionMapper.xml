@@ -40,6 +40,7 @@
     </select>
 
     <select id="findVersionById" resultMap="swmpVersionResultMap" >
+        <include refid="select_swmp_version" />
         and mv.id = #{id}
     </select>
 
@@ -73,11 +74,11 @@
 
     <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity" useGeneratedKeys="true" keyProperty="id">
         insert into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path)
-        values(#{swmpId}, #{ownerId}, #{versionName}, #{versionTag}, #{versionMeta}, #{storagePath})
+        values(#{version.swmpId}, #{version.ownerId}, #{version.versionName}, #{version.versionTag}, #{version.versionMeta}, #{version.storagePath})
     </insert>
 
     <update id="update" parameterType="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity">
-        update swmp_version set version_tag = #{versionTag} where id = #{id}
+        update swmp_version set version_tag = #{version.versionTag} where id = #{version.id}
     </update>
 
     <resultMap id="swmpVersionResultMap" type="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity" >
