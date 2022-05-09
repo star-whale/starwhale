@@ -1,5 +1,5 @@
-from ctypes import alignment
 import typing as t
+import yaml
 import json
 import os
 from collections import namedtuple
@@ -8,13 +8,12 @@ from pathlib import Path
 import jsonlines
 
 from rich.console import Console
-from rich.panel import Panel
 from loguru import logger
 from starwhale.utils import gen_uniq_version
 
 from .store import EvalLocalStorage
 from starwhale.consts import (
-    DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, FMT_DATETIME,
+    DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, DEFAULT_MANIFEST_NAME, FMT_DATETIME,
     JSON_INDENT, SWDS_BACKEND_TYPE,
 )
 
@@ -23,10 +22,15 @@ from starwhale.utils.error import SWObjNameFormatError
 from starwhale.swds.dataset import DataSet
 from starwhale.swmp.store import ModelPackageLocalStore
 from starwhale.utils.process import check_call
+from starwhale.utils.progress import run_with_progress_bar
 
 DEFAULT_SW_TASK_RUN_IMAGE = "starwhaleai/starwhale:latest"
 EVAL_TASK_TYPE = namedtuple("EVAL_TASK_TYPE", ["ALL", "PPL", "CMP"])(
     "all", "ppl", "cmp"
+)
+_CNTR_WORKDIR = "/opt/starwhale"
+_RUN_SUBDIR = namedtuple("_RUN_SUBDIR", ["RESULT", "DATASET", "PPL_RESULT", "STATUS", "LOG", "SWMP", "CONFIG"])(
+    "result", "dataset", "ppl_result", "status", "log", "swmp", "config"
 )
 
 
@@ -37,7 +41,7 @@ class EvalExecutor(object):
         self.name = name
         self.desc = desc
         self.model = model
-        self.datasets = datasets
+        self.datasets = list(datasets)
         self.baseimage = baseimage
         self.gencmd = gencmd
         self.docker_verbose = docker_verbose
@@ -48,7 +52,6 @@ class EvalExecutor(object):
         self._manifest = {}
         self._workdir = Path()
         self._model_dir = Path()
-        self._fuse_jsons = []
 
         self._validator()
 
@@ -68,21 +71,35 @@ class EvalExecutor(object):
 
     @logger.catch
     def run(self, phase: str=EVAL_TASK_TYPE.ALL):
-        self._gen_version()
-        self._prepare_workdir()
-        self._extract_swmp()
-        self._gen_swds_fuse_json()
+        self._manifest["phase"] = phase
+
+        operations = [
+            (self._gen_version, 5, "gen version"),
+            (self._prepare_workdir, 5, "prepare workdir"),
+            (self._extract_swmp, 15, "extract swmp"),
+            (self._gen_swds_fuse_json, 10, "gen swds fuse json"),
+        ]
+
+        _ppl = (self._do_run_ppl, 70, "run ppl")
+        _cmp = (self._do_run_cmp, 70, "run cmp")
 
         if phase == EVAL_TASK_TYPE.ALL:
-            self._do_run_ppl()
-            self._do_run_cmp()
+            operations.extend([_ppl, _cmp])
         elif phase == EVAL_TASK_TYPE.PPL:
-            self._do_run_ppl()
+            operations.append(_ppl)
         elif phase == EVAL_TASK_TYPE.CMP:
-            self._do_run_cmp()
+            operations.append(_cmp)
 
         if phase != EVAL_TASK_TYPE.PPL and not self.gencmd:
-            self._render_report()
+            operations.append(
+                (self._render_report, 15, "render report")
+            )
+
+        operations.append(
+            (self._render_manifest, 5, "render manifest"),
+        )
+
+        run_with_progress_bar("eval run in local...", operations, self._console)
 
     def _gen_version(self) -> None:
         #TODO: abstract base class or mixin class for swmp/swds/
@@ -103,11 +120,12 @@ class EvalExecutor(object):
 
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
-        self._workdir = self._store.rootdir / "run" / "eval" / self._version
+        #TODO: fix _workdir sequence-depent issue
+        self._workdir = self._store.rootdir / "run" / "eval" / self._version[:2] /self._version
 
         ensure_dir(self._workdir)
         for _w in (self._ppl_workdir, self._cmp_workdir):
-            for _n in ("result", "log", "status", "config"):
+            for _n in _RUN_SUBDIR:
                 ensure_dir(_w / _n)
 
         logger.info(f"[step:prepare]eval workdir: {self._workdir}")
@@ -116,17 +134,22 @@ class EvalExecutor(object):
         self._model_dir = ModelPackageLocalStore().extract(self.model)
 
     def _gen_swds_fuse_json(self) -> Path:
+        _fuse_jsons = []
         for ds in self.datasets:
             fname = DataSet.render_fuse_json(ds, force=False)
-            self._fuse_jsons.append(fname)
-            logger.debug(f"[gen fuse.json]{fname}")
+            _fuse_jsons.append(fname)
+            logger.debug(f"[gen fuse input.json]{fname}")
 
-        _base = json.load(open(self._fuse_jsons[0], "r"))
-        for _f in self._fuse_jsons[0:]:
+        _base = json.load(open(_fuse_jsons[0], "r"))
+        for _f in _fuse_jsons[0:]:
             _config = json.load(open(_f, "r"))
             _base["swds"].extend(_config["swds"])
 
-        _f = self._workdir / EVAL_TASK_TYPE.PPL / "config" / DEFAULT_INPUT_JSON_FNAME
+        _bucket = f"{_CNTR_WORKDIR}/{_RUN_SUBDIR.DATASET}"
+        for i in range(len(_base["swds"])):
+            _base["swds"][i]["bucket"] = _bucket
+
+        _f = self._workdir / EVAL_TASK_TYPE.PPL / _RUN_SUBDIR.CONFIG / DEFAULT_INPUT_JSON_FNAME
         ensure_file(_f, json.dumps(_base, indent=JSON_INDENT))
         return _f
 
@@ -136,14 +159,14 @@ class EvalExecutor(object):
             kind=DATA_LOADER_KIND.JSONL,
             swds=[
                 dict(
-                    bucket= str((self._workdir / EVAL_TASK_TYPE.PPL / "result").resolve()),
+                    bucket= f"{_CNTR_WORKDIR}/{_RUN_SUBDIR.PPL_RESULT}",
                     key=dict(
                         data="current",
                     )
                 )
             ]
         )
-        _f = self._workdir / EVAL_TASK_TYPE.CMP / "config" / DEFAULT_INPUT_JSON_FNAME
+        _f = self._workdir / EVAL_TASK_TYPE.CMP / _RUN_SUBDIR.CONFIG / DEFAULT_INPUT_JSON_FNAME
         ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
         return _f
 
@@ -159,7 +182,7 @@ class EvalExecutor(object):
         logger.info(f"[run {typ}] docker run command output...")
         self._console.rule(f":elephant: {typ} docker cmd", align="left")
         self._console.print(f"{cmd}\n")
-        self._console.print(f":fish: eval run dir @ [green blink]{self._workdir}/{typ}[/]")
+        self._console.print(f":fish: eval run:{typ} dir @ [green blink]{self._workdir}/{typ}[/]")
         if not self.gencmd:
             check_call(cmd, shell=True)
 
@@ -167,14 +190,18 @@ class EvalExecutor(object):
         if typ not in (EVAL_TASK_TYPE.PPL, EVAL_TASK_TYPE.CMP):
             raise Exception(f"no support {typ} to gen docker cmd")
 
-        rootdir = "/opt/starwhale"
         rundir = self._workdir / typ
 
-        cmd = ["docker", "run", "-it", "--net=host"]
+        cmd = ["docker", "run", "--net=host"]
         cmd += [
-            "-v", f"{rundir}:{rootdir}",
-            "-v", f"{self._model_dir}:{rootdir}/swmp",
+            "-v", f"{rundir}:{_CNTR_WORKDIR}",
+            "-v", f"{self._model_dir}:{_CNTR_WORKDIR}/{_RUN_SUBDIR.SWMP}",
         ]
+
+        if typ == EVAL_TASK_TYPE.PPL:
+            cmd += ["-v", f"{self._store.dataset_dir}:{_CNTR_WORKDIR}/{_RUN_SUBDIR.DATASET}"]
+        elif typ == EVAL_TASK_TYPE.CMP:
+            cmd += ["-v", f"{self._ppl_workdir / _RUN_SUBDIR.RESULT }:{_CNTR_WORKDIR}/{_RUN_SUBDIR.PPL_RESULT}"]
 
         if self.docker_verbose:
             cmd += ["-e", "DEBUG=1"]
@@ -201,10 +228,26 @@ class EvalExecutor(object):
     def _render_report(self) -> None:
         from starwhale.cluster.view import ClusterView
         _cv = ClusterView()
-        _f = self._cmp_workdir / "result" / "current"
+        _f = self._cmp_workdir / _RUN_SUBDIR.RESULT / "current"
 
         with jsonlines.open(str(_f.resolve()), "r") as _reader:
             for _report in _reader:
                 if not _report or not isinstance(_report, dict):
                     continue
                 _cv.render_job_report(self._console, _report)
+
+        self._console.rule("[bold green]More Details[/]")
+        self._console.print(f":helicopter: eval version: [green]{self._version}[/], :hedgehog: workdir: {self._workdir.resolve()} \n")
+
+    def _render_manifest(self):
+        self._manifest.update(
+            dict(
+                name=self.name,
+                desc=self.desc,
+                model=self.model,
+                datasets=self.datasets,
+                baseimage=self.baseimage,
+            )
+        )
+        _f = self._workdir / DEFAULT_MANIFEST_NAME
+        ensure_file(_f, yaml.dump(self._manifest, default_flow_style=False))

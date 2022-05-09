@@ -179,7 +179,7 @@ class ModelPackageLocalStore(LocalStorage):
             _target = self.workdir / _name / _version
 
         if _target.exists() and (_target / DEFAULT_MANIFEST_NAME).exists() and not force:
-            self.console.print(f":joy_cat: {_target} existed, skip extract swmp")
+            self.console.print(f":joy_cat: {swmp} existed, skip extract swmp")
         else:
             empty_dir(_target)
             ensure_dir(_target)

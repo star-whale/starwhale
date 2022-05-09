@@ -341,15 +341,16 @@ class DataSet(object):
 
         ds_name = _manifest["name"]
         ds_version = _manifest["version"]
-        bucket = str((self.workdir / "data").resolve())
+        bucket = str((self._store.dataset_dir).resolve())
         swds_bins = [_k for _k in _manifest["signature"].keys() if _k.startswith("data_") and _k.endswith(SWDS_SUBFILE_TYPE.BIN)]
+        path_prefix = f"{ds_name}/{ds_version}/data"
         for idx in range(0, len(swds_bins)):
             _fuse["swds"].append(
                 dict(
                     bucket=bucket,
                     key=dict(
-                        data=SWDS_DATA_FNAME_FMT.format(index=idx),
-                        label=SWDS_LABEL_FNAME_FMT.format(index=idx),
+                        data=f"{path_prefix}/{SWDS_DATA_FNAME_FMT.format(index=idx)}",
+                        label=f"{path_prefix}/{SWDS_LABEL_FNAME_FMT.format(index=idx)}",
                         #TODO: add extra_attr ds_name, ds_versoin
                     ),
                     ext_attr=dict(
