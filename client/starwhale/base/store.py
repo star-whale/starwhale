@@ -4,10 +4,10 @@ from collections import namedtuple
 from abc import ABCMeta, abstractmethod
 
 from rich import box
-from rich.console import Console
 from rich.table import Table
 
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.utils import console
 
 
 class LocalStorage(SWCliConfigMixed):
@@ -18,7 +18,7 @@ class LocalStorage(SWCliConfigMixed):
 
     def __init__(self, swcli_config: t.Union[dict, None] = None) -> None:
         super().__init__(swcli_config)
-        self.console = Console()
+        self._console = console
 
     def _parse_swobj(self, sw_name:str) -> t.Tuple[str, str]:
         if ":" not in sw_name:

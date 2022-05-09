@@ -9,7 +9,11 @@ import platform
 import subprocess
 import typing as t
 
+from rich.console import Console
+
 from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX, PYTHON_RUN_ENV
+
+console = Console(soft_wrap=True)
 
 
 def gen_uniq_version(feature: str = "") -> str:

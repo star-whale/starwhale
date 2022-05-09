@@ -7,16 +7,14 @@ from datetime import datetime
 from pathlib import Path
 import jsonlines
 
-from rich.console import Console
 from loguru import logger
-from starwhale.utils import gen_uniq_version
 
+from starwhale.utils import gen_uniq_version, console
 from .store import EvalLocalStorage
 from starwhale.consts import (
     DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, DEFAULT_MANIFEST_NAME, FMT_DATETIME,
     JSON_INDENT, SWDS_BACKEND_TYPE,
 )
-
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
 from starwhale.swds.dataset import DataSet
@@ -47,7 +45,7 @@ class EvalExecutor(object):
         self.docker_verbose = docker_verbose
         self._store = EvalLocalStorage()
 
-        self._console = Console()
+        self._console = console
         self._version = ""
         self._manifest = {}
         self._workdir = Path()
@@ -234,7 +232,7 @@ class EvalExecutor(object):
             for _report in _reader:
                 if not _report or not isinstance(_report, dict):
                     continue
-                _cv.render_job_report(self._console, _report)
+                _cv.render_job_report(_report)
 
         self._console.rule("[bold green]More Details[/]")
         self._console.print(f":helicopter: eval version: [green]{self._version}[/], :hedgehog: workdir: {self._workdir.resolve()} \n")

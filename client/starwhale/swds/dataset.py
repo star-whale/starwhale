@@ -11,7 +11,6 @@ from loguru import logger
 from fs import open_fs
 from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
-from rich.console import Console
 from rich import print as rprint
 
 from starwhale.utils.fs import (
@@ -20,7 +19,7 @@ from starwhale.utils.fs import (
 )
 from starwhale import __version__
 from starwhale.utils import (
-    convert_to_bytes, gen_uniq_version
+    convert_to_bytes, gen_uniq_version, console
 )
 from starwhale.utils.load import import_cls
 from starwhale.utils.venv import SUPPORTED_PIP_REQ, dump_python_dep_env, detect_pip_req
@@ -129,7 +128,7 @@ class DataSet(object):
         self._name = self._swds_config.name
         self._version = ds_version
         self._manifest = {}
-        self.console = Console()
+        self._console = console
         self._store = DataSetLocalStore()
 
         self._validator()
@@ -160,11 +159,11 @@ class DataSet(object):
            (self._render_manifest, 5, "render manifest"),
            (self._make_swds_meta_tar, 15, "make meta tar"),
         ]
-        run_with_progress_bar("swds building...", operations, self.console)
+        run_with_progress_bar("swds building...", operations, self._console)
 
     def _copy_src(self) -> None:
         logger.info(f"[step:copy]start to copy src {self.workdir} -> {self._src_dir}")
-        self.console.print(":thumbs_up: try to copy source code files...")
+        self._console.print(":thumbs_up: try to copy source code files...")
         workdir_fs = open_fs(str(self.workdir.absolute()))
         src_fs = open_fs(str(self._src_dir.absolute()))
         snapshot_fs = open_fs(str(self._snapshot_workdir.absolute()))
@@ -190,7 +189,7 @@ class DataSet(object):
             tar.add(str(_w / DEFAULT_DATASET_YAML_NAME))
 
         logger.info(f"[step:tar]finish to make swmp_meta tar")
-        self.console.print(f":hibiscus: congratulation! you can run [red bold blink] swcli dataset info {self._name}:{self._version}[/]")
+        self._console.print(f":hibiscus: congratulation! you can run [red bold blink] swcli dataset info {self._name}:{self._version}[/]")
 
     def _calculate_signature(self) -> None:
         _algo = BLAKE2B_SIGNATURE_ALGO
@@ -198,7 +197,7 @@ class DataSet(object):
         total_size = 0
 
         logger.info(f"[step:signature]try to calculate signature with {_algo} @ {self._data_dir}")
-        self.console.print(f":robot: calculate signature...")
+        self._console.print(f":robot: calculate signature...")
 
         #TODO: _cal(self._snapshot_workdir / ARCHIVE_SWDS_META) # add meta sign into _manifest.yaml
         for f in self._data_dir.iterdir():
@@ -220,7 +219,7 @@ class DataSet(object):
             dep_dir=self._snapshot_workdir / "dep",
             pip_req_fpath=detect_pip_req(self.workdir, self._swds_config.pip_req),
             skip_gen_env=True,  #TODO: add venv dump?
-            console=self.console,
+            console=self._console,
         )
 
         self._manifest["dep"] = _manifest
@@ -246,7 +245,7 @@ class DataSet(object):
              alignment_bytes_size=_sw.attr.alignment_size,
              volume_bytes_size=_sw.attr.volume_size,
         )
-        self.console.print(f":ghost: import [red]{_obj}[/] to make swds...")
+        self._console.print(f":ghost: import [red]{_obj}[/] to make swds...")
         if self._swds_config.mode == DS_PROCESS_MODE.GENERATE:
             logger.info("[info:swds]do make swds_bin job...")
             _obj.make_swds()
@@ -279,7 +278,7 @@ class DataSet(object):
         self._manifest["version"] = self._version
         self._manifest["created_at"] = datetime.now().astimezone().strftime(FMT_DATETIME)
         logger.info(f"[step:version] dataset swds version: {self._version}")
-        self.console.print(f":new: swmp version {self._version[:SHORT_VERSION_CNT]}")
+        self._console.print(f":new: swmp version {self._version[:SHORT_VERSION_CNT]}")
         return self._version
 
     def _prepare_snapshot(self) -> None:
@@ -294,7 +293,7 @@ class DataSet(object):
         ensure_dir(self._docker_dir)
 
         logger.info(f"[step:prepare-snapshot]swds snapshot workdir: {self._snapshot_workdir}")
-        self.console.print(f":file_folder: swmp workdir: [underline]{self._snapshot_workdir}[/]")
+        self._console.print(f":file_folder: swmp workdir: [underline]{self._snapshot_workdir}[/]")
 
     @property
     def _data_dir(self):
@@ -362,12 +361,12 @@ class DataSet(object):
 
         _f = self.workdir / LOCAL_FUSE_JSON_NAME
         if _f.exists() and not force:
-            self.console.print(f":joy_cat: {LOCAL_FUSE_JSON_NAME} existed, skip render")
+            self._console.print(f":joy_cat: {LOCAL_FUSE_JSON_NAME} existed, skip render")
         else:
             ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
-            self.console.print(f":clap: render swds {ds_name}:{ds_version} {LOCAL_FUSE_JSON_NAME}")
+            self._console.print(f":clap: render swds {ds_name}:{ds_version} {LOCAL_FUSE_JSON_NAME}")
 
-        self.console.print(f":mag: {_f}")
+        self._console.print(f":mag: {_f}")
         return str(_f.resolve())
 
     @classmethod

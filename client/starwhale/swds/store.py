@@ -6,7 +6,6 @@ import typing as t
 
 import click
 import requests
-from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
 from rich import print as rprint
@@ -19,7 +18,7 @@ from starwhale.consts import (
 )
 from starwhale.utils.http import wrap_sw_error_resp, upload_file
 from starwhale.utils.fs import empty_dir
-from starwhale.utils import pretty_bytes
+from starwhale.utils import pretty_bytes, console
 from starwhale.utils.error import NotFoundError
 
 #TODO: refactor Dataset and ModelPackage LocalStorage
@@ -140,7 +139,7 @@ class DataSetLocalStore(LocalStorage):
     def info(self, sw_name: str) -> None:
         _manifest = self._do_get_info(*self._parse_swobj(sw_name))
         _config_panel = Panel(Pretty(_manifest, expand_all=True), title="inspect _manifest.yaml and dataset.yaml info")
-        Console().print(_config_panel)
+        self._console.print(_config_panel)
         #TODO: show dataset dir tree view
 
     def _do_get_info(self, _name: str, _version: str) -> dict:

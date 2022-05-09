@@ -118,7 +118,7 @@ class ModelPackageLocalStore(LocalStorage):
     def info(self, swmp: str) -> None:
         _manifest = self.get_swmp_info(*self._parse_swobj(swmp))
         _config_panel = Panel(Pretty(_manifest, expand_all=True), title="inspect _manifest.yaml / model.yaml info")
-        self.console.print(_config_panel)
+        self._console.print(_config_panel)
         #TODO: add workdir tree
 
     def get_swmp_info(self, _name: str, _version: str) -> dict:
@@ -179,11 +179,11 @@ class ModelPackageLocalStore(LocalStorage):
             _target = self.workdir / _name / _version
 
         if _target.exists() and (_target / DEFAULT_MANIFEST_NAME).exists() and not force:
-            self.console.print(f":joy_cat: {swmp} existed, skip extract swmp")
+            self._console.print(f":joy_cat: {swmp} existed, skip extract swmp")
         else:
             empty_dir(_target)
             ensure_dir(_target)
-            self.console.print(":oncoming_police_car: try to extract swmp...")
+            self._console.print(":oncoming_police_car: try to extract swmp...")
             _swmp_path = self._get_swmp_path(swmp)
             with tarfile.open(_swmp_path, "r") as tar:
                 tar.extractall(path=str(_target.resolve()))
@@ -191,7 +191,7 @@ class ModelPackageLocalStore(LocalStorage):
         if not (_target / DEFAULT_MANIFEST_NAME).exists():
             raise Exception("invalid swmp model dir")
 
-        self.console.print(f":clap: extracted-swmp @ {_target.resolve()}")
+        self._console.print(f":clap: extracted-swmp @ {_target.resolve()}")
         return _target
 
     def _get_swmp_path(self, swmp: str) -> Path:

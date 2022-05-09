@@ -10,13 +10,12 @@ from loguru import logger
 from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
 from fs import open_fs
-from rich.console import Console
 
 from starwhale import __version__
 from starwhale.utils.error import (
     FileTypeError, FileFormatError, NotFoundError
 )
-from starwhale.utils import gen_uniq_version
+from starwhale.utils import gen_uniq_version, console
 from starwhale.utils.fs import ensure_dir, ensure_file, ensure_link
 from starwhale.utils.venv import (
     detect_pip_req, dump_python_dep_env, SUPPORTED_PIP_REQ
@@ -123,7 +122,7 @@ class ModelPackage(object):
         self._snapshot = None
         self._name = self._swmp_config.name
         self._manifest = {} #TODO: use manifest classget_conda_env
-        self._console = Console(record=True)
+        self._console = console
 
         self._load_config_envs()
 

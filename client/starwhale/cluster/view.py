@@ -2,10 +2,7 @@
 import typing as t
 from functools import wraps
 
-from loguru import logger
-from numpy import isin
-from rich.layout import Layout
-from rich.console import Console, RenderableType
+from rich.console import RenderableType
 from rich import print as rprint
 from rich.panel import Panel
 from rich.table import Table
@@ -13,7 +10,7 @@ from rich.tree import Tree
 from rich import box
 
 from .model import ClusterModel, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE, PROJECT_OBJ_TYPE
-from starwhale.utils import pretty_bytes
+from starwhale.utils import pretty_bytes, console
 
 
 #TODO: use model-view-control mode to refactor Cluster
@@ -62,7 +59,6 @@ class ClusterView(ClusterModel):
     @_pager #type: ignore
     @_header #type: ignore
     def info_job(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
-        console = Console()
         tasks, pager = self._fetch_tasks(project, job, page, size)
         report = self._fetch_job_report(project, job)
 
@@ -92,11 +88,11 @@ class ClusterView(ClusterModel):
             console.print(table)
 
         _print_tasks()
-        self.render_job_report(console, report)
+        self.render_job_report(report)
 
         return tasks, pager
 
-    def render_job_report(self, console: Console, report: dict) -> None:
+    def render_job_report(self, report: dict) -> None:
         labels: dict = report.get("labels", {})
         sort_label_names = sorted(list(labels.keys()))
 
