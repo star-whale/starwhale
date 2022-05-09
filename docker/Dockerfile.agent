@@ -30,9 +30,20 @@ ENV CUDA_VERSION 11.4.0
 ENV NV_ML_REPO_ENABLED 1
 ENV NV_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
 
-RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH}/7fa2af80.pub | apt-key add - \
-    && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list \
-    && if [ ! -z ${NV_ML_REPO_ENABLED} ]; then echo "deb ${NV_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi \
+#RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH}/7fa2af80.pub | apt-key add - \
+#    && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list \
+#    && if [ ! -z ${NV_ML_REPO_ENABLED} ]; then echo "deb ${NV_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi \
+#    && apt-get update \
+#    && apt-get install -y --no-install-recommends cuda-cudart-11-4=${NV_CUDA_CUDART_VERSION} ${NV_CUDA_COMPAT_PACKAGE} \
+#    && ln -s cuda-11.4 /usr/local/cuda \
+#    && apt-get clean all \
+#    && rm -rf /var/lib/apt/lists/* /tmp/*
+
+## wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb |
+COPY external/cuda-keyring_1.0-1_all.deb cuda-keyring_1.0-1_all.deb
+RUN apt install -y --no-install-recommends dirmngr \
+    && dpkg -i cuda-keyring_1.0-1_all.deb \
+    && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub \
     && apt-get update \
     && apt-get install -y --no-install-recommends cuda-cudart-11-4=${NV_CUDA_CUDART_VERSION} ${NV_CUDA_COMPAT_PACKAGE} \
     && ln -s cuda-11.4 /usr/local/cuda \
@@ -51,6 +62,6 @@ ENV JAVA_JAR=agent
 WORKDIR /opt/starwhale.java
 # java jar
 COPY jar/agent.jar agent.jar
-#COPY jar/controller.jar controller.jar
+COPY jar/controller.jar controller.jar
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_AGENT_OPTS -jar $JAVA_JAR.jar"]
