@@ -9,7 +9,7 @@ import requests
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.consts import SW_API_VERSION, HTTP_METHOD
 from starwhale.utils.http import wrap_sw_error_resp, ignore_error
-from starwhale.consts import FMT_DATETIME
+from starwhale.consts import FMT_DATETIME, SHORT_VERSION_CNT
 
 _DEFAULT_TIMEOUT_SECS = 90
 
@@ -17,7 +17,6 @@ _DEFAULT_TIMEOUT_SECS = 90
 _SHOW_ALL = 100
 DEFAULT_PAGE_NUM = 1
 DEFAULT_PAGE_SIZE = 20
-SHORT_VERSION_CNT = 12
 
 _fmt_timestamp = lambda x: datetime.fromtimestamp(float(x) / 1000.0).strftime(FMT_DATETIME)
 _fmt_duration = lambda x: str(timedelta(milliseconds=float(x)))

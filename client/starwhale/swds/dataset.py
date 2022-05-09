@@ -5,13 +5,12 @@ from pathlib import Path
 from collections import namedtuple
 from datetime import datetime
 import platform
-import importlib
-import sys
 
 from loguru import logger
 from fs import open_fs
 from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
+from rich.console import Console
 
 from starwhale.utils.fs import (
     ensure_dir, ensure_file, blake2b_file,
@@ -27,9 +26,10 @@ from starwhale.utils.error import FileTypeError, NoSupportError
 from starwhale.consts import (
     DEFAULT_STARWHALE_API_VERSION, FMT_DATETIME,
     DEFAULT_MANIFEST_NAME, DEFAULT_DATASET_YAML_NAME,
-    DEFAULT_COPY_WORKERS
+    DEFAULT_COPY_WORKERS, SHORT_VERSION_CNT,
 )
 from starwhale.utils.config import load_swcli_config
+from starwhale.utils.progress import run_with_progress_bar
 
 
 DS_PROCESS_MODE = namedtuple("DS_PROCESS_MODE", ["DEFINE", "GENERATE"])(
@@ -124,6 +124,7 @@ class DataSet(object):
         self._name = self._swds_config.name
         self._version = ""
         self._manifest = {}
+        self.console = Console()
 
     def __str__(self) -> str:
         return f"DataSet {self._name}"
@@ -144,18 +145,22 @@ class DataSet(object):
         #TODO: design dataset layer mechanism
         #TODO: design append some new data into existed dataset
         #TODO: design uniq build steps for model build, swmp build
-        #TODO: tune output log
-        self._gen_version()
-        self._prepare_snapshot()
-        self._copy_src()
-        self._call_make_swds()
-        self._dump_dep()
-        self._calculate_signature()
-        self._render_manifest()
-        self._make_swds_meta_tar()
+
+        operations = [
+           (self._gen_version, 5, "gen version"),
+           (self._prepare_snapshot, 5, "prepare snapshot"),
+           (self._copy_src, 15, "copy src"),
+           (self._call_make_swds, 30, "make swds"),
+           (self._dump_dep, 30, "dump dep"),
+           (self._calculate_signature, 5, "calculate signature"),
+           (self._render_manifest, 5, "render manifest"),
+           (self._make_swds_meta_tar, 15, "make meta tar"),
+        ]
+        run_with_progress_bar("swds building...", operations, self.console)
 
     def _copy_src(self) -> None:
         logger.info(f"[step:copy]start to copy src {self.workdir} -> {self._src_dir}")
+        self.console.print(":thumbs_up: try to copy source code files...")
         workdir_fs = open_fs(str(self.workdir.absolute()))
         src_fs = open_fs(str(self._src_dir.absolute()))
         snapshot_fs = open_fs(str(self._snapshot_workdir.absolute()))
@@ -181,6 +186,7 @@ class DataSet(object):
             tar.add(str(_w / DEFAULT_DATASET_YAML_NAME))
 
         logger.info(f"[step:tar]finish to make swmp_meta tar")
+        self.console.print(f":hibiscus: congratulation! you can run [red bold blink] swcli dataset info {self._name}:{self._version}[/]")
 
     def _calculate_signature(self) -> None:
         _algo = BLAKE2B_SIGNATURE_ALGO
@@ -188,6 +194,7 @@ class DataSet(object):
         total_size = 0
 
         logger.info(f"[step:signature]try to calculate signature with {_algo} @ {self._data_dir}")
+        self.console.print(f":robot: calculate signature...")
 
         #TODO: _cal(self._snapshot_workdir / ARCHIVE_SWDS_META) # add meta sign into _manifest.yaml
         for f in self._data_dir.iterdir():
@@ -209,6 +216,7 @@ class DataSet(object):
             dep_dir=self._snapshot_workdir / "dep",
             pip_req_fpath=detect_pip_req(self.workdir, self._swds_config.pip_req),
             skip_gen_env=True,  #TODO: add venv dump?
+            console=self.console,
         )
 
         self._manifest["dep"] = _manifest
@@ -234,6 +242,7 @@ class DataSet(object):
              alignment_bytes_size=_sw.attr.alignment_size,
              volume_bytes_size=_sw.attr.volume_size,
         )
+        self.console.print(f":ghost: import [red]{_obj}[/] to make swds...")
         if self._swds_config.mode == DS_PROCESS_MODE.GENERATE:
             logger.info("[info:swds]do make swds_bin job...")
             _obj.make_swds()
@@ -266,6 +275,7 @@ class DataSet(object):
         self._manifest["version"] = self._version
         self._manifest["created_at"] = datetime.now().astimezone().strftime(FMT_DATETIME)
         logger.info(f"[step:version] dataset swds version: {self._version}")
+        self.console.print(f":new: swmp version {self._version[:SHORT_VERSION_CNT]}")
         return self._version
 
     def _prepare_snapshot(self) -> None:
@@ -280,6 +290,7 @@ class DataSet(object):
         ensure_dir(self._docker_dir)
 
         logger.info(f"[step:prepare-snapshot]swds snapshot workdir: {self._snapshot_workdir}")
+        self.console.print(f":file_folder: swmp workdir: [underline]{self._snapshot_workdir}[/]")
 
     @property
     def _data_dir(self):
