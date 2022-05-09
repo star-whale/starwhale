@@ -11,17 +11,20 @@
     <select id="listSWDSVersionsByJobId" resultMap="ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper.dsVersionResultMap">
         select dsv.id as dsv_id,
                dataset_id,
-               owner_id,
+               dsv.owner_id,
                version_name as dsv_version_name,
+               ds.dataset_name as ds_dataset_name,
                version_tag as dsv_version_tag,
                version_meta as dsv_version_meta,
                storage_path as dsv_storage_path,
                dsv.created_time as dsv_created_time,
                dsv.modified_time as dsv_modified_time
         from dataset_version as dsv,
+             dataset_info as ds,
              job_dataset_version_rel as rel
         where rel.job_id = #{jobId}
           and rel.dataset_version_id = dsv.id
+          and ds.id = dsv.dataset_id
     </select>
 
     <insert id="addJobSWDSVersions" >

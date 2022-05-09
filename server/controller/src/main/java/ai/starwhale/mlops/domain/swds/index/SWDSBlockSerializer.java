@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.swds.index;
 
+import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
@@ -37,21 +38,21 @@ public class SWDSBlockSerializer {
         this.objectMapper = objectMapper;
     }
 
-    public List<SWDSBlock> fromString(String str) throws JsonProcessingException {
+    public List<SWDSBlockVO> fromString(String str) throws JsonProcessingException {
         final String[] lines = str.split(TOKEN_LINE);
-        List<SWDSBlock> result = new LinkedList<>();
+        List<SWDSBlockVO> result = new LinkedList<>();
         for(String line:lines){
-            result.add(objectMapper.readValue(line,SWDSBlock.class));
+            result.add(objectMapper.readValue(line,SWDSBlockVO.class));
         }
         return result;
     }
 
-    public String toString(List<SWDSBlock> swdsBlocks) throws JsonProcessingException {
+    public String toString(List<SWDSBlockVO> swdsBlocks) throws JsonProcessingException {
         if(null == swdsBlocks || swdsBlocks.size() ==0){
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        for (SWDSBlock swdsBlock : swdsBlocks) {
+        for (SWDSBlockVO swdsBlock : swdsBlocks) {
             sb.append(objectMapper.writeValueAsString(swdsBlock));
             sb.append(TOKEN_LINE);
         }

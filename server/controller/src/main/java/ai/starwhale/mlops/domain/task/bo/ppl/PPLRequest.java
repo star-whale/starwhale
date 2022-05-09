@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.task.bo.ppl;
 
-import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
+import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -31,7 +31,7 @@ public class PPLRequest extends TaskRequest {
     /**
      * blocks may come from different SWDS
      */
-    private List<SWDSBlock> swdsBlocks;
+    private List<SWDSBlockVO> swdsBlocks;
 
     @Override
     public TaskRequest deepCopy() {

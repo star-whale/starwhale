@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.api.protocol.report.resp;
 
 import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
 
@@ -61,7 +60,7 @@ public class TaskTrigger {
     /**
      * blocks may come from different SWDS
      */
-    private List<SWDSBlock> swdsBlocks;
+    private List<SWDSBlockVO> swdsBlocks;
 
     private Integer deviceAmount;
 

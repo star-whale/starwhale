@@ -23,7 +23,7 @@ _DATA_LOADER_KIND = namedtuple("_DATA_LOADER_KIND", ["SWDS", "JSONL"])(
 _CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 _FILE_END_POS = -1
 
-DATA_FIELD = namedtuple("DATA_FIELD", ["index", "data_size", "batch_size", "data"])
+DATA_FIELD = namedtuple("DATA_FIELD", ["index", "data_size", "batch_size", "data", "ext_attr"])
 
 
 #TODO: use attr to simplify code
@@ -92,12 +92,12 @@ class SWDSDataLoader(DataLoader):
     def __iter__(self):
         for _swds in self.swds:
             for data, label in zip(
-                self._do_iter(_swds["bucket"], _swds["key"]["data"]),
-                self._do_iter(_swds["bucket"], _swds["key"]["label"])
+                self._do_iter(_swds["bucket"], _swds["key"]["data"], _swds.get('ext_attr', {})),
+                self._do_iter(_swds["bucket"], _swds["key"]["label"], _swds.get('ext_attr', {}))
             ):
                 yield data, label
 
-    def _do_iter(self, bucket: str, key_compose: str) -> t.Iterator[DATA_FIELD]:
+    def _do_iter(self, bucket: str, key_compose: str, ext_attr: dict) -> t.Iterator[DATA_FIELD]:
         from .dataset import _header_struct, _header_size
 
         self.logger.info(f"@{bucket}/{key_compose}")
@@ -109,7 +109,8 @@ class SWDSDataLoader(DataLoader):
             _, _, idx, size, padding_size, batch, _ = _header_struct.unpack(header)
             data = _file.read(size + padding_size)
             yield DATA_FIELD(idx, size, batch,
-                             data[:size].tobytes() if isinstance(data, memoryview) else data[:size])
+                             data[:size].tobytes() if isinstance(data, memoryview) else data[:size],
+                             ext_attr)
 
 
 class StorageBackend(object):

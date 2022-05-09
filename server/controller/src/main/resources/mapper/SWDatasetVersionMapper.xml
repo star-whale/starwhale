@@ -10,7 +10,7 @@
     <sql id="select_swds_version">
         select dsv.id as dsv_id,
                dataset_id,
-               owner_id,
+               dsv.owner_id,
                version_name as dsv_version_name,
                version_tag as dsv_version_tag,
                version_meta as dsv_version_meta,
@@ -18,6 +18,7 @@
                status as status,
                dsv.created_time as dsv_created_time,
                dsv.modified_time as dsv_modified_time,
+               ds.dataset_name as ds_dataset_name,
                u.id as user_id,
                u.user_name,
                u.created_time as user_created_time,
@@ -26,10 +27,12 @@
                r.role_name,
                r.role_name_en
         from dataset_version as dsv,
+             dataset_info as ds,
              user_info as u,
              user_role as r
-        where owner_id = u.id
+        where dsv.owner_id = u.id
           and r.id = u.role_id
+          and ds.id = dsv.dataset_id
     </sql>
 
     <select id="listVersions" resultMap="dsVersionResultMap" >
@@ -107,6 +110,7 @@
         <id property="id" column="dsv_id" />
         <result property="datasetId" column="dataset_id" />
         <result property="versionName" column="dsv_version_name" />
+        <result property="datasetName" column="ds_dataset_name" />
         <result property="versionTag" column="dsv_version_tag" />
         <result property="versionMeta" column="dsv_version_meta" />
         <result property="storagePath" column="dsv_storage_path" />

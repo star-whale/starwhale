@@ -20,9 +20,9 @@ import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
 import ai.starwhale.mlops.api.protocol.report.req.TaskLog;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskType;
 import lombok.Builder;
@@ -90,7 +90,7 @@ public class InferenceTask {
     /**
      * input information at ppl stage: SWDS(blocks may come from different SWDS)、device info
      */
-    List<SWDSBlock> swdsBlocks;
+    List<SWDSBlockVO> swdsBlocks;
 
     Integer deviceAmount;
 
