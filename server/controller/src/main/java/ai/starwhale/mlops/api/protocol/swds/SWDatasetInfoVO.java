@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.swmp;
+package ai.starwhale.mlops.api.protocol.swds;
 
 import ai.starwhale.mlops.api.protocol.StorageFileVO;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -29,12 +29,12 @@ import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@Schema(description = "SWModelPackage information object", title = "ModelInfo")
+@Schema(description = "SWDataset information object", title = "DatasetInfo")
 @Validated
-public class SWModelPackageInfoVO implements Serializable {
+public class SWDatasetInfoVO implements Serializable {
 
-    @JsonProperty("swmpName")
-    private String swmpName;
+    @JsonProperty("swdsName")
+    private String swdsName;
 
     @JsonProperty("versionName")
     private String versionName;
@@ -52,8 +52,8 @@ public class SWModelPackageInfoVO implements Serializable {
     @Valid
     private List<StorageFileVO> files;
 
-    public static SWModelPackageInfoVO empty() {
-        return new SWModelPackageInfoVO("", "", "", "", 0L , new ArrayList<>());
+    public static SWDatasetInfoVO empty() {
+        return new SWDatasetInfoVO("", "", "", "", 0L , new ArrayList<>());
     }
 
 }

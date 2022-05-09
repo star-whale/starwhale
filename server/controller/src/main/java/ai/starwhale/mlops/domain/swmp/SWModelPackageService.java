@@ -16,9 +16,9 @@
 
 package ai.starwhale.mlops.domain.swmp;
 
+import ai.starwhale.mlops.api.protocol.StorageFileVO;
 import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
-import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO.ModelFile;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
@@ -27,6 +27,7 @@ import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
@@ -42,16 +43,12 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -84,6 +81,9 @@ public class SWModelPackageService {
 
     @Resource
     private StorageAccessService storageAccessService;
+
+    @Resource
+    private StorageService storageService;
 
     @Resource
     private UserService userService;
@@ -138,26 +138,13 @@ public class SWModelPackageService {
         //Get file list in storage
         try {
             String storagePath = versionEntity.getStoragePath();
-            Stream<String> list = storageAccessService.list(storagePath);
-            List<ModelFile> collect = list.map(filePath -> {
-                long length = 0L;
-                try {
-                    StorageObjectInfo info = storageAccessService.head(filePath);
-                    length = info.getContentLength();
-                } catch (IOException e) {
-                    log.error("storage head", e);
-                }
-                if (StrUtil.startWith(filePath, storagePath)) {
-                    filePath = filePath.substring(0, storagePath.length());
-                }
-                return ModelFile.builder()
-                    .name(filePath)
-                    .size(FileUtil.readableFileSize(length))
-                    .build();
-            }).collect(Collectors.toList());
+            List<StorageFileVO> collect = storageService.listStorageFile(storagePath);
 
             return SWModelPackageInfoVO.builder()
-                .modelName(model.getSwmpName())
+                .swmpName(model.getSwmpName())
+                .versionName(versionEntity.getVersionName())
+                .versionTag(versionEntity.getVersionTag())
+                .versionMeta(versionEntity.getVersionMeta())
                 .files(collect)
                 .build();
 

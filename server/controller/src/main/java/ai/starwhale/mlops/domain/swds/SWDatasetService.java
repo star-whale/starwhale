@@ -16,13 +16,16 @@
 
 package ai.starwhale.mlops.domain.swds;
 
+import ai.starwhale.mlops.api.protocol.StorageFileVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
+import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
@@ -31,8 +34,10 @@ import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.storage.StorageAccessService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -60,6 +65,12 @@ public class SWDatasetService {
     private SWDSVersionConvertor versionConvertor;
 
     @Resource
+    private StorageAccessService storageAccessService;
+
+    @Resource
+    private StorageService storageService;
+
+    @Resource
     private ProjectManager projectManager;
 
     public PageInfo<DatasetVO> listSWDataset(SWDSObject swds, PageParams pageParams) {
@@ -77,16 +88,39 @@ public class SWDatasetService {
         return res > 0;
     }
 
-    public DatasetVersionVO getSWDSInfo(SWDSObject swds) {
+    public SWDatasetInfoVO getSWDSInfo(SWDSObject swds) {
         Long dsID = idConvertor.revert(swds.getId());
+        SWDatasetEntity ds = swdsMapper.findDatasetById(dsID);
+        if(ds == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                .tip("Unable to find swds " + dsID), HttpStatus.BAD_REQUEST);
+        }
 
-        SWDatasetVersionEntity entity = swdsVersionMapper.getLatestVersion(dsID);
-        if(entity == null) {
+        SWDatasetVersionEntity versionEntity = swdsVersionMapper.getLatestVersion(dsID);
+        if(versionEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                 .tip("Unable to find the latest version of swmp " + dsID), HttpStatus.BAD_REQUEST);
         }
 
-        return versionConvertor.convert(entity);
+        //Get file list in storage
+        try {
+            String storagePath = versionEntity.getStoragePath();
+            List<StorageFileVO> collect = storageService.listStorageFile(storagePath);
+
+            return SWDatasetInfoVO.builder()
+                .swdsName(ds.getDatasetName())
+                .versionName(versionEntity.getVersionName())
+                .versionTag(versionEntity.getVersionTag())
+                .versionMeta(versionEntity.getVersionMeta())
+                .files(collect)
+                .build();
+
+        } catch (IOException e) {
+            log.error("list swds storage", e);
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE)
+                .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
     }
 
 
