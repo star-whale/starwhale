@@ -7,7 +7,6 @@ import tarfile
 
 import click
 import requests
-from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
 from rich import print as rprint
@@ -119,7 +118,7 @@ class ModelPackageLocalStore(LocalStorage):
     def info(self, swmp: str) -> None:
         _manifest = self.get_swmp_info(*self._parse_swobj(swmp))
         _config_panel = Panel(Pretty(_manifest, expand_all=True), title="inspect _manifest.yaml / model.yaml info")
-        Console().print(_config_panel)
+        self._console.print(_config_panel)
         #TODO: add workdir tree
 
     def get_swmp_info(self, _name: str, _version: str) -> dict:
@@ -172,9 +171,32 @@ class ModelPackageLocalStore(LocalStorage):
 
         _remove_workdir(_version)
 
-    def extract(self, swmp: str, force: bool=False) -> None:
-        #TODO: extract swmp into workdir
-        ...
+    def extract(self, swmp: str, force: bool=False, _target: t.Optional[Path]=None) -> Path:
+        _name, _version = swmp.split(":")
+        if _target:
+            _target = Path(_target) / _version
+        else:
+            _target = self.workdir / _name / _version
+
+        if _target.exists() and (_target / DEFAULT_MANIFEST_NAME).exists() and not force:
+            self._console.print(f":joy_cat: {swmp} existed, skip extract swmp")
+        else:
+            empty_dir(_target)
+            ensure_dir(_target)
+            self._console.print(":oncoming_police_car: try to extract swmp...")
+            _swmp_path = self._get_swmp_path(swmp)
+            with tarfile.open(_swmp_path, "r") as tar:
+                tar.extractall(path=str(_target.resolve()))
+
+        if not (_target / DEFAULT_MANIFEST_NAME).exists():
+            raise Exception("invalid swmp model dir")
+
+        self._console.print(f":clap: extracted-swmp @ {_target.resolve()}")
+        return _target
+
+    def _get_swmp_path(self, swmp: str) -> Path:
+        _name, _version = swmp.split(":")
+        return self.pkgdir / _name / f"{_version}.swmp"
 
     def pre_activate(self, swmp: str) -> None:
         if swmp.count(":") == 1:

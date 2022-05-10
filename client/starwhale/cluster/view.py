@@ -2,10 +2,7 @@
 import typing as t
 from functools import wraps
 
-from loguru import logger
-from numpy import isin
-from rich.layout import Layout
-from rich.console import Console, RenderableType
+from rich.console import RenderableType
 from rich import print as rprint
 from rich.panel import Panel
 from rich.table import Table
@@ -13,7 +10,7 @@ from rich.tree import Tree
 from rich import box
 
 from .model import ClusterModel, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE, PROJECT_OBJ_TYPE
-from starwhale.utils import pretty_bytes
+from starwhale.utils import pretty_bytes, console
 
 
 #TODO: use model-view-control mode to refactor Cluster
@@ -56,14 +53,14 @@ class ClusterView(ClusterModel):
             return func(*args, **kwargs) #type: ignore
         return _wrapper
 
+    def run_job(self, model: int, datasets: t.List[int], project: int, baseimage: int, resource: str, name: str, desc: str):
+        pass
+
     @_pager #type: ignore
     @_header #type: ignore
-    def inspect_job(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
-        console = Console()
+    def info_job(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
         tasks, pager = self._fetch_tasks(project, job, page, size)
         report = self._fetch_job_report(project, job)
-        labels: dict = report.get("labels", {})
-        sort_label_names = sorted(list(labels.keys()))
 
         def _print_tasks():
             table = Table(box=box.SIMPLE, expand=True)
@@ -89,6 +86,15 @@ class ClusterView(ClusterModel):
 
             console.rule(f"[bold green]Project({project} Job({job}) Tasks List")
             console.print(table)
+
+        _print_tasks()
+        self.render_job_report(report)
+
+        return tasks, pager
+
+    def render_job_report(self, report: dict) -> None:
+        labels: dict = report.get("labels", {})
+        sort_label_names = sorted(list(labels.keys()))
 
         def _print_report():
             #TODO: add other kind report
@@ -153,12 +159,9 @@ class ClusterView(ClusterModel):
             console.print(
                 self.comparsion(mtable, btable)
             )
-
-        _print_tasks()
         _print_report()
         _print_confusion_matrix()
 
-        return tasks, pager
 
     def _pretty_status(self, status: str) -> t.Tuple[str, str, str]:
         style = ""

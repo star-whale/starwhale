@@ -10,20 +10,19 @@ from loguru import logger
 from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
 from fs import open_fs
-from rich.console import Console
 
 from starwhale import __version__
 from starwhale.utils.error import (
     FileTypeError, FileFormatError, NotFoundError
 )
-from starwhale.utils import gen_uniq_version
+from starwhale.utils import gen_uniq_version, console, now_str
 from starwhale.utils.fs import ensure_dir, ensure_file, ensure_link
 from starwhale.utils.venv import (
     detect_pip_req, dump_python_dep_env, SUPPORTED_PIP_REQ
 )
 from starwhale.utils.load import import_cls
 from starwhale.consts import (
-    DEFAULT_STARWHALE_API_VERSION, FMT_DATETIME,
+    DEFAULT_STARWHALE_API_VERSION,
     DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME,
     DEFAULT_COPY_WORKERS, SHORT_VERSION_CNT
 )
@@ -123,7 +122,7 @@ class ModelPackage(object):
         self._snapshot = None
         self._name = self._swmp_config.name
         self._manifest = {} #TODO: use manifest classget_conda_env
-        self.console = Console(record=True)
+        self._console = console
 
         self._load_config_envs()
 
@@ -216,7 +215,7 @@ class ModelPackage(object):
             (self._render_manifest, 5, "render manifest"),
             (self._make_swmp_tar, 20, "build swmp"),
         ]
-        run_with_progress_bar("swmp building...", operations, self.console)
+        run_with_progress_bar("swmp building...", operations, self._console)
 
     def _gen_version(self) -> None:
         logger.info("[step:version]create swmp version...")
@@ -224,9 +223,9 @@ class ModelPackage(object):
             self._version = gen_uniq_version(self._swmp_config.name)
 
         self._manifest["version"] = self._version
-        self._manifest["created_at"] = datetime.now().astimezone().strftime(FMT_DATETIME)
+        self._manifest["created_at"] = now_str()
         logger.info(f"[step:version]swmp version is {self._version}")
-        self.console.print(f":new: swmp version {self._version[:SHORT_VERSION_CNT]}")
+        self._console.print(f":new: swmp version {self._version[:SHORT_VERSION_CNT]}")
 
     def _prepare_snapshot(self):
         logger.info("[step:prepare-snapshot]prepare swmp snapshot dirs...")
@@ -247,7 +246,7 @@ class ModelPackage(object):
         #TODO: add lock/flag file for gc
 
         logger.info(f"[step:prepare-snapshot]swmp snapshot workdir: {self._snapshot_workdir}")
-        self.console.print(f":file_folder: swmp workdir: [underline]{self._snapshot_workdir}[/]")
+        self._console.print(f":file_folder: swmp workdir: [underline]{self._snapshot_workdir}[/]")
 
     @property
     def _model_pip_req(self) -> str:
@@ -277,7 +276,7 @@ class ModelPackage(object):
             dep_dir=self._snapshot_workdir / "dep",
             pip_req_fpath=self._model_pip_req,
             skip_gen_env=self._skip_gen_env,
-            console=self.console,
+            console=self._console,
         )
         self._manifest["dep"] = _manifest
 
@@ -285,7 +284,7 @@ class ModelPackage(object):
 
     def _copy_src(self) -> None:
         logger.info(f"[step:copy]start to copy src {self.workdir} -> {self._src_dir} ...")
-        self.console.print(":thumbs_up: try to copy source code files...")
+        self._console.print(":thumbs_up: try to copy source code files...")
         _mc = self._swmp_config
         workdir_fs = open_fs(str(self.workdir.resolve()))
         snapshot_fs = open_fs(str(self._snapshot_workdir.resolve()))
@@ -325,7 +324,7 @@ class ModelPackage(object):
 
         ensure_link(out, self._swmp_store / "latest")
         logger.info(f"[step:tar]finish to make swmp")
-        self.console.print(f":hibiscus: congratulation! you can run [blink red bold] swcli model info {self._name}:{self._version}[/]")
+        self._console.print(f":hibiscus: congratulation! you can run [blink red bold] swcli model info {self._name}:{self._version}[/]")
 
     def _render_docker_script(self):
         #TODO: agent run and smoketest step

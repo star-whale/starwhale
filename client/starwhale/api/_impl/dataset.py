@@ -10,6 +10,7 @@ import jsonlines
 from starwhale.swds.dataset import (
     D_ALIGNMENT_SIZE, D_USER_BATCH_SIZE, D_FILE_VOLUME_SIZE
 )
+from starwhale.consts import SWDS_DATA_FNAME_FMT, SWDS_LABEL_FNAME_FMT
 
 #TODO: tune header size
 _header_magic = struct.unpack(">I", b"SWDS")[0]
@@ -40,8 +41,8 @@ class BuildExecutor(object):
     INDEX_NAME = "index.jsonl"
     _DATA_TMP_IDX = "_tmp_index_data.jsonl"
     _LABEL_TMP_IDX = "_tmp_index_label.jsonl"
-    _DATA_FMT = "data_ubyte_{index}.swds_bin"
-    _LABEL_FMT = "label_ubyte_{index}.swds_bin"
+    _DATA_FMT = SWDS_DATA_FNAME_FMT
+    _LABEL_FMT = SWDS_LABEL_FNAME_FMT
 
     def __init__(self,
                  data_dir:Path = Path("."),

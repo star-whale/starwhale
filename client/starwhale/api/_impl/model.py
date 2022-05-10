@@ -7,17 +7,16 @@ from collections import namedtuple
 from pathlib import Path
 import json
 import logging
-from datetime import datetime
 from functools import wraps
 
 import loguru
 import jsonlines
-from starwhale.consts import FMT_DATETIME
+
 from starwhale.consts.env import SW_ENV
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.utils import pretty_bytes, in_production
+from starwhale.utils import pretty_bytes, in_production, now_str
 from .loader import DATA_FIELD, DataLoader, get_data_loader
 
 _TASK_ROOT_DIR = "/var/starwhale" if  in_production() else "/tmp/starwhale"
@@ -29,7 +28,6 @@ _LOG_TYPE = namedtuple("LOG_TYPE", ["SW", "USER"])(
     "starwhale", "user"
 )
 _jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
-_now = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
 
 class _RunConfig(object):
 
@@ -190,7 +188,7 @@ class PipelineHandler(object):
             raise
 
         try:
-            self._status_writer.write({"time": _now(), "status": ex is None, "exception": ex})
+            self._status_writer.write({"time": now_str(), "status": ex is None, "exception": ex})
             self._result_writer.write(output)
         except Exception as e:
             self._sw_logger.exception(f"cmp record exception: {e}")
@@ -233,7 +231,7 @@ class PipelineHandler(object):
 
     def _do_record(self, output: t.Any, data: DATA_FIELD, label: DATA_FIELD, exception: t.Union[None, Exception]):
         self._status_writer.write({
-            "time": _now(),
+            "time": now_str(),
             "status": exception is None,
             "exception": str(exception),
             "index": data.index,

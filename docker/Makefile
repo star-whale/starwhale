@@ -7,6 +7,7 @@ SW_VERSION := 0.1.0.dev15
 BASE_IMAGE :=starwhaleai/base:${VERSION_FORMAT}
 NODEJS_IMAGE :=starwhaleai/nodejs:${VERSION_FORMAT}
 SW_IMAGE := starwhaleai/starwhale:${VERSION_FORMAT}
+SW_LATEST_IMAGE := starwhaleai/starwhale:latest
 SW_TASKSET_IMAGE := starwhaleai/taskset:${VERSION_FORMAT}
 SW_CONTROLLER_IMAGE := starwhaleai/controller:${VERSION_FORMAT}
 SW_AGENT_IMAGE := starwhaleai/agent:${VERSION_FORMAT}
@@ -19,10 +20,12 @@ build-base:
 
 build-starwhale:
 	docker build --build-arg BASE_IMAGE=$(BASE_IMAGE) --build-arg SW_VERSION=$(SW_VERSION) -f Dockerfile.sw -t $(SW_IMAGE) .
+	docker tag $(SW_IMAGE) $(SW_LATEST_IMAGE)
 
 release:
 	docker push $(BASE_IMAGE)
 	docker push $(SW_IMAGE)
+	docker push $(SW_LATEST_IMAGE)
 	docker push $(SW_TASKSET_IMAGE)
 	docker push $(SW_CONTROLLER_IMAGE)
 	docker push $(SW_AGENT_IMAGE)

@@ -6,21 +6,19 @@ import typing as t
 
 import click
 import requests
-from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
 from rich import print as rprint
 
 from fs import open_fs
 
-from .dataset import ARCHIVE_SWDS_META
 from starwhale.base.store import LocalStorage
 from starwhale.consts import (
     DEFAULT_DATASET_YAML_NAME, DEFAULT_MANIFEST_NAME, SW_API_VERSION
 )
 from starwhale.utils.http import wrap_sw_error_resp, upload_file
 from starwhale.utils.fs import empty_dir
-from starwhale.utils import fmt_http_server, pretty_bytes
+from starwhale.utils import pretty_bytes, console
 from starwhale.utils.error import NotFoundError
 
 #TODO: refactor Dataset and ModelPackage LocalStorage
@@ -40,6 +38,7 @@ class DataSetLocalStore(LocalStorage):
         )
 
     def iter_local_swobj(self):
+        from .dataset import ARCHIVE_SWDS_META
         _fs = open_fs(str(self.dataset_dir.resolve()))
 
         for name_dir in _fs.scandir("."):
@@ -122,6 +121,7 @@ class DataSetLocalStore(LocalStorage):
 
         #TODO: parallel upload
         try:
+            from .dataset import ARCHIVE_SWDS_META
             for p in [_dir / "data" / n for n in _manifest["signature"]] + [_dir / ARCHIVE_SWDS_META]:
                 _upload_blob(p)
         except Exception as e:
@@ -139,7 +139,7 @@ class DataSetLocalStore(LocalStorage):
     def info(self, sw_name: str) -> None:
         _manifest = self._do_get_info(*self._parse_swobj(sw_name))
         _config_panel = Panel(Pretty(_manifest, expand_all=True), title="inspect _manifest.yaml and dataset.yaml info")
-        Console().print(_config_panel)
+        self._console.print(_config_panel)
         #TODO: show dataset dir tree view
 
     def _do_get_info(self, _name: str, _version: str) -> dict:
