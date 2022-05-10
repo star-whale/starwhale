@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.user.mapper;
+package ai.starwhale.mlops.domain.swmp;
 
-import ai.starwhale.mlops.domain.user.UserEntity;
-import java.util.List;
-import org.apache.ibatis.annotations.Param;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface UserMapper {
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SWMPQuery {
 
-    int createUser(@Param("user")UserEntity user);
+    private String swmpId;
 
-    UserEntity findUser(@Param("id") Long id);
+    private String swmpName;
 
-    UserEntity findUserByName(@Param("userName") String userName);
+    private String projectId;
 
-    List<UserEntity> listUsers(@Param("userNamePrefix") String userNamePrefix);
+    private String projectName;
 
-    int changePassword(@Param("user")UserEntity user);
+    private String ownerId;
 
-    int enableUser(@Param("user")UserEntity user);
+    private String ownerName;
 }

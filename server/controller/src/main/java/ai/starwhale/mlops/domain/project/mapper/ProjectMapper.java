@@ -22,7 +22,7 @@ import org.apache.ibatis.annotations.Param;
 
 public interface ProjectMapper {
 
-    int createProject(ProjectEntity project);
+    int createProject(@Param("project")ProjectEntity project);
 
     int deleteProject(@Param("id") Long id);
 
@@ -35,5 +35,5 @@ public interface ProjectMapper {
 
     ProjectEntity findDefaultProject(@Param("userId") Long userId);
 
-    int modifyProject(ProjectEntity project);
+    int modifyProject(@Param("project")ProjectEntity project);
 }

@@ -31,9 +31,9 @@ public interface SWModelPackageVersionMapper {
 
     int revertTo(@Param("swmpVersionId")Long swmpVersionId);
 
-    int addNewVersion(SWModelPackageVersionEntity entity);
+    int addNewVersion(@Param("version") SWModelPackageVersionEntity version);
 
-    int update(SWModelPackageVersionEntity entity);
+    int update(@Param("version")SWModelPackageVersionEntity version);
 
     SWModelPackageVersionEntity findByNameAndSwmpId(@Param("swmpVersion")String version, @Param("swmpId")Long id);
 }

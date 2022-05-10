@@ -102,20 +102,15 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
         SystemInfo systemInfo = systemDetect.detect()
                 .orElse(
                         SystemInfo.builder()
-                                .hostAddress("localhost")
+                                .hostAddress("127.0.0.1")
                                 .availableMemory(0)
                                 .totalMemory(0)
                                 .build()
                 );
 
-        // just deal report device's status if there have some tasks which status are preparing
-        /*List devices = (List) SerializationUtils.clone(sourcePool.getDevices());
-        if(taskPool.preparingTasks.size() > 0) {
-
-        }*/
-
         Node node = Node.builder()
                 .ipAddr(agentProperties.getHostIP().equals("127.0.0.1") ? systemInfo.getHostAddress() : agentProperties.getHostIP())
+                .serialNumber(systemInfo.getId())
                 .agentVersion(agentProperties.getVersion())
                 .memorySizeGB(BigInteger.valueOf(systemInfo.getTotalMemory()).divide(FileUtils.ONE_GB_BI).intValue())
                 .devices(List.copyOf(sourcePool.getDevices()))

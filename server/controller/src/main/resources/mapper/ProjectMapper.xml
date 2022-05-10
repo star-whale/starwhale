@@ -10,7 +10,7 @@
 <mapper namespace="ai.starwhale.mlops.domain.project.mapper.ProjectMapper">
     <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity" useGeneratedKeys="true" keyProperty="id">
         insert into project_info(project_name, owner_id)
-        values (#{projectName}, #{ownerId})
+        values (#{project.projectName}, #{project.ownerId})
     </insert>
 
     <delete id="deleteProject" parameterType="java.lang.Long">
@@ -21,8 +21,8 @@
 
     <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity">
         update project_info
-        set project_name = #{projectName}
-        where id = #{id}
+        set project_name = #{project.projectName}
+        where id = #{project.id}
     </update>
 
     <sql id="select_project">

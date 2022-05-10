@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDSVersionRequest;
+import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
 import ai.starwhale.mlops.common.PageParams;
@@ -97,9 +98,9 @@ public class DatasetController implements DatasetApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<DatasetVersionVO>> getDatasetInfo(String projectId,
+    public ResponseEntity<ResponseMessage<SWDatasetInfoVO>> getDatasetInfo(String projectId,
         String datasetId) {
-        DatasetVersionVO swdsInfo = swDatasetService.getSWDSInfo(
+        SWDatasetInfoVO swdsInfo = swDatasetService.getSWDSInfo(
             SWDSObject.builder().id(datasetId).projectId(projectId).build());
 
         return ResponseEntity.ok(Code.success.asResponse(swdsInfo));

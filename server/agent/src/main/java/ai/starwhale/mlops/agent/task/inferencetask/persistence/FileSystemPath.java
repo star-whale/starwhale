@@ -19,6 +19,7 @@ package ai.starwhale.mlops.agent.task.inferencetask.persistence;
 import cn.hutool.core.collection.CollectionUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -230,7 +231,7 @@ public class FileSystemPath {
             }
             if (argsNum != objs.length) throw new IllegalArgumentException();
             Collections.reverse(nodes);
-            String format = String.join("/", nodes);
+            String format = String.join(File.separator, nodes);
             return String.format(format, objs);
         }
     }

@@ -25,6 +25,7 @@ import java.text.StringCharacterIterator;
 @Data
 @Builder
 public class SystemInfo {
+    private String id;
     private String hostName;
     private String hostAddress;
     private long totalMemory;

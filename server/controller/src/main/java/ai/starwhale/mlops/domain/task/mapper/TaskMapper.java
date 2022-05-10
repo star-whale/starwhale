@@ -27,7 +27,7 @@ public interface TaskMapper {
 
     TaskEntity findTaskById(@Param("taskId") Long taskId);
 
-    int addTask(TaskEntity taskEntity);
+    int addTask(@Param("task")TaskEntity task);
 
     int addAll(@Param("taskList")List<TaskEntity> taskList);
 

@@ -22,14 +22,13 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDSVersionRequest;
-import ai.starwhale.mlops.api.protocol.swds.upload.UploadHeader;
+import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
-import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -100,10 +99,10 @@ public interface DatasetApi {
                 content =
                 @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = DatasetVersionVO.class)))
+                    schema = @Schema(implementation = SWDatasetInfoVO.class)))
         })
     @GetMapping(value = "/project/{projectId}/dataset/{datasetId}")
-    ResponseEntity<ResponseMessage<DatasetVersionVO>> getDatasetInfo(
+    ResponseEntity<ResponseMessage<SWDatasetInfoVO>> getDatasetInfo(
         @Parameter(
             in = ParameterIn.PATH,
             description = "Project id",

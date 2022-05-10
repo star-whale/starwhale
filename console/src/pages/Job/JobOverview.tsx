@@ -1,4 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
+import _ from 'lodash'
+import { toaster } from 'baseui/toast'
 import useTranslation from '@/hooks/useTranslation'
 import { useJob } from '@job/hooks/useJob'
 import { formatTimestampDateTime } from '@/utils/datetime'
@@ -7,8 +9,8 @@ import { ScrollFollow, LazyLog } from 'react-lazylog'
 import { Accordion, Panel } from 'baseui/accordion'
 import { fetchTaskOfflineFileLog, fetchTaskOfflineLogFiles } from '@/domain/job/services/task'
 import { getToken } from '@/api'
-import { ITaskSchema, TaskStatusType } from '../../domain/job/schemas/task'
 import TaskListCard from './TaskListCard'
+import { ITaskSchema, TaskStatusType } from '../../domain/job/schemas/task'
 
 export default function JobOverview() {
     const { job } = useJob()
@@ -40,26 +42,31 @@ export default function JobOverview() {
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
     const [, setExpanded] = useState(false)
     const [currentLogFiles, setCurrentLogFiles] = useState<Record<string, string>>({})
-    const onAction = useCallback(async (type, task: ITaskSchema) => {
-        setCurrentTask(task)
-        if ([TaskStatusType.SUCCESS, TaskStatusType.SUCCESS].includes(task.taskStatus)) {
-            const data = await fetchTaskOfflineLogFiles(task?.id)
-
-            const files: Record<string, string> = {}
-            data.map(async (v: string) => {
-                const content = await fetchTaskOfflineFileLog(task?.id, v)
-                files[v] = content
+    const onAction = useCallback(
+        async (type, task: ITaskSchema) => {
+            setCurrentTask(task)
+            if ([TaskStatusType.RUNNING, TaskStatusType.PREPARING].includes(task.taskStatus)) {
                 setCurrentLogFiles({
-                    ...files,
+                    [task?.uuid]: 'ws',
                 })
-            })
-        } else if ([TaskStatusType.RUNNING, TaskStatusType.PREPARING].includes(task.taskStatus)) {
-            setCurrentLogFiles({
-                [task?.uuid]: 'ws',
-            })
-        }
-        setExpanded(true)
-    }, [])
+            } else {
+                const data = await fetchTaskOfflineLogFiles(task?.id)
+                if (_.isEmpty(data)) {
+                    toaster.negative(t('no logs found'), { autoHideDuration: 2000 })
+                }
+                const files: Record<string, string> = {}
+                data.map(async (v: string) => {
+                    const content = await fetchTaskOfflineFileLog(task?.id, v)
+                    files[v] = content
+                    setCurrentLogFiles({
+                        ...files,
+                    })
+                })
+            }
+            setExpanded(true)
+        },
+        [t]
+    )
 
     const currentOnlineLogUrl = useMemo(() => {
         return `${window.location.protocol === 'http:' ? 'ws:' : 'wss:'}//${window.location.host}/api/v1/log/online/${
@@ -67,21 +74,13 @@ export default function JobOverview() {
         }?Authorization=${getToken()}`
     }, [currentTask])
 
-    // useWebSocket({
-    //     debug: true,
-    //     wsUrl: currentOnlineLogUrl,
-    //     onMessage: (e) => {
-    //         console.log('self', e)
-    //     },
-    // })
-
     return (
         <>
             <div
                 style={{
                     width: '100%',
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 380px',
+                    gridTemplateColumns: '1fr 1fr 430px',
                     gridAutoRows: '200px',
                     // gridAutoColumns: 'minmax(200px, 1fr)',
                     gridGap: '16px',

@@ -91,6 +91,10 @@ class SWCliConfigMixed(object):
         return self.rootdir / "dataset"
 
     @property
+    def eval_run_dir(self) -> Path:
+        return self.rootdir / "run" / "eval"
+
+    @property
     def sw_remote_addr(self) -> str:
         addr = self._controller.get("remote_addr", "")
         return fmt_http_server(addr)

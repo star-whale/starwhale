@@ -2,10 +2,6 @@
 import typing as t
 from functools import wraps
 
-from loguru import logger
-from numpy import isin
-from rich.layout import Layout
-from rich.console import Console, RenderableType
 from rich import print as rprint
 from rich.panel import Panel
 from rich.table import Table
@@ -13,7 +9,8 @@ from rich.tree import Tree
 from rich import box
 
 from .model import ClusterModel, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE, PROJECT_OBJ_TYPE
-from starwhale.utils import pretty_bytes
+from starwhale.utils import pretty_bytes, console
+from starwhale.utils.ui import comparsion
 
 
 #TODO: use model-view-control mode to refactor Cluster
@@ -56,14 +53,14 @@ class ClusterView(ClusterModel):
             return func(*args, **kwargs) #type: ignore
         return _wrapper
 
+    def run_job(self, model: int, datasets: t.List[int], project: int, baseimage: int, resource: str, name: str, desc: str):
+        pass
+
     @_pager #type: ignore
     @_header #type: ignore
-    def inspect_job(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
-        console = Console()
+    def info_job(self, project: int, job: int, page: int=DEFAULT_PAGE_NUM, size: int=DEFAULT_PAGE_SIZE):
         tasks, pager = self._fetch_tasks(project, job, page, size)
         report = self._fetch_job_report(project, job)
-        labels: dict = report.get("labels", {})
-        sort_label_names = sorted(list(labels.keys()))
 
         def _print_tasks():
             table = Table(box=box.SIMPLE, expand=True)
@@ -89,6 +86,15 @@ class ClusterView(ClusterModel):
 
             console.rule(f"[bold green]Project({project} Job({job}) Tasks List")
             console.print(table)
+
+        _print_tasks()
+        self.render_job_report(report)
+
+        return tasks, pager
+
+    def render_job_report(self, report: dict) -> None:
+        labels: dict = report.get("labels", {})
+        sort_label_names = sorted(list(labels.keys()))
 
         def _print_report():
             #TODO: add other kind report
@@ -127,7 +133,7 @@ class ClusterView(ClusterModel):
 
             console.rule(f"[bold green]{report['kind'].upper()} Report")
             console.print(
-                self.comparsion(tree, table)
+                comparsion(tree, table)
             )
 
         def _print_confusion_matrix():
@@ -151,14 +157,11 @@ class ClusterView(ClusterModel):
 
             console.rule(f"[bold green]{report['kind'].upper()} Confusion Matrix")
             console.print(
-                self.comparsion(mtable, btable)
+                comparsion(mtable, btable)
             )
-
-        _print_tasks()
         _print_report()
         _print_confusion_matrix()
 
-        return tasks, pager
 
     def _pretty_status(self, status: str) -> t.Tuple[str, str, str]:
         style = ""
@@ -230,7 +233,7 @@ class ClusterView(ClusterModel):
 
         def _details(pid: int):
             _r = self._inspect_project(pid)
-            return self.comparsion(
+            return comparsion(
                 _show_objects(_r["models"], PROJECT_OBJ_TYPE.MODEL),
                 _show_objects(_r["datasets"], PROJECT_OBJ_TYPE.DATASET)
             )
@@ -308,10 +311,3 @@ class ClusterView(ClusterModel):
             return Panel(grid, title_align="left")
 
         rprint(_details())
-
-    def comparsion(self, r1: RenderableType, r2: RenderableType) -> Table:
-        table = Table(show_header=False, pad_edge=False, box=None, expand=True)
-        table.add_column("1", ratio=1)
-        table.add_column("2", ratio=1)
-        table.add_row(r1, r2)
-        return table

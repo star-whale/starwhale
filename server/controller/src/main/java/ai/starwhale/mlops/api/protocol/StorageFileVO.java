@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.user.mapper;
+package ai.starwhale.mlops.api.protocol;
 
-import ai.starwhale.mlops.domain.user.UserEntity;
-import java.util.List;
-import org.apache.ibatis.annotations.Param;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serializable;
+import lombok.Builder;
+import lombok.Data;
+import org.springframework.validation.annotation.Validated;
 
-public interface UserMapper {
+@Data
+@Builder
+@Validated
+@Schema(description = "Storage file object", title = "StorageFile")
+public class StorageFileVO implements Serializable {
 
-    int createUser(@Param("user")UserEntity user);
+    @JsonProperty("name")
+    private String name;
 
-    UserEntity findUser(@Param("id") Long id);
-
-    UserEntity findUserByName(@Param("userName") String userName);
-
-    List<UserEntity> listUsers(@Param("userNamePrefix") String userNamePrefix);
-
-    int changePassword(@Param("user")UserEntity user);
-
-    int enableUser(@Param("user")UserEntity user);
+    @JsonProperty("size")
+    private String size;
 }

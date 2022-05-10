@@ -18,8 +18,9 @@ package ai.starwhale.mlops.domain.job.mapper;
 
 import ai.starwhale.mlops.domain.job.BaseImageEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
 public interface BaseImageMapper {
 
-    List<BaseImageEntity> listBaseImages(String namePrefix);
+    List<BaseImageEntity> listBaseImages(@Param("imageName") String imageName);
 }

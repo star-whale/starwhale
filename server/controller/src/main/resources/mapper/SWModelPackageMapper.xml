@@ -22,22 +22,48 @@
                u.created_time as user_created_time,
                u.user_enabled,
                r.role_name,
-               r.role_name_en
+               r.role_name_en,
+               p.project_name
         from swmp_info as s,
              user_info as u,
-             user_role as r
+             user_role as r,
+             project_info as p
         where s.is_deleted = 0
         and u.id = s.owner_id
         and r.id = u.role_id
+        and p.id = s.project_id
     </sql>
-    <select id="listSWModelPackages" resultMap="swmpResultMap">
+
+    <select id="listSWModelPackagesByQuery" parameterType="ai.starwhale.mlops.domain.swmp.SWMPQuery" resultMap="swmpResultMap">
         <include refid="select_swmp"/>
-        and project_id = #{projectId}
-        <if test="namePrefix != null and namePrefix != ''">
-            and s.swmp_name like concat(#{namePrefix}, '%')
+        <if test="query.projectId != null and query.projectId != ''">
+            and s.project_id = #{query.projectId}
         </if>
-        order by s.id desc
+        <if test="query.projectName != null and query.projectName != ''">
+            and p.project_name like concat(#{query.projectName}, '%')
+        </if>
+        <if test="query.swmpId != null and query.swmpId != ''">
+            and s.id = #{query.swmpId}
+        </if>
+        <if test="query.swmpName != null and query.swmpName != ''">
+            and s.swmp_name like concat(#{query.swmpName}, '%')
+        </if>
+        <if test="query.ownerId != null and query.ownerId != ''">
+            and s.owner_id = #{query.ownerId}
+        </if>
+        <if test="query.ownerName != null and query.ownerName != ''">
+            and u.user_name like concat(#{query.ownerName}, '%')
+        </if>
     </select>
+
+<!--    <select id="listSWModelPackages" resultMap="swmpResultMap">-->
+<!--        <include refid="select_swmp"/>-->
+<!--        and project_id = #{projectId}-->
+<!--        <if test="namePrefix != null and namePrefix != ''">-->
+<!--            and s.swmp_name like concat(#{namePrefix}, '%')-->
+<!--        </if>-->
+<!--        order by s.id desc-->
+<!--    </select>-->
 
     <select id="findSWModelPackageById" resultMap="swmpResultMap" >
         <include refid="select_swmp"/>
@@ -66,7 +92,7 @@
 
     <insert id="addSWModelPackage" useGeneratedKeys="true" keyProperty="id">
         insert into swmp_info(swmp_name, project_id, owner_id)
-        values(#{swmpName}, #{projectId}, #{ownerId})
+        values(#{entity.swmpName}, #{entity.projectId}, #{entity.ownerId})
     </insert>
 
     <delete id="deleteSWModelPackage" >

@@ -2,6 +2,14 @@
 import React, { useEffect, useRef } from 'react'
 import _ from 'lodash'
 
+// useWebSocket({
+//     debug: true,
+//     wsUrl: currentOnlineLogUrl,
+//     onMessage: (e) => {
+//         console.log('self', e)
+//     },
+// })
+
 interface IWebSocket {
     wsUrl: string
     debug?: boolean

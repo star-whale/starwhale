@@ -96,9 +96,15 @@ export default function JobListCard() {
                                     </>
                                 ),
                                 [JobStatusType.PAUSED]: (
-                                    <StyledLink onClick={() => handleAction(job.id, JobActionType.RESUME)}>
-                                        {t('Cancel')}
-                                    </StyledLink>
+                                    <>
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.CANCEL)}>
+                                            {t('Cancel')}
+                                        </StyledLink>
+                                        &nbsp;&nbsp;
+                                        <StyledLink onClick={() => handleAction(job.id, JobActionType.RESUME)}>
+                                            {t('Resume')}
+                                        </StyledLink>
+                                    </>
                                 ),
                                 [JobStatusType.SUCCESS]: (
                                     <Link to={`/projects/${projectId}/jobs/${job.id}/results`}>
