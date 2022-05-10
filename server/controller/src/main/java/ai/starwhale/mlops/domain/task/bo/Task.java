@@ -97,7 +97,13 @@ public class Task {
         public StatusUnModifiableTask(Task task){
             this.oTask = task;
         }
-
+        public Task getOTask(){
+            if(oTask instanceof StatusUnModifiableTask){
+                StatusUnModifiableTask statusUnModifiableTask = (StatusUnModifiableTask) oTask;
+                return statusUnModifiableTask.getOTask();
+            }
+            return oTask;
+        }
         @Override
         public Long getId() {
             return oTask.id;

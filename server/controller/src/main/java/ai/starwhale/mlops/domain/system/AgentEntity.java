@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.system;
 
 import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,5 +43,7 @@ public class AgentEntity extends BaseEntity {
     private String serialNumber;
 
     private String deviceInfo;
+
+    private AgentStatus status;
 
 }

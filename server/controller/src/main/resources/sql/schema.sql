@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS agent_info
     serial_number varchar(255) NOT NULL,
     connect_time  datetime     NOT NULL,
     agent_version varchar(255) NOT NULL,
+    agent_status  varchar(32)  NOT NULL,
     device_info   varchar(255) NOT NULL,
     created_time  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

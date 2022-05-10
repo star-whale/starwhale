@@ -194,11 +194,14 @@ public class JobService {
     public void cancelJob(Long jobId){
         Collection<Task> tasks = livingTaskCache.ofJob(jobId);
         if(null == tasks || tasks.isEmpty()){
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB).tip("freezing job can't be canceled "),
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB).tip("freeze job can't be canceled "),
                 HttpStatus.BAD_REQUEST);
         }
         JobStatus desiredJobStatus = taskJobStatusHelper.desiredJobStatus(tasks);
-        if(desiredJobStatus != JobStatus.RUNNING){
+        if(desiredJobStatus != JobStatus.RUNNING
+            && desiredJobStatus != JobStatus.PAUSED
+            && desiredJobStatus != JobStatus.TO_COLLECT_RESULT
+            && desiredJobStatus != JobStatus.COLLECTING_RESULT){
             throw new SWValidationException(ValidSubject.JOB).tip("not running job can't be canceled ");
         }
         jobMapper.updateJobStatus(List.of(jobId), JobStatus.TO_CANCEL);
@@ -208,8 +211,9 @@ public class JobService {
             || task.getStatus() == TaskStatus.ASSIGNING).collect(Collectors.toList()), TaskStatus.TO_CANCEL);
         List<Task> tobeCanceledTasks = tasks.parallelStream()
             .filter(task -> task.getStatus() == TaskStatus.CREATED
+                || task.getStatus() == TaskStatus.PAUSED
                 || task.getStatus() == TaskStatus.UNKNOWN).collect(Collectors.toList());
-        swTaskScheduler.stopSchedule(tobeCanceledTasks.parallelStream().map(Task::getId).collect(
+        swTaskScheduler.stopSchedule(tobeCanceledTasks.parallelStream().filter(task -> task.getStatus() == TaskStatus.CREATED).map(Task::getId).collect(
             Collectors.toList()));
         updateTaskStatus(tobeCanceledTasks, TaskStatus.CANCELED);
     }

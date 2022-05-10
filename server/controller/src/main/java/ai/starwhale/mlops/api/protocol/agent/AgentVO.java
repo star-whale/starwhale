@@ -16,14 +16,11 @@
 
 package ai.starwhale.mlops.api.protocol.agent;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import lombok.Builder;
 import lombok.Data;
-import org.aspectj.weaver.loadtime.Agent;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.validation.annotation.Validated;
 
 @Data
@@ -36,45 +33,17 @@ public class AgentVO implements Serializable {
 
     private String ip;
 
+    private String serialNumber;
+
     private Long connectedTime;
 
-    private StatusEnum status;
+    private AgentStatus status;
 
     private String version;
 
     public static AgentVO empty() {
-        return new AgentVO("", "", -1L, StatusEnum.OFFLINE, "");
+        return new AgentVO("", "", "",-1L, AgentStatus.OFFLINE, "");
     }
 
-    /**
-     * Gets or Sets status
-     */
-    public enum StatusEnum {
-        ACTIVE("active"),
-
-        OFFLINE("offline");
-
-        private final String value;
-
-        StatusEnum(String value) {
-            this.value = value;
-        }
-
-        @Override
-        @JsonValue
-        public String toString() {
-            return String.valueOf(value);
-        }
-
-        @JsonCreator
-        public static StatusEnum fromValue(String text) {
-            for (StatusEnum b : StatusEnum.values()) {
-                if (String.valueOf(b.value).equals(text)) {
-                    return b;
-                }
-            }
-            return null;
-        }
-    }
 
 }

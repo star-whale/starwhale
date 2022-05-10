@@ -54,6 +54,8 @@ public class Agent {
 
     Long connectTime;
 
+    AgentStatus status;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -107,6 +109,11 @@ public class Agent {
         @Override
         public Long getConnectTime() {
             return agent.getConnectTime();
+        }
+
+        @Override
+        public AgentStatus getStatus(){
+            return agent.getStatus();
         }
 
         @Override

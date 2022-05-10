@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,22 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ai.starwhale.mlops.domain.system.mapper;
-
-import ai.starwhale.mlops.domain.system.AgentEntity;
-import java.util.Collection;
-import java.util.List;
-import org.apache.ibatis.annotations.Param;
-
-public interface AgentMapper {
-
-    List<AgentEntity> listAgents();
-
-    Long addAgent(@Param("agent")AgentEntity agent);
-
-    void deleteById(@Param("agentId")Long agentId);
-
-    void updateAgents(@Param("agents")List<AgentEntity> agents);
-
-}
+truncate TABLE agent_info;
+ALTER TABLE `agent_info`
+    ADD COLUMN `agent_status` VARCHAR(32) NOT NULL AFTER `agent_version`;

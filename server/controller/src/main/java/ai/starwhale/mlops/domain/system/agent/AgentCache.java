@@ -21,6 +21,8 @@ import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.system.AgentEntity;
 import ai.starwhale.mlops.domain.system.agent.Agent.AgentUnModifiable;
 import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,16 +45,31 @@ public class AgentCache implements CommandLineRunner {
 
     final AgentConverter agentConverter;
 
-    public AgentCache(AgentMapper agentMapper,
-        AgentConverter agentConverter) {
+    final List<AgentStatusWatcher> agentStatusWatchers;
+
+    public AgentCache(AgentMapper agentMapper, AgentConverter agentConverter,
+        List<AgentStatusWatcher> agentStatusWatchers) {
         this.agentMapper = agentMapper;
         this.agentConverter = agentConverter;
+        this.agentStatusWatchers = agentStatusWatchers;
         agents = new ConcurrentHashMap<>();
     }
 
     public List<Agent> agents(){
         return agents.values().parallelStream().map(agent -> new AgentUnModifiable(agent)).collect(
             Collectors.toList());
+    }
+
+    public void removeOfflineAgent(String agentSerialNumber){
+        Agent tobeDeleteAgent = agents.get(agentSerialNumber);
+        if(null == tobeDeleteAgent){
+            return;
+        }
+        if(tobeDeleteAgent.getStatus() != AgentStatus.OFFLINE){
+            throw new SWValidationException(ValidSubject.NODE).tip("you can't remove online agent manually!");
+        }
+        agentMapper.deleteById(tobeDeleteAgent.getId());
+        agents.remove(agentSerialNumber);
     }
 
     public Agent nodeReport(Node node){
@@ -65,6 +82,7 @@ public class AgentCache implements CommandLineRunner {
             return new AgentUnModifiable(agentReported);
         }else {
             residentAgent.setAgentVersion(agentReported.getAgentVersion());
+            residentAgent.setStatus(AgentStatus.ONLINE);
             residentAgent.setNodeInfo(agentReported.getNodeInfo());
             residentAgent.setConnectTime(agentReported.getConnectTime());
             return new AgentUnModifiable(residentAgent);
@@ -73,7 +91,15 @@ public class AgentCache implements CommandLineRunner {
 
     @Scheduled(initialDelay = 10000,fixedDelay = 30000)
     public void flushDb(){
+        long now = System.currentTimeMillis();
+        int bareTimeMilli = 30000;
         List<AgentEntity> agentEntities = agents.values().stream()
+            .peek(agent -> {
+                if( (now - agent.getConnectTime())> bareTimeMilli && AgentStatus.ONLINE == agent.getStatus()){
+                    agent.setStatus(AgentStatus.OFFLINE);
+                    agentStatusWatchers.parallelStream().forEach(watcher->watcher.agentStatusChange(agent,AgentStatus.OFFLINE));
+                }
+            })
             .map(agent -> agentConverter.toEntity(agent))
             .collect(Collectors.toList());
         if(null == agentEntities || agentEntities.isEmpty()){
@@ -99,7 +125,7 @@ public class AgentCache implements CommandLineRunner {
     private void initCache() {
         List<AgentEntity> agentEntities = agentMapper.listAgents();
         agentEntities.parallelStream().forEach(entity -> {
-            agents.put(entity.getAgentIp(),agentConverter.fromEntity(entity));
+            agents.put(entity.getSerialNumber(),agentConverter.fromEntity(entity));
         });
     }
 }

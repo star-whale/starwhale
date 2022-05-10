@@ -22,6 +22,7 @@
                a.id as agent_id,
                inet_ntoa(a.agent_ip) as agent_ip,
                a.agent_version,
+               a.agent_status,
                a.serial_number as agent_serial_number,
                a.connect_time,
                a.created_time as agent_created_time,
