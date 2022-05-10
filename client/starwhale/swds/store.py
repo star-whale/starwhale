@@ -2,13 +2,11 @@ from collections import namedtuple
 from pathlib import Path
 import sys
 import yaml
-import typing as t
 
 import click
 import requests
 from rich.panel import Panel
 from rich.pretty import Pretty
-from rich import print as rprint
 
 from fs import open_fs
 
@@ -18,7 +16,7 @@ from starwhale.consts import (
 )
 from starwhale.utils.http import wrap_sw_error_resp, upload_file
 from starwhale.utils.fs import empty_dir
-from starwhale.utils import pretty_bytes, console
+from starwhale.utils import pretty_bytes
 from starwhale.utils.error import NotFoundError
 
 #TODO: refactor Dataset and ModelPackage LocalStorage
@@ -73,11 +71,11 @@ class DataSetLocalStore(LocalStorage):
         _name, _version = self._parse_swobj(sw_name)
         _dir = self._guess(self.dataset_dir / _name, _version)
         if not _dir.exists():
-            rprint(f"[red]failed to push {sw_name}[/], because of {_dir} not found")
+            self._console.print(f"[red]failed to push {sw_name}[/], because of {_dir} not found")
             sys.exit(1)
 
         #TODO: refer to docker push
-        rprint(" :fire: try to push swds...")
+        self._console.print(" :fire: try to push swds...")
         _manifest_path = _dir / DEFAULT_MANIFEST_NAME
         _swds = f"{_name}:{_dir.name}"
         _headers = {"Authorization": self._sw_token}
@@ -95,7 +93,7 @@ class DataSetLocalStore(LocalStorage):
             headers=_headers,
             exit=True,
         )
-        rprint(f"\t :arrow_up: {DEFAULT_MANIFEST_NAME} :ok:")
+        self._console.print(f"\t :arrow_up: {DEFAULT_MANIFEST_NAME} :ok:")
         upload_id = r.json().get("data", {}).get("upload_id")
         if not upload_id:
             raise Exception("get invalid upload_id")
@@ -117,7 +115,7 @@ class DataSetLocalStore(LocalStorage):
                 headers=_headers,
                 use_raise=True,
             )
-            rprint(f"\t :arrow_up: {_fp.name} :ok:")
+            self._console.print(f"\t :arrow_up: {_fp.name} :ok:")
 
         #TODO: parallel upload
         try:
@@ -125,11 +123,11 @@ class DataSetLocalStore(LocalStorage):
             for p in [_dir / "data" / n for n in _manifest["signature"]] + [_dir / ARCHIVE_SWDS_META]:
                 _upload_blob(p)
         except Exception as e:
-            rprint(f"when upload blobs, we meet Exception{e}, will cancel upload")
+            self._console.print(f"when upload blobs, we meet Exception{e}, will cancel upload")
             r = requests.post(url, data={"swds": _swds, "project": project, "phase": _UPLOAD_PHASE.CANCEL}, headers=_headers)
             wrap_sw_error_resp(r, "cancel", use_raise=True)
         else:
-            rprint(" :clap: :clap: all uploaded.")
+            self._console.print(" :clap: :clap: all uploaded.")
             r =  requests.post(url, data={"swds": _swds, "project": project, "phase": _UPLOAD_PHASE.END}, headers=_headers)
             wrap_sw_error_resp(r, "end", use_raise=True)
 
@@ -161,9 +159,9 @@ class DataSetLocalStore(LocalStorage):
         if _dir.exists() and _dir.is_dir():
             click.confirm(f"continue to delete {_dir}?", abort=True)
             empty_dir(_dir)
-            rprint(f" :bomb: delete dataset dir {_dir}")
+            self._console.print(f":bomb delete dataset dir: {_dir}")
         else:
-            rprint(f" :diving_mask: {_dir} is not dir, please check, we will not delete it")
+            self._console.print(f":diving_mask: not found or no dir for {_dir}, skip to delete it")
 
     def gc(self, dry_run: bool=False) -> None:
         #TODO: remove intermediated dataset dir

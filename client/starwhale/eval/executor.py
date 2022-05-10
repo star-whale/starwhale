@@ -7,12 +7,13 @@ from pathlib import Path
 import jsonlines
 
 from loguru import logger
+from rich.console import Console
 
 from starwhale.utils import gen_uniq_version, console, now_str
 from .store import EvalLocalStorage
 from starwhale.consts import (
     DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, DEFAULT_MANIFEST_NAME,
-    JSON_INDENT, SWDS_BACKEND_TYPE,
+    JSON_INDENT, SWDS_BACKEND_TYPE, VERSION_PREFIX_CNT
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
@@ -118,7 +119,7 @@ class EvalExecutor(object):
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
         #TODO: fix _workdir sequence-depent issue
-        self._workdir = self._store.rootdir / "run" / "eval" / self._version[:2] /self._version
+        self._workdir = self._store.eval_run_dir / self._version[:VERSION_PREFIX_CNT] /self._version
 
         ensure_dir(self._workdir)
         for _w in (self._ppl_workdir, self._cmp_workdir):
@@ -223,15 +224,8 @@ class EvalExecutor(object):
         return " ".join(cmd)
 
     def _render_report(self) -> None:
-        from starwhale.cluster.view import ClusterView
-        _cv = ClusterView()
         _f = self._cmp_workdir / _RUN_SUBDIR.RESULT / "current"
-
-        with jsonlines.open(str(_f.resolve()), "r") as _reader:
-            for _report in _reader:
-                if not _report or not isinstance(_report, dict):
-                    continue
-                _cv.render_job_report(_report)
+        render_cmp_report(_f)
 
         self._console.rule("[bold green]More Details[/]")
         self._console.print(f":helicopter: eval version: [green]{self._version}[/], :hedgehog: workdir: {self._workdir.resolve()} \n")
@@ -249,3 +243,14 @@ class EvalExecutor(object):
         )
         _f = self._workdir / DEFAULT_MANIFEST_NAME
         ensure_file(_f, yaml.dump(self._manifest, default_flow_style=False))
+
+
+def render_cmp_report(rpath: Path) -> None:
+    from starwhale.cluster.view import ClusterView
+    _cv = ClusterView()
+
+    with jsonlines.open(str(rpath.resolve()), "r") as _reader:
+        for _report in _reader:
+            if not _report or not isinstance(_report, dict):
+                continue
+            _cv.render_job_report(_report)

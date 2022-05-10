@@ -2,7 +2,6 @@
 import typing as t
 from functools import wraps
 
-from rich.console import RenderableType
 from rich import print as rprint
 from rich.panel import Panel
 from rich.table import Table
@@ -11,6 +10,7 @@ from rich import box
 
 from .model import ClusterModel, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE, PROJECT_OBJ_TYPE
 from starwhale.utils import pretty_bytes, console
+from starwhale.utils.ui import comparsion
 
 
 #TODO: use model-view-control mode to refactor Cluster
@@ -133,7 +133,7 @@ class ClusterView(ClusterModel):
 
             console.rule(f"[bold green]{report['kind'].upper()} Report")
             console.print(
-                self.comparsion(tree, table)
+                comparsion(tree, table)
             )
 
         def _print_confusion_matrix():
@@ -157,7 +157,7 @@ class ClusterView(ClusterModel):
 
             console.rule(f"[bold green]{report['kind'].upper()} Confusion Matrix")
             console.print(
-                self.comparsion(mtable, btable)
+                comparsion(mtable, btable)
             )
         _print_report()
         _print_confusion_matrix()
@@ -233,7 +233,7 @@ class ClusterView(ClusterModel):
 
         def _details(pid: int):
             _r = self._inspect_project(pid)
-            return self.comparsion(
+            return comparsion(
                 _show_objects(_r["models"], PROJECT_OBJ_TYPE.MODEL),
                 _show_objects(_r["datasets"], PROJECT_OBJ_TYPE.DATASET)
             )
@@ -311,10 +311,3 @@ class ClusterView(ClusterModel):
             return Panel(grid, title_align="left")
 
         rprint(_details())
-
-    def comparsion(self, r1: RenderableType, r2: RenderableType) -> Table:
-        table = Table(show_header=False, pad_edge=False, box=None, expand=True)
-        table.add_column("1", ratio=1)
-        table.add_column("2", ratio=1)
-        table.add_row(r1, r2)
-        return table
