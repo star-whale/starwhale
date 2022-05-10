@@ -26,3 +26,6 @@ js:
 
 scss:
   - '**/*.scss'
+
+java:
+  - '**/*.java'

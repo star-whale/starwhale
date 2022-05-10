@@ -19,7 +19,7 @@ jobs:
       scss: ${{ steps.filter.outputs.scss }}
 
     steps:
-      - name: Check for python files changed
+      - name: Check for console files changed
         uses: getsentry/paths-filter@v2
         id: filter
         with:
