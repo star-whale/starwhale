@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,21 +14,8 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.system.mapper;
+package ai.starwhale.mlops.domain.system.agent;
 
-import ai.starwhale.mlops.domain.system.AgentEntity;
-import java.util.Collection;
-import java.util.List;
-import org.apache.ibatis.annotations.Param;
-
-public interface AgentMapper {
-
-    List<AgentEntity> listAgents();
-
-    Long addAgent(AgentEntity agent);
-
-    void deleteById(@Param("agentId")Long agentId);
-
-    void updateAgents(@Param("agents")List<AgentEntity> agents);
-
+public enum AgentStatus {
+    ONLINE,OFFLINE
 }

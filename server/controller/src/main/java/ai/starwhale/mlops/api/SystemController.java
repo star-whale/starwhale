@@ -46,6 +46,11 @@ public class SystemController implements SystemApi{
     }
 
     @Override
+    public ResponseEntity<ResponseMessage<String>> deleteAgent(String serialNumber) {
+        return ResponseEntity.ok(Code.success.asResponse(systemService.deleteOfflineAgent(serialNumber)));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> systemVersionAction(String action) {
         return ResponseEntity.ok(Code.success.asResponse("Unknown action"));
     }

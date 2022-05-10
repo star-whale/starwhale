@@ -42,6 +42,7 @@ public class AgentConverter {
             .serialNumber(node.getSerialNumber())
             .nodeInfo(new NodeInfo(node.getMemorySizeGB(),node.getDevices()))
             .agentVersion(node.getAgentVersion())
+            .status(AgentStatus.ONLINE)
             .connectTime(Instant.now().toEpochMilli())
             .build();
     }
@@ -63,6 +64,7 @@ public class AgentConverter {
             .ip(entity.getAgentIp())
             .serialNumber(entity.getSerialNumber())
             .agentVersion(entity.getAgentVersion())
+            .status(entity.getStatus())
             .nodeInfo(nodeInfo)
             .connectTime(entity.getConnectTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
             .build();
@@ -80,6 +82,7 @@ public class AgentConverter {
             .serialNumber(agent.getSerialNumber())
             .agentIp(agent.getIp())
             .agentVersion(agent.getAgentVersion())
+            .status(agent.getStatus())
             .connectTime(Instant.ofEpochMilli(agent.getConnectTime()).atZone(ZoneId.systemDefault()).toLocalDateTime())
             .deviceInfo(deviceInfo)
             .build();

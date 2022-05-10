@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -66,6 +67,24 @@ public interface SystemApi {
         @Valid
         @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
+
+    @Operation(summary = "remove offline agent")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = String.class)))
+        })
+    @DeleteMapping(value = "/system/agent")
+    ResponseEntity<ResponseMessage<String>> deleteAgent(
+        @Parameter(in = ParameterIn.QUERY, description = "the serialNumber of the agent to be deleted", schema = @Schema())
+        @Valid
+        @RequestParam(value = "serialNumber", required = true)
+            String serialNumber);
 
     @Operation(summary = "Upgrade system version or cancel upgrade")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

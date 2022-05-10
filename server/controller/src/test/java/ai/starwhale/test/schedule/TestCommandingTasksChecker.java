@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.domain.system.agent.Agent;
 import ai.starwhale.mlops.domain.system.agent.Agent.AgentUnModifiable;
+import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
@@ -32,11 +33,12 @@ import org.junit.jupiter.api.Test;
 
 public class TestCommandingTasksChecker {
     final TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
-    final CommandingTasksChecker commandingTasksChecker = new CommandingTasksChecker(taskStatusMachine);
+    final CommandingTasksChecker commandingTasksChecker = new CommandingTasksChecker(taskStatusMachine,
+        null, null);
 
     @Test
     public void test(){
-        Agent agent = new Agent(1L,"1","10.199.2.2","10.199.2.2",null,null);
+        Agent agent = new Agent(1L,"1","10.199.2.2","10.199.2.2",null,null, AgentStatus.ONLINE);
         List<TaskCommand> taskCommands = List.of(
             new TaskCommand(CommandType.TRIGGER,Task.builder().id(1L).uuid("uu1").build()),
             new TaskCommand(CommandType.TRIGGER,Task.builder().id(2L).uuid("uu2").build()));

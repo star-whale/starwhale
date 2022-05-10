@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
+import ai.starwhale.mlops.domain.task.bo.Task.StatusUnModifiableTask;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.*;
 
@@ -126,7 +127,13 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
 
     @Override
     public void adopt(Collection<Task> tasks, final TaskStatus status) {
-        tasks.parallelStream().forEach(task -> {
+        tasks.parallelStream().map(task -> {
+            if(task instanceof StatusUnModifiableTask){
+                StatusUnModifiableTask statusUnModifiableTask = (StatusUnModifiableTask) task;
+                return statusUnModifiableTask.getOTask();
+            }
+            return task;
+        }).forEach(task -> {
             updateCache(status, task);
         });
     }
