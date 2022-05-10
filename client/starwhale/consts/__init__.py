@@ -42,6 +42,7 @@ JSON_INDENT = 4
 SW_API_VERSION = "v1"
 
 SHORT_VERSION_CNT = 12
+VERSION_PREFIX_CNT = 2
 SWDS_BACKEND_TYPE = namedtuple("SWDS_BACKEND_TYPE", ["S3", "FUSE"])(
     "s3", "fuse"
 )
@@ -53,3 +54,5 @@ SWDS_SUBFILE_TYPE = namedtuple("SWDS_SUBFILE_TYPE", ["BIN", "META"])(
 )
 SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDS_SUBFILE_TYPE.BIN
 SWDS_LABEL_FNAME_FMT = "label_ubyte_{index}.%s" % SWDS_SUBFILE_TYPE.BIN
+
+CURRENT_FNAME = "current"

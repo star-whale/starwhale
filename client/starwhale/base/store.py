@@ -59,7 +59,7 @@ class LocalStorage(SWCliConfigMixed):
         for s in self.iter_local_swobj():
             table.add_row(s.name, s.version, s.tag, s.size, s.environment, s.generate, s.created)
 
-        Console().print(table)
+        self._console.print(table)
 
     @abstractmethod
     def iter_local_swobj(self) -> "LocalStorage.SWobjMeta" :
