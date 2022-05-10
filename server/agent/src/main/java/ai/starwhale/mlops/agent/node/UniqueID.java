@@ -18,6 +18,7 @@ package ai.starwhale.mlops.agent.node;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +26,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.UUID;
 
 public class UniqueID {
+    public static String UNIQUE_FILE = "unique-id";
 
     private String id;
     private final String basePath;
@@ -40,7 +42,7 @@ public class UniqueID {
     }
 
     private String getOrCheckUniqueID() throws IOException {
-        String uniqueIDFile = basePath + "unique-id";
+        String uniqueIDFile = basePath + File.separator + UNIQUE_FILE;
         Path filePath = Path.of(uniqueIDFile);
         if (Files.exists(filePath)) {
             String content = Files.readString(filePath);
