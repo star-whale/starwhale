@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.swmp;
 
+import ai.starwhale.mlops.domain.project.Project;
+import ai.starwhale.mlops.domain.user.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,13 +29,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SWMPObject {
 
-    private String id;
+    private Long id;
 
     private String name;
 
-    private String projectId;
+    private Project project;
 
-    private String ownerId;
+    private User owner;
 
     private Version version;
 
@@ -43,11 +45,11 @@ public class SWMPObject {
     @NoArgsConstructor
     public static class Version {
 
-        private String id;
+        private Long id;
 
         private String name;
 
-        private String ownerId;
+        private Long ownerId;
 
         private String tag;
 

@@ -28,7 +28,7 @@ public interface JobMapper {
 
     JobEntity findJobById(@Param("jobId") Long jobId);
 
-    int addJob(JobEntity jobEntity);
+    int addJob(@Param("job")JobEntity jobEntity);
 
     List<JobEntity> findJobByStatusIn(@Param("jobStatuses") List<JobStatus> jobStatuses);
 

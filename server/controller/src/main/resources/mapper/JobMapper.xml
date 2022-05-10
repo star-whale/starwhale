@@ -121,18 +121,18 @@
                              device_type,
                              device_amount,
                              result_output_path)
-        values (#{jobUuid},
-                #{projectId},
-                #{swmpVersionId},
-                #{ownerId},
-                #{createdTime},
-                #{finishedTime},
-                #{durationMs},
-                #{jobStatus},
-                #{baseImageId},
-                #{deviceType},
-                #{deviceAmount},
-                #{resultOutputPath}
+        values (#{job.jobUuid},
+                #{job.projectId},
+                #{job.swmpVersionId},
+                #{job.ownerId},
+                #{job.createdTime},
+                #{job.finishedTime},
+                #{job.durationMs},
+                #{job.jobStatus},
+                #{job.baseImageId},
+                #{job.deviceType},
+                #{job.deviceAmount},
+                #{job.resultOutputPath}
                 )
     </insert>
 

@@ -16,15 +16,17 @@
 
 package ai.starwhale.mlops.domain.swmp.mapper;
 
+import ai.starwhale.mlops.domain.swmp.SWMPQuery;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
 public interface SWModelPackageMapper {
 
-    List<SWModelPackageEntity> listSWModelPackages(@Param("projectId")Long projectId, @Param("namePrefix")String namePrefix);
+//    List<SWModelPackageEntity> listSWModelPackages(@Param("projectId")Long projectId, @Param("namePrefix")String namePrefix);
+    List<SWModelPackageEntity> listSWModelPackagesByQuery(@Param("query")SWMPQuery query);
 
-    int addSWModelPackage(SWModelPackageEntity entity);
+    int addSWModelPackage(@Param("entity")SWModelPackageEntity entity);
 
     int deleteSWModelPackage(@Param("id")Long id);
 

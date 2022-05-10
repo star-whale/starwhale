@@ -16,17 +16,19 @@
 
 package ai.starwhale.mlops.domain.swmp;
 
+import ai.starwhale.mlops.api.protocol.StorageFileVO;
 import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
-import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO.ModelFile;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
@@ -42,22 +44,19 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import ai.starwhale.mlops.storage.StorageObjectInfo;
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -74,6 +73,9 @@ public class SWModelPackageService {
     private IDConvertor idConvertor;
 
     @Resource
+    private LocalDateTimeConvertor localDateTimeConvertor;
+
+    @Resource
     private SWMPConvertor swmpConvertor;
 
     @Resource
@@ -86,6 +88,9 @@ public class SWModelPackageService {
     private StorageAccessService storageAccessService;
 
     @Resource
+    private StorageService storageService;
+
+    @Resource
     private UserService userService;
 
     @Resource
@@ -95,32 +100,47 @@ public class SWModelPackageService {
     private LivingTaskCache livingTaskCache;
 
 
-    public PageInfo<SWModelPackageVO> listSWMP(SWMPObject swmp, PageParams pageParams) {
+    public PageInfo<SWModelPackageVO> listSWMP(SWMPQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackages(
-            idConvertor.revert(swmp.getProjectId()), swmp.getName());
+        List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackagesByQuery(query);
+            //idConvertor.revert(swmp.getProject().getId()), swmp.getName());
         return PageUtil.toPageInfo(entities, swmpConvertor::convert);
     }
 
     public Boolean deleteSWMP(SWMPObject swmp) {
-        Long id = idConvertor.revert(swmp.getId());
+        Long id = swmp.getId();
         int res = swmpMapper.deleteSWModelPackage(id);
         log.info("SWMP has been deleted. ID={}", id);
         return res > 0;
     }
 
+    public List<SWModelPackageInfoVO> listSWMPInfo(SWMPQuery query) {
+        List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackagesByQuery(query);
+
+        return entities.stream()
+            .map(entity -> getSWMPInfo(SWMPObject.builder()
+                .id(entity.getId())
+                .name(entity.getSwmpName())
+                .build()))
+            .collect(Collectors.toList());
+    }
+
     public SWModelPackageInfoVO getSWMPInfo(SWMPObject swmp) {
-        Long modelID = idConvertor.revert(swmp.getId());
-        SWModelPackageEntity model = swmpMapper.findSWModelPackageById(modelID);
-        if (model == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip("Unable to find swmp " + modelID), HttpStatus.BAD_REQUEST);
+        Long modelID = swmp.getId();
+        String swmpName = swmp.getName();
+        if(!StringUtils.hasText(swmpName)) {
+            SWModelPackageEntity model = swmpMapper.findSWModelPackageById(modelID);
+            if (model == null) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                    .tip("Unable to find swmp " + modelID), HttpStatus.BAD_REQUEST);
+            }
+            swmpName = model.getSwmpName();
         }
 
         SWModelPackageVersionEntity versionEntity;
         if(swmp.getVersion() != null) {
             // find version by versionId
-            Long versionId = idConvertor.revert(swmp.getVersion().getId());
+            Long versionId = swmp.getVersion().getId();
             versionEntity = swmpVersionMapper.findVersionById(versionId);
             if(versionEntity == null) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
@@ -130,34 +150,28 @@ public class SWModelPackageService {
             // find current version
             versionEntity = swmpVersionMapper.getLatestVersion(modelID);
             if(versionEntity == null) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                    .tip("Unable to find the latest version of swmp " + modelID), HttpStatus.BAD_REQUEST);
+                log.error("Unable to find the latest version of swmp {}", modelID);
+                SWModelPackageInfoVO vo = SWModelPackageInfoVO.empty();
+                vo.setSwmpId(idConvertor.convert(modelID));
+                vo.setSwmpName(swmpName);
+                return vo;
+//                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+//                    .tip("Unable to find the latest version of swmp " + modelID), HttpStatus.BAD_REQUEST);
             }
         }
 
         //Get file list in storage
         try {
             String storagePath = versionEntity.getStoragePath();
-            Stream<String> list = storageAccessService.list(storagePath);
-            List<ModelFile> collect = list.map(filePath -> {
-                long length = 0L;
-                try {
-                    StorageObjectInfo info = storageAccessService.head(filePath);
-                    length = info.getContentLength();
-                } catch (IOException e) {
-                    log.error("storage head", e);
-                }
-                if (StrUtil.startWith(filePath, storagePath)) {
-                    filePath = filePath.substring(0, storagePath.length());
-                }
-                return ModelFile.builder()
-                    .name(filePath)
-                    .size(FileUtil.readableFileSize(length))
-                    .build();
-            }).collect(Collectors.toList());
+            List<StorageFileVO> collect = storageService.listStorageFile(storagePath);
 
             return SWModelPackageInfoVO.builder()
-                .modelName(model.getSwmpName())
+                .swmpId(idConvertor.convert(modelID))
+                .swmpName(swmpName)
+                .versionName(versionEntity.getVersionName())
+                .versionTag(versionEntity.getVersionTag())
+                .versionMeta(versionEntity.getVersionMeta())
+                .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))
                 .files(collect)
                 .build();
 
@@ -172,7 +186,7 @@ public class SWModelPackageService {
 
     public Boolean modifySWMPVersion(Version version) {
         SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
-            .id(idConvertor.revert(version.getId()))
+            .id(version.getId())
             .versionTag(version.getTag())
             .storagePath(version.getStoragePath())
             .build();
@@ -182,7 +196,7 @@ public class SWModelPackageService {
     }
 
     public Boolean revertVersionTo(SWMPObject swmp) {
-        Long vid = idConvertor.revert(swmp.getVersion().getId());
+        Long vid = swmp.getVersion().getId();
         int res = swmpVersionMapper.revertTo(vid);
         log.info("SWMP Version has been revert to {}", vid);
         return res > 0;
@@ -191,15 +205,15 @@ public class SWModelPackageService {
     public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPObject swmp, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWModelPackageVersionEntity> entities = swmpVersionMapper.listVersions(
-            idConvertor.revert(swmp.getId()), swmp.getVersion().getName());
+            swmp.getId(), swmp.getVersion().getName());
         return PageUtil.toPageInfo(entities, versionConvertor::convert);
     }
 
     public String addSWMP(SWMPObject swmp) {
         SWModelPackageEntity entity = SWModelPackageEntity.builder()
             .swmpName(swmp.getName())
-            .ownerId(idConvertor.revert(swmp.getOwnerId()))
-            .projectId(idConvertor.revert(swmp.getProjectId()))
+            .ownerId(idConvertor.revert(swmp.getOwner().getId()))
+            .projectId(idConvertor.revert(swmp.getProject().getId()))
             .build();
         if(entity.getProjectId() == 0) {
             ProjectEntity defaultProject = projectManager.findDefaultProject();
@@ -214,8 +228,8 @@ public class SWModelPackageService {
 
     public String addVersion(SWMPObject swmp) {
         SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
-            .swmpId(idConvertor.revert(swmp.getId()))
-            .ownerId(idConvertor.revert(swmp.getVersion().getOwnerId()))
+            .swmpId(swmp.getId())
+            .ownerId(swmp.getVersion().getOwnerId())
             .versionTag(swmp.getVersion().getTag())
             .versionName(swmp.getVersion().getName())
             .versionMeta(swmp.getVersion().getMeta())

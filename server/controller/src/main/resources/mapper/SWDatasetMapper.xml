@@ -59,7 +59,7 @@
 
     <insert id="addDataset" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into dataset_info(dataset_name, project_id, owner_id)
-        values(#{datasetName}, #{projectId}, #{ownerId})
+        values(#{swds.datasetName}, #{swds.projectId}, #{swds.ownerId})
     </insert>
 
     <delete id="deleteDataset" >

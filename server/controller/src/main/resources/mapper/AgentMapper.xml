@@ -28,7 +28,7 @@
 
     <insert id="addAgent" parameterType="ai.starwhale.mlops.domain.system.AgentEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into agent_info(agent_ip, connect_time, agent_version, serial_number, device_info)
-        values (inet_aton(#{agentIp}), #{connectTime}, #{agentVersion}, #{serialNumber}, #{deviceInfo})
+        values (inet_aton(#{agent.agentIp}), #{agent.connectTime}, #{agent.agentVersion}, #{agent.serialNumber}, #{agent.deviceInfo})
     </insert>
 
     <update id="updateAgents">
