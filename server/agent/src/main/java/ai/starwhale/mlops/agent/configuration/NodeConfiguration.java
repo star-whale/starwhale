@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.agent.configuration;
 
 import ai.starwhale.mlops.agent.node.SourcePool;
+import ai.starwhale.mlops.agent.node.UniqueID;
 import ai.starwhale.mlops.agent.node.base.SimpleSystemDetect;
 import ai.starwhale.mlops.agent.node.base.SystemDetect;
 import ai.starwhale.mlops.agent.node.cpu.CPUDetect;
@@ -45,6 +46,11 @@ public class NodeConfiguration {
     }
 
     @Bean
+    public UniqueID uniqueID(AgentProperties agentProperties) {
+        return new UniqueID(agentProperties.getBasePath());
+    }
+
+    @Bean
     @ConditionalOnProperty(name = "sw.agent.node.sourcePool.gpu.nvidia.detect", havingValue = "cmd", matchIfMissing = true)
     public GPUDetect nvidiaGPUDetect() {
         return new NvidiaCmdDetect();
@@ -58,8 +64,8 @@ public class NodeConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "sw.agent.node.sourcePool.system.detect", havingValue = "simple", matchIfMissing = true)
-    public SystemDetect simpleSystemDetect() {
-        return new SimpleSystemDetect();
+    public SystemDetect simpleSystemDetect(UniqueID uniqueID) {
+        return new SimpleSystemDetect(uniqueID);
     }
 
     // todo:other brand of gpu
