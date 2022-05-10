@@ -19,6 +19,7 @@ jobs:
       scss: ${{ steps.filter.outputs.scss }}
 
     steps:
+      - uses: actions/checkout@v3
       - name: Check for console files changed
         uses: getsentry/paths-filter@v2
         id: filter

@@ -28,3 +28,6 @@ ci-type:
 
 ut:
 	echo "ut"
+
+install-req:
+	python3 -m pip install .
