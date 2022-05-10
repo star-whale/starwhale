@@ -80,7 +80,7 @@ export default function JobOverview() {
                 style={{
                     width: '100%',
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 380px',
+                    gridTemplateColumns: '1fr 1fr 430px',
                     gridAutoRows: '200px',
                     // gridAutoColumns: 'minmax(200px, 1fr)',
                     gridGap: '16px',
