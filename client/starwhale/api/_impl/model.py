@@ -17,6 +17,7 @@ from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils import pretty_bytes, in_production, now_str
+from starwhale.consts import CURRENT_FNAME
 from .loader import DATA_FIELD, DataLoader, get_data_loader
 
 _TASK_ROOT_DIR = "/var/starwhale" if  in_production() else "/tmp/starwhale"
@@ -103,7 +104,7 @@ class PipelineHandler(object):
 
         self._data_loader = get_data_loader(self.config.swds_config, self._sw_logger)
         #TODO: split status/result files
-        self._result_writer = _jl_writer(self.config.result_dir / "current")
+        self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)
         self._status_writer = _jl_writer(self.config.status_dir / "timeline")
 
         #TODO: find some elegant call method
@@ -259,5 +260,5 @@ class PipelineHandler(object):
         self._update_status(self.STATUS.RUNNING)
 
     def _update_status(self, status: str) -> None:
-        fpath = self.config.status_dir / "current"
+        fpath = self.config.status_dir / CURRENT_FNAME
         ensure_file(fpath, status)

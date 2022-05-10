@@ -54,3 +54,5 @@ SWDS_SUBFILE_TYPE = namedtuple("SWDS_SUBFILE_TYPE", ["BIN", "META"])(
 )
 SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDS_SUBFILE_TYPE.BIN
 SWDS_LABEL_FNAME_FMT = "label_ubyte_{index}.%s" % SWDS_SUBFILE_TYPE.BIN
+
+CURRENT_FNAME = "current"

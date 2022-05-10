@@ -7,7 +7,10 @@ from rich.table import Table
 from rich.pretty import Pretty
 
 from starwhale.base.store import LocalStorage
-from starwhale.consts import DEFAULT_MANIFEST_NAME, SHORT_VERSION_CNT, VERSION_PREFIX_CNT
+from starwhale.consts import (
+    DEFAULT_MANIFEST_NAME, SHORT_VERSION_CNT, VERSION_PREFIX_CNT,
+    CURRENT_FNAME,
+)
 from starwhale.utils.fs import empty_dir
 
 class EvalLocalStorage(LocalStorage):
@@ -62,7 +65,7 @@ class EvalLocalStorage(LocalStorage):
             self._console.rule(f"[green bold]Inspect {DEFAULT_MANIFEST_NAME} for eval:{version}")
             self._console.print(Pretty(_m, expand_all=True))
 
-        _rpath = _dir / EVAL_TASK_TYPE.CMP / _RUN_SUBDIR.RESULT / "current"
+        _rpath = _dir / EVAL_TASK_TYPE.CMP / _RUN_SUBDIR.RESULT / CURRENT_FNAME
         if _rpath.exists():
             render_cmp_report(_rpath)
         else:

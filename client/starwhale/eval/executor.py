@@ -7,13 +7,12 @@ from pathlib import Path
 import jsonlines
 
 from loguru import logger
-from rich.console import Console
 
 from starwhale.utils import gen_uniq_version, console, now_str
 from .store import EvalLocalStorage
 from starwhale.consts import (
     DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, DEFAULT_MANIFEST_NAME,
-    JSON_INDENT, SWDS_BACKEND_TYPE, VERSION_PREFIX_CNT
+    JSON_INDENT, SWDS_BACKEND_TYPE, VERSION_PREFIX_CNT, CURRENT_FNAME
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
@@ -21,6 +20,7 @@ from starwhale.swds.dataset import DataSet
 from starwhale.swmp.store import ModelPackageLocalStore
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
+from starwhale.api._impl.model import PipelineHandler
 
 DEFAULT_SW_TASK_RUN_IMAGE = "starwhaleai/starwhale:latest"
 EVAL_TASK_TYPE = namedtuple("EVAL_TASK_TYPE", ["ALL", "PPL", "CMP"])(
@@ -30,6 +30,7 @@ _CNTR_WORKDIR = "/opt/starwhale"
 _RUN_SUBDIR = namedtuple("_RUN_SUBDIR", ["RESULT", "DATASET", "PPL_RESULT", "STATUS", "LOG", "SWMP", "CONFIG"])(
     "result", "dataset", "ppl_result", "status", "log", "swmp", "config"
 )
+_STATUS = PipelineHandler.STATUS
 
 
 class EvalExecutor(object):
@@ -47,7 +48,7 @@ class EvalExecutor(object):
 
         self._console = console
         self._version = ""
-        self._manifest = {}
+        self._manifest = {"status": _STATUS.START}
         self._workdir = Path()
         self._model_dir = Path()
 
@@ -69,7 +70,18 @@ class EvalExecutor(object):
 
     @logger.catch
     def run(self, phase: str=EVAL_TASK_TYPE.ALL):
+        try:
+            self._do_run(phase)
+        except Exception as e:
+            self._manifest["status"] = _STATUS.FAILED
+            self._manifest["error_message"] = str(e)
+            raise
+        finally:
+            self._render_manifest()
+
+    def _do_run(self, phase: str=EVAL_TASK_TYPE.ALL):
         self._manifest["phase"] = phase
+        self._manifest["status"] = _STATUS.RUNNING
 
         operations = [
             (self._gen_version, 5, "gen version"),
@@ -92,10 +104,6 @@ class EvalExecutor(object):
             operations.append(
                 (self._render_report, 15, "render report")
             )
-
-        operations.append(
-            (self._render_manifest, 5, "render manifest"),
-        )
 
         run_with_progress_bar("eval run in local...", operations, self._console)
 
@@ -159,7 +167,7 @@ class EvalExecutor(object):
                 dict(
                     bucket= f"{_CNTR_WORKDIR}/{_RUN_SUBDIR.PPL_RESULT}",
                     key=dict(
-                        data="current",
+                        data=CURRENT_FNAME,
                     )
                 )
             ]
@@ -224,18 +232,26 @@ class EvalExecutor(object):
         return " ".join(cmd)
 
     def _render_report(self) -> None:
-        _f = self._cmp_workdir / _RUN_SUBDIR.RESULT / "current"
+        _f = self._cmp_workdir / _RUN_SUBDIR.RESULT / CURRENT_FNAME
         render_cmp_report(_f)
 
         self._console.rule("[bold green]More Details[/]")
         self._console.print(f":helicopter: eval version: [green]{self._version}[/], :hedgehog: workdir: {self._workdir.resolve()} \n")
 
     def _render_manifest(self):
+        _status = True
+        for _d in (self._ppl_workdir, self._cmp_workdir):
+            _f = _d / _RUN_SUBDIR.STATUS / CURRENT_FNAME
+            if not _f.exists():
+                continue
+            _status = _status and (_f.open().read().strip() == _STATUS.SUCCESS)
+
         self._manifest.update(
             dict(
                 name=self.name,
                 desc=self.desc,
                 model=self.model,
+                status=_STATUS.SUCCESS if _status else _STATUS.FAILED,
                 datasets=self.datasets,
                 baseimage=self.baseimage,
                 finished_at=now_str(),
