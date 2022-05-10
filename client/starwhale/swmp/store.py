@@ -29,6 +29,7 @@ from starwhale.utils.error import NotFoundError
 from starwhale.utils.http import wrap_sw_error_resp, upload_file
 
 TMP_FILE_BUFSIZE = 8192
+_SWMP_FILE_TYPE = ".swmp"
 
 class ModelPackageLocalStore(LocalStorage):
 
@@ -47,11 +48,11 @@ class ModelPackageLocalStore(LocalStorage):
                 continue
 
             for _fname in pkg_fs.opendir(mdir.name).listdir("."):
-                if _fname != self.LATEST_TAG and not _fname.endswith(".swmp"):
+                if _fname != self.LATEST_TAG and not _fname.endswith(_SWMP_FILE_TYPE):
                     continue
 
                 _path = self.pkgdir / mdir.name / _fname
-                _manifest = self._load_swmp_manifest(str(_path.resolve()))
+                _manifest = self._load_swmp_manifest(_path.resolve())
                 _tag = _fname if _fname == self.LATEST_TAG else ""
 
                 yield LocalStorage.SWobjMeta(
@@ -62,8 +63,15 @@ class ModelPackageLocalStore(LocalStorage):
                     created=_manifest["created_at"]
                 )
 
-    def _load_swmp_manifest(self, fpath) -> dict:
-        with TarFS(fpath) as tar:
+    def _load_swmp_manifest(self, fpath: Path, direct: bool=False) -> dict:
+        if not direct and fpath.name.endswith(_SWMP_FILE_TYPE):
+            _mname = fpath.parent.name
+            _mversion = fpath.name.split(_SWMP_FILE_TYPE)[0]
+            _extracted_fpath = self.workdir / _mname / _mversion / DEFAULT_MANIFEST_NAME
+            if _extracted_fpath.exists():
+                return yaml.safe_load(_extracted_fpath.open())
+
+        with TarFS(str(fpath)) as tar:
             return yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
 
     def push(self, swmp: str, project: str="", force: bool=False) -> None:
@@ -113,7 +121,7 @@ class ModelPackageLocalStore(LocalStorage):
 
     def swmp_path(self, swmp: str) -> Path:
         _model, _version = self._parse_swobj(swmp)
-        return (self.pkgdir / _model / f"{_version}.swmp")
+        return (self.pkgdir / _model / f"{_version}{_SWMP_FILE_TYPE}")
 
     def info(self, swmp: str) -> None:
         _manifest = self.get_swmp_info(*self._parse_swobj(swmp))
@@ -123,7 +131,7 @@ class ModelPackageLocalStore(LocalStorage):
 
     def get_swmp_info(self, _name: str, _version: str) -> dict:
         _workdir = self._guess(self.workdir / _name, _version)
-        _swmp_path = self._guess(self.pkgdir / _name, _version if _version == self.LATEST_TAG else f"{_version}.swmp")
+        _swmp_path = self._guess(self.pkgdir / _name, _version if _version == self.LATEST_TAG else f"{_version}{_SWMP_FILE_TYPE}")
 
         if _workdir.exists():
             _manifest = yaml.safe_load((_workdir / DEFAULT_MANIFEST_NAME).open())
@@ -196,7 +204,7 @@ class ModelPackageLocalStore(LocalStorage):
 
     def _get_swmp_path(self, swmp: str) -> Path:
         _name, _version = swmp.split(":")
-        return self.pkgdir / _name / f"{_version}.swmp"
+        return self.pkgdir / _name / f"{_version}{_SWMP_FILE_TYPE}"
 
     def pre_activate(self, swmp: str) -> None:
         if swmp.count(":") == 1:
