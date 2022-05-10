@@ -1,6 +1,13 @@
 name: Maven Package
 
-on: [push]
+on: 
+  push:
+    branches:
+      - main
+      - feat/*
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
