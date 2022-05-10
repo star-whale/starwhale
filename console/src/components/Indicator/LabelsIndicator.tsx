@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
+import React, { memo, useCallback, useRef, useState } from 'react'
 import {
     StatefulDataTable,
     NumericalColumn,
@@ -108,25 +108,21 @@ function LabelsIndicator({ data: rawData, style, isLoading }: ILabelsProps) {
             })
         )
 
-    const [rows, setRows] = React.useState([] as Array<{ id: string; data: ILabel }>)
-
-    useEffect(() => {
-        const itemsToRowData: Array<{ id: string; data: ILabel }> = _.values(
-            _.map(rawData, (value, rawKey) => {
-                return {
+    const itemsToRowData: Array<{ id: string; data: ILabel }> = _.values(
+        _.map(rawData, (value, rawKey) => {
+            return {
+                id: rawKey,
+                data: {
                     id: rawKey,
-                    data: {
-                        id: rawKey,
-                        ...value,
-                    },
-                }
-            })
-        )
-        setRows(itemsToRowData)
-    }, [rawData])
+                    ...value,
+                },
+            }
+        })
+    )
 
     const rowActions: RowActionT[] = []
     const batchActions: BatchActionT[] = []
+    const rows = itemsToRowData
 
     return (
         <BusyLoaderWrapper loaderType='skeleton' isLoading={isLoading}>
