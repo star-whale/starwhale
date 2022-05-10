@@ -14,24 +14,17 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.api.protocol.runtime;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class BaseImageEntity extends BaseEntity {
-
-    private Long id;
-
+@Validated
+public class BaseImageRequest {
+    @NotNull
+    @JsonProperty("imageName")
     private String imageName;
-
 }

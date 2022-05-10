@@ -20,7 +20,17 @@
         order by image_name
     </select>
 
+    <insert id="createBaseImage" parameterType="ai.starwhale.mlops.domain.job.BaseImageEntity" useGeneratedKeys="true" keyProperty="id">
+        insert into base_image(image_name) values(#{image.imageName})
+    </insert>
 
+    <delete id="deleteBaseImage" parameterType="java.lang.Long">
+        delete from base_image where id = #{id}
+    </delete>
+
+    <delete id="deleteBaseImageByName" parameterType="java.lang.String">
+        delete from base_image where image_name = #{name}
+    </delete>
 
     <resultMap id="baseImageResultMap" type="ai.starwhale.mlops.domain.job.BaseImageEntity" >
         <id property="id" column="image_id" />

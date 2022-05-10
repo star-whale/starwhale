@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Service
 public class EnvService {
@@ -35,6 +36,25 @@ public class EnvService {
     @Resource
     private BaseImageConvertor baseImageConvertor;
 
+
+    public Long createImage(BaseImage baseImage) {
+        BaseImageEntity entity = BaseImageEntity.builder()
+            .id(baseImage.getId())
+            .imageName(baseImage.getName())
+            .build();
+        baseImageMapper.createBaseImage(entity);
+        return entity.getId();
+    }
+
+    public Boolean deleteImage(BaseImage baseImage) {
+        int res;
+        if(StringUtils.hasText(baseImage.getName())) {
+            res = baseImageMapper.deleteBaseImageByName(baseImage.getName());
+        } else {
+            res = baseImageMapper.deleteBaseImage(baseImage.getId());
+        }
+        return res > 0;
+    }
 
     public List<BaseImageVO> listImages(String namePrefix) {
         List<BaseImageEntity> baseImageEntities = baseImageMapper.listBaseImages(namePrefix);
