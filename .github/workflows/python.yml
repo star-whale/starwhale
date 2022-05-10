@@ -1,0 +1,99 @@
+name: python
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  codestyle:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+      - name: Get pip cache
+        id: pip-cache-path
+        run: echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: pip-cache
+        with:
+          path: ${{ steps.pip-cache-path.outputs.dir }}
+          key: ${{ runner.os }}-codestyle-${{ hashFiles('client/requirements-dev.txt')}}
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: |
+          pip install .
+          pip install -r requirements-dev.txt
+
+      - name: Black format check
+        working-directory: ./client
+        run: make ci-format
+      - name: Lint check
+        working-directory: ./client
+        run: make ci-lint
+      - name: Type Check
+        working-directory: ./client
+        run: make ci-type
+
+  unittest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.7'
+          architecture: 'x64'
+
+      - name: Get pip cache
+        id: pip-cache-path
+        run: echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: pip-cache
+        with:
+          path: ${{ steps.pip-cache-path.outputs.dir }}
+          key: ${{ runner.os }}-unittest-${{ hashFiles('client/requirements-dev.txt')}}
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: |
+          pip install .
+          pip install -r requirements-dev.txt
+
+      - name: Run Unittest
+        working-directory: ./client
+        run: make ut
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3.1.0
+        with:
+          name: codecov
+          fail_ci_if_error: false
+          directory: ./client/coverage/reports/
+          files: ./coverage.xml
+          flags: unittests
+          verbose: true

@@ -16,3 +16,15 @@ build-dev-wheel:
 
 dev-dep:
 	python3 -m pip install -r requirements-dev.txt
+
+ci-format:
+	echo "ci format"
+
+ci-lint:
+	echo "ci lint"
+
+ci-type:
+	echo "ci type"
+
+ut:
+	echo "ut"
