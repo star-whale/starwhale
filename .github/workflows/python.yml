@@ -1,4 +1,4 @@
-name: python
+name: Python Client/SDK
 
 on:
   push:
@@ -10,11 +10,30 @@ on:
 
 jobs:
 
+  filter:
+    runs-on: ubuntu-latest
+
+    outputs:
+      client: ${{ steps.filter.outputs.client }}
+
+    steps:
+      - name: Check for python files changed
+        uses: getsentry/paths-filter@v2
+        id: filter
+        with:
+          base: main
+          filters: .github/file-filter.yml
+
+
   codestyle:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
+
+    needs:
+      - filter
+    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v3
@@ -40,7 +59,6 @@ jobs:
         working-directory: ./client
         run: |
           pip install .
-          pip install -r requirements-dev.txt
 
       - name: Black format check
         working-directory: ./client
@@ -58,8 +76,18 @@ jobs:
       run:
         shell: bash
 
+    needs:
+      - filter
+    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
+
     steps:
       - uses: actions/checkout@v3
+
+      - name: Check for python files changed
+        uses: getsentry/paths-filter@v2
+        id: python-changes
+        with:
+          filters: .github/python-file-filters.yml
 
       - name: Setup python
         uses: actions/setup-python@v3
@@ -82,7 +110,6 @@ jobs:
         working-directory: ./client
         run: |
           pip install .
-          pip install -r requirements-dev.txt
 
       - name: Run Unittest
         working-directory: ./client
