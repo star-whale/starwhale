@@ -12,7 +12,7 @@ from functools import wraps
 import loguru
 import jsonlines
 
-from starwhale.consts.env import SW_ENV
+from starwhale.consts.env import sw_env
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -65,10 +65,10 @@ class _RunConfig(object):
     def create_by_env(cls) -> "_RunConfig":
         _env = os.environ.get
         return _RunConfig(
-            swds_config_path=_env(SW_ENV.INTPUT_CONFIG),
-            status_dir=_env(SW_ENV.STATUS_D),
-            log_dir=_env(SW_ENV.LOG_D),
-            result_dir=_env(SW_ENV.RESULT_D),
+            swds_config_path=_env(sw_env.input_config),
+            status_dir=_env(sw_env.status_dir),
+            log_dir=_env(sw_env.log_dir),
+            result_dir=_env(sw_env.result_dir),
         )
 
     @classmethod
@@ -78,10 +78,10 @@ class _RunConfig(object):
             if _v:
                 os.environ[_e] = _v
 
-        _set("status_dir", SW_ENV.STATUS_D)
-        _set("log_dir", SW_ENV.LOG_D)
-        _set("result_dir", SW_ENV.RESULT_D)
-        _set("input_config", SW_ENV.INTPUT_CONFIG)
+        _set("status_dir", sw_env.status_dir)
+        _set("log_dir", sw_env.log_dir)
+        _set("result_dir", sw_env.result_dir)
+        _set("input_config", sw_env.input_config)
 
 
 class PipelineHandler(object):
