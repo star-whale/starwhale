@@ -25,6 +25,7 @@ PROJECT_OBJ_TYPE = namedtuple("PROJECT_OBJ_TYPE", ["MODEL", "DATASET"])(
     "model", "dataset"
 )
 
+
 # TODO: use model-view-control mode to refactor Cluster
 class ClusterModel(SWCliConfigMixed):
     def __init__(self, swcli_config: t.Union[dict, None] = None) -> None:
@@ -181,8 +182,8 @@ class ClusterModel(SWCliConfigMixed):
         ).json()
 
         tasks = []
-        for t in r["data"]["list"]:
-            t["created_at"] = _fmt_timestamp(t["startTime"])
+        for _t in r["data"]["list"]:
+            _t["created_at"] = _fmt_timestamp(_t["startTime"])
             tasks.append(t)
 
         return tasks, self._parse_pager(r)

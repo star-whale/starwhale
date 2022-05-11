@@ -17,7 +17,11 @@ def init_logger(verbose: int) -> None:
     elif verbose == 2:
         lvl = logging.INFO
     else:
-        fmt = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | {elapsed} | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+        fmt = (
+            "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | {elapsed} | "
+            "<level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> "
+            "- <level>{message}</level>"
+        )
         lvl = logging.DEBUG
 
     lvl_name = logging.getLevelName(lvl)

@@ -2,10 +2,7 @@ from http import HTTPStatus
 import sys
 
 import requests
-from loguru import logger
 from rich import print as rprint
-from rich.pretty import Pretty
-from rich.panel import Panel
 
 from starwhale.utils.config import update_swcli_config
 from starwhale.utils import fmt_http_server
@@ -28,7 +25,7 @@ def login(username, password, server):
         rprint(f":man_cook: login {server} successfully!")
         token = r.headers.get("Authorization")
         if not token:
-            rprint(f":do_not_litter: cannot get token, please contract starwhale.")
+            rprint(":do_not_litter: cannot get token, please contract starwhale.")
             sys.exit(1)
 
         _d = r.json()["data"]
@@ -55,4 +52,4 @@ def logout():
             user_role="",
         )
     )
-    rprint(f":wink: bye.")
+    rprint(":wink: bye.")

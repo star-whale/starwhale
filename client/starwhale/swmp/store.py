@@ -131,7 +131,7 @@ class ModelPackageLocalStore(LocalStorage):
                 with _spath.open("wb") as f:
                     for chunk in r.iter_content(chunk_size=TMP_FILE_BUFSIZE):
                         f.write(chunk)
-                rprint(f" :clap: pull completed")
+                rprint(":clap: pull completed")
             else:
                 wrap_sw_error_resp(r, "pull failed", exit=True)
 
@@ -268,7 +268,7 @@ class ModelPackageLocalStore(LocalStorage):
             logger.info(f"render activate script: {_ascript}")
             venv_activate_render(_env_dir, _ascript)
         else:
-            logger.info(f"restore conda env ...")
+            logger.info("restore conda env ...")
             _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
             # TODO: controller will proceed in advance
             conda_restore(_env_yaml, _env_dir)

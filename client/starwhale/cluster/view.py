@@ -17,11 +17,12 @@ class ClusterView(ClusterModel):
     def _pager(func):  # type: ignore
         @wraps(func)  # type: ignore
         def _wrapper(*args, **kwargs):
-            self: ClusterView = args[0]
-
             def _print(_r):
                 p = Panel(
-                    f"Counts: [green] {_r['current']}/{_r['total']} [/] :sheep: , [red] {_r['remain']} [/] items does not show.",
+                    (
+                        f"Counts: [green] {_r['current']}/{_r['total']} [/] :sheep: ,"
+                        f"[red] {_r['remain']} [/] items does not show."
+                    ),
                     title="Count Details",
                     title_align="left",
                 )
@@ -47,7 +48,7 @@ class ClusterView(ClusterModel):
                     f":clown_face:{self.user_name}@{self.user_role}",
                 )
                 p = Panel(
-                    grid, title=f"Starwhale Controller Cluster", title_align="left"
+                    grid, title="Starwhale Controller Cluster", title_align="left"
                 )
                 rprint(p, "\n")
 
@@ -90,15 +91,15 @@ class ClusterView(ClusterModel):
             table.add_column("Created")
             table.add_column("Finished")
 
-            for t in tasks:
-                status, style, icon = self._pretty_status(t["taskStatus"])
+            for _t in tasks:
+                status, style, icon = self._pretty_status(_t["taskStatus"])
                 table.add_row(
-                    t["id"],
-                    t["uuid"],
+                    _t["id"],
+                    _t["uuid"],
                     f"[{style}]{icon}{status}[/]",
-                    t["agent"]["ip"],
+                    _t["agent"]["ip"],
                     "",
-                    t["created_at"],
+                    _t["created_at"],
                     "",
                 )
 
@@ -279,7 +280,7 @@ class ClusterView(ClusterModel):
                 _details(p["id"]),
             )
 
-        p = Panel(grid, title=f"Project Details", title_align="left")
+        p = Panel(grid, title="Project Details", title_align="left")
         rprint(p)
         return projects, pager
 

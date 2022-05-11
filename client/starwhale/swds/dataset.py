@@ -41,9 +41,7 @@ from starwhale.consts import (
     SWDS_DATA_FNAME_FMT,
     SWDS_SUBFILE_TYPE,
 )
-from starwhale.utils.config import load_swcli_config
 from starwhale.utils.progress import run_with_progress_bar
-from starwhale.utils.config import load_swcli_config
 from .store import DataSetLocalStore
 
 
@@ -57,6 +55,7 @@ D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
 D_USER_BATCH_SIZE = 1
 
 ARCHIVE_SWDS_META = "archive.%s" % SWDS_SUBFILE_TYPE.META
+
 
 # TODO: use attr to tune code
 class DataSetAttr(object):
@@ -218,9 +217,10 @@ class DataSet(object):
             tar.add(str(_w / DEFAULT_MANIFEST_NAME))
             tar.add(str(_w / DEFAULT_DATASET_YAML_NAME))
 
-        logger.info(f"[step:tar]finish to make swmp_meta tar")
+        logger.info("[step:tar]finish to make swmp_meta tar")
         self._console.print(
-            f":hibiscus: congratulation! you can run [red bold blink] swcli dataset info {self._name}:{self._version}[/]"
+            ":hibiscus: congratulation! you can run "
+            f"[red bold blink] swcli dataset info {self._name}:{self._version}[/]"
         )
 
     def _calculate_signature(self) -> None:
@@ -231,7 +231,7 @@ class DataSet(object):
         logger.info(
             f"[step:signature]try to calculate signature with {_algo} @ {self._data_dir}"
         )
-        self._console.print(f":robot: calculate signature...")
+        self._console.print(":robot: calculate signature...")
 
         # TODO: _cal(self._snapshot_workdir / ARCHIVE_SWDS_META) # add meta sign into _manifest.yaml
         for f in self._data_dir.iterdir():

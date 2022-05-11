@@ -55,7 +55,10 @@ class DataLoader(object):
         return f"DataLoader for {self.storage.backend}"
 
     def __repr__(self) -> str:
-        return f"DataLoader for {self.storage.backend}, swds({len(self.swds)}), extra:{self.storage.service}"
+        return (
+            f"DataLoader for {self.storage.backend}, "
+            f"swds({len(self.swds)}), extra:{self.storage.service}"
+        )
 
 
 class JSONLineDataLoader(DataLoader):

@@ -148,7 +148,10 @@ class PipelineHandler(object):
             sys.stderr = StreamWrapper(sys.stderr, self.logger, logging.WARN)
 
     def __str__(self) -> str:
-        return f"PipelineHandler status@{self.config.status_dir}, log@{self.config.log_dir}, result@{self.config.result_dir}"
+        return (
+            f"PipelineHandler status@{self.config.status_dir}, "
+            f"log@{self.config.log_dir}, result@{self.config.result_dir}"
+        )
 
     def __exit__(self):
         # TODO: reset sys for stdout/stderr?
@@ -219,11 +222,15 @@ class PipelineHandler(object):
     def _starwhale_internal_run_ppl(self) -> None:
         for data, label in self._data_loader:
             self._sw_logger.info(
-                f"[{data.index}]data-label loaded, data size:{pretty_bytes(data.data_size)}, label size:{pretty_bytes(label.data_size)} ,batch:{data.batch_size}"
+                f"[{data.index}]data-label loaded, data size:{pretty_bytes(data.data_size)}, "
+                f"label size:{pretty_bytes(label.data_size)} ,batch:{data.batch_size}"
             )
 
             if data.index != label.index:
-                msg = f"data index[{data.index}] is not equal label index [{label.index}], {'ignore error' if self.ignore_error else ''}"
+                msg = (
+                    f"data index[{data.index}] is not equal label index [{label.index}], "
+                    f"{'ignore error' if self.ignore_error else ''}"
+                )
                 self._sw_logger.error(msg)
                 if not self.ignore_error:
                     raise Exception(msg)

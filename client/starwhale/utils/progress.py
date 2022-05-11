@@ -3,8 +3,6 @@ import typing as t
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 from rich.console import Console
 
-from starwhale.utils import console
-
 
 def run_with_progress_bar(
     title: str, operations: t.List[t.Tuple[t.Callable, int, str]], console: Console

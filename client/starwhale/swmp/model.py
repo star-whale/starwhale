@@ -3,7 +3,6 @@ import os
 import typing as t
 from pathlib import Path
 import platform
-from datetime import datetime
 import tarfile
 
 from loguru import logger
@@ -309,7 +308,7 @@ class ModelPackage(object):
         return self._snapshot_workdir / "src"
 
     def _dump_dep(self) -> None:
-        logger.info(f"[step:dep]start dump python dep...")
+        logger.info("[step:dep]start dump python dep...")
 
         _manifest = dump_python_dep_env(
             dep_dir=self._snapshot_workdir / "dep",
@@ -319,7 +318,7 @@ class ModelPackage(object):
         )
         self._manifest["dep"] = _manifest
 
-        logger.info(f"[step:dep]finish dump dep")
+        logger.info("[step:dep]finish dump dep")
 
     def _copy_src(self) -> None:
         logger.info(
@@ -372,7 +371,7 @@ class ModelPackage(object):
             tar.add(str(self._snapshot_workdir), arcname="")
 
         ensure_link(out, self._swmp_store / "latest")
-        logger.info(f"[step:tar]finish to make swmp")
+        logger.info("[step:tar]finish to make swmp")
         self._console.print(
             f":hibiscus: congratulation! you can run [blink red bold] swcli model info {self._name}:{self._version}[/]"
         )
