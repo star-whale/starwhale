@@ -48,7 +48,7 @@ export default function ModelListCard() {
                                 {model.name}
                             </Link>,
                             model.owner && <User user={model.owner} />,
-                            model.createTime && formatTimestampDateTime(model.createTime),
+                            model.createdTime && formatTimestampDateTime(model.createdTime),
                             <Link key={model.id} to={`/projects/${projectId}/models/${model.id}/versions`}>
                                 {t('Version History')}
                             </Link>,

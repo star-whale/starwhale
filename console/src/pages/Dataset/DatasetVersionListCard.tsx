@@ -75,7 +75,7 @@ export default function DatasetVersionListCard() {
                                 >
                                     {t('show meta')}
                                 </Button>,
-                                dataset.createTime && formatTimestampDateTime(dataset.createTime),
+                                dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                                 dataset.owner && <User user={dataset.owner} />,
                                 <Button size='mini' key={dataset.id} onClick={() => {}}>
                                     {t('Revert')}

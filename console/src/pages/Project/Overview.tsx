@@ -40,7 +40,7 @@ export default function ProjectOverview() {
                     [
                         project?.name,
                         project?.owner && <User user={project?.owner} />,
-                        project?.createTime && formatTimestampDateTime(project.createTime),
+                        project?.createdTime && formatTimestampDateTime(project.createdTime),
                     ],
                 ]}
             />
