@@ -49,7 +49,7 @@ class _RunConfig(object):
         # TODO: graceful method
         self._prepare()
 
-    def load_swds_config(self, path: _ptype) -> dict:
+    def load_swds_config(self, path: _ptype) -> t.Dict[str, t.Any]:
         if not path:
             path = Path(_TASK_ROOT_DIR) / "config" / "swds.json"
 
@@ -77,7 +77,7 @@ class _RunConfig(object):
 
     @classmethod
     def set_env(cls, _config: dict = {}) -> None:
-        def _set(_k, _e):
+        def _set(_k: str, _e: str) -> None:
             _v = _config.get(_k)
             if _v:
                 os.environ[_e] = _v
@@ -147,12 +147,12 @@ class PipelineHandler(object):
         _sw_logger = _logger.bind(type=_LogType.SW)
         return _logger, _sw_logger
 
-    def _monkey_patch(self):
+    def _monkey_patch(self) -> None:
         if not isinstance(sys.stdout, StreamWrapper):
-            sys.stdout = StreamWrapper(sys.stdout, self.logger, logging.INFO)
+            sys.stdout = StreamWrapper(sys.stdout, self.logger, logging.INFO)  # type: ignore
 
         if not isinstance(sys.stderr, StreamWrapper):
-            sys.stderr = StreamWrapper(sys.stderr, self.logger, logging.WARN)
+            sys.stderr = StreamWrapper(sys.stderr, self.logger, logging.WARN)  # type: ignore
 
     def __str__(self) -> str:
         return (
@@ -160,7 +160,7 @@ class PipelineHandler(object):
             f"log@{self.config.log_dir}, result@{self.config.result_dir}"
         )
 
-    def __exit__(self):
+    def __exit__(self) -> None:
         # TODO: reset sys for stdout/stderr?
         sys.stdout = self._orig_stdout
         sys.stderr = self._orig_stderr
@@ -179,15 +179,15 @@ class PipelineHandler(object):
         self._sw_logger.remove()
 
     @abstractmethod
-    def ppl(self, data: bytes, batch_size: int, **kw) -> t.Any:
+    def ppl(self, data: bytes, batch_size: int, **kw: t.Any) -> t.Any:
         # TODO: how to handle each batch element is not equal.
         raise NotImplementedError
 
     @abstractmethod
-    def cmp(self, _data_loader: DataLoader):
+    def cmp(self, _data_loader: DataLoader) -> t.Any:
         raise NotImplementedError
 
-    def handle_label(self, label: bytes, batch_size: int, **kw) -> t.Any:
+    def handle_label(self, label: bytes, batch_size: int, **kw: t.Any) -> t.Any:
         return label.decode()
 
     def _record_status(func):  # type: ignore
@@ -219,7 +219,7 @@ class PipelineHandler(object):
 
         try:
             self._status_writer.write(
-                {"time": now_str(), "status": ex is None, "exception": ex}
+                {"time": now_str(), "status": ex is None, "exception": ex}  # type: ignore
             )
             self._result_writer.write(output)
         except Exception as e:
@@ -279,10 +279,10 @@ class PipelineHandler(object):
         data: DataField,
         label: DataField,
         exception: t.Union[None, Exception],
-    ):
+    ) -> None:
         self._status_writer.write(
             {
-                "time": now_str(),
+                "time": now_str(),  # type: ignore
                 "status": exception is None,
                 "exception": str(exception),
                 "index": data.index,
@@ -305,7 +305,7 @@ class PipelineHandler(object):
                     size=label.data_size,
                 )
             except Exception as e:
-                self._sw_logger.exception(f"{label.data} label handle exception:{e}")
+                self._sw_logger.exception(f"{label.data!r} label handle exception:{e}")
                 if not self.ignore_error:
                     self._update_status(self.STATUS.FAILED)
                     raise

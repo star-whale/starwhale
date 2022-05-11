@@ -71,7 +71,7 @@ class EvalExecutor(object):
 
         self._console = console
         self._version = ""
-        self._manifest = {"status": _STATUS.START}
+        self._manifest: t.Dict[str, t.Any] = {"status": _STATUS.START}
         self._workdir = Path()
         self._model_dir = Path()
 
@@ -83,7 +83,7 @@ class EvalExecutor(object):
     def __repr__(self) -> str:
         return f"Evaluation Executor: name -> {self.name}, version -> {self._version}"
 
-    def _validator(self):
+    def _validator(self) -> None:
         if self.model.count(":") != 1:
             raise SWObjNameFormatError
 
@@ -92,7 +92,7 @@ class EvalExecutor(object):
                 raise SWObjNameFormatError
 
     @logger.catch
-    def run(self, phase: str = EvalTaskType.ALL):
+    def run(self, phase: str = EvalTaskType.ALL) -> None:
         try:
             self._do_run(phase)
         except Exception as e:
@@ -102,7 +102,7 @@ class EvalExecutor(object):
         finally:
             self._render_manifest()
 
-    def _do_run(self, phase: str = EvalTaskType.ALL):
+    def _do_run(self, phase: str = EvalTaskType.ALL) -> None:
         self._manifest["phase"] = phase
         self._manifest["status"] = _STATUS.RUNNING
 
@@ -134,7 +134,7 @@ class EvalExecutor(object):
         if not self._version:
             self._version = gen_uniq_version(self.name)
         self._manifest["version"] = self._version
-        self._manifest["created_at"] = now_str()
+        self._manifest["created_at"] = now_str()  # type: ignore
         logger.info(f"[step:version]eval job version is {self._version}")
 
     @property
@@ -188,14 +188,14 @@ class EvalExecutor(object):
         for i in range(len(_base["swds"])):
             _base["swds"][i]["bucket"] = _bucket
 
-        _f = (
+        _json_f: Path = (
             self._workdir
             / EvalTaskType.PPL
             / RunSubDirType.CONFIG
             / DEFAULT_INPUT_JSON_FNAME
         )
-        ensure_file(_f, json.dumps(_base, indent=JSON_INDENT))
-        return _f
+        ensure_file(_json_f, json.dumps(_base, indent=JSON_INDENT))
+        return _json_f
 
     def _gen_jsonl_fuse_json(self) -> Path:
         _fuse = dict(
@@ -296,7 +296,7 @@ class EvalExecutor(object):
             f":helicopter: eval version: [green]{self._version}[/], :hedgehog: workdir: {self._workdir.resolve()} \n"
         )
 
-    def _render_manifest(self):
+    def _render_manifest(self) -> None:
         _status = True
         for _d in (self._ppl_workdir, self._cmp_workdir):
             _f = _d / RunSubDirType.STATUS / CURRENT_FNAME
@@ -312,7 +312,7 @@ class EvalExecutor(object):
                 status=_STATUS.SUCCESS if _status else _STATUS.FAILED,
                 datasets=self.datasets,
                 baseimage=self.baseimage,
-                finished_at=now_str(),
+                finished_at=now_str(),  # type: ignore
             )
         )
         _f = self._workdir / DEFAULT_MANIFEST_NAME

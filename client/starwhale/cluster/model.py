@@ -29,11 +29,11 @@ class ProjectObjType(t.NamedTuple):
 
 # TODO: use model-view-control mode to refactor Cluster
 class ClusterModel(SWCliConfigMixed):
-    def __init__(self, swcli_config: t.Union[dict, None] = None) -> None:
+    def __init__(self, swcli_config: t.Optional[t.Dict[str, t.Any]] = None) -> None:
         super().__init__(swcli_config)
 
     def request(
-        self, path: str, method: str = HTTPMethod.GET, **kw: dict
+        self, path: str, method: str = HTTPMethod.GET, **kw: t.Any
     ) -> requests.Response:
         _url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/{path.lstrip('/')}"
         r = requests.request(
@@ -98,7 +98,7 @@ class ClusterModel(SWCliConfigMixed):
             )
         return projects, self._parse_pager(r)
 
-    def _parse_pager(self, resp: dict) -> dict:
+    def _parse_pager(self, resp: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         _d = resp["data"]
         return dict(
             total=_d["total"],
@@ -176,7 +176,7 @@ class ClusterModel(SWCliConfigMixed):
         job: int,
         page: int = DEFAULT_PAGE_NUM,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[dict], dict]:
+    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         r = self.request(
             f"/project/{project}/job/{job}/task",
             params={"pageNum": page, "pageSize": size},

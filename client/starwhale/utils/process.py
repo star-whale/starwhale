@@ -1,4 +1,5 @@
 import os
+import typing as t
 from subprocess import Popen, CalledProcessError, PIPE, STDOUT
 
 from select import select
@@ -6,7 +7,7 @@ from select import select
 from loguru import logger
 
 
-def log_check_call(*args, **kwargs) -> int:
+def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
     log = kwargs.pop("log", logger.debug)
     kwargs["stdout"] = PIPE
     kwargs["stderr"] = STDOUT
@@ -17,7 +18,7 @@ def log_check_call(*args, **kwargs) -> int:
 
     output = []
     p = Popen(*args, **kwargs)
-    log(f"cmd: {p.args}")
+    log(f"cmd: {p.args!r}")
     while True:
         fds, _, _ = select([p.stdout], [], [], 30)  # timeout 30s
         for fd in fds:

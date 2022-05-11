@@ -12,7 +12,7 @@ from sklearn.metrics import (
 
 
 class MetricKind(t.NamedTuple):
-    MultiClassification = "multi_classification"
+    MultiClassification: str = "multi_classification"
 
 
 def multi_classification(
@@ -26,7 +26,7 @@ def multi_classification(
         def _wrapper(*args, **kwargs):
             y_true, y_pred = func(*args, **kwargs)
 
-            _r = {"kind": MetricKind.MultiClassification}
+            _r: t.Dict[str, t.Any] = {"kind": MetricKind.MultiClassification}
             cr = classification_report(
                 y_true, y_pred, output_dict=True, labels=all_labels
             )

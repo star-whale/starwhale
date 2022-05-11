@@ -18,11 +18,11 @@ _FILE_END_POS = -1
 
 
 class DataField(t.NamedTuple):
-    index: int
+    idx: int
     data_size: int
     batch_size: int
     data: bytes
-    ext_attr: dict
+    ext_attr: t.Dict[str, t.Any]
 
 
 # TODO: use attr to simplify code
@@ -35,7 +35,7 @@ class DataLoader(object):
     def __init__(
         self,
         storage: StorageBackend,
-        swds: list = [],
+        swds: t.List[t.Dict[str, t.Any]] = [],
         logger: t.Union[loguru.Logger, None] = None,
         kind: str = DataLoaderKind.SWDS,
     ):
@@ -46,12 +46,12 @@ class DataLoader(object):
 
         self._do_validate()
 
-    def _do_validate(self):
+    def _do_validate(self) -> None:
         if self.kind not in (DataLoaderKind.JSONL, DataLoaderKind.SWDS):
             raise Exception(f"{self.kind} no support")
 
     @abstractmethod
-    def __iter__(self):
+    def __iter__(self) -> t.Any:
         raise NotImplementedError
 
     def __str__(self) -> str:
@@ -68,12 +68,12 @@ class JSONLineDataLoader(DataLoader):
     def __init__(
         self,
         storage: StorageBackend,
-        swds: list = [],
+        swds: t.List[t.Dict[str, t.Any]] = [],
         logger: t.Union[loguru.Logger, None] = None,
     ) -> None:
         super().__init__(storage, swds, logger, DataLoaderKind.JSONL)
 
-    def __iter__(self):
+    def __iter__(self) -> t.Any:
         for _swds in self.swds:
             for data in self._do_iter(_swds["bucket"], _swds["key"]["data"]):
                 yield data
@@ -97,7 +97,7 @@ class SWDSDataLoader(DataLoader):
     def __init__(
         self,
         storage: StorageBackend,
-        swds: list = [],
+        swds: t.List[t.Dict[str, t.Any]] = [],
         logger: t.Union[loguru.Logger, None] = None,
     ) -> None:
         super().__init__(storage, swds, logger, DataLoaderKind.SWDS)
@@ -115,7 +115,7 @@ class SWDSDataLoader(DataLoader):
                 yield data, label
 
     def _do_iter(
-        self, bucket: str, key_compose: str, ext_attr: dict
+        self, bucket: str, key_compose: str, ext_attr: t.Dict[str, t.Any]
     ) -> t.Iterator[DataField]:
         from .dataset import _header_struct, _header_size
 
@@ -139,7 +139,12 @@ class SWDSDataLoader(DataLoader):
 class StorageBackend(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, backend: str, secret: dict = {}, service: dict = {}) -> None:
+    def __init__(
+        self,
+        backend: str,
+        secret: t.Dict[str, t.Any] = {},
+        service: t.Dict[str, t.Any] = {},
+    ) -> None:
         self.service = service
         self.backend = backend
         self.secret = secret
@@ -152,7 +157,7 @@ class StorageBackend(object):
     def __repr__(self) -> str:
         return f"StorageBackend for {self.backend}, service: {self.service}"
 
-    def _do_validate(self):
+    def _do_validate(self) -> None:
         # TODO: add more validator
         if self.backend == SWDSBackendType.S3:
             _s = self.secret
@@ -219,7 +224,7 @@ class S3StorageBackend(StorageBackend):
 
 
 class FuseStorageBackend(StorageBackend):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(backend=SWDSBackendType.FUSE)
 
     def _make_file(self, bucket: str, key_compose: str) -> t.Any:
@@ -235,7 +240,8 @@ class FuseStorageBackend(StorageBackend):
 
 # TODO: add mock test
 class S3BufferedFileLike(object):
-    def __init__(self, s3, bucket, key, start, end) -> None:
+    # TODO: add s3 typing
+    def __init__(self, s3: t.Any, bucket: str, key: str, start: int, end: int) -> None:
         self.key = key
         self.obj = s3.Object(bucket, key)
         self.start = start
@@ -247,7 +253,7 @@ class S3BufferedFileLike(object):
         self._current_s3_start = start
         self._iter_lines = None
 
-    def tell(self):
+    def tell(self) -> int:
         return self._current
 
     def readline(self) -> str:
@@ -255,7 +261,7 @@ class S3BufferedFileLike(object):
             self._iter_lines = self.obj.get()["Body"].iter_lines(chunk_size=_CHUNK_SIZE)
 
         try:
-            line: bytes = next(self._iter_lines)
+            line: bytes = next(self._iter_lines)  # type: ignore
         except StopIteration:
             line = b""
         return line.decode()
@@ -287,7 +293,7 @@ class S3BufferedFileLike(object):
                 self._current = end
                 return out
 
-    def close(self):
+    def close(self) -> None:
         # TODO: cleanup stream and open
         self.obj = None
         try:
@@ -309,7 +315,7 @@ class S3BufferedFileLike(object):
         if self._s3_eof or (_end != _FILE_END_POS and _end < _start):
             return b"", 0
 
-        resp = self.obj.get(Range=f"bytes={_start}-{_end}")  # type: ignore
+        resp = self.obj.get(Range=f"bytes={_start}-{_end}")
         body = resp["Body"]
         length = resp["ContentLength"]
         out = resp["Body"].read()
@@ -320,7 +326,7 @@ class S3BufferedFileLike(object):
 
 
 def get_data_loader(
-    swds_config: dict, logger: t.Union[loguru.Logger, None] = None
+    swds_config: t.Dict[str, t.Any], logger: t.Union[loguru.Logger, None] = None
 ) -> DataLoader:
     """s3 or fuse data loader
 
@@ -365,6 +371,8 @@ def get_data_loader(
         DataLoader: S3DataLoader or FuseDataLoader
     """
     logger = logger or _logger
+
+    _storage: t.Union[S3StorageBackend, FuseStorageBackend]
 
     _backend = swds_config["backend"]
     if _backend == SWDSBackendType.S3:

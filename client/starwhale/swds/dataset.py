@@ -85,7 +85,7 @@ class DataSetConfig(object):
         tag: t.List[str] = [],
         desc: str = "",
         version: str = DEFAULT_STARWHALE_API_VERSION,
-        attr: dict = {},
+        attr: t.Dict[str, t.Any] = {},
     ) -> None:
         self.name = name
         self.mode = mode
@@ -102,8 +102,8 @@ class DataSetConfig(object):
 
         self._validator()
 
-    def _validator(self):
-        if self.mode not in DSProcessMode:
+    def _validator(self) -> None:
+        if self.mode not in (DSProcessMode.DEFINE, DSProcessMode.GENERATE):
             raise NoSupportError(f"{self.mode} mode no support")
 
         if ":" not in self.process:
@@ -147,7 +147,7 @@ class DataSet(object):
         self._swds_config = self.load_dataset_config(self._ds_path)
         self._name = self._swds_config.name
         self._version = ds_version
-        self._manifest = {}
+        self._manifest: t.Dict[str, t.Any] = {}
         self._console = console
         self._store = DataSetLocalStore()
 
@@ -159,12 +159,12 @@ class DataSet(object):
     def __repr__(self) -> str:
         return f"DataSet {self._name} @{self.workdir}"
 
-    def _validator(self):
+    def _validator(self) -> None:
         if not (self.workdir / self._swds_config.data_dir).exists():
             raise FileNotFoundError(f"{self._swds_config.data_dir} no existed")
 
     @logger.catch
-    def _do_build(self):
+    def _do_build(self) -> None:
         # TODO: design dataset layer mechanism
         # TODO: design append some new data into existed dataset
         # TODO: design uniq build steps for model build, swmp build
@@ -395,7 +395,7 @@ class DataSet(object):
         ]
         path_prefix = f"{ds_name}/{ds_version}/data"
         for idx in range(0, len(swds_bins)):
-            _fuse["swds"].append(
+            _fuse["swds"].append(  # type: ignore
                 dict(
                     bucket=bucket,
                     key=dict(

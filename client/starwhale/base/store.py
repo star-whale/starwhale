@@ -23,7 +23,7 @@ class LocalStorage(SWCliConfigMixed):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, swcli_config: t.Union[dict, None] = None) -> None:
+    def __init__(self, swcli_config: t.Optional[t.Dict[str, t.Any]] = None) -> None:
         super().__init__(swcli_config)
         self._console = console
 

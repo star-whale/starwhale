@@ -31,7 +31,7 @@ class EvalLocalStorage(LocalStorage):
         table.add_column("Created At", style="magenta")
         table.add_column("Finished At", style="magenta")
 
-        def _s(x):
+        def _s(x: str) -> str:
             if ":" in x:
                 _n, _v = x.split(":")
                 return f"{_n}:{_v[:SHORT_VERSION_CNT]}"
@@ -93,3 +93,12 @@ class EvalLocalStorage(LocalStorage):
 
     def gc(self, dry_run: bool = False) -> None:
         pass
+
+    def pull(self, sw_name: str) -> None:
+        pass
+
+    def push(self, sw_name: str) -> None:
+        pass
+
+    def iter_local_swobj(self) -> t.Generator["LocalStorage.SWobjMeta", None, None]:
+        return super().iter_local_swobj()
