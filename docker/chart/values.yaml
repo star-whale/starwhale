@@ -6,14 +6,14 @@ commonAnnotations: {}
 image:
   registry: "docker.io"
   agent:
-    repo: "starwhaleai/agent"
-    tag: "0.1.0-nightly-20220509194639-651ddd7"
+    repo: "starwhaleai/server"
+    tag: "0.1.0-nightly-20220511172423-ab61b19"
   taskset:
     repo: "starwhaleai/taskset"
     tag: "0.1.0-nightly-2022041601"
   controller:
-    repo: "starwhaleai/controller"
-    tag: "0.1.0-nightly-20220509190916-651ddd7"
+    repo: "starwhaleai/server"
+    tag: "0.1.0-nightly-20220511172423-ab61b19"
   pullPolicy: IfNotPresent
 
 mysql:
