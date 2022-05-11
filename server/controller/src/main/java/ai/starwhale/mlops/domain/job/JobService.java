@@ -16,17 +16,15 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
-import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.task.LivingTaskCache;
@@ -45,7 +43,6 @@ import cn.hutool.core.util.IdUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -67,9 +64,6 @@ public class JobService {
 
     @Resource
     private JobSWDSVersionMapper jobSWDSVersionMapper;
-
-    @Resource
-    private IDConvertor idConvertor;
 
     @Resource
     private JobConvertor jobConvertor;
@@ -101,14 +95,14 @@ public class JobService {
     @Resource
     private StoragePathCoordinator storagePathCoordinator;
 
-    public PageInfo<JobVO> listJobs(String projectId, String swmpId, PageParams pageParams) {
+    public PageInfo<JobVO> listJobs(Long projectId, Long swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<JobEntity> jobEntities = jobMapper.listJobs(idConvertor.revert(projectId), idConvertor.revert(swmpId));
+        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, swmpId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
 
-    public JobVO findJob(String projectId, String jobId) {
-        JobEntity entity = jobMapper.findJobById(idConvertor.revert(jobId));
+    public JobVO findJob(Long projectId, Long jobId) {
+        JobEntity entity = jobMapper.findJobById(jobId);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
                 .tip(String.format("Unable to find job %s", jobId)), HttpStatus.BAD_REQUEST);
@@ -126,25 +120,24 @@ public class JobService {
         return jobVO;
     }
 
-    public Object getJobResult(String projectId, String jobId) {
-        return resultQuerier.resultOfJob(
-            idConvertor.revert(jobId));
+    public Object getJobResult(Long projectId, Long jobId) {
+        return resultQuerier.resultOfJob(jobId);
     }
 
-    public String createJob(JobRequest jobRequest, String projectId) {
+    public Long createJob(Long projectId, Long imageId, Long modelVersionId, List<Long> datasetVersionIds, Integer deviceType, int deviceCount) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         JobEntity jobEntity = JobEntity.builder()
-            .ownerId(idConvertor.revert(user.getId()))
+            .ownerId(user.getId())
             .jobUuid(jobUuid)
             .createdTime(LocalDateTime.now())
             //.finishedTime(LocalDateTime.now())
             .durationMs(0L)
-            .baseImageId(idConvertor.revert(jobRequest.getBaseImageId()))
-            .projectId(idConvertor.revert(projectId))
-            .swmpVersionId(idConvertor.revert(jobRequest.getModelVersionId()))
-            .deviceType(Integer.valueOf(jobRequest.getDeviceId()))
-            .deviceAmount(jobRequest.getDeviceCount())
+            .baseImageId(imageId)
+            .projectId(projectId)
+            .swmpVersionId(modelVersionId)
+            .deviceType(deviceType)
+            .deviceAmount(deviceCount)
             .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
             .jobStatus(JobStatus.CREATED)
             .build();
@@ -152,18 +145,18 @@ public class JobService {
         jobMapper.addJob(jobEntity);
         log.info("Job has been created. ID={}, UUID={}", jobEntity.getId(), jobEntity.getJobUuid());
 
-        String datasetVersionIds = jobRequest.getDatasetVersionIds();
-        if(datasetVersionIds == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
-                .tip("Dataset Version ids must be set."), HttpStatus.BAD_REQUEST);
-        }
-        List<Long> dsvIds = Arrays.stream(datasetVersionIds.split("[,;]"))
-            .map(idConvertor::revert)
-            .collect(Collectors.toList());
+//        String datasetVersionIds = jobRequest.getDatasetVersionIds();
+//        if(datasetVersionIds == null) {
+//            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
+//                .tip("Dataset Version ids must be set."), HttpStatus.BAD_REQUEST);
+//        }
+//        List<Long> dsvIds = Arrays.stream(datasetVersionIds.split("[,;]"))
+//            .map(idConvertor::revert)
+//            .collect(Collectors.toList());
 
-        jobSWDSVersionMapper.addJobSWDSVersions(jobEntity.getId(), dsvIds);
+        jobSWDSVersionMapper.addJobSWDSVersions(jobEntity.getId(), datasetVersionIds);
 
-        return idConvertor.convert(jobEntity.getId());
+        return jobEntity.getId();
     }
 
     /**

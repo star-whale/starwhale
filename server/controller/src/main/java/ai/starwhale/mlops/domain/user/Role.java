@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.user;
 
-import ai.starwhale.mlops.common.IDConvertor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,20 +31,14 @@ public class Role implements GrantedAuthority {
     public static final String ADMIN = "USER_ADMIN";
     public static final String USER = "USER";
 
-    private String id;
+    private Long id;
     private String authority;
 
     public Role fromEntity(RoleEntity entity) {
-        return fromEntity(entity, null);
-    }
-
-    public Role fromEntity(RoleEntity entity, IDConvertor idConvertor) {
         if(entity == null) {
             return this;
         }
-        if (idConvertor != null) {
-            setId(idConvertor.convert(entity.getId()));
-        }
+        setId(entity.getId());
         setAuthority(entity.getRoleName());
         return this;
     }

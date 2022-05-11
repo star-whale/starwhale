@@ -16,12 +16,16 @@
 
 package ai.starwhale.mlops.domain.project;
 
+import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -33,11 +37,28 @@ public class ProjectManager {
     @Resource
     private UserService userService;
 
+    private static final Map<String, String> SORT_MAP = Map.of(
+        "id", "project_id",
+        "name", "project_name",
+        "time", "created_time",
+        "createdTime", "created_time");
+
+    public List<ProjectEntity> listProjects(Project project, User owner, OrderParams orderParams) {
+        if(owner != null && owner.getId() != null) {
+            return projectMapper.listProjectsByOwner(owner.getId(), orderParams.getOrderSQL(SORT_MAP));
+        } else if (owner != null && StringUtils.hasText(owner.getName())) {
+            return projectMapper.listProjectsByOwnerName(owner.getName(), orderParams.getOrderSQL(SORT_MAP));
+        }
+
+        return projectMapper.listProjects(project.getName(), orderParams.getOrderSQL(SORT_MAP));
+
+    }
+
     public ProjectEntity findDefaultProject() {
         Long userId = userService.currentUserDetail().getIdTableKey();
         ProjectEntity defaultProject = projectMapper.findDefaultProject(userId);
         if(defaultProject == null) {
-            List<ProjectEntity> entities = projectMapper.listProjectsByOwner(userId);
+            List<ProjectEntity> entities = projectMapper.listProjectsByOwner(userId, null);
             if(entities.isEmpty()) {
                 log.error("Can not find default project by user, id = {}", userId);
                 return null;
@@ -48,7 +69,7 @@ public class ProjectManager {
     }
 
     public ProjectEntity findByName(String projectName){
-        List<ProjectEntity> projectEntities = projectMapper.listProjects(projectName);
+        List<ProjectEntity> projectEntities = projectMapper.listProjects(projectName, null);
         if(null != projectEntities && !projectEntities.isEmpty()){
             return projectEntities.get(0);
         }

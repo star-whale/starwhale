@@ -21,7 +21,6 @@ import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
-import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -68,9 +67,6 @@ public class SWModelPackageService {
 
     @Resource
     private SWModelPackageVersionMapper swmpVersionMapper;
-
-    @Resource
-    private IDConvertor idConvertor;
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
@@ -152,7 +148,6 @@ public class SWModelPackageService {
             if(versionEntity == null) {
                 log.error("Unable to find the latest version of swmp {}", modelID);
                 SWModelPackageInfoVO vo = SWModelPackageInfoVO.empty();
-                vo.setSwmpId(idConvertor.convert(modelID));
                 vo.setSwmpName(swmpName);
                 return vo;
 //                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
@@ -166,7 +161,6 @@ public class SWModelPackageService {
             List<StorageFileVO> collect = storageService.listStorageFile(storagePath);
 
             return SWModelPackageInfoVO.builder()
-                .swmpId(idConvertor.convert(modelID))
                 .swmpName(swmpName)
                 .versionName(versionEntity.getVersionName())
                 .versionTag(versionEntity.getVersionTag())
@@ -209,11 +203,11 @@ public class SWModelPackageService {
         return PageUtil.toPageInfo(entities, versionConvertor::convert);
     }
 
-    public String addSWMP(SWMPObject swmp) {
+    public Long addSWMP(SWMPObject swmp) {
         SWModelPackageEntity entity = SWModelPackageEntity.builder()
             .swmpName(swmp.getName())
-            .ownerId(idConvertor.revert(swmp.getOwner().getId()))
-            .projectId(idConvertor.revert(swmp.getProject().getId()))
+            .ownerId(swmp.getOwner().getId())
+            .projectId(swmp.getProject().getId())
             .build();
         if(entity.getProjectId() == 0) {
             ProjectEntity defaultProject = projectManager.findDefaultProject();
@@ -223,10 +217,10 @@ public class SWModelPackageService {
         }
         swmpMapper.addSWModelPackage(entity);
         log.info("SWMP has been created. ID={}, NAME={}", entity.getId(), entity.getSwmpName());
-        return idConvertor.convert(entity.getId());
+        return entity.getId();
     }
 
-    public String addVersion(SWMPObject swmp) {
+    public Long addVersion(SWMPObject swmp) {
         SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
             .swmpId(swmp.getId())
             .ownerId(swmp.getVersion().getOwnerId())
@@ -237,15 +231,12 @@ public class SWModelPackageService {
             .build();
         swmpVersionMapper.addNewVersion(entity);
         log.info("SWMP Version has been created. ID={}", entity.getId());
-        return idConvertor.convert(entity.getId());
+        return entity.getId();
     }
 
-    public List<SWModelPackageVO> findModelByVersionId(List<String> versionIds) {
-        List<Long> vIds = versionIds.stream()
-            .map(idConvertor::revert)
-            .collect(Collectors.toList());
+    public List<SWModelPackageVO> findModelByVersionId(List<Long> versionIds) {
 
-        List<SWModelPackageVersionEntity> versions = swmpVersionMapper.findVersionsByIds(vIds);
+        List<SWModelPackageVersionEntity> versions = swmpVersionMapper.findVersionsByIds(versionIds);
 
         List<Long> ids = versions.stream()
             .map(SWModelPackageVersionEntity::getSwmpId)

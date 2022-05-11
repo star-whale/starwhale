@@ -20,7 +20,6 @@ import ai.starwhale.mlops.api.protocol.StorageFileVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
-import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
@@ -34,7 +33,6 @@ import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
-import ai.starwhale.mlops.storage.StorageAccessService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
@@ -56,16 +54,10 @@ public class SWDatasetService {
     private SWDatasetVersionMapper swdsVersionMapper;
 
     @Resource
-    private IDConvertor idConvertor;
-
-    @Resource
     private SWDSConvertor swdsConvertor;
 
     @Resource
     private SWDSVersionConvertor versionConvertor;
-
-    @Resource
-    private StorageAccessService storageAccessService;
 
     @Resource
     private StorageService storageService;
@@ -76,20 +68,20 @@ public class SWDatasetService {
     public PageInfo<DatasetVO> listSWDataset(SWDSObject swds, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWDatasetEntity> entities = swdsMapper.listDatasets(
-            idConvertor.revert(swds.getProjectId()), swds.getName());
+            swds.getProjectId(), swds.getName());
 
         return PageUtil.toPageInfo(entities, swdsConvertor::convert);
     }
 
     public Boolean deleteSWDS(SWDSObject swds) {
-        Long id = idConvertor.revert(swds.getId());
+        Long id = swds.getId();
         int res = swdsMapper.deleteDataset(id);
         log.info("SWDS has been deleted. ID={}", swds.getId());
         return res > 0;
     }
 
     public SWDatasetInfoVO getSWDSInfo(SWDSObject swds) {
-        Long dsID = idConvertor.revert(swds.getId());
+        Long dsID = swds.getId();
         SWDatasetEntity ds = swdsMapper.findDatasetById(dsID);
         if(ds == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
@@ -126,7 +118,7 @@ public class SWDatasetService {
 
     public Boolean modifySWDSVersion(Version version) {
         SWDatasetVersionEntity entity = SWDatasetVersionEntity.builder()
-            .id(idConvertor.revert(version.getId()))
+            .id(version.getId())
             .versionTag(version.getTag())
             .storagePath(version.getStoragePath())
             .build();
@@ -136,8 +128,8 @@ public class SWDatasetService {
     }
 
     public Boolean revertVersionTo(SWDSObject swds) {
-        Long swdsId = idConvertor.revert(swds.getId());
-        Long revertTo = idConvertor.revert(swds.getLatestVersion().getId());
+        Long swdsId = swds.getId();
+        Long revertTo = swds.getLatestVersion().getId();
         int res = swdsVersionMapper.revertTo(swdsId, revertTo);
         log.info("SWDS Version {} has been revert to {}", swdsId, revertTo);
         return res > 0;
@@ -146,15 +138,15 @@ public class SWDatasetService {
     public PageInfo<DatasetVersionVO> listDatasetVersionHistory(SWDSObject swds, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWDatasetVersionEntity> entities = swdsVersionMapper.listVersions(
-            idConvertor.revert(swds.getId()), swds.getLatestVersion().getName());
+            swds.getId(), swds.getLatestVersion().getName());
         return PageUtil.toPageInfo(entities, versionConvertor::convert);
     }
 
-    public String addDataset(SWDSObject swds) {
+    public Long addDataset(SWDSObject swds) {
         SWDatasetEntity entity = SWDatasetEntity.builder()
             .datasetName(swds.getName())
-            .ownerId(idConvertor.revert(swds.getOwnerId()))
-            .projectId(idConvertor.revert(swds.getProjectId()))
+            .ownerId(swds.getOwnerId())
+            .projectId(swds.getProjectId())
             .build();
         if(entity.getProjectId() == 0) {
             ProjectEntity defaultProject = projectManager.findDefaultProject();
@@ -166,13 +158,13 @@ public class SWDatasetService {
         }
         swdsMapper.addDataset(entity);
         log.info("SWDS has been created. ID={}", entity.getId());
-        return idConvertor.convert(entity.getId());
+        return entity.getId();
     }
 
-    public String addVersion(SWDSObject swds) {
+    public Long addVersion(SWDSObject swds) {
         SWDatasetVersionEntity entity = SWDatasetVersionEntity.builder()
-            .datasetId(idConvertor.revert(swds.getId()))
-            .ownerId(idConvertor.revert(swds.getLatestVersion().getOwnerId()))
+            .datasetId(swds.getId())
+            .ownerId(swds.getLatestVersion().getOwnerId())
             .versionTag(swds.getLatestVersion().getTag())
             .versionName(swds.getLatestVersion().getName())
             .versionMeta(swds.getLatestVersion().getMeta())
@@ -180,14 +172,11 @@ public class SWDatasetService {
             .build();
         swdsVersionMapper.addNewVersion(entity);
         log.info("SWDS Version has been created. DSID={}, VID={}", entity.getDatasetId(), entity.getId());
-        return idConvertor.convert(entity.getId());
+        return entity.getId();
     }
 
-    public List<DatasetVO> findDatasetsByVersionIds(List<String> versionIds) {
-        List<Long> vIds = versionIds.stream()
-            .map(idConvertor::revert)
-            .collect(Collectors.toList());
-        List<SWDatasetVersionEntity> versions = swdsVersionMapper.findVersionsByIds(vIds);
+    public List<DatasetVO> findDatasetsByVersionIds(List<Long> versionIds) {
+        List<SWDatasetVersionEntity> versions = swdsVersionMapper.findVersionsByIds(versionIds);
 
         List<Long> ids = versions.stream()
             .map(SWDatasetVersionEntity::getDatasetId)
