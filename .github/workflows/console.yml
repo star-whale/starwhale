@@ -9,7 +9,6 @@ on:
       - main
 
 jobs:
-
   filter:
     runs-on: ubuntu-latest
 
@@ -33,7 +32,6 @@ jobs:
     needs:
       - filter
     if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.console == 'true') || github.event_name == 'push' }}
-
 
     strategy:
       matrix:
@@ -68,7 +66,7 @@ jobs:
 
       - name: Install project dependencies
         working-directory: ./console
-        if: steps.yarn-cache.outputs.cache-hit != 'true' # Over here!
+        # if: steps.yarn-cache.outputs.cache-hit != 'true' # Over here!
         run: yarn
 
       - name: Yarn lint
