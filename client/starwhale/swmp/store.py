@@ -39,7 +39,10 @@ class ModelPackageLocalStore(LocalStorage):
             caption=f"@{self.pkgdir}"
         )
 
-    def iter_local_swobj(self) -> LocalStorage.SWobjMeta:  # type: ignore
+    def iter_local_swobj(self) -> t.Generator[LocalStorage.SWobjMeta, None, None]:
+        if not self.pkgdir.exists():
+            return
+
         pkg_fs = open_fs(str(self.pkgdir.resolve()))
 
         for mdir in pkg_fs.scandir("."):
