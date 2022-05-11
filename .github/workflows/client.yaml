@@ -58,7 +58,9 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./client
-        run: make install-req
+        run: |
+          make install-req
+          make install-dev-req
 
       - name: Black format check
         working-directory: ./client
@@ -102,7 +104,9 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./client
-        run: make install-req
+        run: |
+          make install-req
+          make install-dev-req
 
       - name: Run Unittest
         working-directory: ./client
