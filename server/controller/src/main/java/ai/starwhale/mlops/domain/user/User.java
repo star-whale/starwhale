@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.user;
 
-import ai.starwhale.mlops.common.IDConvertor;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Set;
@@ -33,7 +32,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @NoArgsConstructor
 public class User implements UserDetails, Serializable {
 
-    private String id;
+    private Long id;
     private Long idTableKey;
     private String name;
     private String password;
@@ -72,20 +71,15 @@ public class User implements UserDetails, Serializable {
     }
 
     public User fromEntity(UserEntity entity) {
-        return fromEntity(entity, null);
-    }
-    public User fromEntity(UserEntity entity, IDConvertor idConvertor) {
         if(entity == null) {
             return this;
         }
-        if (idConvertor != null) {
-          setId(idConvertor.convert(entity.getId()));
-        }
+        setId(entity.getId());
         setName(entity.getUserName());
         setPassword(entity.getUserPwd());
         setSalt(entity.getUserPwdSalt());
         setActive(entity.getUserEnabled() == 1);
-        setRoles(Set.of(new Role().fromEntity(entity.getRole(), idConvertor)));
+        setRoles(Set.of(new Role().fromEntity(entity.getRole())));
         setIdTableKey(entity.getId());
         return this;
     }

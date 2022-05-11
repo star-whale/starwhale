@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
@@ -26,14 +26,11 @@ import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.google.common.base.Strings;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -43,7 +40,7 @@ public class ProjectService {
     private ProjectMapper projectMapper;
 
     @Resource
-    private IDConvertor idConvertor;
+    private ProjectManager projectManager;
 
     @Resource
     private ProjectConvertor projectConvertor;
@@ -54,7 +51,7 @@ public class ProjectService {
      * @return Optional of a ProjectVO object.
      */
     public ProjectVO findProject(Project project) {
-        ProjectEntity projectEntity = projectMapper.findProject(idConvertor.revert(project.getId()));
+        ProjectEntity projectEntity = projectMapper.findProject(project.getId());
         if(projectEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                 .tip(String.format("Unable to find project %s", project.getId())), HttpStatus.BAD_REQUEST);
@@ -68,16 +65,9 @@ public class ProjectService {
      * @param pageParams Paging parameters.
      * @return A list of ProjectVO objects
      */
-    public PageInfo<ProjectVO> listProject(Project project, PageParams pageParams) {
+    public PageInfo<ProjectVO> listProject(Project project, PageParams pageParams, OrderParams orderParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ProjectEntity> entities;
-        if(StringUtils.hasText(project.getOwner().getId())) {
-            entities = projectMapper.listProjectsByOwner(idConvertor.revert(project.getOwner().getId()));
-        } else if (StringUtils.hasText(project.getOwner().getName())) {
-            entities = projectMapper.listProjectsByOwnerName(project.getOwner().getName());
-        } else {
-            entities = projectMapper.listProjects(project.getName());
-        }
+        List<ProjectEntity> entities = projectManager.listProjects(project, project.getOwner(), orderParams);
 
         return PageUtil.toPageInfo(entities, projectConvertor::convert);
     }
@@ -87,15 +77,15 @@ public class ProjectService {
      * @param project Object of the project to create.
      * @return ID of the project was created.
      */
-    public String createProject(Project project) {
+    public Long createProject(Project project) {
         ProjectEntity entity = ProjectEntity.builder()
             .projectName(project.getName())
-            .ownerId(idConvertor.revert(project.getOwner().getId()))
+            .ownerId(project.getOwner().getId())
             .isDefault(project.isDefault() ? 1 : 0)
             .build();
         projectMapper.createProject(entity);
         log.info("Project has been created. ID={}, NAME={}", entity.getId(), entity.getProjectName());
-        return idConvertor.convert(entity.getId());
+        return entity.getId();
     }
 
     /**
@@ -104,7 +94,7 @@ public class ProjectService {
      * @return Is the operation successful.
      */
     public Boolean deleteProject(Project project) {
-        Long id = idConvertor.revert(project.getId());
+        Long id = project.getId();
         ProjectEntity entity = projectMapper.findProject(id);
         if(entity.getIsDefault() > 0) {
             throw new StarWhaleApiException(
@@ -123,7 +113,7 @@ public class ProjectService {
      */
     public Boolean modifyProject(Project project) {
         ProjectEntity entity = ProjectEntity.builder()
-            .id(idConvertor.revert(project.getId()))
+            .id(project.getId())
             .projectName(project.getName())
             .build();
         int res = projectMapper.modifyProject(entity);

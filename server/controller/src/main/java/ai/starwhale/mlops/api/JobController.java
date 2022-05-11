@@ -30,6 +30,8 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -62,13 +64,17 @@ public class JobController implements JobApi{
     public ResponseEntity<ResponseMessage<PageInfo<JobVO>>> listJobs(String projectId, String swmpId,
         Integer pageNum, Integer pageSize) {
 
-        PageInfo<JobVO> jobVOS = jobService.listJobs(projectId, swmpId, new PageParams(pageNum, pageSize));
+        PageInfo<JobVO> jobVOS = jobService.listJobs(idConvertor.revert(projectId), idConvertor.revert(swmpId),
+            PageParams.builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build());
         return ResponseEntity.ok(Code.success.asResponse(jobVOS));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<JobVO>> findJob(String projectId, String jobId) {
-        JobVO job = jobService.findJob(projectId, jobId);
+        JobVO job = jobService.findJob(idConvertor.revert(projectId), idConvertor.revert(jobId));
         return ResponseEntity.ok(Code.success.asResponse(job));
     }
 
@@ -76,16 +82,27 @@ public class JobController implements JobApi{
     public ResponseEntity<ResponseMessage<PageInfo<TaskVO>>> listTasks(String projectId,
         String jobId, Integer pageNum, Integer pageSize) {
 
-        PageInfo<TaskVO> pageInfo = taskService.listTasks(jobId, new PageParams(pageNum, pageSize));
+        PageInfo<TaskVO> pageInfo = taskService.listTasks(idConvertor.revert(jobId),
+            PageParams.builder()
+            .pageNum(pageNum)
+            .pageSize(pageSize)
+            .build());
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> createJob(String projectId,
         JobRequest jobRequest) {
-        String id = jobService.createJob(jobRequest, projectId);
+        Long jobId = jobService.createJob(idConvertor.revert(projectId),
+            idConvertor.revert(jobRequest.getBaseImageId()),
+            idConvertor.revert(jobRequest.getModelVersionId()),
+            Arrays.stream(jobRequest.getDatasetVersionIds().split("[,;]"))
+            .map(idConvertor::revert)
+            .collect(Collectors.toList()),
+            Integer.valueOf(jobRequest.getDeviceId()),
+            jobRequest.getDeviceCount());
 
-        return ResponseEntity.ok(Code.success.asResponse(id));
+        return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }
 
     @Override
@@ -105,7 +122,8 @@ public class JobController implements JobApi{
     @Override
     public ResponseEntity<ResponseMessage<Object>> getJobResult(String projectId,
         String jobId) {
-        Object jobResult = jobService.getJobResult(projectId, jobId);
+        Object jobResult = jobService.getJobResult(idConvertor.revert(projectId),
+            idConvertor.revert(jobId));
         return ResponseEntity.ok(Code.success.asResponse(jobResult));
     }
 

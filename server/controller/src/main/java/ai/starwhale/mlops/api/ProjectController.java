@@ -20,6 +20,8 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.project.ProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.project.Project;
 import ai.starwhale.mlops.domain.project.ProjectService;
@@ -45,17 +47,26 @@ public class ProjectController implements ProjectApi{
     @Resource
     private UserService userService;
 
+    @Resource
+    private IDConvertor idConvertor;
+
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(String projectName,
-        String ownerId, String ownerName, Integer pageNum, Integer pageSize) {
+        String ownerId, String ownerName, Integer pageNum, Integer pageSize, String sort, Integer order) {
 
         PageInfo<ProjectVO> projects = projectService.listProject(
             Project.builder()
                 .name(projectName)
-                .owner(User.builder().id(ownerId).name(ownerName).build())
+                .owner(User.builder().id(idConvertor.revert(ownerId)).name(ownerName).build())
                 .build(),
-            PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
-
+            PageParams.builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build(),
+            OrderParams.builder()
+                .sort(sort)
+                .order(order)
+                .build());
 
         return ResponseEntity.ok(Code.success.asResponse(projects));
     }
@@ -64,20 +75,20 @@ public class ProjectController implements ProjectApi{
     public ResponseEntity<ResponseMessage<String>> createProject(ProjectRequest projectRequest) {
         User user = userService.currentUserDetail();
 
-        String projectId = projectService
+        Long projectId = projectService
             .createProject(Project.builder()
                 .name(projectRequest.getProjectName())
                 .owner(User.builder().id(user.getId()).build())
                 .isDefault(false)
                 .build());
 
-        return ResponseEntity.ok(Code.success.asResponse(projectId));
+        return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(projectId)));
 
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> deleteProjectById(String projectId) {
-        Boolean res = projectService.deleteProject(Project.builder().id(projectId).build());
+        Boolean res = projectService.deleteProject(Project.builder().id(idConvertor.revert(projectId)).build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete project failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -87,7 +98,7 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<ProjectVO>> getProjectById(String projectId) {
-        ProjectVO project = projectService.findProject(Project.builder().id(projectId).build());
+        ProjectVO project = projectService.findProject(Project.builder().id(idConvertor.revert(projectId)).build());
         return ResponseEntity.ok(Code.success.asResponse(project));
     }
 
@@ -96,7 +107,7 @@ public class ProjectController implements ProjectApi{
         String projectName) {
         Boolean res = projectService
             .modifyProject(Project.builder()
-                .id(projectId)
+                .id(idConvertor.revert(projectId))
                 .name(projectName)
                 .build());
         if(!res) {

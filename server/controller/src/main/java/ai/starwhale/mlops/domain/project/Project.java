@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.project;
 
-import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.domain.user.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,7 +28,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Project {
 
-    private String id;
+    private Long id;
 
     private String name;
 

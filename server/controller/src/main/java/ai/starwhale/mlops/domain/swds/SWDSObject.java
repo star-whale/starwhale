@@ -26,13 +26,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SWDSObject {
-    private String id;
+
+    private Long id;
 
     private String name;
 
-    private String projectId;
+    private Long projectId;
 
-    private String ownerId;
+    private Long ownerId;
 
     private Version latestVersion;
 
@@ -42,11 +43,11 @@ public class SWDSObject {
     @NoArgsConstructor
     public static class Version {
 
-        private String id;
+        private Long id;
 
         private String name;
 
-        private String ownerId;
+        private Long ownerId;
 
         private String tag;
 

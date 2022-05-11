@@ -45,6 +45,8 @@ import io.jsonwebtoken.lang.Strings;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -74,7 +76,8 @@ public class SWModelPackageController implements SWModelPackageApi{
         PageInfo<SWModelPackageVO> pageInfo;
         if(StringUtils.hasText(versionId)) {
             List<SWModelPackageVO> voList = swmpService
-                .findModelByVersionId(List.of(versionId.split("[,;]")));
+                .findModelByVersionId(Stream.of(versionId.split("[,;]")).map(idConvertor::revert).collect(
+                    Collectors.toList()));
             pageInfo = PageInfo.of(voList);
         } else {
             pageInfo = swmpService.listSWMP(
@@ -95,7 +98,7 @@ public class SWModelPackageController implements SWModelPackageApi{
         RevertSWMPVersionRequest revertRequest) {
         SWMPObject swmp = SWMPObject.builder()
             .id(idConvertor.revert(modelId))
-            .project(Project.builder().id(projectId).build())
+            .project(Project.builder().id(idConvertor.revert(projectId)).build())
             .version(Version.builder().id(idConvertor.revert(revertRequest.getVersionId())).build())
             .build();
         Boolean res = swmpService.revertVersionTo(swmp);
@@ -110,7 +113,7 @@ public class SWModelPackageController implements SWModelPackageApi{
     public ResponseEntity<ResponseMessage<String>> deleteModelById(String projectId,String modelId) {
         Boolean res = swmpService.deleteSWMP(
             SWMPObject.builder()
-                .project(Project.builder().id(projectId).build())
+                .project(Project.builder().id(idConvertor.revert(projectId)).build())
                 .id(idConvertor.revert(modelId))
                 .build());
         if(!res) {
@@ -123,14 +126,14 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(String projectId,String modelId, String versionId) {
         SWMPObject swmp = SWMPObject.builder()
-            .project(Project.builder().id(projectId).build())
+            .project(Project.builder().id(idConvertor.revert(projectId)).build())
             .id(idConvertor.revert(modelId)).build();
         if(Strings.hasText(versionId)) {
             swmp.setVersion(Version.builder().id(idConvertor.revert(versionId)).build());
         }
         SWModelPackageInfoVO swmpInfo = swmpService.getSWMPInfo(
             SWMPObject.builder()
-                .project(Project.builder().id(projectId).build())
+                .project(Project.builder().id(idConvertor.revert(projectId)).build())
                 .id(idConvertor.revert(modelId)).build());
         return ResponseEntity.ok(Code.success.asResponse(swmpInfo));
     }
@@ -140,7 +143,7 @@ public class SWModelPackageController implements SWModelPackageApi{
         String modelId, String modelVersionName, Integer pageNum, Integer pageSize) {
         PageInfo<SWModelPackageVersionVO> pageInfo = swmpService.listSWMPVersionHistory(
             SWMPObject.builder()
-                .project(Project.builder().id(projectId).build())
+                .project(Project.builder().id(idConvertor.revert(projectId)).build())
                 .id(idConvertor.revert(modelId))
                 .version(Version.builder().name(modelVersionName).build())
                 .build(),
@@ -155,7 +158,7 @@ public class SWModelPackageController implements SWModelPackageApi{
     public ResponseEntity<ResponseMessage<String>> createModelVersion(String projectId, String modelId,
         MultipartFile zipFile, SWMPVersionRequest request) {
         User user = userService.currentUserDetail();
-        String versionId = createVersion(projectId, modelId, zipFile, request.getImportPath(), user.getId());
+        Long versionId = createVersion(projectId, idConvertor.revert(modelId), zipFile, request.getImportPath(), user.getId());
         log.info("Create swmp version successfully, id = {}", versionId);
         return ResponseEntity.ok(Code.success
             .asResponse("success"));
@@ -176,13 +179,13 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> createModel(String projectId, MultipartFile zipFile, SWMPRequest swmpRequest) {
         User user = userService.currentUserDetail();
-        String modelId = swmpService.addSWMP(
+        Long modelId = swmpService.addSWMP(
             SWMPObject.builder()
-                .project(Project.builder().id(projectId).build())
+                .project(Project.builder().id(idConvertor.revert(projectId)).build())
                 .name(swmpRequest.getModelName())
-                .owner(User.builder().id(user.getId()).build())
+                .owner(user)
                 .build());
-        String versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
+        Long versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
         log.info("Create swmp successfully, version id = {}", versionId);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -215,12 +218,12 @@ public class SWModelPackageController implements SWModelPackageApi{
         return ResponseEntity.ok(swmpService.query(queryRequest));
     }
 
-    private String createVersion(String projectId, String modelId, MultipartFile zipFile, String importPath, String userId) {
+    private Long createVersion(String projectId, Long modelId, MultipartFile zipFile, String importPath, Long userId) {
         String path = importPath;
         String meta = "";
         if (zipFile != null) {
             // upload file
-            SWMPFile swmpFile = new SWMPFile(projectId, modelId);
+            SWMPFile swmpFile = new SWMPFile(projectId, String.valueOf(modelId));
             String fileName = swmpFile.generateZipFileName();
             File dest = new File(swmpFile.getZipFilePath(), fileName);
             try {
@@ -232,13 +235,13 @@ public class SWModelPackageController implements SWModelPackageApi{
             meta = swmpFile.meta();
         }
         SWMPObject swmp = SWMPObject.builder()
-            .id(idConvertor.revert(modelId))
+            .id(modelId)
             .version(Version.builder()
                 .storagePath(path)
                 .meta(meta)
                 .name(RandomUtil.randomHexString(8))
                 .tag("")
-                .ownerId(idConvertor.revert(userId))
+                .ownerId(userId)
                 .build())
             .build();
         return swmpService.addVersion(swmp);
