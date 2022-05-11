@@ -1,2 +1,2 @@
 build-package:
-	mvn -B package
+	mvn -B package $ARGS
