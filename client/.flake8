@@ -1,7 +1,11 @@
 [flake8]
 # H101: Use TODO(NAME)
-ignore= H101
-max-line-length = 88
+# W503: line break before binary operator
+# E203: whitespace before ':'
+# E731: do not assign a lambda expression, use a def
+# W605: invalid escape sequence '\#'
+ignore= H101,W503,E203,E731,W605
+max-line-length = 120
 exclude =
     .eggs
     .egg-info
