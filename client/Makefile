@@ -32,7 +32,7 @@ ci-lint:
 
 ci-mypy:
 	echo "run mypy"
-	mypy --strict --python-version=3.7 .
+	mypy --python-version=3.7 .
 
 ut:
 	echo "ut"
