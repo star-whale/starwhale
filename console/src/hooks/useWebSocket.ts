@@ -12,7 +12,6 @@ import _ from 'lodash'
 
 interface IWebSocket {
     wsUrl: string
-    debug?: boolean
     onOpen?: () => void
     onClose?: () => void
     onMessage?: (event: Event) => void
@@ -23,8 +22,8 @@ export default function useWebSocket({ wsUrl, onOpen, onClose, onMessage }: IWeb
     const heartBeatTimeoutRef = useRef(undefined as undefined | number)
     const wsRef = useRef(undefined as undefined | WebSocket)
     useEffect(() => {
-        // const log = _.bind(console.log, console, '[useWebSocket]')
-        const log = (...args: any[]) => {}
+        // eslint-disable-next-line
+        const log = process.env.DEBUG ? _.bind(console.log, console, '[useWebSocket]') : (...args: any[]) => {}
         log('use effect', wsUrl)
 
         if (!wsUrl) {

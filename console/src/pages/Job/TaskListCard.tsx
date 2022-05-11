@@ -31,7 +31,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             task.uuid,
                             task.agent?.ip,
                             task.agent?.version,
-                            task.startTime && formatTimestampDateTime(task.startTime),
+                            task.createdTime && formatTimestampDateTime(task.createdTime),
                             task.taskStatus,
                             <StyledLink
                                 key={task.uuid}

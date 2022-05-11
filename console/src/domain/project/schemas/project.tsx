@@ -3,7 +3,6 @@ import { IUserSchema } from '@user/schemas/user'
 
 export interface IProjectSchema extends IResourceSchema {
     name: string
-    createTime: number
     owner?: IUserSchema
 }
 

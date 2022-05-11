@@ -18,7 +18,6 @@ export enum TaskStatusType {
 export interface ITaskSchema extends IResourceSchema {
     uuid: string
     agent: IAgentSchema
-    startTime: number
     taskStatus: TaskStatusType
 }
 

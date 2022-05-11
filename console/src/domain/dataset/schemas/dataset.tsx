@@ -4,7 +4,6 @@ import { IUserSchema } from '@user/schemas/user'
 // TODO fix dataset & dataset detail has different attrs
 export interface IDatasetSchema extends IResourceSchema {
     name: string
-    createTime: number
     owner?: IUserSchema
 }
 

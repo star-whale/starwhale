@@ -1,6 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
+import smallLogoImg from '@/assets/logo_small.svg'
+import normalLogoImg from '@/assets/logo_normal_en_white.svg'
 import Text from '../Text'
 
 export interface ILogoProps {
@@ -20,7 +22,7 @@ export default function Logo({ expanded = true }: ILogoProps) {
                 color: '#fff',
             }}
         >
-            StarWhale
+            <img width='150px' src={normalLogoImg} alt='logo' />
         </Text>
     ) : (
         <Text
@@ -31,7 +33,7 @@ export default function Logo({ expanded = true }: ILogoProps) {
                 color: '#fff',
             }}
         >
-            SW
+            <img src={smallLogoImg} alt='logo' />
         </Text>
     )
 

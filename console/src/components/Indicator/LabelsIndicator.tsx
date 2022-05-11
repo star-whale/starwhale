@@ -41,7 +41,7 @@ function LabelsIndicator({ data: rawData, style, isLoading }: ILabelsProps) {
 
     const renderCell = (props: any) => {
         return (
-            <StatefulTooltip accessibilityType='tooltip' content={props.value}>
+            <StatefulTooltip accessibilityType='tooltip' content={props?.value}>
                 <span>{props?.value?.toFixed(4)}</span>
             </StatefulTooltip>
         )
@@ -69,7 +69,7 @@ function LabelsIndicator({ data: rawData, style, isLoading }: ILabelsProps) {
         }),
         NumericalColumn({
             title: t('Support'),
-            mapDataToValue: (data: ILabel) => data.support,
+            mapDataToValue: (data: ILabel) => data.support ?? 0,
         }),
     ]
 
@@ -83,28 +83,28 @@ function LabelsIndicator({ data: rawData, style, isLoading }: ILabelsProps) {
         columns.push(
             NumericalColumn({
                 title: t('TP'),
-                mapDataToValue: (data: ILabel) => data.tp,
+                mapDataToValue: (data: ILabel) => data.tp ?? 0,
             })
         )
     if (hasAttrbute('tn'))
         columns.push(
             NumericalColumn({
                 title: t('TN'),
-                mapDataToValue: (data: ILabel) => data.tn,
+                mapDataToValue: (data: ILabel) => data.tn ?? 0,
             })
         )
     if (hasAttrbute('fp'))
         columns.push(
             NumericalColumn({
                 title: t('FP'),
-                mapDataToValue: (data: ILabel) => data.fp,
+                mapDataToValue: (data: ILabel) => data.fp ?? 0,
             })
         )
     if (hasAttrbute('fn'))
         columns.push(
             NumericalColumn({
                 title: t('FN'),
-                mapDataToValue: (data: ILabel) => data.fn,
+                mapDataToValue: (data: ILabel) => data.fn ?? 0,
             })
         )
 
