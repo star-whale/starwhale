@@ -1,0 +1,31 @@
+client:
+  - '**/*.py'
+  - 'client/**'
+
+console:
+  - 'console/**'
+
+docker:
+  - 'docker/**'
+
+server:
+  - '**/*.java'
+  - 'server/**'
+
+docs:
+  - 'docs/**'
+
+scripts:
+  - 'script/**'
+
+js:
+  - '**/*.js'
+  - '**/*.jsx'
+  - '**/*.ts'
+  - '**/*.tsx'
+
+scss:
+  - '**/*.scss'
+
+java:
+  - '**/*.java'

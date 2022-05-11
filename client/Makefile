@@ -14,5 +14,20 @@ upload-pypi:
 build-dev-wheel:
 	python3 -m pip install -e .
 
-dev-dep:
+install-dev-req:
 	python3 -m pip install -r requirements-dev.txt
+
+ci-format:
+	echo "ci format"
+
+ci-lint:
+	echo "ci lint"
+
+ci-type:
+	echo "ci type"
+
+ut:
+	echo "ut"
+
+install-req:
+	python3 -m pip install .
