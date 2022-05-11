@@ -49,12 +49,13 @@ jobs:
           cache: "yarn"
           cache-dependency-path: "./console/yarn.lock"
 
-      - name: Install yarn
-        run: npm install -g yarn
-
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Install yarn
+        working-directory: ./console
+        run: make install-yarn
 
       - uses: actions/cache@v3
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
@@ -69,10 +70,8 @@ jobs:
       - name: Install project dependencies
         working-directory: ./console
         if: steps.yarn-cache.outputs.cache-hit != 'true' # Over here!
-        run: yarn
+        run: make install-dependencies
 
       - name: Yarn lint
         working-directory: ./console
-        run: |
-          yarn lint
-          yarn typecheck
+        run: ci-lint
