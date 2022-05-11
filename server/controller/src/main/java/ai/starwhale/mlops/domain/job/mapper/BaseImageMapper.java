@@ -23,4 +23,10 @@ import org.apache.ibatis.annotations.Param;
 public interface BaseImageMapper {
 
     List<BaseImageEntity> listBaseImages(@Param("imageName") String imageName);
+
+    int createBaseImage(@Param("image") BaseImageEntity image);
+
+    int deleteBaseImage(@Param("id") Long id);
+
+    int deleteBaseImageByName(@Param("name") String name);
 }
