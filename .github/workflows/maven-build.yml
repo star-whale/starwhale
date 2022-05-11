@@ -57,4 +57,4 @@ jobs:
 
       - name: Build with Maven
         working-directory: ./server
-        run: make build-package
+        run: build-package-with-unit

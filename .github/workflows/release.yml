@@ -65,7 +65,7 @@ jobs:
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
       - name: Build with Maven
         working-directory: ./server
-        run: make build-package -DskipTests
+        run: make build-package
 
       # docker-hub login
       - name: Log in to Docker Hub
