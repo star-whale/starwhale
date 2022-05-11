@@ -25,9 +25,9 @@ _p = lambda p, sub: Path(p) if p else Path(_TASK_ROOT_DIR) / sub
 _ptype = t.Union[str, None, Path]
 
 
-class _LogType(t.NamedTuple):
-    SW: str = "starwhale"
-    USER: str = "user"
+class _LogType:
+    SW = "starwhale"
+    USER = "user"
 
 
 _jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
@@ -89,15 +89,15 @@ class _RunConfig(object):
 
 
 class PipelineHandler(object):
-    class ResultOutputType(t.NamedTuple):
-        JSONL: str = "jsonline"
-        PLAIN: str = "plain"
+    class ResultOutputType:
+        JSONL = "jsonline"
+        PLAIN = "plain"
 
-    class STATUS(t.NamedTuple):
-        START: str = "start"
-        RUNNING: str = "running"
-        SUCCESS: str = "success"
-        FAILED: str = "failed"
+    class STATUS:
+        START = "start"
+        RUNNING = "running"
+        SUCCESS = "success"
+        FAILED = "failed"
 
     __metaclass__ = ABCMeta
 

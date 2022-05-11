@@ -11,8 +11,8 @@ from sklearn.metrics import (
 )
 
 
-class MetricKind(t.NamedTuple):
-    MultiClassification: str = "multi_classification"
+class MetricKind:
+    MultiClassification = "multi_classification"
 
 
 def multi_classification(

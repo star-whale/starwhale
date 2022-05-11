@@ -1,5 +1,4 @@
 import pathlib
-import typing as t
 
 
 # TODO: use str path, not Path Class
@@ -25,20 +24,20 @@ ENV_CONDA = "CONDA_DEFAULT_ENV"
 ENV_CONDA_PREFIX = "CONDA_PREFIX"
 
 
-class PythonRunEnv(t.NamedTuple):
-    CONDA: str = "conda"
-    VENV: str = "venv"
-    SYSTEM: str = "system"
+class PythonRunEnv:
+    CONDA = "conda"
+    VENV = "venv"
+    SYSTEM = "system"
 
 
-class HTTPMethod(t.NamedTuple):
-    GET: str = "GET"
-    OPTIONS: str = "OPTIONS"
-    HEAD: str = "HEAD"
-    POST: str = "POST"
-    PUT: str = "PUT"
-    DELETE: str = "DELETE"
-    PATCH: str = "PATCH"
+class HTTPMethod:
+    GET = "GET"
+    OPTIONS = "OPTIONS"
+    HEAD = "HEAD"
+    POST = "POST"
+    PUT = "PUT"
+    DELETE = "DELETE"
+    PATCH = "PATCH"
 
 
 FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
@@ -54,19 +53,19 @@ SHORT_VERSION_CNT = 12
 VERSION_PREFIX_CNT = 2
 
 
-class SWDSBackendType(t.NamedTuple):
-    S3: str = "s3"
-    FUSE: str = "fuse"
+class SWDSBackendType:
+    S3 = "s3"
+    FUSE = "fuse"
 
 
-class DataLoaderKind(t.NamedTuple):
-    SWDS: str = "swds"
-    JSONL: str = "jsonl"
+class DataLoaderKind:
+    SWDS = "swds"
+    JSONL = "jsonl"
 
 
-class SWDSSubFileType(t.NamedTuple):
-    BIN: str = "swds_bin"
-    META: str = "swds_meta"
+class SWDSSubFileType:
+    BIN = "swds_bin"
+    META = "swds_meta"
 
 
 SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDSSubFileType.BIN

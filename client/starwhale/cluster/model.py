@@ -22,9 +22,9 @@ _fmt_timestamp = lambda x: datetime.fromtimestamp(float(x) / 1000.0).strftime(
 _fmt_duration = lambda x: str(timedelta(milliseconds=float(x)))
 
 
-class ProjectObjType(t.NamedTuple):
-    MODEL: str = "model"
-    DATASET: str = "dataset"
+class ProjectObjType:
+    MODEL = "model"
+    DATASET = "dataset"
 
 
 # TODO: use model-view-control mode to refactor Cluster

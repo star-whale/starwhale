@@ -29,20 +29,20 @@ from starwhale.api._impl.model import PipelineHandler
 DEFAULT_SW_TASK_RUN_IMAGE = "starwhaleai/starwhale:latest"
 
 
-class EvalTaskType(t.NamedTuple):
-    ALL: str = "all"
-    PPL: str = "ppl"
-    CMP: str = "cmp"
+class EvalTaskType:
+    ALL = "all"
+    PPL = "ppl"
+    CMP = "cmp"
 
 
-class RunSubDirType(t.NamedTuple):
-    RESULT: str = "result"
-    DATASET: str = "dataset"
-    PPL_RESULT: str = "ppl_result"
-    STATUS: str = "status"
-    LOG: str = "log"
-    SWMP: str = "swmp"
-    CONFIG: str = "config"
+class RunSubDirType:
+    RESULT = "result"
+    DATASET = "dataset"
+    PPL_RESULT = "ppl_result"
+    STATUS = "status"
+    LOG = "log"
+    SWMP = "swmp"
+    CONFIG = "config"
 
 
 _CNTR_WORKDIR = "/opt/starwhale"

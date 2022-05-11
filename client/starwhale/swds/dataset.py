@@ -44,15 +44,14 @@ from starwhale.utils.progress import run_with_progress_bar
 from .store import DataSetLocalStore
 
 
-class DSProcessMode(t.NamedTuple):
-    DEFINE: str = "define"
-    GENERATE: str = "generate"
+class DSProcessMode:
+    DEFINE = "define"
+    GENERATE = "generate"
 
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
 D_USER_BATCH_SIZE = 1
-
 ARCHIVE_SWDS_META = "archive.%s" % SWDSSubFileType.META
 
 

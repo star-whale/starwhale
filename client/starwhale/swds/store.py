@@ -14,6 +14,7 @@ from starwhale.base.store import LocalStorage
 from starwhale.consts import (
     DEFAULT_DATASET_YAML_NAME,
     DEFAULT_MANIFEST_NAME,
+    SHORT_VERSION_CNT,
     SW_API_VERSION,
 )
 from starwhale.utils.http import wrap_sw_error_resp, upload_file
@@ -24,15 +25,15 @@ from starwhale.utils.error import NotFoundError
 # TODO: refactor Dataset and ModelPackage LocalStorage
 
 
-class _UploadPhase(t.NamedTuple):
-    MANIFEST: str = "MANIFEST"
-    BLOB: str = "BLOB"
-    END: str = "END"
-    CANCEL: str = "CANCEL"
+class _UploadPhase:
+    MANIFEST = "MANIFEST"
+    BLOB = "BLOB"
+    END = "END"
+    CANCEL = "CANCEL"
 
 
 class DataSetLocalStore(LocalStorage):
-    def list(self, filter: str = "") -> None:  # type: ignore
+    def list(self, filter: str = "", title: str = "", caption: str = "") -> None:
         super().list(
             filter=filter,
             title="List dataset(swds) in local storage",
@@ -71,7 +72,7 @@ class DataSetLocalStore(LocalStorage):
                 with (_path / DEFAULT_MANIFEST_NAME).open("r") as f:
                     _manifest = yaml.safe_load(f)
                 # TODO: support dataset tag cmd
-                _tag = ver_dir.name[:7]
+                _tag = ver_dir.name[:SHORT_VERSION_CNT]
 
                 yield LocalStorage.SWobjMeta(
                     name=name_dir.name,
