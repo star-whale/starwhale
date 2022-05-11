@@ -17,3 +17,11 @@ exclude = '''
   )/
 )
 '''
+
+[tool.mypy]
+exclude = [
+    "venv",
+    "build",
+    "dist",
+    "__pycache__",
+]

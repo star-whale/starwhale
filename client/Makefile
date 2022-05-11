@@ -30,8 +30,9 @@ ci-lint:
 	echo "run flake8"
 	flake8 .
 
-ci-type:
+ci-mypy:
 	echo "run mypy"
+	mypy --strict --python-version=3.7 .
 
 ut:
 	echo "ut"
