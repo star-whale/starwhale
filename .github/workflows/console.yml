@@ -73,4 +73,4 @@ jobs:
         working-directory: ./console
         run: |
           yarn lint
-          yarn typecheck
+          # yarn typecheck
