@@ -10,9 +10,7 @@ RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --
     && apt-key fingerprint 0EBFCD88 \
     && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
     && apt-get update \
-    && apt-get install -y docker-ce=5:20.10.14~3-0~ubuntu-focal docker-ce-cli=5:20.10.14~3-0~ubuntu-focal nvidia-docker2 \
-    && apt-get clean all \
-    && rm -rf /var/lib/apt/lists/* /tmp/*
+    && apt-get install -y docker-ce=5:20.10.14~3-0~ubuntu-focal docker-ce-cli=5:20.10.14~3-0~ubuntu-focal nvidia-docker2
 
 VOLUME /var/lib/docker
 EXPOSE 2375 2376
