@@ -97,7 +97,7 @@
     "build": "craco build ",
     "test": "craco test",
     "eject": "craco eject",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p .",
     "lint": "eslint -c .eslintrc.js './src/**/*.{ts,tsx}'",
     "lint:fix": "eslint --fix -c .eslintrc.js './src/**/*.{ts,tsx}'",
     "storybook": "start-storybook -p 6006 -s public",
