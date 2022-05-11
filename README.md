@@ -24,6 +24,18 @@
     <img src="https://img.shields.io/github/license/star-whale/starwhale?style=flat">
 </a>
 
+<a href="https://github.com/star-whale/starwhale/actions/workflows/client.yaml">
+    <img src="https://github.com/star-whale/starwhale/actions/workflows/client.yaml/badge.svg">
+</a>
+
+<a href="https://github.com/star-whale/starwhale/actions/workflows/maven-build.yml">
+    <img src="https://github.com/star-whale/starwhale/actions/workflows/maven-build.yml/badge.svg">
+</a>
+
+<a href="https://github.com/star-whale/starwhale/actions/workflows/console.yml">
+    <img src="https://github.com/star-whale/starwhale/actions/workflows/console.yml/badge.svg">
+</a>
+
 </p>
 
 ## What is Starwhale
@@ -33,4 +45,5 @@
 ## Community
 
 ## License
+
 Starwhale is Licensed under the [Apache License 2.0](https://github.com/star-whale/starwhale/blob/main/LICENSE).
