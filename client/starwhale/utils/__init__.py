@@ -57,7 +57,7 @@ def is_venv() -> bool:
         [
             "python3",
             "-c",
-            "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))",
+            "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))",  # noqa: E501
         ],
         stderr=sys.stdout,
     )
@@ -108,7 +108,7 @@ def get_python_version():
 def fmt_http_server(server: str, https: bool = False) -> str:
     server = server.strip().strip("/")
     if not server:
-        raise Exception(f"no server addr")
+        raise Exception("no server addr")
 
     if server.startswith(("http://", "https://")):
         return server

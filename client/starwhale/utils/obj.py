@@ -1,8 +1,6 @@
 import typing as t
 from functools import wraps
 
-from loguru import logger
-
 
 class Dict2Obj(object):
     def __init__(self, d: dict) -> None:

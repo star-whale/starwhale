@@ -76,7 +76,7 @@ class EvalLocalStorage(LocalStorage):
         else:
             self._console.print(":bomb: no report to render")
 
-        self._console.rule(f"Evaluation process dirs")
+        self._console.rule("Evaluation process dirs")
         self._console.print(f":cactus: ppl: {_dir/EVAL_TASK_TYPE.PPL}")
         self._console.print(f":camel: cmp: {_dir/EVAL_TASK_TYPE.CMP}")
 

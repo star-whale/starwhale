@@ -1,4 +1,3 @@
-import os
 import typing as t
 from collections import namedtuple
 from pathlib import Path

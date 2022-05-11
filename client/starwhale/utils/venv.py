@@ -100,7 +100,7 @@ def conda_activate(env: t.Union[str, Path]) -> None:
 
 
 def conda_activate_render(env: t.Union[str, Path], path: Path) -> None:
-    content = f"""
+    content = """
 _conda_hook="$(/opt/miniconda3/bin/conda shell.bash hook)"
 cat >> /dev/stdout << EOF
 $_conda_hook
@@ -134,7 +134,7 @@ echo 'source {venvdir}/bin/activate'
 def _render_sw_activate(content: str, path: Path) -> None:
     ensure_file(path, content, mode=0o755)
     rprint(f" :clap: {path.name} is generated at {path}")
-    rprint(f" :compass: run cmd:  ")
+    rprint(" :compass: run cmd:  ")
     rprint(f" \t [bold red] $(sh {path}) [/]")
 
 
@@ -215,7 +215,7 @@ def dump_python_dep_env(
             cenv = get_conda_env()
             dest = str(_conda_dir / CONDA_ENV_TAR)
             if not cenv:
-                raise Exception(f"cannot get conda env value")
+                raise Exception("cannot get conda env value")
 
             # TODO: add env/env-name into model.yaml, user can set custom vars.
             logger.info("[info:dep]try to pack conda...")
