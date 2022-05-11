@@ -4,8 +4,10 @@ import typing as t
 from pathlib import Path
 
 from starwhale.consts import (
-    SW_CLI_CONFIG, DEFAULT_LOCAL_SW_CONTROLLER_ADDR,
-    SW_LOCAL_STORAGE, ENV_SW_CLI_CONFIG,
+    SW_CLI_CONFIG,
+    DEFAULT_LOCAL_SW_CONTROLLER_ADDR,
+    SW_LOCAL_STORAGE,
+    ENV_SW_CLI_CONFIG,
 )
 from starwhale.utils.fs import ensure_dir
 from starwhale.utils import fmt_http_server
@@ -19,7 +21,7 @@ def load_swcli_config() -> dict:
     if _config:
         return _config
 
-    #TODO: add set_global_env func in cli startup
+    # TODO: add set_global_env func in cli startup
     fpath = get_swcli_config_path()
 
     if not os.path.exists(fpath):
@@ -39,9 +41,7 @@ def render_default_swcli_config(fpath: str) -> dict:
             username="",
             user_role="",
         ),
-        storage=dict(
-            root=str(SW_LOCAL_STORAGE.resolve())
-        )
+        storage=dict(root=str(SW_LOCAL_STORAGE.resolve())),
     )
     render_swcli_config(c, fpath)
     return c
@@ -49,7 +49,7 @@ def render_default_swcli_config(fpath: str) -> dict:
 
 def update_swcli_config(**kw) -> None:
     c = load_swcli_config()
-    #TODO: tune update config
+    # TODO: tune update config
     c.update(kw)
     render_swcli_config(c)
 
@@ -61,17 +61,17 @@ def get_swcli_config_path() -> str:
     return fpath
 
 
-def render_swcli_config(c: dict, path: str="") -> None:
+def render_swcli_config(c: dict, path: str = "") -> None:
     fpath = path or get_swcli_config_path()
     ensure_dir(os.path.dirname(fpath), recursion=True)
     with open(fpath, "w") as f:
-        #TODO: use sw_cli_config class
+        # TODO: use sw_cli_config class
         yaml.dump(c, f, default_flow_style=False)
 
 
-#TODO: abstract better common base or mixed class
+# TODO: abstract better common base or mixed class
 class SWCliConfigMixed(object):
-    def __init__(self, swcli_config: t.Union[dict, None]=None) -> None:
+    def __init__(self, swcli_config: t.Union[dict, None] = None) -> None:
         self._config = swcli_config or load_swcli_config()
 
     @property

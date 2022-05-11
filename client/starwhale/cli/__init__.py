@@ -18,12 +18,7 @@ from .project import project_cmd
 def create_sw_cli():
     @click.group()
     @click.version_option(version=__version__)
-    @click.option(
-        "-v",
-        "--verbose",
-        count=True,
-        help="verbose for log"
-    )
+    @click.option("-v", "--verbose", count=True, help="verbose for log")
     def cli(verbose):
         load_swcli_config()
         init_logger(verbose)

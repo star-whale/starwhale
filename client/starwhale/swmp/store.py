@@ -16,12 +16,21 @@ from loguru import logger
 
 from starwhale.utils import fmt_http_server, pretty_bytes
 from starwhale.consts import (
-    DEFAULT_MANIFEST_NAME, DEFAULT_MODEL_YAML_NAME, SW_API_VERSION,
+    DEFAULT_MANIFEST_NAME,
+    DEFAULT_MODEL_YAML_NAME,
+    SW_API_VERSION,
 )
 from starwhale.utils.venv import (
-    CONDA_ENV_TAR, DUMP_CONDA_ENV_FNAME, DUMP_PIP_REQ_FNAME,
-    DUMP_USER_PIP_REQ_FNAME, install_req, venv_activate_render,
-    conda_activate_render, conda_restore, venv_setup, SW_ACTIVATE_SCRIPT
+    CONDA_ENV_TAR,
+    DUMP_CONDA_ENV_FNAME,
+    DUMP_PIP_REQ_FNAME,
+    DUMP_USER_PIP_REQ_FNAME,
+    install_req,
+    venv_activate_render,
+    conda_activate_render,
+    conda_restore,
+    venv_setup,
+    SW_ACTIVATE_SCRIPT,
 )
 from starwhale.utils.fs import ensure_dir, empty_dir
 from starwhale.base.store import LocalStorage
@@ -31,13 +40,11 @@ from starwhale.utils.http import wrap_sw_error_resp, upload_file
 TMP_FILE_BUFSIZE = 8192
 _SWMP_FILE_TYPE = ".swmp"
 
-class ModelPackageLocalStore(LocalStorage):
 
+class ModelPackageLocalStore(LocalStorage):
     def list(self, filter: str = "") -> None:
         super().list(
-            filter=filter,
-            title="List swmp in local storage",
-            caption=f"@{self.pkgdir}"
+            filter=filter, title="List swmp in local storage", caption=f"@{self.pkgdir}"
         )
 
     def iter_local_swobj(self) -> t.Generator[LocalStorage.SWobjMeta, None, None]:
@@ -59,14 +66,16 @@ class ModelPackageLocalStore(LocalStorage):
                 _tag = _fname if _fname == self.LATEST_TAG else ""
 
                 yield LocalStorage.SWobjMeta(
-                    name=mdir.name, version=_manifest["version"], tag=_tag,
+                    name=mdir.name,
+                    version=_manifest["version"],
+                    tag=_tag,
                     environment=_manifest["dep"]["env"],
                     size=pretty_bytes(_path.stat().st_size),
                     generate="local" if _manifest["dep"]["local_gen_env"] else "remote",
-                    created=_manifest["created_at"]
+                    created=_manifest["created_at"],
                 )
 
-    def _load_swmp_manifest(self, fpath: Path, direct: bool=False) -> dict:
+    def _load_swmp_manifest(self, fpath: Path, direct: bool = False) -> dict:
         if not direct and fpath.name.endswith(_SWMP_FILE_TYPE):
             _mname = fpath.parent.name
             _mversion = fpath.name.split(_SWMP_FILE_TYPE)[0]
@@ -77,8 +86,8 @@ class ModelPackageLocalStore(LocalStorage):
         with TarFS(str(fpath)) as tar:
             return yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
 
-    def push(self, swmp: str, project: str="", force: bool=False) -> None:
-        #TODO: add more restful api for project, /api/v1/project/{project_id}/model/push
+    def push(self, swmp: str, project: str = "", force: bool = False) -> None:
+        # TODO: add more restful api for project, /api/v1/project/{project_id}/model/push
         url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/project/model/push"
 
         _spath = self.swmp_path(swmp)
@@ -90,14 +99,15 @@ class ModelPackageLocalStore(LocalStorage):
         upload_file(
             url=url,
             fpath=_spath,
-            fields={"swmp": swmp, "project": project,
-                    "force": "1" if force else "0"},
+            fields={"swmp": swmp, "project": project, "force": "1" if force else "0"},
             headers={"Authorization": self._sw_token},
             exit=True,
         )
         rprint(" :clap: push done.")
 
-    def pull(self, swmp: str, project:str="", server: str="", force: bool=False) -> None:
+    def pull(
+        self, swmp: str, project: str = "", server: str = "", force: bool = False
+    ) -> None:
         server = server.strip() or self.sw_remote_addr
         server = fmt_http_server(server)
         url = f"{server}/api/{SW_API_VERSION}/project/model/pull"
@@ -107,13 +117,16 @@ class ModelPackageLocalStore(LocalStorage):
             rprint(f":ghost: {swmp} is already existed, skip pull")
             return
 
-        #TODO: add progress bar and rich live
-        #TODO: multi phase for pull swmp
-        #TODO: get size in advance
+        # TODO: add progress bar and rich live
+        # TODO: multi phase for pull swmp
+        # TODO: get size in advance
         rprint(f"try to pull {swmp}")
-        with requests.get(url, stream=True,
-                         params={"swmp": swmp, "project": project}, # type: ignore
-                         headers={"Authorization": self._sw_token}) as r:
+        with requests.get(
+            url,
+            stream=True,
+            params={"swmp": swmp, "project": project},  # type: ignore
+            headers={"Authorization": self._sw_token},
+        ) as r:
             if r.status_code == HTTPStatus.OK:
                 with _spath.open("wb") as f:
                     for chunk in r.iter_content(chunk_size=TMP_FILE_BUFSIZE):
@@ -124,17 +137,23 @@ class ModelPackageLocalStore(LocalStorage):
 
     def swmp_path(self, swmp: str) -> Path:
         _model, _version = self._parse_swobj(swmp)
-        return (self.pkgdir / _model / f"{_version}{_SWMP_FILE_TYPE}")
+        return self.pkgdir / _model / f"{_version}{_SWMP_FILE_TYPE}"
 
     def info(self, swmp: str) -> None:
         _manifest = self.get_swmp_info(*self._parse_swobj(swmp))
-        _config_panel = Panel(Pretty(_manifest, expand_all=True), title="inspect _manifest.yaml / model.yaml info")
+        _config_panel = Panel(
+            Pretty(_manifest, expand_all=True),
+            title="inspect _manifest.yaml / model.yaml info",
+        )
         self._console.print(_config_panel)
-        #TODO: add workdir tree
+        # TODO: add workdir tree
 
     def get_swmp_info(self, _name: str, _version: str) -> dict:
         _workdir = self._guess(self.workdir / _name, _version)
-        _swmp_path = self._guess(self.pkgdir / _name, _version if _version == self.LATEST_TAG else f"{_version}{_SWMP_FILE_TYPE}")
+        _swmp_path = self._guess(
+            self.pkgdir / _name,
+            _version if _version == self.LATEST_TAG else f"{_version}{_SWMP_FILE_TYPE}",
+        )
 
         if _workdir.exists():
             _manifest = yaml.safe_load((_workdir / DEFAULT_MANIFEST_NAME).open())
@@ -151,7 +170,7 @@ class ModelPackageLocalStore(LocalStorage):
         _manifest["pkg"] = str(_swmp_path.resolve())
         return _manifest
 
-    def gc(self, dry_run: bool=False) -> None:
+    def gc(self, dry_run: bool = False) -> None:
         ...
 
     def delete(self, swmp) -> None:
@@ -182,14 +201,20 @@ class ModelPackageLocalStore(LocalStorage):
 
         _remove_workdir(_version)
 
-    def extract(self, swmp: str, force: bool=False, _target: t.Optional[Path]=None) -> Path:
+    def extract(
+        self, swmp: str, force: bool = False, _target: t.Optional[Path] = None
+    ) -> Path:
         _name, _version = swmp.split(":")
         if _target:
             _target = Path(_target) / _version
         else:
             _target = self.workdir / _name / _version
 
-        if _target.exists() and (_target / DEFAULT_MANIFEST_NAME).exists() and not force:
+        if (
+            _target.exists()
+            and (_target / DEFAULT_MANIFEST_NAME).exists()
+            and not force
+        ):
             self._console.print(f":joy_cat: {swmp} existed, skip extract swmp")
         else:
             empty_dir(_target)
@@ -212,7 +237,7 @@ class ModelPackageLocalStore(LocalStorage):
     def pre_activate(self, swmp: str) -> None:
         if swmp.count(":") == 1:
             _name, _version = swmp.split(":")
-            #TODO: guess _version?
+            # TODO: guess _version?
             _workdir = self.workdir / _name / _version
         else:
             _workdir = Path(swmp)
@@ -245,13 +270,15 @@ class ModelPackageLocalStore(LocalStorage):
         else:
             logger.info(f"restore conda env ...")
             _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
-            #TODO: controller will proceed in advance
+            # TODO: controller will proceed in advance
             conda_restore(_env_yaml, _env_dir)
 
             logger.info(f"render activate script: {_ascript}")
             conda_activate_render(_env_dir, _ascript)
 
-    def _activate_venv(self, _workdir: Path, _dep: dict, _rebuild: bool=False) -> None:
+    def _activate_venv(
+        self, _workdir: Path, _dep: dict, _rebuild: bool = False
+    ) -> None:
         if not _dep["venv"]["use"] and not _rebuild:
             raise Exception("env set venv, but venv:use is false")
 
@@ -260,7 +287,11 @@ class ModelPackageLocalStore(LocalStorage):
         _venv_dir = _python_dir / "venv"
 
         _relocate = True
-        if _rebuild or not _dep["local_gen_env"] or not (_venv_dir / "bin" / "activate").exists():
+        if (
+            _rebuild
+            or not _dep["local_gen_env"]
+            or not (_venv_dir / "bin" / "activate").exists()
+        ):
             logger.info(f"setup venv and pip install {_venv_dir}")
             _relocate = False
             venv_setup(_venv_dir)

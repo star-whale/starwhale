@@ -12,12 +12,16 @@ def dataset_cmd():
 
 @dataset_cmd.command("build", help="Build swds with dataset.yaml")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
-@click.option("-f", "--dataset-yaml", default=DEFAULT_DATASET_YAML_NAME,
-              help="dataset yaml filename, default use ${workdir}/dataset.yaml file")
+@click.option(
+    "-f",
+    "--dataset-yaml",
+    default=DEFAULT_DATASET_YAML_NAME,
+    help="dataset yaml filename, default use ${workdir}/dataset.yaml file",
+)
 def _build(workdir, dataset_yaml):
-    #TODO: add cmd options for dataset build, another choice for dataset.yaml
-    #TODO: add dryrun
-    #TODO: add compress args
+    # TODO: add cmd options for dataset build, another choice for dataset.yaml
+    # TODO: add dryrun
+    # TODO: add compress args
     DataSet.build(workdir, dataset_yaml)
 
 
@@ -28,7 +32,12 @@ def _list():
 
 @dataset_cmd.command("push", help="Push swds into starwhale controller")
 @click.argument("swds")
-@click.option("-p", "--project", default="", help="project name, if omit, starwhale will push swmp to your default project")
+@click.option(
+    "-p",
+    "--project",
+    default="",
+    help="project name, if omit, starwhale will push swmp to your default project",
+)
 @click.option("-f", "--force", is_flag=True, help="force push swds")
 def _push(swds, project, force):
     DataSetLocalStore().push(swds, project, force)
@@ -54,6 +63,11 @@ def _gc(dry_run):
 
 @dataset_cmd.command("render-fuse", help="Render fuse input.json for local swds")
 @click.argument("swds")
-@click.option("-f", "--force", is_flag=True, help=f"Force to render, if {LOCAL_FUSE_JSON_NAME} was already existed")
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help=f"Force to render, if {LOCAL_FUSE_JSON_NAME} was already existed",
+)
 def _render_fuse(swds, force):
     DataSet.render_fuse_json(swds, force)

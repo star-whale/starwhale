@@ -11,8 +11,13 @@ from loguru import logger
 from starwhale.utils import gen_uniq_version, console, now_str
 from .store import EvalLocalStorage
 from starwhale.consts import (
-    DATA_LOADER_KIND, DEFAULT_INPUT_JSON_FNAME, DEFAULT_MANIFEST_NAME,
-    JSON_INDENT, SWDS_BACKEND_TYPE, VERSION_PREFIX_CNT, CURRENT_FNAME
+    DATA_LOADER_KIND,
+    DEFAULT_INPUT_JSON_FNAME,
+    DEFAULT_MANIFEST_NAME,
+    JSON_INDENT,
+    SWDS_BACKEND_TYPE,
+    VERSION_PREFIX_CNT,
+    CURRENT_FNAME,
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
@@ -27,16 +32,24 @@ EVAL_TASK_TYPE = namedtuple("EVAL_TASK_TYPE", ["ALL", "PPL", "CMP"])(
     "all", "ppl", "cmp"
 )
 _CNTR_WORKDIR = "/opt/starwhale"
-_RUN_SUBDIR = namedtuple("_RUN_SUBDIR", ["RESULT", "DATASET", "PPL_RESULT", "STATUS", "LOG", "SWMP", "CONFIG"])(
-    "result", "dataset", "ppl_result", "status", "log", "swmp", "config"
-)
+_RUN_SUBDIR = namedtuple(
+    "_RUN_SUBDIR",
+    ["RESULT", "DATASET", "PPL_RESULT", "STATUS", "LOG", "SWMP", "CONFIG"],
+)("result", "dataset", "ppl_result", "status", "log", "swmp", "config")
 _STATUS = PipelineHandler.STATUS
 
 
 class EvalExecutor(object):
-
-    def __init__(self, model: str, datasets: t.List[str], baseimage: str=DEFAULT_SW_TASK_RUN_IMAGE,
-                 name: str="", desc: str="", gencmd: bool=False, docker_verbose: bool=False) -> None:
+    def __init__(
+        self,
+        model: str,
+        datasets: t.List[str],
+        baseimage: str = DEFAULT_SW_TASK_RUN_IMAGE,
+        name: str = "",
+        desc: str = "",
+        gencmd: bool = False,
+        docker_verbose: bool = False,
+    ) -> None:
         self.name = name
         self.desc = desc
         self.model = model
@@ -69,7 +82,7 @@ class EvalExecutor(object):
                 raise SWObjNameFormatError
 
     @logger.catch
-    def run(self, phase: str=EVAL_TASK_TYPE.ALL):
+    def run(self, phase: str = EVAL_TASK_TYPE.ALL):
         try:
             self._do_run(phase)
         except Exception as e:
@@ -79,7 +92,7 @@ class EvalExecutor(object):
         finally:
             self._render_manifest()
 
-    def _do_run(self, phase: str=EVAL_TASK_TYPE.ALL):
+    def _do_run(self, phase: str = EVAL_TASK_TYPE.ALL):
         self._manifest["phase"] = phase
         self._manifest["status"] = _STATUS.RUNNING
 
@@ -101,14 +114,12 @@ class EvalExecutor(object):
             operations.append(_cmp)
 
         if phase != EVAL_TASK_TYPE.PPL and not self.gencmd:
-            operations.append(
-                (self._render_report, 15, "render report")
-            )
+            operations.append((self._render_report, 15, "render report"))
 
         run_with_progress_bar("eval run in local...", operations, self._console)
 
     def _gen_version(self) -> None:
-        #TODO: abstract base class or mixin class for swmp/swds/
+        # TODO: abstract base class or mixin class for swmp/swds/
         logger.info("[step:version]create eval job version...")
         if not self._version:
             self._version = gen_uniq_version(self.name)
@@ -126,8 +137,12 @@ class EvalExecutor(object):
 
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
-        #TODO: fix _workdir sequence-depent issue
-        self._workdir = self._store.eval_run_dir / self._version[:VERSION_PREFIX_CNT] /self._version
+        # TODO: fix _workdir sequence-depent issue
+        self._workdir = (
+            self._store.eval_run_dir
+            / self._version[:VERSION_PREFIX_CNT]
+            / self._version
+        )
 
         ensure_dir(self._workdir)
         for _w in (self._ppl_workdir, self._cmp_workdir):
@@ -155,7 +170,12 @@ class EvalExecutor(object):
         for i in range(len(_base["swds"])):
             _base["swds"][i]["bucket"] = _bucket
 
-        _f = self._workdir / EVAL_TASK_TYPE.PPL / _RUN_SUBDIR.CONFIG / DEFAULT_INPUT_JSON_FNAME
+        _f = (
+            self._workdir
+            / EVAL_TASK_TYPE.PPL
+            / _RUN_SUBDIR.CONFIG
+            / DEFAULT_INPUT_JSON_FNAME
+        )
         ensure_file(_f, json.dumps(_base, indent=JSON_INDENT))
         return _f
 
@@ -165,14 +185,19 @@ class EvalExecutor(object):
             kind=DATA_LOADER_KIND.JSONL,
             swds=[
                 dict(
-                    bucket= f"{_CNTR_WORKDIR}/{_RUN_SUBDIR.PPL_RESULT}",
+                    bucket=f"{_CNTR_WORKDIR}/{_RUN_SUBDIR.PPL_RESULT}",
                     key=dict(
                         data=CURRENT_FNAME,
-                    )
+                    ),
                 )
-            ]
+            ],
         )
-        _f = self._workdir / EVAL_TASK_TYPE.CMP / _RUN_SUBDIR.CONFIG / DEFAULT_INPUT_JSON_FNAME
+        _f = (
+            self._workdir
+            / EVAL_TASK_TYPE.CMP
+            / _RUN_SUBDIR.CONFIG
+            / DEFAULT_INPUT_JSON_FNAME
+        )
         ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
         return _f
 
@@ -188,7 +213,9 @@ class EvalExecutor(object):
         logger.info(f"[run {typ}] docker run command output...")
         self._console.rule(f":elephant: {typ} docker cmd", align="left")
         self._console.print(f"{cmd}\n")
-        self._console.print(f":fish: eval run:{typ} dir @ [green blink]{self._workdir}/{typ}[/]")
+        self._console.print(
+            f":fish: eval run:{typ} dir @ [green blink]{self._workdir}/{typ}[/]"
+        )
         if not self.gencmd:
             check_call(cmd, shell=True)
 
@@ -200,35 +227,46 @@ class EvalExecutor(object):
 
         cmd = ["docker", "run", "--net=host"]
         cmd += [
-            "-v", f"{rundir}:{_CNTR_WORKDIR}",
-            "-v", f"{self._model_dir}:{_CNTR_WORKDIR}/{_RUN_SUBDIR.SWMP}",
+            "-v",
+            f"{rundir}:{_CNTR_WORKDIR}",
+            "-v",
+            f"{self._model_dir}:{_CNTR_WORKDIR}/{_RUN_SUBDIR.SWMP}",
         ]
 
         if typ == EVAL_TASK_TYPE.PPL:
-            cmd += ["-v", f"{self._store.dataset_dir}:{_CNTR_WORKDIR}/{_RUN_SUBDIR.DATASET}"]
+            cmd += [
+                "-v",
+                f"{self._store.dataset_dir}:{_CNTR_WORKDIR}/{_RUN_SUBDIR.DATASET}",
+            ]
         elif typ == EVAL_TASK_TYPE.CMP:
-            cmd += ["-v", f"{self._ppl_workdir / _RUN_SUBDIR.RESULT }:{_CNTR_WORKDIR}/{_RUN_SUBDIR.PPL_RESULT}"]
+            cmd += [
+                "-v",
+                f"{self._ppl_workdir / _RUN_SUBDIR.RESULT }:{_CNTR_WORKDIR}/{_RUN_SUBDIR.PPL_RESULT}",
+            ]
 
         if self.docker_verbose:
             cmd += ["-e", "DEBUG=1"]
 
         _env = os.environ
-        for _ee in ("SW_PYPI_INDEX_URL", "SW_PYPI_EXTRA_INDEX_URL", "SW_PYPI_TRUSTED_HOST",
-                    "SW_RESET_CONDA_CONFIG"):
+        for _ee in (
+            "SW_PYPI_INDEX_URL",
+            "SW_PYPI_EXTRA_INDEX_URL",
+            "SW_PYPI_TRUSTED_HOST",
+            "SW_RESET_CONDA_CONFIG",
+        ):
             if _ee not in _env:
                 continue
             cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
 
         _mname, _mver = self.model.split(":")
         cmd += [
-            "-e", f"SW_SWMP_NAME={_mname}",
-            "-e", f"SW_SWMP_VERSION={_mver}",
+            "-e",
+            f"SW_SWMP_NAME={_mname}",
+            "-e",
+            f"SW_SWMP_VERSION={_mver}",
         ]
 
-        cmd += [
-            self.baseimage,
-            typ
-        ]
+        cmd += [self.baseimage, typ]
         return " ".join(cmd)
 
     def _render_report(self) -> None:
@@ -236,7 +274,9 @@ class EvalExecutor(object):
         render_cmp_report(_f)
 
         self._console.rule("[bold green]More Details[/]")
-        self._console.print(f":helicopter: eval version: [green]{self._version}[/], :hedgehog: workdir: {self._workdir.resolve()} \n")
+        self._console.print(
+            f":helicopter: eval version: [green]{self._version}[/], :hedgehog: workdir: {self._workdir.resolve()} \n"
+        )
 
     def _render_manifest(self):
         _status = True
@@ -263,6 +303,7 @@ class EvalExecutor(object):
 
 def render_cmp_report(rpath: Path) -> None:
     from starwhale.cluster.view import ClusterView
+
     _cv = ClusterView()
 
     with jsonlines.open(str(rpath.resolve()), "r") as _reader:

@@ -39,7 +39,9 @@ def empty_dir(path: t.Union[str, Path]) -> None:
         path.unlink()
 
 
-def ensure_dir(path: t.Union[str, Path], mode: int=0o755, recursion: bool=True) ->None:
+def ensure_dir(
+    path: t.Union[str, Path], mode: int = 0o755, recursion: bool = True
+) -> None:
     p = Path(path)
     if p.exists() and p.is_dir():
         return
@@ -51,7 +53,7 @@ def ensure_dir(path: t.Union[str, Path], mode: int=0o755, recursion: bool=True) 
             os.mkdir(path, mode)
     except OSError as e:
         if e.errno != errno.EEXIST:
-            #TODO: add more hunmanable exception log
+            # TODO: add more hunmanable exception log
             raise
 
 
