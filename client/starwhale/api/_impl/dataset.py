@@ -8,11 +8,13 @@ from binascii import crc32
 import jsonlines
 
 from starwhale.swds.dataset import (
-    D_ALIGNMENT_SIZE, D_USER_BATCH_SIZE, D_FILE_VOLUME_SIZE
+    D_ALIGNMENT_SIZE,
+    D_USER_BATCH_SIZE,
+    D_FILE_VOLUME_SIZE,
 )
 from starwhale.consts import SWDS_DATA_FNAME_FMT, SWDS_LABEL_FNAME_FMT
 
-#TODO: tune header size
+# TODO: tune header size
 _header_magic = struct.unpack(">I", b"SWDS")[0]
 _data_magic = struct.unpack(">I", b"SDWS")[0]
 _header_struct = struct.Struct(">IIQIIII")
@@ -34,7 +36,8 @@ class BuildExecutor(object):
         data bytes...
         padding bytes...        --> default 4K padding
     """
-    #TODO: add more docstring for class
+
+    # TODO: add more docstring for class
 
     __metaclass__ = ABCMeta
 
@@ -44,16 +47,18 @@ class BuildExecutor(object):
     _DATA_FMT = SWDS_DATA_FNAME_FMT
     _LABEL_FMT = SWDS_LABEL_FNAME_FMT
 
-    def __init__(self,
-                 data_dir:Path = Path("."),
-                 output_dir: Path = Path("./sw_output"),
-                 data_filter:str ="*", label_filter:str ="*",
-                 batch:int =D_USER_BATCH_SIZE,
-                 alignment_bytes_size:int = D_ALIGNMENT_SIZE,
-                 volume_bytes_size:int = D_FILE_VOLUME_SIZE,
-                 ) -> None:
-        #TODO: add more docstring for args
-        #TODO: validate group upper and lower?
+    def __init__(
+        self,
+        data_dir: Path = Path("."),
+        output_dir: Path = Path("./sw_output"),
+        data_filter: str = "*",
+        label_filter: str = "*",
+        batch: int = D_USER_BATCH_SIZE,
+        alignment_bytes_size: int = D_ALIGNMENT_SIZE,
+        volume_bytes_size: int = D_FILE_VOLUME_SIZE,
+    ) -> None:
+        # TODO: add more docstring for args
+        # TODO: validate group upper and lower?
         self._batch = max(batch, 1)
         self.data_dir = data_dir
         self.data_filter = data_filter
@@ -67,11 +72,13 @@ class BuildExecutor(object):
 
     def _prepare(self):
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self._index_writer = jsonlines.open(str((self.output_dir / self.INDEX_NAME).resolve()), mode="w")
+        self._index_writer = jsonlines.open(
+            str((self.output_dir / self.INDEX_NAME).resolve()), mode="w"
+        )
 
     def __exit__(self):
         try:
-            self._index_writer.close() # type: ignore
+            self._index_writer.close()  # type: ignore
         except Exception as e:
             print(f"index writer close exception: {e}")
 
@@ -79,14 +86,14 @@ class BuildExecutor(object):
 
     def _write(self, writer, idx: int, data: bytes) -> t.Tuple[int, int]:
         size = len(data)
-        crc = crc32(data) #TODO: crc is right?
+        crc = crc32(data)  # TODO: crc is right?
         start = writer.tell()
         padding_size = self._get_padding_size(size + _header_size)
 
         _header = _header_struct.pack(
             _header_magic, crc, idx, size, padding_size, self._batch, _data_magic
         )
-        _padding = b'\0' * padding_size
+        _padding = b"\0" * padding_size
         writer.write(_header + data + _padding)
         return start, _header_size + size + padding_size
 
@@ -108,17 +115,19 @@ class BuildExecutor(object):
                     file=self._LABEL_FMT.format(index=fno),
                     offset=label_pos,
                     size=label_size,
-                )
+                ),
             )
         )
 
     def make_swds(self):
-        #TODO: add lock
+        # TODO: add lock
         fno, wrote_size = 0, 0
         dwriter = (self.output_dir / self._DATA_FMT.format(index=fno)).open("wb")
         lwriter = (self.output_dir / self._LABEL_FMT.format(index=fno)).open("wb")
 
-        for idx, (data, label) in enumerate(zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())):
+        for idx, (data, label) in enumerate(
+            zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())
+        ):
             data_pos, data_size = self._write(dwriter, idx, data)
             label_pos, label_size = self._write(lwriter, idx, label)
             self._write_index(idx, fno, data_pos, data_size, label_pos, label_size)
@@ -131,8 +140,12 @@ class BuildExecutor(object):
                 dwriter.close()
                 lwriter.close()
 
-                dwriter = (self.output_dir / self._DATA_FMT.format(index=fno)).open("wb")
-                lwriter = (self.output_dir / self._LABEL_FMT.format(index=fno)).open("wb")
+                dwriter = (self.output_dir / self._DATA_FMT.format(index=fno)).open(
+                    "wb"
+                )
+                lwriter = (self.output_dir / self._LABEL_FMT.format(index=fno)).open(
+                    "wb"
+                )
 
         try:
             dwriter.close()
@@ -183,7 +196,6 @@ class BuildExecutor(object):
 
 
 class MNISTBuildExecutor(BuildExecutor):
-
     def iter_data_slice(self, path: str):
         fpath = Path(path)
 
@@ -211,4 +223,4 @@ class MNISTBuildExecutor(BuildExecutor):
                 yield content
 
 
-#TODO: define some open dataset class, like ImageNet, COCO
+# TODO: define some open dataset class, like ImageNet, COCO

@@ -12,22 +12,34 @@ from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
 
 from starwhale.utils.fs import (
-    ensure_dir, ensure_file, blake2b_file,
-    BLAKE2B_SIGNATURE_ALGO
+    ensure_dir,
+    ensure_file,
+    blake2b_file,
+    BLAKE2B_SIGNATURE_ALGO,
 )
 from starwhale import __version__
 from starwhale.utils import (
-    convert_to_bytes, gen_uniq_version, console, now_str,
+    convert_to_bytes,
+    gen_uniq_version,
+    console,
+    now_str,
 )
 from starwhale.utils.load import import_cls
 from starwhale.utils.venv import SUPPORTED_PIP_REQ, dump_python_dep_env, detect_pip_req
 from starwhale.utils.error import FileTypeError, NoSupportError
 from starwhale.consts import (
     DEFAULT_STARWHALE_API_VERSION,
-    DEFAULT_MANIFEST_NAME, DEFAULT_DATASET_YAML_NAME,
-    DEFAULT_COPY_WORKERS, SHORT_VERSION_CNT, JSON_INDENT,
-    LOCAL_FUSE_JSON_NAME, SWDS_BACKEND_TYPE, DATA_LOADER_KIND,
-    SWDS_LABEL_FNAME_FMT, SWDS_DATA_FNAME_FMT, SWDS_SUBFILE_TYPE
+    DEFAULT_MANIFEST_NAME,
+    DEFAULT_DATASET_YAML_NAME,
+    DEFAULT_COPY_WORKERS,
+    SHORT_VERSION_CNT,
+    JSON_INDENT,
+    LOCAL_FUSE_JSON_NAME,
+    SWDS_BACKEND_TYPE,
+    DATA_LOADER_KIND,
+    SWDS_LABEL_FNAME_FMT,
+    SWDS_DATA_FNAME_FMT,
+    SWDS_SUBFILE_TYPE,
 )
 from starwhale.utils.config import load_swcli_config
 from starwhale.utils.progress import run_with_progress_bar
@@ -41,37 +53,42 @@ DS_PROCESS_MODE = namedtuple("DS_PROCESS_MODE", ["DEFINE", "GENERATE"])(
 D_DS_PROCESS_MODE = DS_PROCESS_MODE.GENERATE
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
-D_ALIGNMENT_SIZE = 4 * 1024            # 4k for page cache
+D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
 D_USER_BATCH_SIZE = 1
 
 ARCHIVE_SWDS_META = "archive.%s" % SWDS_SUBFILE_TYPE.META
 
-#TODO: use attr to tune code
+# TODO: use attr to tune code
 class DataSetAttr(object):
-
-    def __init__(self, volume_size: t.Union[int, str] = D_FILE_VOLUME_SIZE,
-                 alignment_size: t.Union[int, str]= D_ALIGNMENT_SIZE,
-                 batch_size: int = D_USER_BATCH_SIZE) -> None:
+    def __init__(
+        self,
+        volume_size: t.Union[int, str] = D_FILE_VOLUME_SIZE,
+        alignment_size: t.Union[int, str] = D_ALIGNMENT_SIZE,
+        batch_size: int = D_USER_BATCH_SIZE,
+    ) -> None:
         self.batch_size = batch_size
         self.volume_size = convert_to_bytes(volume_size)
         self.alignment_size = convert_to_bytes(alignment_size)
 
 
-#TODO: abstract base class from DataSetConfig and ModelConfig
-#TODO: use attr to tune code
+# TODO: abstract base class from DataSetConfig and ModelConfig
+# TODO: use attr to tune code
 class DataSetConfig(object):
-
-    def __init__(self, name: str, data_dir: str, process: str,
-                 mode: str = D_DS_PROCESS_MODE,
-                 data_filter: str="",
-                 label_filter: str="",
-                 pip_req: str = "",
-                 pkg_data: t.List[str]=[],
-                 tag: t.List[str] = [],
-                 desc: str = "",
-                 version: str = DEFAULT_STARWHALE_API_VERSION,
-                 attr: dict= {},
-                 ) -> None:
+    def __init__(
+        self,
+        name: str,
+        data_dir: str,
+        process: str,
+        mode: str = D_DS_PROCESS_MODE,
+        data_filter: str = "",
+        label_filter: str = "",
+        pip_req: str = "",
+        pkg_data: t.List[str] = [],
+        tag: t.List[str] = [],
+        desc: str = "",
+        version: str = DEFAULT_STARWHALE_API_VERSION,
+        attr: dict = {},
+    ) -> None:
         self.name = name
         self.mode = mode
         self.data_dir = str(data_dir)
@@ -92,9 +109,11 @@ class DataSetConfig(object):
             raise NoSupportError(f"{self.mode} mode no support")
 
         if ":" not in self.process:
-            raise Exception(f"please use module:class format, current is: {self.process}")
+            raise Exception(
+                f"please use module:class format, current is: {self.process}"
+            )
 
-        #TODO: add more validator
+        # TODO: add more validator
 
     def __str__(self) -> str:
         return f"DataSet Config {self.name}"
@@ -111,11 +130,16 @@ class DataSetConfig(object):
 
         return cls(**c)
 
-#TODO: abstract base object for DataSet and ModelPackage
-class DataSet(object):
 
-    def __init__(self, workdir: str, ds_yaml_name: str=DEFAULT_DATASET_YAML_NAME, dry_run: bool=False,
-                 ds_version:str="") -> None:
+# TODO: abstract base object for DataSet and ModelPackage
+class DataSet(object):
+    def __init__(
+        self,
+        workdir: str,
+        ds_yaml_name: str = DEFAULT_DATASET_YAML_NAME,
+        dry_run: bool = False,
+        ds_version: str = "",
+    ) -> None:
         self.workdir = Path(workdir)
         self._dry_run = dry_run
         self._ds_yaml_name = ds_yaml_name
@@ -143,19 +167,19 @@ class DataSet(object):
 
     @logger.catch
     def _do_build(self):
-        #TODO: design dataset layer mechanism
-        #TODO: design append some new data into existed dataset
-        #TODO: design uniq build steps for model build, swmp build
+        # TODO: design dataset layer mechanism
+        # TODO: design append some new data into existed dataset
+        # TODO: design uniq build steps for model build, swmp build
 
         operations = [
-           (self._gen_version, 5, "gen version"),
-           (self._prepare_snapshot, 5, "prepare snapshot"),
-           (self._copy_src, 15, "copy src"),
-           (self._call_make_swds, 30, "make swds"),
-           (self._dump_dep, 30, "dump dep"),
-           (self._calculate_signature, 5, "calculate signature"),
-           (self._render_manifest, 5, "render manifest"),
-           (self._make_swds_meta_tar, 15, "make meta tar"),
+            (self._gen_version, 5, "gen version"),
+            (self._prepare_snapshot, 5, "prepare snapshot"),
+            (self._copy_src, 15, "copy src"),
+            (self._call_make_swds, 30, "make swds"),
+            (self._dump_dep, 30, "dump dep"),
+            (self._calculate_signature, 5, "calculate signature"),
+            (self._render_manifest, 5, "render manifest"),
+            (self._make_swds_meta_tar, 15, "make meta tar"),
         ]
         run_with_progress_bar("swds building...", operations, self._console)
 
@@ -166,13 +190,21 @@ class DataSet(object):
         src_fs = open_fs(str(self._src_dir.absolute()))
         snapshot_fs = open_fs(str(self._snapshot_workdir.absolute()))
 
-        copy_file(workdir_fs, self._ds_yaml_name, snapshot_fs, DEFAULT_DATASET_YAML_NAME)
+        copy_file(
+            workdir_fs, self._ds_yaml_name, snapshot_fs, DEFAULT_DATASET_YAML_NAME
+        )
         copy_file(workdir_fs, self._ds_yaml_name, src_fs, DEFAULT_DATASET_YAML_NAME)
-        #TODO: tune copy src
-        copy_fs(workdir_fs, src_fs,
-                walker=Walker(
-                    filter=["*.py", self._ds_yaml_name] + SUPPORTED_PIP_REQ + self._swds_config.pkg_data
-                ), workers=DEFAULT_COPY_WORKERS)
+        # TODO: tune copy src
+        copy_fs(
+            workdir_fs,
+            src_fs,
+            walker=Walker(
+                filter=["*.py", self._ds_yaml_name]
+                + SUPPORTED_PIP_REQ
+                + self._swds_config.pkg_data
+            ),
+            workers=DEFAULT_COPY_WORKERS,
+        )
 
         logger.info("[step:copy]finish copy files")
 
@@ -187,17 +219,21 @@ class DataSet(object):
             tar.add(str(_w / DEFAULT_DATASET_YAML_NAME))
 
         logger.info(f"[step:tar]finish to make swmp_meta tar")
-        self._console.print(f":hibiscus: congratulation! you can run [red bold blink] swcli dataset info {self._name}:{self._version}[/]")
+        self._console.print(
+            f":hibiscus: congratulation! you can run [red bold blink] swcli dataset info {self._name}:{self._version}[/]"
+        )
 
     def _calculate_signature(self) -> None:
         _algo = BLAKE2B_SIGNATURE_ALGO
         _sign = dict()
         total_size = 0
 
-        logger.info(f"[step:signature]try to calculate signature with {_algo} @ {self._data_dir}")
+        logger.info(
+            f"[step:signature]try to calculate signature with {_algo} @ {self._data_dir}"
+        )
         self._console.print(f":robot: calculate signature...")
 
-        #TODO: _cal(self._snapshot_workdir / ARCHIVE_SWDS_META) # add meta sign into _manifest.yaml
+        # TODO: _cal(self._snapshot_workdir / ARCHIVE_SWDS_META) # add meta sign into _manifest.yaml
         for f in self._data_dir.iterdir():
             if not f.is_file():
                 continue
@@ -208,7 +244,9 @@ class DataSet(object):
 
         self._manifest["dataset_byte_size"] = total_size
         self._manifest["signature"] = _sign
-        logger.info(f"[step:signature]finish calculate signature with {_algo} for {len(_sign)} files")
+        logger.info(
+            f"[step:signature]finish calculate signature with {_algo} for {len(_sign)} files"
+        )
 
     def _dump_dep(self) -> None:
         logger.info("[step:dump]dump conda or venv environment...")
@@ -216,7 +254,7 @@ class DataSet(object):
         _manifest = dump_python_dep_env(
             dep_dir=self._snapshot_workdir / "dep",
             pip_req_fpath=detect_pip_req(self.workdir, self._swds_config.pip_req),
-            skip_gen_env=True,  #TODO: add venv dump?
+            skip_gen_env=True,  # TODO: add venv dump?
             console=self._console,
         )
 
@@ -225,31 +263,34 @@ class DataSet(object):
 
     def _call_make_swds(self) -> None:
         from starwhale.api._impl.dataset import BuildExecutor
+
         logger.info("[step:swds]try to gen swds...")
         self._manifest["dataset_attr"] = self._swds_config.attr.__dict__
         self._manifest["mode"] = self._swds_config.mode
         self._manifest["process"] = self._swds_config.process
 
-        #TODO: add more import format support, current is module:class
-        logger.info(f"[info:swds]try to import {self._swds_config.process} @ {self.workdir}")
+        # TODO: add more import format support, current is module:class
+        logger.info(
+            f"[info:swds]try to import {self._swds_config.process} @ {self.workdir}"
+        )
         _cls = import_cls(self.workdir, self._swds_config.process, BuildExecutor)
         _sw = self._swds_config
         _obj = _cls(
-             data_dir=self.workdir / self._swds_config.data_dir,
-             output_dir=self._data_dir,
-             data_filter=_sw.data_filter,
-             label_filter=_sw.label_filter,
-             batch=_sw.attr.batch_size,
-             alignment_bytes_size=_sw.attr.alignment_size,
-             volume_bytes_size=_sw.attr.volume_size,
+            data_dir=self.workdir / self._swds_config.data_dir,
+            output_dir=self._data_dir,
+            data_filter=_sw.data_filter,
+            label_filter=_sw.label_filter,
+            batch=_sw.attr.batch_size,
+            alignment_bytes_size=_sw.attr.alignment_size,
+            volume_bytes_size=_sw.attr.volume_size,
         )
         self._console.print(f":ghost: import [red]{_obj}[/] to make swds...")
         if self._swds_config.mode == DS_PROCESS_MODE.GENERATE:
             logger.info("[info:swds]do make swds_bin job...")
             _obj.make_swds()
-            #TODO: need remove workdir in sys.path?
+            # TODO: need remove workdir in sys.path?
         else:
-            #TODO: add some dry-run output
+            # TODO: add some dry-run output
             logger.info("[info:swds]skip make swds_bin")
 
         logger.info(f"[step:swds]finish gen swds @ {self._data_dir}")
@@ -258,7 +299,7 @@ class DataSet(object):
         self._manifest["name"] = self._name
         self._manifest["extra"] = dict(
             desc=self._swds_config.desc,
-            tag=self._swds_config.tag or [self._version[:7]]
+            tag=self._swds_config.tag or [self._version[:7]],
         )
         self._manifest["build"] = dict(
             os=platform.system(),
@@ -272,7 +313,7 @@ class DataSet(object):
         if not self._version:
             self._version = gen_uniq_version()
 
-        #TODO: abstract with ModelPackage
+        # TODO: abstract with ModelPackage
         self._manifest["version"] = self._version
         self._manifest["created_at"] = now_str()
         logger.info(f"[step:version] dataset swds version: {self._version}")
@@ -280,7 +321,7 @@ class DataSet(object):
         return self._version
 
     def _prepare_snapshot(self) -> None:
-        #TODO: add some start file flag
+        # TODO: add some start file flag
         self._snapshot_workdir = self._store.dataset_dir / self._name / self._version
 
         if self._snapshot_workdir.exists():
@@ -290,8 +331,12 @@ class DataSet(object):
         ensure_dir(self._src_dir)
         ensure_dir(self._docker_dir)
 
-        logger.info(f"[step:prepare-snapshot]swds snapshot workdir: {self._snapshot_workdir}")
-        self._console.print(f":file_folder: swmp workdir: [underline]{self._snapshot_workdir}[/]")
+        logger.info(
+            f"[step:prepare-snapshot]swds snapshot workdir: {self._snapshot_workdir}"
+        )
+        self._console.print(
+            f":file_folder: swmp workdir: [underline]{self._snapshot_workdir}[/]"
+        )
 
     @property
     def _data_dir(self):
@@ -310,7 +355,12 @@ class DataSet(object):
         return self._dep_dir / "docker"
 
     @classmethod
-    def build(cls, workdir: str, ds_yaml_name: str=DEFAULT_DATASET_YAML_NAME, dry_run: bool=False) -> None:
+    def build(
+        cls,
+        workdir: str,
+        ds_yaml_name: str = DEFAULT_DATASET_YAML_NAME,
+        dry_run: bool = False,
+    ) -> None:
         ds = DataSet(workdir, ds_yaml_name, dry_run)
         ds._do_build()
 
@@ -324,7 +374,7 @@ class DataSet(object):
 
         return DataSetConfig.create_by_yaml(fpath)
 
-    def _do_render_fuse_json(self, force: bool=False) -> str:
+    def _do_render_fuse_json(self, force: bool = False) -> str:
         _mf = self.workdir / DEFAULT_MANIFEST_NAME
         if not _mf.exists():
             raise Exception(f"need {DEFAULT_MANIFEST_NAME} @ {self.workdir}")
@@ -339,7 +389,11 @@ class DataSet(object):
         ds_name = _manifest["name"]
         ds_version = _manifest["version"]
         bucket = str((self._store.dataset_dir).resolve())
-        swds_bins = [_k for _k in _manifest["signature"].keys() if _k.startswith("data_") and _k.endswith(SWDS_SUBFILE_TYPE.BIN)]
+        swds_bins = [
+            _k
+            for _k in _manifest["signature"].keys()
+            if _k.startswith("data_") and _k.endswith(SWDS_SUBFILE_TYPE.BIN)
+        ]
         path_prefix = f"{ds_name}/{ds_version}/data"
         for idx in range(0, len(swds_bins)):
             _fuse["swds"].append(
@@ -348,27 +402,31 @@ class DataSet(object):
                     key=dict(
                         data=f"{path_prefix}/{SWDS_DATA_FNAME_FMT.format(index=idx)}",
                         label=f"{path_prefix}/{SWDS_LABEL_FNAME_FMT.format(index=idx)}",
-                        #TODO: add extra_attr ds_name, ds_versoin
+                        # TODO: add extra_attr ds_name, ds_versoin
                     ),
                     ext_attr=dict(
                         ds_name=ds_name,
                         ds_version=ds_version,
-                    )
+                    ),
                 )
             )
 
         _f = self.workdir / LOCAL_FUSE_JSON_NAME
         if _f.exists() and not force:
-            self._console.print(f":joy_cat: {LOCAL_FUSE_JSON_NAME} existed, skip render")
+            self._console.print(
+                f":joy_cat: {LOCAL_FUSE_JSON_NAME} existed, skip render"
+            )
         else:
             ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
-            self._console.print(f":clap: render swds {ds_name}:{ds_version} {LOCAL_FUSE_JSON_NAME}")
+            self._console.print(
+                f":clap: render swds {ds_name}:{ds_version} {LOCAL_FUSE_JSON_NAME}"
+            )
 
         self._console.print(f":mag: {_f}")
         return str(_f.resolve())
 
     @classmethod
-    def render_fuse_json(cls, swds: str, force: bool=False) -> str:
+    def render_fuse_json(cls, swds: str, force: bool = False) -> str:
         dsl = DataSetLocalStore()
         _name, _version = dsl._parse_swobj(swds)
         _workdir = str((dsl.dataset_dir / _name / _version).resolve())

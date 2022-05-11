@@ -10,8 +10,13 @@ from rich import print as rprint
 from rich.console import Console
 
 from starwhale.utils import (
-    get_python_run_env, get_python_version,
-    is_conda, is_venv, is_darwin, is_linux, is_windows,
+    get_python_run_env,
+    get_python_version,
+    is_conda,
+    is_venv,
+    is_darwin,
+    is_linux,
+    is_windows,
     get_conda_env,
 )
 from starwhale.utils.error import NoSupportError
@@ -26,25 +31,37 @@ DUMP_USER_PIP_REQ_FNAME = "pip-req.txt"
 SW_ACTIVATE_SCRIPT = "activate.sw"
 
 SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
-SW_PYPI_INDEX_URL = os.environ.get("SW_PYPI_INDEX_URL", "https://pypi.doubanio.com/simple/")
-SW_PYPI_EXTRA_INDEX_URL = os.environ.get("SW_PYPI_EXTRA_INDEX_URL",
-                                         "https://pypi.tuna.tsinghua.edu.cn/simple/ http://pypi.mirrors.ustc.edu.cn/simple/ https://pypi.org/simple")
-SW_PYPI_TRUSTED_HOST = os.environ.get("SW_PYPI_TRUSTED_HOST",
-                                      "pypi.tuna.tsinghua.edu.cn pypi.mirrors.ustc.edu.cn pypi.doubanio.com pypi.org")
+SW_PYPI_INDEX_URL = os.environ.get(
+    "SW_PYPI_INDEX_URL", "https://pypi.doubanio.com/simple/"
+)
+SW_PYPI_EXTRA_INDEX_URL = os.environ.get(
+    "SW_PYPI_EXTRA_INDEX_URL",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/ http://pypi.mirrors.ustc.edu.cn/simple/ https://pypi.org/simple",
+)
+SW_PYPI_TRUSTED_HOST = os.environ.get(
+    "SW_PYPI_TRUSTED_HOST",
+    "pypi.tuna.tsinghua.edu.cn pypi.mirrors.ustc.edu.cn pypi.doubanio.com pypi.org",
+)
 
 
 def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
-    #TODO: use custom pip source
+    # TODO: use custom pip source
     venvdir = str(venvdir)
     req = str(req)
-    cmd = [os.path.join(venvdir, 'bin', 'pip'), 'install',
-           '--exists-action', 'w',
-           '--index-url', SW_PYPI_INDEX_URL,
-           '--extra-index-url', SW_PYPI_EXTRA_INDEX_URL,
-           '--trusted-host', SW_PYPI_TRUSTED_HOST,
-           ]
+    cmd = [
+        os.path.join(venvdir, "bin", "pip"),
+        "install",
+        "--exists-action",
+        "w",
+        "--index-url",
+        SW_PYPI_INDEX_URL,
+        "--extra-index-url",
+        SW_PYPI_EXTRA_INDEX_URL,
+        "--trusted-host",
+        SW_PYPI_TRUSTED_HOST,
+    ]
 
-    cmd += ['-r', req] if os.path.isfile(req) else [req]
+    cmd += ["-r", req] if os.path.isfile(req) else [req]
     check_call(cmd)
 
 
@@ -55,18 +72,18 @@ def venv_activate(venvdir: t.Union[str, Path]) -> None:
 
 
 def venv_setup(venvdir: t.Union[str, Path]) -> None:
-    #TODO: define starwhale virtualenv.py
-    #TODO: use more elegant method to make venv portable
+    # TODO: define starwhale virtualenv.py
+    # TODO: use more elegant method to make venv portable
     check_call(f"python3 -m venv {venvdir}", shell=True)
 
 
 def pip_freeze(path: t.Union[str, Path]):
-    #TODO: add cmd timeout and error log
+    # TODO: add cmd timeout and error log
     check_call(f"pip freeze > {path}", shell=True)
 
 
-def conda_export(path: t.Union[str, Path], env:str=""):
-    #TODO: add cmd timeout
+def conda_export(path: t.Union[str, Path], env: str = ""):
+    # TODO: add cmd timeout
     cmd = f"{get_conda_bin()} env export"
     env = f"-n {env}" if env else ""
     check_call(f"{cmd} {env} > {path}", shell=True)
@@ -93,7 +110,9 @@ EOF
     _render_sw_activate(content, path)
 
 
-def venv_activate_render(venvdir: t.Union[str, Path], path: Path, relocate: bool=False) -> None:
+def venv_activate_render(
+    venvdir: t.Union[str, Path], path: Path, relocate: bool = False
+) -> None:
     bin = f"{venvdir}/bin"
     if relocate:
         content = f"""
@@ -120,7 +139,7 @@ def _render_sw_activate(content: str, path: Path) -> None:
 
 
 def get_conda_bin() -> str:
-    #TODO: add process cache
+    # TODO: add process cache
     for _p in (
         "/opt/miniconda3/bin/conda",
         "/opt/anaconda3/bin/conda",
@@ -133,11 +152,13 @@ def get_conda_bin() -> str:
         return "conda"
 
 
-def dump_python_dep_env(dep_dir: t.Union[str, Path],
-                        pip_req_fpath: str,
-                        skip_gen_env: bool = False,
-                        console: t.Optional[Console] = None) -> dict:
-    #TODO: smart dump python dep by starwhale sdk-api, pip ast analysis?
+def dump_python_dep_env(
+    dep_dir: t.Union[str, Path],
+    pip_req_fpath: str,
+    skip_gen_env: bool = False,
+    console: t.Optional[Console] = None,
+) -> dict:
+    # TODO: smart dump python dep by starwhale sdk-api, pip ast analysis?
     dep_dir = Path(dep_dir)
     console = console or Console()
 
@@ -151,7 +172,7 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
         python=py_ver,
         local_gen_env=False,
         venv=dict(use=not is_conda()),
-        conda=dict(use=is_conda())
+        conda=dict(use=is_conda()),
     )
 
     _conda_dir = dep_dir / "conda"
@@ -178,14 +199,16 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
         pip_freeze(_pip_lock_req)
     else:
         # TODO: add other env tools
-        logger.warning("detect use system python, swcli does not pip freeze, only use custom pip-req")
+        logger.warning(
+            "detect use system python, swcli does not pip freeze, only use custom pip-req"
+        )
 
     if is_windows() or is_darwin() or skip_gen_env:
-        #TODO: win/osx will produce env in controller agent with task
+        # TODO: win/osx will produce env in controller agent with task
         logger.info(f"[info:dep]{sys_name} will skip conda/venv dump or generate")
     elif is_linux():
-        #TODO: more design local or remote build venv
-        #TODO: ignore some pkg when dump, like notebook?
+        # TODO: more design local or remote build venv
+        # TODO: ignore some pkg when dump, like notebook?
         _manifest["local_gen_env"] = True  # type: ignore
 
         if is_conda():
@@ -194,19 +217,25 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
             if not cenv:
                 raise Exception(f"cannot get conda env value")
 
-            #TODO: add env/env-name into model.yaml, user can set custom vars.
+            # TODO: add env/env-name into model.yaml, user can set custom vars.
             logger.info("[info:dep]try to pack conda...")
-            conda_pack.pack(name=cenv, force=True, output=dest, ignore_editable_packages=True)
+            conda_pack.pack(
+                name=cenv, force=True, output=dest, ignore_editable_packages=True
+            )
             logger.info(f"[info:dep]finish conda pack {dest})")
             console.print(f":beer_mug: conda pack @ [underline]{dest}[/]")
         else:
-            #TODO: tune venv create performance, use clone?
+            # TODO: tune venv create performance, use clone?
             logger.info(f"[info:dep]build venv dir: {_venv_dir}")
             venv_setup(_venv_dir)
-            logger.info(f"[info:dep]install pip freeze({_pip_lock_req}) to venv: {_venv_dir}")
+            logger.info(
+                f"[info:dep]install pip freeze({_pip_lock_req}) to venv: {_venv_dir}"
+            )
             install_req(_venv_dir, _pip_lock_req)
             if os.path.exists(pip_req_fpath):
-                logger.info(f"[info:dep]install custom pip({pip_req_fpath}) to venv: {_venv_dir}")
+                logger.info(
+                    f"[info:dep]install custom pip({pip_req_fpath}) to venv: {_venv_dir}"
+                )
                 install_req(_venv_dir, pip_req_fpath)
             console.print(f":beer_mug: venv @ [underline]{_venv_dir}[/]")
 
@@ -216,7 +245,7 @@ def dump_python_dep_env(dep_dir: t.Union[str, Path],
     return _manifest
 
 
-def detect_pip_req(workdir: t.Union[str, Path], fname: str="") -> str:
+def detect_pip_req(workdir: t.Union[str, Path], fname: str = "") -> str:
     workdir = Path(workdir)
 
     if fname and (workdir / fname).exists():
@@ -224,6 +253,6 @@ def detect_pip_req(workdir: t.Union[str, Path], fname: str="") -> str:
     else:
         for p in SUPPORTED_PIP_REQ:
             if (workdir / p).exists():
-                    return str(workdir / p)
+                return str(workdir / p)
             else:
                 return ""

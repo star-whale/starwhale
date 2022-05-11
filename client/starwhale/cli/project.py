@@ -9,9 +9,26 @@ def project_cmd():
 
 
 @project_cmd.command("list", help="list current user projects in starwhale controller")
-@click.option("-a", "--all-users", is_flag=True, help="list all users project, if not set, cli will show current user's projects")
-@click.option("-p", "--page", type=int, default=DEFAULT_PAGE_NUM, help="page number for projects list")
-@click.option("-s", "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for projects list")
+@click.option(
+    "-a",
+    "--all-users",
+    is_flag=True,
+    help="list all users project, if not set, cli will show current user's projects",
+)
+@click.option(
+    "-p",
+    "--page",
+    type=int,
+    default=DEFAULT_PAGE_NUM,
+    help="page number for projects list",
+)
+@click.option(
+    "-s",
+    "--size",
+    type=int,
+    default=DEFAULT_PAGE_SIZE,
+    help="page size for projects list",
+)
 @click.option("--fullname", is_flag=True, help="show version fullname")
 def _list(all_users, page, size, fullname):
     ClusterView().list_projects(all_users, page, size, fullname)

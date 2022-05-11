@@ -9,7 +9,6 @@ on:
       - main
 
 jobs:
-
   filter:
     runs-on: ubuntu-latest
 
@@ -24,7 +23,6 @@ jobs:
         with:
           base: main
           filters: .github/file-filter.yml
-
 
   codestyle:
     runs-on: ubuntu-latest
@@ -42,8 +40,8 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v3
         with:
-          python-version: '3.7'
-          architecture: 'x64'
+          python-version: "3.7"
+          architecture: "x64"
 
       - name: Get pip cache
         id: pip-cache-path
@@ -64,7 +62,7 @@ jobs:
 
       - name: Black format check
         working-directory: ./client
-        run: make ci-format
+        run: make ci-format-checker
       - name: Lint check
         working-directory: ./client
         run: make ci-lint
@@ -88,8 +86,8 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v3
         with:
-          python-version: '3.7'
-          architecture: 'x64'
+          python-version: "3.7"
+          architecture: "x64"
 
       - name: Get pip cache
         id: pip-cache-path

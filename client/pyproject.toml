@@ -1,0 +1,16 @@
+[tool.black]
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.egg-info
+    | \.git
+    | \.vscode
+    | \.venv
+    | venv
+    | build
+    | dist
+  )/
+)
+'''
