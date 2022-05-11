@@ -252,7 +252,7 @@ class S3BufferedFileLike(object):
 
     def readline(self) -> str:
         if self._iter_lines is None:
-            self._iter_lines = self.obj.get()["Body"].iter_lines(chunk_size=_CHUNK_SIZE)  # type: ignore
+            self._iter_lines = self.obj.get()["Body"].iter_lines(chunk_size=_CHUNK_SIZE)
 
         try:
             line: bytes = next(self._iter_lines)

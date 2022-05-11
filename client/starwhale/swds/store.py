@@ -24,13 +24,14 @@ from starwhale.utils.error import NotFoundError
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 
-_UPLOAD_PHASE = namedtuple("_UPLOAD_PHASE", ["MANIFEST", "BLOB", "END", "CANCEL"])(
-    "MANIFEST", "BLOB", "END", "CANCEL"
+_UPLOAD_PHASE_T = namedtuple(  # type: ignore
+    "_UPLOAD_PHASE", ["MANIFEST", "BLOB", "END", "CANCEL"]
 )
+_UPLOAD_PHASE = _UPLOAD_PHASE_T("MANIFEST", "BLOB", "END", "CANCEL")
 
 
 class DataSetLocalStore(LocalStorage):
-    def list(self, filter: str = "") -> None:
+    def list(self, filter: str = "") -> None:  # type: ignore
         super().list(
             filter=filter,
             title="List dataset(swds) in local storage",
@@ -119,7 +120,7 @@ class DataSetLocalStore(LocalStorage):
         _manifest = yaml.safe_load(_manifest_path.open())
 
         # TODO: add retry deco
-        def _upload_blob(_fp: Path):
+        def _upload_blob(_fp: Path) -> None:
             if not _fp.exists():
                 raise NotFoundError(f"{_fp} not found")
 
@@ -174,7 +175,7 @@ class DataSetLocalStore(LocalStorage):
         self._console.print(_config_panel)
         # TODO: show dataset dir tree view
 
-    def _do_get_info(self, _name: str, _version: str) -> dict:
+    def _do_get_info(self, _name: str, _version: str) -> t.Dict[t.Any, t.Any]:
         _dir = self._guess(self.dataset_dir / _name, _version)
         if not _dir.exists():
             raise NotFoundError(f"{_dir} is not existed")
