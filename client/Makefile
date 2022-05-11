@@ -32,7 +32,6 @@ ci-lint:
 
 ci-type:
 	echo "run mypy"
-	mypy starwhale
 
 ut:
 	echo "ut"
