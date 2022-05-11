@@ -2,6 +2,7 @@ from collections import namedtuple
 from pathlib import Path
 import sys
 import yaml
+import typing as t
 
 import click
 import requests
@@ -35,10 +36,12 @@ class DataSetLocalStore(LocalStorage):
             caption=f"@{self.dataset_dir}",
         )
 
-    def iter_local_swobj(self):
+    def iter_local_swobj(self) -> t.Generator[LocalStorage.SWobjMeta, None, None]:
         from .dataset import ARCHIVE_SWDS_META
-        _fs = open_fs(str(self.dataset_dir.resolve()))
+        if not self.dataset_dir.exists():
+            return
 
+        _fs = open_fs(str(self.dataset_dir.resolve()))
         for name_dir in _fs.scandir("."):
             if not name_dir.is_dir:
                 continue

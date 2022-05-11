@@ -62,7 +62,7 @@ class LocalStorage(SWCliConfigMixed):
         self._console.print(table)
 
     @abstractmethod
-    def iter_local_swobj(self) -> "LocalStorage.SWobjMeta" :
+    def iter_local_swobj(self) -> t.Generator["LocalStorage.SWobjMeta", None, None] :
         raise NotImplementedError
 
     @abstractmethod
