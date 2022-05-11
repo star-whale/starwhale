@@ -2,7 +2,6 @@ import typing as t
 import yaml
 import json
 import os
-from collections import namedtuple
 from pathlib import Path
 import jsonlines
 
@@ -11,11 +10,11 @@ from loguru import logger
 from starwhale.utils import gen_uniq_version, console, now_str
 from .store import EvalLocalStorage
 from starwhale.consts import (
-    DATA_LOADER_KIND,
+    DataLoaderKind,
     DEFAULT_INPUT_JSON_FNAME,
     DEFAULT_MANIFEST_NAME,
     JSON_INDENT,
-    SWDS_BACKEND_TYPE,
+    SWDSBackendType,
     VERSION_PREFIX_CNT,
     CURRENT_FNAME,
 )
@@ -28,14 +27,25 @@ from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
 
 DEFAULT_SW_TASK_RUN_IMAGE = "starwhaleai/starwhale:latest"
-EVAL_TASK_TYPE = namedtuple("EVAL_TASK_TYPE", ["ALL", "PPL", "CMP"])(
-    "all", "ppl", "cmp"
-)
+
+
+class EvalTaskType(t.NamedTuple):
+    ALL: str = "all"
+    PPL: str = "ppl"
+    CMP: str = "cmp"
+
+
+class RunSubDirType(t.NamedTuple):
+    RESULT: str = "result"
+    DATASET: str = "dataset"
+    PPL_RESULT: str = "ppl_result"
+    STATUS: str = "status"
+    LOG: str = "log"
+    SWMP: str = "swmp"
+    CONFIG: str = "config"
+
+
 _CNTR_WORKDIR = "/opt/starwhale"
-_RUN_SUBDIR = namedtuple(
-    "_RUN_SUBDIR",
-    ["RESULT", "DATASET", "PPL_RESULT", "STATUS", "LOG", "SWMP", "CONFIG"],
-)("result", "dataset", "ppl_result", "status", "log", "swmp", "config")
 _STATUS = PipelineHandler.STATUS
 
 
@@ -82,7 +92,7 @@ class EvalExecutor(object):
                 raise SWObjNameFormatError
 
     @logger.catch
-    def run(self, phase: str = EVAL_TASK_TYPE.ALL):
+    def run(self, phase: str = EvalTaskType.ALL):
         try:
             self._do_run(phase)
         except Exception as e:
@@ -92,7 +102,7 @@ class EvalExecutor(object):
         finally:
             self._render_manifest()
 
-    def _do_run(self, phase: str = EVAL_TASK_TYPE.ALL):
+    def _do_run(self, phase: str = EvalTaskType.ALL):
         self._manifest["phase"] = phase
         self._manifest["status"] = _STATUS.RUNNING
 
@@ -106,14 +116,14 @@ class EvalExecutor(object):
         _ppl = (self._do_run_ppl, 70, "run ppl")
         _cmp = (self._do_run_cmp, 70, "run cmp")
 
-        if phase == EVAL_TASK_TYPE.ALL:
+        if phase == EvalTaskType.ALL:
             operations.extend([_ppl, _cmp])
-        elif phase == EVAL_TASK_TYPE.PPL:
+        elif phase == EvalTaskType.PPL:
             operations.append(_ppl)
-        elif phase == EVAL_TASK_TYPE.CMP:
+        elif phase == EvalTaskType.CMP:
             operations.append(_cmp)
 
-        if phase != EVAL_TASK_TYPE.PPL and not self.gencmd:
+        if phase != EvalTaskType.PPL and not self.gencmd:
             operations.append((self._render_report, 15, "render report"))
 
         run_with_progress_bar("eval run in local...", operations, self._console)
@@ -129,11 +139,11 @@ class EvalExecutor(object):
 
     @property
     def _ppl_workdir(self) -> Path:
-        return self._workdir / EVAL_TASK_TYPE.PPL
+        return self._workdir / EvalTaskType.PPL
 
     @property
     def _cmp_workdir(self) -> Path:
-        return self._workdir / EVAL_TASK_TYPE.CMP
+        return self._workdir / EvalTaskType.CMP
 
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
@@ -146,7 +156,15 @@ class EvalExecutor(object):
 
         ensure_dir(self._workdir)
         for _w in (self._ppl_workdir, self._cmp_workdir):
-            for _n in _RUN_SUBDIR:
+            for _n in (
+                RunSubDirType.RESULT,
+                RunSubDirType.DATASET,
+                RunSubDirType.PPL_RESULT,
+                RunSubDirType.STATUS,
+                RunSubDirType.LOG,
+                RunSubDirType.SWMP,
+                RunSubDirType.CONFIG,
+            ):
                 ensure_dir(_w / _n)
 
         logger.info(f"[step:prepare]eval workdir: {self._workdir}")
@@ -166,14 +184,14 @@ class EvalExecutor(object):
             _config = json.load(open(_f, "r"))
             _base["swds"].extend(_config["swds"])
 
-        _bucket = f"{_CNTR_WORKDIR}/{_RUN_SUBDIR.DATASET}"
+        _bucket = f"{_CNTR_WORKDIR}/{RunSubDirType.DATASET}"
         for i in range(len(_base["swds"])):
             _base["swds"][i]["bucket"] = _bucket
 
         _f = (
             self._workdir
-            / EVAL_TASK_TYPE.PPL
-            / _RUN_SUBDIR.CONFIG
+            / EvalTaskType.PPL
+            / RunSubDirType.CONFIG
             / DEFAULT_INPUT_JSON_FNAME
         )
         ensure_file(_f, json.dumps(_base, indent=JSON_INDENT))
@@ -181,11 +199,11 @@ class EvalExecutor(object):
 
     def _gen_jsonl_fuse_json(self) -> Path:
         _fuse = dict(
-            backend=SWDS_BACKEND_TYPE.FUSE,
-            kind=DATA_LOADER_KIND.JSONL,
+            backend=SWDSBackendType.FUSE,
+            kind=DataLoaderKind.JSONL,
             swds=[
                 dict(
-                    bucket=f"{_CNTR_WORKDIR}/{_RUN_SUBDIR.PPL_RESULT}",
+                    bucket=f"{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
                     key=dict(
                         data=CURRENT_FNAME,
                     ),
@@ -194,8 +212,8 @@ class EvalExecutor(object):
         )
         _f = (
             self._workdir
-            / EVAL_TASK_TYPE.CMP
-            / _RUN_SUBDIR.CONFIG
+            / EvalTaskType.CMP
+            / RunSubDirType.CONFIG
             / DEFAULT_INPUT_JSON_FNAME
         )
         ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
@@ -203,10 +221,10 @@ class EvalExecutor(object):
 
     def _do_run_cmp(self) -> None:
         self._gen_jsonl_fuse_json()
-        self._do_run_cmd(EVAL_TASK_TYPE.CMP)
+        self._do_run_cmd(EvalTaskType.CMP)
 
     def _do_run_ppl(self) -> None:
-        self._do_run_cmd(EVAL_TASK_TYPE.PPL)
+        self._do_run_cmd(EvalTaskType.PPL)
 
     def _do_run_cmd(self, typ: str) -> None:
         cmd = self._gen_docker_cmd(typ)
@@ -220,7 +238,7 @@ class EvalExecutor(object):
             check_call(cmd, shell=True)
 
     def _gen_docker_cmd(self, typ: str) -> str:
-        if typ not in (EVAL_TASK_TYPE.PPL, EVAL_TASK_TYPE.CMP):
+        if typ not in (EvalTaskType.PPL, EvalTaskType.CMP):
             raise Exception(f"no support {typ} to gen docker cmd")
 
         rundir = self._workdir / typ
@@ -230,18 +248,18 @@ class EvalExecutor(object):
             "-v",
             f"{rundir}:{_CNTR_WORKDIR}",
             "-v",
-            f"{self._model_dir}:{_CNTR_WORKDIR}/{_RUN_SUBDIR.SWMP}",
+            f"{self._model_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}",
         ]
 
-        if typ == EVAL_TASK_TYPE.PPL:
+        if typ == EvalTaskType.PPL:
             cmd += [
                 "-v",
-                f"{self._store.dataset_dir}:{_CNTR_WORKDIR}/{_RUN_SUBDIR.DATASET}",
+                f"{self._store.dataset_dir}:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
             ]
-        elif typ == EVAL_TASK_TYPE.CMP:
+        elif typ == EvalTaskType.CMP:
             cmd += [
                 "-v",
-                f"{self._ppl_workdir / _RUN_SUBDIR.RESULT }:{_CNTR_WORKDIR}/{_RUN_SUBDIR.PPL_RESULT}",
+                f"{self._ppl_workdir / RunSubDirType.RESULT }:{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
             ]
 
         if self.docker_verbose:
@@ -270,7 +288,7 @@ class EvalExecutor(object):
         return " ".join(cmd)
 
     def _render_report(self) -> None:
-        _f = self._cmp_workdir / _RUN_SUBDIR.RESULT / CURRENT_FNAME
+        _f = self._cmp_workdir / RunSubDirType.RESULT / CURRENT_FNAME
         render_cmp_report(_f)
 
         self._console.rule("[bold green]More Details[/]")
@@ -281,7 +299,7 @@ class EvalExecutor(object):
     def _render_manifest(self):
         _status = True
         for _d in (self._ppl_workdir, self._cmp_workdir):
-            _f = _d / _RUN_SUBDIR.STATUS / CURRENT_FNAME
+            _f = _d / RunSubDirType.STATUS / CURRENT_FNAME
             if not _f.exists():
                 continue
             _status = _status and (_f.open().read().strip() == _STATUS.SUCCESS)

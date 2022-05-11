@@ -1,7 +1,6 @@
 from __future__ import annotations
 import typing as t
 from functools import wraps
-from collections import namedtuple
 
 from sklearn.metrics import (
     classification_report,
@@ -11,9 +10,9 @@ from sklearn.metrics import (
     cohen_kappa_score,
 )
 
-METRIC_KIND = namedtuple("METRIC_KIND", ["MULTI_CLASSIFICATION"])(
-    "multi_classification"
-)
+
+class MetricKind(t.NamedTuple):
+    MultiClassification = "multi_classification"
 
 
 def multi_classification(
@@ -27,7 +26,7 @@ def multi_classification(
         def _wrapper(*args, **kwargs):
             y_true, y_pred = func(*args, **kwargs)
 
-            _r = {"kind": METRIC_KIND.MULTI_CLASSIFICATION}
+            _r = {"kind": MetricKind.MultiClassification}
             cr = classification_report(
                 y_true, y_pred, output_dict=True, labels=all_labels
             )

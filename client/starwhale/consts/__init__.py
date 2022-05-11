@@ -1,5 +1,5 @@
 import pathlib
-from collections import namedtuple
+import typing as t
 
 
 # TODO: use str path, not Path Class
@@ -24,13 +24,22 @@ SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
 ENV_CONDA = "CONDA_DEFAULT_ENV"
 ENV_CONDA_PREFIX = "CONDA_PREFIX"
 
-PYTHON_RUN_ENV = namedtuple("PYTHON_RUN_ENV", ["CONDA", "VENV", "SYSTEM"])(
-    "conda", "venv", "system"
-)
 
-HTTP_METHOD = namedtuple(
-    "HTTP_METHOD", ["GET", "OPTIONS", "HEAD", "POST", "PUT", "DELETE", "PATCH"]
-)("GET", "OPTIONS", "HEAD", "POST", "PUT", "DELETE", "PATCH")
+class PythonRunEnv(t.NamedTuple):
+    CONDA: str = "conda"
+    VENV: str = "venv"
+    SYSTEM: str = "system"
+
+
+class HTTPMethod(t.NamedTuple):
+    GET: str = "GET"
+    OPTIONS: str = "OPTIONS"
+    HEAD: str = "HEAD"
+    POST: str = "POST"
+    PUT: str = "PUT"
+    DELETE: str = "DELETE"
+    PATCH: str = "PATCH"
+
 
 FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 
@@ -43,12 +52,24 @@ SW_API_VERSION = "v1"
 
 SHORT_VERSION_CNT = 12
 VERSION_PREFIX_CNT = 2
-SWDS_BACKEND_TYPE = namedtuple("SWDS_BACKEND_TYPE", ["S3", "FUSE"])("s3", "fuse")
-DATA_LOADER_KIND = namedtuple("DATA_LOADER_KIND", ["SWDS", "JSONL"])("swds", "jsonl")
-SWDS_SUBFILE_TYPE = namedtuple("SWDS_SUBFILE_TYPE", ["BIN", "META"])(
-    "swds_bin", "swds_meta"
-)
-SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDS_SUBFILE_TYPE.BIN
-SWDS_LABEL_FNAME_FMT = "label_ubyte_{index}.%s" % SWDS_SUBFILE_TYPE.BIN
+
+
+class SWDSBackendType(t.NamedTuple):
+    S3: str = "s3"
+    FUSE: str = "fuse"
+
+
+class DataLoaderKind(t.NamedTuple):
+    SWDS: str = "swds"
+    JSONL: str = "jsonl"
+
+
+class SWDSSubFileType(t.NamedTuple):
+    BIN: str = "swds_bin"
+    META: str = "swds_meta"
+
+
+SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDSSubFileType.BIN
+SWDS_LABEL_FNAME_FMT = "label_ubyte_{index}.%s" % SWDSSubFileType.BIN
 
 CURRENT_FNAME = "current"

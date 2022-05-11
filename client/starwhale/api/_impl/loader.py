@@ -2,7 +2,6 @@ from __future__ import annotations
 import json
 import typing as t
 from pathlib import Path
-from collections import namedtuple
 from abc import ABCMeta, abstractmethod
 
 import loguru
@@ -11,15 +10,19 @@ import boto3
 from botocore.client import Config as S3Config
 
 from starwhale.utils.error import NoSupportError
-from starwhale.consts import SWDS_BACKEND_TYPE, DATA_LOADER_KIND
+from starwhale.consts import SWDSBackendType, DataLoaderKind
 
 # TODO: config chunk size
 _CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 _FILE_END_POS = -1
 
-DATA_FIELD = namedtuple(
-    "DATA_FIELD", ["index", "data_size", "batch_size", "data", "ext_attr"]
-)
+
+class DataField(t.NamedTuple):
+    index: int
+    data_size: int
+    batch_size: int
+    data: bytes
+    ext_attr: dict
 
 
 # TODO: use attr to simplify code
@@ -34,7 +37,7 @@ class DataLoader(object):
         storage: StorageBackend,
         swds: list = [],
         logger: t.Union[loguru.Logger, None] = None,
-        kind: str = DATA_LOADER_KIND.SWDS,
+        kind: str = DataLoaderKind.SWDS,
     ):
         self.storage = storage
         self.swds = swds
@@ -44,7 +47,7 @@ class DataLoader(object):
         self._do_validate()
 
     def _do_validate(self):
-        if self.kind not in DATA_LOADER_KIND:
+        if self.kind not in (DataLoaderKind.JSONL, DataLoaderKind.SWDS):
             raise Exception(f"{self.kind} no support")
 
     @abstractmethod
@@ -68,7 +71,7 @@ class JSONLineDataLoader(DataLoader):
         swds: list = [],
         logger: t.Union[loguru.Logger, None] = None,
     ) -> None:
-        super().__init__(storage, swds, logger, DATA_LOADER_KIND.JSONL)
+        super().__init__(storage, swds, logger, DataLoaderKind.JSONL)
 
     def __iter__(self):
         for _swds in self.swds:
@@ -97,7 +100,7 @@ class SWDSDataLoader(DataLoader):
         swds: list = [],
         logger: t.Union[loguru.Logger, None] = None,
     ) -> None:
-        super().__init__(storage, swds, logger, DATA_LOADER_KIND.SWDS)
+        super().__init__(storage, swds, logger, DataLoaderKind.SWDS)
 
     def __iter__(self):
         for _swds in self.swds:
@@ -113,7 +116,7 @@ class SWDSDataLoader(DataLoader):
 
     def _do_iter(
         self, bucket: str, key_compose: str, ext_attr: dict
-    ) -> t.Iterator[DATA_FIELD]:
+    ) -> t.Iterator[DataField]:
         from .dataset import _header_struct, _header_size
 
         self.logger.info(f"@{bucket}/{key_compose}")
@@ -124,7 +127,7 @@ class SWDSDataLoader(DataLoader):
                 break
             _, _, idx, size, padding_size, batch, _ = _header_struct.unpack(header)
             data = _file.read(size + padding_size)
-            yield DATA_FIELD(
+            yield DataField(
                 idx,
                 size,
                 batch,
@@ -151,10 +154,7 @@ class StorageBackend(object):
 
     def _do_validate(self):
         # TODO: add more validator
-        if self.backend not in SWDS_BACKEND_TYPE:
-            raise NoSupportError(f"{self.backend} no support")
-
-        if self.backend == SWDS_BACKEND_TYPE.S3:
+        if self.backend == SWDSBackendType.S3:
             _s = self.secret
             if (
                 not _s
@@ -192,7 +192,7 @@ class StorageBackend(object):
 
 class S3StorageBackend(StorageBackend):
     def __init__(self, secret: dict = {}, service: dict = {}):
-        super().__init__(backend=SWDS_BACKEND_TYPE.S3, secret=secret, service=service)
+        super().__init__(backend=SWDSBackendType.S3, secret=secret, service=service)
 
         # TODO: region field empty?
         # TODO: add more s3 config, such as connect timeout
@@ -220,7 +220,7 @@ class S3StorageBackend(StorageBackend):
 
 class FuseStorageBackend(StorageBackend):
     def __init__(self):
-        super().__init__(backend=SWDS_BACKEND_TYPE.FUSE)
+        super().__init__(backend=SWDSBackendType.FUSE)
 
     def _make_file(self, bucket: str, key_compose: str) -> t.Any:
         _key, _start, _ = self._parse_key(key_compose)
@@ -367,17 +367,17 @@ def get_data_loader(
     logger = logger or _logger
 
     _backend = swds_config["backend"]
-    if _backend == SWDS_BACKEND_TYPE.S3:
+    if _backend == SWDSBackendType.S3:
         _storage = S3StorageBackend(swds_config["secret"], swds_config["service"])
-    elif _backend == SWDS_BACKEND_TYPE.FUSE:
+    elif _backend == SWDSBackendType.FUSE:
         _storage = FuseStorageBackend()
     else:
         raise NoSupportError(f"{_backend} backend storage, no support")
 
-    _kind = swds_config.get("kind", DATA_LOADER_KIND.SWDS)
-    if _kind == DATA_LOADER_KIND.JSONL:
+    _kind = swds_config.get("kind", DataLoaderKind.SWDS)
+    if _kind == DataLoaderKind.JSONL:
         return JSONLineDataLoader(_storage, swds_config["swds"], logger)
-    elif _kind == DATA_LOADER_KIND.SWDS:
+    elif _kind == DataLoaderKind.SWDS:
         return SWDSDataLoader(_storage, swds_config["swds"], logger)
     else:
         raise NoSupportError(f"{_kind} data loader, no support")

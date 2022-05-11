@@ -1,7 +1,7 @@
 import click
 
 from starwhale.consts import DEFAULT_MODEL_YAML_NAME
-from starwhale.consts.env import sw_env
+from starwhale.consts.env import SWEnv
 from starwhale.swmp.model import ModelPackage
 from starwhale.swmp.store import ModelPackageLocalStore
 
@@ -115,21 +115,21 @@ def _extract(swmp, force, target):
 )
 @click.option(
     "--status-dir",
-    envvar=sw_env.status_dir,
-    help=f"ppl status dir, env is {sw_env.status_dir}",
+    envvar=SWEnv.status_dir,
+    help=f"ppl status dir, env is {SWEnv.status_dir}",
 )
 @click.option(
-    "--log-dir", envvar=sw_env.log_dir, help=f"ppl log dir, env is {sw_env.log_dir}"
+    "--log-dir", envvar=SWEnv.log_dir, help=f"ppl log dir, env is {SWEnv.log_dir}"
 )
 @click.option(
     "--result-dir",
-    envvar=sw_env.result_dir,
-    help=f"ppl result dir, env is {sw_env.result_dir}",
+    envvar=SWEnv.result_dir,
+    help=f"ppl result dir, env is {SWEnv.result_dir}",
 )
 @click.option(
     "--input-config",
-    envvar=sw_env.input_config,
-    help=f"ppl swds config.json path, env is {sw_env.input_config}",
+    envvar=SWEnv.input_config,
+    help=f"ppl swds config.json path, env is {SWEnv.input_config}",
 )
 def _ppl(swmp, model_yaml, status_dir, log_dir, result_dir, input_config):
     # TODO: add local mock input_config
@@ -157,21 +157,21 @@ def _ppl(swmp, model_yaml, status_dir, log_dir, result_dir, input_config):
 )
 @click.option(
     "--status-dir",
-    envvar=sw_env.status_dir,
-    help=f"ppl status dir, env is {sw_env.status_dir}",
+    envvar=SWEnv.status_dir,
+    help=f"ppl status dir, env is {SWEnv.status_dir}",
 )
 @click.option(
-    "--log-dir", envvar=sw_env.log_dir, help=f"ppl log dir, env is {sw_env.log_dir}"
+    "--log-dir", envvar=SWEnv.log_dir, help=f"ppl log dir, env is {SWEnv.log_dir}"
 )
 @click.option(
     "--result-dir",
-    envvar=sw_env.result_dir,
-    help=f"ppl result dir, env is {sw_env.result_dir}",
+    envvar=SWEnv.result_dir,
+    help=f"ppl result dir, env is {SWEnv.result_dir}",
 )
 @click.option(
     "--input-config",
-    envvar=sw_env.input_config,
-    help=f"ppl swds config.json path, env is {sw_env.input_config}",
+    envvar=SWEnv.input_config,
+    help=f"ppl swds config.json path, env is {SWEnv.input_config}",
 )
 def _cmp(swmp, model_yaml, status_dir, log_dir, result_dir, input_config):
     ModelPackage.cmp(

@@ -1,6 +1,5 @@
 import typing as t
 from pathlib import Path
-from collections import namedtuple
 from abc import ABCMeta, abstractmethod
 
 from rich import box
@@ -12,10 +11,15 @@ from starwhale.utils import console
 
 class LocalStorage(SWCliConfigMixed):
     LATEST_TAG = "latest"
-    SWobjMeta = namedtuple(
-        "SWobjMeta",
-        ["name", "version", "tag", "environment", "size", "generate", "created"],
-    )
+
+    class SWobjMeta(t.NamedTuple):
+        name: str
+        version: str
+        tag: str
+        environment: str
+        size: str
+        generate: str
+        created: str
 
     __metaclass__ = ABCMeta
 

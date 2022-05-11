@@ -3,7 +3,6 @@ import os
 import sys
 import typing as t
 from abc import ABCMeta, abstractmethod
-from collections import namedtuple
 from pathlib import Path
 import json
 import logging
@@ -12,20 +11,25 @@ from functools import wraps
 import loguru
 import jsonlines
 
-from starwhale.consts.env import sw_env
+from starwhale.consts.env import SWEnv
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils import pretty_bytes, in_production, now_str
 from starwhale.consts import CURRENT_FNAME
-from .loader import DATA_FIELD, DataLoader, get_data_loader
+from .loader import DataField, DataLoader, get_data_loader
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
 _p = lambda p, sub: Path(p) if p else Path(_TASK_ROOT_DIR) / sub
 _ptype = t.Union[str, None, Path]
 
-_LOG_TYPE = namedtuple("LOG_TYPE", ["SW", "USER"])("starwhale", "user")
+
+class _LogType(t.NamedTuple):
+    SW: str = "starwhale"
+    USER: str = "user"
+
+
 _jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
 
 
@@ -65,10 +69,10 @@ class _RunConfig(object):
     def create_by_env(cls) -> "_RunConfig":
         _env = os.environ.get
         return _RunConfig(
-            swds_config_path=_env(sw_env.input_config),
-            status_dir=_env(sw_env.status_dir),
-            log_dir=_env(sw_env.log_dir),
-            result_dir=_env(sw_env.result_dir),
+            swds_config_path=_env(SWEnv.input_config),
+            status_dir=_env(SWEnv.status_dir),
+            log_dir=_env(SWEnv.log_dir),
+            result_dir=_env(SWEnv.result_dir),
         )
 
     @classmethod
@@ -78,26 +82,29 @@ class _RunConfig(object):
             if _v:
                 os.environ[_e] = _v
 
-        _set("status_dir", sw_env.status_dir)
-        _set("log_dir", sw_env.log_dir)
-        _set("result_dir", sw_env.result_dir)
-        _set("input_config", sw_env.input_config)
+        _set("status_dir", SWEnv.status_dir)
+        _set("log_dir", SWEnv.log_dir)
+        _set("result_dir", SWEnv.result_dir)
+        _set("input_config", SWEnv.input_config)
 
 
 class PipelineHandler(object):
-    RESULT_OUTPUT_TYPE = namedtuple("OUTPUT_TYPE", ["JSONL", "PLAIN"])(
-        "jsonline", "plain"
-    )
-    STATUS = namedtuple("STATUS", ["START", "RUNNING", "SUCCESS", "FAILED"])(
-        "start", "running", "success", "failed"
-    )
+    class ResultOutputType(t.NamedTuple):
+        JSONL: str = "jsonline"
+        PLAIN: str = "plain"
+
+    class STATUS(t.NamedTuple):
+        START: str = "start"
+        RUNNING: str = "running"
+        SUCCESS: str = "success"
+        FAILED: str = "failed"
 
     __metaclass__ = ABCMeta
 
     def __init__(
         self,
         merge_label: bool = True,
-        output_type: str = RESULT_OUTPUT_TYPE.JSONL,
+        output_type: str = ResultOutputType.JSONL,
         ignore_error: bool = False,
     ) -> None:
         # TODO: add args for compare result and label directly
@@ -133,11 +140,11 @@ class PipelineHandler(object):
             serialize=True,
         )
         _logger.bind(
-            type=_LOG_TYPE.USER,
+            type=_LogType.USER,
             task_id=os.environ.get("SW_TASK_ID", ""),
             job_id=os.environ.get("SW_JOB_ID", ""),
         )
-        _sw_logger = _logger.bind(type=_LOG_TYPE.SW)
+        _sw_logger = _logger.bind(type=_LogType.SW)
         return _logger, _sw_logger
 
     def _monkey_patch(self):
@@ -269,8 +276,8 @@ class PipelineHandler(object):
     def _do_record(
         self,
         output: t.Any,
-        data: DATA_FIELD,
-        label: DATA_FIELD,
+        data: DataField,
+        label: DataField,
         exception: t.Union[None, Exception],
     ):
         self._status_writer.write(

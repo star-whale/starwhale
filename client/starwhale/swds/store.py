@@ -1,4 +1,3 @@
-from collections import namedtuple
 from pathlib import Path
 import sys
 import yaml
@@ -24,10 +23,12 @@ from starwhale.utils.error import NotFoundError
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 
-_UPLOAD_PHASE_T = namedtuple(  # type: ignore
-    "_UPLOAD_PHASE", ["MANIFEST", "BLOB", "END", "CANCEL"]
-)
-_UPLOAD_PHASE = _UPLOAD_PHASE_T("MANIFEST", "BLOB", "END", "CANCEL")
+
+class _UploadPhase(t.NamedTuple):
+    MANIFEST: str = "MANIFEST"
+    BLOB: str = "BLOB"
+    END: str = "END"
+    CANCEL: str = "CANCEL"
 
 
 class DataSetLocalStore(LocalStorage):
@@ -105,7 +106,7 @@ class DataSetLocalStore(LocalStorage):
             fpath=_manifest_path,
             fields={
                 "swds": _swds,
-                "phase": _UPLOAD_PHASE.MANIFEST,
+                "phase": _UploadPhase.MANIFEST,
                 "project": project,
                 "force": "1" if force else "0",
             },
@@ -129,7 +130,7 @@ class DataSetLocalStore(LocalStorage):
                 fpath=_fp,
                 fields={
                     "swds": _swds,
-                    "phase": _UPLOAD_PHASE.BLOB,
+                    "phase": _UploadPhase.BLOB,
                 },
                 headers=_headers,
                 use_raise=True,
@@ -150,7 +151,7 @@ class DataSetLocalStore(LocalStorage):
             )
             r = requests.post(
                 url,
-                data={"swds": _swds, "project": project, "phase": _UPLOAD_PHASE.CANCEL},
+                data={"swds": _swds, "project": project, "phase": _UploadPhase.CANCEL},
                 headers=_headers,
             )
             wrap_sw_error_resp(r, "cancel", use_raise=True)
@@ -158,7 +159,7 @@ class DataSetLocalStore(LocalStorage):
             self._console.print(" :clap: :clap: all uploaded.")
             r = requests.post(
                 url,
-                data={"swds": _swds, "project": project, "phase": _UPLOAD_PHASE.END},
+                data={"swds": _swds, "project": project, "phase": _UploadPhase.END},
                 headers=_headers,
             )
             wrap_sw_error_resp(r, "end", use_raise=True)

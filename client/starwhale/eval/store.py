@@ -57,7 +57,7 @@ class EvalLocalStorage(LocalStorage):
             yield _mf, yaml.safe_load(_mf.open())
 
     def info(self, version: str) -> None:
-        from .executor import EVAL_TASK_TYPE, render_cmp_report, _RUN_SUBDIR
+        from .executor import EvalTaskType, render_cmp_report, RunSubDirType
 
         _dir = self._guess(self.eval_run_dir / version[:VERSION_PREFIX_CNT], version)
         _mf = _dir / DEFAULT_MANIFEST_NAME
@@ -70,15 +70,15 @@ class EvalLocalStorage(LocalStorage):
             )
             self._console.print(Pretty(_m, expand_all=True))
 
-        _rpath = _dir / EVAL_TASK_TYPE.CMP / _RUN_SUBDIR.RESULT / CURRENT_FNAME
+        _rpath = _dir / EvalTaskType.CMP / RunSubDirType.RESULT / CURRENT_FNAME
         if _rpath.exists():
             render_cmp_report(_rpath)
         else:
             self._console.print(":bomb: no report to render")
 
         self._console.rule("Evaluation process dirs")
-        self._console.print(f":cactus: ppl: {_dir/EVAL_TASK_TYPE.PPL}")
-        self._console.print(f":camel: cmp: {_dir/EVAL_TASK_TYPE.CMP}")
+        self._console.print(f":cactus: ppl: {_dir/EvalTaskType.PPL}")
+        self._console.print(f":camel: cmp: {_dir/EvalTaskType.CMP}")
 
     def delete(self, version: str) -> None:
         _dir = self._guess(self.eval_run_dir / version[:VERSION_PREFIX_CNT], version)
