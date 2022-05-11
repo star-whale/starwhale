@@ -16,22 +16,18 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.common.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class BaseImageEntity extends BaseEntity {
+public class BaseImage {
 
     private Long id;
 
-    private String imageName;
-
+    private String name;
 }

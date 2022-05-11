@@ -1,6 +1,6 @@
 export interface IBaseSchema {
-    uid: string
-    createdTime: string
-    updatedTime?: string
+    uuid: string
+    createdTime?: number
+    stopTime?: number
     deletedTime?: string
 }

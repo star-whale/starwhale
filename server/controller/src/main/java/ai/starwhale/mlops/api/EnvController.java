@@ -18,11 +18,18 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.runtime.BaseImageRequest;
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.job.BaseImage;
 import ai.starwhale.mlops.domain.job.EnvService;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import java.util.List;
 import javax.annotation.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,6 +40,9 @@ public class EnvController implements EnvApi{
 
     @Resource
     private EnvService envService;
+
+    @Resource
+    private IDConvertor idConvertor;
 
     @Override
     public ResponseEntity<ResponseMessage<List<BaseImageVO>>> listBaseImage(String imageName) {
@@ -46,4 +56,26 @@ public class EnvController implements EnvApi{
         List<DeviceVO> deviceVOS = envService.listDevices();
         return ResponseEntity.ok(Code.success.asResponse(deviceVOS));
     }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> createImage(BaseImageRequest imageRequest) {
+        Long id = envService.createImage(BaseImage.builder()
+                .name(imageRequest.getImageName())
+                .build());
+        return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(id)));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> deleteImage(String imageId) {
+        Boolean res = envService.deleteImage(BaseImage.builder()
+            .id(idConvertor.revert(imageId))
+            .build());
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete baseImage failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+
 }

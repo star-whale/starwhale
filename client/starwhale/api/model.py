@@ -1,10 +1,9 @@
 from ._impl.model import PipelineHandler
 
-__all__ = ['push', 'list', 'info', 'pull', 'build', 'delete',
-           'PipelineHandler']
+__all__ = ["push", "list", "info", "pull", "build", "delete", "PipelineHandler"]
 
 
-#TODO: add swmp push/pull/info/list api
+# TODO: add swmp push/pull/info/list api
 def list(filter: str):
     pass
 

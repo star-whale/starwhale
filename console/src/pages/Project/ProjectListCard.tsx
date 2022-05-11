@@ -47,7 +47,7 @@ export default function ProjectListCard() {
                                 {project.name}
                             </Link>,
                             project.owner && <User user={project.owner} />,
-                            project.createTime && formatTimestampDateTime(project.createTime),
+                            project.createdTime && formatTimestampDateTime(project.createdTime),
                         ]
                     }) ?? []
                 }

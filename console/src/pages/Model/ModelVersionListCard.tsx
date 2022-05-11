@@ -45,7 +45,7 @@ export default function ModelVersionListCard() {
                     modelsInfo.data?.list.map((model) => {
                         return [
                             model.meta,
-                            model.createTime && formatTimestampDateTime(model.createTime),
+                            model.createdTime && formatTimestampDateTime(model.createdTime),
                             model.owner && <User user={model.owner} />,
                             <Button size='mini' key={model.id} onClick={() => {}}>
                                 {t('Revert')}

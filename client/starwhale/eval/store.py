@@ -8,13 +8,15 @@ from rich.pretty import Pretty
 
 from starwhale.base.store import LocalStorage
 from starwhale.consts import (
-    DEFAULT_MANIFEST_NAME, SHORT_VERSION_CNT, VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
+    SHORT_VERSION_CNT,
+    VERSION_PREFIX_CNT,
     CURRENT_FNAME,
 )
 from starwhale.utils.fs import empty_dir
 
-class EvalLocalStorage(LocalStorage):
 
+class EvalLocalStorage(LocalStorage):
     def list(self, filter: str = "", title: str = "", caption: str = "") -> None:
         title = title or "List StarWhale Evaluation Result in local storage"
         caption = caption or f"@{self.eval_run_dir}"
@@ -49,20 +51,23 @@ class EvalLocalStorage(LocalStorage):
             )
         self._console.print(table)
 
-    #TODO: add yield typing hint
-    def iter_run_result(self, filter:str) -> t.Any:
+    # TODO: add yield typing hint
+    def iter_run_result(self, filter: str) -> t.Any:
         for _mf in self.eval_run_dir.glob(f"**/**/{DEFAULT_MANIFEST_NAME}"):
             yield _mf, yaml.safe_load(_mf.open())
 
     def info(self, version: str) -> None:
         from .executor import EVAL_TASK_TYPE, render_cmp_report, _RUN_SUBDIR
+
         _dir = self._guess(self.eval_run_dir / version[:VERSION_PREFIX_CNT], version)
         _mf = _dir / DEFAULT_MANIFEST_NAME
         if not _mf.exists():
             self._console.print(f":tea: not found {_mf}")
         else:
             _m = yaml.safe_load(_mf.open())
-            self._console.rule(f"[green bold]Inspect {DEFAULT_MANIFEST_NAME} for eval:{version}")
+            self._console.rule(
+                f"[green bold]Inspect {DEFAULT_MANIFEST_NAME} for eval:{version}"
+            )
             self._console.print(Pretty(_m, expand_all=True))
 
         _rpath = _dir / EVAL_TASK_TYPE.CMP / _RUN_SUBDIR.RESULT / CURRENT_FNAME
@@ -71,7 +76,7 @@ class EvalLocalStorage(LocalStorage):
         else:
             self._console.print(":bomb: no report to render")
 
-        self._console.rule(f"Evaluation process dirs")
+        self._console.rule("Evaluation process dirs")
         self._console.print(f":cactus: ppl: {_dir/EVAL_TASK_TYPE.PPL}")
         self._console.print(f":camel: cmp: {_dir/EVAL_TASK_TYPE.CMP}")
 
@@ -82,7 +87,9 @@ class EvalLocalStorage(LocalStorage):
             empty_dir(_dir)
             self._console.print(f":bomb delete eval run dir: {_dir}")
         else:
-            self._console.print(f":diving_mask: not found or no dir for {_dir}, skip to delete it")
+            self._console.print(
+                f":diving_mask: not found or no dir for {_dir}, skip to delete it"
+            )
 
     def gc(self, dry_run: bool = False) -> None:
         pass

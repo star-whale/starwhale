@@ -1,3 +1,5 @@
+PY_CHANGED_FILES = $(shell git diff --name-only --relative -- '*.py')
+
 check:
 	python3 setup.py check
 
@@ -17,14 +19,19 @@ build-dev-wheel:
 install-dev-req:
 	python3 -m pip install -r requirements-dev.txt
 
-ci-format:
-	echo "ci format"
+black-format:
+	black --config pyproject.toml $(PY_CHANGED_FILES)
+
+ci-format-checker:
+	echo "run black"
+	black --check --config pyproject.toml .
 
 ci-lint:
-	echo "ci lint"
+	echo "run flake8"
+	flake8 .
 
 ci-type:
-	echo "ci type"
+	echo "run mypy"
 
 ut:
 	echo "ut"

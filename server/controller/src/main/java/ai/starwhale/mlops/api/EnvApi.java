@@ -17,8 +17,9 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import ai.starwhale.mlops.api.protocol.runtime.BaseImageRequest;
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -31,7 +32,11 @@ import java.util.List;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Runtime")
@@ -72,4 +77,18 @@ public interface EnvApi {
         })
     @GetMapping(value = "/runtime/device")
     ResponseEntity<ResponseMessage<List<DeviceVO>>> listDevice();
+
+    @Operation(summary = "Create a new baseImage")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(value = "/runtime/baseImage")
+    ResponseEntity<ResponseMessage<String>> createImage(
+        @Valid @RequestBody BaseImageRequest imageRequest);
+
+    @Operation(summary = "Delete a image by ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "ok")})
+    @DeleteMapping(value = "/runtime/baseImage/{imageId}")
+    ResponseEntity<ResponseMessage<String>> deleteImage(
+        @Valid @PathVariable("imageId") String imageId);
 }

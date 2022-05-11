@@ -31,7 +31,7 @@ module.exports = {
         'react-hooks/rules-of-hooks': 'error',
         'react-hooks/exhaustive-deps': 'error',
         '@typescript-eslint/no-unused-vars': 'error',
-        'no-console': 'error',
+        'no-console': 'warn',
         '@typescript-eslint/explicit-function-return-type': 'off',
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/naming-convention': [

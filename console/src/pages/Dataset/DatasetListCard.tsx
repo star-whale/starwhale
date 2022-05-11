@@ -48,7 +48,7 @@ export default function DatasetListCard() {
                                 {dataset.name}
                             </Link>,
                             dataset.owner && <User user={dataset.owner} />,
-                            dataset.createTime && formatTimestampDateTime(dataset.createTime),
+                            dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
                             <Link key={dataset.id} to={`/projects/${projectId}/datasets/${dataset.id}/versions`}>
                                 {t('Version History')}
                             </Link>,

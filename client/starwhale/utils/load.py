@@ -1,13 +1,10 @@
-from statistics import mode
 import typing as t
 import sys
 from pathlib import Path
 import importlib
 
-from loguru import logger
 
-
-def import_cls(workdir: Path, mc: str, parentClass: t.Any=object) -> t.Any:
+def import_cls(workdir: Path, mc: str, parentClass: t.Any = object) -> t.Any:
     _module_name, _cls_name = mc.split(":", 1)
     _changed = False
 

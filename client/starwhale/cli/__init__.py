@@ -3,8 +3,7 @@ import random
 import time
 
 from starwhale import __version__
-from starwhale.consts import SW_CLI_CONFIG, ENV_SW_CLI_CONFIG
-from starwhale.utils.config import load_swcli_config, load_swcli_config
+from starwhale.utils.config import load_swcli_config
 from starwhale.utils.debug import init_logger
 
 from .model import model_cmd
@@ -18,12 +17,7 @@ from .project import project_cmd
 def create_sw_cli():
     @click.group()
     @click.version_option(version=__version__)
-    @click.option(
-        "-v",
-        "--verbose",
-        count=True,
-        help="verbose for log"
-    )
+    @click.option("-v", "--verbose", count=True, help="verbose for log")
     def cli(verbose):
         load_swcli_config()
         init_logger(verbose)

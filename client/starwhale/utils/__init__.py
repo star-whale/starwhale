@@ -12,13 +12,10 @@ from datetime import datetime
 
 from rich.console import Console
 
-from starwhale.consts import (
-    ENV_CONDA, ENV_CONDA_PREFIX, PYTHON_RUN_ENV,
-    FMT_DATETIME
-)
+from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX, PYTHON_RUN_ENV, FMT_DATETIME
 
 console = Console(soft_wrap=True)
-now_str = lambda : datetime.now().astimezone().strftime(FMT_DATETIME)
+now_str = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
 
 
 def gen_uniq_version(feature: str = "") -> str:
@@ -36,22 +33,34 @@ def random_str(cnt: int = 8) -> str:
 
 
 def get_external_python_version():
-    return subprocess.check_output(["python3", "-c",
-        "import sys; _v = sys.version_info; print(f'{_v,major}.{_v.minor}.{_v.micro}')"
-        ], stderr=sys.stderr
+    return subprocess.check_output(
+        [
+            "python3",
+            "-c",
+            "import sys; _v = sys.version_info; print(f'{_v,major}.{_v.minor}.{_v.micro}')",
+        ],
+        stderr=sys.stderr,
     )
+
 
 def in_dev() -> bool:
     return not in_production()
 
+
 def in_production() -> bool:
     return os.environ.get("SW_PRODUCTION", "") == "1"
 
+
 def is_venv() -> bool:
-    #TODO: refactor for get external venv attr
-    output = subprocess.check_output(["python3", "-c",
-         "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))"
-        ],stderr=sys.stdout)
+    # TODO: refactor for get external venv attr
+    output = subprocess.check_output(
+        [
+            "python3",
+            "-c",
+            "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))",  # noqa: E501
+        ],
+        stderr=sys.stdout,
+    )
     return "True" in str(output)
 
 
@@ -77,12 +86,12 @@ def get_conda_env_prefix() -> str:
 
 
 def is_windows() -> bool:
-    #TODO: for windows nt?
+    # TODO: for windows nt?
     return platform.system() == "Windows"
 
 
 def is_darwin() -> bool:
-    #TODO: check m1 chip system
+    # TODO: check m1 chip system
     return platform.system() == "Darwin"
 
 
@@ -91,15 +100,15 @@ def is_linux() -> bool:
 
 
 def get_python_version():
-    #TODO: check user ppl environment or starwhale-cli env? need test
+    # TODO: check user ppl environment or starwhale-cli env? need test
     _v = sys.version_info
     return f"{_v.major}.{_v.minor}.{_v.micro}"
 
 
-def fmt_http_server(server: str, https: bool=False) -> str:
+def fmt_http_server(server: str, https: bool = False) -> str:
     server = server.strip().strip("/")
     if not server:
-        raise Exception(f"no server addr")
+        raise Exception("no server addr")
 
     if server.startswith(("http://", "https://")):
         return server
@@ -117,6 +126,7 @@ _bytes_map = {
     "gb": 1024 * 1024 * 1024,
 }
 
+
 def convert_to_bytes(s: t.Union[str, int]) -> int:
     if isinstance(s, int):
         return s
@@ -131,12 +141,12 @@ def convert_to_bytes(s: t.Union[str, int]) -> int:
 
 _bytes_progress = ("B", "KB", "MB", "GB", "TB", "PB")
 
-def pretty_bytes(b: t.Union[int, float]) -> str:
 
-    def _c(b: t.Union[int, float], idx:int) -> str:
+def pretty_bytes(b: t.Union[int, float]) -> str:
+    def _c(b: t.Union[int, float], idx: int) -> str:
         if b < 1024 or (idx + 1 == len(_bytes_progress)):
             return f"{b:.2f}{_bytes_progress[idx]}"
         else:
-            return _c(b / 1024, idx+1)
+            return _c(b / 1024, idx + 1)
 
     return _c(b, 0)

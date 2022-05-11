@@ -8,7 +8,11 @@ def add_mngt_command(cli):
     @cli.command("login", help="Login remote StarWhale Controller")
     @click.option("--username", prompt="username")
     @click.password_option(confirmation_prompt=False)
-    @click.option("--starwhale", prompt="starwhale controller web:", default=DEFAULT_LOCAL_SW_CONTROLLER_ADDR)
+    @click.option(
+        "--starwhale",
+        prompt="starwhale controller web:",
+        default=DEFAULT_LOCAL_SW_CONTROLLER_ADDR,
+    )
     def _login(username, password, starwhale):
         login(username, password, starwhale)
 
@@ -19,10 +23,9 @@ def add_mngt_command(cli):
 
     @cli.command("quickstart", help="StarWhale Quickstart")
     def _quickstart():
-        #TODO: init git repo, add some gitignore
+        # TODO: init git repo, add some gitignore
         pass
 
     @cli.command("autocomplete", help="Generate zsh/bash command auto complete")
     def _autocompete():
         pass
-

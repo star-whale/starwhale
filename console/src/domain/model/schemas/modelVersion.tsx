@@ -4,7 +4,6 @@ import { IUserSchema } from '@user/schemas/user'
 export interface IModelVersionSchema extends IResourceSchema {
     name: string
     tag: string
-    createTime: number
     meta: Record<string, unknown>
     owner?: IUserSchema
 }

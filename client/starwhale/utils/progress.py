@@ -3,10 +3,10 @@ import typing as t
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 from rich.console import Console
 
-from starwhale.utils import console
 
-
-def run_with_progress_bar(title:str, operations: t.List[t.Tuple[t.Callable, int, str]], console: Console):
+def run_with_progress_bar(
+    title: str, operations: t.List[t.Tuple[t.Callable, int, str]], console: Console
+):
     with Progress(
         SpinnerColumn(),
         *Progress.get_default_columns(),
@@ -19,6 +19,8 @@ def run_with_progress_bar(title:str, operations: t.List[t.Tuple[t.Callable, int,
         for idx, op in enumerate(operations):
             progress.update(task, description=f"[red]{op[2]}...")
             op[0]()
-            progress.update(task, advance=op[1],
-                            description=f"[green]{idx+1} out of {len(operations)} steps finished")
-
+            progress.update(
+                task,
+                advance=op[1],
+                description=f"[green]{idx+1} out of {len(operations)} steps finished",
+            )

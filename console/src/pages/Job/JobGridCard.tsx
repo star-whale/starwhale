@@ -79,13 +79,13 @@ function JobGridCard() {
             cellRenderer: ({ rowData }: any) => <User user={rowData.owner} />,
         },
         {
-            key: 'createTime',
-            title: 'createTime',
+            key: 'createdTime',
+            title: 'createdTime',
             resizable: true,
             sortable: true,
             width: 150,
             align: Column.Alignment.CENTER,
-            cellRenderer: ({ rowData }: any) => rowData.createTime && formatTimestampDateTime(rowData.createTime),
+            cellRenderer: ({ rowData }: any) => rowData.createdTime && formatTimestampDateTime(rowData.createdTime),
         },
         {
             key: 'duration',
