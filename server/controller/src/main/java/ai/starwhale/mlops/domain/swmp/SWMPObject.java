@@ -37,25 +37,6 @@ public class SWMPObject {
 
     private User owner;
 
-    private Version version;
+    private SWMPVersion version;
 
-    @Data
-    @Builder
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class Version {
-
-        private Long id;
-
-        private String name;
-
-        private Long ownerId;
-
-        private String tag;
-
-        private String meta;
-
-        private String storagePath;
-
-    }
 }

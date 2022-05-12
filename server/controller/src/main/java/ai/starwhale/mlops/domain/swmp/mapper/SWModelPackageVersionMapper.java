@@ -22,7 +22,7 @@ import org.apache.ibatis.annotations.Param;
 
 public interface SWModelPackageVersionMapper {
 
-    List<SWModelPackageVersionEntity> listVersions(@Param("swmpId") Long swmpId, @Param("namePrefix")String namePrefix);
+    List<SWModelPackageVersionEntity> listVersions(@Param("swmpId") Long swmpId, @Param("namePrefix")String namePrefix, @Param("tag")String tag);
 
     SWModelPackageVersionEntity findVersionById(@Param("id")Long id);
     List<SWModelPackageVersionEntity> findVersionsByIds(@Param("dsVersionIds")List<Long> dsVersionIds);

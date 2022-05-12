@@ -36,6 +36,9 @@
         <if test="namePrefix != null and namePrefix != ''">
             and version_name like concat(#{namePrefix}, '%')
         </if>
+        <if test="tag != null and tag != ''">
+            and version_tag like concat(#{tag}, '%')
+        </if>
         order by mv.id desc
     </select>
 

@@ -28,7 +28,6 @@ import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
-import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
 import ai.starwhale.mlops.domain.task.LivingTaskCache;
@@ -178,7 +177,7 @@ public class SWModelPackageService {
 
     }
 
-    public Boolean modifySWMPVersion(Version version) {
+    public Boolean modifySWMPVersion(SWMPVersion version) {
         SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
             .id(version.getId())
             .versionTag(version.getTag())
@@ -196,10 +195,10 @@ public class SWModelPackageService {
         return res > 0;
     }
 
-    public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPObject swmp, PageParams pageParams) {
+    public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPObject swmp, SWMPVersion version, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWModelPackageVersionEntity> entities = swmpVersionMapper.listVersions(
-            swmp.getId(), swmp.getVersion().getName());
+            swmp.getId(), version.getName(), version.getTag());
         return PageUtil.toPageInfo(entities, versionConvertor::convert);
     }
 

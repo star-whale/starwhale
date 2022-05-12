@@ -25,16 +25,16 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class SWDSObject {
-
+public class SWDSVersion {
     private Long id;
 
     private String name;
 
-    private Long projectId;
-
     private Long ownerId;
 
-    private SWDSVersion currentVersion;
+    private String tag;
 
+    private String meta;
+
+    private String storagePath;
 }

@@ -181,8 +181,14 @@ public interface SWModelPackageApi {
             String modelId,
         @Parameter(in = ParameterIn.QUERY, description = "Model version name prefix to search for", schema = @Schema())
         @Valid
-        @RequestParam(value = "modelVersionName", required = false)
-            String modelVersionName,
+        @RequestParam(value = "vName", required = false)
+            String vName,
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Model version tag",
+            schema = @Schema())
+        @RequestParam(value = "vTag", required = false)
+        String vTag,
         @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
         @Valid
         @RequestParam(value = "pageNum", required = false, defaultValue = "1")
