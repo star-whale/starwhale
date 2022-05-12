@@ -6,4 +6,4 @@ build-ui:
 	yarn build
 ci-lint:
 	yarn lint
-	yarn typecheck
+	#yarn typecheck
