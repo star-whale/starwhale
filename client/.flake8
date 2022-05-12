@@ -6,6 +6,7 @@
 # W605: invalid escape sequence '\#'
 ignore= H101,W503,E203,E731,W605
 max-line-length = 120
+max-complexity = 18
 exclude =
     .eggs
     .egg-info

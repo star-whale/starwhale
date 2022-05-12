@@ -36,7 +36,7 @@ ci-mypy:
 
 ut:
 	echo "ut"
-	pytest tests -vvrfEsx
+	pytest tests -vvrfEsx --cov-config=.coveragerc --cov=starwhale --cov-report=xml:coverage.xml --cov-report=term-missing
 
 install-req:
 	python3 -m pip install .

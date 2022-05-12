@@ -110,12 +110,20 @@ jobs:
         working-directory: ./client
         run: make ut
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3.1.0
+      - name: Publish coverage to Coveralls
+        uses: AndreMiras/coveralls-python-action@v20201129
         with:
-          name: codecov
-          fail_ci_if_error: false
-          directory: ./client/coverage/reports/
-          files: ./coverage.xml
-          flags: unittests
-          verbose: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel: true
+          debug: true
+          base-path: ./client
+          flag-name: unittest
+
+  coveralls_finish:
+    needs: unittest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Coveralls Finished
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          parallel-finished: true

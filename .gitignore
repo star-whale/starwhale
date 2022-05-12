@@ -56,3 +56,21 @@ yarn-debug.log*
 yarn-error.log*
 /docker/jar/
 /server/controller/src/main/resources/static/
+
+# Test Coverage
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.pytest_cache/
+*,cover
+htmlcov/
+
+# Python
+__pycache__
+.Python
+pip-delete-this-directory.txt
+.mypy*
+
+# Other
+.cache
