@@ -7,7 +7,7 @@ from rich.table import Table
 from rich.tree import Tree
 from rich import box
 
-from .model import ClusterModel, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE, PROJECT_OBJ_TYPE
+from .model import ClusterModel, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE, ProjectObjType
 from starwhale.utils import pretty_bytes, console
 from starwhale.utils.ui import comparsion
 
@@ -239,7 +239,7 @@ class ClusterView(ClusterModel):
                 otree = tree.add(f"{_o['name']}")
                 for _v in _o["latest_versions"]:
                     _k = "name" if fullname else "short_name"
-                    if typ == PROJECT_OBJ_TYPE.MODEL:
+                    if typ == ProjectObjType.MODEL:
                         # TODO: add model version for every version
                         _size = _o["files"][0]["size"]
                     else:
@@ -253,8 +253,8 @@ class ClusterView(ClusterModel):
         def _details(pid: int):
             _r = self._inspect_project(pid)
             return comparsion(
-                _show_objects(_r["models"], PROJECT_OBJ_TYPE.MODEL),
-                _show_objects(_r["datasets"], PROJECT_OBJ_TYPE.DATASET),
+                _show_objects(_r["models"], ProjectObjType.MODEL),
+                _show_objects(_r["datasets"], ProjectObjType.DATASET),
             )
 
         if not projects:

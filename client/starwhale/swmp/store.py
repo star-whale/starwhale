@@ -42,7 +42,7 @@ _SWMP_FILE_TYPE = ".swmp"
 
 
 class ModelPackageLocalStore(LocalStorage):
-    def list(self, filter: str = "") -> None:
+    def list(self, filter: str = "", title: str = "", caption: str = "") -> None:
         super().list(
             filter=filter, title="List swmp in local storage", caption=f"@{self.pkgdir}"
         )

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 install_requires = [
     "click>=8.0.4",
-    "importlib-metadata==4.8.2",
+    "importlib-metadata>=4.0.0",
     "attrs==21.4.0",
     "pyyaml==6.0",
     "cattrs==1.7.1",

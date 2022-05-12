@@ -67,16 +67,16 @@ class BuildExecutor(object):
         self.alignment_bytes_size = alignment_bytes_size
         self.volume_bytes_size = volume_bytes_size
 
-        self._index_writer = None
+        self._index_writer: t.Optional[jsonlines.Writer] = None
         self._prepare()
 
-    def _prepare(self):
+    def _prepare(self) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self._index_writer = jsonlines.open(
             str((self.output_dir / self.INDEX_NAME).resolve()), mode="w"
         )
 
-    def __exit__(self):
+    def __exit__(self) -> None:
         try:
             self._index_writer.close()  # type: ignore
         except Exception as e:
@@ -84,7 +84,7 @@ class BuildExecutor(object):
 
         print("cleanup done.")
 
-    def _write(self, writer, idx: int, data: bytes) -> t.Tuple[int, int]:
+    def _write(self, writer: t.Any, idx: int, data: bytes) -> t.Tuple[int, int]:
         size = len(data)
         crc = crc32(data)  # TODO: crc is right?
         start = writer.tell()
@@ -97,11 +97,19 @@ class BuildExecutor(object):
         writer.write(_header + data + _padding)
         return start, _header_size + size + padding_size
 
-    def _get_padding_size(self, size):
+    def _get_padding_size(self, size: int) -> int:
         remain = (size + _header_size) % self.alignment_bytes_size
         return 0 if remain == 0 else (self.alignment_bytes_size - remain)
 
-    def _write_index(self, idx, fno, data_pos, data_size, label_pos, label_size):
+    def _write_index(
+        self,
+        idx: int,
+        fno: int,
+        data_pos: int,
+        data_size: int,
+        label_pos: int,
+        label_size: int,
+    ) -> None:
         self._index_writer.write(  # type: ignore
             dict(
                 id=idx,
@@ -119,7 +127,7 @@ class BuildExecutor(object):
             )
         )
 
-    def make_swds(self):
+    def make_swds(self) -> None:
         # TODO: add lock
         fno, wrote_size = 0, 0
         dwriter = (self.output_dir / self._DATA_FMT.format(index=fno)).open("wb")

@@ -1,4 +1,3 @@
-from collections import namedtuple
 from pathlib import Path
 import sys
 import yaml
@@ -15,6 +14,7 @@ from starwhale.base.store import LocalStorage
 from starwhale.consts import (
     DEFAULT_DATASET_YAML_NAME,
     DEFAULT_MANIFEST_NAME,
+    SHORT_VERSION_CNT,
     SW_API_VERSION,
 )
 from starwhale.utils.http import wrap_sw_error_resp, upload_file
@@ -24,13 +24,16 @@ from starwhale.utils.error import NotFoundError
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 
-_UPLOAD_PHASE = namedtuple("_UPLOAD_PHASE", ["MANIFEST", "BLOB", "END", "CANCEL"])(
-    "MANIFEST", "BLOB", "END", "CANCEL"
-)
+
+class _UploadPhase:
+    MANIFEST = "MANIFEST"
+    BLOB = "BLOB"
+    END = "END"
+    CANCEL = "CANCEL"
 
 
 class DataSetLocalStore(LocalStorage):
-    def list(self, filter: str = "") -> None:
+    def list(self, filter: str = "", title: str = "", caption: str = "") -> None:
         super().list(
             filter=filter,
             title="List dataset(swds) in local storage",
@@ -69,7 +72,7 @@ class DataSetLocalStore(LocalStorage):
                 with (_path / DEFAULT_MANIFEST_NAME).open("r") as f:
                     _manifest = yaml.safe_load(f)
                 # TODO: support dataset tag cmd
-                _tag = ver_dir.name[:7]
+                _tag = ver_dir.name[:SHORT_VERSION_CNT]
 
                 yield LocalStorage.SWobjMeta(
                     name=name_dir.name,
@@ -104,7 +107,7 @@ class DataSetLocalStore(LocalStorage):
             fpath=_manifest_path,
             fields={
                 "swds": _swds,
-                "phase": _UPLOAD_PHASE.MANIFEST,
+                "phase": _UploadPhase.MANIFEST,
                 "project": project,
                 "force": "1" if force else "0",
             },
@@ -119,7 +122,7 @@ class DataSetLocalStore(LocalStorage):
         _manifest = yaml.safe_load(_manifest_path.open())
 
         # TODO: add retry deco
-        def _upload_blob(_fp: Path):
+        def _upload_blob(_fp: Path) -> None:
             if not _fp.exists():
                 raise NotFoundError(f"{_fp} not found")
 
@@ -128,7 +131,7 @@ class DataSetLocalStore(LocalStorage):
                 fpath=_fp,
                 fields={
                     "swds": _swds,
-                    "phase": _UPLOAD_PHASE.BLOB,
+                    "phase": _UploadPhase.BLOB,
                 },
                 headers=_headers,
                 use_raise=True,
@@ -149,7 +152,7 @@ class DataSetLocalStore(LocalStorage):
             )
             r = requests.post(
                 url,
-                data={"swds": _swds, "project": project, "phase": _UPLOAD_PHASE.CANCEL},
+                data={"swds": _swds, "project": project, "phase": _UploadPhase.CANCEL},
                 headers=_headers,
             )
             wrap_sw_error_resp(r, "cancel", use_raise=True)
@@ -157,7 +160,7 @@ class DataSetLocalStore(LocalStorage):
             self._console.print(" :clap: :clap: all uploaded.")
             r = requests.post(
                 url,
-                data={"swds": _swds, "project": project, "phase": _UPLOAD_PHASE.END},
+                data={"swds": _swds, "project": project, "phase": _UploadPhase.END},
                 headers=_headers,
             )
             wrap_sw_error_resp(r, "end", use_raise=True)
@@ -174,7 +177,7 @@ class DataSetLocalStore(LocalStorage):
         self._console.print(_config_panel)
         # TODO: show dataset dir tree view
 
-    def _do_get_info(self, _name: str, _version: str) -> dict:
+    def _do_get_info(self, _name: str, _version: str) -> t.Dict[t.Any, t.Any]:
         _dir = self._guess(self.dataset_dir / _name, _version)
         if not _dir.exists():
             raise NotFoundError(f"{_dir} is not existed")

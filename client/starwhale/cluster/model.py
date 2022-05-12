@@ -1,12 +1,11 @@
 import typing as t
 from datetime import datetime, timedelta
 import yaml
-from collections import namedtuple
 
 import requests
 
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.consts import SW_API_VERSION, HTTP_METHOD
+from starwhale.consts import SW_API_VERSION, HTTPMethod
 from starwhale.utils.http import wrap_sw_error_resp, ignore_error
 from starwhale.consts import FMT_DATETIME, SHORT_VERSION_CNT
 
@@ -21,18 +20,20 @@ _fmt_timestamp = lambda x: datetime.fromtimestamp(float(x) / 1000.0).strftime(
     FMT_DATETIME
 )
 _fmt_duration = lambda x: str(timedelta(milliseconds=float(x)))
-PROJECT_OBJ_TYPE = namedtuple("PROJECT_OBJ_TYPE", ["MODEL", "DATASET"])(
-    "model", "dataset"
-)
+
+
+class ProjectObjType:
+    MODEL = "model"
+    DATASET = "dataset"
 
 
 # TODO: use model-view-control mode to refactor Cluster
 class ClusterModel(SWCliConfigMixed):
-    def __init__(self, swcli_config: t.Union[dict, None] = None) -> None:
+    def __init__(self, swcli_config: t.Optional[t.Dict[str, t.Any]] = None) -> None:
         super().__init__(swcli_config)
 
     def request(
-        self, path: str, method: str = HTTP_METHOD.GET, **kw: dict
+        self, path: str, method: str = HTTPMethod.GET, **kw: t.Any
     ) -> requests.Response:
         _url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/{path.lstrip('/')}"
         r = requests.request(
@@ -97,7 +98,7 @@ class ClusterModel(SWCliConfigMixed):
             )
         return projects, self._parse_pager(r)
 
-    def _parse_pager(self, resp: dict) -> dict:
+    def _parse_pager(self, resp: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         _d = resp["data"]
         return dict(
             total=_d["total"],
@@ -137,12 +138,12 @@ class ClusterModel(SWCliConfigMixed):
                 _v["short_name"] = _v["name"][:SHORT_VERSION_CNT]
                 _v["created_at"] = _fmt_timestamp(_v.pop("createTime"))
                 _v.pop("owner", None)
-                if typ == PROJECT_OBJ_TYPE.DATASET:
+                if typ == ProjectObjType.DATASET:
                     _v["meta"] = yaml.safe_load(_v["meta"])
                 versions.append(_v)
 
             _m["latest_versions"] = versions
-            if typ == PROJECT_OBJ_TYPE.MODEL:
+            if typ == ProjectObjType.MODEL:
                 _m["files"] = self._fetch_model_files(pid, _m["id"])
             ret.append(_m)
 
@@ -175,7 +176,7 @@ class ClusterModel(SWCliConfigMixed):
         job: int,
         page: int = DEFAULT_PAGE_NUM,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[dict], dict]:
+    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         r = self.request(
             f"/project/{project}/job/{job}/task",
             params={"pageNum": page, "pageSize": size},

@@ -12,7 +12,7 @@ from datetime import datetime
 
 from rich.console import Console
 
-from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX, PYTHON_RUN_ENV, FMT_DATETIME
+from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX, PythonRunEnv, FMT_DATETIME
 
 console = Console(soft_wrap=True)
 now_str = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
@@ -32,7 +32,7 @@ def random_str(cnt: int = 8) -> str:
     return "".join(random.sample(string.ascii_lowercase + string.digits, cnt))
 
 
-def get_external_python_version():
+def get_external_python_version() -> t.Any:
     return subprocess.check_output(
         [
             "python3",
@@ -70,11 +70,11 @@ def is_conda() -> bool:
 
 def get_python_run_env() -> str:
     if is_conda():
-        return PYTHON_RUN_ENV.CONDA
+        return PythonRunEnv.CONDA
     elif is_venv():
-        return PYTHON_RUN_ENV.VENV
+        return PythonRunEnv.VENV
     else:
-        return PYTHON_RUN_ENV.SYSTEM
+        return PythonRunEnv.SYSTEM
 
 
 def get_conda_env() -> str:

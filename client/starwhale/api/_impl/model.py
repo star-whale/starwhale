@@ -3,7 +3,6 @@ import os
 import sys
 import typing as t
 from abc import ABCMeta, abstractmethod
-from collections import namedtuple
 from pathlib import Path
 import json
 import logging
@@ -12,20 +11,25 @@ from functools import wraps
 import loguru
 import jsonlines
 
-from starwhale.consts.env import SW_ENV
+from starwhale.consts.env import SWEnv
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils import pretty_bytes, in_production, now_str
 from starwhale.consts import CURRENT_FNAME
-from .loader import DATA_FIELD, DataLoader, get_data_loader
+from .loader import DataField, DataLoader, get_data_loader
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
 _p = lambda p, sub: Path(p) if p else Path(_TASK_ROOT_DIR) / sub
 _ptype = t.Union[str, None, Path]
 
-_LOG_TYPE = namedtuple("LOG_TYPE", ["SW", "USER"])("starwhale", "user")
+
+class _LogType:
+    SW = "starwhale"
+    USER = "user"
+
+
 _jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
 
 
@@ -45,7 +49,7 @@ class _RunConfig(object):
         # TODO: graceful method
         self._prepare()
 
-    def load_swds_config(self, path: _ptype) -> dict:
+    def load_swds_config(self, path: _ptype) -> t.Dict[str, t.Any]:
         if not path:
             path = Path(_TASK_ROOT_DIR) / "config" / "swds.json"
 
@@ -65,39 +69,42 @@ class _RunConfig(object):
     def create_by_env(cls) -> "_RunConfig":
         _env = os.environ.get
         return _RunConfig(
-            swds_config_path=_env(SW_ENV.INTPUT_CONFIG),
-            status_dir=_env(SW_ENV.STATUS_D),
-            log_dir=_env(SW_ENV.LOG_D),
-            result_dir=_env(SW_ENV.RESULT_D),
+            swds_config_path=_env(SWEnv.input_config),
+            status_dir=_env(SWEnv.status_dir),
+            log_dir=_env(SWEnv.log_dir),
+            result_dir=_env(SWEnv.result_dir),
         )
 
     @classmethod
     def set_env(cls, _config: dict = {}) -> None:
-        def _set(_k, _e):
+        def _set(_k: str, _e: str) -> None:
             _v = _config.get(_k)
             if _v:
                 os.environ[_e] = _v
 
-        _set("status_dir", SW_ENV.STATUS_D)
-        _set("log_dir", SW_ENV.LOG_D)
-        _set("result_dir", SW_ENV.RESULT_D)
-        _set("input_config", SW_ENV.INTPUT_CONFIG)
+        _set("status_dir", SWEnv.status_dir)
+        _set("log_dir", SWEnv.log_dir)
+        _set("result_dir", SWEnv.result_dir)
+        _set("input_config", SWEnv.input_config)
 
 
 class PipelineHandler(object):
-    RESULT_OUTPUT_TYPE = namedtuple("OUTPUT_TYPE", ["JSONL", "PLAIN"])(
-        "jsonline", "plain"
-    )
-    STATUS = namedtuple("STATUS", ["START", "RUNNING", "SUCCESS", "FAILED"])(
-        "start", "running", "success", "failed"
-    )
+    class ResultOutputType:
+        JSONL = "jsonline"
+        PLAIN = "plain"
+
+    class STATUS:
+        START = "start"
+        RUNNING = "running"
+        SUCCESS = "success"
+        FAILED = "failed"
 
     __metaclass__ = ABCMeta
 
     def __init__(
         self,
         merge_label: bool = True,
-        output_type: str = RESULT_OUTPUT_TYPE.JSONL,
+        output_type: str = ResultOutputType.JSONL,
         ignore_error: bool = False,
     ) -> None:
         # TODO: add args for compare result and label directly
@@ -133,19 +140,19 @@ class PipelineHandler(object):
             serialize=True,
         )
         _logger.bind(
-            type=_LOG_TYPE.USER,
+            type=_LogType.USER,
             task_id=os.environ.get("SW_TASK_ID", ""),
             job_id=os.environ.get("SW_JOB_ID", ""),
         )
-        _sw_logger = _logger.bind(type=_LOG_TYPE.SW)
+        _sw_logger = _logger.bind(type=_LogType.SW)
         return _logger, _sw_logger
 
-    def _monkey_patch(self):
+    def _monkey_patch(self) -> None:
         if not isinstance(sys.stdout, StreamWrapper):
-            sys.stdout = StreamWrapper(sys.stdout, self.logger, logging.INFO)
+            sys.stdout = StreamWrapper(sys.stdout, self.logger, logging.INFO)  # type: ignore
 
         if not isinstance(sys.stderr, StreamWrapper):
-            sys.stderr = StreamWrapper(sys.stderr, self.logger, logging.WARN)
+            sys.stderr = StreamWrapper(sys.stderr, self.logger, logging.WARN)  # type: ignore
 
     def __str__(self) -> str:
         return (
@@ -153,7 +160,7 @@ class PipelineHandler(object):
             f"log@{self.config.log_dir}, result@{self.config.result_dir}"
         )
 
-    def __exit__(self):
+    def __exit__(self) -> None:
         # TODO: reset sys for stdout/stderr?
         sys.stdout = self._orig_stdout
         sys.stderr = self._orig_stderr
@@ -172,15 +179,15 @@ class PipelineHandler(object):
         self._sw_logger.remove()
 
     @abstractmethod
-    def ppl(self, data: bytes, batch_size: int, **kw) -> t.Any:
+    def ppl(self, data: bytes, batch_size: int, **kw: t.Any) -> t.Any:
         # TODO: how to handle each batch element is not equal.
         raise NotImplementedError
 
     @abstractmethod
-    def cmp(self, _data_loader: DataLoader):
+    def cmp(self, _data_loader: DataLoader) -> t.Any:
         raise NotImplementedError
 
-    def handle_label(self, label: bytes, batch_size: int, **kw) -> t.Any:
+    def handle_label(self, label: bytes, batch_size: int, **kw: t.Any) -> t.Any:
         return label.decode()
 
     def _record_status(func):  # type: ignore
@@ -212,7 +219,7 @@ class PipelineHandler(object):
 
         try:
             self._status_writer.write(
-                {"time": now_str(), "status": ex is None, "exception": ex}
+                {"time": now_str(), "status": ex is None, "exception": ex}  # type: ignore
             )
             self._result_writer.write(output)
         except Exception as e:
@@ -269,13 +276,13 @@ class PipelineHandler(object):
     def _do_record(
         self,
         output: t.Any,
-        data: DATA_FIELD,
-        label: DATA_FIELD,
+        data: DataField,
+        label: DataField,
         exception: t.Union[None, Exception],
-    ):
+    ) -> None:
         self._status_writer.write(
             {
-                "time": now_str(),
+                "time": now_str(),  # type: ignore
                 "status": exception is None,
                 "exception": str(exception),
                 "index": data.index,
@@ -298,7 +305,7 @@ class PipelineHandler(object):
                     size=label.data_size,
                 )
             except Exception as e:
-                self._sw_logger.exception(f"{label.data} label handle exception:{e}")
+                self._sw_logger.exception(f"{label.data!r} label handle exception:{e}")
                 if not self.ignore_error:
                     self._update_status(self.STATUS.FAILED)
                     raise
