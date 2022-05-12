@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * <a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a>
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,10 +26,10 @@ public interface ProjectMapper {
 
     int deleteProject(@Param("id") Long id);
 
-    List<ProjectEntity> listProjects(@Param("projectName") String projectName);
+    List<ProjectEntity> listProjects(@Param("projectName") String projectName, @Param("order") String order);
 
-    List<ProjectEntity> listProjectsByOwner(@Param("userId") Long userId);
-    List<ProjectEntity> listProjectsByOwnerName(@Param("userName") String userName);
+    List<ProjectEntity> listProjectsByOwner(@Param("userId") Long userId, @Param("order") String order);
+    List<ProjectEntity> listProjectsByOwnerName(@Param("userName") String userName, @Param("order") String order);
 
     ProjectEntity findProject(@Param("id") Long id);
 

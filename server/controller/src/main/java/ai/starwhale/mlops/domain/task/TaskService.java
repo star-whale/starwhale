@@ -45,9 +45,6 @@ import org.springframework.util.StringUtils;
 public class TaskService {
 
     @Resource
-    private IDConvertor idConvertor;
-
-    @Resource
     private TaskConvertor taskConvertor;
 
     @Resource
@@ -60,9 +57,9 @@ public class TaskService {
     private StorageAccessService storageAccessService;
 
 
-    public PageInfo<TaskVO> listTasks(String jobId, PageParams pageParams) {
+    public PageInfo<TaskVO> listTasks(Long jobId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<TaskEntity> tasks = taskMapper.listTasks(idConvertor.revert(jobId));
+        List<TaskEntity> tasks = taskMapper.listTasks(jobId);
 
         return PageUtil.toPageInfo(tasks, taskConvertor::convert);
 
@@ -86,7 +83,7 @@ public class TaskService {
         ResultPath resultPath = resultPathOfTask(taskId);
         String logDir = resultPath.logDir();
         try(InputStream inputStream = storageAccessService.get(
-            logDir + PATH_SPLITERATOR + logFileName);) {
+            logDir + PATH_SPLITERATOR + logFileName)) {
             return new String(inputStream.readAllBytes());
         } catch (IOException e) {
             log.error("read logs path from storage failed {}",taskId,e);

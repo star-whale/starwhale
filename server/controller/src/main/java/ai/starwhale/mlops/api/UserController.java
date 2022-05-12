@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
+import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.project.Project;
 import ai.starwhale.mlops.domain.project.ProjectService;
@@ -41,27 +42,33 @@ public class UserController implements UserApi{
     @Resource
     private ProjectService projectService;
 
+    @Resource
+    private IDConvertor idConvertor;
+
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<UserVO>>> listUser(String userName,
         Integer pageNum, Integer pageSize) {
         PageInfo<UserVO> pageInfo = userService.listUsers(User.builder().name(userName).build(),
-            new PageParams(pageNum, pageSize));
+            PageParams.builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build());
 
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> createUser(UserRequest request) {
-        String id = userService.createUser(User.builder().name(request.getUserName()).build(),
+        Long userId = userService.createUser(User.builder().name(request.getUserName()).build(),
             request.getUserPwd());
 
         //create default project
         projectService.createProject(Project.builder()
                 .name(request.getUserName())
-                .owner(User.builder().id(id).build())
+                .owner(User.builder().id(userId).build())
                 .isDefault(true)
                 .build());
-        return ResponseEntity.ok(Code.success.asResponse(id));
+        return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(userId)));
     }
 
     @Override
@@ -72,20 +79,20 @@ public class UserController implements UserApi{
 
     @Override
     public ResponseEntity<ResponseMessage<UserVO>> getUserById(String userId) {
-        UserVO userVO = userService.findUserById(userId);
+        UserVO userVO = userService.findUserById(idConvertor.revert(userId));
         return ResponseEntity.ok(Code.success.asResponse(userVO));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> updateUserPwd(String userId, String userPwd) {
-        Boolean res = userService.changePassword(User.builder().id(userId).build(), userPwd);
+        Boolean res = userService.changePassword(User.builder().id(idConvertor.revert(userId)).build(), userPwd);
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(res)));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> updateUserState(String userId,
         Boolean isEnabled) {
-        Boolean res = userService.updateUserState(User.builder().id(userId).build(),
+        Boolean res = userService.updateUserState(User.builder().id(idConvertor.revert(userId)).build(),
             isEnabled);
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(res)));
     }

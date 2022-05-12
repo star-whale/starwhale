@@ -56,7 +56,9 @@ public interface ProjectApi {
         @Parameter(in = ParameterIn.QUERY, description = "Name of the project owner", schema = @Schema())
         @Valid @RequestParam(value = "ownerName", required = false) String ownerName,
         @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
-        @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
+        @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize,
+        @Valid @RequestParam(value = "sort", required = false) String sort,
+        @Valid @RequestParam(value = "order", required = false, defaultValue = "1") Integer order);
 
 
     @Operation(summary = "Create a new project")
