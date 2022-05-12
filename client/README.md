@@ -1,8 +1,12 @@
 # StarWhale Client and Python SDK
 
-# Develop:
-- conda create a development env
-- cd client dir
-- pip install -e
-- run "swcli --help" or "python -m starwhale --help"
-- docker run -it -v ~/.cache/minio:/data -p 9000:9000 -p 9001:9001 quay.io/minio/minio:latest server /data --console-address ":9001"
+# How to develop
+
+- create conda env: `conda create -n starwhale python=3.7`
+- install req: `make install-req`
+- install dev-req: `make install-dev-req`
+- write some code
+- debug starwhale cli: `swcli --help` or some other swcli cmds
+- write some code
+- run ci: `make all-check`
+- submit your pull request
