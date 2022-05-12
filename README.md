@@ -36,6 +36,10 @@
     <img src="https://github.com/star-whale/starwhale/actions/workflows/console.yml/badge.svg">
 </a>
 
+<a href='https://coveralls.io/github/star-whale/starwhale?branch=main'>
+    <img src='https://coveralls.io/repos/github/star-whale/starwhale/badge.svg?branch=main' alt='Python Client/SDK Coverage Status' />
+</a>
+
 </p>
 
 ## What is Starwhale
