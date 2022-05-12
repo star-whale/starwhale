@@ -19,6 +19,7 @@ package ai.starwhale.mlops.common;
 import ai.starwhale.mlops.exception.ConvertException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
@@ -34,7 +35,7 @@ public class IDConvertor implements Convertor<Long, String>{
 
     @Override
     public Long revert(String strId) throws ConvertException {
-        if(strId == null) {
+        if(!StringUtils.hasText(strId)) {
             return null;
         }
         try {
