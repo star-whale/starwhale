@@ -99,6 +99,7 @@ public class LogRecorder {
 
     /**
      * when container restart, must recall this method
+     * todo hava some bug
      *
      * @param taskId      task id
      * @param containerId container

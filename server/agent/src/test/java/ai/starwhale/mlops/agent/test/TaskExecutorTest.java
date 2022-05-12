@@ -18,6 +18,7 @@ package ai.starwhale.mlops.agent.test;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
+import ai.starwhale.mlops.agent.node.UniqueID;
 import ai.starwhale.mlops.agent.node.gpu.GPUDetect;
 import ai.starwhale.mlops.agent.node.gpu.GPUInfo;
 import ai.starwhale.mlops.agent.task.Action;
@@ -35,19 +36,23 @@ import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskType;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 
+@RunWith(SpringRunner.class)
 @SpringBootTest(
         classes = StarWhaleAgentTestApplication.class)
 @TestPropertySource(
@@ -68,6 +73,9 @@ public class TaskExecutorTest {
     @MockBean
     private TaskPersistence taskPersistence;
 
+    @MockBean
+    private UniqueID uniqueID;
+
     @Autowired
     private TaskExecutor taskExecutor;
 
@@ -80,7 +88,7 @@ public class TaskExecutorTest {
     @Autowired
     private SourcePool sourcePool;
 
-    void mockConfig() {
+    void mockConfig() throws IOException {
         Mockito.when(containerClient.createAndStartContainer(any()))
                 .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(containerClient.containerInfo(any())).thenReturn(ContainerClient.ContainerInfo.builder().logPath("log-path").build());
@@ -123,11 +131,12 @@ public class TaskExecutorTest {
                                 .build()
                 )
         ));
+        Mockito.when(uniqueID.id()).thenReturn("123456");
 
     }
 
     @Test
-    public void fullFlowTest() {
+    public void fullFlowTest() throws IOException {
         mockConfig();
 
         rebuildTasksAction.apply(Void.TYPE.cast(null), Context.builder().build());

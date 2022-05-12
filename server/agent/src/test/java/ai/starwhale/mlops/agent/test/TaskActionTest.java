@@ -36,13 +36,16 @@ import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskType;
 import cn.hutool.core.collection.CollectionUtil;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Test;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +57,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
+@Ignore
+@RunWith(SpringRunner.class)
 @SpringBootTest(
         classes = StarWhaleAgentTestApplication.class)
 @TestPropertySource(
@@ -63,7 +68,7 @@ import static org.mockito.ArgumentMatchers.any;
                 "sw.agent.node.sourcePool.init.enabled=false",
                 // when test,please set these properties with debug configuration
                 //"sw.storage.s3-config.endpoint=http://${ip}:9000",
-                //"sw.agent.basePath=""
+                "sw.agent.basePath=/var/starwhale"
         },
         locations = "classpath:application-integrationtest.yaml"
 )
@@ -98,10 +103,19 @@ public class TaskActionTest {
     @Autowired
     private FileSystemPath fileSystemPath;
 
+    private void pre() throws IOException {
+        if(Files.exists(Path.of(agentProperties.getBasePath()))) {
+            // clear local dir
+            FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+        } else {
+            Files.createDirectory(Path.of(agentProperties.getBasePath()));
+        }
+
+    }
+
     @Test
     public void testPreparing2Running() throws IOException {
-        // clear local dir
-        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+        pre();
 
         Mockito.when(containerClient.createAndStartContainer(any()))
                 .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
@@ -167,9 +181,7 @@ public class TaskActionTest {
 
     @Test
     public void testMonitorTask() throws Exception {
-        // clear local dir
-        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
-
+        pre();
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
                         .id(1234567890L)
@@ -249,8 +261,7 @@ public class TaskActionTest {
 
     @Test
     public void testUpload() throws IOException {
-        // clear local dir
-        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+        pre();
 
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
@@ -323,7 +334,8 @@ public class TaskActionTest {
 
 
     @Test
-    public void testArchived() {
+    public void testArchived() throws IOException {
+        pre();
         InferenceTask task = InferenceTask.builder()
                 .id(1234567890L)
                 .containerId("container-1")

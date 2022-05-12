@@ -9,8 +9,7 @@ NODEJS_IMAGE :=starwhaleai/nodejs:${VERSION_FORMAT}
 SW_IMAGE := starwhaleai/starwhale:${VERSION_FORMAT}
 SW_LATEST_IMAGE := starwhaleai/starwhale:latest
 SW_TASKSET_IMAGE := starwhaleai/taskset:${VERSION_FORMAT}
-SW_CONTROLLER_IMAGE := starwhaleai/controller:${VERSION_FORMAT}
-SW_AGENT_IMAGE := starwhaleai/agent:${VERSION_FORMAT}
+SW_SERVER_IMAGE := starwhaleai/server:${VERSION_FORMAT}
 
 DOCKER_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := $(dir $(abspath $(DOCKER_DIR)))
@@ -27,8 +26,7 @@ release:
 	docker push $(SW_IMAGE)
 	docker push $(SW_LATEST_IMAGE)
 	docker push $(SW_TASKSET_IMAGE)
-	docker push $(SW_CONTROLLER_IMAGE)
-	docker push $(SW_AGENT_IMAGE)
+	docker push starwhaleai/server:${VERSION_FORMAT}
 
 build-taskset:
 	docker build --build-arg BASE_IMAGE=$(BASE_IMAGE) -f Dockerfile.taskset -t $(SW_TASKSET_IMAGE) .
@@ -46,8 +44,9 @@ build-jar-with-ui: build-ui build-jar
 build-jar:
 	docker volume create --name maven-repo; docker run --rm -it -v maven-repo:/root/.m2 -v $(ROOT_DIR):/app -w /app maven:3.8.5-openjdk-11 mvn clean package -f server/pom.xml -DskipTests;
 
-build-controller: build-jar-with-ui
-	docker build -f Dockerfile.controller -t $(SW_CONTROLLER_IMAGE) .
+build-server: build-jar-with-ui
+	docker build -f Dockerfile.server -t $(SW_SERVER_IMAGE) .
 
-build-agent: build-jar
-	docker build -f Dockerfile.agent -t $(SW_AGENT_IMAGE) .
+# used when release
+build-server-when-ui-and-jar-built:
+	docker build -f Dockerfile.server -t $(SW_SERVER_IMAGE) .

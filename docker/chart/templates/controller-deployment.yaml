@@ -57,6 +57,8 @@ spec:
             failureThreshold: 15
           env:
             {{ include "chart.mirror.env" . | nindent 12 }}
+            - name: JAR
+              value: controller
             - name: SW_CONTROLLER_PORT
               value: "{{ .Values.controller.containerPort }}"
             - name: SW_STORAGE_PREFIX

@@ -10,9 +10,7 @@ RUN curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --
     && apt-key fingerprint 0EBFCD88 \
     && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
     && apt-get update \
-    && apt-get install -y docker-ce=5:20.10.14~3-0~ubuntu-focal docker-ce-cli=5:20.10.14~3-0~ubuntu-focal nvidia-docker2 \
-    && apt-get clean all \
-    && rm -rf /var/lib/apt/lists/* /tmp/*
+    && apt-get install -y docker-ce=5:20.10.14~3-0~ubuntu-focal docker-ce-cli=5:20.10.14~3-0~ubuntu-focal nvidia-docker2
 
 VOLUME /var/lib/docker
 EXPOSE 2375 2376
@@ -29,13 +27,15 @@ ENV CUDA_VERSION 11.4.0
 ENV NV_ML_REPO_ENABLED 1
 ENV NV_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
 
-RUN curl -fsSL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH}/7fa2af80.pub | apt-key add - \
-    && echo "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH} /" > /etc/apt/sources.list.d/cuda.list \
-    && if [ ! -z ${NV_ML_REPO_ENABLED} ]; then echo "deb ${NV_ML_REPO_URL} /" > /etc/apt/sources.list.d/nvidia-ml.list; fi \
+RUN apt install -y --no-install-recommends dirmngr \
+    && wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb \
+    && dpkg -i cuda-keyring_1.0-1_all.deb \
+    && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub \
     && apt-get update \
     && apt-get install -y --no-install-recommends cuda-cudart-11-4=${NV_CUDA_CUDART_VERSION} ${NV_CUDA_COMPAT_PACKAGE} \
     && ln -s cuda-11.4 /usr/local/cuda \
     && apt-get clean all \
+    && rm cuda-keyring_1.0-1_all.deb \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
 ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}

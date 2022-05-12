@@ -47,12 +47,13 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 
 # java opts
-ENV JAVA_AGENT_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:5005
-ENV JAVA_JAR=agent
+ENV JDWP_PORT=5005
+ENV JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:$JDWP_PORT
+ENV JAR=agent
 
 WORKDIR /opt/starwhale.java
 # java jar
 COPY jar/agent.jar agent.jar
 COPY jar/controller.jar controller.jar
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_AGENT_OPTS -jar $JAVA_JAR.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar $JAR.jar"]

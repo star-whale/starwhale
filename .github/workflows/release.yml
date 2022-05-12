@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Release by Tag CI
 
 on:
   push:
@@ -21,12 +21,13 @@ jobs:
           cache: "yarn"
           cache-dependency-path: "./console/yarn.lock"
 
-      - name: Install yarn
-        run: npm install -g yarn
-
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
+
+      - name: Install yarn
+        working-directory: ./console
+        run: make install-yarn
 
       - uses: actions/cache@v3
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
@@ -40,12 +41,11 @@ jobs:
       - name: Install project dependencies
         working-directory: ./console
         if: steps.yarn-cache.outputs.cache-hit != 'true' # Over here!
-        run: yarn
-      - name: Yarn lint
+        run: make install-dependencies
+
+      - name: Yarn Build
         working-directory: ./console
-        run: |
-          yarn lint
-          yarn typecheck
+        run: make build-ui
 
       # jar build
       - name: Cache local Maven repository
@@ -64,7 +64,8 @@ jobs:
           cache: 'maven'
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
       - name: Build with Maven
-        run: mvn -B package --file server/pom.xml -DskipTests
+        working-directory: ./server
+        run: make build-package
 
       # docker-hub login
       - name: Log in to Docker Hub
@@ -79,13 +80,14 @@ jobs:
           # Optionally strip `v` prefix
           strip_v: true
       # docker image build
-      - name: Docker build and push controller
+      - name: Docker image build and push
         working-directory: ./docker
         env:
-          RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
-        run: docker build -f Dockerfile.controller -t starwhaleai/controller:$RELEASE_VERSION .;docker push starwhaleai/controller:$RELEASE_VERSION
-      - name: Docker build and push agent
-        working-directory: ./docker
-        env:
-          RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
-        run: docker build -f Dockerfile.agent -t starwhaleai/agent:$RELEASE_VERSION .;docker push starwhaleai/agent:$RELEASE_VERSION
+          RELEASE_VERSION: v${{ steps.tag.outputs.tag }}
+        run: |
+          make build-base VERSION_FORMAT=$RELEASE_VERSION
+          make build-starwhale VERSION_FORMAT=$RELEASE_VERSION
+          make build-taskset VERSION_FORMAT=$RELEASE_VERSION
+          make build-server-when-ui-and-jar-built VERSION_FORMAT=$RELEASE_VERSION
+          make release
+      # todo cli build and upload
