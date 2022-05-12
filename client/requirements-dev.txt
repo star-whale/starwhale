@@ -9,3 +9,7 @@ types-click
 types-setuptools
 types-requests
 types-boto3
+pytest >= 6.0
+testfixtures >= 6.10.3
+pytest-env >= 0.6.0
+pytest-xdist >= 2.0
