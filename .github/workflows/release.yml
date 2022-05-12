@@ -3,9 +3,9 @@ name: Release Docker Image and Pypi Package
 on:
   release:
     types: [published]
-  push:
-    tags:
-      - "v*.*.*"
+
+permissions:
+  contents: read
 
 jobs:
   pypi-release:
@@ -118,6 +118,7 @@ jobs:
           distribution: "adopt"
           cache: "maven"
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
+
       - name: Build with Maven
         working-directory: ./server
         run: make build-package
@@ -141,14 +142,13 @@ jobs:
         with:
           strip_v: true
 
-      - name: Docker image build and push
+      - name: Build and push docker image
         working-directory: ./docker
         env:
           VERSION_FORMAT: ${{ steps.tag.outputs.tag }}
           PYPI_RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
         run: |
-          make build-base
           make build-starwhale
-          make build-taskset
-          make build-server-when-ui-and-jar-built
-          make release
+          make release-starwhale
+          make build-server
+          make release-server

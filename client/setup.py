@@ -26,7 +26,7 @@ setup(
     name="starwhale",
     author="Starwhale Team",
     author_email="developer@starwhale.ai",
-    version=os.environ.get("PYPI_RELEASE_VERSION", "0.1.0"),
+    version=os.environ.get("PYPI_RELEASE_VERSION", "0.1.0").lstrip("v"),
     description="MLOps Platform",
     keywords="MLOps AI",
     url="https://github.com/star-whale/starwhale",
