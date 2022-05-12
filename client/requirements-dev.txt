@@ -4,3 +4,8 @@ flake8==4.0.1
 mypy==0.950
 mypy-extensions==0.4.3
 profimp==0.1.0
+types-PyYAML
+types-click
+types-setuptools
+types-requests
+types-boto3

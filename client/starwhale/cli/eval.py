@@ -2,9 +2,9 @@ import click
 
 from starwhale.cluster import ClusterView, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE
 from starwhale.eval.executor import (
-    EVAL_TASK_TYPE,
-    DEFAULT_SW_TASK_RUN_IMAGE,
+    EvalTaskType,
     EvalExecutor,
+    DEFAULT_SW_TASK_RUN_IMAGE,
 )
 from starwhale.eval.store import EvalLocalStorage
 
@@ -85,8 +85,8 @@ def _cluster_info(project, job, page, size):
 @click.option("--desc", help="evaluation job description")
 @click.option(
     "--phase",
-    type=click.Choice(EVAL_TASK_TYPE),
-    default=EVAL_TASK_TYPE.ALL,
+    type=click.Choice([EvalTaskType.ALL, EvalTaskType.CMP, EvalTaskType.PPL]),
+    default=EvalTaskType.ALL,
     help="evalution run phase",
 )
 @click.option("--gencmd", is_flag=True, help="gen docker run command")

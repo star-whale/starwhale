@@ -139,7 +139,7 @@ class ModelPackage(object):
         self._version = ""
         self._snapshot = None
         self._name = self._swmp_config.name
-        self._manifest = {}  # TODO: use manifest classget_conda_env
+        self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
         self._console = console
 
         self._load_config_envs()

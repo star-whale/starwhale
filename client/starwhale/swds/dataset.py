@@ -2,7 +2,6 @@ import tarfile
 import typing as t
 import yaml
 from pathlib import Path
-from collections import namedtuple
 import platform
 import json
 
@@ -35,26 +34,25 @@ from starwhale.consts import (
     SHORT_VERSION_CNT,
     JSON_INDENT,
     LOCAL_FUSE_JSON_NAME,
-    SWDS_BACKEND_TYPE,
-    DATA_LOADER_KIND,
+    SWDSBackendType,
+    DataLoaderKind,
     SWDS_LABEL_FNAME_FMT,
     SWDS_DATA_FNAME_FMT,
-    SWDS_SUBFILE_TYPE,
+    SWDSSubFileType,
 )
 from starwhale.utils.progress import run_with_progress_bar
 from .store import DataSetLocalStore
 
 
-DS_PROCESS_MODE = namedtuple("DS_PROCESS_MODE", ["DEFINE", "GENERATE"])(
-    "define", "generate"
-)
-D_DS_PROCESS_MODE = DS_PROCESS_MODE.GENERATE
+class DSProcessMode:
+    DEFINE = "define"
+    GENERATE = "generate"
+
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
 D_USER_BATCH_SIZE = 1
-
-ARCHIVE_SWDS_META = "archive.%s" % SWDS_SUBFILE_TYPE.META
+ARCHIVE_SWDS_META = "archive.%s" % SWDSSubFileType.META
 
 
 # TODO: use attr to tune code
@@ -78,7 +76,7 @@ class DataSetConfig(object):
         name: str,
         data_dir: str,
         process: str,
-        mode: str = D_DS_PROCESS_MODE,
+        mode: str = DSProcessMode.GENERATE,
         data_filter: str = "",
         label_filter: str = "",
         pip_req: str = "",
@@ -86,7 +84,7 @@ class DataSetConfig(object):
         tag: t.List[str] = [],
         desc: str = "",
         version: str = DEFAULT_STARWHALE_API_VERSION,
-        attr: dict = {},
+        attr: t.Dict[str, t.Any] = {},
     ) -> None:
         self.name = name
         self.mode = mode
@@ -103,8 +101,8 @@ class DataSetConfig(object):
 
         self._validator()
 
-    def _validator(self):
-        if self.mode not in DS_PROCESS_MODE:
+    def _validator(self) -> None:
+        if self.mode not in (DSProcessMode.DEFINE, DSProcessMode.GENERATE):
             raise NoSupportError(f"{self.mode} mode no support")
 
         if ":" not in self.process:
@@ -148,7 +146,7 @@ class DataSet(object):
         self._swds_config = self.load_dataset_config(self._ds_path)
         self._name = self._swds_config.name
         self._version = ds_version
-        self._manifest = {}
+        self._manifest: t.Dict[str, t.Any] = {}
         self._console = console
         self._store = DataSetLocalStore()
 
@@ -160,12 +158,12 @@ class DataSet(object):
     def __repr__(self) -> str:
         return f"DataSet {self._name} @{self.workdir}"
 
-    def _validator(self):
+    def _validator(self) -> None:
         if not (self.workdir / self._swds_config.data_dir).exists():
             raise FileNotFoundError(f"{self._swds_config.data_dir} no existed")
 
     @logger.catch
-    def _do_build(self):
+    def _do_build(self) -> None:
         # TODO: design dataset layer mechanism
         # TODO: design append some new data into existed dataset
         # TODO: design uniq build steps for model build, swmp build
@@ -285,7 +283,7 @@ class DataSet(object):
             volume_bytes_size=_sw.attr.volume_size,
         )
         self._console.print(f":ghost: import [red]{_obj}[/] to make swds...")
-        if self._swds_config.mode == DS_PROCESS_MODE.GENERATE:
+        if self._swds_config.mode == DSProcessMode.GENERATE:
             logger.info("[info:swds]do make swds_bin job...")
             _obj.make_swds()
             # TODO: need remove workdir in sys.path?
@@ -381,8 +379,8 @@ class DataSet(object):
 
         _manifest = yaml.safe_load(_mf.open())
         _fuse = dict(
-            backend=SWDS_BACKEND_TYPE.FUSE,
-            kind=DATA_LOADER_KIND.SWDS,
+            backend=SWDSBackendType.FUSE,
+            kind=DataLoaderKind.SWDS,
             swds=[],
         )
 
@@ -392,11 +390,11 @@ class DataSet(object):
         swds_bins = [
             _k
             for _k in _manifest["signature"].keys()
-            if _k.startswith("data_") and _k.endswith(SWDS_SUBFILE_TYPE.BIN)
+            if _k.startswith("data_") and _k.endswith(SWDSSubFileType.BIN)
         ]
         path_prefix = f"{ds_name}/{ds_version}/data"
         for idx in range(0, len(swds_bins)):
-            _fuse["swds"].append(
+            _fuse["swds"].append(  # type: ignore
                 dict(
                     bucket=bucket,
                     key=dict(

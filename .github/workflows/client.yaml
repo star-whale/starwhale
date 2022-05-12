@@ -60,15 +60,15 @@ jobs:
           make install-req
           make install-dev-req
 
-      - name: Black format check
+      - name: Black Format Check
         working-directory: ./client
         run: make ci-format-checker
-      - name: Lint check
+      - name: Flake8 Lint Check
         working-directory: ./client
         run: make ci-lint
-      - name: Type Check
+      - name: Mypy Type Check
         working-directory: ./client
-        run: make ci-type
+        run: make ci-mypy
 
   unittest:
     runs-on: ubuntu-latest
