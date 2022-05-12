@@ -1,3 +1,4 @@
+import os
 from setuptools import setup, find_packages
 
 install_requires = [
@@ -25,7 +26,7 @@ setup(
     name="starwhale",
     author="Starwhale Team",
     author_email="developer@starwhale.ai",
-    version="0.1.0.dev15",
+    version=os.environ.get("PYPI_RELEASE_VERSION", "0.1.0"),
     description="MLOps Platform",
     keywords="MLOps AI",
     url="https://github.com/star-whale/starwhale",

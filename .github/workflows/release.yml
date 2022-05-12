@@ -10,9 +10,60 @@ on:
 jobs:
   pypi-release:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.7"
+          architecture: "x64"
+
+      - name: Get pip cache
+        id: pip-cache-path
+        run: echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: pip-cache
+        with:
+          path: ${{ steps.pip-cache-path.outputs.dir }}
+          key: ${{ runner.os }}-codestyle-${{ hashFiles('client/requirements-dev.txt')}}
+
+      - name: Install dependencies
+        working-directory: ./client
+        run: |
+          make install-req
+          make install-dev-req
+
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+
+      - name: Build Python Package
+        working-directory: ./client
+        env:
+          PYPI_RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
+        run: make build-wheel
+
+      - name: Publish a Python distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1.5.0
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          verbose: true
 
   image-release:
     runs-on: ubuntu-latest
+
+    needs:
+      - pypi-release
 
     steps:
       - uses: actions/checkout@v3
@@ -93,10 +144,11 @@ jobs:
       - name: Docker image build and push
         working-directory: ./docker
         env:
-          RELEASE_VERSION: v${{ steps.tag.outputs.tag }}
+          VERSION_FORMAT: ${{ steps.tag.outputs.tag }}
+          PYPI_RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
         run: |
-          make build-base VERSION_FORMAT=$RELEASE_VERSION
-          make build-starwhale VERSION_FORMAT=$RELEASE_VERSION
-          make build-taskset VERSION_FORMAT=$RELEASE_VERSION
-          make build-server-when-ui-and-jar-built VERSION_FORMAT=$RELEASE_VERSION
+          make build-base
+          make build-starwhale
+          make build-taskset
+          make build-server-when-ui-and-jar-built
           make release

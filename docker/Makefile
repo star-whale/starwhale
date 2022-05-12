@@ -2,7 +2,7 @@ GIT_REVISION = $(shell git rev-parse --short HEAD)
 DATE = $(shell date "+%Y%m%d%H%M%S")
 BASE_VERSION = 0.1.0
 VERSION_FORMAT = ${BASE_VERSION}-nightly-${DATE}-${GIT_REVISION}
-SW_VERSION := 0.1.0.dev15
+PYPI_RELEASE_VERSION = 0.1.0
 
 BASE_IMAGE :=starwhaleai/base:${VERSION_FORMAT}
 NODEJS_IMAGE :=starwhaleai/nodejs:${VERSION_FORMAT}
@@ -18,7 +18,7 @@ build-base:
 	docker build -f Dockerfile.base -t $(BASE_IMAGE) .
 
 build-starwhale:
-	docker build --build-arg BASE_IMAGE=$(BASE_IMAGE) --build-arg SW_VERSION=$(SW_VERSION) -f Dockerfile.sw -t $(SW_IMAGE) .
+	docker build --build-arg BASE_IMAGE=$(BASE_IMAGE) --build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) -f Dockerfile.sw -t $(SW_IMAGE) .
 	docker tag $(SW_IMAGE) $(SW_LATEST_IMAGE)
 
 release:
@@ -36,8 +36,7 @@ build-nodejs:
 	docker build -t ${NODEJS_IMAGE} -f Dockerfile.nodejs .
 
 build-ui:
-	docker run --rm -it -v $(ROOT_DIR)console:/app -w /app starwhaleai/nodejs:0.1.0-nightly-20220505190936 yarn install;
-	docker run --rm -it -v $(ROOT_DIR)console:/app -w /app starwhaleai/nodejs:0.1.0-nightly-20220505190936 yarn build;
+	docker run --rm -it -v $(ROOT_DIR)console:/app -w /app starwhaleai/nodejs:0.1.0-nightly-20220505190936 bash -c "yarn install && yarn build"
 
 build-jar-with-ui: build-ui build-jar
 

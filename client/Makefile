@@ -13,7 +13,7 @@ build-wheel: check clean
 upload-pypi:
 	twine upload dist/*
 
-build-dev-wheel:
+install-dev-wheel:
 	python3 -m pip install -e .
 
 install-dev-req:
