@@ -1,0 +1,15 @@
+[report]
+omit =
+  */site-packages/*
+  */dist/*
+  */build/*
+show_missing = true
+exclude_lines =
+  pragma: no cover
+  def __repr__
+  def __str__
+  raise NotImplementedError
+  if __name__ == .__main__.:
+
+[run]
+relative_files = True
