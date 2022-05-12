@@ -57,6 +57,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
             .deviceAmount(jobEntity.getDeviceAmount())
             .jobStatus(jobEntity.getJobStatus())
             .stopTime(localDateTimeConvertor.convert(jobEntity.getFinishedTime()))
+            .comment(jobEntity.getComment())
             .build();
     }
 
