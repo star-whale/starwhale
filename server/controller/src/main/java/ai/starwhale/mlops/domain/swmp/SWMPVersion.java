@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.swds;
+package ai.starwhale.mlops.domain.swmp;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,16 +25,17 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class SWDSObject {
+public class SWMPVersion {
 
     private Long id;
 
     private String name;
 
-    private Long projectId;
-
     private Long ownerId;
 
-    private SWDSVersion currentVersion;
+    private String tag;
 
+    private String meta;
+
+    private String storagePath;
 }

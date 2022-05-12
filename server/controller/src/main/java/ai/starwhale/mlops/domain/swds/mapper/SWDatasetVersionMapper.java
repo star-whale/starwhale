@@ -22,7 +22,9 @@ import org.apache.ibatis.annotations.Param;
 
 public interface SWDatasetVersionMapper {
 
-    List<SWDatasetVersionEntity> listVersions(@Param("datasetId")Long datasetId, @Param("namePrefix")String namePrefix);
+    List<SWDatasetVersionEntity> listVersions(@Param("datasetId")Long datasetId,
+        @Param("namePrefix")String namePrefix,
+        @Param("tag")String tag);
 
     SWDatasetVersionEntity getVersionById(@Param("dsVersionId")Long dsVersionId);
 

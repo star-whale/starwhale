@@ -143,8 +143,14 @@ public interface DatasetApi {
             in = ParameterIn.QUERY,
             description = "Dataset version name prefix",
             schema = @Schema())
-        @RequestParam(value = "dsVersionName", required = false)
-            String dsVersionName,
+        @RequestParam(value = "vName", required = false)
+            String vName,
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "Dataset version tag",
+            schema = @Schema())
+        @RequestParam(value = "vTag", required = false)
+        String vTag,
         @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
         @Valid
         @RequestParam(value = "pageNum", required = false, defaultValue = "1")

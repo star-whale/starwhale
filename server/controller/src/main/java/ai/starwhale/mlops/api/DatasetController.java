@@ -31,7 +31,7 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.RandomUtil;
 import ai.starwhale.mlops.domain.swds.SWDSFile;
 import ai.starwhale.mlops.domain.swds.SWDSObject;
-import ai.starwhale.mlops.domain.swds.SWDSObject.Version;
+import ai.starwhale.mlops.domain.swds.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.SWDatasetService;
 import ai.starwhale.mlops.domain.swds.upload.SwdsUploader;
 import ai.starwhale.mlops.domain.user.User;
@@ -86,7 +86,7 @@ public class DatasetController implements DatasetApi{
         SWDSObject swmp = SWDSObject.builder()
             .id(idConvertor.revert(datasetId))
             .projectId(idConvertor.revert(projectId))
-            .latestVersion(Version.builder().id(idConvertor.revert(revertRequest.getVersionId())).build())
+            .currentVersion(SWDSVersion.builder().id(idConvertor.revert(revertRequest.getVersionId())).build())
             .build();
         Boolean res = swDatasetService.revertVersionTo(swmp);
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
@@ -119,12 +119,15 @@ public class DatasetController implements DatasetApi{
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVO>>> listDatasetVersion(
-        String projectId, String datasetId, String dsVersionName, Integer pageNum, Integer pageSize) {
+        String projectId, String datasetId, String vName, String tag, Integer pageNum, Integer pageSize) {
         PageInfo<DatasetVersionVO> pageInfo = swDatasetService.listDatasetVersionHistory(
             SWDSObject.builder()
                 .projectId(idConvertor.revert(projectId))
                 .id(idConvertor.revert(datasetId))
-                .latestVersion(Version.builder().name(dsVersionName).build())
+                .build(),
+            SWDSVersion.builder()
+                .name(vName)
+                .tag(tag)
                 .build(),
             PageParams.builder()
                 .pageNum(pageNum)
@@ -177,7 +180,7 @@ public class DatasetController implements DatasetApi{
     public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(String projectId, String datasetId,
         String versionId, String tag) {
         Boolean res = swDatasetService.modifySWDSVersion(
-            Version.builder().id(idConvertor.revert(versionId)).tag(tag).build());
+            SWDSVersion.builder().id(idConvertor.revert(versionId)).tag(tag).build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -228,7 +231,7 @@ public class DatasetController implements DatasetApi{
         }
         SWDSObject swmp = SWDSObject.builder()
             .id(datasetId)
-            .latestVersion(Version.builder()
+            .currentVersion(SWDSVersion.builder()
                 .storagePath(path)
                 .meta(meta)
                 .name(RandomUtil.randomHexString(8))
