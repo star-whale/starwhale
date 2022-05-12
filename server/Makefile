@@ -1,4 +1,4 @@
 build-package:
 	mvn -B package -DskipTests
-ci-unit-test:
-	mvn test
+ci-package-with-unit-test:
+	mvn -B package

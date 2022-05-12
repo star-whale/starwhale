@@ -57,6 +57,4 @@ jobs:
 
       - name: Build with Maven
         working-directory: ./server
-        run: |
-          make build-package
-          make ci-unit-test
+        run: make ci-package-with-unit-test

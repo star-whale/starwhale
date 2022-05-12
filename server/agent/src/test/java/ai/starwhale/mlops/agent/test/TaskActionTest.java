@@ -66,7 +66,7 @@ import static org.mockito.ArgumentMatchers.any;
                 "sw.agent.node.sourcePool.init.enabled=false",
                 // when test,please set these properties with debug configuration
                 //"sw.storage.s3-config.endpoint=http://${ip}:9000",
-                //"sw.agent.basePath=""
+                "sw.agent.basePath=/var/starwhale"
         },
         locations = "classpath:application-integrationtest.yaml"
 )
@@ -101,10 +101,19 @@ public class TaskActionTest {
     @Autowired
     private FileSystemPath fileSystemPath;
 
+    private void pre() throws IOException {
+        if(Files.exists(Path.of(agentProperties.getBasePath()))) {
+            // clear local dir
+            FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+        } else {
+            Files.createDirectory(Path.of(agentProperties.getBasePath()));
+        }
+
+    }
+
     @Test
     public void testPreparing2Running() throws IOException {
-        // clear local dir
-        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+        pre();
 
         Mockito.when(containerClient.createAndStartContainer(any()))
                 .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
@@ -170,9 +179,7 @@ public class TaskActionTest {
 
     @Test
     public void testMonitorTask() throws Exception {
-        // clear local dir
-        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
-
+        pre();
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
                         .id(1234567890L)
@@ -252,8 +259,7 @@ public class TaskActionTest {
 
     @Test
     public void testUpload() throws IOException {
-        // clear local dir
-        FileUtils.cleanDirectory(new File(agentProperties.getBasePath()));
+        pre();
 
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
@@ -326,7 +332,8 @@ public class TaskActionTest {
 
 
     @Test
-    public void testArchived() {
+    public void testArchived() throws IOException {
+        pre();
         InferenceTask task = InferenceTask.builder()
                 .id(1234567890L)
                 .containerId("container-1")
