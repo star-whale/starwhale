@@ -36,6 +36,9 @@ ci-mypy:
 
 ut:
 	echo "ut"
+	pytest tests -vvrfEsx
 
 install-req:
 	python3 -m pip install .
+
+all-check: ci-format-checker ci-lint ci-mypy ut
