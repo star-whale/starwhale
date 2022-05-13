@@ -19,12 +19,13 @@
     "noEmit": true,
     "jsx": "react",
     "typeRoots": [
-      "./@types",
+      "./types",
       "./node_modules/@types",
     ]
   },
   "include": [
     "src",
+    "types"
   ],
   "exclude": [
     "src/stories",
