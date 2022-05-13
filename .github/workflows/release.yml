@@ -144,7 +144,7 @@ jobs:
       - name: Build and push docker image
         working-directory: ./docker
         env:
-          VERSION_FORMAT: ${{ steps.tag.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
           PYPI_RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
         run: |
           make build-server
