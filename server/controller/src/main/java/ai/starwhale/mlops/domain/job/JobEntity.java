@@ -73,5 +73,6 @@ public class JobEntity extends BaseEntity {
 
     private String resultOutputPath;
 
+    private String comment;
 
 }

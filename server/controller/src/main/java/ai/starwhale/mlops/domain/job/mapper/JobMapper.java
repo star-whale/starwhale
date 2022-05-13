@@ -37,4 +37,8 @@ public interface JobMapper {
     void updateJobFinishedTime(@Param("jobIds") List<Long> jobIds,@Param("finishedTime")LocalDateTime finishedTime);
 
     void updateJobResultPath(@Param("jobId")Long jobId, @Param("resultDir")String resultDir);
+
+    int updateJobComment(@Param("id")Long id, @Param("comment")String comment);
+
+    int updateJobCommentByUUID(@Param("uuid")String uuid, @Param("comment")String comment);
 }

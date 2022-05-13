@@ -40,6 +40,7 @@ import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.time.LocalDateTime;
@@ -122,6 +123,16 @@ public class JobService {
 
     public Object getJobResult(Long projectId, Long jobId) {
         return resultQuerier.resultOfJob(jobId);
+    }
+
+    public Boolean updateJobComment(Long projectId, String jid, String comment) {
+        int res;
+        if(StrUtil.isNumeric(jid)){
+            res = jobMapper.updateJobComment(Long.valueOf(jid), comment);
+        } else {
+            res = jobMapper.updateJobCommentByUUID(jid, comment);
+        }
+        return res > 0;
     }
 
     public Long createJob(Long projectId, Long imageId, Long modelVersionId, List<Long> datasetVersionIds, Integer deviceType, int deviceCount) {

@@ -26,6 +26,8 @@ import ai.starwhale.mlops.common.InvokerManager;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.task.TaskService;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
@@ -127,4 +129,15 @@ public class JobController implements JobApi{
         return ResponseEntity.ok(Code.success.asResponse(jobResult));
     }
 
+    @Override
+    public ResponseEntity<ResponseMessage<String>> modifyJobComment(String projectId, String jobId,
+        String comment) {
+        Boolean res = jobService.updateJobComment(idConvertor.revert(projectId), jobId, comment);
+
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update job comment failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
 }

@@ -70,6 +70,9 @@ public class JobVO implements Serializable {
     @JsonProperty("jobStatus")
     private JobStatus jobStatus;
 
+    @JsonProperty("comment")
+    private String comment;
+
     @JsonProperty("duration")
     public Long getDuration(){
         if(null == stopTime || stopTime <=0){

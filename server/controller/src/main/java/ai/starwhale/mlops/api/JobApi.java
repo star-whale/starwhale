@@ -35,6 +35,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -166,4 +167,33 @@ public interface JobApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("jobId")
             String jobId);
+
+    @Operation(summary = "Set Job Comment")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "OK",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = String.class)))
+        })
+    @PutMapping(value = "/project/{projectId}/job/{jobId}/comment")
+    ResponseEntity<ResponseMessage<String>> modifyJobComment(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project id",
+            schema = @Schema())
+        @PathVariable("projectId")
+        String projectId,
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Job id or uuid",
+            required = true,
+            schema = @Schema())
+        @PathVariable("jobId")
+        String jobId,
+        @Valid @RequestParam(value = "comment", required = false)
+        String comment);
 }

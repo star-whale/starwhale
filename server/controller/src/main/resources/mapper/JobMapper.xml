@@ -23,6 +23,7 @@
                j.device_type,
                j.device_amount,
                j.result_output_path as job_result_output_path,
+               j.job_comment,
                p.id as project_id,
                p.project_name,
                u.id as user_id,
@@ -108,6 +109,16 @@
         update job_info set result_output_path = #{resultDir} WHERE id = #{jobId}
     </update>
 
+    <update id="updateJobComment">
+        update job_info set job_comment = #{comment}
+        where id = #{id}
+    </update>
+
+    <update id="updateJobCommentByUUID">
+        update job_info set job_comment = #{comment}
+        where job_uuid = #{uuid}
+    </update>
+
     <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.JobEntity" useGeneratedKeys="true" keyProperty="id">
         insert into job_info(job_uuid,
                              project_id,
@@ -150,6 +161,7 @@
         <result property="deviceType" column="device_type" />
         <result property="deviceAmount" column="device_amount" />
         <result property="resultOutputPath" column="job_result_output_path" />
+        <result property="comment" column="job_comment"/>
         <association property="project" resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
         <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper.swmpVersionResultMap" />
         <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
