@@ -243,7 +243,7 @@ class EvalExecutor(object):
 
         rundir = self._workdir / typ
 
-        cmd = ["docker", "run", "--net=host"]
+        cmd = ["docker", "run", "--net=host", "--pull=always"]
         cmd += [
             "-v",
             f"{rundir}:{_CNTR_WORKDIR}",
