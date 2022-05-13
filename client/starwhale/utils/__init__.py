@@ -39,7 +39,6 @@ def get_external_python_version() -> t.Any:
             "-c",
             "import sys; _v = sys.version_info; print(f'{_v,major}.{_v.minor}.{_v.micro}')",
         ],
-        stderr=sys.stderr,
     )
 
 
@@ -59,7 +58,6 @@ def is_venv() -> bool:
             "-c",
             "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))",  # noqa: E501
         ],
-        stderr=sys.stdout,
     )
     return "True" in str(output)
 
