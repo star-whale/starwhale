@@ -4,9 +4,6 @@ on:
   release:
     types: [published]
 
-permissions:
-  contents: read
-
 jobs:
   pypi-release:
     runs-on: ubuntu-latest
@@ -53,11 +50,13 @@ jobs:
         run: make build-wheel
 
       - name: Publish a Python distribution to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1.5.0
+        uses: pypa/gh-action-pypi-publish@v1.5.0
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
           verbose: true
+          packages_dir: client/dist/
+          verify_metadata: false
 
   image-release:
     runs-on: ubuntu-latest
