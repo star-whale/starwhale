@@ -20,6 +20,7 @@ DOCKER_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := $(dir $(abspath $(DOCKER_DIR)))
 
 define build-image
+	docker pull ${GHCR_IO_REPO}/$(1):latest || true
 	docker build --build-arg BASE_IMAGE=$(DH_BASE_IMAGE) --build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) -f Dockerfile.$(1) -t ${DOCKER_HUB_REPO}/$(1):$(2) .
 	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${DOCKER_HUB_REPO}/$(1):latest
 	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${GHCR_IO_REPO}/$(1):$(2)
