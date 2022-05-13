@@ -147,7 +147,7 @@ jobs:
           VERSION_FORMAT: ${{ steps.tag.outputs.tag }}
           PYPI_RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
         run: |
-          make build-starwhale
-          make release-starwhale
           make build-server
           make release-server
+          make build-starwhale
+          make release-starwhale
