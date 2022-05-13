@@ -49,7 +49,9 @@ jobs:
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
+        run: |
+          echo "::set-output name=dir::"
+          yarn cache dir
 
       - name: Install yarn
         working-directory: ./console
