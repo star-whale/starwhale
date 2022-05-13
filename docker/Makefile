@@ -1,8 +1,6 @@
 GIT_REVISION = $(shell git rev-parse --short HEAD)
 DATE = $(shell date "+%Y%m%d")
-BASE_VERSION = 0.1.0
-RELEASE_VERSION = ${BASE_VERSION}-nightly-${DATE}-${GIT_REVISION}
-PYPI_RELEASE_VERSION = 0.1.0.dev15
+LATEST_R_VERSION = 0.1.1
 
 DOCKER_HUB_REPO := starwhaleai
 GHCR_IO_REPO := ghcr.io/star-whale
@@ -18,6 +16,14 @@ DH_NODEJS_IMAGE := ${DOCKER_HUB_REPO}/nodejs:${FIXED_VERSION_NODEJS_IMAGE}
 
 DOCKER_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := $(dir $(abspath $(DOCKER_DIR)))
+
+ifndef RELEASE_VERSION
+	RELEASE_VERSION = ${LATEST_R_VERSION}-nightly-${DATE}-${GIT_REVISION}
+endif
+
+ifndef PYPI_RELEASE_VERSION
+	PYPI_RELEASE_VERSION = 0.1.0.dev15
+endif
 
 define build-image
 	docker pull ${GHCR_IO_REPO}/$(1):latest || true
