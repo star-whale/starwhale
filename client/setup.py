@@ -1,3 +1,4 @@
+import os
 from setuptools import setup, find_packages
 
 install_requires = [
@@ -21,11 +22,22 @@ install_requires = [
 ]
 
 
+def _format_version() -> str:
+    _v = os.environ.get("PYPI_RELEASE_VERSION", "0.1.0.alpha1")
+    _v = _v.lstrip("v").replace("-", ".")
+    _vs = _v.split(".", 3)
+    if len(_vs) == 4:
+        _vs[-1] = _vs[-1].replace(".", "")
+        return ".".join(_vs)
+    else:
+        return _v
+
+
 setup(
     name="starwhale",
     author="Starwhale Team",
     author_email="developer@starwhale.ai",
-    version="0.1.0.dev15",
+    version=_format_version(),
     description="MLOps Platform",
     keywords="MLOps AI",
     url="https://github.com/star-whale/starwhale",
