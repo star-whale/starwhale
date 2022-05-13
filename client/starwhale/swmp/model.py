@@ -195,7 +195,7 @@ class ModelPackage(object):
         mp = cls._load_runnable_mp(swmp, _model_yaml_fname, kw)
         _obj = mp._load_user_ppl_obj(kw)
         _obj._starwhale_internal_run_cmp()
-        logger.info(f"finish run cmp: {_obj}")
+        mp._console.print(f":clap: finish run cmp: {_obj}")
 
     @classmethod
     def ppl(
@@ -207,7 +207,7 @@ class ModelPackage(object):
         mp = cls._load_runnable_mp(swmp, _model_yaml_fname, kw)
         _obj = mp._load_user_ppl_obj(kw)
         _obj._starwhale_internal_run_ppl()
-        logger.info(f"finish run ppl: {_obj}")
+        mp._console.print(f":clap: finish run ppl: {_obj}")
 
     def _load_user_ppl_obj(self, kw: dict = {}):
         from starwhale.api._impl.model import _RunConfig
@@ -215,7 +215,7 @@ class ModelPackage(object):
         _RunConfig.set_env(kw)
 
         _s = f"{self._swmp_config.run.ppl}@{self.workdir}"
-        logger.info(f"try to import {_s}...")
+        self._console.print(f"try to import {_s}...")
         _cls = import_cls(self.workdir, self._swmp_config.run.ppl)
         return _cls()
 
