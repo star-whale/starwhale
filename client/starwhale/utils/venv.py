@@ -5,7 +5,7 @@ from pathlib import Path
 import shutil
 
 from loguru import logger
-import conda_pack
+import conda_pack  # type: ignore
 from rich import print as rprint
 from rich.console import Console
 
@@ -77,19 +77,21 @@ def venv_setup(venvdir: t.Union[str, Path]) -> None:
     check_call(f"python3 -m venv {venvdir}", shell=True)
 
 
-def pip_freeze(path: t.Union[str, Path]):
+def pip_freeze(path: t.Union[str, Path]) -> None:
     # TODO: add cmd timeout and error log
     check_call(f"pip freeze > {path}", shell=True)
 
 
-def conda_export(path: t.Union[str, Path], env: str = ""):
+def conda_export(path: t.Union[str, Path], env: str = "") -> None:
     # TODO: add cmd timeout
     cmd = f"{get_conda_bin()} env export"
     env = f"-n {env}" if env else ""
     check_call(f"{cmd} {env} > {path}", shell=True)
 
 
-def conda_restore(env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]):
+def conda_restore(
+    env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]
+) -> None:
     cmd = f"{get_conda_bin()} env update --file {env_fpath} --prefix {target_env}"
     check_call(cmd, shell=True)
 
