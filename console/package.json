@@ -101,7 +101,9 @@
     "lint": "eslint -c .eslintrc.js './src/**/*.{ts,tsx}'",
     "lint:fix": "eslint --fix -c .eslintrc.js './src/**/*.{ts,tsx}'",
     "storybook": "start-storybook -p 6006 -s public",
-    "build-storybook": "build-storybook -s public"
+    "build-storybook": "build-storybook -s public",
+    "cy:run": "cypress run",
+    "cy:open": "cypress open"
   },
   "eslintConfig": {
     "extends": [
