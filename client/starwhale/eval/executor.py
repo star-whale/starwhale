@@ -26,7 +26,7 @@ from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
 
-DEFAULT_SW_TASK_RUN_IMAGE = "starwhaleai/starwhale:latest"
+DEFAULT_SW_TASK_RUN_IMAGE = "ghcr.io/star-whale/starwhale:latest"
 
 
 class EvalTaskType:
