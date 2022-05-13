@@ -5,13 +5,15 @@ LATEST_R_VERSION = 0.1.1
 DOCKER_HUB_REPO := starwhaleai
 GHCR_IO_REPO := ghcr.io/star-whale
 
-# Please update base/nodejs/taskset image version by manual, DOT NOT USE RELEASE TAG.
+# Please update base/nodejs/taskset/base_server image version by manual, DOT NOT USE RELEASE TAG.
 # These images versions are slow to release.
 FIXED_VERSION_BASE_IMAGE := 0.1.1
 FIXED_VERSION_NODEJS_IMAGE := 0.1.1
 FIXED_VERSION_TASKSET_IMAGE := 0.1.1
+FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.1
 
 DH_BASE_IMAGE := ${DOCKER_HUB_REPO}/base:${FIXED_VERSION_BASE_IMAGE}
+DH_BASE_SERVER_IMAGE := ${DOCKER_HUB_REPO}/base_server:${FIXED_VERSION_BASE_SERVER_IMAGE}
 DH_NODEJS_IMAGE := ${DOCKER_HUB_REPO}/nodejs:${FIXED_VERSION_NODEJS_IMAGE}
 
 DOCKER_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -27,7 +29,7 @@ endif
 
 define build-image
 	docker pull ${GHCR_IO_REPO}/$(1):latest || true
-	docker build --build-arg BASE_IMAGE=$(DH_BASE_IMAGE) --build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) -f Dockerfile.$(1) -t ${DOCKER_HUB_REPO}/$(1):$(2) .
+	docker build --build-arg BASE_IMAGE=$(DH_BASE_IMAGE) --build-arg BASE_SERVER_IMAGE=$(DH_BASE_SERVER_IMAGE) --build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) -f Dockerfile.$(1) -t ${DOCKER_HUB_REPO}/$(1):$(2) .
 	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${DOCKER_HUB_REPO}/$(1):latest
 	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${GHCR_IO_REPO}/$(1):$(2)
 	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${GHCR_IO_REPO}/$(1):latest
@@ -45,6 +47,12 @@ build-base:
 
 release-base:
 	$(call push-image,base,${FIXED_VERSION_BASE_IMAGE})
+
+build-base-server:
+	$(call build-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
+
+release-base-server:
+	$(call push-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
 
 build-starwhale:
 	$(call build-image,starwhale,${RELEASE_VERSION})

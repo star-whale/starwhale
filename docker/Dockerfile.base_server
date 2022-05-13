@@ -1,0 +1,47 @@
+FROM ubuntu:20.04
+
+COPY external/sources.list /etc/apt/sources.list
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+ENV TZ=Etc/UTC
+
+# nvidia driver version
+ARG NV_DRIVER_VERSION=470
+ENV NV_DRIVER_VERSION ${NV_DRIVER_VERSION}
+
+# Install os dependence\OpenJDK-11\nvidia-smi
+RUN apt-get update \
+    && apt-get install -y openjdk-11-jdk \
+    && apt-get install -y --no-install-recommends nvidia-driver-${NV_DRIVER_VERSION} \
+    && apt-get install -y --no-install-recommends \
+    wget locales make cmake build-essential software-properties-common curl sudo ca-certificates apt-transport-https iputils-ping net-tools openssh-server net-tools gcc-aarch64-linux-gnu \
+    zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils gpg-agent \
+    && locale-gen en_US.UTF-8
+
+# cuda runtime
+ENV NVARCH x86_64
+ENV NVIDIA_REQUIRE_CUDA "cuda>=11.4 brand=tesla,driver>=418,driver<419 brand=tesla,driver>=440,driver<441 brand=tesla,driver>=450,driver<451 brand=tesla,driver>=460,driver<461"
+ENV NV_CUDA_CUDART_VERSION 11.4.43-1
+ENV NV_CUDA_COMPAT_PACKAGE cuda-compat-11-4
+ENV CUDA_VERSION 11.4.0
+
+ENV NV_ML_REPO_ENABLED 1
+ENV NV_ML_REPO_URL https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu2004/${NVARCH}
+
+RUN apt install -y --no-install-recommends dirmngr \
+    && wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb \
+    && dpkg -i cuda-keyring_1.0-1_all.deb \
+    && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends cuda-cudart-11-4=${NV_CUDA_CUDART_VERSION} ${NV_CUDA_COMPAT_PACKAGE} \
+    && ln -s cuda-11.4 /usr/local/cuda \
+    && apt-get clean all \
+    && rm cuda-keyring_1.0-1_all.deb \
+    && rm -rf /var/lib/apt/lists/* /tmp/*
+
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
