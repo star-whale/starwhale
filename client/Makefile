@@ -13,7 +13,7 @@ build-wheel: check clean
 upload-pypi:
 	twine upload dist/*
 
-install-dev-wheel:
+install-sw:
 	python3 -m pip install -e .
 
 install-dev-req:
@@ -37,8 +37,5 @@ ci-mypy:
 ut:
 	echo "ut"
 	pytest tests -vvrfEsx --cov-config=.coveragerc --cov=starwhale --cov-report=xml:coverage.xml --cov-report=term-missing
-
-install-req:
-	python3 -m pip install .
 
 all-check: ci-format-checker ci-lint ci-mypy ut

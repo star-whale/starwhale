@@ -3,7 +3,7 @@
 # How to develop
 
 - create conda env: `conda create -n starwhale python=3.7`
-- install req: `make install-req`
+- install req: `make install-sw`
 - install dev-req: `make install-dev-req`
 - write some code
 - debug starwhale cli: `swcli --help` or some other swcli cmds
