@@ -20,12 +20,16 @@ import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.task.LivingTaskCacheImpl;
-import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
+import ai.starwhale.mlops.domain.task.cache.CacheWrapperForWatch;
+import ai.starwhale.mlops.domain.task.cache.LivingTaskCacheImpl;
+import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
+import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForCache;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,19 +41,65 @@ public class TestLivingTaskCache {
 
     TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
 
+    TaskMapper taskMapper = new TaskMapper() {
+        @Override
+        public List<TaskEntity> listTasks(Long jobId) {
+            return null;
+        }
+
+        @Override
+        public TaskEntity findTaskById(Long taskId) {
+            return null;
+        }
+
+        @Override
+        public int addTask(TaskEntity task) {
+            return 0;
+        }
+
+        @Override
+        public int addAll(List<TaskEntity> taskList) {
+            return 0;
+        }
+
+        @Override
+        public void updateTaskStatus(List<Long> taskIds, TaskStatus taskStatus) {
+
+        }
+
+        @Override
+        public List<TaskEntity> findTaskByStatus(TaskStatus taskStatus) {
+            return null;
+        }
+
+        @Override
+        public List<TaskEntity> findTaskByStatusIn(List<TaskStatus> taskStatusList) {
+            return null;
+        }
+
+        @Override
+        public void updateTaskAgent(List<Long> taskIds, Long agentId) {
+
+        }
+    };
+
     @Test
     public void test() {
-        LivingTaskCacheImpl livingTaskCache = new LivingTaskCacheImpl(null,
-            null, new TaskJobStatusHelper(), taskStatusMachine, null, null);
+        List<TaskStatusChangeWatcher> taskStatusChangeWatchers = new LinkedList<>();
+        LivingTaskCacheImpl livingTaskCache = new LivingTaskCacheImpl(null);
+        TaskWatcherForCache taskWatcherForCache = new TaskWatcherForCache(taskStatusMachine,
+            taskMapper, livingTaskCache);
+        taskStatusChangeWatchers.add(taskWatcherForCache);
+        CacheWrapperForWatch cacheWrapperForWatch = new CacheWrapperForWatch(livingTaskCache,taskStatusChangeWatchers);
         Job job = mockJob();
         List<Task> mockedTasks = mockTask(job);
-        livingTaskCache.adopt(
+        cacheWrapperForWatch.adopt(
             mockedTasks, TaskStatus.CREATED);
-        livingTaskCache.update(mockedTasks.subList(10, 20).stream().map(Task::getId).collect(
-                Collectors.toList()),
-            TaskStatus.RUNNING);
+        cacheWrapperForWatch.ofStatus(TaskStatus.CREATED).stream().collect(Collectors.toList()).subList(10, 20).forEach(task -> {
+            task.setStatus(TaskStatus.RUNNING);
+        });
         Assertions.assertEquals(246,
-            livingTaskCache.ofStatus(TaskStatus.CREATED).size());
+            cacheWrapperForWatch.ofStatus(TaskStatus.CREATED).size());
     }
 
     private List<Task> mockTask(Job job) {

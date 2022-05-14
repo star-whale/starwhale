@@ -29,7 +29,7 @@ import ai.starwhale.mlops.domain.swds.SWDatasetEntity;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
-import ai.starwhale.mlops.domain.task.LivingTaskCache;
+import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -95,7 +95,7 @@ public class SwdsUploader {
         StorageAccessService storageAccessService, UserService userService,
         ProjectMapper projectMapper,
         @Qualifier("yamlMapper") ObjectMapper yamlMapper,
-        LivingTaskCache livingTaskCache,
+        @Qualifier("cacheWrapperReadOnly") LivingTaskCache livingTaskCache,
         ProjectManager projectManager) {
         this.hotSwdsHolder = hotSwdsHolder;
         this.swdsMapper = swdsMapper;

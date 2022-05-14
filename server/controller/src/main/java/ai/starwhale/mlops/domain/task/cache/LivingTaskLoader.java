@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task;
+package ai.starwhale.mlops.domain.task.cache;
 
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
+import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.schedule.CommandingTasksChecker;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
@@ -41,6 +45,8 @@ import java.util.stream.Stream;
  * loading tasks
  */
 @Service
+@Order(2)
+@Slf4j
 public class LivingTaskLoader implements CommandLineRunner {
 
     final LivingTaskCache livingTaskCache;
@@ -59,7 +65,7 @@ public class LivingTaskLoader implements CommandLineRunner {
 
     final JobStatusMachine jobStatusMachine;
 
-    public LivingTaskLoader(LivingTaskCache livingTaskCache,
+    public LivingTaskLoader(@Qualifier("cacheWrapperForWatch")LivingTaskCache livingTaskCache,
         SWTaskScheduler swTaskScheduler, CommandingTasksChecker commandingTasksChecker,
         TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter,
         JobBoConverter jobBoConverter,
@@ -90,12 +96,14 @@ public class LivingTaskLoader implements CommandLineRunner {
             }).flatMap(Collection::stream)
             .collect(Collectors.groupingBy(Task::getStatus));
 
+        //save all tasks to taskCache
         collectStatus.entrySet().parallelStream()
             .forEach(entry -> livingTaskCache.adopt(entry.getValue(), entry.getKey()));
 
-        scheduleCreatedTasks(collectStatus.get(TaskStatus.CREATED));
-        checkCommandingTasks(collectStatus.get(TaskStatus.ASSIGNING));
-        checkCommandingTasks(collectStatus.get(TaskStatus.CANCELLING));
+        //make sure all tasks are watchable
+        scheduleCreatedTasks(livingTaskCache.ofStatus(TaskStatus.CREATED));
+        checkCommandingTasks(livingTaskCache.ofStatus(TaskStatus.ASSIGNING));
+        checkCommandingTasks(livingTaskCache.ofStatus(TaskStatus.CANCELLING));
     }
 
     /**
@@ -116,7 +124,7 @@ public class LivingTaskLoader implements CommandLineRunner {
     /**
      * load CREATED tasks on start
      */
-    void scheduleCreatedTasks(List<Task> tasks){
+    void scheduleCreatedTasks(Collection<Task> tasks){
         if (null == tasks) {
             return;
         }
@@ -129,11 +137,12 @@ public class LivingTaskLoader implements CommandLineRunner {
     /**
      * load commanding tasks on start
      */
-    void checkCommandingTasks(List<Task> tasks){
+    void checkCommandingTasks(Collection<Task> tasks){
         if(null == tasks){
             return;
         }
         tasks.parallelStream()
+            .filter(task -> null != task.getAgent())
             .collect(Collectors.groupingBy(Task::getAgent))
             .forEach((agent, taskList) -> commandingTasksChecker
                 .onTaskCommanding(taskBoConverter.toTaskCommand(taskList),agent));
@@ -143,5 +152,6 @@ public class LivingTaskLoader implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         loadLivingTasks();
+        log.info("living task loader loaded");
     }
 }

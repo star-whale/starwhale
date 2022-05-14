@@ -48,11 +48,16 @@ public class TestTaskJobStatusHelper {
 
     @Test
     public void testCollecting() {
+        JobStatus collectingResult = JobStatus.COLLECTING_RESULT;
         List<Task> tasks = List.of(
             mock(CMP, CREATED), successPPL(), successPPL(), successPPL(), successPPL(),
             successPPL());
         logTasks(tasks);
-        JobStatus collectingResult = JobStatus.COLLECTING_RESULT;
+        Assertions.assertEquals(collectingResult, taskJobStatusHelper.desiredJobStatus(tasks));
+        tasks = List.of(
+            mock(CMP, CREATED), mock(CMP, CREATED), successPPL(), successPPL(), successPPL(), successPPL(),
+            successPPL());
+        logTasks(tasks);
         Assertions.assertEquals(collectingResult, taskJobStatusHelper.desiredJobStatus(tasks));
         tasks = List.of(
             mock(CMP, ASSIGNING), successPPL(), successPPL(), successPPL(), successPPL(),

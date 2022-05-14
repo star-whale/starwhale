@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,6 +20,8 @@ import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.dag.DAGEditor;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
@@ -27,7 +29,7 @@ import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
-import ai.starwhale.mlops.domain.task.LivingTaskCache;
+import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -50,6 +52,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -82,6 +85,7 @@ public class JobService {
     private SWTaskScheduler swTaskScheduler;
 
     @Resource
+    @Qualifier("cacheWrapperForWatch")
     private LivingTaskCache livingTaskCache;
 
     @Resource
@@ -95,6 +99,9 @@ public class JobService {
 
     @Resource
     private StoragePathCoordinator storagePathCoordinator;
+
+    @Resource
+    private DAGEditor dagEditor;
 
     public PageInfo<JobVO> listJobs(Long projectId, Long swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -166,7 +173,7 @@ public class JobService {
 //            .collect(Collectors.toList());
 
         jobSWDSVersionMapper.addJobSWDSVersions(jobEntity.getId(), datasetVersionIds);
-
+        dagEditor.jobStatusChange(jobBoConverter.fromEntity(jobMapper.findJobById(jobEntity.getId())),JobStatus.CREATED);
         return jobEntity.getId();
     }
 
@@ -179,8 +186,11 @@ public class JobService {
         allNewJobs.parallel().forEach(job->{
             //one transaction
             final List<Task> tasks = jobSpliterator.split(job);
-            swTaskScheduler.adoptTasks(tasks,job.getJobRuntime().getDeviceClass());
             livingTaskCache.adopt(tasks, TaskStatus.CREATED);
+            List<Long> taskIds = tasks.parallelStream().map(Task::getId)
+                .collect(Collectors.toList());
+            tasks.parallelStream().forEach(task->dagEditor.taskStatusChange(task,TaskStatus.CREATED));
+            swTaskScheduler.adoptTasks(livingTaskCache.ofIds(taskIds),job.getJobRuntime().getDeviceClass());
         });
 
     }
@@ -206,20 +216,20 @@ public class JobService {
             && desiredJobStatus != JobStatus.PAUSED
             && desiredJobStatus != JobStatus.TO_COLLECT_RESULT
             && desiredJobStatus != JobStatus.COLLECTING_RESULT){
-            throw new SWValidationException(ValidSubject.JOB).tip("not running job can't be canceled ");
+            throw new SWValidationException(ValidSubject.JOB).tip("not RUNNING/PAUSED/TO_COLLECT_RESULT/COLLECTING_RESULT job can't be canceled ");
         }
         jobMapper.updateJobStatus(List.of(jobId), JobStatus.TO_CANCEL);
         updateTaskStatus(tasks.parallelStream().filter(task ->
             task.getStatus() == TaskStatus.RUNNING
             || task.getStatus() == TaskStatus.PREPARING
             || task.getStatus() == TaskStatus.ASSIGNING).collect(Collectors.toList()), TaskStatus.TO_CANCEL);
-        List<Task> tobeCanceledTasks = tasks.parallelStream()
+        List<Task> directlyCanceledTasks = tasks.parallelStream()
             .filter(task -> task.getStatus() == TaskStatus.CREATED
                 || task.getStatus() == TaskStatus.PAUSED
                 || task.getStatus() == TaskStatus.UNKNOWN).collect(Collectors.toList());
-        swTaskScheduler.stopSchedule(tobeCanceledTasks.parallelStream().filter(task -> task.getStatus() == TaskStatus.CREATED).map(Task::getId).collect(
+        swTaskScheduler.stopSchedule(directlyCanceledTasks.parallelStream().filter(task -> task.getStatus() == TaskStatus.CREATED).map(Task::getId).collect(
             Collectors.toList()));
-        updateTaskStatus(tobeCanceledTasks, TaskStatus.CANCELED);
+        updateTaskStatus(directlyCanceledTasks, TaskStatus.CANCELED);
     }
 
     /**
@@ -240,7 +250,7 @@ public class JobService {
         }
         swTaskScheduler.stopSchedule(createdTasks.parallelStream().map(Task::getId).collect(
             Collectors.toList()));
-        jobMapper.updateJobStatus(List.of(jobId), JobStatus.PAUSED);
+        createdTasks.forEach(task -> task.setStatus(TaskStatus.PAUSED));
         updateTaskStatus(createdTasks,TaskStatus.PAUSED);
 
     }
@@ -249,23 +259,26 @@ public class JobService {
      * prevent send packet greater than @@GLOBAL.max_allowed_packet
      */
     static final Integer MAX_BATCH_SIZE = 1000;
-    private void updateTaskStatus(Collection<Task> toBeUpdatedTasks,TaskStatus taskStatus) {
-        List<Long> toBeUpdateTaskIds = toBeUpdatedTasks.parallelStream().map(Task::getId).collect(
-            Collectors.toList());
-        if(!CollectionUtils.isEmpty(toBeUpdateTaskIds)){
-            BatchOperateHelper.doBatch(toBeUpdateTaskIds
-                , taskStatus
-                , (tsks, status) -> taskMapper.updateTaskStatus(
-                    tsks.stream().collect(Collectors.toList()),
-                    status)
-                , MAX_BATCH_SIZE);
-            livingTaskCache.update(toBeUpdateTaskIds, taskStatus);
+    private void updateTaskStatus(Collection<Task> tasks,TaskStatus taskStatus) {
+        if(CollectionUtils.isEmpty(tasks)){
+            return;
         }
+        //update in mem
+        tasks.forEach(task -> task.setStatus(taskStatus));
+        //save to db
+        List<Long> taskIds = tasks.parallelStream().map(Task::getId).collect(
+            Collectors.toList());
+        BatchOperateHelper.doBatch(taskIds
+            , taskStatus
+            , (tsks, status) -> taskMapper.updateTaskStatus(
+                tsks.stream().collect(Collectors.toList()),
+                status)
+            , MAX_BATCH_SIZE);
     }
 
     /**
      * transactional
-     * jobStatus RUNNING->PAUSED; taskStatus CREATED->PAUSED
+     * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED
      */
     @Transactional
     public void resumeJob(Long jobId){
@@ -289,10 +302,6 @@ public class JobService {
         }
         Job job = jobBoConverter.fromEntity(jobEntity);
         updateTaskStatus(pausedTasks,TaskStatus.CREATED);
-        pausedTasks = livingTaskCache.ofJob(jobId).parallelStream()
-            .filter(task -> task.getStatus().equals(TaskStatus.CREATED))
-            .collect(
-                Collectors.toList());
         swTaskScheduler.adoptTasks(pausedTasks,job.getJobRuntime().getDeviceClass());
     }
 

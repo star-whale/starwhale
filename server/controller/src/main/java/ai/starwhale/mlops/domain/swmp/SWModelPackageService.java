@@ -30,7 +30,7 @@ import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
-import ai.starwhale.mlops.domain.task.LivingTaskCache;
+import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.User;
@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,6 +93,7 @@ public class SWModelPackageService {
     private ProjectManager projectManager;
 
     @Resource
+    @Qualifier("cacheWrapperReadOnly")
     private LivingTaskCache livingTaskCache;
 
 

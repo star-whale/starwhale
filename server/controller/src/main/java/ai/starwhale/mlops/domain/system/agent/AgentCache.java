@@ -97,7 +97,7 @@ public class AgentCache implements CommandLineRunner {
             .peek(agent -> {
                 if( (now - agent.getConnectTime())> bareTimeMilli && AgentStatus.ONLINE == agent.getStatus()){
                     agent.setStatus(AgentStatus.OFFLINE);
-                    agentStatusWatchers.parallelStream().forEach(watcher->watcher.agentStatusChange(agent,AgentStatus.OFFLINE));
+                    agentStatusWatchers.parallelStream().forEach(watcher->watcher.onAgentStatusChange(agent,AgentStatus.OFFLINE));
                 }
             })
             .map(agent -> agentConverter.toEntity(agent))
@@ -125,7 +125,9 @@ public class AgentCache implements CommandLineRunner {
     private void initCache() {
         List<AgentEntity> agentEntities = agentMapper.listAgents();
         agentEntities.parallelStream().forEach(entity -> {
-            agents.put(entity.getSerialNumber(),agentConverter.fromEntity(entity));
+            Agent agent = agentConverter.fromEntity(entity);
+            agents.put(entity.getSerialNumber(), agent);
+            agentStatusWatchers.forEach(agentStatusWatcher -> agentStatusWatcher.onAgentStatusChange(agent,agent.getStatus()));
         });
     }
 }

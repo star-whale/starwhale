@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.system.agent;
+package ai.starwhale.mlops.domain.dag.mapper;
 
-public interface AgentStatusWatcher {
-    void onAgentStatusChange(Agent agent,AgentStatus newStatus);
+import ai.starwhale.mlops.domain.dag.po.GraphEntity;
+import org.apache.ibatis.annotations.Param;
+
+public interface GraphMapper {
+
+    GraphEntity findByJobId(@Param("jobId") Long jobId);
+
+    void add(@Param("graphEntity") GraphEntity graphEntity);
 }

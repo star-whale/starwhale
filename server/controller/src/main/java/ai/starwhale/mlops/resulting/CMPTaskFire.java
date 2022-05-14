@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,12 +17,13 @@
 package ai.starwhale.mlops.resulting;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.domain.dag.DAGEditor;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.task.LivingTaskCache;
+import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.ResultPathConverter;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,14 +73,16 @@ public class CMPTaskFire {
 
     final ResultPathConverter resultPathConverter;
 
+    final DAGEditor dagEditor;
+
     public CMPTaskFire(JobBoConverter jobBoConverter,
         TaskMapper taskMapper,
         JobMapper jobMapper,
-        LivingTaskCache livingTaskCache,
+        @Qualifier("cacheWrapperForWatch") LivingTaskCache livingTaskCache,
         StorageAccessService storageAccessService,
         TaskBoConverter taskBoConverter,
         SWTaskScheduler swTaskScheduler,
-        ResultPathConverter resultPathConverter) {
+        ResultPathConverter resultPathConverter, DAGEditor dagEditor) {
         this.jobBoConverter = jobBoConverter;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
@@ -87,6 +91,7 @@ public class CMPTaskFire {
         this.taskBoConverter = taskBoConverter;
         this.swTaskScheduler = swTaskScheduler;
         this.resultPathConverter = resultPathConverter;
+        this.dagEditor = dagEditor;
     }
 
     @Transactional
@@ -130,8 +135,11 @@ public class CMPTaskFire {
         jobMapper.updateJobStatus(List.of(job.getId()),JobStatus.COLLECTING_RESULT);
 
         List<Task> cmpTasks = taskBoConverter.fromTaskEntity(List.of(taskEntity), job);
-        swTaskScheduler.adoptTasks(cmpTasks, Clazz.CPU);
+        cmpTasks.parallelStream().forEach(t->{
+            dagEditor.taskStatusChange(t,TaskStatus.CREATED);
+        });
         livingTaskCache.adopt(cmpTasks,TaskStatus.CREATED);
+        swTaskScheduler.adoptTasks(livingTaskCache.ofIds(cmpTasks.parallelStream().map(Task::getId).collect(Collectors.toList())), Clazz.CPU);
     }
 
 }

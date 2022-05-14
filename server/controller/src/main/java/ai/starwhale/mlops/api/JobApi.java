@@ -17,9 +17,11 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.dag.GraphVO;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
+import ai.starwhale.mlops.domain.dag.bo.Graph;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -196,4 +198,26 @@ public interface JobApi {
         String jobId,
         @Valid @RequestParam(value = "comment", required = false)
         String comment);
+
+    @Operation(summary = "DAG of Job")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "OK",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = GraphVO.class)))
+        })
+    @GetMapping(value = "/project/{projectId}/job/{jobId}/dag")
+    ResponseEntity<ResponseMessage<GraphVO>> getJobDAG(@Parameter(
+        in = ParameterIn.PATH,
+        description = "Project id",
+        schema = @Schema())
+    @PathVariable("projectId")
+        String projectId,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("jobId")
+            String jobId);
 }

@@ -71,10 +71,16 @@ public class AgentMocker {
 
     final String serialNumber;
 
+    public AgentMocker(){
+        serialNumber = ip;
+    }
+
     public AgentMocker(String ip){
         this.ip = ip;
         this.serialNumber = ip;
     }
+
+
 
     @Data
     @NoArgsConstructor
@@ -117,21 +123,21 @@ public class AgentMocker {
                 return TaskStatusInterface.PREPARING;
             }
             Random r = new Random();
-            if(r.nextInt(10000) > 99998){
+            if(r.nextInt(10000) > 99996){
                 log.warn("failure of task {}",tt.getId());
                 return TaskStatusInterface.FAIL;
             }
             long runningTime = System.currentTimeMillis() - startTime;
             if(!cancel){
-                if(runningTime > 100){
+                if(runningTime > 1000){
                     return TaskStatusInterface.SUCCESS;
                 }
-                if(runningTime > 20){
+                if(runningTime > 200){
                     return TaskStatusInterface.RUNNING;
                 }
                 return TaskStatusInterface.PREPARING;
             } else {
-                if(runningTime > 2000){
+                if(runningTime > 1000){
                     return TaskStatusInterface.CANCELED;
                 }
                 return TaskStatusInterface.CANCELING;
@@ -154,7 +160,7 @@ public class AgentMocker {
     }
 
     private void statusChange() throws InterruptedException {
-        Thread.sleep(1000);
+        Thread.sleep(100);
         allTasks.values().forEach(RunningTask::statusChange);
         freeDeviceFromFinishedTask();
     }
@@ -184,6 +190,7 @@ public class AgentMocker {
         ResponseEntity<ResponseMessage<ReportResponse>> reportResponseResponseEntity = restTemplate.exchange(reportService, HttpMethod.POST,request, new ParameterizedTypeReference<ResponseMessage<ReportResponse>>(){});
         ResponseMessage<ReportResponse> body = reportResponseResponseEntity.getBody();
         if(!"success".equals(body.getCode())){
+            log.error("------------error------------");
             Assertions.fail();
         }
         removeEndedTasks();
@@ -212,8 +219,12 @@ public class AgentMocker {
 
     private List<TaskReport> taskInfo() {
         return allTasks.values().stream().map(
-            runningTask -> TaskReport.builder().taskType(runningTask.getTt().getTaskType())
-                .id(runningTask.getTt().getId()).status(runningTask.getStatus()).build()).collect(
+            runningTask -> {
+                TaskReport taskReport = TaskReport.builder().taskType(runningTask.getTt().getTaskType())
+                    .id(runningTask.getTt().getId()).status(runningTask.getStatus()).build();
+                log.info("task reported with status {} {}",taskReport.getId(),taskReport.getStatus());
+                return taskReport;
+            }).collect(
             Collectors.toList());
     }
 

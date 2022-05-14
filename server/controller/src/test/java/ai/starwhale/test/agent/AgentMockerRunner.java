@@ -16,6 +16,7 @@
 
 package ai.starwhale.test.agent;
 
+import ch.qos.logback.classic.Level;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -29,7 +30,7 @@ import org.junit.jupiter.api.Test;
  */
 public class AgentMockerRunner {
 
-    int agentNumber = 3;
+    int agentNumber = 13;
 
     int startIp = 50;
 
@@ -39,6 +40,8 @@ public class AgentMockerRunner {
 
     @Test
     public void testMultipleAgent() throws InterruptedException {
+        ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.INFO);
         for(int i=0;i<=agentNumber;i++){
             final int tmpi=i;
             WORKER_THREAD_POOL.submit(()->{

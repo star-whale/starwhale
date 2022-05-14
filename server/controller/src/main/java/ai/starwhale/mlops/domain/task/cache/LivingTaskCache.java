@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task;
+package ai.starwhale.mlops.domain.task.cache;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -34,31 +34,36 @@ public interface LivingTaskCache {
     void adopt(Collection<Task> livingTasks, TaskStatus status);
 
     /**
-     * do business logic caused by status change
-     * @param livingTaskIds
-     * @param status
+     * do cache change caused by status change
+     * @param taskId
+     * @param newStatus
      */
-    void update(Collection<Long> livingTaskIds, TaskStatus status);
+    void update(Long taskId, TaskStatus newStatus);
 
     /**
      *
      * @param taskStatus
-     * @return better if the client can't modify the task returned
+     * @return
      */
     Collection<Task> ofStatus(TaskStatus taskStatus);
 
     /**
      *
-     * @param taskId
-     * @return better if the client can't modify the task returned
+     * @param taskIds
+     * @return
      */
-    Optional<Task> ofId(Long taskId);
+    Collection<Task> ofIds(Collection<Long> taskIds);
 
     /**
      *
      * @param jobId
-     * @return better if the client can't modify the task returned
+     * @return
      */
     Collection<Task> ofJob(Long jobId);
 
+    /**
+     * remove all tasks of job in cache
+     * @param jobId
+     */
+    void clearTasksOf(Long jobId);
 }

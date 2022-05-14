@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,6 @@ import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.system.agent.Agent;
 import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import ai.starwhale.mlops.domain.system.agent.AgentStatusWatcher;
-import ai.starwhale.mlops.domain.task.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -52,15 +51,12 @@ public class CommandingTasksChecker implements AgentStatusWatcher {
 
     final TaskStatusMachine taskStatusMachine;
     final Map<Agent, Set<TaskCommand>> commandingTaskAgentMap;
-    final LivingTaskCache livingTaskCache;
     final SWTaskScheduler swTaskScheduler;
 
     public CommandingTasksChecker(
         TaskStatusMachine taskStatusMachine,
-        LivingTaskCache livingTaskCache,
         SWTaskScheduler swTaskScheduler){
         this.taskStatusMachine = taskStatusMachine;
-        this.livingTaskCache = livingTaskCache;
         this.swTaskScheduler = swTaskScheduler;
         commandingTaskAgentMap = new ConcurrentHashMap<>();
     }
@@ -108,24 +104,24 @@ public class CommandingTasksChecker implements AgentStatusWatcher {
     }
 
     @Override
-    public void agentStatusChange(Agent agent, AgentStatus newStatus) {
+    public void onAgentStatusChange(Agent agent, AgentStatus newStatus) {
         log.debug("agent status change to {} watched by {}",newStatus,this.getClass().getName());
         if(AgentStatus.OFFLINE != newStatus){
             return;
         }
         Set<TaskCommand> taskCommands = commandingTaskAgentMap.get(agent);
-        commandingTaskAgentMap.remove(agent);
         if(null == taskCommands || taskCommands.isEmpty()){
             return;
         }
+        commandingTaskAgentMap.remove(agent);
         reScheduleTasks(taskCommands);
 
     }
 
     private void reScheduleTasks(Set<TaskCommand> taskCommands) {
-        List<Long> taskIds = taskCommands.parallelStream().map(tc -> tc.getTask().getId())
-            .collect(Collectors.toList());
-        livingTaskCache.update(taskIds, TaskStatus.CREATED);
+        taskCommands.forEach(taskCommand -> {
+            taskCommand.getTask().setStatus(TaskStatus.CREATED);
+        });
         Map<Clazz, List<Task>> deviceGroup = taskCommands.parallelStream().map(TaskCommand::getTask)
             .collect(Collectors.groupingBy(task -> task.getJob().getJobRuntime().getDeviceClass()));
         deviceGroup.forEach((deviceClass,tasks)->{
