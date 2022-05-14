@@ -1,3 +1,4 @@
+import typing as t
 import click
 
 from starwhale.cluster import ClusterView, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE
@@ -10,18 +11,18 @@ from starwhale.eval.store import EvalLocalStorage
 
 
 @click.group("local", help="Local mode")
-def _local_mode_cmd():
-    pass
+def _local_mode_cmd() -> None:
+    ...
 
 
 @click.group("cluster", help="Remote cluster mode with starwhale controller")
-def _cluster_mode_cmd():
-    pass
+def _cluster_mode_cmd() -> None:
+    ...
 
 
 @click.group("eval", help="Manage Evaluation in local or cluster mode")
-def eval_cmd():
-    pass
+def eval_cmd() -> None:
+    ...
 
 
 eval_cmd.add_command(_local_mode_cmd)
@@ -29,7 +30,7 @@ eval_cmd.add_command(_cluster_mode_cmd)
 
 
 @_local_mode_cmd.command("list", help="List evaluation result")
-def _local_list():
+def _local_list() -> None:
     EvalLocalStorage().list()
 
 
@@ -41,19 +42,19 @@ def _local_list():
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for projects list"
 )
-def _cluster_list(project, page, size):
+def _cluster_list(project: int, page: int, size: int) -> None:
     ClusterView().list_jobs(project, page, size)
 
 
 @_local_mode_cmd.command("info", help="Get job info with eval version")
 @click.argument("version")
-def _local_info(version):
+def _local_info(version: str) -> None:
     EvalLocalStorage().info(version)
 
 
 @_local_mode_cmd.command("delete", help="Delete eval result")
 @click.argument("version")
-def _local_delete(version):
+def _local_delete(version: str) -> None:
     EvalLocalStorage().delete(version)
 
 
@@ -66,7 +67,7 @@ def _local_delete(version):
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for projects list"
 )
-def _cluster_info(project, job, page, size):
+def _cluster_info(project: int, job: int, page: int, size: int) -> None:
     ClusterView().info_job(project, job, page, size)
 
 
@@ -91,7 +92,16 @@ def _cluster_info(project, job, page, size):
 )
 @click.option("--gencmd", is_flag=True, help="gen docker run command")
 @click.option("--docker-verbose", is_flag=True, help="docker run verbose output")
-def _local_run(model, dataset, baseimage, name, desc, phase, gencmd, docker_verbose):
+def _local_run(
+    model: str,
+    dataset: t.List[str],
+    baseimage: str,
+    name: str,
+    desc: str,
+    phase: str,
+    gencmd: bool,
+    docker_verbose: bool,
+) -> None:
     EvalExecutor(
         model,
         dataset,
@@ -104,16 +114,27 @@ def _local_run(model, dataset, baseimage, name, desc, phase, gencmd, docker_verb
 
 
 @_cluster_mode_cmd.command("run", help="Run evaluation in remote controller cluster")
-@click.option("--model", required=True, help="model id")
-@click.option("--dataset", required=True, multiple=True, help="dataset id, one or more")
-@click.option("--project", help="project id")
+@click.option("--project", type=int, help="project id")
+@click.option("--model", type=int, required=True, help="model id")
+@click.option(
+    "--dataset", required=True, multiple=True, type=int, help="dataset id, one or more"
+)
 @click.option("--baseimage", type=int, help="task baseimage id")
 @click.option(
     "--resource",
     default="cpu:1",
+    type=str,
     help="resource, fmt is resource [name]:[cnt], such as cpu:1, gpu:2",
 )
-@click.option("--name", help="evaluation job name")
-@click.option("--desc", help="evaluation job description")
-def _cluster_run(model, dataset, project, baseimage, resource, name, desc):
+@click.option("--name", type=str, help="evaluation job name")
+@click.option("--desc", type=str, help="evaluation job description")
+def _cluster_run(
+    model: int,
+    dataset: t.List[int],
+    project: int,
+    baseimage: int,
+    resource: str,
+    name: str,
+    desc: str,
+) -> None:
     ClusterView().run_job(model, dataset, project, baseimage, resource, name, desc)
