@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         working-directory: ./client
         run: |
-          make install-req
+          make install-sw
           make install-dev-req
 
       - name: Get tag
