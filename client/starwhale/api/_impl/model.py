@@ -229,13 +229,13 @@ class PipelineHandler(object):
     def _starwhale_internal_run_ppl(self) -> None:
         for data, label in self._data_loader:
             self._sw_logger.info(
-                f"[{data.index}]data-label loaded, data size:{pretty_bytes(data.data_size)}, "
+                f"[{data.idx}]data-label loaded, data size:{pretty_bytes(data.data_size)}, "
                 f"label size:{pretty_bytes(label.data_size)} ,batch:{data.batch_size}"
             )
 
-            if data.index != label.index:
+            if data.idx != label.idx:
                 msg = (
-                    f"data index[{data.index}] is not equal label index [{label.index}], "
+                    f"data index[{data.idx}] is not equal label index [{label.idx}], "
                     f"{'ignore error' if self.ignore_error else ''}"
                 )
                 self._sw_logger.error(msg)
@@ -249,29 +249,29 @@ class PipelineHandler(object):
                 output = self.ppl(
                     data.data,
                     data.batch_size,
-                    data_index=data.index,
+                    data_index=data.idx,
                     data_size=data.data_size,
                     label_content=label.data,
                     label_size=label.data_size,
                     label_batch=label.batch_size,
-                    label_index=label.index,
+                    label_index=label.idx,
                     ds_name=data.ext_attr.get("ds_name", ""),
                     ds_version=data.ext_attr.get("ds_version", ""),
                 )
             except Exception as e:
                 exception = e
-                self._sw_logger.exception(f"[{data.index}] data handle -> failed")
+                self._sw_logger.exception(f"[{data.idx}] data handle -> failed")
                 if not self.ignore_error:
                     self._update_status(self.STATUS.FAILED)
                     raise
             else:
                 exception = None
-                self._sw_logger.info(f"[{data.index}] data handle -> success")
+                self._sw_logger.info(f"[{data.idx}] data handle -> success")
 
             try:
                 self._do_record(output, data, label, exception)
             except Exception as e:
-                self._sw_logger.exception(f"{data.index} data record exception: {e}")
+                self._sw_logger.exception(f"{data.idx} data record exception: {e}")
 
     def _do_record(
         self,
@@ -285,14 +285,14 @@ class PipelineHandler(object):
                 "time": now_str(),  # type: ignore
                 "status": exception is None,
                 "exception": str(exception),
-                "index": data.index,
+                "index": data.idx,
                 "output_size": len(output),
             }
         )
 
         # TODO: output maybe cannot be jsonized
         result = {
-            "index": data.index,
+            "index": data.idx,
             "result": output,
             "batch": data.batch_size,
         }
@@ -301,7 +301,7 @@ class PipelineHandler(object):
                 result["label"] = self.handle_label(
                     label.data,
                     label.batch_size,
-                    index=label.index,
+                    index=label.idx,
                     size=label.data_size,
                 )
             except Exception as e:
