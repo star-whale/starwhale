@@ -4,7 +4,7 @@ from starwhale.cluster import ClusterView, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE
 
 
 @click.group("project", help="starwhale controller project info and operation")
-def project_cmd():
+def project_cmd() -> None:
     pass
 
 
@@ -30,10 +30,11 @@ def project_cmd():
     help="page size for projects list",
 )
 @click.option("--fullname", is_flag=True, help="show version fullname")
-def _list(all_users, page, size, fullname):
+def _list(all_users: bool, page: int, size: int, fullname: bool) -> None:
     ClusterView().list_projects(all_users, page, size, fullname)
 
 
 @project_cmd.command("create", help="create a new project in starwhale controller")
-def _create():
-    pass
+@click.argument("project", type=str)
+def _create(project: str) -> None:
+    ClusterView().create_project(project)

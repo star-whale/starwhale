@@ -221,6 +221,13 @@ class ClusterView(ClusterModel):
         rprint(table)
         return jobs, pager
 
+    def create_project(self, project: str) -> None:
+        success, msg = self._request_create_project(project)
+        if success:
+            rprint(f":clap: success to create {project}")
+        else:
+            rprint(f":collision: failed to create {project}, notice: [red]{msg}[/]")
+
     @_pager  # type: ignore
     @_header  # type: ignore
     def list_projects(

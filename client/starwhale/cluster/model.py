@@ -1,6 +1,8 @@
+from http import HTTPStatus
 import typing as t
 from datetime import datetime, timedelta
 import yaml
+import json
 
 import requests
 
@@ -41,11 +43,22 @@ class ClusterModel(SWCliConfigMixed):
             _url,
             timeout=_DEFAULT_TIMEOUT_SECS,
             verify=False,
-            headers={"Authorization": self._sw_token},
+            headers={
+                "Authorization": self._sw_token,
+                "Content-Type": "application/json",
+            },
             **kw,
         )
         wrap_sw_error_resp(r, path, exit=False, use_raise=False, slient=True)
         return r
+
+    def _request_create_project(self, project: str) -> t.Tuple[bool, str]:
+        r = self.request(
+            "/project",
+            method=HTTPMethod.POST,
+            data=json.dumps({"projectName": project}),
+        )
+        return r.status_code == HTTPStatus.OK, r.json()["message"]
 
     @ignore_error([])
     def _fetch_baseimage(self) -> t.List[str]:
