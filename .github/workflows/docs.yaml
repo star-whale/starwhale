@@ -70,3 +70,12 @@ jobs:
       - name: Build docs
         working-directory: ./docs
         run: make build-docs
+
+      - name: Publish to Github Pages
+        #if: ${{ github.ref == 'refs/heads/master'}} && success()
+        uses: crazy-max/ghaction-github-pages@v2.6.0
+        with:
+          target_branch: gh-pages
+          build_dir: docs/build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
