@@ -1,4 +1,4 @@
-name: Render and publish docs
+name: Render and Publish docs
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
       - name: Use Node.js 16
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 16.x
           cache: "yarn"
           cache-dependency-path: "./docs/yarn.lock"
 
@@ -72,10 +72,10 @@ jobs:
         run: make build-docs
 
       - name: Publish to Github Pages
-        #if: ${{ github.ref == 'refs/heads/master'}} && success()
-        uses: crazy-max/ghaction-github-pages@v2.6.0
+        #if: ${{ github.ref == 'refs/heads/master'}}
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          target_branch: gh-pages
-          build_dir: docs/build
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/build
+          user_name: github-actions[bot]
+          user_email: "github-actions[bot]@users.noreply.github.com"

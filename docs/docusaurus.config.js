@@ -9,7 +9,7 @@ module.exports = {
     onBrokenLinks: 'warn',
     onBrokenMarkdownLinks: 'warn',
     favicon: 'img/favicon.ico',
-    organizationName: 'star-whale',
+    organizationName: 'star-whale.github.io',
     projectName: 'starwhale',
     i18n: {
         defaultLocale: 'en',
