@@ -16,8 +16,8 @@ from starwhale.utils.ui import comparsion
 class ClusterView(ClusterModel):
     def _pager(func):  # type: ignore
         @wraps(func)  # type: ignore
-        def _wrapper(*args, **kwargs):
-            def _print(_r):
+        def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
+            def _print(_r: t.Dict[str, t.Any]) -> None:
                 p = Panel(
                     (
                         f"Counts: [green] {_r['current']}/{_r['total']} [/] :sheep: ,"
@@ -36,10 +36,10 @@ class ClusterView(ClusterModel):
 
     def _header(func):  # type: ignore
         @wraps(func)  # type: ignore
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
             self: ClusterView = args[0]
 
-            def _print():
+            def _print() -> None:
                 grid = Table.grid(expand=True)
                 grid.add_column(justify="center", ratio=1)
                 grid.add_column(justify="right")
@@ -59,15 +59,25 @@ class ClusterView(ClusterModel):
 
     def run_job(
         self,
-        model: int,
-        datasets: t.List[int],
+        model_id: int,
+        dataset_ids: t.List[int],
         project: int,
-        baseimage: int,
-        resource: str,
+        baseimage_id: int,
+        device: str,
         name: str,
         desc: str,
-    ):
-        pass
+    ) -> None:
+        success, msg = self._request_create_job(
+            project, model_id, dataset_ids, baseimage_id, device, name, desc
+        )
+
+        if success:
+            rprint(f":clap: success to create job(project id: {project}) {msg}")
+            rprint(
+                f":writing_hand: run cmd [green]swcli eval cluster info {project} {msg}[/] to fetch job details"
+            )
+        else:
+            rprint(f":collision: failed to create job, notice: [red]{msg}[/]")
 
     @_pager  # type: ignore
     @_header  # type: ignore
@@ -77,11 +87,11 @@ class ClusterView(ClusterModel):
         job: int,
         page: int = DEFAULT_PAGE_NUM,
         size: int = DEFAULT_PAGE_SIZE,
-    ):
+    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         tasks, pager = self._fetch_tasks(project, job, page, size)
         report = self._fetch_job_report(project, job)
 
-        def _print_tasks():
+        def _print_tasks() -> None:
             table = Table(box=box.SIMPLE, expand=True)
             table.add_column("ID", justify="left", style="cyan", no_wrap=True)
             table.add_column("UUID")
@@ -111,13 +121,17 @@ class ClusterView(ClusterModel):
 
         return tasks, pager
 
-    def render_job_report(self, report: dict) -> None:
-        labels: dict = report.get("labels", {})
+    def render_job_report(self, report: t.Dict[str, t.Any]) -> None:
+        if not report:
+            rprint(":turtle: no report")
+            return
+
+        labels: t.Dict[str, t.Any] = report.get("labels", {})
         sort_label_names = sorted(list(labels.keys()))
 
-        def _print_report():
+        def _print_report() -> None:
             # TODO: add other kind report
-            def _r(_tree, _obj):
+            def _r(_tree: t.Any, _obj: t.Any) -> None:
                 if not isinstance(_obj, dict):
                     _tree.add(str(_obj))
 
@@ -150,7 +164,7 @@ class ClusterView(ClusterModel):
             console.rule(f"[bold green]{report['kind'].upper()} Report")
             console.print(comparsion(tree, table))
 
-        def _print_confusion_matrix():
+        def _print_confusion_matrix() -> None:
             cm = report.get("confusion_matrix", {})
             if not cm:
                 return
@@ -176,8 +190,8 @@ class ClusterView(ClusterModel):
         _print_confusion_matrix()
 
     def _pretty_status(self, status: str) -> t.Tuple[str, str, str]:
-        style = ""
-        icon = ":thinking:"
+        style = "blue"
+        icon = ":tractor:"
         if status == "SUCCESS":
             style = "green"
             icon = ":clap:"
@@ -190,7 +204,7 @@ class ClusterView(ClusterModel):
     @_header  # type: ignore
     def list_jobs(
         self, project: int, page: int = DEFAULT_PAGE_NUM, size: int = DEFAULT_PAGE_SIZE
-    ):
+    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         jobs, pager = self._fetch_jobs(project, page, size)
 
         table = Table(
@@ -221,6 +235,13 @@ class ClusterView(ClusterModel):
         rprint(table)
         return jobs, pager
 
+    def create_project(self, project: str) -> None:
+        success, msg = self._request_create_project(project)
+        if success:
+            rprint(f":clap: success to create {project}")
+        else:
+            rprint(f":collision: failed to create {project}, notice: [red]{msg}[/]")
+
     @_pager  # type: ignore
     @_header  # type: ignore
     def list_projects(
@@ -229,11 +250,11 @@ class ClusterView(ClusterModel):
         page: int = DEFAULT_PAGE_NUM,
         size: int = DEFAULT_PAGE_SIZE,
         fullname: bool = False,
-    ):
+    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         user_name = "" if all_users else self.user_name
         projects, pager = self._fetch_projects(user_name, page, size)
 
-        def _show_objects(objects: t.List, typ: str) -> Tree:
+        def _show_objects(objects: t.List[t.Dict[str, t.Any]], typ: str) -> Tree:
             tree = Tree(f"[red]{typ}[/]")
             for _o in objects:
                 otree = tree.add(f"{_o['name']}")
@@ -246,11 +267,11 @@ class ClusterView(ClusterModel):
                         _size = pretty_bytes(_v["meta"]["dataset_byte_size"])
 
                     otree.add(
-                        f"[green]{_v[_k]}[/] :timer_clock: {_v['created_at']} :dizzy:{_size}"
+                        f"[{_v['id']}][green]{_v[_k]}[/] :timer_clock: {_v['created_at']} :dizzy:{_size}"
                     )
             return tree
 
-        def _details(pid: int):
+        def _details(pid: int) -> Table:
             _r = self._inspect_project(pid)
             return comparsion(
                 _show_objects(_r["models"], ProjectObjType.MODEL),
@@ -270,7 +291,7 @@ class ClusterView(ClusterModel):
 
         for p in projects:
             grid.add_row(
-                f"{p['id']} {p['name']}",
+                f"[{p['id']}]{p['name']}",
                 ":arrow_right::arrow_right:",
                 f"default:{p['is_default']} :timer_clock:created:{p['created_at']} :clown_face:owner:{p['owner']} ",
             )
@@ -285,13 +306,13 @@ class ClusterView(ClusterModel):
         return projects, pager
 
     @_header  # type: ignore
-    def info(self):
+    def info(self) -> None:
         # TODO: user async to get
         _baseimages = self._fetch_baseimage()
         _version = self._fetch_version()
         _agents = self._fetch_agents()
 
-        def _agents_table():
+        def _agents_table() -> Table:
             table = Table(
                 show_edge=False,
                 show_header=True,

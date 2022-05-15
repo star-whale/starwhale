@@ -29,7 +29,7 @@ def login(username, password, server):
             sys.exit(1)
 
         _d = r.json()["data"]
-        role = _d.get("role") if isinstance(_d, dict) else None
+        role = _d.get("role", {}).get("roleName") if isinstance(_d, dict) else None
 
         update_swcli_config(
             controller=dict(

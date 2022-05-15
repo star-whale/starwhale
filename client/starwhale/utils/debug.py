@@ -11,10 +11,8 @@ from starwhale.consts import ENV_LOG_LEVEL
 def init_logger(verbose: int) -> None:
     fmt = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>"
     if verbose <= 0:
-        lvl = logging.ERROR
-    elif verbose == 1:
         lvl = logging.WARNING
-    elif verbose == 2:
+    elif verbose == 1:
         lvl = logging.INFO
     else:
         fmt = (

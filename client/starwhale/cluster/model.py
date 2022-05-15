@@ -1,6 +1,8 @@
+from http import HTTPStatus
 import typing as t
 from datetime import datetime, timedelta
 import yaml
+import json
 
 import requests
 
@@ -20,6 +22,7 @@ _fmt_timestamp = lambda x: datetime.fromtimestamp(float(x) / 1000.0).strftime(
     FMT_DATETIME
 )
 _fmt_duration = lambda x: str(timedelta(milliseconds=float(x)))
+_device_id_map = {"cpu": 1, "gpu": 2}
 
 
 class ProjectObjType:
@@ -41,23 +44,73 @@ class ClusterModel(SWCliConfigMixed):
             _url,
             timeout=_DEFAULT_TIMEOUT_SECS,
             verify=False,
-            headers={"Authorization": self._sw_token},
+            headers={
+                "Authorization": self._sw_token,
+                "Content-Type": "application/json",
+            },
             **kw,
         )
         wrap_sw_error_resp(r, path, exit=False, use_raise=False, slient=True)
         return r
 
+    def _request_create_project(self, project: str) -> t.Tuple[bool, str]:
+        r = self.request(
+            "/project",
+            method=HTTPMethod.POST,
+            data=json.dumps({"projectName": project}),
+        )
+        return r.status_code == HTTPStatus.OK, r.json()["message"]
+
+    def _request_create_job(
+        self,
+        project: int,
+        model_id: int,
+        dataset_ids: t.List[int],
+        baseimage_id: int,
+        device: str,
+        name: str,
+        desc: str,
+    ) -> t.Tuple[bool, str]:
+        _did, _dcnt = self._parse_device(device)
+
+        r = self.request(
+            f"/project/{project}/job",
+            method=HTTPMethod.POST,
+            data=json.dumps(
+                {
+                    "modelVersionId": model_id,
+                    "datasetVersionIds": ",".join([str(i) for i in dataset_ids]),
+                    "baseImageId": baseimage_id,
+                    "deviceId": _did,
+                    "deviceCount": _dcnt,
+                }
+            ),
+        )
+        _rt = r.json()
+        if r.status_code == HTTPStatus.OK:
+            return True, _rt["data"]
+        else:
+            return False, _rt["message"]
+
+    def _parse_device(self, device: str) -> t.Tuple[int, int]:
+        _t = device.split(":")
+        _id = _device_id_map.get(_t[0].lower(), _device_id_map["cpu"])
+        _cnt = int(_t[1]) if len(_t) == 2 else 1
+        return _id, _cnt
+
     @ignore_error([])
     def _fetch_baseimage(self) -> t.List[str]:
         r = self.request("/runtime/baseImage")
-        return [i["name"] for i in r.json().get("data", []) if i.get("name")]
+        return [
+            f"[{i['id']}]{i['name']}" for i in r.json().get("data", []) if i.get("name")
+        ]
 
     @ignore_error("--")
     def _fetch_version(self) -> str:
         return self.request("/system/version").json()["data"]["version"]
 
     @ignore_error([])
-    def _fetch_agents(self) -> t.List[dict]:
+    def _fetch_agents(self) -> t.List[t.Dict[str, t.Any]]:
         # TODO: add pageSize to args
         return self.request(
             "/system/agent",
@@ -65,7 +118,7 @@ class ClusterModel(SWCliConfigMixed):
         ).json()["data"]["list"]
 
     @ignore_error({})
-    def _fetch_current_user(self) -> dict:
+    def _fetch_current_user(self) -> t.Dict[str, t.Any]:
         r = self.request("/user/current").json()["data"]
         return dict(name=r["name"], role=r["role"]["roleName"])
 
@@ -75,7 +128,7 @@ class ClusterModel(SWCliConfigMixed):
         user_name: str = "",
         page: int = DEFAULT_PAGE_NUM,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[dict], dict]:
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         # TODO: user params for project api
         r = self.request(
             "/project",
@@ -91,7 +144,7 @@ class ClusterModel(SWCliConfigMixed):
                 dict(
                     id=_p["id"],
                     name=_p["name"],
-                    created_at=_fmt_timestamp(_p["createTime"]),
+                    created_at=_fmt_timestamp(_p["createdTime"]),
                     is_default=_p["isDefault"],
                     owner=owner,
                 )
@@ -107,7 +160,7 @@ class ClusterModel(SWCliConfigMixed):
         )
 
     @ignore_error({})
-    def _inspect_project(self, pid: int, versions_size: int = 10) -> dict:
+    def _inspect_project(self, pid: int, versions_size: int = 10) -> t.Dict[str, t.Any]:
         return {
             "models": self._fetch_project_objects(pid, "model", versions_size),
             "datasets": self._fetch_project_objects(pid, "dataset", versions_size),
@@ -121,12 +174,12 @@ class ClusterModel(SWCliConfigMixed):
     @ignore_error([])
     def _fetch_project_objects(
         self, pid: int, typ: str, versions_size: int = 10
-    ) -> t.List[dict]:
+    ) -> t.List[t.Dict[str, t.Any]]:
         r = self.request(f"/project/{pid}/{typ}", params={"pageSize": _SHOW_ALL})
 
         ret = []
         for _m in r.json()["data"]["list"]:
-            _m["created_at"] = (_fmt_timestamp(_m.pop("createTime")),)
+            _m["created_at"] = (_fmt_timestamp(_m.pop("createdTime")),)
             _m.pop("owner", None)
 
             mvr = self.request(
@@ -136,7 +189,7 @@ class ClusterModel(SWCliConfigMixed):
             versions = []
             for _v in mvr.json()["data"]["list"]:
                 _v["short_name"] = _v["name"][:SHORT_VERSION_CNT]
-                _v["created_at"] = _fmt_timestamp(_v.pop("createTime"))
+                _v["created_at"] = _fmt_timestamp(_v.pop("createdTime"))
                 _v.pop("owner", None)
                 if typ == ProjectObjType.DATASET:
                     _v["meta"] = yaml.safe_load(_v["meta"])
@@ -160,7 +213,7 @@ class ClusterModel(SWCliConfigMixed):
 
         for j in r["data"]["list"]:
             j.pop("owner", None)
-            j["created_at"] = _fmt_timestamp(j["createTime"])
+            j["created_at"] = _fmt_timestamp(j["createdTime"])
             j["finished_at"] = _fmt_timestamp(j["stopTime"])
             j["duration_str"] = _fmt_duration(j["duration"])
             j["short_model_version"] = j["modelVersion"][:SHORT_VERSION_CNT]
@@ -184,12 +237,12 @@ class ClusterModel(SWCliConfigMixed):
 
         tasks = []
         for _t in r["data"]["list"]:
-            _t["created_at"] = _fmt_timestamp(_t["startTime"])
-            tasks.append(t)
+            _t["created_at"] = _fmt_timestamp(_t["createdTime"])
+            tasks.append(_t)
 
         return tasks, self._parse_pager(r)
 
     @ignore_error({})
-    def _fetch_job_report(self, project: int, job: int) -> dict:
+    def _fetch_job_report(self, project: int, job: int) -> t.Dict[str, t.Any]:
         r = self.request(f"/project/{project}/job/{job}/result").json()
-        return r["data"]
+        return r["data"]  # type: ignore

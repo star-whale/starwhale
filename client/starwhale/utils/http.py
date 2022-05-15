@@ -24,7 +24,7 @@ def wrap_sw_error_resp(
 
     _rprint = lambda x: x if slient else rprint
     if r.status_code == HTTPStatus.OK:
-        _rprint(f" :clap: {header} success")
+        _rprint(f":clap: {header} success")
         return
 
     _rprint(f":fearful: {header} failed")
