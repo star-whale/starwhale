@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://raw.githubusercontent.com/star-whale/starwhale/main/docs/src/_static/img/starwhale.png" width="600" style="max-width: 600px;">
+    <img src="https://raw.githubusercontent.com/star-whale/starwhale/main/docs/static/img/starwhale.png" width="600" style="max-width: 600px;">
 </p>
 
 <p align="center">
