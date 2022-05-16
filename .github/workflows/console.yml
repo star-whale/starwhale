@@ -77,7 +77,7 @@ jobs:
         working-directory: ./console
         run: make ci-lint
 
-      - name: E2E lint
-        working-directory: ./console
-        run: |
-          yarn cy:run
+      # - name: E2E lint
+      #   working-directory: ./console
+      #   run: |
+      #     yarn cy:run
