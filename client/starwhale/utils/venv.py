@@ -9,6 +9,7 @@ import conda_pack  # type: ignore
 from rich import print as rprint
 from rich.console import Console
 
+
 from starwhale.utils import (
     get_python_run_env,
     get_python_version,
@@ -26,11 +27,11 @@ from starwhale.utils.process import check_call
 
 CONDA_ENV_TAR = "env.tar.gz"
 DUMP_CONDA_ENV_FNAME = "env-lock.yaml"
-DUMP_PIP_REQ_FNAME = "pip-req-lock.txt"
-DUMP_USER_PIP_REQ_FNAME = "pip-req.txt"
+DUMP_PIP_REQ_FNAME = "requirements-lock.txt"
+DUMP_USER_PIP_REQ_FNAME = "requirements.txt"
 SW_ACTIVATE_SCRIPT = "activate.sw"
 
-SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
+SUPPORTED_PIP_REQ = [DUMP_USER_PIP_REQ_FNAME, "pip-req.txt", "pip3-req.txt"]
 SW_PYPI_INDEX_URL = os.environ.get(
     "SW_PYPI_INDEX_URL", "https://pypi.doubanio.com/simple/"
 )
