@@ -12,6 +12,7 @@ exclude =
     .egg-info
     .git
     .vscode
+    .history
     .tox
     .mypy_cache
     .venv
