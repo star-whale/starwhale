@@ -28,11 +28,11 @@ public class TaskStatusMachine {
 
     final static Map<TaskStatus, Set<TaskStatus>> transferMap = Map.ofEntries(
         new SimpleEntry<>(CREATED, Set.of(ASSIGNING,PAUSED,PREPARING,RUNNING,SUCCESS,FAIL,CANCELED))
-        , new SimpleEntry<>(PAUSED, Set.of(CREATED,CANCELED))
+        , new SimpleEntry<>(PAUSED, Set.of(CREATED,CANCELED,SUCCESS))
         , new SimpleEntry<>(ASSIGNING, Set.of(CREATED,PREPARING,RUNNING,SUCCESS,FAIL,TO_CANCEL))
         , new SimpleEntry<>(PREPARING, Set.of(RUNNING,SUCCESS,FAIL,TO_CANCEL))
         , new SimpleEntry<>(RUNNING, Set.of(SUCCESS,FAIL,TO_CANCEL))
-        , new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING,CANCELED,FAIL))
+        , new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING,CANCELED,SUCCESS,FAIL))
         , new SimpleEntry<>(CANCELLING, Set.of(CANCELLING,CANCELED,FAIL))
         , new SimpleEntry<>(CANCELED, Set.of())
         , new SimpleEntry<>(SUCCESS, Set.of())

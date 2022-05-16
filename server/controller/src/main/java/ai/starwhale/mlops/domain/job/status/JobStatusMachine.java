@@ -40,7 +40,7 @@ public class JobStatusMachine {
     final static Map<JobStatus, Set<JobStatus>> transferMap = Map.ofEntries(
         new SimpleEntry<>(CREATED, Set.of(PAUSED,RUNNING,SUCCESS,TO_CANCEL,FAIL))
         , new SimpleEntry<>(PAUSED, Set.of(RUNNING,CANCELED,FAIL))
-        , new SimpleEntry<>(RUNNING, Set.of(TO_COLLECT_RESULT,SUCCESS,FAIL))
+        , new SimpleEntry<>(RUNNING, Set.of(PAUSED,TO_COLLECT_RESULT,SUCCESS,FAIL))
         , new SimpleEntry<>(TO_COLLECT_RESULT, Set.of(COLLECTING_RESULT,SUCCESS,TO_CANCEL,FAIL))
         , new SimpleEntry<>(COLLECTING_RESULT, Set.of(SUCCESS,TO_CANCEL,FAIL))
         , new SimpleEntry<>(SUCCESS, Set.of())

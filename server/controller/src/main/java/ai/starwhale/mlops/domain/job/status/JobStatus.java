@@ -16,8 +16,6 @@
 
 package ai.starwhale.mlops.domain.job.status;
 
-import ai.starwhale.mlops.domain.job.Job;
-
 /**
  * possible job statuses
  */

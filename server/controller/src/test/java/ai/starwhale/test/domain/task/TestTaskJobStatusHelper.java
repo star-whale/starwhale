@@ -95,11 +95,11 @@ public class TestTaskJobStatusHelper {
 
     @Test
     public void testCancelling() {
+        JobStatus canceling = JobStatus.CANCELING;
         List<Task> tasks = List.of(
             mock(CMP, CANCELLING), successPPL(), successPPL(), successPPL(), successPPL(),
             successPPL());
         logTasks(tasks);
-        JobStatus canceling = JobStatus.CANCELING;
         Assertions.assertEquals(canceling, taskJobStatusHelper.desiredJobStatus(tasks));
 
         tasks = List.of(
@@ -112,16 +112,22 @@ public class TestTaskJobStatusHelper {
             successPPL());
         Assertions.assertEquals(canceling, taskJobStatusHelper.desiredJobStatus(tasks));
 
-        List<Task> tasks1 = List.of(
+        tasks = List.of(
             mock(PPL, CANCELLING), mock(PPL, CANCELLING), successPPL(), successPPL(), successPPL(),
             successPPL(), successPPL());
-        logTasks(tasks1);
-        Assertions.assertEquals(canceling, taskJobStatusHelper.desiredJobStatus(tasks1));
-        List<Task> tasks2 = List.of(
+        logTasks(tasks);
+        Assertions.assertEquals(canceling, taskJobStatusHelper.desiredJobStatus(tasks));
+        tasks = List.of(
             mock(PPL, CANCELLING), mock(PPL, TO_CANCEL), mock(PPL, CANCELED), successPPL(),
             successPPL(), successPPL(), successPPL(), successPPL());
-        logTasks(tasks2);
-        Assertions.assertEquals(canceling, taskJobStatusHelper.desiredJobStatus(tasks2));
+        logTasks(tasks);
+        Assertions.assertEquals(canceling, taskJobStatusHelper.desiredJobStatus(tasks));
+
+        tasks = List.of(
+            mock(PPL, CANCELED), mock(PPL, TO_CANCEL), mock(PPL, CANCELED), mock(PPL, CANCELED), mock(PPL, CANCELED), successPPL(),
+            successPPL(), successPPL(), successPPL(), successPPL());
+        logTasks(tasks);
+        Assertions.assertEquals(canceling, taskJobStatusHelper.desiredJobStatus(tasks));
 
 
     }

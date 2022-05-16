@@ -79,8 +79,7 @@ public class TaskJobStatusHelper {
                         TaskStatus.CREATED, TaskStatus.ASSIGNING, TaskStatus.PAUSED,
                         TaskStatus.PREPARING, TaskStatus.RUNNING), null, RequireType.HAVE_NO)));
         map.put(JobStatus.PAUSED,
-            Set.of(new TaskStatusRequirement(Set.of(TaskStatus.CREATED), null, RequireType.HAVE_NO)
-                , new TaskStatusRequirement(Set.of(TaskStatus.PAUSED), null, RequireType.MUST)
+            Set.of(new TaskStatusRequirement(Set.of(TaskStatus.PAUSED), null, RequireType.MUST)
                 , new TaskStatusRequirement(
                     Set.of(TaskStatus.TO_CANCEL, TaskStatus.CANCELLING, TaskStatus.CANCELED,
                         TaskStatus.FAIL), null, RequireType.HAVE_NO)

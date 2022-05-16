@@ -86,7 +86,8 @@ public class TestLivingTaskCache {
     @Test
     public void test() {
         List<TaskStatusChangeWatcher> taskStatusChangeWatchers = new LinkedList<>();
-        LivingTaskCacheImpl livingTaskCache = new LivingTaskCacheImpl(null);
+        LivingTaskCacheImpl livingTaskCache = new LivingTaskCacheImpl(null, null,
+            null, null, null);
         TaskWatcherForCache taskWatcherForCache = new TaskWatcherForCache(taskStatusMachine,
             taskMapper, livingTaskCache);
         taskStatusChangeWatchers.add(taskWatcherForCache);

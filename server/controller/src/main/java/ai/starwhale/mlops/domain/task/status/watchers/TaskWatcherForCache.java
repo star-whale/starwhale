@@ -30,12 +30,14 @@ import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import java.util.List;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
  * update status in cache, persist easy lost tasks
  */
+@Slf4j
 @Component
 @Order(1)
 public class TaskWatcherForCache implements TaskStatusChangeWatcher {
@@ -59,9 +61,14 @@ public class TaskWatcherForCache implements TaskStatusChangeWatcher {
         if(task.getStatus() == newStatus){
             return;
         }
+        if(!taskStatusMachine.couldTransfer(task.getStatus(),newStatus)){
+            log.error("task status changed unexpectedly from {} to {} of id {}",task.getStatus(),newStatus,task.getId());
+            return;
+        }
         if(easyLost(newStatus)){
             taskMapper.updateTaskStatus(List.of(task.getId()),newStatus);
         }
+
         taskCache.update(task.getId(),newStatus);
     }
 

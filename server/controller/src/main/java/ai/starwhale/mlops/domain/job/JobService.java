@@ -48,6 +48,7 @@ import com.github.pagehelper.PageInfo;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
@@ -202,7 +203,7 @@ public class JobService {
 
     /**
      * transactional
-     * jobStatus->TO_CANCEL; taskStatus->TO_CANCEL
+     * jobStatus->TO_CANCEL; RUNNING/PREPARING/ASSIGNING->TO_CANCEL;CREATED/PAUSED/UNKNOWN->CANCELED
      */
     @Transactional
     public void cancelJob(Long jobId){
@@ -218,18 +219,22 @@ public class JobService {
             && desiredJobStatus != JobStatus.COLLECTING_RESULT){
             throw new SWValidationException(ValidSubject.JOB).tip("not RUNNING/PAUSED/TO_COLLECT_RESULT/COLLECTING_RESULT job can't be canceled ");
         }
-        jobMapper.updateJobStatus(List.of(jobId), JobStatus.TO_CANCEL);
-        updateTaskStatus(tasks.parallelStream().filter(task ->
-            task.getStatus() == TaskStatus.RUNNING
-            || task.getStatus() == TaskStatus.PREPARING
-            || task.getStatus() == TaskStatus.ASSIGNING).collect(Collectors.toList()), TaskStatus.TO_CANCEL);
-        List<Task> directlyCanceledTasks = tasks.parallelStream()
-            .filter(task -> task.getStatus() == TaskStatus.CREATED
-                || task.getStatus() == TaskStatus.PAUSED
-                || task.getStatus() == TaskStatus.UNKNOWN).collect(Collectors.toList());
-        swTaskScheduler.stopSchedule(directlyCanceledTasks.parallelStream().filter(task -> task.getStatus() == TaskStatus.CREATED).map(Task::getId).collect(
-            Collectors.toList()));
-        updateTaskStatus(directlyCanceledTasks, TaskStatus.CANCELED);
+//        jobMapper.updateJobStatus(List.of(jobId), JobStatus.CANCELING);
+        Optional<Task> anyTask = tasks.stream().findAny();
+        synchronized (anyTask.get().getJob()){
+            tasks.stream().filter(task ->
+                    task.getStatus() == TaskStatus.RUNNING
+                        || task.getStatus() == TaskStatus.PREPARING
+                        || task.getStatus() == TaskStatus.ASSIGNING)
+                .forEach(task -> task.setStatus(TaskStatus.TO_CANCEL));
+            List<Task> directlyCanceledTasks = tasks.parallelStream()
+                .filter(task -> task.getStatus() == TaskStatus.CREATED
+                    || task.getStatus() == TaskStatus.PAUSED
+                    || task.getStatus() == TaskStatus.UNKNOWN).collect(Collectors.toList());
+            updateTaskStatus(directlyCanceledTasks, TaskStatus.CANCELED);
+            swTaskScheduler.stopSchedule(directlyCanceledTasks.parallelStream().filter(task -> task.getStatus() == TaskStatus.CREATED).map(Task::getId).collect(
+                Collectors.toList()));
+        }
     }
 
     /**
@@ -248,10 +253,15 @@ public class JobService {
         if(null == createdTasks || createdTasks.isEmpty()){
             throw new SWValidationException(ValidSubject.JOB).tip("all tasks are assigned to agent, this job can't be paused now");
         }
-        swTaskScheduler.stopSchedule(createdTasks.parallelStream().map(Task::getId).collect(
-            Collectors.toList()));
-        createdTasks.forEach(task -> task.setStatus(TaskStatus.PAUSED));
-        updateTaskStatus(createdTasks,TaskStatus.PAUSED);
+//        jobMapper.updateJobStatus(List.of(jobId),JobStatus.PAUSED);\
+        Optional<Task> anyTask = tasks.stream().findAny();
+        synchronized (anyTask.get().getJob()){
+            updateTaskStatus(createdTasks,TaskStatus.PAUSED);
+            createdTasks.forEach(task -> task.setStatus(TaskStatus.PAUSED));
+            swTaskScheduler.stopSchedule(createdTasks.parallelStream().map(Task::getId).collect(
+                Collectors.toList()));
+        }
+
 
     }
 
@@ -264,7 +274,7 @@ public class JobService {
             return;
         }
         //update in mem
-        tasks.forEach(task -> task.setStatus(taskStatus));
+        tasks.parallelStream().forEach(t->livingTaskCache.update(t.getId(),taskStatus));
         //save to db
         List<Long> taskIds = tasks.parallelStream().map(Task::getId).collect(
             Collectors.toList());
@@ -286,7 +296,6 @@ public class JobService {
         if(jobEntity.getJobStatus() != JobStatus.PAUSED){
             throw new SWValidationException(ValidSubject.JOB).tip("unpaused job can't be resumed ");
         }
-        jobMapper.updateJobStatus(List.of(jobId), JobStatus.RUNNING);
         Collection<Task> tasks = livingTaskCache.ofJob(jobId);
         if(null == tasks || tasks.isEmpty()){
             log.warn("no tasks found for job {} in task machine",jobId);
@@ -300,9 +309,14 @@ public class JobService {
         if(null == pausedTasks || pausedTasks.isEmpty()){
             return;
         }
-        Job job = jobBoConverter.fromEntity(jobEntity);
-        updateTaskStatus(pausedTasks,TaskStatus.CREATED);
-        swTaskScheduler.adoptTasks(pausedTasks,job.getJobRuntime().getDeviceClass());
+        Optional<Task> anyTask = tasks.stream().findAny();
+        Job job = anyTask.get().getJob();
+        synchronized (job){
+            updateTaskStatus(pausedTasks,TaskStatus.CREATED);
+            pausedTasks.forEach(task -> task.setStatus(TaskStatus.CREATED));
+            swTaskScheduler.adoptTasks(pausedTasks,job.getJobRuntime().getDeviceClass());
+        }
+
     }
 
 }

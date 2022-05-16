@@ -18,15 +18,22 @@ package ai.starwhale.mlops.domain.task.cache;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
+import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
 import ai.starwhale.mlops.domain.task.TaskWrapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
+import ai.starwhale.mlops.schedule.SWTaskScheduler;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,9 +85,20 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
     final ConcurrentLinkedQueue<Long> toBePersistentTasks;
 
     final TaskMapper taskMapper;
+    final JobMapper jobMapper;
+    final JobStatusMachine jobStatusMachine;
+    final SWTaskScheduler swTaskScheduler;
+    final TaskJobStatusHelper taskJobStatusHelper;
 
-    public LivingTaskCacheImpl(TaskMapper taskMapper) {
+    public LivingTaskCacheImpl(TaskMapper taskMapper,
+        JobMapper jobMapper, JobStatusMachine jobStatusMachine,
+        SWTaskScheduler swTaskScheduler,
+        TaskJobStatusHelper taskJobStatusHelper) {
         this.taskMapper = taskMapper;
+        this.jobMapper = jobMapper;
+        this.jobStatusMachine = jobStatusMachine;
+        this.swTaskScheduler = swTaskScheduler;
+        this.taskJobStatusHelper = taskJobStatusHelper;
         taskIdMap = new ConcurrentHashMap<>();
         jobIdMap = new ConcurrentHashMap<>();
         taskStatusMap = new ConcurrentHashMap<>();
@@ -253,6 +271,48 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
     private Set<Long> safeGetTaskIdsFromStatus(TaskStatus oldStatus) {
         return taskStatusMap.computeIfAbsent(oldStatus, k -> Collections.synchronizedSet(new HashSet<>()));
     }
+
+    /**
+     * compensation for the failure case when all tasks of one job are final status but updating job status failed
+     */
+    @Scheduled(fixedDelay = 1000 * 60 ,initialDelay = 1000 * 60 )
+    public void checkAllJobs() {
+        persistJobStatus(jobIdMap.keySet());
+    }
+
+
+    /**
+     * change job status triggered by living task status change
+     */
+    void persistJobStatus(Set<Long> toBeCheckedJobs) {
+        if(CollectionUtils.isEmpty(toBeCheckedJobs)){
+            return;
+        }
+        final Map<JobStatus, List<Long>> jobDesiredStatusMap = toBeCheckedJobs.parallelStream()
+            .collect(Collectors.groupingBy((jobid -> taskJobStatusHelper.desiredJobStatus(this.ofJob(jobid)))));
+        jobDesiredStatusMap.forEach((desiredStatus, jobids) -> {
+            //filter these job who's current status is before desired status
+            final List<Long> toBeUpdated = jobids.parallelStream().filter(jid -> {
+                    final Job job = jobIdMap.get(jid);
+                    return null != job;
+                }).peek(jobId -> jobIdMap.get(jobId).setStatus(desiredStatus))
+                .collect(Collectors.toList());
+            if(null != toBeUpdated && !toBeUpdated.isEmpty()){
+                jobMapper.updateJobStatus(toBeUpdated, desiredStatus);
+            }
+
+            if(desiredStatus == JobStatus.FAIL){
+                swTaskScheduler.stopSchedule(jobids.parallelStream().map(jid->jobTaskMap.get(jid)).flatMap(Collection::stream).collect(
+                    Collectors.toList()));
+            }
+            if (jobStatusMachine.isFinal(desiredStatus)) {
+                jobMapper.updateJobFinishedTime(jobids, Instant.now().atZone(ZoneId.systemDefault()).toLocalDateTime());
+                removeFinishedJobTasks(jobids);
+            }
+
+        });
+    }
+
 
 
 }
