@@ -1,5 +1,4 @@
 from __future__ import annotations
-from itertools import Predicate
 import os
 import sys
 import typing as t

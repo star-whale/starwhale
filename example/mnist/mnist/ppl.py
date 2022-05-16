@@ -4,6 +4,7 @@ import os
 import torch
 from torchvision import transforms
 from PIL import Image
+import numpy as np
 
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
@@ -33,14 +34,16 @@ class MNISTInference(PipelineHandler):
         confusion_matrix_normalize="all",
         show_hamming_loss=True,
         show_cohen_kappa_score=True,
+        show_roc_auc=True,
         all_labels=[i for i in range(0, 10)],
     )
     def cmp(self, _data_loader):
-        _result, _label = [], []
+        _result, _label, _pr = [], [], []
         for _data in _data_loader:
             _label.extend([int(l) for l in _data["label"]])
             _result.extend([int(l) for l in _data["result"]])
-        return _label, _result
+            _pr.extend([l for l in _data["pr"]])
+        return _label, _result, _pr
 
     def _pre(self, input: bytes, batch_size: int):
         images = []
@@ -60,7 +63,9 @@ class MNISTInference(PipelineHandler):
         return torch.stack(images).to(self.device)
 
     def _post(self, input):
-        return input.argmax(1).flatten().tolist(), input.tolist()
+        pred_value = input.argmax(1).flatten().tolist()
+        probability_matrix = np.exp(input).tolist()
+        return pred_value, probability_matrix
 
     def _load_model(self, device):
         model = Net().to(device)
