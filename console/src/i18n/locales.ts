@@ -67,7 +67,7 @@ const locales0 = {
         en: 'PROJECT',
     },
     'projects': {
-        en: 'projects',
+        en: 'Projects',
     },
     'Project': {
         en: 'Project',

@@ -30,6 +30,7 @@ export default function BaseLayout({
                 flexFlow: 'row nowrap',
                 justifyContent: 'space-between',
                 height: '100vh',
+                width: '100vw',
                 position: 'relative',
                 ...style,
             }}
@@ -38,14 +39,15 @@ export default function BaseLayout({
             <div
                 style={{
                     overflowY: 'auto',
+                    height: '100%',
                     flexGrow: 1,
                 }}
             >
                 <Header />
                 <div
                     style={{
-                        padding: '32px',
-                        height: '100%',
+                        padding: '0 28px 28px 28px',
+                        border: '8px',
                         boxSizing: 'border-box',
                         minWidth: '792px',
                         display: 'flex',

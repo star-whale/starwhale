@@ -46,6 +46,7 @@ export const colors = {
     //
     brandPrimary: '#2B65D9',
     brandPrimaryHover: color('#2B65D9').alpha(0.5).toString(),
+    brandFontPrimary: '#02102B',
     brandBgNav: '#122A59',
     brandBgNavTitle: '#1D3973',
     brandBgNavBorder: '#1D3973',
@@ -54,6 +55,7 @@ export const colors = {
     brandBgContent: '#EBF1FF',
     brandBgUser: '#D0DDF7',
     brandBgUserFont: '#02102B',
+    brandTableHeaderBackground: '#F3F5F9',
 }
 
 const primitives = {
@@ -76,7 +78,7 @@ const overrides = {
     },
     deep: {
         colors: {
-            buttonPrimaryFill: '#273343',
+            buttonPrimaryFill: colors.brandPrimary,
             // ----------- custom -----------
             brandRootBackground: colors.brandBackground1,
             brandHeaderBackground: colors.brand2,

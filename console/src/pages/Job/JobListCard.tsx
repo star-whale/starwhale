@@ -44,9 +44,6 @@ export default function JobListCard() {
         <>
             <Card
                 title={t('Jobs')}
-                style={{
-                    paddingTop: '0',
-                }}
                 extra={
                     <Button
                         size={ButtonSize.compact}

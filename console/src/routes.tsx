@@ -61,11 +61,11 @@ const Routes = () => {
                     <Route exact path='/projects/:projectId/:path?'>
                         <ProjectLayout>
                             <Switch>
-                                <Route exact path='/projects/:projectId' component={ProjectOverview} />
                                 <Route exact path='/projects/:projectId/models' component={ProjectModels} />
                                 <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
                                 <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
                                 <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
+                                <Redirect from='/projects/:projectId' to='/projects/:projectId/models' />
                             </Switch>
                         </ProjectLayout>
                     </Route>

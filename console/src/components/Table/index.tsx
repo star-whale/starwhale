@@ -35,22 +35,21 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     },
                     TableHeadCell: {
                         style: {
-                            backgroundColor: 'var(--color-brandBackground2)',
+                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
                             fontWeight: 'bold',
                             borderBottom: 'none',
                             fontSize: 14,
                             lineHeight: '16px',
-                            padding: '16px 12px',
+                            padding: '15px 28px',
                         },
                     },
                     TableHeadRow: {
-                        style: {
-                            backgroundColor: 'var(--color-brandBackground1)',
-                        },
+                        style: {},
                     },
                     TableBodyCell: {
                         style: {
-                            padding: '12px',
+                            padding: '0px 28px',
+                            lineHeight: '44px',
                         },
                     },
                     ...overrides,

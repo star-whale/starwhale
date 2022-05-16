@@ -93,8 +93,7 @@ export default function Card({
                     className={styles.cardHeadWrapper}
                     style={{
                         ...headStyle,
-                        color: theme.colors.contentPrimary,
-                        // borderBottomColor: theme.borders.border300.borderColor,
+                        color: 'var(--color-brandFontPrimary)',
                         borderBottom: 'none',
                     }}
                 >
@@ -107,7 +106,7 @@ export default function Card({
                                         // size='large'
                                         style={{
                                             fontSize: 30,
-                                            fontWeight: 400,
+                                            fontWeight: 700,
                                         }}
                                     >
                                         {title}
