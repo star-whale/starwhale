@@ -2,7 +2,7 @@ from __future__ import annotations
 import typing as t
 from functools import wraps
 
-from sklearn.metrics import (
+from sklearn.metrics import (  # type: ignore
     classification_report,
     multilabel_confusion_matrix,
     confusion_matrix,
@@ -20,10 +20,10 @@ def multi_classification(
     show_hamming_loss: bool = True,
     show_cohen_kappa_score: bool = True,
     all_labels: t.Union[list[t.Any], None] = None,
-):
-    def _decorator(func):
+) -> t.Any:
+    def _decorator(func: t.Any) -> t.Any:
         @wraps(func)
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args: t.Any, **kwargs: t.Any) -> t.Dict[str, t.Any]:
             y_true, y_pred = func(*args, **kwargs)
 
             _r: t.Dict[str, t.Any] = {"kind": MetricKind.MultiClassification}
@@ -34,7 +34,7 @@ def multi_classification(
             _r["summary"] = {k: cr.get(k) for k in _summary_m}
             _r["labels"] = {k: v for k, v in cr.items() if k not in _summary_m}
 
-            # TODO: tune performace, use intermediate result
+            # TODO: tune performace, use intermediated result
             cm = confusion_matrix(
                 y_true, y_pred, labels=all_labels, normalize=confusion_matrix_normalize
             )

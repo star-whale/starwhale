@@ -1,4 +1,5 @@
 from __future__ import annotations
+from itertools import Predicate
 import os
 import sys
 import typing as t
@@ -242,11 +243,12 @@ class PipelineHandler(object):
                 if not self.ignore_error:
                     raise Exception(msg)
 
-            output = b""
+            pred: t.Any = b""
+            pr: t.Any = b""
             exception = None
             try:
                 # TODO: inspect profiling
-                output = self.ppl(
+                pred, pr = self.ppl(
                     data.data,
                     data.batch_size,
                     data_index=data.idx,
@@ -269,13 +271,14 @@ class PipelineHandler(object):
                 self._sw_logger.info(f"[{data.idx}] data handle -> success")
 
             try:
-                self._do_record(output, data, label, exception)
+                self._do_record(pred, pr, data, label, exception)
             except Exception as e:
                 self._sw_logger.exception(f"{data.idx} data record exception: {e}")
 
     def _do_record(
         self,
-        output: t.Any,
+        pred: t.Any,
+        pr: t.Any,
         data: DataField,
         label: DataField,
         exception: t.Union[None, Exception],
@@ -286,14 +289,15 @@ class PipelineHandler(object):
                 "status": exception is None,
                 "exception": str(exception),
                 "index": data.idx,
-                "output_size": len(output),
+                "output_size": len(pred),
             }
         )
 
         # TODO: output maybe cannot be jsonized
         result = {
             "index": data.idx,
-            "result": output,
+            "result": pred,
+            "pr": pr,
             "batch": data.batch_size,
         }
         if self.merge_label:
