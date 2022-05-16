@@ -60,9 +60,6 @@ class ModelRunConfig(object):
         if not self.ppl:
             raise FileFormatError("need ppl field")
 
-        if not (self.runtime or self.base_image):
-            raise FileFormatError("runtime or base_image must set at least one field")
-
     def __str__(self) -> str:
         return f"Model Run Config: ppl -> {self.ppl}"
 
@@ -310,13 +307,14 @@ class ModelPackage(object):
     def _dump_dep(self) -> None:
         logger.info("[step:dep]start dump python dep...")
 
-        _manifest = dump_python_dep_env(
+        _dep = dump_python_dep_env(
             dep_dir=self._snapshot_workdir / "dep",
             pip_req_fpath=self._model_pip_req,
             skip_gen_env=self._skip_gen_env,
             console=self._console,
+            expected_runtime=self._swmp_config.run.runtime,
         )
-        self._manifest["dep"] = _manifest
+        self._manifest["dep"] = _dep
 
         logger.info("[step:dep]finish dump dep")
 

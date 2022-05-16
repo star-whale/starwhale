@@ -8,7 +8,6 @@ config:
   - config/hyperparam.json
 
 run:
-  runtime: python3.9
   ppl: mnist.ppl:MNISTInference
   pip_req: requirements.txt
   exclude_pkg_data:

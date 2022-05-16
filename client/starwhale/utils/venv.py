@@ -9,6 +9,8 @@ import conda_pack  # type: ignore
 from rich import print as rprint
 from rich.console import Console
 
+from starwhale.utils.error import UnExpectedConfigFieldError
+
 
 from starwhale.utils import (
     get_python_run_env,
@@ -160,7 +162,8 @@ def dump_python_dep_env(
     pip_req_fpath: str,
     skip_gen_env: bool = False,
     console: t.Optional[Console] = None,
-) -> dict:
+    expected_runtime: str = "",
+) -> t.Dict[str, t.Any]:
     # TODO: smart dump python dep by starwhale sdk-api, pip ast analysis?
     dep_dir = Path(dep_dir)
     console = console or Console()
@@ -168,6 +171,12 @@ def dump_python_dep_env(
     pr_env = get_python_run_env()
     sys_name = platform.system()
     py_ver = get_python_version()
+
+    expected_runtime = expected_runtime.strip().lower()
+    if expected_runtime and not py_ver.startswith(expected_runtime):
+        raise UnExpectedConfigFieldError(
+            f"expected runtime({expected_runtime}) is not equal to detected runtime{py_ver}"
+        )
 
     _manifest = dict(
         env=pr_env,

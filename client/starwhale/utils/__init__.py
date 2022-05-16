@@ -97,7 +97,7 @@ def is_linux() -> bool:
     return platform.system() in ("Linux", "Unix")
 
 
-def get_python_version():
+def get_python_version() -> str:
     # TODO: check user ppl environment or starwhale-cli env? need test
     _v = sys.version_info
     return f"{_v.major}.{_v.minor}.{_v.micro}"
