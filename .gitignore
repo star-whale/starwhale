@@ -57,6 +57,7 @@ yarn-error.log*
 /docker/jar/
 /server/controller/src/main/resources/static/
 videos/
+cypress/example
 
 # Test Coverage
 .coverage
