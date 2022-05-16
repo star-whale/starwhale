@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - feat/*
   pull_request:
     branches:
       - main
@@ -75,3 +76,8 @@ jobs:
       - name: Yarn lint
         working-directory: ./console
         run: make ci-lint
+
+      # - name: E2E lint
+      #   working-directory: ./console
+      #   run: |
+      #     yarn cy:run
