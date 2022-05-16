@@ -79,6 +79,11 @@
         and p.id = #{id}
     </select>
 
+    <select id="findProjectByName" parameterType="java.lang.Long" resultMap="projectResultMap">
+        <include refid="select_project"/>
+        and p.project_name = #{projectName}
+    </select>
+
     <select id="findDefaultProject" parameterType="java.lang.Long" resultMap="projectResultMap">
         <include refid="select_project"/>
         and p.owner_id = #{userId}
