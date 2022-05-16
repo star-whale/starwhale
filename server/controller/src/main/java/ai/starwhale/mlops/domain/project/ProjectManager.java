@@ -76,5 +76,13 @@ public class ProjectManager {
         return findDefaultProject();
     }
 
+    public Boolean existProject(String projectName, Boolean isDeleted) {
+        ProjectEntity existProject = projectMapper.findProjectByName(projectName);
+        if(existProject == null) {
+            return false;
+        }
+        return isDeleted ? existProject.getIsDeleted() == 1 : existProject.getIsDeleted() == 0;
+    }
+
 
 }

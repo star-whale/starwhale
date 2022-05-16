@@ -78,6 +78,12 @@ public class ProjectService {
      * @return ID of the project was created.
      */
     public Long createProject(Project project) {
+        if (projectManager.existProject(project.getName(), false)) {
+            //项目存在且未被删除
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                .tip(String.format("Project %s already exists", project.getName())), HttpStatus.BAD_REQUEST);
+        }
+
         ProjectEntity entity = ProjectEntity.builder()
             .projectName(project.getName())
             .ownerId(project.getOwner().getId())
