@@ -44,6 +44,7 @@ example/mnist/test/task_volume
 # UI
 node_modules
 console/node/
+console/cypress/example
 coverage
 build
 .DS_Store
@@ -57,7 +58,6 @@ yarn-error.log*
 /docker/jar/
 /server/controller/src/main/resources/static/
 videos/
-cypress/example
 
 # Test Coverage
 .coverage
