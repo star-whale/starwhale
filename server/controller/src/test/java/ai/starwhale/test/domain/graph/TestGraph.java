@@ -14,8 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.system.agent;
+package ai.starwhale.test.domain.graph;
 
-public interface AgentStatusWatcher {
-    void onAgentStatusChange(Agent agent,AgentStatus newStatus);
+import ai.starwhale.mlops.domain.dag.bo.Graph;
+import ai.starwhale.mlops.domain.dag.bo.GraphNode;
+import ai.starwhale.mlops.domain.dag.po.GraphNodeEntity.NodeType;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+public class TestGraph {
+
+    @Test
+    public void testEmptyGraph(){
+        Graph graph = Graph.emptyInstance();
+        GraphNode lastNodeOf = graph.findLastNodeOf("", NodeType.TASK_PPL, 1L);
+        Assertions.assertTrue(lastNodeOf.empty());
+    }
+
 }

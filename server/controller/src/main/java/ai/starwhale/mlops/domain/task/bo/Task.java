@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.task.bo;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.system.agent.Agent;
+import ai.starwhale.mlops.domain.task.TaskWrapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.TaskType;
 import java.util.Objects;
@@ -91,16 +92,18 @@ public class Task {
 
 
 
-    public static class StatusUnModifiableTask extends Task{
+    public static class StatusUnModifiableTask extends Task implements TaskWrapper {
 
         Task oTask;
         public StatusUnModifiableTask(Task task){
             this.oTask = task;
         }
-        public Task getOTask(){
-            if(oTask instanceof StatusUnModifiableTask){
-                StatusUnModifiableTask statusUnModifiableTask = (StatusUnModifiableTask) oTask;
-                return statusUnModifiableTask.getOTask();
+
+        @Override
+        public Task unwrap(){
+            if(oTask instanceof TaskWrapper){
+                TaskWrapper wrappedTask = (TaskWrapper) oTask;
+                return wrappedTask.unwrap();
             }
             return oTask;
         }

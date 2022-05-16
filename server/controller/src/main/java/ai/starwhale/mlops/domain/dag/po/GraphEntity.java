@@ -14,8 +14,28 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.system.agent;
+package ai.starwhale.mlops.domain.dag.po;
 
-public interface AgentStatusWatcher {
-    void onAgentStatusChange(Agent agent,AgentStatus newStatus);
+import ai.starwhale.mlops.domain.dag.bo.GraphEdge;
+import ai.starwhale.mlops.domain.dag.bo.GraphNode;
+import java.util.List;
+import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * DAG
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class GraphEntity {
+
+    Long id;
+
+    Long jobId;
+
 }

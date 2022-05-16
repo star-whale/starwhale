@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 public class TestCommandingTasksChecker {
     final TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
     final CommandingTasksChecker commandingTasksChecker = new CommandingTasksChecker(taskStatusMachine,
-        null, null);
+        null);
 
     @Test
     public void test(){

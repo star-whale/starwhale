@@ -18,12 +18,14 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.dag.GraphVO;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.InvokerManager;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.domain.dag.DAGQuerier;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.task.TaskService;
 import ai.starwhale.mlops.exception.SWProcessException;
@@ -54,6 +56,9 @@ public class JobController implements JobApi{
 
     @Resource
     private IDConvertor idConvertor;
+
+    @Resource
+    private DAGQuerier dagQuerier;
 
 
     private final InvokerManager<String, Long> JOB_ACTIONS = InvokerManager.<String, Long>create()
@@ -140,4 +145,12 @@ public class JobController implements JobApi{
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
+
+    @Override
+    public ResponseEntity<ResponseMessage<GraphVO>> getJobDAG(String projectId, String jobId) {
+        Long iJobId = idConvertor.revert(jobId);
+
+        return ResponseEntity.ok(Code.success.asResponse(new GraphVO(dagQuerier.dagOfJob(iJobId,true))));
+    }
+
 }

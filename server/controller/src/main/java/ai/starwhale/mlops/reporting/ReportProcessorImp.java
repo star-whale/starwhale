@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2022 Starwhale, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,7 +24,7 @@ import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.system.agent.Agent;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
-import ai.starwhale.mlops.domain.task.LivingTaskCache;
+import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -66,7 +67,7 @@ public class ReportProcessorImp implements ReportProcessor {
     final TaskMapper taskMapper;
 
     public ReportProcessorImp(CommandingTasksChecker commandingTasksChecker,
-        LivingTaskCache livingTaskCache, SWTaskScheduler swTaskScheduler,
+        @Qualifier("cacheWrapperForWatch") LivingTaskCache livingTaskCache, SWTaskScheduler swTaskScheduler,
         TaskBoConverter taskBoConverter,
         AgentCache agentCache, ObjectMapper jsonMapper,
         TaskMapper taskMapper) {
@@ -80,7 +81,6 @@ public class ReportProcessorImp implements ReportProcessor {
     }
 
     // 0.if node doesn't exists creat one 1. check commanding tasks;  2. change task status; 3. schedule task & cancel task;
-    @Transactional
     public ReportResponse receive(ReportRequest report) {
         final Node nodeInfo = report.getNodeInfo();
         if(null == nodeInfo){
@@ -94,22 +94,22 @@ public class ReportProcessorImp implements ReportProcessor {
             .onNodeReporting(agent, reportedTasks);
         Set<Long> unProperTaskIds = unProperTasks.parallelStream()
             .map(taskCommand -> taskCommand.getTask().getId()).collect(Collectors.toSet());
-        taskStatusChange(reportedTasks.parallelStream().filter(rt->!unProperTaskIds.contains(rt.getId())).collect(
+        copyTaskStatusFromAgentReport(reportedTasks.parallelStream().filter(rt->!unProperTaskIds.contains(rt.getId())).collect(
             Collectors.toList()));
         if (!CollectionUtils.isEmpty(unProperTasks)) {
             return rebuildReportResponse(unProperTasks);
         }
         final List<Task> toAssignTasks = swTaskScheduler.schedule(nodeInfo);
+        scheduledTaskStatusChange(toAssignTasks,agent);
+        commandingTasksChecker.onTaskCommanding(taskBoConverter.toTaskCommand(toAssignTasks),
+            agent);
+
         final Collection<Task> toCancelTasks = livingTaskCache
             .ofStatus(TaskStatus.TO_CANCEL)
             .stream()
             .filter(t->t.getAgent().equals(agent))
             .collect(Collectors.toList());
-        scheduledTaskStatusChange(toAssignTasks,agent);
-
-        commandingTasksChecker.onTaskCommanding(taskBoConverter.toTaskCommand(toAssignTasks),
-            agent);
-        canceledTaskStatusChange(toCancelTasks);
+        toCancelTaskStatusChange(toCancelTasks);
         commandingTasksChecker.onTaskCommanding(taskBoConverter.toTaskCommand(List.copyOf(toCancelTasks)),
             agent);
         return buidResponse(toAssignTasks, toCancelTasks);
@@ -124,8 +124,8 @@ public class ReportProcessorImp implements ReportProcessor {
             taskIdsToCancel, taskBoConverter.toTaskTrigger(toAssignTasks), new ArrayList<>());
     }
 
-    private void canceledTaskStatusChange(Collection<Task> tasks) {
-        livingTaskCache.update(tasks.parallelStream().map(Task::getId).collect(Collectors.toList()), TaskStatus.CANCELLING);
+    private void toCancelTaskStatusChange(Collection<Task> tasks) {
+        tasks.forEach(task -> task.setStatus(TaskStatus.CANCELLING));
     }
 
     /**
@@ -140,15 +140,22 @@ public class ReportProcessorImp implements ReportProcessor {
             Collectors.toList());
         BatchOperateHelper.doBatch(taskIds, agent.getId(),
             (tsks, agentid) -> taskMapper.updateTaskAgent(List.copyOf(tsks), agentid), MAX_BATCH_SIZE);
-        toAssignTasks.parallelStream().forEach(task -> task.setAgent(agent));
-        livingTaskCache.update(taskIds, TaskStatus.ASSIGNING);
+        toAssignTasks.stream().forEach(task -> {
+            task.setAgent(agent);
+            task.setStatus(TaskStatus.ASSIGNING);
+        });
     }
 
-    private void taskStatusChange(List<ReportedTask> reportedTasks) {
-        reportedTasks.parallelStream()
-            .collect(Collectors.groupingBy(ReportedTask::getStatus))
-            .forEach((targetStatus, tasks) -> livingTaskCache.update(tasks.parallelStream().map(ReportedTask::getId).collect(
-                Collectors.toList()), targetStatus));
+    private void copyTaskStatusFromAgentReport(List<ReportedTask> reportedTasks) {
+
+        reportedTasks.forEach(reportedTask -> {
+            Collection<Task> optionalTasks = livingTaskCache.ofIds(List.of(reportedTask.getId()));
+            if(null == optionalTasks || optionalTasks.isEmpty()){
+                log.error("unknown optionalTasks reported {}",reportedTask.getId());
+                return;
+            }
+            optionalTasks.forEach(task -> task.setStatus(reportedTask.getStatus()));
+        });
     }
 
     ReportResponse rebuildReportResponse(List<TaskCommand> taskCommands) {

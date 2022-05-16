@@ -1,0 +1,66 @@
+/*
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ai.starwhale.mlops.domain.dag.po;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * node on the graph
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class GraphNodeEntity {
+
+    /**
+     * id of the node
+     */
+    Long id;
+
+    /**
+     * which graph the node belongs to
+     */
+    Long graphId;
+
+    /**
+     * type of the node e.g. TaskStatus or JobStatus
+     */
+    NodeType type;
+
+    /**
+     * group of the node e.g. PPL Task/ CMP Task/ Job
+     */
+    String group;
+
+    /**
+     * taskId or jobId
+     */
+    Long nodeOwnerId;
+
+    /**
+     * content for the node e.g. status name
+     */
+    String content;
+
+    public enum NodeType{
+        TASK_PPL,TASK_CMP,JOB
+    }
+}

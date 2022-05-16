@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.system.agent;
+package ai.starwhale.mlops.domain.task.status;
 
-public interface AgentStatusWatcher {
-    void onAgentStatusChange(Agent agent,AgentStatus newStatus);
+import ai.starwhale.mlops.domain.task.bo.Task;
+
+public interface TaskStatusChangeWatcher {
+    void onTaskStatusChange(Task task, TaskStatus newStatus);
 }

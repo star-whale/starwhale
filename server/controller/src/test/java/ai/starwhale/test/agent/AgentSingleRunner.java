@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.system.agent;
+package ai.starwhale.test.agent;
 
-public interface AgentStatusWatcher {
-    void onAgentStatusChange(Agent agent,AgentStatus newStatus);
+import org.junit.jupiter.api.Test;
+
+public class AgentSingleRunner {
+
+    @Test
+    public void test() throws InterruptedException {
+        AgentMocker agentMocker = new AgentMocker();
+        agentMocker.start();
+    }
 }
