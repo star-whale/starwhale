@@ -1,5 +1,4 @@
 import React, { useCallback, useState, memo } from 'react'
-import './Runs.scss'
 import TableGrid from '@/components/Table/TableGrid'
 import { Column } from '@/components/BaseTable'
 import Card from '@/components/Card'

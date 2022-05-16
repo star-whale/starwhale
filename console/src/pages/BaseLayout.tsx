@@ -1,8 +1,8 @@
-import { headerHeight } from '@/consts'
 import React from 'react'
 import { Breadcrumbs } from 'baseui/breadcrumbs'
 import { useHistory } from 'react-router-dom'
 import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
+import Header from '@/components/Header'
 
 export interface IBaseLayoutProps {
     children: React.ReactNode
@@ -34,14 +34,14 @@ export default function BaseLayout({
                 ...style,
             }}
         >
-            {Sidebar && <Sidebar style={{ marginTop: headerHeight }} />}
+            {Sidebar && <Sidebar />}
             <div
                 style={{
                     overflowY: 'auto',
-                    paddingTop: headerHeight,
                     flexGrow: 1,
                 }}
             >
+                <Header />
                 <div
                     style={{
                         padding: '32px',

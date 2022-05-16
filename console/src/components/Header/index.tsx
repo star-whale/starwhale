@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { fetchCurrentUser } from '@user/services/user'
 import { useQuery } from 'react-query'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
@@ -10,25 +10,23 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useLocation } from 'react-router-dom'
 import { useStyletron } from 'baseui'
 import { headerHeight } from '@/consts'
-import { SidebarContext } from '@/contexts/SidebarContext'
 import useTranslation from '@/hooks/useTranslation'
 import { createUseStyles } from 'react-jss'
 import { IThemedStyleProps } from '@/theme'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import User from '@/domain/user/components/User'
 import { simulationJump } from '@/utils'
-import { FiLogOut } from 'react-icons/fi'
-import HeaderLeftMenu from './HeaderLeftMenu'
-import Logo from './Logo'
+import { FiLogOut, FiUser } from 'react-icons/fi'
+import { BsChevronDown } from 'react-icons/bs'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: {
         padding: '0 32px 0 0',
-        position: 'fixed',
-        background: 'var(--color-brandHeaderBackground)',
+        // position: 'fixed',
+        // background: 'var(--color-brandHeaderBackground)',
         backdropFilter: 'blur(10px)',
         zIndex: 1000,
-        top: 0,
+        // top: 0,
         height: `${headerHeight}px`,
         width: '100%',
         display: 'flex',
@@ -48,6 +46,8 @@ const useStyles = createUseStyles({
         'height': '100%',
         'margin-left': '20px',
         'flex-direction': 'column',
+
+        'padding': '14px 0 14px 0',
         '&:hover': {
             '& $userMenu': {
                 display: 'flex',
@@ -57,8 +57,14 @@ const useStyles = createUseStyles({
     userNameWrapper: {
         'height': '100%',
         'display': 'flex',
-        'color': 'var(--color-brandBackground4)',
+        'color': 'var(--color-brandBgUserFont)',
+        'backgroundColor': 'var(--color-brandBgUser)',
+        'borderRadius': '20px',
+        'fontSize': '16px',
+        'padding': '7px 13px 7px 7px',
         'align-items': 'center',
+        'lineHeight': '40px',
+        'gap': '9px',
     },
     userMenu: (props: IThemedStyleProps) => ({
         'position': 'absolute',
@@ -113,7 +119,6 @@ export default function Header() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser, setCurrentUser } = useCurrentUser()
     const userInfo = useQuery('currentUser', fetchCurrentUser, { enabled: false })
-
     // TODO:  refact move to sep file
     useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,7 +176,6 @@ export default function Header() {
         lastLocationPathRef.current = location.pathname
     }, [location.pathname])
 
-    const ctx = useContext(SidebarContext)
     const [t] = useTranslation()
 
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
@@ -186,13 +190,13 @@ export default function Header() {
 
     return (
         <header className={headerStyles.headerWrapper}>
-            <Logo expanded={ctx.expanded} />
-            <div>{currentUser && <HeaderLeftMenu />}</div>
             <div style={{ flexGrow: 1 }} />
             {currentUser && (
                 <div className={styles.userWrapper}>
                     <div className={styles.userNameWrapper}>
-                        <User user={currentUser} />
+                        <FiUser size={20} />
+                        <User size='large' user={currentUser} />
+                        <BsChevronDown size={20} />
                     </div>
                     <div className={styles.userMenu}>
                         {/* <div

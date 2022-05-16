@@ -1,6 +1,6 @@
 import React from 'react'
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom'
-import Header from '@/components/Header'
+// import Header from '@/components/Header'
 import ProjectLayout from '@/pages/Project/ProjectLayout'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import { IThemedStyleProps } from '@/theme'
@@ -49,7 +49,6 @@ const Routes = () => {
     return (
         <BrowserRouter>
             <div className={styles.root}>
-                <Header />
                 <Switch>
                     <Route exact path='/projects/:projectId/jobgrids'>
                         <JobsLayout>
@@ -79,11 +78,6 @@ const Routes = () => {
                             </Switch>
                         </TaskLayout>
                     </Route>
-                    {/* <Route exact path='/projects/:projectId/jobs/:jobId'>
-                        <JobLayout>
-                            <Switch></Switch>
-                        </JobLayout>
-                    </Route> */}
                     {/* datasets */}
                     <Route exact path='/projects/:projectId/datasets/:datasetId/versions'>
                         <DatasetVersionLayout>
@@ -129,13 +123,12 @@ const Routes = () => {
                     {/* other */}
                     <Route exact path='/login' component={Login} />
                     <Route>
-                        <BaseLayout sidebar={undefined}>
+                        <ProjectLayout>
                             <Switch>
-                                {/* <Route exact path='/' component={Home} /> */}
                                 <Route exact path='/projects' component={ProjectListCard} />
                                 <Redirect from='/' to='/projects' />
                             </Switch>
-                        </BaseLayout>
+                        </ProjectLayout>
                     </Route>
                 </Switch>
             </div>

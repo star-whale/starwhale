@@ -10,6 +10,11 @@ export interface IThemedStyleProps {
     themeType: BaseThemeType
 }
 
+export interface IComposedComponentProps {
+    style?: React.CSSProperties
+    className?: string
+}
+
 // TODO: type support
 // export interface IColors extends Partial<Colors>  {
 //     brand1: string
@@ -38,10 +43,21 @@ export const colors = {
     brandIndicatorSuspend: '#722ED1',
     brandIndicatorCompleted: '#91D5FF',
     brandLink: '#009BDE',
+    //
+    brandPrimary: '#2B65D9',
+    brandPrimaryHover: color('#2B65D9').alpha(0.5).toString(),
+    brandBgNav: '#122A59',
+    brandBgNavTitle: '#1D3973',
+    brandBgNavBorder: '#1D3973',
+    brandBgNavFont: '#FFFFFF',
+    brandBgNavFontGray: color('#FFFFFF').alpha(0.6).toString(),
+    brandBgContent: '#EBF1FF',
+    brandBgUser: '#D0DDF7',
+    brandBgUserFont: '#02102B',
 }
 
 const primitives = {
-    primaryFontFamily: 'Consolas',
+    // primaryFontFamily: 'Consolas',
 }
 
 const overrides = {

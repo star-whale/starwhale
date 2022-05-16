@@ -1,4 +1,3 @@
-@use 'src/styles/abstracts' as *;
 
 * {
   margin: 0;
@@ -12,10 +11,6 @@ html {
   width: 100%;
 }
 body {
-  font-size: 1em;
-  font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  color: $text-color;
   height: 100%;
 }
 #root {

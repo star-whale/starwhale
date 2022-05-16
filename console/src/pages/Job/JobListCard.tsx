@@ -14,7 +14,6 @@ import { Link, useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
-import './Runs.scss'
 
 export default function JobListCard() {
     const [t] = useTranslation()
@@ -45,6 +44,9 @@ export default function JobListCard() {
         <>
             <Card
                 title={t('Jobs')}
+                style={{
+                    paddingTop: '0',
+                }}
                 extra={
                     <Button
                         size={ButtonSize.compact}

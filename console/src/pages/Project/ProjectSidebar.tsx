@@ -11,38 +11,35 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
     const [t] = useTranslation()
     const { projectId } = useParams<{ modelId: string; projectId: string }>()
     const projectInfo = useFetchProject(projectId)
-    const project = projectInfo.data
+    const project = projectInfo?.data
+    const projectName = project?.name || t('PROJECT')
 
-    const navItems: INavItem[] = useMemo(
-        () =>
-            project
-                ? [
-                      {
-                          title: project?.name ?? t('sth name', [t('Project')]),
-                          path: `/projects/${project?.id}`,
-                          icon: BsFolder2,
-                      },
-                      {
-                          title: t('Model'),
-                          path: `/projects/${project.id}/models`,
-                          icon: BiLayer,
-                          activePathPattern: /\/(models)\/?/,
-                      },
-                      {
-                          title: t('Dataset'),
-                          path: `/projects/${project.id}/datasets`,
-                          activePathPattern: /\/(datasets)\/?/,
-                          icon: BiBarChartSquare,
-                      },
-                      {
-                          title: t('Job'),
-                          path: `/projects/${project.id}/jobs`,
-                          activePathPattern: /\/(jobs|new_job)\/?/,
-                          icon: BiEqualizer,
-                      },
-                  ]
-                : [],
-        [project, t]
-    )
-    return <BaseSidebar navItems={navItems} style={style} />
+    console.log(project?.name, projectInfo)
+    const navItems: INavItem[] = useMemo(() => {
+        if (!project) {
+            return []
+        }
+
+        return [
+            {
+                title: t('Model'),
+                path: `/projects/${projectId}/models`,
+                icon: BiLayer,
+                activePathPattern: /\/(models)\/?/,
+            },
+            {
+                title: t('Dataset'),
+                path: `/projects/${projectId}/datasets`,
+                activePathPattern: /\/(datasets)\/?/,
+                icon: BiBarChartSquare,
+            },
+            {
+                title: t('Job'),
+                path: `/projects/${projectId}/jobs`,
+                activePathPattern: /\/(jobs|new_job)\/?/,
+                icon: BiEqualizer,
+            },
+        ]
+    }, [project, projectInfo?.data, projectId, t])
+    return <BaseSidebar navItems={navItems} style={style} title={projectName} icon={BiBarChartSquare} />
 }

@@ -11,6 +11,7 @@ import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import themes from '@/theme'
 import { apiInit } from '@/api'
 import { ToasterContainer } from 'baseui/toast'
+import '@/styles/_reset.scss'
 
 apiInit()
 const engine = new Styletron()
