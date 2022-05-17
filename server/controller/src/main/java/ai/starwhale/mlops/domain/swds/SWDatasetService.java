@@ -35,12 +35,14 @@ import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -89,9 +91,14 @@ public class SWDatasetService {
 
         SWDatasetVersionEntity versionEntity = swdsVersionMapper.getLatestVersion(dsID);
         if(versionEntity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip("Unable to find the latest version of swmp " + dsID), HttpStatus.BAD_REQUEST);
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                .tip("Unable to find the latest version of swds " + ds.getId()), HttpStatus.BAD_REQUEST);
         }
+        return toSWDatasetInfoVO(ds, versionEntity);
+
+    }
+
+    private SWDatasetInfoVO toSWDatasetInfoVO(SWDatasetEntity ds,SWDatasetVersionEntity versionEntity) {
 
         //Get file list in storage
         try {
@@ -111,7 +118,6 @@ public class SWDatasetService {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE)
                 .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 
 
@@ -188,4 +194,42 @@ public class SWDatasetService {
             .collect(Collectors.toList());
     }
 
+    public List<SWDatasetInfoVO> listDS(String project, String name) {
+        if(StringUtils.hasText(name)){
+            SWDatasetEntity ds = swdsMapper.findByName(name);
+            if(null == ds){
+                throw new SWValidationException(ValidSubject.SWDS)
+                    .tip("Unable to find the swds with name " + name);
+            }
+            return swDatasetInfoOfDs(ds);
+        }
+        ProjectEntity projectEntity;
+        if(!StringUtils.hasText(project)){
+            projectEntity = projectManager.findDefaultProject();
+        }else {
+            projectEntity = projectManager.findByName(project);
+        }
+
+        if(null == projectEntity){
+            return List.of();
+        }
+        List<SWDatasetEntity> swDatasetEntities = swdsMapper.listDatasets(projectEntity.getId(), null);
+        if(null == swDatasetEntities || swDatasetEntities.isEmpty()){
+            return List.of();
+        }
+        return swDatasetEntities.parallelStream()
+            .map(swDatasetEntity -> swDatasetInfoOfDs(swDatasetEntity))
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
+    }
+
+    private List<SWDatasetInfoVO> swDatasetInfoOfDs(SWDatasetEntity ds) {
+        List<SWDatasetVersionEntity> swDatasetVersionEntities = swdsVersionMapper.listVersions(
+            ds.getId(), null, null);
+        if(null == swDatasetVersionEntities || swDatasetVersionEntities.isEmpty()){
+            return List.of();
+        }
+        return swDatasetVersionEntities.parallelStream()
+            .map(entity -> toSWDatasetInfoVO(ds, entity)).collect(Collectors.toList());
+    }
 }

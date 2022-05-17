@@ -54,6 +54,12 @@
         for update
     </select>
 
+    <select id="findByDSIdAndVersionName" resultMap="dsVersionResultMap" >
+        <include refid="select_swds_version" />
+        and dataset_id = #{datasetId}
+        and version_name = #{versionName}
+    </select>
+
     <select id="getVersionById" resultMap="dsVersionResultMap" >
         <include refid="select_swds_version" />
         and dsv.id = #{dsVersionId}
