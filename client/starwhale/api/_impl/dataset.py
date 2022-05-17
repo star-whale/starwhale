@@ -161,7 +161,9 @@ class BuildExecutor(object):
         except Exception as e:
             print(f"data/label write close exception: {e}")
 
-    def _iter_files(self, filter, sort_key=None):
+    def _iter_files(
+        self, filter: str, sort_key: t.Optional[t.Any] = None
+    ) -> t.Generator[Path, None, None]:
         _key = sort_key
         if _key is not None and not callable(_key):
             raise Exception(f"data_sort_func({_key}) is not callable.")
@@ -172,34 +174,34 @@ class BuildExecutor(object):
                 continue
             yield p
 
-    def iter_data_files(self):
+    def iter_data_files(self) -> t.Generator[Path, None, None]:
         return self._iter_files(self.data_filter, self.data_sort_func())
 
-    def iter_label_files(self):
+    def iter_label_files(self) -> t.Generator[Path, None, None]:
         return self._iter_files(self.label_filter, self.label_sort_func())
 
-    def iter_all_dataset_slice(self):
+    def iter_all_dataset_slice(self) -> t.Generator[t.Any, None, None]:
         for p in self.iter_data_files():
             for d in self.iter_data_slice(str(p.absolute())):
                 yield d
 
-    def iter_all_label_slice(self):
+    def iter_all_label_slice(self) -> t.Generator[t.Any, None, None]:
         for p in self.iter_label_files():
             for d in self.iter_label_slice(str(p.absolute())):
                 yield d
 
     @abstractmethod
-    def iter_data_slice(self, path: str):
+    def iter_data_slice(self, path: str) -> t.Generator[t.Any, None, None]:
         raise NotImplementedError
 
     @abstractmethod
-    def iter_label_slice(self, path: str):
+    def iter_label_slice(self, path: str) -> t.Generator[t.Any, None, None]:
         raise NotImplementedError
 
-    def data_sort_func(self):
+    def data_sort_func(self) -> t.Any:
         return None
 
-    def label_sort_func(self):
+    def label_sort_func(self) -> t.Any:
         return None
 
 

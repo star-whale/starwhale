@@ -12,7 +12,7 @@ from starwhale.utils.http import wrap_sw_error_resp
 DEFAULT_HTTP_TIMEOUT = 90
 
 
-def login(username, password, server):
+def login(username: str, password: str, server: str) -> None:
     server = fmt_http_server(server)
     url = f"{server}/api/{SW_API_VERSION}/login"
     r = requests.post(
@@ -43,7 +43,7 @@ def login(username, password, server):
         wrap_sw_error_resp(r, "login failed!", exit=True)
 
 
-def logout():
+def logout() -> None:
     update_swcli_config(
         controller=dict(
             remote_addr="",

@@ -41,15 +41,15 @@ class _RunConfig(object):
         log_dir: _ptype = "",
         result_dir: _ptype = "",
     ) -> None:
-        self.status_dir = _p(status_dir, "status")
-        self.log_dir = _p(log_dir, "log")
-        self.result_dir = _p(result_dir, "result")
+        self.status_dir = _p(status_dir, "status")  # type: ignore
+        self.log_dir = _p(log_dir, "log")  # type: ignore
+        self.result_dir = _p(result_dir, "result")  # type: ignore
         self.swds_config = self.load_swds_config(swds_config_path)
 
         # TODO: graceful method
         self._prepare()
 
-    def load_swds_config(self, path: _ptype) -> t.Dict[str, t.Any]:
+    def load_swds_config(self, path: _ptype) -> t.Any:
         if not path:
             path = Path(_TASK_ROOT_DIR) / "config" / "swds.json"
 
@@ -76,7 +76,7 @@ class _RunConfig(object):
         )
 
     @classmethod
-    def set_env(cls, _config: dict = {}) -> None:
+    def set_env(cls, _config: t.Dict[str, t.Any] = {}) -> None:
         def _set(_k: str, _e: str) -> None:
             _v = _config.get(_k)
             if _v:
@@ -119,8 +119,8 @@ class PipelineHandler(object):
 
         self._data_loader = get_data_loader(self.config.swds_config, self._sw_logger)
         # TODO: split status/result files
-        self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)
-        self._status_writer = _jl_writer(self.config.status_dir / "timeline")
+        self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)  # type: ignore
+        self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
 
         # TODO: find some elegant call method
         self._monkey_patch()
@@ -192,7 +192,7 @@ class PipelineHandler(object):
 
     def _record_status(func):  # type: ignore
         @wraps(func)  # type: ignore
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
             self: PipelineHandler = args[0]
             self._sw_logger.info(f"start to run {func}...")
             self._update_status(self.STATUS.RUNNING)

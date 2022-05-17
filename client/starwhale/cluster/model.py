@@ -50,7 +50,7 @@ class ClusterModel(SWCliConfigMixed):
             },
             **kw,
         )
-        wrap_sw_error_resp(r, path, exit=False, use_raise=False, slient=True)
+        wrap_sw_error_resp(r, path, exit=False, use_raise=False, silent=True)
         return r
 
     def _request_create_project(self, project: str) -> t.Tuple[bool, str]:
@@ -144,7 +144,7 @@ class ClusterModel(SWCliConfigMixed):
                 dict(
                     id=_p["id"],
                     name=_p["name"],
-                    created_at=_fmt_timestamp(_p["createdTime"]),
+                    created_at=_fmt_timestamp(_p["createdTime"]),  # type: ignore
                     is_default=_p["isDefault"],
                     owner=owner,
                 )
@@ -179,7 +179,7 @@ class ClusterModel(SWCliConfigMixed):
 
         ret = []
         for _m in r.json()["data"]["list"]:
-            _m["created_at"] = (_fmt_timestamp(_m.pop("createdTime")),)
+            _m["created_at"] = (_fmt_timestamp(_m.pop("createdTime")),)  # type: ignore
             _m.pop("owner", None)
 
             mvr = self.request(
@@ -189,7 +189,7 @@ class ClusterModel(SWCliConfigMixed):
             versions = []
             for _v in mvr.json()["data"]["list"]:
                 _v["short_name"] = _v["name"][:SHORT_VERSION_CNT]
-                _v["created_at"] = _fmt_timestamp(_v.pop("createdTime"))
+                _v["created_at"] = _fmt_timestamp(_v.pop("createdTime"))  # type: ignore
                 _v.pop("owner", None)
                 if typ == ProjectObjType.DATASET:
                     _v["meta"] = yaml.safe_load(_v["meta"])
@@ -213,9 +213,9 @@ class ClusterModel(SWCliConfigMixed):
 
         for j in r["data"]["list"]:
             j.pop("owner", None)
-            j["created_at"] = _fmt_timestamp(j["createdTime"])
-            j["finished_at"] = _fmt_timestamp(j["stopTime"])
-            j["duration_str"] = _fmt_duration(j["duration"])
+            j["created_at"] = _fmt_timestamp(j["createdTime"])  # type: ignore
+            j["finished_at"] = _fmt_timestamp(j["stopTime"])  # type: ignore
+            j["duration_str"] = _fmt_duration(j["duration"])  # type: ignore
             j["short_model_version"] = j["modelVersion"][:SHORT_VERSION_CNT]
 
             jobs.append(j)
@@ -237,7 +237,7 @@ class ClusterModel(SWCliConfigMixed):
 
         tasks = []
         for _t in r["data"]["list"]:
-            _t["created_at"] = _fmt_timestamp(_t["createdTime"])
+            _t["created_at"] = _fmt_timestamp(_t["createdTime"])  # type: ignore
             tasks.append(_t)
 
         return tasks, self._parse_pager(r)
