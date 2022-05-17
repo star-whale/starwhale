@@ -177,6 +177,21 @@ public class DatasetController implements DatasetApi{
     }
 
     @Override
+    public byte[] pullDS(String name, String version,
+        String partName) {
+        if(!StringUtils.hasText(name) || !StringUtils.hasText(version) ){
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("please provide name and version for the DS "),HttpStatus.BAD_REQUEST);
+        }
+        return swdsUploader.pull(name,version,partName);
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<SWDatasetInfoVO>>> listDS(String project,
+        String name) {
+        return ResponseEntity.ok(Code.success.asResponse(swDatasetService.listDS(project,name)));
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(String projectId, String datasetId,
         String versionId, String tag) {
         Boolean res = swDatasetService.modifySWDSVersion(

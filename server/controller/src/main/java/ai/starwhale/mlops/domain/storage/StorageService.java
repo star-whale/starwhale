@@ -59,7 +59,7 @@ public class StorageService {
                     log.error("storage head", e);
                 }
                 if (StrUtil.startWith(filePath, storagePath)) {
-                    filePath = filePath.substring(0, storagePath.length());
+                    filePath = filePath.substring(storagePath.length() + 1);
                 }
                 return StorageFileVO.builder()
                     .name(filePath)

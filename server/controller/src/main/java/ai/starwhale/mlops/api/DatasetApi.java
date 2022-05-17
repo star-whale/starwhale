@@ -34,8 +34,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -196,6 +198,27 @@ public interface DatasetApi {
         @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) String uploadHeader,
         @Parameter(description = "file detail") @RequestPart(value = "file",required = false) MultipartFile dsFile,
         UploadRequest uploadRequest);
+
+    @Operation(summary = "Pull SWDS files",
+        description = "Pull SWDS files part by part. ")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+        value = "/project/dataset",
+        produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    byte[] pullDS(
+        @Parameter(name = "name", description = "the name of the SWDS attempt to pull", required = true) String name,
+        @Parameter(name = "version", description = "the version of the SWDS attempt to pull", required = true) String version,
+        @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified", required = false) @RequestParam(name = "part_name",required = false) String partName);
+
+    @Operation(summary = "List SWDS versions",
+        description = "List SWDS versions. ")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+        value = "/project/dataset/list",
+        produces = {"application/json"})
+    ResponseEntity<ResponseMessage<List<SWDatasetInfoVO>>> listDS(
+        @Parameter(name = "project", description = "the project name", required = false) @RequestParam(name = "project",required = false) String project,
+        @Parameter(name = "name", description = "the name of SWDS", required = false) @RequestParam(name = "name",required = false) String name);
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

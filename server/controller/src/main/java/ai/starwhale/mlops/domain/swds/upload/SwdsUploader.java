@@ -59,6 +59,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -330,5 +331,27 @@ public class SwdsUploader {
         final SWDSVersionWithMeta swdsVersionWithMeta = getSwdsVersion(uploadId);
         swdsVersionMapper.updateStatus(swdsVersionWithMeta.getSwDatasetVersionEntity().getId(),SWDatasetVersionEntity.STATUS_AVAILABLE);
         hotSwdsHolder.end(uploadId);
+    }
+
+    final static String SWDS_MANIFEST="_manifest.yaml";
+    public byte[] pull(String name, String version, String partName) {
+        SWDatasetEntity datasetEntity = swdsMapper.findByName(name);
+        if(null == datasetEntity){
+            throw new SWValidationException(ValidSubject.SWDS).tip("dataset name doesn't exists");
+        }
+        SWDatasetVersionEntity datasetVersionEntity = swdsVersionMapper.findByDSIdAndVersionName(
+            datasetEntity.getId(), version);
+        if(null == datasetVersionEntity){
+            throw new SWValidationException(ValidSubject.SWDS).tip("dataset version doesn't exists");
+        }
+        if(!StringUtils.hasText(partName)){
+            partName = SWDS_MANIFEST;
+        }
+        try(InputStream inputStream = storageAccessService.get(datasetVersionEntity.getStoragePath() + "/" + partName.trim())){
+            return inputStream.readAllBytes();
+        } catch (IOException e) {
+            log.error("pull file from storage failed",e);
+            throw new SWProcessException(ErrorType.STORAGE).tip("pull file from storage failed: "+ e.getMessage());
+        }
     }
 }
