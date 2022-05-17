@@ -9,6 +9,9 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils import console
 
 
+_MIN_GUESS_NAME_LENGTH = 5
+
+
 class LocalStorage(SWCliConfigMixed):
     LATEST_TAG = "latest"
 
@@ -37,15 +40,22 @@ class LocalStorage(SWCliConfigMixed):
 
         return _name, _version
 
-    def _guess(self, rootdir: Path, name: str) -> Path:
+    def _guess(self, rootdir: Path, name: str, ftype: str = "") -> Path:
         # TODO: support more guess method, such as tag
         _path = rootdir / name
         if _path.exists():
             return _path
 
-        for d in rootdir.iterdir():
-            if d.name.startswith(name) or name.startswith(d.name):
-                return d
+        if len(name) < _MIN_GUESS_NAME_LENGTH:
+            return _path
+
+        ftype = ftype.strip()
+        for fd in rootdir.iterdir():
+            if ftype and not fd.name.endswith(ftype):
+                continue
+
+            if fd.name.startswith(name) or name.startswith(fd.name):
+                return fd
         else:
             return _path
 
