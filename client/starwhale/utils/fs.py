@@ -5,6 +5,9 @@ import errno
 from pathlib import Path
 import hashlib
 
+from starwhale.utils import console
+from starwhale.utils.process import check_call
+
 BLAKE2B_SIGNATURE_ALGO = "blake2b"
 
 
@@ -28,15 +31,27 @@ def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> No
     os.chmod(path, mode)
 
 
-def empty_dir(path: t.Union[str, Path]) -> None:
-    path = Path(path)
-    if not path.exists():
+def empty_dir(p: t.Union[str, Path]) -> None:
+    path = Path(p)
+    if not path.exists() or path.resolve() == Path("/"):
         return
 
-    if path.is_dir():
-        shutil.rmtree(str(path.resolve()))
-    else:
-        path.unlink()
+    def _self_empty() -> None:
+        if path.is_dir():
+            shutil.rmtree(str(path.resolve()))
+        else:
+            path.unlink()
+
+    def _sudo_empty() -> None:
+        console.print(
+            f":bell: try to use [red bold]SUDO[/] privilege to empty : {path}"
+        )
+        check_call(f"sudo rm -rf {path}", shell=True)
+
+    try:
+        _self_empty()
+    except PermissionError:
+        _sudo_empty()
 
 
 def ensure_dir(

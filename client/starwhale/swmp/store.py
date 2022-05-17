@@ -75,7 +75,7 @@ class ModelPackageLocalStore(LocalStorage):
                     created=_manifest["created_at"],
                 )
 
-    def _load_swmp_manifest(self, fpath: Path, direct: bool = False) -> dict:
+    def _load_swmp_manifest(self, fpath: Path, direct: bool = False) -> t.Any:
         if not direct and fpath.name.endswith(_SWMP_FILE_TYPE):
             _mname = fpath.parent.name
             _mversion = fpath.name.split(_SWMP_FILE_TYPE)[0]
@@ -148,13 +148,14 @@ class ModelPackageLocalStore(LocalStorage):
         self._console.print(_config_panel)
         # TODO: add workdir tree
 
-    def get_swmp_info(self, _name: str, _version: str) -> dict:
+    def get_swmp_info(self, _name: str, _version: str) -> t.Dict[str, t.Any]:
         _workdir = self._guess(self.workdir / _name, _version)
         _swmp_path = self._guess(
             self.pkgdir / _name,
             _version if _version == self.LATEST_TAG else f"{_version}{_SWMP_FILE_TYPE}",
         )
 
+        _manifest: t.Dict[str, t.Any] = {}
         if _workdir.exists():
             _manifest = yaml.safe_load((_workdir / DEFAULT_MANIFEST_NAME).open())
             _model = yaml.safe_load((_workdir / DEFAULT_MODEL_YAML_NAME).open())
@@ -173,10 +174,10 @@ class ModelPackageLocalStore(LocalStorage):
     def gc(self, dry_run: bool = False) -> None:
         ...
 
-    def delete(self, swmp) -> None:
+    def delete(self, swmp: str) -> None:
         _model, _version = self._parse_swobj(swmp)
 
-        def _remove_workdir(_real_version):
+        def _remove_workdir(_real_version: str) -> None:
             workdir_fpath = self._guess(self.workdir / _model, _real_version)
             if not (workdir_fpath.exists() and workdir_fpath.is_dir()):
                 return
@@ -249,7 +250,7 @@ class ModelPackageLocalStore(LocalStorage):
         _f = getattr(self, f"_activate_{_env}")
         _f(_workdir, _manifest["dep"])
 
-    def _activate_conda(self, _workdir: Path, _dep: dict) -> None:
+    def _activate_conda(self, _workdir: Path, _dep: t.Dict[str, t.Any]) -> None:
         if not _dep["conda"]["use"]:
             raise Exception("env set conda, but conda:use is false")
 
@@ -277,7 +278,7 @@ class ModelPackageLocalStore(LocalStorage):
             conda_activate_render(_env_dir, _ascript)
 
     def _activate_venv(
-        self, _workdir: Path, _dep: dict, _rebuild: bool = False
+        self, _workdir: Path, _dep: t.Dict[str, t.Any], _rebuild: bool = False
     ) -> None:
         if not _dep["venv"]["use"] and not _rebuild:
             raise Exception("env set venv, but venv:use is false")
@@ -306,5 +307,5 @@ class ModelPackageLocalStore(LocalStorage):
         logger.info(f"render activate script: {_ascript}")
         venv_activate_render(_venv_dir, _ascript, relocate=_relocate)
 
-    def _activate_system(self, _workdir: Path, _dep: dict) -> None:
+    def _activate_system(self, _workdir: Path, _dep: t.Dict[str, t.Any]) -> None:
         self._activate_venv(_workdir, _dep, _rebuild=True)
