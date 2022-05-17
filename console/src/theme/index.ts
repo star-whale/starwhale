@@ -1,6 +1,6 @@
 import { Theme } from 'baseui/theme'
 import color from 'color'
-import { createDarkTheme, createLightTheme, DarkTheme as BaseDarkTheme } from 'baseui'
+import { createDarkTheme, createLightTheme, LightTheme as BaseLightTheme, DarkTheme as BaseDarkTheme } from 'baseui'
 
 export type BaseThemeType = 'light' | 'dark' | 'deep'
 export type ThemeType = BaseThemeType | 'followTheSystem'
@@ -15,25 +15,30 @@ export interface IComposedComponentProps {
     className?: string
 }
 
-export const colors = {
-    brandPrimary: '#2B65D9',
-    brandPrimaryHover: color('#2B65D9').alpha(0.5).toString(),
-    brandFontPrimary: '#02102B',
-    brandBackgroundPrimar: '#EBF1FF',
-    brandBgNav: '#122A59',
-    brandBgNavTitle: '#1D3973',
-    brandBgNavBorder: '#1D3973',
-    brandBgNavFont: '#FFFFFF',
-    brandBgNavFontGray: color('#FFFFFF').alpha(0.6).toString(),
-    brandBgContent: '#EBF1FF',
-    brandBgUser: '#D0DDF7',
-    brandBgSecondory: '#D0DDF7',
-    brandBgSecondory4: color('#D0DDF7').alpha(0.4).toString(),
-    brandBgUserFont: '#02102B',
-    brandTableHeaderBackground: '#F3F5F9',
-    brandLink: '#2B65D9',
-    // ---- raw ------
-    contentPrimary: '#02102B',
+const customPrimiaryColors = {
+    primary: '#2B65D9',
+    primaryHover: '#5181E0',
+    primaryPressed: '#1C4CAD',
+    backgroundPrimary: '#EBF1FF',
+    backgroundSecondary: '#D0DDF7',
+    backgroundHover: '#F0F4FF',
+    backgroundFullscreen: color('#02102B').alpha(0.5).toString(),
+    backgroundNav: ' #122A59',
+    backgroundNavFixed: ' #1D3973;',
+    dividerPrimary: ' #EEF1F6',
+    dividerSecondary: '  #CFD7E6',
+    fontPrimay: '#02102B',
+    fontNote: color('#02102B').alpha(0.6).toString(),
+    fontTip: color('#02102B').alpha(0.4).toString(),
+    fontDisable: color('#02102B').alpha(0.2).toString(),
+    fontWhite: '#FFFFFF',
+    fontWhite60: color('#FFFFFF').alpha(0.6).toString(),
+    error: '#CC3D3D',
+    success: '#00B368',
+    warning: '#E67F17',
+    tips: '#4D576A',
+    shadow1: BaseLightTheme.lighting.shadow500,
+    shadow2: BaseLightTheme.lighting.shadow600,
 }
 
 const primitives = {
@@ -56,14 +61,40 @@ const overrides = {
     },
     deep: {
         colors: {
-            buttonPrimaryFill: colors.brandPrimary,
+            primary: customPrimiaryColors.primary,
+            accent: customPrimiaryColors.primary,
+            positive: customPrimiaryColors.primary,
+            contentPrimary: customPrimiaryColors.fontPrimay,
+            buttonPrimaryFill: customPrimiaryColors.primary,
+            buttonPrimaryHover: customPrimiaryColors.primaryHover,
+            buttonPrimaryActive: customPrimiaryColors.primaryPressed,
+            borderSelected: customPrimiaryColors.primary,
+            tickFillSelected: customPrimiaryColors.primary,
+            tickFillSelectedHover: customPrimiaryColors.primary,
             // ----------- custom -----------
-            brandRootBackground: colors.brandBackgroundPrimar,
-            ...colors,
+            brandPrimary: customPrimiaryColors.primary,
+            brandPrimaryHover: customPrimiaryColors.primaryHover,
+            brandFontPrimary: customPrimiaryColors.fontPrimay,
+            brandBgNav: customPrimiaryColors.backgroundNav,
+            brandBgNavTitle: customPrimiaryColors.backgroundNavFixed,
+            brandBgNavBorder: customPrimiaryColors.backgroundNavFixed,
+            brandBgNavFont: customPrimiaryColors.fontWhite,
+            brandBgNavFontGray: customPrimiaryColors.fontWhite60,
+            brandBgUser: customPrimiaryColors.backgroundSecondary,
+            brandBgSecondory: customPrimiaryColors.backgroundSecondary,
+            brandBgSecondory4: color('#D0DDF7').alpha(0.4).toString(),
+            brandBgUserFont: customPrimiaryColors.fontPrimay,
+            brandTableHeaderBackground: '#F3F5F9',
+            brandLink: customPrimiaryColors.primary,
+            brandRootBackground: customPrimiaryColors.backgroundPrimary,
         },
         typography: {},
         borders: {
+            inputBorderRadius: '4px',
             buttonBorderRadius: '4px',
+            popoverBorderRadius: '4px',
+            surfaceBorderRadius: '4px',
+            tagBorderRadius: '4px',
         },
     },
 }

@@ -1,8 +1,24 @@
 
 
 .tr--selected {
-  background: #FFFFFF;
-  border:1px solid ;
-  box-shadow: 1px 1px 8px 1px rgba(0,0,0,0.20);
-  border-radius: 8px;
+background: #2B65D9;
+border-radius: 8px;
+
+ td {
+  color: #ffffff !important;
+ }
+ a {
+  color: #ffffff !important;
+ }
+
+
+ &:hover {
+   td {
+    color: rgb(2, 16, 43) !important;
+   }
+   a {
+    color: #2B65D9 !important;
+   }
+  
+ }
 }
