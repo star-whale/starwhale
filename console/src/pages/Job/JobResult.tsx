@@ -53,13 +53,28 @@ function JobResult() {
                             >
                                 Sumary
                             </LabelMedium>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6 }}>
                                 {_(data)
                                     .map((subV, subK) => (
-                                        <>
-                                            <p>{subK}</p>
+                                        <div
+                                            style={{
+                                                backgroundColor: '#F0F4FF',
+                                                borderRadius: '4px',
+                                                padding: '0 24px',
+                                                gap: 12,
+                                                display: 'flex',
+                                                lineHeight: '24px',
+                                            }}
+                                        >
+                                            <p
+                                                style={{
+                                                    color: 'rgba(2,16,43,0.60)',
+                                                }}
+                                            >
+                                                {subK}
+                                            </p>
                                             <p>{subV}</p>
-                                        </>
+                                        </div>
                                     ))
                                     .value()}
                             </div>
