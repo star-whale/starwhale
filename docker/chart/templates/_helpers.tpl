@@ -152,12 +152,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
+            - name: SW_CURRENT_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             - name: SW_CONTROLLER_URL
               value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}/"
             - name: SW_BASE_PATH
               value: "/opt/starwhale"
             - name: DOCKER_HOST
-              value: "tcp://127.0.0.1:2376"
+              value: "tcp://$(SW_CURRENT_POD_IP):{{ .Values.taskset.dockerPort }}"
             - name: SW_STORAGE_PREFIX
               value: "{{ include "common.names.fullname" . }}"
             {{- if .Values.minio.enabled}}
@@ -192,6 +196,8 @@ spec:
               subPath: dind
         - name: taskset
           image: "{{ .Values.image.registry}}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag | default .Chart.AppVersion }}"
+          ports:
+            - containerPort: {{ .Values.taskset.dockerPort }}
           env:
             {{ include "chart.mirror.env" . | nindent 12 }}
             - name: SW_HOST_IP
