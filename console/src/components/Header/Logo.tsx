@@ -1,10 +1,9 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import smallLogoImg from '@/assets/logo_small.svg'
+import smallLogoImg from '@/assets/logo_small_en_white.svg'
 import normalLogoImg from '@/assets/logo_normal_en_white.svg'
 import { IComposedComponentProps } from '@/theme'
-import Text from '@/components/Text'
 import { createUseStyles } from 'react-jss'
 import classNames from 'classnames'
 import { sidebarFoldedWidth, sidebarExpandedWidth, headerHeight } from '@/consts'
@@ -16,7 +15,7 @@ const useLogoStyles = createUseStyles({
         textDecoration: 'none',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'width 200ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
+        transition: 'width 100ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
         height: headerHeight,
     },
 })
@@ -31,27 +30,9 @@ export default function Logo({ expanded = true, className }: ILogoProps) {
     const styles = useLogoStyles()
 
     const LogoText = expanded ? (
-        <Text
-            size='large'
-            style={{
-                display: 'flex',
-                fontSize: '30px',
-                color: '#fff',
-            }}
-        >
-            <img width='150px' src={normalLogoImg} alt='logo' />
-        </Text>
+        <img style={{ width: '140px' }} src={normalLogoImg} alt='logo' />
     ) : (
-        <Text
-            size='large'
-            style={{
-                display: 'flex',
-                fontSize: '20px',
-                color: '#fff',
-            }}
-        >
-            <img src={smallLogoImg} alt='logo' />
-        </Text>
+        <img style={{ width: '50px' }} src={smallLogoImg} alt='logo' />
     )
 
     if (!currentUser)

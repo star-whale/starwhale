@@ -164,7 +164,7 @@ export default function JobOverview() {
                 style={{
                     width: '100%',
                     display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 430px',
+                    gridTemplateColumns: '1fr 1fr',
                     gridAutoRows: '200px',
                     // gridAutoColumns: 'minmax(200px, 1fr)',
                     gridGap: '16px',
@@ -215,22 +215,6 @@ export default function JobOverview() {
                         ))}
                     </Accordion>
                 </div>
-
-                <Card
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-                        gap: '12px',
-                        fontSize: '16px',
-                    }}
-                >
-                    {items.map((v) => (
-                        <div key={v?.label} style={{ display: 'flex' }}>
-                            <div style={{ flexBasis: '130px' }}>{v?.label}</div>
-                            <div>: {v?.value}</div>
-                        </div>
-                    ))}
-                </Card>
             </div>
         </>
     )

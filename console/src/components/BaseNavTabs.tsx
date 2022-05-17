@@ -37,6 +37,13 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
             }}
             fill='intrinsic'
             activateOnFocus
+            overrides={{
+                TabHighlight: {
+                    style: {
+                        background: 'var(--color-brandPrimary)',
+                    },
+                },
+            }}
         >
             {navItems.map((item) => {
                 const Icon = item.icon
@@ -50,7 +57,12 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
                             },
                             Tab: {
                                 style: {
-                                    background: 'transparent',
+                                    'background': 'transparent',
+                                    'color': item.path == activeItemId ? 'var(--color-brandPrimary)' : '',
+                                    ':hover': {
+                                        background: 'transparent',
+                                        color: 'var(--color-brandPrimary)',
+                                    },
                                 },
                             },
                         }}

@@ -1,7 +1,5 @@
 import useTranslation from '@/hooks/useTranslation'
-import { BsFolder2 } from 'react-icons/bs'
 import { BiBarChartSquare, BiLayer, BiEqualizer } from 'react-icons/bi'
-
 import React, { useMemo } from 'react'
 import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import { useParams } from 'react-router'
@@ -14,7 +12,6 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
     const project = projectInfo?.data
     const projectName = project?.name || t('PROJECT')
 
-    console.log(project?.name, projectInfo)
     const navItems: INavItem[] = useMemo(() => {
         if (!project) {
             return []

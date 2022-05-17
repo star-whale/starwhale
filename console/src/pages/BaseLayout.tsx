@@ -3,6 +3,7 @@ import { Breadcrumbs } from 'baseui/breadcrumbs'
 import { useHistory } from 'react-router-dom'
 import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import Header from '@/components/Header'
+import { headerHeight } from '@/consts'
 
 export interface IBaseLayoutProps {
     children: React.ReactNode
@@ -41,22 +42,24 @@ export default function BaseLayout({
                     overflowY: 'auto',
                     height: '100%',
                     flexGrow: 1,
+                    position: 'relative',
                 }}
             >
                 <Header />
                 <div
                     style={{
-                        padding: '0 28px 28px 28px',
+                        padding: '28px',
                         border: '8px',
                         boxSizing: 'border-box',
                         minWidth: '792px',
                         display: 'flex',
                         flexDirection: 'column',
+                        paddingTop: !breadcrumbItems ? headerHeight : '28px',
                         ...contentStyle,
                     }}
                 >
                     {(breadcrumbItems || extra) && (
-                        <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center' }}>
+                        <div style={{ marginBottom: 27, display: 'flex', alignItems: 'center' }}>
                             {breadcrumbItems && (
                                 <div style={{ flexShrink: 0 }}>
                                     <Breadcrumbs

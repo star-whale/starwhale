@@ -181,7 +181,10 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
                         style: ({ $active }) => {
                             if ($active)
                                 return {
-                                    'padding': '0',
+                                    'paddingLeft': '0',
+                                    'paddingRight': '0',
+                                    'paddingTop': '0',
+                                    'paddingBottom': '0',
                                     'backgroundImage': 'none',
                                     'borderLeft': '0',
                                     'backgroundColor': 'var(--color-brandPrimary)',
@@ -193,7 +196,10 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
                                 }
 
                             return {
-                                'padding': '0',
+                                'paddingLeft': '0',
+                                'paddingRight': '0',
+                                'paddingTop': '0',
+                                'paddingBottom': '0',
                                 'borderLeft': '0',
                                 'backgroundColor': 'none',
                                 'backgroundImage': 'none',

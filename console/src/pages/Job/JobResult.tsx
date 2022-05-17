@@ -9,34 +9,12 @@ import { getHeatmapConfig } from '@/components/Indicator/utils'
 import { LabelLarge, LabelMedium } from 'baseui/typography'
 import { useStyletron } from 'baseui'
 import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
+import { flattenObject } from '@/utils'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
 
-function flattenObject(o: any, prefix = '', result: any = {}, keepNull = true) {
-    if (_.isString(o) || _.isNumber(o) || _.isBoolean(o) || (keepNull && _.isNull(o))) {
-        /* eslint-disable no-param-reassign */
-        result[prefix] = o
-        return result
-    }
-
-    if (_.isArray(o) || _.isPlainObject(o)) {
-        Object.keys(o).forEach((i) => {
-            let pref = prefix
-            if (_.isArray(o)) {
-                pref += `[${i}]`
-            } else if (_.isEmpty(prefix)) {
-                pref = i
-            } else {
-                pref = `${prefix} / ${i}`
-            }
-            flattenObject(o[i] ?? {}, pref, result, keepNull)
-        })
-        return result
-    }
-    return result
-}
 function JobResult() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
     const jobResult = useQuery(`fetchJobResult:${projectId}:${jobId}`, () => fetchJobResult(projectId, jobId), {

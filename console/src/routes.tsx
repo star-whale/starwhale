@@ -27,6 +27,7 @@ import JobNewCard from './pages/Project/JobNewCard'
 import JobResult from './pages/Job/JobResult'
 import JobsLayout from './pages/Job/JobsLayout'
 import JobGridCard from './pages/Job/JobGridCard'
+import ApiHeader from './api/ApiHeader'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -49,6 +50,7 @@ const Routes = () => {
     return (
         <BrowserRouter>
             <div className={styles.root}>
+                <ApiHeader />
                 <Switch>
                     <Route exact path='/projects/:projectId/jobgrids'>
                         <JobsLayout>
