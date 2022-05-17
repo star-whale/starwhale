@@ -189,6 +189,7 @@ class DataSetLocalStore(LocalStorage):
         if not _dir.exists():
             raise NotFoundError(f"{_dir} is not existed")
 
+        _manifest: t.Dict[str, t.Any] = {}
         _manifest = yaml.safe_load((_dir / DEFAULT_MANIFEST_NAME).open())
         _dataset = yaml.safe_load((_dir / DEFAULT_DATASET_YAML_NAME).open())
 

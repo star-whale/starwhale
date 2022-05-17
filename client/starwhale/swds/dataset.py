@@ -132,12 +132,12 @@ class DataSetConfig(object):
 class DataSet(object):
     def __init__(
         self,
-        workdir: str,
+        workdir: Path,
         ds_yaml_name: str = DEFAULT_DATASET_YAML_NAME,
         dry_run: bool = False,
         ds_version: str = "",
     ) -> None:
-        self.workdir = Path(workdir)
+        self.workdir = workdir
         self._dry_run = dry_run
         self._ds_yaml_name = ds_yaml_name
         self._ds_path = self.workdir / ds_yaml_name
@@ -313,7 +313,7 @@ class DataSet(object):
 
         # TODO: abstract with ModelPackage
         self._manifest["version"] = self._version
-        self._manifest["created_at"] = now_str()
+        self._manifest["created_at"] = now_str()  # type: ignore
         logger.info(f"[step:version] dataset swds version: {self._version}")
         self._console.print(f":new: swmp version {self._version[:SHORT_VERSION_CNT]}")
         return self._version
@@ -337,19 +337,19 @@ class DataSet(object):
         )
 
     @property
-    def _data_dir(self):
+    def _data_dir(self) -> Path:
         return self._snapshot_workdir / "data"
 
     @property
-    def _src_dir(self):
+    def _src_dir(self) -> Path:
         return self._snapshot_workdir / "src"
 
     @property
-    def _dep_dir(self):
+    def _dep_dir(self) -> Path:
         return self._snapshot_workdir / "dep"
 
     @property
-    def _docker_dir(self):
+    def _docker_dir(self) -> Path:
         return self._dep_dir / "docker"
 
     @classmethod
@@ -359,7 +359,7 @@ class DataSet(object):
         ds_yaml_name: str = DEFAULT_DATASET_YAML_NAME,
         dry_run: bool = False,
     ) -> None:
-        ds = DataSet(workdir, ds_yaml_name, dry_run)
+        ds = DataSet(Path(workdir), ds_yaml_name, dry_run)
         ds._do_build()
 
     def load_dataset_config(self, fpath: t.Union[str, Path]) -> DataSetConfig:
@@ -427,6 +427,6 @@ class DataSet(object):
     def render_fuse_json(cls, swds: str, force: bool = False) -> str:
         dsl = DataSetLocalStore()
         _name, _version = dsl._parse_swobj(swds)
-        _workdir = str((dsl.dataset_dir / _name / _version).resolve())
+        _workdir = dsl._guess(dsl.dataset_dir / _name, _version)
         ds = DataSet(_workdir, ds_version=_version)
         return ds._do_render_fuse_json(force)
