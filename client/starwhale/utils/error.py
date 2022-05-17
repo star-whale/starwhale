@@ -1,23 +1,22 @@
 class FileTypeError(Exception):
-    def __str__(self) -> str:
-        return "file type error"
+    pass
 
 
 class FileFormatError(Exception):
-    def __str__(self) -> str:
-        return "file format error"
+    pass
 
 
 class NoSupportError(Exception):
-    def __str__(self) -> str:
-        return "no support"
+    pass
 
 
 class NotFoundError(Exception):
-    def __str__(self) -> str:
-        return "path no found"
+    pass
 
 
 class SWObjNameFormatError(Exception):
-    def __str__(self) -> str:
-        return "object name error, format is [name]:[version]"
+    pass
+
+
+class UnExpectedConfigFieldError(Exception):
+    pass
