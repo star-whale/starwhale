@@ -30,8 +30,9 @@ eval_cmd.add_command(_cluster_mode_cmd)
 
 
 @_local_mode_cmd.command("list", help="List evaluation result")
-def _local_list() -> None:
-    EvalLocalStorage().list()
+@click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
+def _local_list(fullname: bool) -> None:
+    EvalLocalStorage().list(fullname=fullname)
 
 
 @_cluster_mode_cmd.command("list", help="List remote starwhale controller job")

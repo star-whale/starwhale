@@ -78,8 +78,9 @@ def _info(swmp: str) -> None:
 
 
 @model_cmd.command("list", help="List swmp from local storage")
-def _list() -> None:
-    ModelPackageLocalStore().list()
+@click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
+def _list(fullname: bool) -> None:
+    ModelPackageLocalStore().list(fullname=fullname)
 
 
 @model_cmd.command("gendep", help="Generate venv or conda by swmp")

@@ -33,11 +33,18 @@ class _UploadPhase:
 
 
 class DataSetLocalStore(LocalStorage):
-    def list(self, filter: str = "", title: str = "", caption: str = "") -> None:
+    def list(
+        self,
+        filter: str = "",
+        title: str = "",
+        caption: str = "",
+        fullname: bool = False,
+    ) -> None:
         super().list(
             filter=filter,
             title="List dataset(swds) in local storage",
             caption=f"@{self.dataset_dir}",
+            fullname=fullname,
         )
 
     def iter_local_swobj(self) -> t.Generator[LocalStorage.SWobjMeta, None, None]:

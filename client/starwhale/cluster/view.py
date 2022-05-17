@@ -92,7 +92,7 @@ class ClusterView(ClusterModel):
         report = self._fetch_job_report(project, job)
 
         def _print_tasks() -> None:
-            table = Table(box=box.SIMPLE, expand=True)
+            table = Table(box=box.SIMPLE)
             table.add_column("ID", justify="left", style="cyan", no_wrap=True)
             table.add_column("UUID")
             table.add_column("Status", style="magenta")
@@ -208,7 +208,8 @@ class ClusterView(ClusterModel):
         jobs, pager = self._fetch_jobs(project, page, size)
 
         table = Table(
-            title=f"Project({project}) Jobs List", box=box.SIMPLE, expand=True
+            title=f"Project({project}) Jobs List",
+            box=box.SIMPLE,
         )
         table.add_column("ID", justify="left", style="cyan", no_wrap=True)
         table.add_column("Model", style="magenta")
@@ -316,7 +317,6 @@ class ClusterView(ClusterModel):
             table = Table(
                 show_edge=False,
                 show_header=True,
-                expand=True,
                 row_styles=["none", "dim"],
                 box=box.SIMPLE,
             )

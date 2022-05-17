@@ -42,9 +42,18 @@ _SWMP_FILE_TYPE = ".swmp"
 
 
 class ModelPackageLocalStore(LocalStorage):
-    def list(self, filter: str = "", title: str = "", caption: str = "") -> None:
+    def list(
+        self,
+        filter: str = "",
+        title: str = "",
+        caption: str = "",
+        fullname: bool = False,
+    ) -> None:
         super().list(
-            filter=filter, title="List swmp in local storage", caption=f"@{self.pkgdir}"
+            filter=filter,
+            title="List swmp in local storage",
+            caption=f"@{self.pkgdir}",
+            fullname=fullname,
         )
 
     def iter_local_swobj(self) -> t.Generator[LocalStorage.SWobjMeta, None, None]:

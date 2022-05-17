@@ -26,8 +26,9 @@ def _build(workdir, dataset_yaml):
 
 
 @dataset_cmd.command("list", help="List local dataset")
-def _list():
-    DataSetLocalStore().list()
+@click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
+def _list(fullname: bool):
+    DataSetLocalStore().list(fullname=fullname)
 
 
 @dataset_cmd.command("push", help="Push swds into starwhale controller")

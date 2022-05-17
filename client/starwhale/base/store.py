@@ -7,6 +7,7 @@ from rich.table import Table
 
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils import console
+from starwhale.consts import SHORT_VERSION_CNT
 
 
 _MIN_GUESS_NAME_LENGTH = 5
@@ -60,11 +61,17 @@ class LocalStorage(SWCliConfigMixed):
             return _path
 
     @abstractmethod
-    def list(self, filter: str = "", title: str = "", caption: str = "") -> None:
+    def list(
+        self,
+        filter: str = "",
+        title: str = "",
+        caption: str = "",
+        fullname: bool = False,
+    ) -> None:
         title = title or "List StarWhale obj[swmp|swds] in local storage"
         caption = caption or f"@{self.rootdir}"
 
-        table = Table(title=title, caption=caption, box=box.SIMPLE, expand=True)
+        table = Table(title=title, caption=caption, box=box.SIMPLE)
         table.add_column("Name", justify="right", style="cyan", no_wrap=False)
         table.add_column("Version", style="magenta")
         table.add_column("Tag", style="magenta")
@@ -74,8 +81,9 @@ class LocalStorage(SWCliConfigMixed):
         table.add_column("Created", justify="right")
 
         for s in self.iter_local_swobj():
+            _version = s.version if fullname else s.version[:SHORT_VERSION_CNT]
             table.add_row(
-                s.name, s.version, s.tag, s.size, s.environment, s.generate, s.created
+                s.name, _version, s.tag, s.size, s.environment, s.generate, s.created
             )
 
         self._console.print(table)
