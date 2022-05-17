@@ -29,3 +29,6 @@ scss:
 
 java:
   - "**/*.java"
+
+charts:
+  - "docker/chart/**"
