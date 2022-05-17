@@ -42,9 +42,18 @@ _SWMP_FILE_TYPE = ".swmp"
 
 
 class ModelPackageLocalStore(LocalStorage):
-    def list(self, filter: str = "", title: str = "", caption: str = "") -> None:
+    def list(
+        self,
+        filter: str = "",
+        title: str = "",
+        caption: str = "",
+        fullname: bool = False,
+    ) -> None:
         super().list(
-            filter=filter, title="List swmp in local storage", caption=f"@{self.pkgdir}"
+            filter=filter,
+            title="List swmp in local storage",
+            caption=f"@{self.pkgdir}",
+            fullname=fullname,
         )
 
     def iter_local_swobj(self) -> t.Generator[LocalStorage.SWobjMeta, None, None]:
@@ -90,7 +99,7 @@ class ModelPackageLocalStore(LocalStorage):
         # TODO: add more restful api for project, /api/v1/project/{project_id}/model/push
         url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/project/model/push"
 
-        _spath = self.swmp_path(swmp)
+        _spath = self._get_swmp_path(swmp)
         if not _spath.exists():
             rprint(f"[red]failed to push {swmp}[/], because of {_spath} not found")
             sys.exit(1)
@@ -112,7 +121,7 @@ class ModelPackageLocalStore(LocalStorage):
         server = fmt_http_server(server)
         url = f"{server}/api/{SW_API_VERSION}/project/model/pull"
 
-        _spath = self.swmp_path(swmp)
+        _spath = self._get_swmp_path(swmp)
         if _spath.exists() and not force:
             rprint(f":ghost: {swmp} is already existed, skip pull")
             return
@@ -124,7 +133,7 @@ class ModelPackageLocalStore(LocalStorage):
         with requests.get(
             url,
             stream=True,
-            params={"swmp": swmp, "project": project},  # type: ignore
+            params={"swmp": swmp, "project": project},
             headers={"Authorization": self._sw_token},
         ) as r:
             if r.status_code == HTTPStatus.OK:
@@ -134,10 +143,6 @@ class ModelPackageLocalStore(LocalStorage):
                 rprint(":clap: pull completed")
             else:
                 wrap_sw_error_resp(r, "pull failed", exit=True)
-
-    def swmp_path(self, swmp: str) -> Path:
-        _model, _version = self._parse_swobj(swmp)
-        return self.pkgdir / _model / f"{_version}{_SWMP_FILE_TYPE}"
 
     def info(self, swmp: str) -> None:
         _manifest = self.get_swmp_info(*self._parse_swobj(swmp))
@@ -205,11 +210,11 @@ class ModelPackageLocalStore(LocalStorage):
     def extract(
         self, swmp: str, force: bool = False, _target: t.Optional[Path] = None
     ) -> Path:
-        _name, _version = swmp.split(":")
+        _name, _version = self._parse_swobj(swmp)
         if _target:
             _target = Path(_target) / _version
         else:
-            _target = self.workdir / _name / _version
+            _target = self._guess(self.workdir / _name, _version)
 
         if (
             _target.exists()
@@ -232,14 +237,13 @@ class ModelPackageLocalStore(LocalStorage):
         return _target
 
     def _get_swmp_path(self, swmp: str) -> Path:
-        _name, _version = swmp.split(":")
-        return self.pkgdir / _name / f"{_version}{_SWMP_FILE_TYPE}"
+        _model, _version = self._parse_swobj(swmp)
+        return self._guess(self.pkgdir / _model, _version, ftype=_SWMP_FILE_TYPE)
 
     def pre_activate(self, swmp: str) -> None:
         if swmp.count(":") == 1:
-            _name, _version = swmp.split(":")
-            # TODO: guess _version?
-            _workdir = self.workdir / _name / _version
+            _name, _version = self._parse_swobj(swmp)
+            _workdir = self._guess(self.workdir / _name, _version)
         else:
             _workdir = Path(swmp)
 

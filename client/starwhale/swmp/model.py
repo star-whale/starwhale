@@ -75,7 +75,7 @@ class ModelConfig(object):
         name: str,
         model: t.List[str],
         config: t.List[str],
-        run: dict,
+        run: t.Dict[str, t.Any],
         desc: str = "",
         tag: t.List[str] = [],
         version: str = DEFAULT_STARWHALE_API_VERSION,
@@ -93,7 +93,7 @@ class ModelConfig(object):
 
         self._validator()
 
-    def _validator(self):
+    def _validator(self) -> None:
         # TODO: use attr validator
         if not self.model:
             raise FileFormatError("need at least one model")
@@ -163,7 +163,7 @@ class ModelPackage(object):
         cls,
         swmp: str = ".",
         _model_yaml_fname: str = DEFAULT_MODEL_YAML_NAME,
-        kw: dict = {},
+        kw: t.Dict[str, t.Any] = {},
     ) -> "ModelPackage":
         if swmp.count(":") == 1:
             _name, _version = swmp.split(":")
@@ -187,7 +187,7 @@ class ModelPackage(object):
         cls,
         swmp: str = ".",
         _model_yaml_fname: str = DEFAULT_MODEL_YAML_NAME,
-        kw: dict = {},
+        kw: t.Dict[str, t.Any] = {},
     ) -> None:
         mp = cls._load_runnable_mp(swmp, _model_yaml_fname, kw)
         _obj = mp._load_user_ppl_obj(kw)
@@ -199,14 +199,14 @@ class ModelPackage(object):
         cls,
         swmp: str = ".",
         _model_yaml_fname: str = DEFAULT_MODEL_YAML_NAME,
-        kw: dict = {},
+        kw: t.Dict[str, t.Any] = {},
     ) -> None:
         mp = cls._load_runnable_mp(swmp, _model_yaml_fname, kw)
         _obj = mp._load_user_ppl_obj(kw)
         _obj._starwhale_internal_run_ppl()
         mp._console.print(f":clap: finish run ppl: {_obj}")
 
-    def _load_user_ppl_obj(self, kw: dict = {}):
+    def _load_user_ppl_obj(self, kw: t.Dict[str, t.Any] = {}) -> t.Any:
         from starwhale.api._impl.model import _RunConfig
 
         _RunConfig.set_env(kw)
@@ -222,7 +222,7 @@ class ModelPackage(object):
         mp._do_validate()
         mp._do_build()
 
-    def _do_validate(self):
+    def _do_validate(self) -> None:
         sw = self._swmp_config
 
         if not sw.model:
@@ -236,13 +236,12 @@ class ModelPackage(object):
         # TODO: add 'swcli model check' cmd
 
     @logger.catch
-    def _do_build(self):
+    def _do_build(self) -> None:
         operations = [
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),
             (self._copy_src, 15, "copy src"),
             (self._dump_dep, 50, "dump python depency"),
-            (self._render_docker_script, 1, "render docker script"),
             (self._render_manifest, 5, "render manifest"),
             (self._make_swmp_tar, 20, "build swmp"),
         ]
@@ -254,11 +253,11 @@ class ModelPackage(object):
             self._version = gen_uniq_version(self._swmp_config.name)
 
         self._manifest["version"] = self._version
-        self._manifest["created_at"] = now_str()
+        self._manifest["created_at"] = now_str()  # type: ignore
         logger.info(f"[step:version]swmp version is {self._version}")
         self._console.print(f":new: swmp version {self._version[:SHORT_VERSION_CNT]}")
 
-    def _prepare_snapshot(self):
+    def _prepare_snapshot(self) -> None:
         logger.info("[step:prepare-snapshot]prepare swmp snapshot dirs...")
 
         self._swmp_store = self._store.pkgdir / self._name
@@ -350,7 +349,7 @@ class ModelPackage(object):
 
         logger.info("[step:copy]finish copy files")
 
-    def _render_manifest(self):
+    def _render_manifest(self) -> None:
         self._manifest["name"] = self._name
         self._manifest["tag"] = self._swmp_config.tag or []
         self._manifest["build"] = dict(
@@ -362,7 +361,7 @@ class ModelPackage(object):
         ensure_file(_f, yaml.dump(self._manifest, default_flow_style=False))
         logger.info(f"[step:manifest]render manifest: {_f}")
 
-    def _make_swmp_tar(self):
+    def _make_swmp_tar(self) -> None:
         out = self._swmp_store / f"{self._version}.swmp"
         logger.info(f"[step:tar]try to tar for swmp {out} ...")
         with tarfile.open(out, "w:") as tar:
@@ -373,10 +372,6 @@ class ModelPackage(object):
         self._console.print(
             f":hibiscus: congratulation! you can run [blink red bold] swcli model info {self._name}:{self._version}[/]"
         )
-
-    def _render_docker_script(self):
-        # TODO: agent run and smoketest step
-        pass
 
     def load_model_config(self, fpath: str) -> ModelConfig:
         if not os.path.exists(fpath):

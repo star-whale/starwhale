@@ -17,11 +17,17 @@ from starwhale.utils.fs import empty_dir
 
 
 class EvalLocalStorage(LocalStorage):
-    def list(self, filter: str = "", title: str = "", caption: str = "") -> None:
+    def list(
+        self,
+        filter: str = "",
+        title: str = "",
+        caption: str = "",
+        fullname: bool = False,
+    ) -> None:
         title = title or "List StarWhale Evaluation Result in local storage"
         caption = caption or f"@{self.eval_run_dir}"
 
-        table = Table(title=title, caption=caption, box=box.SIMPLE, expand=True)
+        table = Table(title=title, caption=caption, box=box.SIMPLE)
         table.add_column("Name", justify="left", style="cyan", no_wrap=False)
         table.add_column("Version", style="cyan")
         table.add_column("Model")
@@ -32,11 +38,12 @@ class EvalLocalStorage(LocalStorage):
         table.add_column("Finished At", style="magenta")
 
         def _s(x: str) -> str:
+            _end = -1 if fullname else SHORT_VERSION_CNT
             if ":" in x:
                 _n, _v = x.split(":")
-                return f"{_n}:{_v[:SHORT_VERSION_CNT]}"
+                return f"{_n}:{_v[:_end]}"
             else:
-                return x[:SHORT_VERSION_CNT]
+                return x[:_end]
 
         for _, _r in self.iter_run_result(filter):
             table.add_row(

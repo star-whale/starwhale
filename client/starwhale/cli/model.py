@@ -1,3 +1,6 @@
+import typing as t
+from pathlib import Path
+
 import click
 
 from starwhale.consts import DEFAULT_MODEL_YAML_NAME
@@ -7,7 +10,7 @@ from starwhale.swmp.store import ModelPackageLocalStore
 
 
 @click.group("model", help="StarWhale Model Package(swmp) build/push/pull...")
-def model_cmd():
+def model_cmd() -> None:
     pass
 
 
@@ -22,13 +25,13 @@ def model_cmd():
 @click.option(
     "--skip-gen-env", is_flag=True, help="does not gen conda or venv, only dump config"
 )
-def _build(workdir, model_yaml, skip_gen_env):
+def _build(workdir: str, model_yaml: str, skip_gen_env: bool) -> None:
     ModelPackage.build(workdir, model_yaml, skip_gen_env)
 
 
 @model_cmd.command("delete", help="Delete swmp from local storage")
 @click.argument("swmp")
-def _delete(swmp):
+def _delete(swmp: str) -> None:
     ModelPackageLocalStore().delete(swmp)
 
 
@@ -43,7 +46,7 @@ def _delete(swmp):
     help="project name, if omit, starwhale will push swmp to your default project",
 )
 @click.option("-f", "--force", is_flag=True, help="force push swmp")
-def _push(swmp, project, force):
+def _push(swmp: str, project: str, force: bool) -> None:
     ModelPackageLocalStore().push(swmp, project, force)
 
 
@@ -64,29 +67,30 @@ def _push(swmp, project, force):
     help="starwhale controller server, default is swcli config remote_addr",
 )
 @click.option("-f", "--force", is_flag=True, help="force pull swmp")
-def _pull(swmp, project, starwhale, force):
+def _pull(swmp: str, project: str, starwhale: str, force: bool) -> None:
     ModelPackageLocalStore().pull(swmp, project, starwhale, force)
 
 
 @model_cmd.command("info", help="Get more info abort local swmp")
 @click.argument("swmp")
-def _info(swmp):
+def _info(swmp: str) -> None:
     ModelPackageLocalStore().info(swmp)
 
 
 @model_cmd.command("list", help="List swmp from local storage")
-def _list():
-    ModelPackageLocalStore().list()
+@click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
+def _list(fullname: bool) -> None:
+    ModelPackageLocalStore().list(fullname=fullname)
 
 
 @model_cmd.command("gendep", help="Generate venv or conda by swmp")
-def _gendep():
+def _gendep() -> None:
     pass
 
 
 @model_cmd.command("gc", help="GC useless model package files")
 @click.option("--dry-run", is_flag=True, help="Dry-run swmp gc")
-def _gc(dry_run):
+def _gc(dry_run: bool) -> None:
     ModelPackageLocalStore().gc(dry_run)
 
 
@@ -100,7 +104,7 @@ def _gc(dry_run):
     default=None,
     help="extract target dir.if omitted, sw will use starwhale default workdir",
 )
-def _extract(swmp, force, target):
+def _extract(swmp: str, force: bool, target: t.Optional[Path]) -> None:
     ModelPackageLocalStore().extract(swmp, force, target)
 
 
@@ -131,8 +135,14 @@ def _extract(swmp, force, target):
     envvar=SWEnv.input_config,
     help=f"ppl swds config.json path, env is {SWEnv.input_config}",
 )
-def _ppl(swmp, model_yaml, status_dir, log_dir, result_dir, input_config):
-    # TODO: add local mock input_config
+def _ppl(
+    swmp: str,
+    model_yaml: str,
+    status_dir: str,
+    log_dir: str,
+    result_dir: str,
+    input_config: str,
+) -> None:
     ModelPackage.ppl(
         swmp,
         model_yaml,
@@ -173,7 +183,14 @@ def _ppl(swmp, model_yaml, status_dir, log_dir, result_dir, input_config):
     envvar=SWEnv.input_config,
     help=f"ppl swds config.json path, env is {SWEnv.input_config}",
 )
-def _cmp(swmp, model_yaml, status_dir, log_dir, result_dir, input_config):
+def _cmp(
+    swmp: str,
+    model_yaml: str,
+    status_dir: str,
+    log_dir: str,
+    result_dir: str,
+    input_config: str,
+) -> None:
     ModelPackage.cmp(
         swmp,
         model_yaml,
@@ -190,7 +207,7 @@ def _cmp(swmp, model_yaml, status_dir, log_dir, result_dir, input_config):
     "pre-activate", help="Prepare to restore and activate swmp runtime environment"
 )
 @click.argument("swmp")
-def _pre_activate(swmp):
+def _pre_activate(swmp: str) -> None:
     # TODO: add auto decompress
     # TODO: set activate.sw path
     ModelPackageLocalStore().pre_activate(swmp)

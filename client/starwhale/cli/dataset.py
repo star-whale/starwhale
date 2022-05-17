@@ -6,7 +6,7 @@ from starwhale.swds.store import DataSetLocalStore
 
 
 @click.group("dataset", help="StarWhale DataSet(swds) build/push/convert...")
-def dataset_cmd():
+def dataset_cmd() -> None:
     pass
 
 
@@ -18,7 +18,7 @@ def dataset_cmd():
     default=DEFAULT_DATASET_YAML_NAME,
     help="dataset yaml filename, default use ${workdir}/dataset.yaml file",
 )
-def _build(workdir, dataset_yaml):
+def _build(workdir: str, dataset_yaml: str) -> None:
     # TODO: add cmd options for dataset build, another choice for dataset.yaml
     # TODO: add dryrun
     # TODO: add compress args
@@ -26,8 +26,9 @@ def _build(workdir, dataset_yaml):
 
 
 @dataset_cmd.command("list", help="List local dataset")
-def _list():
-    DataSetLocalStore().list()
+@click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
+def _list(fullname: bool) -> None:
+    DataSetLocalStore().list(fullname=fullname)
 
 
 @dataset_cmd.command("push", help="Push swds into starwhale controller")
@@ -39,25 +40,25 @@ def _list():
     help="project name, if omit, starwhale will push swmp to your default project",
 )
 @click.option("-f", "--force", is_flag=True, help="force push swds")
-def _push(swds, project, force):
+def _push(swds: str, project: str, force: bool) -> None:
     DataSetLocalStore().push(swds, project, force)
 
 
 @dataset_cmd.command("info", help="Show dataset details")
 @click.argument("swds")
-def _info(swds):
+def _info(swds: str) -> None:
     DataSetLocalStore().info(swds)
 
 
 @dataset_cmd.command("delete", help="Delete dataset in local environment")
 @click.argument("swds")
-def _delete(swds):
+def _delete(swds: str) -> None:
     DataSetLocalStore().delete(swds)
 
 
 @dataset_cmd.command("gc", help="Delete useless dataset dir")
 @click.option("--dry-run", is_flag=True, help="Dry-run swds gc")
-def _gc(dry_run):
+def _gc(dry_run: bool) -> None:
     DataSetLocalStore().gc(dry_run)
 
 
@@ -69,5 +70,5 @@ def _gc(dry_run):
     is_flag=True,
     help=f"Force to render, if {LOCAL_FUSE_JSON_NAME} was already existed",
 )
-def _render_fuse(swds, force):
+def _render_fuse(swds: str, force: bool) -> None:
     DataSet.render_fuse_json(swds, force)
