@@ -6,7 +6,7 @@ from functools import wraps
 
 from loguru import logger
 import requests
-from requests_toolbelt.multipart.encoder import MultipartEncoder
+from requests_toolbelt.multipart.encoder import MultipartEncoder  # type: ignore
 
 from rich import print as rprint
 from rich.panel import Panel
@@ -19,15 +19,15 @@ def wrap_sw_error_resp(
     header: str,
     exit: bool = False,
     use_raise: bool = False,
-    slient: bool = False,
+    silent: bool = False,
 ) -> None:
 
-    _rprint = lambda x: x if slient else rprint
+    _rprint = lambda x: x if silent else rprint
     if r.status_code == HTTPStatus.OK:
-        _rprint(f":clap: {header} success")
+        _rprint(f":clap: {header} success")  # type: ignore
         return
 
-    _rprint(f":fearful: {header} failed")
+    _rprint(f":fearful: {header} failed")  # type: ignore
     msg = f"http status code: {r.status_code} \n"
 
     try:
@@ -38,7 +38,7 @@ def wrap_sw_error_resp(
         msg += f"starwhale code: {_resp['code']} \n"
         msg += f"error message: {_resp['message']}"
     finally:
-        _rprint(Panel.fit(msg, title=":space_invader: error details"))
+        _rprint(Panel.fit(msg, title=":space_invader: error details"))  # type: ignore
         if exit:
             sys.exit(1)
 
@@ -49,8 +49,8 @@ def wrap_sw_error_resp(
 def upload_file(
     url: str,
     fpath: t.Union[str, Path],
-    fields: dict = {},
-    headers: dict = {},
+    fields: t.Dict[str, t.Any] = {},
+    headers: t.Dict[str, t.Any] = {},
     exit: bool = False,
     use_raise: bool = False,
 ) -> requests.Response:

@@ -1,6 +1,7 @@
-import click
 import random
 import time
+
+import click
 
 from starwhale import __version__
 from starwhale.utils.config import load_swcli_config
@@ -14,11 +15,11 @@ from .cluster import cluster_cmd
 from .project import project_cmd
 
 
-def create_sw_cli():
+def create_sw_cli() -> click.core.Group:
     @click.group()
     @click.version_option(version=__version__)
     @click.option("-v", "--verbose", count=True, help="verbose for log")
-    def cli(verbose):
+    def cli(verbose: bool) -> None:
         load_swcli_config()
         init_logger(verbose)
 

@@ -31,8 +31,8 @@ ignore_missing_imports = true
 follow_imports = "silent"
 disallow_untyped_defs = false
 check_untyped_defs = true
+disallow_untyped_calls = true
 # Strict mode
-disallow_untyped_calls = false
 no_implicit_optional = false
 disallow_incomplete_defs = false
 disallow_subclassing_any = false
