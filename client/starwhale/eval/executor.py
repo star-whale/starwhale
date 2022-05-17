@@ -227,7 +227,7 @@ class EvalExecutor(object):
         self._do_run_cmd(EvalTaskType.PPL)
 
     def _do_run_cmd(self, typ: str) -> None:
-        cmd = self._gen_docker_cmd(typ)
+        cmd = self._gen_run_container_cmd(typ)
         logger.info(f"[run {typ}] docker run command output...")
         self._console.rule(f":elephant: {typ} docker cmd", align="left")
         self._console.print(f"{cmd}\n")
@@ -235,15 +235,16 @@ class EvalExecutor(object):
             f":fish: eval run:{typ} dir @ [green blink]{self._workdir}/{typ}[/]"
         )
         if not self.gencmd:
+            check_call(f"docker pull {self.baseimage}", shell=True)
             check_call(cmd, shell=True)
 
-    def _gen_docker_cmd(self, typ: str) -> str:
+    def _gen_run_container_cmd(self, typ: str) -> str:
         if typ not in (EvalTaskType.PPL, EvalTaskType.CMP):
             raise Exception(f"no support {typ} to gen docker cmd")
 
         rundir = self._workdir / typ
 
-        cmd = ["docker", "run", "--net=host", "--pull=always"]
+        cmd = ["docker", "run", "--net=host"]
         cmd += [
             "-v",
             f"{rundir}:{_CNTR_WORKDIR}",
