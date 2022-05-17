@@ -83,9 +83,6 @@ externalS3OSS:
   defaultBuckets: starwhale
   region: "local"
 
-taskset:
-  dockerPort: 2376
-
 controller:
   taskSplitSize: 2
   auth:
