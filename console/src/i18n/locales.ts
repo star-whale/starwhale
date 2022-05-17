@@ -276,6 +276,15 @@ const locales0 = {
     'no logs found': {
         en: 'no logs found',
     },
+    'Summary': {
+        en: 'Summary',
+    },
+    'Confusion Matrix': {
+        en: 'Confusion Matrix',
+    },
+    'Labels': {
+        en: 'Labels',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

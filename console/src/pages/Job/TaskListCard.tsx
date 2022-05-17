@@ -7,6 +7,9 @@ import Table from '@/components/Table/index'
 import { useParams } from 'react-router-dom'
 import { useFetchTasks } from '@job/hooks/useFetchTasks'
 import { StyledLink } from 'baseui/link'
+import { addClassName } from '../../components/BaseTable/utils'
+import { removeClassName } from '../../components/Table/utils'
+import _ from 'lodash'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -35,7 +38,15 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             task.taskStatus,
                             <StyledLink
                                 key={task.uuid}
-                                onClick={() => {
+                                onClick={(e) => {
+                                    // eslint-disalbe-next-line no-unused-expressions
+                                    let trDom = e.currentTarget.closest('tr')
+                                    let trDoms = trDom?.parentElement?.children
+                                    _.forEach(trDoms, (d) => {
+                                        d?.classList.remove('tr--selected')
+                                    })
+                                    trDom?.classList.add('tr--selected')
+
                                     onAction?.('viewlog', {
                                         ...task,
                                     })

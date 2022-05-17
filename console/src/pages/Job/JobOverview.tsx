@@ -22,30 +22,6 @@ export interface IScrollProps {
 export default function JobOverview() {
     const { job } = useJob()
     const [t] = useTranslation()
-
-    const items = [
-        {
-            label: t('Job ID'),
-            value: job?.id ?? '',
-        },
-        {
-            label: t('Owner'),
-            value: job?.owner?.name ?? '-',
-        },
-        {
-            label: t('Run time'),
-            value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration * 1000) : '-',
-        },
-        {
-            label: t('Created time'),
-            value: job?.createdTime && formatTimestampDateTime(job.createdTime),
-        },
-        {
-            label: t('End time'),
-            value: job?.stopTime && formatTimestampDateTime(job.stopTime),
-        },
-    ]
-
     const [follow, setFollow] = useState(true)
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
     const [, setExpanded] = useState(false)
@@ -173,47 +149,59 @@ export default function JobOverview() {
                 <div style={{ gridColumnStart: 'span 2' }}>
                     <TaskListCard header={null} onAction={onAction} />
 
-                    <Accordion
-                        overrides={{
-                            Content: {
-                                style: {
-                                    height: '800px',
-                                    paddingBottom: '20px',
+                    <Card outTitle={t('View Log')} style={{ padding: 0 }}>
+                        <Accordion
+                            overrides={{
+                                Header: {
+                                    style: {
+                                        borderRadius: '8px',
+                                    },
                                 },
-                            },
-                        }}
-                        onChange={({ expanded }) => {
-                            setExpanded(expanded.includes('0'))
-                        }}
-                    >
-                        {Object.entries(currentLogFiles).map(([fileName, content]) => (
-                            <Panel key={fileName} title={`Log: ${fileName}`}>
-                                {!content.startsWith('ws') ? (
-                                    <LazyLog
-                                        enableSearch
-                                        selectableLines
-                                        text={content || ''}
-                                        follow={follow}
-                                        formatPart={formatContent}
-                                        // scrollToLine={scrollToLine}
-                                        onScroll={handleScroll}
-                                    />
-                                ) : (
-                                    <LazyLog
-                                        enableSearch
-                                        selectableLines
-                                        url={currentOnlineLogUrl}
-                                        websocket
-                                        websocketOptions={{
-                                            formatMessage: formatContent,
-                                        }}
-                                        follow={follow}
-                                        onScroll={handleScroll}
-                                    />
-                                )}
-                            </Panel>
-                        ))}
-                    </Accordion>
+                                Content: {
+                                    style: {
+                                        height: '800px',
+                                        paddingBottom: '0px',
+                                        paddingTop: '0px',
+                                        backgroundColor: 'var(--color-brandBgSecondory)',
+                                    },
+                                },
+                                PanelContainer: {
+                                    style: {},
+                                },
+                            }}
+                            onChange={({ expanded }) => {
+                                setExpanded(expanded.includes('0'))
+                            }}
+                        >
+                            {Object.entries(currentLogFiles).map(([fileName, content]) => (
+                                <Panel key={fileName} title={`Log: ${fileName}`}>
+                                    {!content.startsWith('ws') ? (
+                                        <LazyLog
+                                            enableSearch
+                                            selectableLines
+                                            text={content || ''}
+                                            follow={follow}
+                                            formatPart={formatContent}
+                                            // scrollToLine={scrollToLine}
+                                            onScroll={handleScroll}
+                                        />
+                                    ) : (
+                                        <LazyLog
+                                            enableSearch
+                                            selectableLines
+                                            url={currentOnlineLogUrl}
+                                            websocket
+                                            websocketOptions={{
+                                                formatMessage: formatContent,
+                                            }}
+                                            follow={follow}
+                                            onScroll={handleScroll}
+                                        />
+                                    )}
+                                </Panel>
+                            ))}
+                        </Accordion>
+                    </Card>
                 </div>
             </div>
         </>

@@ -18,6 +18,7 @@ const useStyles = createUseStyles({
 
         return {
             'background': props.theme.colors.backgroundPrimary,
+            'marginTop': '100px',
             '& a': linkStyle,
             '& a:link': linkStyle,
             '& a:visited': linkStyle,
@@ -27,6 +28,7 @@ const useStyles = createUseStyles({
 
 export interface ICardProps {
     title?: string | React.ReactNode
+    outTitle?: string
     titleIcon?: IconType
     titleTail?: React.ReactNode
     style?: React.CSSProperties
@@ -44,6 +46,7 @@ export interface ICardProps {
 
 export default function Card({
     title,
+    outTitle,
     titleIcon: TitleIcon,
     titleTail,
     middle,
@@ -86,8 +89,22 @@ export default function Card({
             ref={mountCard}
             onClick={onClick}
             className={classNames(styles.card, dynamicStyles.card, className)}
-            style={style}
+            style={{
+                ...style,
+                marginTop: outTitle ? '56px' : '0',
+            }}
         >
+            {outTitle && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '-36px',
+                        left: 0,
+                    }}
+                >
+                    {outTitle}
+                </div>
+            )}
             {(title || extra) && (
                 <div
                     className={styles.cardHeadWrapper}

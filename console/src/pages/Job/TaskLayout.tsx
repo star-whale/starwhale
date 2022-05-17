@@ -105,7 +105,7 @@ function TaskLayout({ children }: IJobLayoutProps) {
             }}
             bodyStyle={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
                 gap: '12px',
             }}
         >
@@ -120,9 +120,9 @@ function TaskLayout({ children }: IJobLayoutProps) {
                             borderRadius: '4px',
                         }}
                     >
-                        {v?.label}
+                        {v?.label}:
                     </div>
-                    <div>: {v?.value}</div>
+                    <div> {v?.value}</div>
                 </div>
             ))}
         </Card>

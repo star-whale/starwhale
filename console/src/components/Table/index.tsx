@@ -28,9 +28,9 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             cursor: 'pointer',
                         },
                         props: {
-                            //     onClick: (e: React.MouseEvent) => {
-                            //         e.currentTarget.querySelector('a')?.click()
-                            //     },
+                            onClick: (e: React.MouseEvent) => {
+                                // e.currentTarget.querySelector('a')?.click()
+                            },
                         },
                     },
                     TableHeadCell: {

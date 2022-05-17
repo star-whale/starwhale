@@ -6,10 +6,12 @@ import { fetchJobResult } from '@/domain/job/services/job'
 import { ILabels, INDICATORTYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
 import { getHeatmapConfig } from '@/components/Indicator/utils'
-import { LabelLarge, LabelMedium } from 'baseui/typography'
+import { LabelLarge, LabelMedium, LabelSmall } from 'baseui/typography'
 import { useStyletron } from 'baseui'
 import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
 import { flattenObject } from '@/utils'
+import Card from '@/components/Card'
+import useTranslation from '@/hooks/useTranslation'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -22,10 +24,12 @@ function JobResult() {
     })
 
     const [, theme] = useStyletron()
+    const [t] = useTranslation()
 
     const indicators = useMemo(() => {
         return _.map(jobResult?.data, (v, k) => {
             let children = null
+            let outTitle = ''
 
             switch (k) {
                 default:
@@ -35,6 +39,7 @@ function JobResult() {
                     break
                 case INDICATORTYPE.SUMMARY: {
                     const data = _.isObject(v) ? flattenObject(v) : {}
+                    outTitle = t('Summary')
                     children = _.isObject(v) ? (
                         <div>
                             <LabelMedium
@@ -74,7 +79,7 @@ function JobResult() {
                 }
                 case INDICATORTYPE.CONFUSION_MATRIX: {
                     const heatmapData = getHeatmapConfig(k, _.keys(v?.binarylabel), v?.binarylabel)
-
+                    outTitle = t('Confusion Matrix')
                     children = (
                         <React.Suspense fallback={<BusyPlaceholder />}>
                             <PlotlyVisualizer data={heatmapData} />
@@ -96,14 +101,19 @@ function JobResult() {
                             fn,
                         })
                     })
+                    outTitle = t('Labels')
                     children = <LabelsIndicator isLoading={jobResult.isLoading} data={v} />
                     break
             }
             return (
                 children && (
-                    <div key={k} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
+                    <Card
+                        outTitle={outTitle}
+                        key={k}
+                        style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}
+                    >
                         {children}
-                    </div>
+                    </Card>
                 )
             )
         })
@@ -123,24 +133,40 @@ function JobResult() {
                 <div
                     key='kind'
                     style={{
-                        width: '100%',
-                        lineHeight: 50,
-                        padding: '20px',
-                        background: '#fff',
-                        borderRadius: '12px',
-                        marginBottom: '16px',
                         boxSizing: 'border-box',
+                        display: 'flex',
                     }}
                 >
-                    <LabelLarge
+                    <div
+                        style={{
+                            width: 0,
+                            height: '28px',
+                            border: '4px solid',
+                            borderColor: '#2B65D9',
+                            marginRight: '2px',
+                        }}
+                    ></div>
+                    <LabelSmall
                         $style={{
                             textOverflow: 'ellipsis',
                             overflow: 'hidden',
                             whiteSpace: 'nowrap',
+                            background: '#2B65D9',
+                            lineHeight: '28px',
+                            color: '#FFF',
+                            paddingLeft: '12px',
                         }}
                     >
                         Kind: {jobResult.data?.kind ?? ''}
-                    </LabelLarge>
+                    </LabelSmall>
+                    <div
+                        style={{
+                            width: 0,
+                            height: 0,
+                            border: '14px solid',
+                            borderColor: '#2B65D9 transparent #2B65D9 #2B65D9',
+                        }}
+                    ></div>
                 </div>
             )}
             <div

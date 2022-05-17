@@ -12,6 +12,7 @@ import themes from '@/theme'
 import { apiInit } from '@/api'
 import { ToasterContainer } from 'baseui/toast'
 import '@/styles/_reset.scss'
+import '@/styles/_global.scss'
 
 apiInit()
 const engine = new Styletron()

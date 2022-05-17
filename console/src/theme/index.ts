@@ -32,6 +32,8 @@ export const colors = {
     brandBgUserFont: '#02102B',
     brandTableHeaderBackground: '#F3F5F9',
     brandLink: '#2B65D9',
+    // ---- raw ------
+    contentPrimary: '#02102B',
 }
 
 const primitives = {
