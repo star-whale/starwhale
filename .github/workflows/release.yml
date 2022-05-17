@@ -151,3 +151,36 @@ jobs:
           make release-server
           make build-starwhale
           make release-starwhale
+
+  helm-charts-release:
+    runs-on: ubuntu-latest
+    needs:
+      - image-release
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.8.1
+
+      - name: Get tag
+        id: tag
+        uses: dawidd6/action-get-tag@v1
+        with:
+          strip_v: true
+
+      - name: Package, Index and Publish
+        working-directory: ./docker/charts
+        env:
+          RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
+          API_TOKEN_GITHUB: ${{ secrets.RELEASE_HELM_CHARTS_TOKEN }}
+        run: |
+          make cleanup
+          make package
+          make upload

@@ -31,4 +31,4 @@ java:
   - "**/*.java"
 
 charts:
-  - "docker/chart/**"
+  - "docker/charts/**"

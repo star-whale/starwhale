@@ -1,0 +1,4 @@
+owner: star-whale
+git-repo: charts
+git-base-url: https://api.github.com/
+git-upload-url: https://uploads.github.com/

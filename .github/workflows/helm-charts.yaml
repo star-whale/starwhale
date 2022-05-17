@@ -1,4 +1,4 @@
-name: Helm Chart Linter
+name: Helm Charts Linter
 
 on:
   push:
@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Check for java files changed
+      - name: Check for files changed
         uses: getsentry/paths-filter@v2
         id: filter
         with:
@@ -29,7 +29,7 @@ jobs:
 
     needs:
       - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.server == 'true') || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.charts == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v3
@@ -47,4 +47,5 @@ jobs:
         uses: helm/chart-testing-action@v2.2.1
 
       - name: Run chart-testing (lint)
+        working-directory: ./docker/charts
         run: ct lint --all

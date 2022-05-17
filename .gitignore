@@ -85,5 +85,5 @@ docs/build
 docs/.docusaurus
 
 # Helm Charts
-docker/chart/index.yaml
-docker/chart/starwhale-*.tgz
+docker/charts/index.yaml
+docker/charts/starwhale-*.tgz
