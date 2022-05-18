@@ -23,10 +23,12 @@ import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBasePPLTaskAction;
 import cn.hutool.core.bean.BeanUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class ArchivedAction extends AbsBasePPLTaskAction {
 
@@ -45,10 +47,15 @@ public class ArchivedAction extends AbsBasePPLTaskAction {
     public void success(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
         // upload log
         if (StringUtils.isNotEmpty(oldTask.getContainerId())) {
-            ContainerClient.ContainerInfo info = containerClient.containerInfo(oldTask.getContainerId());
-            taskPersistence.uploadContainerLog(oldTask, info.getLogPath());
-            // remove container
-            containerClient.removeContainer(oldTask.getContainerId(), true);
+            try {
+                ContainerClient.ContainerInfo info = containerClient.containerInfo(oldTask.getContainerId());
+                taskPersistence.uploadContainerLog(oldTask, info.getLogPath());
+                // remove container
+                containerClient.removeContainer(oldTask.getContainerId(), true);
+            } catch (Exception e) {
+                log.error("occur some error when upload container log:{}", e.getMessage(), e);
+            }
+
         }
 
         // remove from origin list

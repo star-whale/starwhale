@@ -32,3 +32,6 @@ java:
 
 charts:
   - "docker/charts/**"
+
+bootstrap:
+  - "bootstrap/**/*.yaml"
