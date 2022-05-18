@@ -25,5 +25,5 @@ dependencies:
     version: 11.x.x
 
 
-version: "latest"
-appVersion: "latest"
+version: "0.1.0"
+appVersion: "0.1.0"
