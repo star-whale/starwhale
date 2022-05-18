@@ -1,0 +1,16 @@
+---
+# mysql container
+
+- name: start mysql
+  community.docker.docker_container:
+    name: mysql_by_bootstrap
+    image: "{{ mysql_image }}"
+    state: started
+    pull: true
+    restart_policy: always
+    ports:
+      - "{{ mysql_port }}:3306"
+    env:
+      MYSQL_ROOT_PASSWORD: "{{ mysql_root_pwd }}"
+    volumes:
+      - "{{ mysql_data_dir }}:/var/lib/mysql"

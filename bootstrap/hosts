@@ -1,0 +1,9 @@
+[controller]
+controller.starwhale.com
+[storage]
+storage.starwhale.com
+[agent]
+agent01.starwhale.com
+agent02.starwhale.com
+agent03.starwhale.com
+agent04.starwhale.com
