@@ -24,7 +24,7 @@ const customPrimiaryColors = {
     backgroundHover: '#F0F4FF',
     backgroundFullscreen: color('#02102B').alpha(0.5).toString(),
     backgroundNav: ' #122A59',
-    backgroundNavFixed: ' #1D3973;',
+    backgroundNavFixed: ' #1D3973',
     dividerPrimary: ' #EEF1F6',
     dividerSecondary: '  #CFD7E6',
     fontPrimay: '#02102B',

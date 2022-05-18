@@ -33,13 +33,13 @@ const useBaseSideBarStyles = createUseStyles({
     },
     siderTitle: {
         height: '56px',
-        background: 'var(--color-brandBgNavTitle)',
+        backgroundColor: 'var(--color-brandBgNavTitle)',
         color: 'var(--color-brandBgNavFont)',
         display: 'flex',
         gap: 14,
         fontSize: '14px',
-        alignItems: 'center',
-        padding: '8px 8px 8px 15px',
+        placeItems: 'center',
+        padding: '8px 15px 8px 15px',
         overflow: 'hidden',
         textDecoration: 'none',
         marginBottom: '7px',
@@ -144,18 +144,26 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
             }}
         >
             <Logo className={styles.siderLogo} expanded={ctx.expanded} />
-            {ctx.expanded && title && icon && (
-                <Link className={styles.siderTitle} to='/projects'>
+            {title && icon && (
+                <Link
+                    className={styles.siderTitle}
+                    style={{
+                        paddingLeft: !ctx.expanded ? 28 : 15,
+                    }}
+                    to='/projects'
+                >
                     {icon}
-                    <Text
-                        style={{
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                        }}
-                    >
-                        {title}
-                    </Text>
+                    {ctx.expanded && (
+                        <Text
+                            style={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            {title}
+                        </Text>
+                    )}
                 </Link>
             )}
             <Navigation

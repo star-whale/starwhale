@@ -1,10 +1,8 @@
 import useTranslation from '@/hooks/useTranslation'
-import { BiBarChartSquare, BiLayer, BiEqualizer } from 'react-icons/bi'
 import React, { useMemo } from 'react'
 import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import { useParams } from 'react-router'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
-import projectSvg from '@/assets/fonts/project.svg'
 import IconFont from '@/components/IconFont'
 
 export default function ProjectSidebar({ style }: IComposedSidebarProps) {
@@ -40,5 +38,12 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
             },
         ]
     }, [project, projectInfo?.data, projectId, t])
-    return <BaseSidebar navItems={navItems} style={style} title={projectName} icon={<IconFont type='project' />} />
+    return (
+        <BaseSidebar
+            navItems={navItems}
+            style={style}
+            title={projectName}
+            icon={<IconFont type='project' size={20} />}
+        />
+    )
 }
