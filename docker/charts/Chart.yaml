@@ -9,7 +9,7 @@ maintainers:
   - name: "Starwhale Team"
     email: developer@starwhale.ai
     url: https://starwhale.ai/team
-icon: https://raw.githubusercontent.com/star-whale/starwhale/main/docs/static/img/starwhale.png
+icon: https://raw.githubusercontent.com/star-whale/starwhale/main/docs/static/img/logo_72x72px.png
 
 dependencies:
   - name: common
@@ -23,7 +23,6 @@ dependencies:
     condition: minio.enabled
     repository: https://charts.bitnami.com/bitnami
     version: 11.x.x
-
 
 version: "0.1.0"
 appVersion: "0.1.0"
