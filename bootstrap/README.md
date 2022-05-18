@@ -28,5 +28,5 @@
 - use make cmd
   - `make install`
   - edit the hosts file at your machine,the same with above example
-  - `make check {sudoer}`
-  - `make play {sudoer}`
+  - `make check user={sudoer}`
+  - `make play user={sudoer}`

@@ -1,14 +1,14 @@
 
 install:
-	pip install -r requirements.txt
+	python3 -m pip install -r requirements.txt
 
 lint:
 	ansible-lint
 
-# make check {your admin name}
+# make check user={your admin name}
 check:
-	ansible-playbook bootstrap.yaml -i hosts --user $(1) --check
+	ansible-playbook bootstrap.yaml -i hosts --user $(user) --check
 
-# make play {your admin name}
+# make play user={your admin name}
 play:
-	ansible-playbook bootstrap.yaml -i hosts --user $(1)
+	ansible-playbook bootstrap.yaml -i hosts --user $(user)
