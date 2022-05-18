@@ -9,7 +9,7 @@ maintainers:
   - name: "Starwhale Team"
     email: developer@starwhale.ai
     url: https://starwhale.ai/team
-icon: file://./logo.png
+icon: https://raw.githubusercontent.com/star-whale/starwhale/main/docs/static/img/starwhale.png
 
 dependencies:
   - name: common
