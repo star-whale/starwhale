@@ -37,7 +37,11 @@
 </a>
 
 <a href='https://coveralls.io/github/star-whale/starwhale?branch=main'>
-    <img src='https://coveralls.io/repos/github/star-whale/starwhale/badge.svg?branch=main' alt='Python Client/SDK Coverage Status' />
+    <img src='https://coveralls.io/repos/github/star-whale/starwhale/badge.svg?branch=main' alt='Coverage Status' />
+</a>
+
+<a href='https://artifacthub.io/packages/helm/starwhale/starwhale'>
+    <img src='https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/starwhale' alt='Artifact Hub'/>
 </a>
 
 </p>
