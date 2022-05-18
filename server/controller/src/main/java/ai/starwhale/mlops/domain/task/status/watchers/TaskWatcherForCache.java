@@ -22,6 +22,7 @@ import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELLING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.FAIL;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.SUCCESS;
 
+import ai.starwhale.mlops.domain.task.TaskWrapper;
 import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -69,7 +70,16 @@ public class TaskWatcherForCache implements TaskStatusChangeWatcher {
             taskMapper.updateTaskStatus(List.of(task.getId()),newStatus);
         }
 
-        taskCache.update(task.getId(),newStatus);
+        if(!taskCache.update(task.getId(),newStatus)){
+            log.warn("task doesn't exists in cache, update it's status directly");
+            if(task instanceof TaskWrapper){
+                TaskWrapper taskWrapper = (TaskWrapper) task;
+                taskWrapper.unwrap().setStatus(ASSIGNING);
+            }else {
+                task.setStatus(ASSIGNING);
+            }
+
+        }
     }
 
     final static Set<TaskStatus> easyLostStatuses = Set.of(SUCCESS, FAIL,

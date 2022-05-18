@@ -120,15 +120,16 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
     }
 
     @Override
-    public void update(Long taskId, TaskStatus newStatus) {
+    public boolean update(Long taskId, TaskStatus newStatus) {
         final Task taskResident = taskIdMap.get(taskId);
         if (null == taskResident) {
             log.debug("no resident task of id {}", taskId);
-            return;
+            return false;
         }
         updateTaskStatusMap(newStatus,taskResident);
         toBePersistentTasks.offer(taskId);
         taskResident.setStatus(newStatus);
+        return true;
     }
 
     /**
@@ -169,6 +170,7 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
 
     @Override
     public void clearTasksOf(Long jid) {
+        log.info("clearing cache of jobid {}",jid);
         final Set<Long> toBeClearedTaskIds = jobTaskMap.get(jid);
         jobIdMap.remove(jid);
         jobTaskMap.remove(jid);
@@ -179,6 +181,7 @@ public class LivingTaskCacheImpl implements LivingTaskCache {
         toBeClearedTaskIds.parallelStream().forEach(tid->{
             taskIdMap.remove(tid);
         });
+        log.info("cleared cache of jobid {}",jid);
     }
 
     @Scheduled(fixedDelay = 1000)

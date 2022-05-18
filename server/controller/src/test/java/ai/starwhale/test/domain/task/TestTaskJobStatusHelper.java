@@ -205,13 +205,27 @@ public class TestTaskJobStatusHelper {
         logTasks(tasks);
         Assertions.assertEquals(JobStatus.FAIL, taskJobStatusHelper.desiredJobStatus(
             tasks));
-        List<Task> tasks1 = List.of(
+        tasks = List.of(
             mock(PPL, FAIL), mock(PPL, CANCELED), successPPL(), successPPL(), successPPL(),
             successPPL(), successPPL());
-        logTasks(tasks1);
+        logTasks(tasks);
         Assertions.assertEquals(JobStatus.FAIL, taskJobStatusHelper.desiredJobStatus(
-            tasks1));
+            tasks));
 
+        tasks = List.of(
+            mock(PPL, FAIL), mock(PPL, CREATED),  mock(PPL, CREATED), mock(PPL, CREATED), mock(PPL, CREATED),successPPL(), successPPL(), successPPL(),
+            successPPL(), successPPL());
+        logTasks(tasks);
+        Assertions.assertEquals(JobStatus.FAIL, taskJobStatusHelper.desiredJobStatus(
+            tasks));
+
+    }
+
+    @Test
+    public void  testEmpty(){
+        List<Task> tasks = List.of();
+        Assertions.assertEquals(JobStatus.UNKNOWN, taskJobStatusHelper.desiredJobStatus(
+            tasks));
     }
 
     private Task successPPL() {

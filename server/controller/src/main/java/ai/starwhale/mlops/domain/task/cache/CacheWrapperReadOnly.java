@@ -40,8 +40,8 @@ public class CacheWrapperReadOnly implements LivingTaskCache{
     }
 
     @Override
-    public void update(Long taskId, TaskStatus newStatus) {
-        livingTaskCache.update(taskId,newStatus);
+    public boolean update(Long taskId, TaskStatus newStatus) {
+        return livingTaskCache.update(taskId,newStatus);
     }
 
     @Override

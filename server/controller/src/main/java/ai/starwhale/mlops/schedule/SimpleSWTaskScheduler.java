@@ -84,6 +84,7 @@ public class SimpleSWTaskScheduler implements SWTaskScheduler {
 
             Long taskId = tobeScheduledTask.getId();
             if(stoppedTaskIds.contains(taskId)){
+                log.info("task schedule skip due to stopped {}",taskId);
                 stoppedTaskIds.remove(taskId);
                 continue;
             }
