@@ -285,6 +285,21 @@ const locales0 = {
     'Labels': {
         en: 'Labels',
     },
+    'Version Meta': {
+        en: 'Version Meta',
+    },
+    'Version Tag': {
+        en: 'Version Tag',
+    },
+    'Swmp ID': {
+        en: 'Swmp ID',
+    },
+    'Files': {
+        en: 'Files',
+    },
+    'Version Name': {
+        en: 'Version Name',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

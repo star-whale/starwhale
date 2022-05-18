@@ -42,17 +42,6 @@ function JobResult() {
                     outTitle = t('Summary')
                     children = _.isObject(v) ? (
                         <div>
-                            <LabelMedium
-                                $style={{
-                                    textOverflow: 'ellipsis',
-                                    overflow: 'hidden',
-                                    whiteSpace: 'nowrap',
-                                    paddingBottom: '12px',
-                                    borderBottom: `1px solid ${theme.borders.border400}`,
-                                }}
-                            >
-                                Sumary
-                            </LabelMedium>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6 }}>
                                 {_(data)
                                     .map((subV, subK) => (

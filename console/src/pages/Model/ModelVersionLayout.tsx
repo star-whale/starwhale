@@ -21,16 +21,16 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
     useEffect(() => {
         setModelLoading(modelInfo.isLoading)
         if (modelInfo.isSuccess) {
-            if (modelInfo.data.id !== model?.id) {
+            if (modelInfo.data.versionMeta !== model?.versionMeta) {
                 setModel(modelInfo.data)
             }
         } else if (modelInfo.isLoading) {
             setModel(undefined)
         }
-    }, [model?.id, modelInfo.data, modelInfo.isLoading, modelInfo.isSuccess, setModel, setModelLoading])
+    }, [model?.versionMeta, modelInfo.data, modelInfo.isLoading, modelInfo.isSuccess, setModel, setModelLoading])
 
     const [t] = useTranslation()
-    const modelName = model?.name ?? '-'
+    const modelName = model?.versionMeta ?? '-'
     const project = projectInfo.data ?? {}
 
     const breadcrumbItems: INavItem[] = useMemo(() => {

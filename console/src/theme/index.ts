@@ -42,7 +42,7 @@ const customPrimiaryColors = {
 }
 
 const primitives = {
-    primaryFontFamily: 'Consolas',
+    primaryFontFamily: 'Cousine',
 }
 
 const overrides = {
