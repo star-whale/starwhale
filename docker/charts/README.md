@@ -72,7 +72,11 @@ helm delete starwhale
 |------|-------------|--------------|
 |`minikube.enabled`|minikube mode for all-in-one test.| `false` |
 
-In minikube mode, you can easy to build an all-in-one starwhale.
+In minikube mode, you can easy to build an all-in-one starwhale. Run command example:
+
+```bash
+helm upgrade --install starwhale starwhale/starwhale --namespace starwhale --create-namespace --set minikube.enabled=true
+```
 
 ## Community
 - Report a bug or feature request, use [Github Issues](https://github.com/star-whale/starwhale/issues/new/choose).
