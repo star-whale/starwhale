@@ -87,3 +87,6 @@ docs/.docusaurus
 # Helm Charts
 docker/charts/index.yaml
 docker/charts/starwhale-*.tgz
+
+# ansible
+bootstrap/hosts
