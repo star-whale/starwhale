@@ -97,8 +97,11 @@ public class MonitoringAction extends AbsBasePPLTaskAction {
                     } else {
                         log.warn("container:{} is dead, now will restart it", oldTask.getContainerId());
                         oldTask.retryRestart();
-                        containerClient.startContainer(oldTask.getContainerId());
+                        // this invoke must before restart
                         logRecorder.restart(oldTask.getId(), oldTask.getContainerId());
+
+                        containerClient.startContainer(oldTask.getContainerId());
+
                     }
                     break;
                 case NO_SUCH_CONTAINER:
