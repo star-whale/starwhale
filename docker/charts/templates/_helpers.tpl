@@ -145,7 +145,7 @@ spec:
     {{- end}}
       containers:
         - name: agent
-          image: "{{ .Values.image.registry}}/{{ .Values.image.agent.repo }}:{{ .Values.image.agent.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Chart.AppVersion }}"
           env:
             {{ include "chart.mirror.env" . | nindent 12 }}
             - name: SW_HOST_IP
@@ -191,7 +191,7 @@ spec:
               mountPath: "/var/lib/docker"
               subPath: dind
         - name: taskset
-          image: "{{ .Values.image.registry}}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.registry}}/{{ .Values.image.org }}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag | default 'latest'}}"
           env:
             {{ include "chart.mirror.env" . | nindent 12 }}
             - name: SW_HOST_IP

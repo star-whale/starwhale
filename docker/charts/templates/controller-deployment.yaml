@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: controller
-          image: "{{ .Values.image.registry}}/{{ .Values.image.controller.repo }}:{{ .Values.image.controller.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Chart.AppVersion }}"
           ports:
             - containerPort: {{ .Values.controller.containerPort }}
           {{- if not .Values.minikube.enabled }}

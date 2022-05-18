@@ -4,16 +4,15 @@ commonLables: {}
 commonAnnotations: {}
 
 image:
-  registry: "docker.io"
-  agent:
-    repo: "starwhaleai/server"
-    tag: "0.1.0-nightly-20220511172423-ab61b19"
+  #registry: "docker.io"
+  #org: "starwhaleai"
+  registry: "ghcr.io"
+  org: "star-whale"
+  server:
+    repo: "server"
   taskset:
-    repo: "starwhaleai/taskset"
-    tag: "0.1.0-nightly-2022041601"
-  controller:
-    repo: "starwhaleai/server"
-    tag: "0.1.0-nightly-20220511172423-ab61b19"
+    repo: "taskset"
+    tag: 0.1.1
   pullPolicy: IfNotPresent
 
 mysql:
