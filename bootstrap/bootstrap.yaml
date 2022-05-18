@@ -2,17 +2,17 @@
 # bootstrap workflow
 # every stage must with become:yes,because need use docker,and docker should with root privilege
 - hosts: storage
-  become: yes
+  become: true
   roles:
     - minio
     - mysql
 
 - hosts: controller
-  become: yes
+  become: true
   roles:
     - controller
 
 - hosts: agent
-  become: yes
+  become: true
   roles:
     - agent

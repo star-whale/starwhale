@@ -1,6 +1,9 @@
 
 install:
-	pip install ansible
+	pip install -r requirements.txt
+
+lint:
+	ansible-lint
 
 # make check {your admin name}
 check:

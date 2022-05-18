@@ -1,7 +1,0 @@
----
-#
-dependencies:
-  - { role: minio }
-  - { role: mysql }
-  - { role: controller }
-  - { role: agent }

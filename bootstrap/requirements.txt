@@ -1,0 +1,3 @@
+ansible
+ansible-lint
+pre-commit

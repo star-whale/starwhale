@@ -1,9 +1,5 @@
 ---
-# agent container
-#- name: install docker
-#  pip:
-#    name: docker
-
+#  agent playbook
 - name: start agent container
   community.docker.docker_container:
     name: agent_by_bootstrap
@@ -19,16 +15,13 @@
       SW_PYPI_EXTRA_INDEX_URL: "{{ pypi_extra_index_url }}"
       SW_PYPI_TRUSTED_HOST: "{{ pypi_trusted_host }}"
       DOCKER_HOST: "tcp://{{ ansible_eth0.ipv4.address }}:{{ taskset_docker_port }}"
-      #
       SW_CONTROLLER_URL: "http://{{ hostvars['controller.starwhale.com']['ansible_eth0']['ipv4']['address'] }}:{{ controller_port }}"
       SW_STORAGE_BUCKET: "{{ minio_default_bucket }}"
       SW_STORAGE_ACCESSKEY: "{{ minio_access_key }}"
       SW_STORAGE_SECRETKEY: "{{ minio_secret_key }}"
-      #
       SW_STORAGE_ENDPOINT: "http://{{ hostvars['storage.starwhale.com']['ansible_eth0']['ipv4']['address'] }}:{{ minio_server_port }}"
 
 - name: start taskset
-  become: yes
   community.docker.docker_container:
     name: taskset_by_bootstrap
     image: "{{ taskset_image }}"
@@ -39,4 +32,4 @@
     volumes:
       - "{{ agent_data_dir }}:/opt/starwhale"
       - "{{ taskset_dind_dir }}:/var/lib/docker"
-    privileged: yes
+    privileged: true
