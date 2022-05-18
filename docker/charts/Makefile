@@ -31,3 +31,6 @@ upload:
 
 dry-run:
 	helm install --debug --dry-run starwhale ./
+
+template:
+	helm template starwhale ./ -n starwhale --debug
