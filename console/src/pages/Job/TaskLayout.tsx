@@ -9,6 +9,8 @@ import BaseSubLayout from '@/pages/BaseSubLayout'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import { FaTasks } from 'react-icons/fa'
 import { AiTwotoneExperiment } from 'react-icons/ai'
+import Card from '@/components/Card'
+import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -70,8 +72,63 @@ function TaskLayout({ children }: IJobLayoutProps) {
         return items
     }, [projectId, jobId, t])
 
+    const items = [
+        {
+            label: t('Job ID'),
+            value: job?.id ?? '',
+        },
+        {
+            label: t('Owner'),
+            value: job?.owner?.name ?? '-',
+        },
+        {
+            label: t('Run time'),
+            value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration * 1000) : '-',
+        },
+        {
+            label: t('Created time'),
+            value: job?.createdTime && formatTimestampDateTime(job.createdTime),
+        },
+        {
+            label: t('End time'),
+            value: job?.stopTime && formatTimestampDateTime(job.stopTime),
+        },
+    ]
+
+    const header = (
+        <Card
+            style={{
+                fontSize: '16px',
+                background: 'var(--color-brandBgSecondory4)',
+                padding: '12px 20px',
+                marginBottom: '10px',
+            }}
+            bodyStyle={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+                gap: '12px',
+            }}
+        >
+            {items.map((v) => (
+                <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
+                    <div
+                        style={{
+                            // flexBasis: '130px',
+                            background: 'var(--color-brandBgSecondory)',
+                            lineHeight: '24px',
+                            padding: '0 12px',
+                            borderRadius: '4px',
+                        }}
+                    >
+                        {v?.label}:
+                    </div>
+                    <div> {v?.value}</div>
+                </div>
+            ))}
+        </Card>
+    )
     return (
-        <BaseSubLayout breadcrumbItems={breadcrumbItems} navItems={navItems}>
+        <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} navItems={navItems}>
             {children}
         </BaseSubLayout>
     )

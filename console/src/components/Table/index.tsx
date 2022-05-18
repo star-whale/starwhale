@@ -26,31 +26,34 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     TableBodyRow: {
                         style: {
                             cursor: 'pointer',
+                            borderRadius: '4px',
                         },
                         props: {
-                            //     onClick: (e: React.MouseEvent) => {
-                            //         e.currentTarget.querySelector('a')?.click()
-                            //     },
+                            // eslint-disable-next-line
+                            onClick: (e: React.MouseEvent) => {
+                                // e.currentTarget.querySelector('a')?.click()
+                            },
                         },
                     },
                     TableHeadCell: {
                         style: {
-                            backgroundColor: 'var(--color-brandBackground2)',
+                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
                             fontWeight: 'bold',
                             borderBottom: 'none',
                             fontSize: 14,
                             lineHeight: '16px',
-                            padding: '16px 12px',
+                            padding: '15px 28px',
                         },
                     },
                     TableHeadRow: {
                         style: {
-                            backgroundColor: 'var(--color-brandBackground1)',
+                            borderRadius: '4px',
                         },
                     },
                     TableBodyCell: {
                         style: {
-                            padding: '12px',
+                            padding: '0px 28px',
+                            lineHeight: '44px',
                         },
                     },
                     ...overrides,

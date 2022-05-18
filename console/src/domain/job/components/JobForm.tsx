@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
-import { Button } from 'baseui/button'
+import { Button, SIZE, KIND } from 'baseui/button'
 import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import { LabelLarge } from 'baseui/typography'
@@ -15,6 +15,8 @@ import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSe
 import BaseImageSelector from '@/domain/runtime/components/BaseImageSelector'
 import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
+// import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
+// import { usePage } from '@/hooks/usePage'
 import DeviceSelector from '../../runtime/components/DeviceSelector'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 
@@ -31,6 +33,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const [modelId, setModelId] = useState('')
     const [datasetId, setDatasetId] = useState('')
     const [, setDatasetVersionIds] = useState('')
+    // const [page] = usePage()
     const [form] = useForm()
     const history = useHistory()
 
@@ -70,11 +73,10 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     }, [form])
 
     // TODO: show dataset version info
-    // let jobsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
+    // const jobsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
 
     // useEffect(() => {
-    //     if (!datasetVersionsByIds.length) return
-
+    //     if (!datasetVersionsByIds.length) return null
     //     console.log(jobsInfo.data)
     // }, [jobsInfo, datasetVersionsByIds])
 
@@ -193,23 +195,14 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         }}
                     />
                 </FormItem>
-                {/* <FormItem label={t('Result Output Path')} name='resultOutputPath'>
-                    <Input
-                        overrides={{
-                            Root: {
-                                style: {
-                                    width: '200px',
-                                },
-                            },
-                        }}
-                    />
-                </FormItem> */}
             </div>
 
             <FormItem>
                 <div style={{ display: 'flex', gap: 20 }}>
                     <div style={{ flexGrow: 1 }} />
                     <Button
+                        size={SIZE.compact}
+                        kind={KIND.secondary}
                         type='button'
                         onClick={() => {
                             history.goBack()
@@ -217,7 +210,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     >
                         {t('cancel')}
                     </Button>
-                    <Button isLoading={loading} disabled={!isModified(job, values)}>
+                    <Button size={SIZE.compact} isLoading={loading} disabled={!isModified(job, values)}>
                         {t('submit')}
                     </Button>
                 </div>

@@ -2,8 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react'
 import _ from 'lodash'
 import { toaster } from 'baseui/toast'
 import useTranslation from '@/hooks/useTranslation'
-import { useJob } from '@job/hooks/useJob'
-import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import Card from '@/components/Card'
 import { LazyLog } from 'react-lazylog'
 import { Accordion, Panel } from 'baseui/accordion'
@@ -20,32 +18,7 @@ export interface IScrollProps {
 }
 
 export default function JobOverview() {
-    const { job } = useJob()
     const [t] = useTranslation()
-
-    const items = [
-        {
-            label: t('Job ID'),
-            value: job?.id ?? '',
-        },
-        {
-            label: t('Owner'),
-            value: job?.owner?.name ?? '-',
-        },
-        {
-            label: t('Run time'),
-            value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration * 1000) : '-',
-        },
-        {
-            label: t('Created time'),
-            value: job?.createdTime && formatTimestampDateTime(job.createdTime),
-        },
-        {
-            label: t('End time'),
-            value: job?.stopTime && formatTimestampDateTime(job.stopTime),
-        },
-    ]
-
     const [follow, setFollow] = useState(true)
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)
     const [, setExpanded] = useState(false)
@@ -163,23 +136,28 @@ export default function JobOverview() {
             <div
                 style={{
                     width: '100%',
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 430px',
-                    gridAutoRows: '200px',
-                    // gridAutoColumns: 'minmax(200px, 1fr)',
-                    gridGap: '16px',
                 }}
             >
-                <div style={{ gridColumnStart: 'span 2' }}>
-                    <TaskListCard header={null} onAction={onAction} />
+                <TaskListCard header={null} onAction={onAction} />
 
+                <Card outTitle={t('View Log')} style={{ padding: 0 }}>
                     <Accordion
                         overrides={{
+                            Header: {
+                                style: {
+                                    borderRadius: '8px',
+                                },
+                            },
                             Content: {
                                 style: {
                                     height: '800px',
-                                    paddingBottom: '20px',
+                                    paddingBottom: '0px',
+                                    paddingTop: '0px',
+                                    backgroundColor: 'var(--color-brandBgSecondory)',
                                 },
+                            },
+                            PanelContainer: {
+                                style: {},
                             },
                         }}
                         onChange={({ expanded }) => {
@@ -214,22 +192,6 @@ export default function JobOverview() {
                             </Panel>
                         ))}
                     </Accordion>
-                </div>
-
-                <Card
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-                        gap: '12px',
-                        fontSize: '16px',
-                    }}
-                >
-                    {items.map((v) => (
-                        <div key={v?.label} style={{ display: 'flex' }}>
-                            <div style={{ flexBasis: '130px' }}>{v?.label}</div>
-                            <div>: {v?.value}</div>
-                        </div>
-                    ))}
                 </Card>
             </div>
         </>

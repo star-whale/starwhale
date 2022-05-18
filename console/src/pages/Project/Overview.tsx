@@ -10,6 +10,7 @@ import { ICreateProjectSchema } from '@project/schemas/project'
 import { createProject } from '@project/services/project'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import ProjectForm from '@project/components/ProjectForm'
+import IconFont from '@/components/IconFont'
 
 export default function ProjectOverview() {
     const { project } = useProject()
@@ -28,7 +29,11 @@ export default function ProjectOverview() {
             title={t('overview')}
             titleIcon={undefined}
             extra={
-                <Button size={ButtonSize.compact} onClick={() => setIsCreateProjectModalOpen(true)}>
+                <Button
+                    startEnhancer={<IconFont type='add' kind='white' />}
+                    size={ButtonSize.compact}
+                    onClick={() => setIsCreateProjectModalOpen(true)}
+                >
                     {t('create')}
                 </Button>
             }

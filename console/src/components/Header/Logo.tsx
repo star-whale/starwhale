@@ -1,53 +1,46 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import smallLogoImg from '@/assets/logo_small.svg'
+import smallLogoImg from '@/assets/logo_small_en_white.svg'
 import normalLogoImg from '@/assets/logo_normal_en_white.svg'
-import Text from '../Text'
+import { IComposedComponentProps } from '@/theme'
+import { createUseStyles } from 'react-jss'
+import classNames from 'classnames'
+import { sidebarFoldedWidth, sidebarExpandedWidth, headerHeight } from '@/consts'
 
-export interface ILogoProps {
+const useLogoStyles = createUseStyles({
+    logoWrapper: {
+        display: 'flex',
+        flexDirection: 'row',
+        textDecoration: 'none',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'width 100ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
+        height: headerHeight,
+    },
+})
+
+export interface ILogoProps extends IComposedComponentProps {
     expanded?: boolean
 }
 
-export default function Logo({ expanded = true }: ILogoProps) {
+export default function Logo({ expanded = true, className }: ILogoProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
+    const styles = useLogoStyles()
 
     const LogoText = expanded ? (
-        <Text
-            size='large'
-            style={{
-                display: 'flex',
-                fontSize: '30px',
-                color: '#fff',
-            }}
-        >
-            <img width='150px' src={normalLogoImg} alt='logo' />
-        </Text>
+        <img style={{ width: '140px' }} src={normalLogoImg} alt='logo' />
     ) : (
-        <Text
-            size='large'
-            style={{
-                display: 'flex',
-                fontSize: '20px',
-                color: '#fff',
-            }}
-        >
-            <img src={smallLogoImg} alt='logo' />
-        </Text>
+        <img style={{ width: '50px' }} src={smallLogoImg} alt='logo' />
     )
 
     if (!currentUser)
         return (
             <div
+                className={classNames(styles.logoWrapper, className)}
                 style={{
-                    flex: `0 0 ${expanded ? 200 : 68}px`,
-                    display: 'flex',
-                    flexDirection: 'row',
-                    textDecoration: 'none',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'width 200ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
+                    width: expanded ? sidebarExpandedWidth : sidebarFoldedWidth,
                 }}
             >
                 {LogoText}
@@ -56,14 +49,9 @@ export default function Logo({ expanded = true }: ILogoProps) {
 
     return (
         <Link
+            className={classNames(styles.logoWrapper, className)}
             style={{
-                flex: `0 0 ${expanded ? 200 : 68}px`,
-                display: 'flex',
-                flexDirection: 'row',
-                textDecoration: 'none',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'width 200ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
+                width: expanded ? sidebarExpandedWidth : sidebarFoldedWidth,
             }}
             to='/'
         >

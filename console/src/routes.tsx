@@ -1,15 +1,12 @@
 import React from 'react'
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom'
-import Header from '@/components/Header'
 import ProjectLayout from '@/pages/Project/ProjectLayout'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import { IThemedStyleProps } from '@/theme'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import Login from '@/pages/Home/Login'
-import ProjectOverview from './pages/Project/Overview'
 import ProjectListCard from './pages/Project/ProjectListCard'
-import BaseLayout from './pages/BaseLayout'
 import ModelLayout from './pages/Model/ModelLayout'
 import ModelOverview from './pages/Model/Overview'
 import ProjectModels from './pages/Project/Models'
@@ -27,6 +24,8 @@ import JobNewCard from './pages/Project/JobNewCard'
 import JobResult from './pages/Job/JobResult'
 import JobsLayout from './pages/Job/JobsLayout'
 import JobGridCard from './pages/Job/JobGridCard'
+import ApiHeader from './api/ApiHeader'
+import Pending from './pages/Home/Pending'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -49,7 +48,7 @@ const Routes = () => {
     return (
         <BrowserRouter>
             <div className={styles.root}>
-                <Header />
+                <ApiHeader />
                 <Switch>
                     <Route exact path='/projects/:projectId/jobgrids'>
                         <JobsLayout>
@@ -62,11 +61,11 @@ const Routes = () => {
                     <Route exact path='/projects/:projectId/:path?'>
                         <ProjectLayout>
                             <Switch>
-                                <Route exact path='/projects/:projectId' component={ProjectOverview} />
                                 <Route exact path='/projects/:projectId/models' component={ProjectModels} />
                                 <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
                                 <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
                                 <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
+                                <Redirect from='/projects/:projectId' to='/projects/:projectId/models' />
                             </Switch>
                         </ProjectLayout>
                     </Route>
@@ -79,11 +78,6 @@ const Routes = () => {
                             </Switch>
                         </TaskLayout>
                     </Route>
-                    {/* <Route exact path='/projects/:projectId/jobs/:jobId'>
-                        <JobLayout>
-                            <Switch></Switch>
-                        </JobLayout>
-                    </Route> */}
                     {/* datasets */}
                     <Route exact path='/projects/:projectId/datasets/:datasetId/versions'>
                         <DatasetVersionLayout>
@@ -128,14 +122,14 @@ const Routes = () => {
                     </Route>
                     {/* other */}
                     <Route exact path='/login' component={Login} />
+                    <Route exact path='/logout' component={Pending} />
                     <Route>
-                        <BaseLayout sidebar={undefined}>
+                        <ProjectLayout>
                             <Switch>
-                                {/* <Route exact path='/' component={Home} /> */}
                                 <Route exact path='/projects' component={ProjectListCard} />
                                 <Redirect from='/' to='/projects' />
                             </Switch>
-                        </BaseLayout>
+                        </ProjectLayout>
                     </Route>
                 </Switch>
             </div>

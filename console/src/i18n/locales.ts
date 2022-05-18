@@ -67,7 +67,7 @@ const locales0 = {
         en: 'PROJECT',
     },
     'projects': {
-        en: 'projects',
+        en: 'Projects',
     },
     'Project': {
         en: 'Project',
@@ -275,6 +275,30 @@ const locales0 = {
     },
     'no logs found': {
         en: 'no logs found',
+    },
+    'Summary': {
+        en: 'Summary',
+    },
+    'Confusion Matrix': {
+        en: 'Confusion Matrix',
+    },
+    'Labels': {
+        en: 'Labels',
+    },
+    'Version Meta': {
+        en: 'Version Meta',
+    },
+    'Version Tag': {
+        en: 'Version Tag',
+    },
+    'Swmp ID': {
+        en: 'Swmp ID',
+    },
+    'Files': {
+        en: 'Files',
+    },
+    'Version Name': {
+        en: 'Version Name',
     },
 }
 

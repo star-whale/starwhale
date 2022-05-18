@@ -1,5 +1,4 @@
 import React, { useCallback, useState, memo } from 'react'
-import './Runs.scss'
 import TableGrid from '@/components/Table/TableGrid'
 import { Column } from '@/components/BaseTable'
 import Card from '@/components/Card'
@@ -13,6 +12,7 @@ import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { Link, useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
+import IconFont from '@/components/IconFont'
 
 function JobGridCard() {
     const { projectId } = useParams<{ jobId: string; projectId: string }>()
@@ -132,6 +132,7 @@ function JobGridCard() {
             extra={
                 <Button
                     size={ButtonSize.compact}
+                    startEnhancer={<IconFont type='add' kind='white' />}
                     onClick={() => {
                         history.push('new_job')
                     }}

@@ -7,8 +7,12 @@ export interface IDatasetSchema extends IResourceSchema {
     owner?: IUserSchema
 }
 
-export interface IDatasetDetailSchema extends IDatasetSchema {
-    datasetName?: string
+export interface IDatasetDetailSchema {
+    swdsName?: string
+    createdTime?: number
+    versionMeta?: string
+    versionName?: string
+    versionTag?: string
     files?: Array<IDatasetFileSchema>
 }
 

@@ -17,6 +17,7 @@ import { JSONTree } from 'react-json-tree'
 
 // eslint-disable-next-line
 import yaml from 'js-yaml'
+import IconFont from '@/components/IconFont'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -54,7 +55,11 @@ export default function DatasetVersionListCard() {
             <Card
                 title={t('dataset versions')}
                 extra={
-                    <Button size={ButtonSize.compact} onClick={() => setIsCreateDatasetVersionOpen(true)}>
+                    <Button
+                        startEnhancer={<IconFont type='add' kind='white' />}
+                        size={ButtonSize.compact}
+                        onClick={() => setIsCreateDatasetVersionOpen(true)}
+                    >
                         {t('create')}
                     </Button>
                 }

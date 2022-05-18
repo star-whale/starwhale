@@ -1,8 +1,36 @@
-import { headerHeight } from '@/consts'
 import React from 'react'
 import { Breadcrumbs } from 'baseui/breadcrumbs'
 import { useHistory } from 'react-router-dom'
 import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
+import Header from '@/components/Header'
+import { headerHeight } from '@/consts'
+import { createUseStyles } from 'react-jss'
+
+const useMainStyles = createUseStyles({
+    mainWrapper: {
+        display: 'flex',
+        flexFlow: 'row nowrap',
+        justifyContent: 'space-between',
+        height: '100vh',
+        width: '100vw',
+        position: 'relative',
+    },
+    mainContentWrapper: {
+        overflowY: 'auto',
+        height: '100%',
+        flexGrow: 1,
+        position: 'relative',
+    },
+    mainContent: {
+        padding: '28px',
+        border: '8px',
+        boxSizing: 'border-box',
+        minWidth: '792px',
+        display: 'flex',
+        flexDirection: 'column',
+        paddingBottom: '30px',
+    },
+})
 
 export interface IBaseLayoutProps {
     children: React.ReactNode
@@ -22,39 +50,27 @@ export default function BaseLayout({
     contentStyle,
 }: IBaseLayoutProps) {
     const history = useHistory()
+    const styles = useMainStyles()
 
     return (
         <main
+            className={styles.mainWrapper}
             style={{
-                display: 'flex',
-                flexFlow: 'row nowrap',
-                justifyContent: 'space-between',
-                height: '100vh',
-                position: 'relative',
                 ...style,
             }}
         >
-            {Sidebar && <Sidebar style={{ marginTop: headerHeight }} />}
-            <div
-                style={{
-                    overflowY: 'auto',
-                    paddingTop: headerHeight,
-                    flexGrow: 1,
-                }}
-            >
+            {Sidebar && <Sidebar />}
+            <div className={styles.mainContentWrapper}>
+                <Header />
                 <div
+                    className={styles.mainContent}
                     style={{
-                        padding: '32px',
-                        height: '100%',
-                        boxSizing: 'border-box',
-                        minWidth: '792px',
-                        display: 'flex',
-                        flexDirection: 'column',
+                        paddingTop: !breadcrumbItems ? headerHeight : '28px',
                         ...contentStyle,
                     }}
                 >
                     {(breadcrumbItems || extra) && (
-                        <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center' }}>
+                        <div style={{ marginBottom: 27, display: 'flex', alignItems: 'center' }}>
                             {breadcrumbItems && (
                                 <div style={{ flexShrink: 0 }}>
                                     <Breadcrumbs
@@ -98,7 +114,7 @@ export default function BaseLayout({
                                                             : undefined
                                                     }
                                                 >
-                                                    {Icon && <Icon size={12} />}
+                                                    {Icon}
                                                     <span>{item.title}</span>
                                                 </div>
                                             )

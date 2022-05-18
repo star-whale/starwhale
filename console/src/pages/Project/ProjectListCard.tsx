@@ -12,6 +12,7 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { Link } from 'react-router-dom'
 import { useFetchProjects } from '@project/hooks/useFetchProjects'
+import IconFont from '@/components/IconFont'
 
 export default function ProjectListCard() {
     const [page] = usePage()
@@ -32,7 +33,11 @@ export default function ProjectListCard() {
             title={t('projects')}
             titleIcon={undefined}
             extra={
-                <Button size={ButtonSize.compact} onClick={() => setIsCreateProjectOpen(true)}>
+                <Button
+                    startEnhancer={<IconFont type='add' kind='white' />}
+                    size={ButtonSize.compact}
+                    onClick={() => setIsCreateProjectOpen(true)}
+                >
                     {t('create')}
                 </Button>
             }
@@ -43,8 +48,16 @@ export default function ProjectListCard() {
                 data={
                     projectsInfo.data?.list?.map((project) => {
                         return [
-                            <Link key={project.id} to={`/projects/${project.id}`}>
-                                {project.name}
+                            <Link
+                                key={project.id}
+                                to={`/projects/${project.id}`}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                }}
+                            >
+                                <IconFont type='project' /> {project.name}
                             </Link>,
                             project.owner && <User user={project.owner} />,
                             project.createdTime && formatTimestampDateTime(project.createdTime),

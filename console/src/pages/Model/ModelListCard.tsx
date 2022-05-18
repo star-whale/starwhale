@@ -12,6 +12,7 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { Link, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
+import IconFont from '@/components/IconFont'
 
 export default function ModelListCard() {
     const [page] = usePage()
@@ -33,7 +34,11 @@ export default function ModelListCard() {
         <Card
             title={t('Models')}
             extra={
-                <Button size={ButtonSize.compact} onClick={() => setIsCreateModelOpen(true)}>
+                <Button
+                    startEnhancer={<IconFont type='add' kind='white' />}
+                    size={ButtonSize.compact}
+                    onClick={() => setIsCreateModelOpen(true)}
+                >
                     {t('create')}
                 </Button>
             }

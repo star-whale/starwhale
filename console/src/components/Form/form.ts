@@ -189,7 +189,7 @@ export function createForm<S extends {} = Store>({
                 return React.createElement(
                     FormControl,
                     {
-                        error,
+                        error: error?.toString(),
                         label: props.required
                             ? React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, [
                                   React.createElement('div', {}, '*'),

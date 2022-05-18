@@ -12,6 +12,7 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { Link, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
+import IconFont from '@/components/IconFont'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -33,7 +34,11 @@ export default function DatasetListCard() {
         <Card
             title={t('Datasets')}
             extra={
-                <Button size={ButtonSize.compact} onClick={() => setIsCreateDatasetOpen(true)}>
+                <Button
+                    startEnhancer={<IconFont type='add' kind='white' />}
+                    size={ButtonSize.compact}
+                    onClick={() => setIsCreateDatasetOpen(true)}
+                >
                     {t('create')}
                 </Button>
             }

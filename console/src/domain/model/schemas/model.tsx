@@ -6,10 +6,16 @@ export interface IModelSchema extends IResourceSchema {
     owner?: IUserSchema
 }
 
-export interface IModelDetailSchema extends IModelSchema {
-    modelName?: string
+export interface IModelDetailSchema {
+    swmpId?: string
+    swmpName?: string
+    versionMeta?: string
+    versionName?: string
+    versionTag?: string
+    createdTime?: number
     files?: Array<IModelFileSchema>
 }
+
 export interface IModelFileSchema {
     name: string
     size: string

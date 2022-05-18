@@ -1,39 +1,121 @@
-@use 'src/styles/abstracts' as *;
-@import './utils';
 
-.ScrollBar__hidden {
-  --ms-overflow-style: none;
-  --scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
+@import './_reset.scss';
+@import './_utils.scss';
+@import '../assets/fonts/iconfont.css';
+
+@font-face {
+  font-family: 'Cousine';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../assets/fonts/cousine-v25-latin-regular.eot'); /* IE9 Compat Modes */
+  src: local(''),
+       url('../assets/fonts/cousine-v25-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+       url('../assets/fonts/cousine-v25-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
+       url('../assets/fonts/cousine-v25-latin-regular.woff') format('woff'), /* Modern Browsers */
+       url('../assets/fonts/cousine-v25-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+       url('../assets/fonts/cousine-v25-latin-regular.svg#Cousine') format('svg'); /* Legacy iOS */
+}
+
+
+body {
+  margin: 0;
+  font-family: Cousine, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',Arial,'Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 400;
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+  background: rgba(2,16,43,0.12);
+  border-radius: 4px;
+  cursor: pointer;
+}
+ 
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: rgba(2,16,43,0.12);
+  border-radius: 4px;
+  width: 8px;
+  outline: 1px solid slategrey;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+
+[data-baseweb="toaster"],
+[data-baseweb="modal"],
+[data-baseweb="popover"] {
+  z-index: 1000;
+}
+
+// iconfont of symbol
+// svg path {  
+//   fill: inherit;  
+// }   
+.icon-container {
+  position: relative; 
+  svg path {
+    fill: '#5181E0';
+    color: '#5181E0';
+  }
+}
+.icon {
+  vertical-align: -0.15em;
+  fill: '#5181E0';
+  color: '#5181E0';
+  overflow: hidden;
+  position: absolute; 
+  height: 100%; 
+  width: 100%; 
+  left: 0; 
+  top: 0;
+
+}
+
+.icon-container-no-color {
+  position: relative; 
+
+  .icon {
+    fill: inherit;
+  }
+ 
+  svg.icon path {
+    fill: inherit; 
   }
 }
 
-.container {
-  position: relative;
-  margin: 0 auto;
-  padding-right: 1rem;
-  padding-left: 1rem;
-  width: 100%;
-  height: 100%;
+// for selected view log  in tasks
+.tr--selected {
+background: #5181E0 ;
+border-radius: 8px;
 
-  @include mq(sm) {
-    max-width: $col-sm;
-  }
+ td {
+  color: #ffffff !important;
+ }
+ a {
+  color: #ffffff !important;
+ }
+ td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+ td:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px;  }
 
-  @include mq(md) {
-    max-width: $col-md;
-  }
 
-  @include mq(lg) {
-    max-width: $col-lg;
-  }
-
-  @include mq(xl) {
-    max-width: $col-xl;
-  }
-
-  @include mq(xxl) {
-    max-width: $col-xxl;
-  }
+ &:hover {
+   td {
+    color: rgb(2, 16, 43) !important;
+   }
+   a {
+    color: #5181E0  !important;
+   }
+  
+ }
 }
+
+table { border-collapse: separate; }

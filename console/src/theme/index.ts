@@ -1,6 +1,6 @@
 import { Theme } from 'baseui/theme'
 import color from 'color'
-import { createDarkTheme, createLightTheme, DarkTheme as BaseDarkTheme } from 'baseui'
+import { createDarkTheme, createLightTheme, LightTheme as BaseLightTheme, DarkTheme as BaseDarkTheme } from 'baseui'
 
 export type BaseThemeType = 'light' | 'dark' | 'deep'
 export type ThemeType = BaseThemeType | 'followTheSystem'
@@ -10,38 +10,39 @@ export interface IThemedStyleProps {
     themeType: BaseThemeType
 }
 
-// TODO: type support
-// export interface IColors extends Partial<Colors>  {
-//     brand1: string
-//     brand2: string
-//     brandBackground: string
-// }
+export interface IComposedComponentProps {
+    style?: React.CSSProperties
+    className?: string
+}
 
-export const colors = {
-    brand1: '#273343',
-    brand2: '#0C1B3E',
-    brandBackground1: '#F1F6FF',
-    brandBackground2: '#F3F6F9',
-    brandBackground3: '#E7EBF0',
-    brandBackground4: '#E0E3E7',
-    brandFontRmphasis: '#1A2027',
-    brandFontRegular: '#2D3843',
-    brandFontCaption: '#3E5060',
-    brandFontDisable: '#BEC2C2',
-    brandIndicatorAction1: '#A0AAB4',
-    brandIndicatorRegular: '#BFC7CF',
-    brandIndicatorDisabled: color('#000000').alpha(2.5).toString(),
-    brandIndicatorCaption: color('#000000').alpha(4.5).toString(),
-    brandIndicatorSuccess: '#34B576',
-    brandIndicatorError: '#E82037',
-    brandIndicatorWarning: '#FFCD00',
-    brandIndicatorSuspend: '#722ED1',
-    brandIndicatorCompleted: '#91D5FF',
-    brandLink: '#009BDE',
+const customPrimiaryColors = {
+    primary: '#2B65D9',
+    primaryHover: '#5181E0',
+    primaryPressed: '#1C4CAD',
+    backgroundPrimary: '#EBF1FF',
+    backgroundSecondary: '#D0DDF7',
+    backgroundHover: '#F0F4FF',
+    backgroundFullscreen: color('#02102B').alpha(0.5).toString(),
+    backgroundNav: ' #122A59',
+    backgroundNavFixed: ' #1D3973',
+    dividerPrimary: ' #EEF1F6',
+    dividerSecondary: '  #CFD7E6',
+    fontPrimay: '#02102B',
+    fontNote: color('#02102B').alpha(0.6).toString(),
+    fontTip: color('#02102B').alpha(0.4).toString(),
+    fontDisable: color('#02102B').alpha(0.2).toString(),
+    fontWhite: '#FFFFFF',
+    fontWhite60: color('#FFFFFF').alpha(0.6).toString(),
+    error: '#CC3D3D',
+    success: '#00B368',
+    warning: '#E67F17',
+    tips: '#4D576A',
+    shadow1: BaseLightTheme.lighting.shadow500,
+    shadow2: BaseLightTheme.lighting.shadow600,
 }
 
 const primitives = {
-    primaryFontFamily: 'Consolas',
+    primaryFontFamily: 'Cousine',
 }
 
 const overrides = {
@@ -60,15 +61,47 @@ const overrides = {
     },
     deep: {
         colors: {
-            buttonPrimaryFill: '#273343',
+            primary: customPrimiaryColors.primary,
+            accent: customPrimiaryColors.primary,
+            positive: customPrimiaryColors.primary,
+            contentPrimary: customPrimiaryColors.fontPrimay,
+            buttonPrimaryFill: customPrimiaryColors.primary,
+            buttonPrimaryHover: customPrimiaryColors.primaryHover,
+            buttonPrimaryActive: customPrimiaryColors.primaryPressed,
+            borderSelected: customPrimiaryColors.primary,
+            tickFillSelected: customPrimiaryColors.primary,
+            tickFillSelectedHover: customPrimiaryColors.primary,
             // ----------- custom -----------
-            brandRootBackground: colors.brandBackground1,
-            brandHeaderBackground: colors.brand2,
-            ...colors,
+            brandPrimary: customPrimiaryColors.primary,
+            brandPrimaryHover: customPrimiaryColors.primaryHover,
+            brandFontPrimary: customPrimiaryColors.fontPrimay,
+            brandBgNav: customPrimiaryColors.backgroundNav,
+            brandBgNavTitle: customPrimiaryColors.backgroundNavFixed,
+            brandBgNavBorder: customPrimiaryColors.backgroundNavFixed,
+            brandBgNavFont: customPrimiaryColors.fontWhite,
+            brandBgNavFontGray: customPrimiaryColors.fontWhite60,
+            brandBgUser: customPrimiaryColors.backgroundSecondary,
+            brandBgSecondory: customPrimiaryColors.backgroundSecondary,
+            brandBgSecondory4: color('#D0DDF7').alpha(0.4).toString(),
+            brandBgUserFont: customPrimiaryColors.fontPrimay,
+            brandTableHeaderBackground: '#F3F5F9',
+            brandLink: customPrimiaryColors.primary,
+            brandRootBackground: customPrimiaryColors.backgroundPrimary,
+            brandLoginBackground: customPrimiaryColors.backgroundNav,
+            brandFontTip: customPrimiaryColors.fontTip,
+            brandFontWhite: customPrimiaryColors.fontWhite,
+            brandFontNote: customPrimiaryColors.fontNote,
+            brandWhite: customPrimiaryColors.fontWhite,
+            brandUserIcon: customPrimiaryColors.backgroundSecondary,
+            brandMenuItemBackground: customPrimiaryColors.backgroundHover,
         },
         typography: {},
         borders: {
+            inputBorderRadius: '4px',
             buttonBorderRadius: '4px',
+            popoverBorderRadius: '4px',
+            surfaceBorderRadius: '4px',
+            tagBorderRadius: '4px',
         },
     },
 }
