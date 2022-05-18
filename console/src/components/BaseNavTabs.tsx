@@ -81,7 +81,7 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
                                     overflow: 'hidden',
                                 }}
                             >
-                                {Icon && <Icon size={12} />}
+                                {Icon}
                                 <div
                                     style={{
                                         display: 'flex',

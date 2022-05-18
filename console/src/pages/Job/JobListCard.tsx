@@ -14,6 +14,7 @@ import { Link, useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
+import IconFont from '@/components/IconFont'
 
 export default function JobListCard() {
     const [t] = useTranslation()
@@ -46,6 +47,7 @@ export default function JobListCard() {
                 title={t('Jobs')}
                 extra={
                     <Button
+                        startEnhancer={<IconFont type='add' kind='white' />}
                         size={ButtonSize.compact}
                         onClick={() => {
                             history.push('new_job')

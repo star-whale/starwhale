@@ -12,6 +12,7 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
+import IconFont from '@/components/IconFont'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -33,7 +34,11 @@ export default function ModelVersionListCard() {
         <Card
             title={t('model versions')}
             extra={
-                <Button size={ButtonSize.compact} onClick={() => setIsCreateModelVersionOpen(true)}>
+                <Button
+                    startEnhancer={<IconFont type='add' kind='white' />}
+                    size={ButtonSize.compact}
+                    onClick={() => setIsCreateModelVersionOpen(true)}
+                >
                     {t('create')}
                 </Button>
             }

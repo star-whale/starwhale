@@ -1,7 +1,86 @@
 
+@import './_reset.scss';
+@import './_utils.scss';
+@import '../assets/fonts/iconfont.css';
 
+body {
+  margin: 0;
+  font-family: Consolas, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',Arial,'Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 400;
+}
+
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+  background: rgba(2,16,43,0.12);
+  border-radius: 4px;
+  cursor: pointer;
+}
+ 
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: rgba(2,16,43,0.12);
+  border-radius: 4px;
+  width: 8px;
+  outline: 1px solid slategrey;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+
+[data-baseweb="toaster"],
+[data-baseweb="modal"],
+[data-baseweb="popover"] {
+  z-index: 1000;
+}
+
+// iconfont of symbol
+// svg path {  
+//   fill: inherit;  
+// }   
+.icon-container {
+  position: relative; 
+  svg path {
+    fill: '#5181E0';
+    color: '#5181E0';
+  }
+}
+.icon {
+  vertical-align: -0.15em;
+  fill: '#5181E0';
+  color: '#5181E0';
+  overflow: hidden;
+  position: absolute; 
+  height: 100%; 
+  width: 100%; 
+  left: 0; 
+  top: 0;
+
+}
+
+.icon-container-no-color {
+  position: relative; 
+
+  .icon {
+    fill: inherit;
+  }
+ 
+  svg.icon path {
+    fill: inherit; 
+  }
+}
+
+// for selected view log  in tasks
 .tr--selected {
-background: #2B65D9;
+background: #5181E0 ;
 border-radius: 8px;
 
  td {
@@ -10,6 +89,8 @@ border-radius: 8px;
  a {
   color: #ffffff !important;
  }
+ td:first-child { border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
+ td:last-child { border-top-right-radius: 8px; border-bottom-right-radius: 8px;  }
 
 
  &:hover {
@@ -17,8 +98,10 @@ border-radius: 8px;
     color: rgb(2, 16, 43) !important;
    }
    a {
-    color: #2B65D9 !important;
+    color: #5181E0  !important;
    }
   
  }
 }
+
+table { border-collapse: separate; }

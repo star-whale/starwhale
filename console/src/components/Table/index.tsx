@@ -26,6 +26,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     TableBodyRow: {
                         style: {
                             cursor: 'pointer',
+                            borderRadius: '4px',
                         },
                         props: {
                             onClick: (e: React.MouseEvent) => {
@@ -44,7 +45,9 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                         },
                     },
                     TableHeadRow: {
-                        style: {},
+                        style: {
+                            borderRadius: '4px',
+                        },
                     },
                     TableBodyCell: {
                         style: {

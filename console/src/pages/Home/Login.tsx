@@ -10,6 +10,7 @@ import { useHistory, useLocation } from 'react-router-dom'
 import { useStyletron } from 'baseui'
 import ZButton from '@/components/Button'
 import LoginLayout from './LoginLayout'
+import IconFont from '@/components/IconFont'
 
 const { Form, FormItem } = createForm<ILoginUserSchema>()
 
@@ -18,8 +19,6 @@ export default function Login() {
     const location = useLocation()
     const history = useHistory()
     const [isLoading, setIsLoading] = useState(false)
-
-    const [, theme] = useStyletron()
 
     const handleFinish = useCallback(
         async (data: ILoginUserSchema) => {
@@ -42,13 +41,7 @@ export default function Login() {
     )
 
     return (
-        <LoginLayout
-            style={{
-                // TODO
-                background: '#efeFEF',
-                color: theme.colors.contentPrimary,
-            }}
-        >
+        <LoginLayout>
             <div
                 style={{
                     display: 'flex',
@@ -56,6 +49,8 @@ export default function Login() {
                     height: '100%',
                     flexDirection: 'row',
                     justifyContent: 'center',
+                    position: 'relative',
+                    top: '-100px',
                 }}
             >
                 <div
@@ -66,9 +61,12 @@ export default function Login() {
                     }}
                 >
                     <Card
+                        style={{
+                            padding: '40px 60px',
+                            width: 420,
+                        }}
                         bodyStyle={{
                             padding: 0,
-                            width: 480,
                             borderRadius: 12,
                             boxShadow: 'none',
                         }}
@@ -76,7 +74,6 @@ export default function Login() {
                         <Form onFinish={handleFinish}>
                             <div
                                 style={{
-                                    color: theme.colors.contentPrimary,
                                     fontSize: '20px',
                                     fontWeight: 600,
                                     lineHeight: '24px',
@@ -86,10 +83,17 @@ export default function Login() {
                                 {t('LOGIN')}
                             </div>
                             <FormItem name='userName' label={t('Username')}>
-                                <Input />
+                                <Input startEnhancer={<IconFont type='user' />} />
                             </FormItem>
                             <FormItem name='userPwd' label={t('Password')}>
-                                <Input type='password' />
+                                <Input
+                                    startEnhancer={<IconFont type='password' />}
+                                    overrides={{
+                                        MaskToggleHideIcon: () => <IconFont type='eye_off' />,
+                                        MaskToggleShowIcon: () => <IconFont type='eye' />,
+                                    }}
+                                    type='password'
+                                />
                             </FormItem>
                             <FormItem>
                                 <div style={{ display: 'flex' }}>

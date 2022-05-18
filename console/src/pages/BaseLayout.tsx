@@ -4,6 +4,33 @@ import { useHistory } from 'react-router-dom'
 import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import Header from '@/components/Header'
 import { headerHeight } from '@/consts'
+import { createUseStyles } from 'react-jss'
+
+const useMainStyles = createUseStyles({
+    mainWrapper: {
+        display: 'flex',
+        flexFlow: 'row nowrap',
+        justifyContent: 'space-between',
+        height: '100vh',
+        width: '100vw',
+        position: 'relative',
+    },
+    mainContentWrapper: {
+        overflowY: 'auto',
+        height: '100%',
+        flexGrow: 1,
+        position: 'relative',
+    },
+    mainContent: {
+        padding: '28px',
+        border: '8px',
+        boxSizing: 'border-box',
+        minWidth: '792px',
+        display: 'flex',
+        flexDirection: 'column',
+        paddingBottom: '30px',
+    },
+})
 
 export interface IBaseLayoutProps {
     children: React.ReactNode
@@ -23,37 +50,21 @@ export default function BaseLayout({
     contentStyle,
 }: IBaseLayoutProps) {
     const history = useHistory()
+    const styles = useMainStyles()
 
     return (
         <main
+            className={styles.mainWrapper}
             style={{
-                display: 'flex',
-                flexFlow: 'row nowrap',
-                justifyContent: 'space-between',
-                height: '100vh',
-                width: '100vw',
-                position: 'relative',
                 ...style,
             }}
         >
             {Sidebar && <Sidebar />}
-            <div
-                style={{
-                    overflowY: 'auto',
-                    height: '100%',
-                    flexGrow: 1,
-                    position: 'relative',
-                }}
-            >
+            <div className={styles.mainContentWrapper}>
                 <Header />
                 <div
+                    className={styles.mainContent}
                     style={{
-                        padding: '28px',
-                        border: '8px',
-                        boxSizing: 'border-box',
-                        minWidth: '792px',
-                        display: 'flex',
-                        flexDirection: 'column',
                         paddingTop: !breadcrumbItems ? headerHeight : '28px',
                         ...contentStyle,
                     }}
@@ -103,7 +114,7 @@ export default function BaseLayout({
                                                             : undefined
                                                     }
                                                 >
-                                                    {Icon && <Icon size={12} />}
+                                                    {Icon}
                                                     <span>{item.title}</span>
                                                 </div>
                                             )

@@ -1,8 +1,8 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
-import { Button } from 'baseui/button'
+import { Button, SIZE, KIND } from 'baseui/button'
 import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
 import { LabelLarge } from 'baseui/typography'
@@ -17,6 +17,8 @@ import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
 import DeviceSelector from '../../runtime/components/DeviceSelector'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
+import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
+import { usePage } from '@/hooks/usePage'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -30,7 +32,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const { projectId } = useParams<{ projectId: string }>()
     const [modelId, setModelId] = useState('')
     const [datasetId, setDatasetId] = useState('')
-    const [, setDatasetVersionIds] = useState('')
+    const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
+    const [page] = usePage()
     const [form] = useForm()
     const history = useHistory()
 
@@ -70,13 +73,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     }, [form])
 
     // TODO: show dataset version info
-    // let jobsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
+    let jobsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
 
-    // useEffect(() => {
-    //     if (!datasetVersionsByIds.length) return
+    useEffect(() => {
+        if (!datasetVersionsByIds.length) return
 
-    //     console.log(jobsInfo.data)
-    // }, [jobsInfo, datasetVersionsByIds])
+        console.log(jobsInfo.data)
+    }, [jobsInfo, datasetVersionsByIds])
 
     const [t] = useTranslation()
 
@@ -193,23 +196,14 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         }}
                     />
                 </FormItem>
-                {/* <FormItem label={t('Result Output Path')} name='resultOutputPath'>
-                    <Input
-                        overrides={{
-                            Root: {
-                                style: {
-                                    width: '200px',
-                                },
-                            },
-                        }}
-                    />
-                </FormItem> */}
             </div>
 
             <FormItem>
                 <div style={{ display: 'flex', gap: 20 }}>
                     <div style={{ flexGrow: 1 }} />
                     <Button
+                        size={SIZE.compact}
+                        kind={KIND.secondary}
                         type='button'
                         onClick={() => {
                             history.goBack()
@@ -217,7 +211,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     >
                         {t('cancel')}
                     </Button>
-                    <Button isLoading={loading} disabled={!isModified(job, values)}>
+                    <Button size={SIZE.compact} isLoading={loading} disabled={!isModified(job, values)}>
                         {t('submit')}
                     </Button>
                 </div>

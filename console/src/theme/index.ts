@@ -42,7 +42,7 @@ const customPrimiaryColors = {
 }
 
 const primitives = {
-    // primaryFontFamily: 'Consolas',
+    primaryFontFamily: 'Consolas',
 }
 
 const overrides = {
@@ -87,6 +87,13 @@ const overrides = {
             brandTableHeaderBackground: '#F3F5F9',
             brandLink: customPrimiaryColors.primary,
             brandRootBackground: customPrimiaryColors.backgroundPrimary,
+            brandLoginBackground: customPrimiaryColors.backgroundNav,
+            brandFontTip: customPrimiaryColors.fontTip,
+            brandFontWhite: customPrimiaryColors.fontWhite,
+            brandFontNote: customPrimiaryColors.fontNote,
+            brandWhite: customPrimiaryColors.fontWhite,
+            brandUserIcon: customPrimiaryColors.backgroundSecondary,
+            brandMenuItemBackground: customPrimiaryColors.backgroundHover,
         },
         typography: {},
         borders: {

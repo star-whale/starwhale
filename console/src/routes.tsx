@@ -1,15 +1,12 @@
 import React from 'react'
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom'
-// import Header from '@/components/Header'
 import ProjectLayout from '@/pages/Project/ProjectLayout'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import { IThemedStyleProps } from '@/theme'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import Login from '@/pages/Home/Login'
-import ProjectOverview from './pages/Project/Overview'
 import ProjectListCard from './pages/Project/ProjectListCard'
-import BaseLayout from './pages/BaseLayout'
 import ModelLayout from './pages/Model/ModelLayout'
 import ModelOverview from './pages/Model/Overview'
 import ProjectModels from './pages/Project/Models'
@@ -28,6 +25,7 @@ import JobResult from './pages/Job/JobResult'
 import JobsLayout from './pages/Job/JobsLayout'
 import JobGridCard from './pages/Job/JobGridCard'
 import ApiHeader from './api/ApiHeader'
+import Pending from './pages/Home/Pending'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -124,6 +122,7 @@ const Routes = () => {
                     </Route>
                     {/* other */}
                     <Route exact path='/login' component={Login} />
+                    <Route exact path='/logout' component={Pending} />
                     <Route>
                         <ProjectLayout>
                             <Switch>

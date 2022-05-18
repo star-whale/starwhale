@@ -139,70 +139,63 @@ export default function JobOverview() {
             <div
                 style={{
                     width: '100%',
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gridAutoRows: '200px',
-                    // gridAutoColumns: 'minmax(200px, 1fr)',
-                    gridGap: '16px',
                 }}
             >
-                <div style={{ gridColumnStart: 'span 2' }}>
-                    <TaskListCard header={null} onAction={onAction} />
+                <TaskListCard header={null} onAction={onAction} />
 
-                    <Card outTitle={t('View Log')} style={{ padding: 0 }}>
-                        <Accordion
-                            overrides={{
-                                Header: {
-                                    style: {
-                                        borderRadius: '8px',
-                                    },
+                <Card outTitle={t('View Log')} style={{ padding: 0 }}>
+                    <Accordion
+                        overrides={{
+                            Header: {
+                                style: {
+                                    borderRadius: '8px',
                                 },
-                                Content: {
-                                    style: {
-                                        height: '800px',
-                                        paddingBottom: '0px',
-                                        paddingTop: '0px',
-                                        backgroundColor: 'var(--color-brandBgSecondory)',
-                                    },
+                            },
+                            Content: {
+                                style: {
+                                    height: '800px',
+                                    paddingBottom: '0px',
+                                    paddingTop: '0px',
+                                    backgroundColor: 'var(--color-brandBgSecondory)',
                                 },
-                                PanelContainer: {
-                                    style: {},
-                                },
-                            }}
-                            onChange={({ expanded }) => {
-                                setExpanded(expanded.includes('0'))
-                            }}
-                        >
-                            {Object.entries(currentLogFiles).map(([fileName, content]) => (
-                                <Panel key={fileName} title={`Log: ${fileName}`}>
-                                    {!content.startsWith('ws') ? (
-                                        <LazyLog
-                                            enableSearch
-                                            selectableLines
-                                            text={content || ''}
-                                            follow={follow}
-                                            formatPart={formatContent}
-                                            // scrollToLine={scrollToLine}
-                                            onScroll={handleScroll}
-                                        />
-                                    ) : (
-                                        <LazyLog
-                                            enableSearch
-                                            selectableLines
-                                            url={currentOnlineLogUrl}
-                                            websocket
-                                            websocketOptions={{
-                                                formatMessage: formatContent,
-                                            }}
-                                            follow={follow}
-                                            onScroll={handleScroll}
-                                        />
-                                    )}
-                                </Panel>
-                            ))}
-                        </Accordion>
-                    </Card>
-                </div>
+                            },
+                            PanelContainer: {
+                                style: {},
+                            },
+                        }}
+                        onChange={({ expanded }) => {
+                            setExpanded(expanded.includes('0'))
+                        }}
+                    >
+                        {Object.entries(currentLogFiles).map(([fileName, content]) => (
+                            <Panel key={fileName} title={`Log: ${fileName}`}>
+                                {!content.startsWith('ws') ? (
+                                    <LazyLog
+                                        enableSearch
+                                        selectableLines
+                                        text={content || ''}
+                                        follow={follow}
+                                        formatPart={formatContent}
+                                        // scrollToLine={scrollToLine}
+                                        onScroll={handleScroll}
+                                    />
+                                ) : (
+                                    <LazyLog
+                                        enableSearch
+                                        selectableLines
+                                        url={currentOnlineLogUrl}
+                                        websocket
+                                        websocketOptions={{
+                                            formatMessage: formatContent,
+                                        }}
+                                        follow={follow}
+                                        onScroll={handleScroll}
+                                    />
+                                )}
+                            </Panel>
+                        ))}
+                    </Accordion>
+                </Card>
             </div>
         </>
     )

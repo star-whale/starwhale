@@ -19,6 +19,7 @@ import { simulationJump } from '@/utils'
 import { FiLogOut, FiUser } from 'react-icons/fi'
 import { BsChevronDown } from 'react-icons/bs'
 import { StatefulMenu } from 'baseui/menu'
+import IconFont from '../IconFont'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: {
@@ -73,11 +74,13 @@ const useStyles = createUseStyles({
         'top': '100%',
         'display': 'none',
         'margin': 0,
-        'padding': 0,
+        'padding': '8px 0',
         'line-height': 1.6,
         'flex-direction': 'column',
+        'alignItems': 'center',
         'width': '100%',
         'font-size': '13px',
+        'borderRadius': '4px',
         'box-shadow': props.theme.lighting.shadow400,
         '& a': {
             '&:link': {
@@ -95,11 +98,14 @@ const useStyles = createUseStyles({
         },
     }),
     userMenuItem: (props: IThemedStyleProps) => ({
-        'padding': '8px 12px',
-        'display': 'flex',
-        'align-items': 'center',
-        'gap': '10px',
-        'color': props.theme.colors.contentPrimary,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'normal',
+        gap: '10px',
+        height: '32px',
+        color: props.theme.colors.contentPrimary,
+        backgroundColor: 'var(--color-brandMenuItemBackground)',
     }),
 })
 
@@ -130,9 +136,22 @@ export default function Header() {
             {currentUser && (
                 <div className={styles.userWrapper}>
                     <div className={styles.userNameWrapper}>
-                        <FiUser size={20} />
+                        <div
+                            style={{
+                                borderRadius: '50%',
+                                backgroundColor: 'var(--color-brandWhite)',
+                                width: '30px',
+                                height: '30px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <IconFont type='user' size={20} kind={'white2'} />
+                        </div>
+
                         <User size='large' user={currentUser} />
-                        <BsChevronDown size={20} />
+                        <BsChevronDown size={14} />
                     </div>
                     <div className={styles.userMenu}>
                         {/* <div
@@ -155,7 +174,7 @@ export default function Header() {
                                 simulationJump('/logout')
                             }}
                         >
-                            <FiLogOut size={12} />
+                            <IconFont type='logout' />
                             <span>{t('Logout')}</span>
                         </div>
                     </div>

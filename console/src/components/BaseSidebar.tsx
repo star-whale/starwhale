@@ -64,7 +64,7 @@ export interface IComposedSidebarProps {
 
 export interface INavItem {
     title: string
-    icon?: React.ComponentType<IconBaseProps>
+    icon?: React.ComponentType<IconBaseProps> | React.ReactNode
     path?: string
     children?: INavItem[]
     disabled?: boolean
@@ -75,7 +75,7 @@ export interface INavItem {
 
 export interface IBaseSideBarProps extends IComposedSidebarProps {
     title?: string
-    icon?: React.ComponentType<IconBaseProps>
+    icon?: React.ReactNode
     navItems: INavItem[]
 }
 
@@ -96,7 +96,7 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
             return {
                 title: (
                     <div className={styles.siderNavLink} style={{ paddingLeft: ctx.expanded ? 24 : 20 }}>
-                        {Icon && <Icon size={20} />}
+                        {Icon}
                         {ctx.expanded && <span>{item.title}</span>}
                     </div>
                 ),
@@ -146,7 +146,7 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
             <Logo className={styles.siderLogo} expanded={ctx.expanded} />
             {ctx.expanded && title && icon && (
                 <Link className={styles.siderTitle} to='/projects'>
-                    {React.createElement(icon, { size: 20 })}
+                    {icon}
                     <Text
                         style={{
                             overflow: 'hidden',
