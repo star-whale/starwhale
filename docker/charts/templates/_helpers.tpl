@@ -191,7 +191,7 @@ spec:
               mountPath: "/var/lib/docker"
               subPath: dind
         - name: taskset
-          image: "{{ .Values.image.registry}}/{{ .Values.image.org }}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag | default 'latest'}}"
+          image: "{{ .Values.image.registry}}/{{ .Values.image.org }}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag }}"
           env:
             {{ include "chart.mirror.env" . | nindent 12 }}
             - name: SW_HOST_IP
