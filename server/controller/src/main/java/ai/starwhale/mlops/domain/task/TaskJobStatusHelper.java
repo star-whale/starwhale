@@ -90,6 +90,10 @@ public class TaskJobStatusHelper {
     }
 
     public JobStatus desiredJobStatus(Collection<Task> tasks) {
+        if(null == tasks || tasks.isEmpty()){
+            log.info("empty tasks, job status to UNKNOWN");
+            return JobStatus.UNKNOWN;
+        }
         long startTime = System.currentTimeMillis();
         for (Entry<JobStatus, Set<TaskStatusRequirement>> entry : jobStatusRequirementSetMap.entrySet()) {
             log.debug("now checking {}",entry.getKey());

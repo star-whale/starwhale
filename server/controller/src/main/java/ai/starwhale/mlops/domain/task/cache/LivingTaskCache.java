@@ -37,8 +37,9 @@ public interface LivingTaskCache {
      * do cache change caused by status change
      * @param taskId
      * @param newStatus
+     * @return if contains taskId and update success return true
      */
-    void update(Long taskId, TaskStatus newStatus);
+    boolean update(Long taskId, TaskStatus newStatus);
 
     /**
      *

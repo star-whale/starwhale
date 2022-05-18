@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS dag_graph
     created_time  datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX idx_dag_job_id (job_id) USING BTREE
+    UNIQUE INDEX idx_dag_job_id (job_id) USING BTREE
     );
 
 CREATE TABLE IF NOT EXISTS dag_graph_node

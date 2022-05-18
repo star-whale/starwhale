@@ -88,6 +88,7 @@ public class TaskWatcherForJob implements TaskStatusChangeWatcher {
             }
             if(!jobStatusMachine.couldTransfer(job.getStatus(),jobNewStatus)){
                 log.error("job status change unexpectedly from {} to {}",job.getStatus(),jobNewStatus);
+                return;
             }
             log.info("job status change from {} to {} with id {}",job.getStatus(),jobNewStatus,job.getId());
             job.setStatus(jobNewStatus);
@@ -98,16 +99,9 @@ public class TaskWatcherForJob implements TaskStatusChangeWatcher {
                 taskCache.clearTasksOf(job.getId());
             }
             if(jobNewStatus == JobStatus.FAIL){
+                log.info("tasks stopped schedule because of failed {}",job.getId());
                 swTaskScheduler.stopSchedule(tasks.parallelStream().filter(t->t.getStatus() == TaskStatus.CREATED).map(Task::getId).collect(
                     Collectors.toList()));
-                List<Long> executingTaskIds = tasks.parallelStream().filter(t -> {
-                    TaskStatus status = t.getStatus();
-                    return status == TaskStatus.ASSIGNING
-                        || status == TaskStatus.PREPARING
-                        || status == TaskStatus.RUNNING
-                        || status == TaskStatus.CANCELLING;
-                }).map(Task::getId).collect(Collectors.toList());
-                taskMapper.updateTaskStatus(executingTaskIds,TaskStatus.FAIL);
             }
         }
     }
