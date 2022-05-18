@@ -3,9 +3,8 @@ Chart Name: {{ .Chart.Name }}
 Chart Version: {{ .Chart.Version }}
 App Version: {{ .Chart.AppVersion }}
 Starwhale Image:
-  - controller: {{ .Values.image.registry }}/{{ .Values.image.controller.repo }}:{{ .Values.image.controller.tag }}
-  - agent: {{ .Values.image.registry }}/{{ .Values.image.agent.repo }}:{{ .Values.image.agent.tag }}
-  - taskset: {{ .Values.image.registry }}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag }}
+  - server: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Chart.AppVersion }}
+  - taskset: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag }}
 
 ******************************************
 {{- if .Values.ingress.enabled }}
