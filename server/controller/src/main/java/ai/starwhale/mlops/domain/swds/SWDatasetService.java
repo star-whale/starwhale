@@ -71,7 +71,12 @@ public class SWDatasetService {
         List<SWDatasetEntity> entities = swdsMapper.listDatasets(
             swds.getProjectId(), swds.getName());
 
-        return PageUtil.toPageInfo(entities, swdsConvertor::convert);
+        return PageUtil.toPageInfo(entities, ds -> {
+            SWDatasetVersionEntity version = swdsVersionMapper.getLatestVersion(ds.getId());
+            DatasetVO vo = swdsConvertor.convert(ds);
+            vo.setVersion(versionConvertor.convert(version));
+            return vo;
+        });
     }
 
     public Boolean deleteSWDS(SWDSObject swds) {
@@ -183,15 +188,12 @@ public class SWDatasetService {
     public List<DatasetVO> findDatasetsByVersionIds(List<Long> versionIds) {
         List<SWDatasetVersionEntity> versions = swdsVersionMapper.findVersionsByIds(versionIds);
 
-        List<Long> ids = versions.stream()
-            .map(SWDatasetVersionEntity::getDatasetId)
-            .collect(Collectors.toList());
-
-        List<SWDatasetEntity> datasets = swdsMapper.findDatasetsByIds(ids);
-
-        return datasets.stream()
-            .map(swdsConvertor::convert)
-            .collect(Collectors.toList());
+        return versions.stream().map(version -> {
+            SWDatasetEntity ds = swdsMapper.findDatasetById(version.getDatasetId());
+            DatasetVO vo = swdsConvertor.convert(ds);
+            vo.setVersion(versionConvertor.convert(version));
+            return vo;
+        }).collect(Collectors.toList());
     }
 
     public List<SWDatasetInfoVO> listDS(String project, String name) {
@@ -218,7 +220,7 @@ public class SWDatasetService {
             return List.of();
         }
         return swDatasetEntities.parallelStream()
-            .map(swDatasetEntity -> swDatasetInfoOfDs(swDatasetEntity))
+            .map(this::swDatasetInfoOfDs)
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
     }
