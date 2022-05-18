@@ -7,8 +7,6 @@ import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
-import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
-import Card from '@/components/Card'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
