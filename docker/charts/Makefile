@@ -28,3 +28,6 @@ upload:
 	cd ${CLONE_DIR}; helm repo index .
 	cd ${CLONE_DIR}; git add . && git commit --message "release charts ${RELEASE_VERSION}" && git push -f origin HEAD:gh-pages || exit 1
 	rm -rf ${CLONE_DIR} || true
+
+dry-run:
+	helm install --debug --dry-run starwhale ./

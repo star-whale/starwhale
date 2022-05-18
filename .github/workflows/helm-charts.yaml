@@ -49,3 +49,7 @@ jobs:
       - name: Run chart-testing (lint)
         working-directory: ./docker/charts
         run: ct lint --all
+
+      - name: Helm Install Dry-run
+        working-directory: ./docker/charts
+        run: make dry-run
