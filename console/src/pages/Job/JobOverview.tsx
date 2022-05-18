@@ -2,8 +2,6 @@ import React, { useCallback, useMemo, useState } from 'react'
 import _ from 'lodash'
 import { toaster } from 'baseui/toast'
 import useTranslation from '@/hooks/useTranslation'
-import { useJob } from '@job/hooks/useJob'
-import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import Card from '@/components/Card'
 import { LazyLog } from 'react-lazylog'
 import { Accordion, Panel } from 'baseui/accordion'
@@ -20,7 +18,6 @@ export interface IScrollProps {
 }
 
 export default function JobOverview() {
-    const { job } = useJob()
     const [t] = useTranslation()
     const [follow, setFollow] = useState(true)
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)

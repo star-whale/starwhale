@@ -1,9 +1,9 @@
 /* eslint-disable react/no-unused-prop-types */
 
-import { Item, Navigation } from 'baseui/side-navigation'
+import { Navigation } from 'baseui/side-navigation'
 import _ from 'lodash'
 import React, { useCallback, useContext, useMemo } from 'react'
-import { useLocation, useHistory } from 'react-router-dom'
+import { useLocation, useHistory, Link } from 'react-router-dom'
 import useSidebarWidth from '@/hooks/useSidebarWidth'
 import { useStyletron } from 'baseui'
 import type { IconBaseProps } from 'react-icons/lib'
@@ -11,14 +11,11 @@ import { SidebarContext } from '@/contexts/SidebarContext'
 import { AiOutlineDoubleLeft, AiOutlineDoubleRight } from 'react-icons/ai'
 import Text from '@/components/Text'
 import { createUseStyles } from 'react-jss'
-import { IThemedStyleProps } from '@/theme'
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import Logo from '@/components/Header/Logo'
 import { headerHeight, sidebarExpandedWidth, sidebarFoldedWidth } from '@/consts'
-import { Link } from 'react-router-dom'
 
 const useBaseSideBarStyles = createUseStyles({
-    sidebarWrapper: ({ theme }: IThemedStyleProps) => ({
+    sidebarWrapper: {
         display: 'flex',
         flexShrink: 0,
         flexDirection: 'column',
@@ -26,7 +23,7 @@ const useBaseSideBarStyles = createUseStyles({
         overflowY: 'auto',
         background: 'var(--color-brandBgNav)',
         transition: 'all 200ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
-    }),
+    },
 
     siderLogo: {
         height: headerHeight,
@@ -83,9 +80,8 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const width = useSidebarWidth()
     const ctx = useContext(SidebarContext)
-    const themeType = useCurrentThemeType()
     const [, theme] = useStyletron()
-    const styles = useBaseSideBarStyles({ theme, themeType })
+    const styles = useBaseSideBarStyles({ theme })
 
     const history = useHistory()
     const location = useLocation()
@@ -103,7 +99,7 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
                 itemId: item.path,
             }
         })
-    }, [ctx.expanded, navItems])
+    }, [ctx.expanded, navItems, styles])
 
     const activeItemId = useMemo(() => {
         const items = baseuiNavItems.slice().reverse()
@@ -238,7 +234,7 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
                     alignItems: 'center',
                     height: 48,
                     position: 'relative',
-                    borderTop: `1px solid var(--color-brandBgNavBorder)`,
+                    borderTop: '1px solid var(--color-brandBgNavBorder)',
                 }}
             >
                 <div

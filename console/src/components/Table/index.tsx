@@ -29,6 +29,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             borderRadius: '4px',
                         },
                         props: {
+                            // eslint-disable-next-line
                             onClick: (e: React.MouseEvent) => {
                                 // e.currentTarget.querySelector('a')?.click()
                             },

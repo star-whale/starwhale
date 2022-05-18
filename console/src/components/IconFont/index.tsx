@@ -57,10 +57,10 @@ export default function IconFont({ size = 14, type = 'user', kind = 'gray' }: II
                 fontWeight: 'normal',
             }}
         >
-            {type == 'project' ? (
+            {type === 'project' ? (
                 <img src={projectSvg} alt='project' width={20} />
             ) : (
-                <span className={`iconfont icon-${type}`}></span>
+                <span className={`iconfont icon-${type}`} />
             )}
         </div>
     )

@@ -58,7 +58,7 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
                             Tab: {
                                 style: {
                                     'background': 'transparent',
-                                    'color': item.path == activeItemId ? 'var(--color-brandPrimary)' : '',
+                                    'color': item.path === activeItemId ? 'var(--color-brandPrimary)' : '',
                                     ':hover': {
                                         background: 'transparent',
                                         color: 'var(--color-brandPrimary)',

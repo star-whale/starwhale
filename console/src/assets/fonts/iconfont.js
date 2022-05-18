@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 !(function (l) {
     var o,
         t,

@@ -7,10 +7,9 @@ import { Input } from 'baseui/input'
 import qs from 'qs'
 import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router-dom'
-import { useStyletron } from 'baseui'
 import ZButton from '@/components/Button'
-import LoginLayout from './LoginLayout'
 import IconFont from '@/components/IconFont'
+import LoginLayout from './LoginLayout'
 
 const { Form, FormItem } = createForm<ILoginUserSchema>()
 

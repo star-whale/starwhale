@@ -1,13 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { fetchCurrentUser } from '@user/services/user'
-import { useQuery } from 'react-query'
+import React, { useState } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import axios from 'axios'
-import { toaster } from 'baseui/toast'
-import { getErrMsg, setToken } from '@/api'
-import qs from 'qs'
+import { setToken } from '@/api'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
-import { useLocation } from 'react-router-dom'
 import { useStyletron } from 'baseui'
 import { headerHeight } from '@/consts'
 import useTranslation from '@/hooks/useTranslation'
@@ -16,17 +10,13 @@ import { IThemedStyleProps } from '@/theme'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import User from '@/domain/user/components/User'
 import { simulationJump } from '@/utils'
-import { FiLogOut, FiUser } from 'react-icons/fi'
 import { BsChevronDown } from 'react-icons/bs'
-import { StatefulMenu } from 'baseui/menu'
 import IconFont from '../IconFont'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: {
         padding: '0 32px 0 0',
         position: 'absolute',
-        // background: 'var(--color-brandHeaderBackground)',
-        // backdropFilter: 'blur(10px)',
         zIndex: 1000,
         top: 0,
         right: 0,
@@ -114,7 +104,6 @@ export default function Header() {
     const themeType = useCurrentThemeType()
     const styles = useStyles({ theme, themeType })
     const headerStyles = useHeaderStyles({ theme })
-    const location = useLocation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
 
@@ -147,7 +136,7 @@ export default function Header() {
                                 justifyContent: 'center',
                             }}
                         >
-                            <IconFont type='user' size={20} kind={'white2'} />
+                            <IconFont type='user' size={20} kind='white2' />
                         </div>
 
                         <User size='large' user={currentUser} />

@@ -37,7 +37,7 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 icon: <IconFont type='job' kind='white' size={20} />,
             },
         ]
-    }, [project, projectInfo?.data, projectId, t])
+    }, [project, projectId, t])
     return (
         <BaseSidebar
             navItems={navItems}

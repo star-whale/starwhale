@@ -1,11 +1,8 @@
 import React from 'react'
-import { useStyletron } from 'baseui'
 import LoginLayout from './LoginLayout'
 import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
 
-export default function Login() {
-    const [, theme] = useStyletron()
-
+export default function Logout() {
     return (
         <LoginLayout>
             <div

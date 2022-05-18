@@ -6,12 +6,11 @@ import { fetchJobResult } from '@/domain/job/services/job'
 import { ILabels, INDICATORTYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
 import { getHeatmapConfig } from '@/components/Indicator/utils'
-import { LabelLarge, LabelMedium, LabelSmall } from 'baseui/typography'
-import { useStyletron } from 'baseui'
-import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
+import { LabelMedium, LabelSmall } from 'baseui/typography'
 import { flattenObject } from '@/utils'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
+import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -23,7 +22,6 @@ function JobResult() {
         refetchOnWindowFocus: false,
     })
 
-    const [, theme] = useStyletron()
     const [t] = useTranslation()
 
     const indicators = useMemo(() => {
@@ -46,6 +44,7 @@ function JobResult() {
                                 {_(data)
                                     .map((subV, subK) => (
                                         <div
+                                            key={subK}
                                             style={{
                                                 backgroundColor: '#F0F4FF',
                                                 borderRadius: '4px',
@@ -121,7 +120,7 @@ function JobResult() {
                 )
             )
         })
-    }, [jobResult.data, jobResult.isLoading, theme])
+    }, [jobResult.data, jobResult.isLoading, t])
 
     if (jobResult.isFetching) {
         return <BusyPlaceholder />
@@ -149,7 +148,7 @@ function JobResult() {
                             borderColor: '#2B65D9',
                             marginRight: '2px',
                         }}
-                    ></div>
+                    />
                     <LabelSmall
                         $style={{
                             textOverflow: 'ellipsis',
@@ -170,7 +169,7 @@ function JobResult() {
                             border: '14px solid',
                             borderColor: '#2B65D9 transparent #2B65D9 #2B65D9',
                         }}
-                    ></div>
+                    />
                 </div>
             )}
             <div
