@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 import json
 import typing as t
 from pathlib import Path
@@ -196,18 +197,26 @@ class StorageBackend(object):
 
 
 class S3StorageBackend(StorageBackend):
-    def __init__(self, secret: dict = {}, service: dict = {}):
+    def __init__(
+        self, secret: t.Dict[str, t.Any] = {}, service: t.Dict[str, t.Any] = {}
+    ):
         super().__init__(backend=SWDSBackendType.S3, secret=secret, service=service)
 
-        # TODO: region field empty?
-        # TODO: add more s3 config, such as connect timeout
-        # TODO: add boto3 typing hint
+        _env = os.environ
         self.s3 = boto3.resource(
             "s3",
             endpoint_url=self.service["endpoint"],
             aws_access_key_id=self.secret["access_key"],
             aws_secret_access_key=self.secret["secret_key"],
-            config=S3Config(signature_version="s3v4", retries={"max_attempts": 30}),
+            config=S3Config(
+                connect_timeout=float(_env.get("SW_S3_CONNECT_TIMEOUT", 10)),
+                read_timeout=float(_env.get("SW_S3_READ_TIMEOUT", 60)),
+                signature_version="s3v4",
+                retries={
+                    "total_max_attempts": int(_env.get("SW_S3_TOTAL_MAX_ATTEMPTS", 6)),
+                    "mode": "standard",
+                },
+            ),
             region_name=self.service["region"],
         )
 
@@ -350,6 +359,10 @@ def get_data_loader(
                 "key": {
                     "data":  "{name}:{start_pos}:{end_pos}", // start default is 0
                     "label": "{name}:{start_pos}:{end_pos}"  // end default is -1, which is EOF of File or Object
+                },
+                "ext_attr":{  //optional
+                    "ds_name": "dataset name",
+                    "ds_version": "dataset version"
                 }
             },
             {
