@@ -1,9 +1,7 @@
 import useTranslation from '@/hooks/useTranslation'
 import React, { useMemo } from 'react'
 import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
-import IconFont from '@/components/IconFont'
 import { AiOutlineSetting, AiOutlineCloudServer } from 'react-icons/ai'
-import { MdSettingsSystemDaydream } from 'react-icons/md'
 import { GrDocker } from 'react-icons/gr'
 
 export default function SettingsSidebar({ style }: IComposedSidebarProps) {
@@ -14,13 +12,13 @@ export default function SettingsSidebar({ style }: IComposedSidebarProps) {
         return [
             {
                 title: t('BaseImage'),
-                path: `/settings/images`,
+                path: '/settings/images',
                 activePathPattern: /\/(images)\/?/,
                 icon: <GrDocker size={20} />,
             },
             {
                 title: t('Agent'),
-                path: `/settings/agents`,
+                path: '/settings/agents',
                 activePathPattern: /\/(agents)\/?/,
                 icon: <AiOutlineCloudServer size={20} />,
             },
@@ -32,7 +30,7 @@ export default function SettingsSidebar({ style }: IComposedSidebarProps) {
             navItems={navItems}
             style={style}
             title={name}
-            titleLink={'/settings'}
+            titleLink='/settings'
             icon={<AiOutlineSetting style={{ color: '#fff' }} size={20} />}
         />
     )

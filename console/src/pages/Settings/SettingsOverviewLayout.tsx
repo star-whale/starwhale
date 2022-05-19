@@ -1,18 +1,9 @@
-import { useJob, useJobLoading } from '@job/hooks/useJob'
 import useTranslation from '@/hooks/useTranslation'
-import React, { useContext, useEffect, useMemo } from 'react'
-import { useQuery } from 'react-query'
-import { useParams } from 'react-router-dom'
-import { INavItem } from '@/components/BaseSidebar'
-import { fetchJob } from '@job/services/job'
-import BaseSubLayout from '@/pages/BaseSubLayout'
-import { SidebarContext } from '@/contexts/SidebarContext'
-import { FaTasks } from 'react-icons/fa'
-import { AiTwotoneExperiment } from 'react-icons/ai'
-import Card from '@/components/Card'
-import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
-import SettingsSidebar from './SettingsSidebar'
+import React from 'react'
 import { useFetchSystemVersion } from '@/domain/setting/hooks/useSettings'
+import Card from '@/components/Card'
+import BaseSubLayout from '../BaseSubLayout'
+import SettingsSidebar from './SettingsSidebar'
 
 export interface IJobLayoutProps {
     children: React.ReactNode

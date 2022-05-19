@@ -11,11 +11,10 @@ import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import User from '@/domain/user/components/User'
 import { simulationJump } from '@/utils'
 import { BsChevronDown } from 'react-icons/bs'
-import IconFont from '../IconFont'
 import { AiOutlineSetting, AiOutlineCloudServer } from 'react-icons/ai'
-import { MdSettingsSystemDaydream } from 'react-icons/md'
 import { GrDocker } from 'react-icons/gr'
 import { Link } from 'react-router-dom'
+import IconFont from '../IconFont'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: {

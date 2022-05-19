@@ -1,6 +1,5 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
-import { IDatasetSchema } from '@dataset/schemas/dataset'
 import { IBaseImageSchema, IDeviceSchema } from '../../runtime/schemas/runtime'
 
 export enum JobActionType {

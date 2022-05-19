@@ -1,6 +1,6 @@
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import axios from 'axios'
-import { IBaseImageSchema, IAgentSchema, IDeleteAgentSchema, ISystemVersionSchema } from '../schemas/system'
+import { IAgentSchema, ISystemVersionSchema } from '../schemas/system'
 
 export async function fetchSystemVersion(): Promise<ISystemVersionSchema> {
     const resp = await axios.get('/api/v1/system/version')
@@ -15,6 +15,6 @@ export async function listAgents(query: IListQuerySchema): Promise<IListSchema<I
 }
 
 export async function deleteAgent(serialNumber: string): Promise<any> {
-    const resp = await axios.delete('/api/v1/system/agent?serialNumber=' + serialNumber)
+    const resp = await axios.delete(`/api/v1/system/agent?serialNumber=${serialNumber}`)
     return resp.data
 }

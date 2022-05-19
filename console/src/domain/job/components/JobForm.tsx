@@ -78,6 +78,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     useEffect(() => {
         // if (!datasetVersionsByIds.length) return nul
+        // eslint-disable-next-line
         console.log(jobsInfo.data)
     }, [jobsInfo, datasetVersionsByIds])
 

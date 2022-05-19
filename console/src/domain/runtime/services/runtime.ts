@@ -22,6 +22,6 @@ export async function createBaseImage(body: ICreateBaseImageSchema): Promise<any
 }
 
 export async function deleteBaseImage(imageId: string): Promise<any> {
-    const resp = await axios.delete('/api/v1/runtime/baseImage/' + imageId)
+    const resp = await axios.delete(`/api/v1/runtime/baseImage/${imageId}`)
     return resp.data
 }

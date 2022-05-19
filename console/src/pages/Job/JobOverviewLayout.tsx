@@ -99,14 +99,14 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
         },
         {
             label: t('Device'),
-            value: (job?.device ?? '-') + ', ' + (job?.deviceAmount ?? '-'),
+            value: `${job?.device ?? '-'}, ${job?.deviceAmount ?? '-'}`,
         },
         {
             label: t('Model'),
             style: {
                 gridColumnStart: 'span 2',
             },
-            value: (job?.modelName ?? '-') + ':' + (job?.modelVersion ?? '-'),
+            value: `${job?.modelName ?? '-'} : ${job?.modelVersion ?? '-'}`,
         },
         {
             label: t('Datasets'),
