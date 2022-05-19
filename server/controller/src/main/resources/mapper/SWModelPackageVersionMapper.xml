@@ -69,7 +69,7 @@
     </select>
 
     <insert id="revertTo">
-        insert into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path)
+        replace into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path)
         select swmp_id, owner_id, version_name, version_tag, version_meta, storage_path
         from swmp_version
         where id = #{swmpVersionId}
