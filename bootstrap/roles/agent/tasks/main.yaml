@@ -1,6 +1,6 @@
 ---
 #  agent playbook
-- name: start agent container
+- name: Start agent container
   community.docker.docker_container:
     name: agent_by_bootstrap
     image: "{{ agent_image }}"
@@ -8,6 +8,7 @@
     restart_policy: always
     volumes:
       - "{{ agent_data_dir }}:/opt/starwhale"
+      - "{{ taskset_dind_dir }}:/var/lib/docker"
     env:
       JAR: "agent"
       SW_HOST_IP: "{{ ansible_eth0.ipv4.address }}"
@@ -21,7 +22,7 @@
       SW_STORAGE_SECRETKEY: "{{ minio_secret_key }}"
       SW_STORAGE_ENDPOINT: "http://{{ hostvars['storage.starwhale.com']['ansible_eth0']['ipv4']['address'] }}:{{ minio_server_port }}"
 
-- name: start taskset
+- name: Start taskset
   community.docker.docker_container:
     name: taskset_by_bootstrap
     image: "{{ taskset_image }}"

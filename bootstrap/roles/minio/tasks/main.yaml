@@ -6,7 +6,7 @@
     state: directory
     mode: '644'
 
-- name: start minio
+- name: Start minio
   community.docker.docker_container:
     name: minio_by_bootstrap
     image: "{{ minio_image }}"
