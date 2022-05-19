@@ -43,6 +43,6 @@ public class JobRequest implements Serializable {
     private String deviceId;
 
     @NotNull
-    @JsonProperty("deviceCount")
-    private Integer deviceCount;
+    @JsonProperty("deviceAmount")
+    private Integer deviceAmount;
 }
