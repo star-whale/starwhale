@@ -89,4 +89,4 @@ docker/charts/index.yaml
 docker/charts/starwhale-*.tgz
 
 # ansible
-bootstrap/hosts
+bootstrap/inventory
