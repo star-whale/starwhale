@@ -27,7 +27,7 @@ The standalone instance is the simplest form that requires only the Starwhale cl
 
 The on-premises instance and hosted instance are both called cloud instances. We can call the on-premises instance "private cloud instance" and the hosted instance "public cloud instance". They both have a controller component and some optional agent components installed on one or more servers. The main difference is that on-premises instances are maintained by operation teams in different organizations, and hosted instances are maintained by the Starwhale team on the public cloud.
 
-Starwhale tries to keep concepts consistent across different types of instances. In this way, people can easily exchange data and migrate between instances.
+**Starwhale tries to keep concepts consistent across different types of instances. In this way, people can easily exchange data and migrate between instances.**
 
 # Project
 

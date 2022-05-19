@@ -9,3 +9,6 @@ install-req:
 
 build-docs:
 	yarn build
+
+lint-docs:
+	markdownlint docs/*.md
