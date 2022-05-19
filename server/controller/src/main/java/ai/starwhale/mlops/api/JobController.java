@@ -107,7 +107,7 @@ public class JobController implements JobApi{
             .map(idConvertor::revert)
             .collect(Collectors.toList()),
             Integer.valueOf(jobRequest.getDeviceId()),
-            jobRequest.getDeviceCount());
+            jobRequest.getDeviceAmount());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }
