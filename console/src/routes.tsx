@@ -26,6 +26,9 @@ import Pending from './pages/Home/Pending'
 import JobTasks from './pages/Job/JobTasks'
 import JobResults from './pages/Job/JobResults'
 import JobOverviewLayout from './pages/Job/JobOverviewLayout'
+import SettingsOverviewLayout from './pages/Settings/SettingsOverviewLayout'
+import SettingAgentListCard from './pages/Settings/SettingAgentListCard'
+import SettingBaseImageListCard from './pages/Settings/SettingBaseImageListCard'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -50,6 +53,17 @@ const Routes = () => {
             <div className={styles.root}>
                 <ApiHeader />
                 <Switch>
+                    {/* setting */}
+                    <Route exact path='/settings/:path?'>
+                        <SettingsOverviewLayout>
+                            <Switch>
+                                <Route exact path='/settings/agents' component={SettingAgentListCard} />
+                                <Route exact path='/settings/images' component={SettingBaseImageListCard} />
+                                <Redirect from='/settings/:path?' to='/settings' />
+                            </Switch>
+                        </SettingsOverviewLayout>
+                    </Route>
+                    {/*  */}
                     <Route exact path='/projects/:projectId/jobgrids'>
                         <JobsLayout>
                             <Switch>

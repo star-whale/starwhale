@@ -17,9 +17,9 @@ import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
 import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
 import { usePage } from '@/hooks/usePage'
+import IconFont from '@/components/IconFont'
 import DeviceSelector from '../../runtime/components/DeviceSelector'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
-import IconFont from '@/components/IconFont'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 

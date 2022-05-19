@@ -303,6 +303,42 @@ const locales0 = {
     'data version revert done': {
         en: 'data version revert done',
     },
+    'something wrong with the server': {
+        en: 'something wrong with the server',
+    },
+    'System Info': {
+        en: 'System Info',
+    },
+    'Base Images': {
+        en: 'Base Images',
+    },
+    'Agent List': {
+        en: 'Agent List',
+    },
+    'SETTINGS': {
+        en: 'SETTINGS',
+    },
+    'Agent': {
+        en: 'Agent',
+    },
+    'System Version': {
+        en: 'System Version',
+    },
+    'Connected Time': {
+        en: 'Connected Time',
+    },
+    'UUID': {
+        en: 'UUID',
+    },
+    'agent delete done': {
+        en: 'agent delete done',
+    },
+    'base image delete done': {
+        en: 'base image delete done',
+    },
+    'Delete': {
+        en: 'Delete',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0
