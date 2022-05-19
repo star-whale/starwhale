@@ -134,7 +134,8 @@ public class SWModelPackageController implements SWModelPackageApi{
         SWModelPackageInfoVO swmpInfo = swmpService.getSWMPInfo(
             SWMPObject.builder()
                 .project(Project.builder().id(idConvertor.revert(projectId)).build())
-                .id(idConvertor.revert(modelId)).build());
+                .id(idConvertor.revert(modelId))
+                .build());
         return ResponseEntity.ok(Code.success.asResponse(swmpInfo));
     }
 
@@ -203,6 +204,17 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public byte[] pull(ClientSWMPRequest pullRequest) {
         return swmpService.pull(pullRequest);
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<SWModelPackageInfoVO>>> listModel(String project,
+        String name) {
+        List<SWModelPackageInfoVO> swModelPackageInfoVOS = swmpService.listSWMPInfo(
+            SWMPQuery.builder()
+                .projectName(project)
+                .swmpName(name)
+                .build());
+        return ResponseEntity.ok(Code.success.asResponse(swModelPackageInfoVOS));
     }
 
     @Override

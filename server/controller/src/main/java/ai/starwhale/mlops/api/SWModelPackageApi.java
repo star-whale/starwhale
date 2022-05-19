@@ -33,6 +33,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -302,6 +303,16 @@ public interface SWModelPackageApi {
         value = "/project/model",
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     byte[] pullModel(ClientSWMPRequest uploadRequest);
+
+    @Operation(summary = "List SWMP versions",
+        description = "List SWMP versions. ")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+        value = "/project/model/list",
+        produces = {"application/json"})
+    ResponseEntity<ResponseMessage<List<SWModelPackageInfoVO>>> listModel(
+        @Parameter(name = "project", description = "the project name") @RequestParam(name = "project",required = false) String project,
+        @Parameter(name = "name", description = "the name of SWMP") @RequestParam(name = "name",required = false) String name);
 
     @Operation(summary = "head for swmp info ",
         description = "head for swmp info")
