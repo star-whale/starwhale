@@ -86,8 +86,8 @@
     </select>
 
     <insert id="revertTo">
-        insert into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, storage_path)
-        select dataset_id, owner_id, version_name, version_tag, version_meta, storage_path
+        replace into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, files_uploaded, storage_path, status)
+        select dataset_id, owner_id, version_name, version_tag, version_meta, files_uploaded, storage_path, status
         from dataset_version
         where id = #{dsVersionId}
     </insert>
