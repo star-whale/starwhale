@@ -18,8 +18,14 @@ package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import ai.starwhale.mlops.common.OrderParams;
+import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.job.mapper.BaseImageMapper;
 import ai.starwhale.mlops.domain.node.Device;
+import cn.hutool.db.sql.Order;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,12 +62,12 @@ public class EnvService {
         return res > 0;
     }
 
-    public List<BaseImageVO> listImages(String namePrefix) {
+    public PageInfo<BaseImageVO> listImages(String namePrefix, PageParams pageParams, OrderParams orderParams) {
+
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<BaseImageEntity> baseImageEntities = baseImageMapper.listBaseImages(namePrefix);
 
-        return baseImageEntities.stream()
-            .map(baseImageConvertor::convert)
-            .collect(Collectors.toList());
+        return PageUtil.toPageInfo(baseImageEntities, baseImageConvertor::convert);
     }
 
     public List<DeviceVO> listDevices() {

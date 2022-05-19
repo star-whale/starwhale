@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageRequest;
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -52,17 +53,21 @@ public interface EnvApi {
                 content =
                 @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = List.class)))
+                    schema = @Schema(implementation = PageInfo.class)))
         })
     @GetMapping(value = "/runtime/baseImage")
-    ResponseEntity<ResponseMessage<List<BaseImageVO>>> listBaseImage(
+    ResponseEntity<ResponseMessage<PageInfo<BaseImageVO>>> listBaseImage(
         @Parameter(
             in = ParameterIn.QUERY,
             description = "Image name prefix to search for",
             schema = @Schema())
         @Valid
         @RequestParam(value = "imageName", required = false)
-            String imageName);
+            String imageName,
+        @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+        @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize,
+        @Valid @RequestParam(value = "sort", required = false) String sort,
+        @Valid @RequestParam(value = "order", required = false, defaultValue = "1") Integer order);
 
     @Operation(summary = "Get the list of device types")
     @ApiResponses(
