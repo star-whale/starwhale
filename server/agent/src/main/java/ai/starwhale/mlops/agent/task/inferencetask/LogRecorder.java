@@ -99,7 +99,6 @@ public class LogRecorder {
 
     /**
      * when container restart, must recall this method
-     * todo hava some bug
      *
      * @param taskId      task id
      * @param containerId container
@@ -122,6 +121,7 @@ public class LogRecorder {
                             new LogRecord(taskId, task.getContainerId(), logCache.get(taskId)));
                     waiting.remove(taskId);
                 }
+                // continue waiting
             } else {
                 // already archived
                 log.warn("the task:{} seem to be archived, please try to get offline log!", taskId);
