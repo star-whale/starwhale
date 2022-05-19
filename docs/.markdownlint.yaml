@@ -10,9 +10,7 @@ extends: null
 MD001: true
 
 # MD002/first-heading-h1/first-header-h1 - First heading should be a top-level heading
-MD002:
-  # Heading level
-  level: 1
+MD002: false
 
 # MD003/heading-style/header-style - Heading style
 MD003:
@@ -66,11 +64,11 @@ MD012:
 # MD013/line-length - Line length
 MD013:
   # Number of characters
-  line_length: 80
+  line_length: 1000
   # Number of characters for headings
-  heading_line_length: 80
+  heading_line_length: 200
   # Number of characters for code blocks
-  code_block_line_length: 80
+  code_block_line_length: 88
   # Include code blocks
   code_blocks: true
   # Include tables
@@ -117,11 +115,7 @@ MD024:
   siblings_only: false
 
 # MD025/single-title/single-h1 - Multiple top-level headings in the same document
-MD025:
-  # Heading level
-  level: 1
-  # RegExp for matching title in front matter
-  front_matter_title: "^\\s*title\\s*[:=]"
+MD025: false
 
 # MD026/no-trailing-punctuation - Trailing punctuation in heading
 MD026:
@@ -199,12 +193,7 @@ MD041:
 MD042: true
 
 # MD043/required-headings/required-headers - Required heading structure
-MD043:
-  # List of headings
-  headings: []
-  # List of headings
-  headers: []
-
+MD043: false
 # MD044/proper-names - Proper names should have the correct capitalization
 MD044:
   # List of proper names
