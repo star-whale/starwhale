@@ -17,7 +17,7 @@ export interface IScrollProps {
     clientHeight: number
 }
 
-export default function JobOverview() {
+export default function JobTasks() {
     const [t] = useTranslation()
     const [follow, setFollow] = useState(true)
     const [currentTask, setCurrentTask] = useState<ITaskSchema | undefined>(undefined)

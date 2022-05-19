@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useRef, useMemo } from 'react'
 import Card from '@/components/Card'
-import { createDatasetVersion } from '@dataset/services/datasetVersion'
+import { createDatasetVersion, revertDatasetVersion } from '@dataset/services/datasetVersion'
 import { usePage } from '@/hooks/usePage'
 import { ICreateDatasetVersionSchema } from '@dataset/schemas/datasetVersion'
 import DatasetVersionForm from '@dataset/components/DatasetVersionForm'
@@ -18,24 +18,35 @@ import { JSONTree } from 'react-json-tree'
 // eslint-disable-next-line
 import yaml from 'js-yaml'
 import IconFont from '@/components/IconFont'
+import { StyledLink } from 'baseui/link'
+import { toaster } from 'baseui/toast'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
     const { datasetId, projectId } = useParams<{ datasetId: string; projectId: string }>()
     const [isOpen, setIsOpen] = useState(false)
     const [drawerData, setDrawerData] = useState('')
+    const [t] = useTranslation()
 
-    const datasetsInfo = useFetchDatasetVersions(projectId, datasetId, page)
+    const datasetVersionsInfo = useFetchDatasetVersions(projectId, datasetId, page)
     const [isCreateDatasetVersionOpen, setIsCreateDatasetVersionOpen] = useState(false)
     const handleCreateDatasetVersion = useCallback(
         async (data: ICreateDatasetVersionSchema) => {
             await createDatasetVersion(projectId, datasetId, data)
-            await datasetsInfo.refetch()
+            await datasetVersionsInfo.refetch()
             setIsCreateDatasetVersionOpen(false)
         },
-        [datasetsInfo, datasetId, projectId]
+        [datasetVersionsInfo, datasetId, projectId]
     )
-    const [t] = useTranslation()
+
+    const handleAction = useCallback(
+        async (datasetVersionId) => {
+            await revertDatasetVersion(projectId, datasetId, datasetVersionId)
+            toaster.positive(t('data version revert done'), { autoHideDuration: 2000 })
+            await datasetVersionsInfo.refetch()
+        },
+        [datasetVersionsInfo, projectId, datasetId, t]
+    )
 
     const cardRef = useRef(null)
 
@@ -65,35 +76,44 @@ export default function DatasetVersionListCard() {
                 }
             >
                 <Table
-                    isLoading={datasetsInfo.isLoading}
+                    isLoading={datasetVersionsInfo.isLoading}
                     columns={[t('Meta'), t('Created'), t('Owner'), t('Action')]}
                     data={
-                        datasetsInfo.data?.list.map((dataset) => {
+                        datasetVersionsInfo.data?.list.map((datasetVersion) => {
                             return [
                                 <Button
-                                    key={dataset.id}
+                                    key={datasetVersion.id}
                                     size='mini'
+                                    startEnhancer={<IconFont type='show' kind='white' />}
                                     onClick={() => {
-                                        setDrawerData(dataset.meta)
+                                        setDrawerData(datasetVersion.meta)
                                         setIsOpen(true)
                                     }}
                                 >
                                     {t('show meta')}
                                 </Button>,
-                                dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
-                                dataset.owner && <User user={dataset.owner} />,
-                                <Button size='mini' key={dataset.id} onClick={() => {}}>
+                                datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
+                                datasetVersion.owner && <User user={datasetVersion.owner} />,
+                                <StyledLink
+                                    animateUnderline={false}
+                                    className='row-center--inline gap4'
+                                    key={datasetVersion.id}
+                                    onClick={() => {
+                                        handleAction(datasetVersion.id)
+                                    }}
+                                >
+                                    <IconFont type='revert' kind='primary' />
                                     {t('Revert')}
-                                </Button>,
+                                </StyledLink>,
                             ]
                         }) ?? []
                     }
                     paginationProps={{
-                        start: datasetsInfo.data?.pageNum,
-                        count: datasetsInfo.data?.pageSize,
-                        total: datasetsInfo.data?.total,
+                        start: datasetVersionsInfo.data?.pageNum,
+                        count: datasetVersionsInfo.data?.pageSize,
+                        total: datasetVersionsInfo.data?.total,
                         afterPageChange: () => {
-                            datasetsInfo.refetch()
+                            datasetVersionsInfo.refetch()
                         },
                     }}
                 />
@@ -130,7 +150,7 @@ export default function DatasetVersionListCard() {
                     }}
                 >
                     <div style={{ padding: '10px', backgroundColor: 'rgb(0, 43, 54)' }}>
-                        <JSONTree data={jsonData} />
+                        <JSONTree data={jsonData} hideRoot shouldExpandNode={() => true} />
                     </div>
                 </Drawer>
             )}

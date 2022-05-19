@@ -155,6 +155,7 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
+                                color: 'var(--color-brandWhite)',
                             }}
                         >
                             {title}

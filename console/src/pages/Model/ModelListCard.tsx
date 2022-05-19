@@ -6,13 +6,13 @@ import { ICreateModelSchema } from '@model/schemas/model'
 import ModelForm from '@model/components/ModelForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
+// import { Button, SIZE as ButtonSize } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { Link, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
-import IconFont from '@/components/IconFont'
+// import IconFont from '@/components/IconFont'
 
 export default function ModelListCard() {
     const [page] = usePage()
@@ -33,15 +33,15 @@ export default function ModelListCard() {
     return (
         <Card
             title={t('Models')}
-            extra={
-                <Button
-                    startEnhancer={<IconFont type='add' kind='white' />}
-                    size={ButtonSize.compact}
-                    onClick={() => setIsCreateModelOpen(true)}
-                >
-                    {t('create')}
-                </Button>
-            }
+            // extra={
+            //     <Button
+            //         startEnhancer={<IconFont type='add' kind='white' />}
+            //         size={ButtonSize.compact}
+            //         onClick={() => setIsCreateModelOpen(true)}
+            //     >
+            //         {t('create')}
+            //     </Button>
+            // }
         >
             <Table
                 isLoading={modelsInfo.isLoading}

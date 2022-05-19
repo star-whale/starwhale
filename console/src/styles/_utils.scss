@@ -110,11 +110,16 @@
   height: 100%;
 }
 
-.raw-center {
+.row-center {
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
+
+  &--inline {
+    @extend .row-center;
+    display: inline-flex;
+  }
 }
 
 .col-center {
@@ -122,4 +127,12 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+$numbers: ("2","4","6","8","10","12");
+
+@each $number, $i in $numbers {
+    .gap#{$number} {
+        gap: #{$number}px
+    }
 }

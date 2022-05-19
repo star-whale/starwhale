@@ -25,6 +25,12 @@ body {
   font-weight: 400;
 }
 
+a:-webkit-any-link {
+  color: -webkit-link;
+  cursor: pointer;
+  // text-decoration: none;
+}
+
 ::-webkit-scrollbar {
   height: 8px;
   width: 8px;

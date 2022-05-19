@@ -32,6 +32,17 @@ export default function MultiTags({ value, placeholder, onChange, getValueLabel 
                         display: 'none',
                     },
                 },
+                Tag: {
+                    props: {
+                        overrides: {
+                            Root: {
+                                style: {
+                                    backgroundColor: 'var(--color-brandPrimary)',
+                                },
+                            },
+                        },
+                    },
+                },
             }}
             getValueLabel={getValueLabel}
             value={value?.map((item) => ({

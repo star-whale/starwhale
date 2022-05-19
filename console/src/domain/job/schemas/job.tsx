@@ -28,10 +28,10 @@ export interface IJobSchema extends IResourceSchema {
     owner?: IUserSchema
     modelName?: string
     modelVersion?: string
-    dataset?: IDatasetSchema
+    datasets?: string[]
     baseImage?: IBaseImageSchema
     device?: IDeviceSchema
-    deviceCount: number
+    deviceAmount: number
     duration: number
     createdTime: number
     stopTime: number

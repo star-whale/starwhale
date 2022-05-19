@@ -17,7 +17,7 @@ const useHeaderStyles = createUseStyles({
     headerWrapper: {
         padding: '0 32px 0 0',
         position: 'absolute',
-        zIndex: 1000,
+        zIndex: 100,
         top: 0,
         right: 0,
         height: `${headerHeight}px`,

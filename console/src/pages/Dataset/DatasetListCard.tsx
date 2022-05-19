@@ -6,13 +6,13 @@ import { ICreateDatasetSchema } from '@dataset/schemas/dataset'
 import DatasetForm from '@dataset/components/DatasetForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
+// import { Button, SIZE as ButtonSize } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { Link, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
-import IconFont from '@/components/IconFont'
+// import IconFont from '@/components/IconFont'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -33,15 +33,15 @@ export default function DatasetListCard() {
     return (
         <Card
             title={t('Datasets')}
-            extra={
-                <Button
-                    startEnhancer={<IconFont type='add' kind='white' />}
-                    size={ButtonSize.compact}
-                    onClick={() => setIsCreateDatasetOpen(true)}
-                >
-                    {t('create')}
-                </Button>
-            }
+            // extra={
+            //     <Button
+            //         startEnhancer={<IconFont type='add' kind='white' />}
+            //         size={ButtonSize.compact}
+            //         onClick={() => setIsCreateDatasetOpen(true)}
+            //     >
+            //         {t('create')}
+            //     </Button>
+            // }
         >
             <Table
                 isLoading={datasetsInfo.isLoading}

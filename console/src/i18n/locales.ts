@@ -22,7 +22,7 @@ const locales0 = {
         en: 'Model Version',
     },
     'model versions': {
-        en: 'model versions',
+        en: 'Model Versions',
     },
     'Models': {
         en: 'Models',
@@ -37,7 +37,7 @@ const locales0 = {
         en: 'Dataset Version',
     },
     'dataset versions': {
-        en: 'dataset versions',
+        en: 'Dataset Versions',
     },
     'datasets': {
         en: 'Datasets',
@@ -299,6 +299,9 @@ const locales0 = {
     },
     'Version Name': {
         en: 'Version Name',
+    },
+    'data version revert done': {
+        en: 'data version revert done',
     },
 }
 

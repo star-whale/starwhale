@@ -4,7 +4,7 @@ import projectSvg from '@/assets/fonts/project.svg'
 
 interface IIconFontProps {
     size?: number
-    kind?: 'white' | 'gray' | 'white2'
+    kind?: 'inherit' | 'white' | 'gray' | 'white2' | 'primary'
     type:
         | 'arrow2_down'
         | 'arrow2_right'
@@ -36,24 +36,23 @@ interface IIconFontProps {
         | 'add'
 }
 
-export default function IconFont({ size = 14, type = 'user', kind = 'gray' }: IIconFontProps) {
+export default function IconFont({ size = 14, type = 'user', kind = 'inherit' }: IIconFontProps) {
     const colors = {
         gray: 'var(--color-brandFontTip)',
         white: 'var(--color-brandFontWhite)',
         white2: 'var(--color-brandUserIcon)',
+        primary: 'var(--color-brandPrimary)',
     }
 
     return (
         <div
-            className='icon-container'
+            className='icon-container row-center'
             style={{
                 width: size,
                 height: size,
                 fontSize: size,
-                color: colors[kind],
+                color: kind === 'inherit' ? 'inherit' : colors[kind],
                 padding: 0,
-                display: 'flex',
-                alignItems: 'center',
                 fontWeight: 'normal',
             }}
         >

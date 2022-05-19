@@ -16,7 +16,7 @@ export default function DatasetOverview() {
 
     const items = [
         {
-            label: t('Version Meta'),
+            label: t('Version Name'),
             value: dataset?.versionName ?? '',
         },
         {
@@ -80,7 +80,7 @@ export default function DatasetOverview() {
                 }}
             >
                 <div style={{ padding: '10px', backgroundColor: 'rgb(0, 43, 54)' }}>
-                    <JSONTree data={jsonData} />
+                    <JSONTree data={jsonData} hideRoot shouldExpandNode={() => true} />
                 </div>
             </Card>
             <Card
