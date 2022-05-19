@@ -7,8 +7,8 @@ lint:
 
 # make check user={your admin name}
 check:
-	ansible-playbook bootstrap.yaml -i hosts --user $(user) --check
+	ansible-playbook bootstrap.yaml -i inventory --user $(user) --check
 
 # make play user={your admin name}
 play:
-	ansible-playbook bootstrap.yaml -i hosts --user $(user)
+	ansible-playbook bootstrap.yaml -i inventory --user $(user)
