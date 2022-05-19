@@ -1,7 +1,7 @@
 ---
 # mysql container
 
-- name: start mysql
+- name: Start mysql
   community.docker.docker_container:
     name: mysql_by_bootstrap
     image: "{{ mysql_image }}"
