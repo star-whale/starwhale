@@ -26,12 +26,14 @@ export default function SettingsSidebar({ style }: IComposedSidebarProps) {
             },
         ]
     }, [t])
+
     return (
         <BaseSidebar
             navItems={navItems}
             style={style}
             title={name}
-            icon={<MdSettingsSystemDaydream style={{ color: '#fff' }} size={20} />}
+            titleLink={'/settings'}
+            icon={<AiOutlineSetting style={{ color: '#fff' }} size={20} />}
         />
     )
 }

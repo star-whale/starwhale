@@ -59,7 +59,7 @@ const Routes = () => {
                             <Switch>
                                 <Route exact path='/settings/agents' component={SettingAgentListCard} />
                                 <Route exact path='/settings/images' component={SettingBaseImageListCard} />
-                                <Redirect from='/settings/:path?' to='/settings' />
+                                <Redirect from='/settings/:path?' to='/settings/images' />
                             </Switch>
                         </SettingsOverviewLayout>
                     </Route>

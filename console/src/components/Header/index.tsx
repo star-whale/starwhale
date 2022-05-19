@@ -35,6 +35,7 @@ const useHeaderStyles = createUseStyles({
 
 const useStyles = createUseStyles({
     systemWrapper: {
+        'margin-left': '12px',
         'position': 'relative',
         'cursor': 'pointer',
         'display': 'flex',
@@ -190,18 +191,25 @@ export default function Header() {
             {currentUser && (
                 <div className={styles.systemWrapper}>
                     <div className={styles.roundWrapper}>
-                        <AiOutlineSetting size={20} />
+                        <Link to='/projects'>
+                            <IconFont type='project' size={20} />
+                        </Link>
+                    </div>
+                </div>
+            )}
+            {currentUser && (
+                <div className={styles.systemWrapper}>
+                    <div className={styles.roundWrapper}>
+                        <Link to='/settings'>
+                            <AiOutlineSetting size={20} />
+                        </Link>
                     </div>
                     <div className={styles.systemMenu}>
-                        <Link className={styles.systemMenuItem} to='/settings'>
-                            <MdSettingsSystemDaydream size={20} />
-                            <span>{t('System Info')}</span>
-                        </Link>
-                        <Link className={styles.systemMenuItem} to=''>
+                        <Link className={styles.systemMenuItem} to='/settings/images'>
                             <GrDocker size={20} />
                             <span>{t('Base Images')}</span>
                         </Link>
-                        <Link className={styles.systemMenuItem} to='/'>
+                        <Link className={styles.systemMenuItem} to='/settings/agents'>
                             <AiOutlineCloudServer size={20} />
                             <span>{t('Agent List')}</span>
                         </Link>

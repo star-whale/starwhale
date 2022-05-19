@@ -71,12 +71,13 @@ export interface INavItem {
 }
 
 export interface IBaseSideBarProps extends IComposedSidebarProps {
+    titleLink?: string
     title?: string
     icon?: React.ReactNode
     navItems: INavItem[]
 }
 
-export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideBarProps) {
+export default function BaseSidebar({ navItems, style, title, icon, titleLink }: IBaseSideBarProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const width = useSidebarWidth()
     const ctx = useContext(SidebarContext)
@@ -146,7 +147,7 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
                     style={{
                         paddingLeft: !ctx.expanded ? 28 : 15,
                     }}
-                    to='/projects'
+                    to={titleLink ?? '/projects'}
                 >
                     {icon}
                     {ctx.expanded && (
