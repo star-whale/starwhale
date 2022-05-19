@@ -34,3 +34,9 @@ dry-run:
 
 template:
 	helm template starwhale ./ -n starwhale --debug
+
+pre-helm-update:
+	which helm
+	helm repo add starwhale https://star-whale.github.io/charts/
+	helm repo update
+	helm upgrade --devel --install starwhale starwhale/starwhale --namespace starwhale --create-namespace --version ${RELEASE_VERSION}
