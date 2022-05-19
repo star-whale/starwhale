@@ -1,6 +1,5 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
-import { IDatasetSchema } from '@dataset/schemas/dataset'
 import { IBaseImageSchema, IDeviceSchema } from '../../runtime/schemas/runtime'
 
 export enum JobActionType {
@@ -28,10 +27,10 @@ export interface IJobSchema extends IResourceSchema {
     owner?: IUserSchema
     modelName?: string
     modelVersion?: string
-    dataset?: IDatasetSchema
+    datasets?: string[]
     baseImage?: IBaseImageSchema
     device?: IDeviceSchema
-    deviceCount: number
+    deviceAmount: number
     duration: number
     createdTime: number
     stopTime: number

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
@@ -15,8 +15,9 @@ import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSe
 import BaseImageSelector from '@/domain/runtime/components/BaseImageSelector'
 import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
-// import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
-// import { usePage } from '@/hooks/usePage'
+import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
+import { usePage } from '@/hooks/usePage'
+import IconFont from '@/components/IconFont'
 import DeviceSelector from '../../runtime/components/DeviceSelector'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 
@@ -32,8 +33,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const { projectId } = useParams<{ projectId: string }>()
     const [modelId, setModelId] = useState('')
     const [datasetId, setDatasetId] = useState('')
-    const [, setDatasetVersionIds] = useState('')
-    // const [page] = usePage()
+    const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
+    const [page] = usePage()
     const [form] = useForm()
     const history = useHistory()
 
@@ -73,12 +74,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     }, [form])
 
     // TODO: show dataset version info
-    // const jobsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
+    const jobsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
 
-    // useEffect(() => {
-    //     if (!datasetVersionsByIds.length) return null
-    //     console.log(jobsInfo.data)
-    // }, [jobsInfo, datasetVersionsByIds])
+    useEffect(() => {
+        // if (!datasetVersionsByIds.length) return nul
+        // eslint-disable-next-line
+        console.log(jobsInfo.data)
+    }, [jobsInfo, datasetVersionsByIds])
 
     const [t] = useTranslation()
 
@@ -148,7 +150,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     </FormItem>
                 )}
                 <div style={{ marginTop: 30 }}>
-                    <Button type='button' onClick={handleAddDataset}>
+                    <Button
+                        type='button'
+                        onClick={handleAddDataset}
+                        startEnhancer={<IconFont type='add' kind='white' />}
+                    >
                         Add
                     </Button>
                 </div>

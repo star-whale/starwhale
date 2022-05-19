@@ -7,6 +7,7 @@ import { toaster } from 'baseui/toast'
 import { getErrMsg, setToken } from '@/api'
 import qs from 'qs'
 import { useLocation } from 'react-router-dom'
+import useTranslation from '@/hooks/useTranslation'
 
 export default function ApiHeader() {
     const location = useLocation()
@@ -16,6 +17,7 @@ export default function ApiHeader() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser, setCurrentUser } = useCurrentUser()
     const userInfo = useQuery('currentUser', fetchCurrentUser, { enabled: false })
+    const [t] = useTranslation()
 
     useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,7 +47,26 @@ export default function ApiHeader() {
                         }/login?redirect=${encodeURIComponent(redirect)}`
                     }
                 } else if (Date.now() - (lastErrMsgRef.current[errMsg] || 0) > errMsgExpireTimeSeconds * 1000) {
-                    toaster.negative(errMsg, { autoHideDuration: (errMsgExpireTimeSeconds + 1) * 1000 })
+                    toaster.negative(
+                        errMsg.length < 100 ? (
+                            errMsg
+                        ) : (
+                            <>
+                                <details>
+                                    <summary>{t('something wrong with the server')}</summary>
+                                    {errMsg}
+                                </details>
+                            </>
+                        ),
+                        {
+                            autoHideDuration: (errMsgExpireTimeSeconds + 1) * 1000,
+                            overrides: {
+                                InnerContainer: {
+                                    style: { wordBreak: 'break-word', width: '100%' },
+                                },
+                            },
+                        }
+                    )
                     lastErrMsgRef.current[errMsg] = Date.now()
                 }
                 return Promise.reject(error)

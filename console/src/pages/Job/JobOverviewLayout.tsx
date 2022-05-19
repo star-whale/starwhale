@@ -16,7 +16,7 @@ export interface IJobLayoutProps {
     children: React.ReactNode
 }
 
-function TaskLayout({ children }: IJobLayoutProps) {
+function JobOverviewLayout({ children }: IJobLayoutProps) {
     const { projectId, jobId } = useParams<{ jobId: string; projectId: string }>()
     const jobInfo = useQuery(`fetchJob:${projectId}:${jobId}`, () => fetchJob(projectId, jobId))
     const { job, setJob } = useJob()
@@ -75,11 +75,15 @@ function TaskLayout({ children }: IJobLayoutProps) {
     const items = [
         {
             label: t('Job ID'),
-            value: job?.id ?? '',
+            value: job?.id ?? '-',
         },
         {
             label: t('Owner'),
             value: job?.owner?.name ?? '-',
+        },
+        {
+            label: t('Status'),
+            value: job?.jobStatus ?? '-',
         },
         {
             label: t('Run time'),
@@ -93,6 +97,31 @@ function TaskLayout({ children }: IJobLayoutProps) {
             label: t('End time'),
             value: job?.stopTime && formatTimestampDateTime(job.stopTime),
         },
+        {
+            label: t('Device'),
+            value: `${job?.device ?? '-'}, ${job?.deviceAmount ?? '-'}`,
+        },
+        {
+            label: t('Model'),
+            style: {
+                gridColumnStart: 'span 2',
+            },
+            value: `${job?.modelName ?? '-'} : ${job?.modelVersion ?? '-'}`,
+        },
+        {
+            label: t('Datasets'),
+            style: {
+                gridColumnStart: 'span 2',
+            },
+            value: job?.datasets?.join(', '),
+        },
+        {
+            label: t('BaseImage'),
+            style: {
+                gridColumnStart: 'span 2',
+            },
+            value: job?.baseImage?.name ?? '-',
+        },
     ]
 
     const header = (
@@ -105,12 +134,12 @@ function TaskLayout({ children }: IJobLayoutProps) {
             }}
             bodyStyle={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
                 gap: '12px',
             }}
         >
             {items.map((v) => (
-                <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
+                <div key={v?.label} style={{ display: 'flex', gap: '12px', ...v.style }}>
                     <div
                         style={{
                             // flexBasis: '130px',
@@ -134,4 +163,4 @@ function TaskLayout({ children }: IJobLayoutProps) {
     )
 }
 
-export default React.memo(TaskLayout)
+export default React.memo(JobOverviewLayout)

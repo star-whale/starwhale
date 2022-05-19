@@ -11,17 +11,20 @@ import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import User from '@/domain/user/components/User'
 import { simulationJump } from '@/utils'
 import { BsChevronDown } from 'react-icons/bs'
+import { AiOutlineSetting, AiOutlineCloudServer } from 'react-icons/ai'
+import { GrDocker } from 'react-icons/gr'
+import { Link } from 'react-router-dom'
 import IconFont from '../IconFont'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: {
         padding: '0 32px 0 0',
         position: 'absolute',
-        zIndex: 1000,
+        zIndex: 100,
         top: 0,
         right: 0,
         height: `${headerHeight}px`,
-        width: '30%',
+        width: '50%',
         display: 'flex',
         flexFlow: 'row nowrap',
         alignItems: 'center',
@@ -30,6 +33,59 @@ const useHeaderStyles = createUseStyles({
 })
 
 const useStyles = createUseStyles({
+    systemWrapper: {
+        'margin-left': '12px',
+        'position': 'relative',
+        'cursor': 'pointer',
+        'display': 'flex',
+        'placeItems': 'center',
+        'height': '100%',
+        '&:hover': {
+            '& $systemMenu': {
+                display: 'flex',
+            },
+        },
+    },
+    systemMenu: (props: IThemedStyleProps) => ({
+        'min-width': '180px',
+        'position': 'absolute',
+        'top': '100%',
+        'left': '-50px',
+        'display': 'none',
+        'margin': 0,
+        'padding': '8px 0',
+        'line-height': 1.6,
+        'flex-direction': 'column',
+        'alignItems': 'center',
+        'width': '100%',
+        'font-size': '13px',
+        'borderRadius': '4px',
+        'box-shadow': props.theme.lighting.shadow400,
+        '& a': {
+            '&:link': {
+                'color': props.theme.colors.contentPrimary,
+                'text-decoration': 'none',
+            },
+            '&:hover': {
+                'color': props.theme.colors.contentPrimary,
+                'text-decoration': 'none',
+            },
+            '&:visited': {
+                'color': props.theme.colors.contentPrimary,
+                'text-decoration': 'none',
+            },
+        },
+    }),
+    systemMenuItem: (props: IThemedStyleProps) => ({
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        alignSelf: 'normal',
+        gap: '10px',
+        height: '32px',
+        color: props.theme.colors.contentPrimary,
+        backgroundColor: 'var(--color-brandMenuItemBackground)',
+    }),
     userWrapper: {
         'position': 'relative',
         'cursor': 'pointer',
@@ -37,7 +93,7 @@ const useStyles = createUseStyles({
         'align-items': 'center',
         'min-width': '140px',
         'height': '100%',
-        'margin-left': '20px',
+        'margin-left': '12px',
         'flex-direction': 'column',
 
         'padding': '14px 0 14px 0',
@@ -97,6 +153,15 @@ const useStyles = createUseStyles({
         color: props.theme.colors.contentPrimary,
         backgroundColor: 'var(--color-brandMenuItemBackground)',
     }),
+    roundWrapper: {
+        borderRadius: '50%',
+        backgroundColor: 'var(--color-brandWhite)',
+        width: '30px',
+        height: '30px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
 })
 
 export default function Header() {
@@ -123,19 +188,37 @@ export default function Header() {
         <header className={headerStyles.headerWrapper}>
             <div style={{ flexGrow: 1 }} />
             {currentUser && (
+                <div className={styles.systemWrapper}>
+                    <div className={styles.roundWrapper}>
+                        <Link to='/projects'>
+                            <IconFont type='project' size={20} />
+                        </Link>
+                    </div>
+                </div>
+            )}
+            {currentUser && (
+                <div className={styles.systemWrapper}>
+                    <div className={styles.roundWrapper}>
+                        <Link to='/settings'>
+                            <AiOutlineSetting size={20} />
+                        </Link>
+                    </div>
+                    <div className={styles.systemMenu}>
+                        <Link className={styles.systemMenuItem} to='/settings/images'>
+                            <GrDocker size={20} />
+                            <span>{t('Base Images')}</span>
+                        </Link>
+                        <Link className={styles.systemMenuItem} to='/settings/agents'>
+                            <AiOutlineCloudServer size={20} />
+                            <span>{t('Agent List')}</span>
+                        </Link>
+                    </div>
+                </div>
+            )}
+            {currentUser && (
                 <div className={styles.userWrapper}>
                     <div className={styles.userNameWrapper}>
-                        <div
-                            style={{
-                                borderRadius: '50%',
-                                backgroundColor: 'var(--color-brandWhite)',
-                                width: '30px',
-                                height: '30px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
+                        <div className={styles.roundWrapper}>
                             <IconFont type='user' size={20} kind='white2' />
                         </div>
 

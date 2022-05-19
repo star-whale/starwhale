@@ -18,14 +18,17 @@ import DatasetVersionListCard from './pages/Dataset/DatasetVersionListCard'
 import DatasetVersionLayout from './pages/Dataset/DatasetVersionLayout'
 import DatasetLayout from './pages/Dataset/DatasetLayout'
 import DatasetOverview from './pages/Dataset/Overview'
-import TaskLayout from './pages/Job/TaskLayout'
-import JobOverview from './pages/Job/JobOverview'
 import JobNewCard from './pages/Project/JobNewCard'
-import JobResult from './pages/Job/JobResult'
 import JobsLayout from './pages/Job/JobsLayout'
 import JobGridCard from './pages/Job/JobGridCard'
 import ApiHeader from './api/ApiHeader'
 import Pending from './pages/Home/Pending'
+import JobTasks from './pages/Job/JobTasks'
+import JobResults from './pages/Job/JobResults'
+import JobOverviewLayout from './pages/Job/JobOverviewLayout'
+import SettingsOverviewLayout from './pages/Settings/SettingsOverviewLayout'
+import SettingAgentListCard from './pages/Settings/SettingAgentListCard'
+import SettingBaseImageListCard from './pages/Settings/SettingBaseImageListCard'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -50,6 +53,17 @@ const Routes = () => {
             <div className={styles.root}>
                 <ApiHeader />
                 <Switch>
+                    {/* setting */}
+                    <Route exact path='/settings/:path?'>
+                        <SettingsOverviewLayout>
+                            <Switch>
+                                <Route exact path='/settings/agents' component={SettingAgentListCard} />
+                                <Route exact path='/settings/images' component={SettingBaseImageListCard} />
+                                <Redirect from='/settings/:path?' to='/settings/images' />
+                            </Switch>
+                        </SettingsOverviewLayout>
+                    </Route>
+                    {/*  */}
                     <Route exact path='/projects/:projectId/jobgrids'>
                         <JobsLayout>
                             <Switch>
@@ -71,12 +85,12 @@ const Routes = () => {
                     </Route>
                     {/* job & task */}
                     <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
-                        <TaskLayout>
+                        <JobOverviewLayout>
                             <Switch>
-                                <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={JobOverview} />
-                                <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResult} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={JobTasks} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResults} />
                             </Switch>
-                        </TaskLayout>
+                        </JobOverviewLayout>
                     </Route>
                     {/* datasets */}
                     <Route exact path='/projects/:projectId/datasets/:datasetId/versions'>
