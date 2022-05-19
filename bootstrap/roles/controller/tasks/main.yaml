@@ -1,6 +1,6 @@
 ---
 # controller container
-- name: start controller container
+- name: Start controller container
   community.docker.docker_container:
     name: controller_by_bootstrap
     image: "{{ controller_image }}"
