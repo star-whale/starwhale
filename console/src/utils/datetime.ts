@@ -12,17 +12,18 @@ export function formatTimestampDateTime(s: number, format = 'YYYY-MM-DDTHH:mm:ss
 export function durationToStr(v: number) {
     const units = ['μs', 'ms', 's', 'm', 'h', 'd']
     let basic = 1000
-    let unitIdx = 0
+    let unitIdx = 1
     let newV = v
     while (newV >= basic) {
         unitIdx++
         newV /= basic
-        if (unitIdx > 2) {
+        if (unitIdx >= 2) {
             basic = 60
         }
         if (unitIdx > 4) {
             basic = 24
         }
     }
+
     return `${newV.toFixed(2)}${units[unitIdx]}`
 }

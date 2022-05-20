@@ -87,7 +87,7 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
         },
         {
             label: t('Run time'),
-            value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration * 1000) : '-',
+            value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration) : '-',
         },
         {
             label: t('Created time'),

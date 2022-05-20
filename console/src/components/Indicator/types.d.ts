@@ -42,6 +42,7 @@ export enum INDICATORTYPE {
     LABELS = 'labels',
     CONFUSION_MATRIX = 'confusion_matrix',
     SUMMARY = 'summary',
+    ROC_AUC = 'roc_auc',
 }
 
 export type IKind = string

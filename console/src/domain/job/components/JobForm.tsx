@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
@@ -66,23 +66,24 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         const datasetVersionId = form.getFieldValue('datasetVersionId') as string
         if (!datasetVersionId) return
         const datasetVersionIdsArr = (form.getFieldValue('datasetVersionIdsArr') ?? []) as Array<string>
-        const ids = new Set(...datasetVersionIdsArr).add(datasetVersionId)
+        const ids = new Set(datasetVersionIdsArr).add(datasetVersionId)
         form.setFieldsValue({
             datasetVersionIdsArr: Array.from(ids),
         })
         setDatasetVersionIds(Array.from(ids).join(','))
     }, [form])
 
-    // TODO: show dataset version info
-    const jobsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
-
-    useEffect(() => {
-        // if (!datasetVersionsByIds.length) return nul
-        // eslint-disable-next-line
-        console.log(jobsInfo.data)
-    }, [jobsInfo, datasetVersionsByIds])
+    const datasetsInfo = useFetchDatasetVersionsByIds(projectId, datasetVersionsByIds, page)
 
     const [t] = useTranslation()
+
+    const getValueLabel = useCallback(
+        (args) => {
+            const dataset = datasetsInfo.data?.list?.find(({ version }) => version?.id === args.option.id)
+            return [dataset?.version?.id, dataset?.version?.name].join('-')
+        },
+        [datasetsInfo]
+    )
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
@@ -159,9 +160,9 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     </Button>
                 </div>
             </div>
-            <div style={{ width: '400px' }}>
+            <div style={{ width: '620px' }}>
                 <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
-                    <MultiTags placeholder='' />
+                    <MultiTags placeholder='' getValueLabel={getValueLabel} />
                 </FormItem>
             </div>
             <Divider orientation='left'>

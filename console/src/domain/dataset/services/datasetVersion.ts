@@ -6,6 +6,7 @@ import {
     IUpdateDatasetVersionSchema,
     IDatasetVersionDetailSchema,
 } from '../schemas/datasetVersion'
+import { IDatasetSchema } from '../schemas/dataset'
 
 export async function listDatasetVersions(
     projectId: string,
@@ -25,8 +26,8 @@ export async function listDatasetVersionsByIds(
     projectId: string,
     datasetVersionIds: string,
     query: IListQuerySchema
-): Promise<IListSchema<IDatasetVersionSchema>> {
-    const resp = await axios.get<IListSchema<IDatasetVersionSchema>>(`/api/v1/project/${projectId}/dataset`, {
+): Promise<IListSchema<IDatasetSchema>> {
+    const resp = await axios.get<IListSchema<IDatasetSchema>>(`/api/v1/project/${projectId}/dataset`, {
         params: {
             ...query,
             versionId: datasetVersionIds,

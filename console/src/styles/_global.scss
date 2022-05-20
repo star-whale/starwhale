@@ -72,20 +72,19 @@ code {
     fill: '#5181E0';
     color: '#5181E0';
   }
+  
+  .icon {
+    vertical-align: -0.15em;
+    fill: '#5181E0';
+    color: '#5181E0';
+    overflow: hidden;
+    position: absolute; 
+    height: 100%; 
+    width: 100%; 
+    left: 0; 
+    top: 0;
+  }
 }
-.icon {
-  vertical-align: -0.15em;
-  fill: '#5181E0';
-  color: '#5181E0';
-  overflow: hidden;
-  position: absolute; 
-  height: 100%; 
-  width: 100%; 
-  left: 0; 
-  top: 0;
-
-}
-
 .icon-container-no-color {
   position: relative; 
 

@@ -282,6 +282,9 @@ const locales0 = {
     'Confusion Matrix': {
         en: 'Confusion Matrix',
     },
+    'Roc Auc': {
+        en: 'Roc Auc',
+    },
     'Labels': {
         en: 'Labels',
     },

@@ -122,7 +122,7 @@ export default function JobListCard() {
                                 job.modelVersion,
                                 job.owner && <User user={job.owner} />,
                                 job.createdTime && formatTimestampDateTime(job.createdTime),
-                                typeof job.duration === 'string' ? '-' : durationToStr(job.duration * 1000),
+                                typeof job.duration === 'string' ? '-' : durationToStr(job.duration),
                                 job.stopTime > 0 ? formatTimestampDateTime(job.stopTime) : '-',
                                 job.jobStatus,
                                 actions[job.jobStatus] ?? '',
