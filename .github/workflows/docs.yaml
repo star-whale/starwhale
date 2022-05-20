@@ -23,6 +23,7 @@ jobs:
         with:
           base: main
           filters: .github/file-filter.yml
+
   build:
     runs-on: ubuntu-latest
     defaults:
@@ -66,6 +67,13 @@ jobs:
         working-directory: ./docs
         if: steps.yarn-cache-docs.outputs.cache-hit != 'true' # Over here!
         run: make install-req
+
+      - name: Install markdownlint cli
+        run: npm -g install markdownlint-cli
+
+      - name: Lint docs
+        working-directory: ./docs
+        run: make lint-docs
 
       - name: Build docs
         working-directory: ./docs

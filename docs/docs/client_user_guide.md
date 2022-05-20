@@ -1,28 +1,30 @@
-# Starwhale Client User Guide
-
+---
+title: Starwhale Client User Guide
+---
 This guide explains all commands provided by the Starwhale client (swcli).
 
-# Definitions
+## Definitions
 
-## Resource URI
+### Resource URI
 
 Resource URI is widely used in Starwhale client commands. The URI can refer to a resource in the local instance or any other resource in a remote instance. In this way, the Starwhale client can easily manipulate any resource.
 
-## Instance URI
+### Instance URI
 
 Instance URI can be either:
+
 - A URL in format: `[http(s)://]<hostname or ip>[:<port>]`, which refers to a Starwhale controller. The default scheme is HTTP, and the default port is 7827.
 - local, which means the local standalone instance.
 
-**Caveat**
+:::tip Caveat
+"local" is different from "localhost". The former means the local standalone instance without a controller, while the latter implies a controller listening at the default port 7827 on localhost.|
+:::
 
-"local" is different from "localhost". The former means the local standalone instance without a controller, while the latter implies a controller listening at the default port 7827 on localhost.
-
-## Project URI
+### Project URI
 
 Project URI is in the format `[<Instance URI>/project/]<project name>`. If the instance URI is not specified, use the default instance instead.
 
-## Other Resources URI
+### Other Resources URI
 
 - Model: `[<Project URI>/model/]<model name>[/version/<version id>]`
 - Dataset: `[<Project URI>/dataset/]<dataset name>[/version/<version id>]`
@@ -33,7 +35,7 @@ If the project URI is not specified, use the default project.
 
 If the version id is not specified, use the latest version.
 
-## Names
+### Names
 
 Names mean project names, model names, dataset names, runtime names, and tag names.
 
@@ -45,356 +47,363 @@ A name should always start with a letter or the `_` character.
 
 The maximum length of a name is 80.
 
-### Name uniqueness requirement
+#### Name uniqueness requirement
 
 The resource name should be a unique string within its owner. For example, the project name should be unique in the owner instance, and the model name should be unique in the owner project.
 
 The resource name can not be used by any other resource of the same kind in the owner, including those removed ones. For example, Project "apple" can not have two models named "Alice", even if one of them is already removed.
 
-Different kinds of resources can have the same name. For example, a project and a model can have the same name "Alice". 
+Different kinds of resources can have the same name. For example, a project and a model can have the same name "Alice".
 
 Resources with different owners can have the same name. For example, a model in project "Apple" and a model in project "Banana" can have the same name "Alice".
 
 Garbage collected resources' names can be reused. For example, after the model with the name "Alice" in project "Apple" is removed and garbage collected, the project can have a new model with the same name "Alice".
 
-# Instance management
+## Instance management
 
-## Select the default instance
+### Select the default instance
 
 This command sets the default Starwhale instance used by other commands.
-```
+
+```console
 swcli instance select <instance uri>
 ```
 
-# Project management
+## Project management
 
-## Select the default project
+### Select the default project
 
 This command sets both the default instance and project used by other commands. When a project is selected as the default project, its owner instance is also selected as the default instance.
-```
+
+```console
 swcli project select <project uri>
 ```
 
-## Create a project
+### Create a project
 
 This command creates a new project.
 
-```
+```console
 swcli project create <project uri>
 ```
 
-## List projects
+### List projects
 
 This command lists all viewable projects in the instance.
 
-```
+```console
 swcli project list [OPTIONS] [instance uri]
 ```
 
 Options:
+
 - -a, --all Include removed projects which have not been garbage collected.
 
-## Remove a project
+### Remove a project
 
 This command removes a project.
 
-```
+```console
 swcli project remove <project uri>
 ```
 
-## Recover a project
+### Recover a project
 
 This command recovers a removed project.
-```
+
+```console
 swcli project recover <project uri>
 ```
 
-# Model management
+## Model management
 
-## Build a model
+### Build a model
 
-This command builds a model with the specified working directory. 
+This command builds a model with the specified working directory.
 
-```
+```console
 swcli model build <model uri> [working dir]
 ```
 
-## List models
+### List models
 
 This command lists all models in the project.
 
-```
+```console
 swcli model list [project uri]
 ```
 
-## Remove a model
+### Remove a model
 
 This command removes a model.
 
-```
+```console
 swcli model remove <model uri>
 ```
 
-## Recover a model
+### Recover a model
 
 This command recovers a removed model.
 
-```
+```console
 swcli model recover <model uri>
 ```
 
-## Evaluate a model
+### Evaluate a model
 
 This command creates a new job for model evaluation.
 
-```
-swcli model eval [OPTIONS] <model uri> 
+```console
+swcli model eval [OPTIONS] <model uri>
 ```
 
-## Manage model tags
+### Manage model tags
 
 This command adds or removes tags on the specified model.
 
-```
-swcli model tag [OPTIONS] <model uri> <tag name>[,<tagname>...]
+```console
+swcli model tag [OPTIONS] <model uri> <tag name>[,<tag name>...]
 ```
 
 Options:
+
 - -r, --remove If specified, remove the tags.
 - -q, --quiet If specified, ignore tag name errors like name duplication, name absence, etc.
 
-## Copy a model
+### Copy a model
 
 This command copies a model to another place, either locally or remotely.
 
-```
+```console
 swcli model copy <source model uri> <destination model uri>
 ```
 
 The destination model URI should not exist and observes the name uniqueness rule.
 
-## Show model history
+### Show model history
 
 This command shows the history of a model.
-```
+
+```console
 swcli model history <model uri>
 ```
 
-## Revert a model to an old version
+### Revert a model to an old version
 
 This command reverts a model to an old version.
 
-```
+```console
 swcli model revert <model uri>
 ```
 
-# Dataset Management
+## Dataset Management
 
-## Build a dataset
+### Build a dataset
 
 This command builds a dataset with the specified working directory.
 
-```
+```console
 swcli dataset build <dataset uri> [working dir]
 ```
 
-## List datasets
+### List datasets
 
 This command lists all datasets in the project.
 
-```
+```console
 swcli dataset list [project uri]
 ```
 
-## Remove a dataset
+### Remove a dataset
 
 This command removes a dataset.
 
-```
+```console
 swcli dataset remove <dataset uri>
 ```
 
-## Recover a dataset
+### Recover a dataset
 
 This command recovers a removed dataset.
 
-```
+```console
 swcli dataset recover <dataset uri>
 ```
 
-## Manage dataset tags
+### Manage dataset tags
 
 This command adds or removes tags on the specified dataset.
 
-```
+```console
 swcli dataset tag [OPTIONS] <dataset uri> <tag name>[,<tagname>...]
 ```
 
 Options:
+
 - -r, --remove If specified, remove the tags.
 - -q, --quiet If specified, ignore tag name errors like name duplication, name absence, etc.
 
-## Copy a dataset
+### Copy a dataset
 
 This command copies a dataset to another place, either locally or remotely.
 
-```
+```console
 swcli dataset copy <source dataset uri> <destination dataset uri>
 ```
 
 The destination dataset URI should not exist and observes the name uniqueness rule.
 
-## Show dataset history
+### Show dataset history
 
 This command shows the history of a dataset.
 
-```
+```console
 swcli dataset history <dataset uri>
 ```
 
-## Revert a dataset to an old version
+### Revert a dataset to an old version
 
 This command reverts a dataset to an old version.
 
-```
+```console
 swcli dataset revert <dataset uri>
 ```
 
-# Runtime management
+## Runtime management
 
-## Build a runtime
+### Build a runtime
 
 This command builds a runtime with the specified working directory.
 
-```
+```console
 swcli runtime build <runtime uri> [working dir]
 ```
 
-## List runtimes
+### List runtimes
 
 This command lists all runtimes in the project.
 
-```
+```console
 swcli runtime list [project uri]
 ```
 
-## Remove a runtime
+### Remove a runtime
 
 This command removes a runtime.
 
-```
+```console
 swcli runtime remove <runtime uri>
 ```
 
-## Recover a runtime
+### Recover a runtime
 
 This command recovers a removed runtime.
 
-```
+```console
 swcli runtime recover <runtime uri>
 ```
 
-## Copy a runtime
+### Copy a runtime
 
 This command copies a runtime to another place, either locally or remotely.
 
-```
+```console
 swcli runtime copy <source runtime uri> <destination runtime uri>
 ```
 
 The destination runtime URI should not exist and observes the name uniqueness rule.
 
-## Show runtime history
+### Show runtime history
 
 This command shows the history of a runtime.
 
-```
+```console
 swcli runtime history <runtime uri>
 ```
 
-## Revert a runtime to an old version
+### Revert a runtime to an old version
 
 This command reverts a runtime to an old version.
 
-```
+```console
 swcli runtime revert <runtime uri>
 ```
 
-# Job Management
+## Job Management
 
-## List jobs
+### List jobs
 
 This command lists all jobs in the project.
 
-```
+```console
 swcli job list [project uri]
 ```
 
-## Get a job's detailed information
+### Get a job's detailed information
 
 This command shows detailed information about a job.
 
-```
+```console
 swcli job info <job uri>
 ```
 
-## Pause a job
+### Pause a job
 
 This command pauses a running job.
 
-```
+```console
 swcli job pause <job uri>
 ```
 
-## Resume a job
+### Resume a job
 
 This command resumes a paused job.
 
-```
+```console
 swcli job resume <job uri>
 ```
 
-## Cancel a job
+### Cancel a job
 
 This command cancels a running/paused job.
 
-```
+```console
 swcli job cancel <job uri>
 ```
 
-# Utilities
+## Utilities
 
-## Garbage collection
+### Garbage collection
 
 This command purges removed entities in the instance. Purged entities are not recoverable.
 
-```
+```console
 swcli gc [instance uri]
 ```
 
 The garbage collection aims to hold the storage size within an acceptable range. It keeps removing the oldest removed entity until the total storage size is not greater than a predefined threshold.
 
-# Others
+## Others
 
-## Special rules for versioned resources
+### Special rules for versioned resources
 
 Some resources are versioned, like models, datasets, and runtimes. There are some special rules for commands manipulating these resources.
 
-### Versioned resource creation and update
+#### Versioned resource creation and update
 
 The command for creation and update has the following pattern:
 
-```
+```console
 swcli model/dataset/runtime build <resource uri> [working dir]
 ```
 
 A new resource with one version is automatically created when the specified resource URI does not exist. Otherwise, a new version of the resource is created and becomes the latest version.
 
-### Versioned resource removal and recovery
+#### Versioned resource removal and recovery
 
 The commands for removal and recovery have the following pattern:
 
-```
+```console
 swcli model/dataset/runtime remove/recover <resource uri>
 ```
 

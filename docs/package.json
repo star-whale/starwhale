@@ -25,6 +25,8 @@
         "@easyops-cn/docusaurus-search-local": "^0.16.3",
         "@mdx-js/react": "^1.6.21",
         "clsx": "^1.1.1",
+        "markdownlint": "^0.25.1",
+        "markdownlint-cli": "^0.31.1",
         "medium-zoom": "^1.0.6",
         "prism-react-renderer": "^1.2.0",
         "react": "^16.8.4",

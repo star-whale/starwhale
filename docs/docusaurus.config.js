@@ -36,17 +36,12 @@ module.exports = {
             },
             items: [
                 {
-                    to: '/docs',
+                    to: '/docs/getting_started',
                     label: 'Docs',
                     position: 'left',
                 },
                 {
-                    to: '/docs/guides',
-                    label: 'Get Started',
-                    position: 'left',
-                },
-                {
-                    to: '/docs/examples',
+                    to: '/docs/examples/mnist',
                     label: 'Examples',
                     position: 'left',
                 },
@@ -64,7 +59,7 @@ module.exports = {
                         },
                         {
                             label: 'CLI',
-                            to: '/docs/references/cli',
+                            to: '/docs/client_user_guide',
                         },
                     ],
                 },
