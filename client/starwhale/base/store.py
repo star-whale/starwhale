@@ -41,14 +41,14 @@ class LocalStorage(SWCliConfigMixed):
 
         return _name, _version
 
-    def _guess(self, rootdir: Path, name: str, ftype: str = "") -> Path:
+    def _guess(self, rootdir: Path, name: str, ftype: str = "") -> t.Tuple[Path, str]:
         # TODO: support more guess method, such as tag
         _path = rootdir / name
         if _path.exists():
-            return _path
+            return _path, name
 
         if len(name) < _MIN_GUESS_NAME_LENGTH:
-            return _path
+            return _path, name
 
         ftype = ftype.strip()
         for fd in rootdir.iterdir():
@@ -56,9 +56,9 @@ class LocalStorage(SWCliConfigMixed):
                 continue
 
             if fd.name.startswith(name) or name.startswith(fd.name):
-                return fd
+                return fd, fd.name.rsplit(ftype, 1)[1] if ftype else fd.name
         else:
-            return _path
+            return _path, name
 
     @abstractmethod
     def list(

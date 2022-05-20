@@ -427,6 +427,6 @@ class DataSet(object):
     def render_fuse_json(cls, swds: str, force: bool = False) -> str:
         dsl = DataSetLocalStore()
         _name, _version = dsl._parse_swobj(swds)
-        _workdir = dsl._guess(dsl.dataset_dir / _name, _version)
+        _workdir, _ = dsl._guess(dsl.dataset_dir / _name, _version)
         ds = DataSet(_workdir, ds_version=_version)
         return ds._do_render_fuse_json(force)

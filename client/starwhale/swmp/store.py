@@ -99,16 +99,22 @@ class ModelPackageLocalStore(LocalStorage):
         # TODO: add more restful api for project, /api/v1/project/{project_id}/model/push
         url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/project/model/push"
 
-        _spath = self._get_swmp_path(swmp)
+        _spath, _full_swmp = self._get_swmp_path(swmp)
         if not _spath.exists():
-            rprint(f"[red]failed to push {swmp}[/], because of {_spath} not found")
+            rprint(
+                f"[red]failed to push {_full_swmp}[/], because of {_spath} not found"
+            )
             sys.exit(1)
 
         rprint(":fire: try to push swmp...")
         upload_file(
             url=url,
             fpath=_spath,
-            fields={"swmp": swmp, "project": project, "force": "1" if force else "0"},
+            fields={
+                "swmp": _full_swmp,
+                "project": project,
+                "force": "1" if force else "0",
+            },
             headers={"Authorization": self._sw_token},
             exit=True,
         )
@@ -121,7 +127,7 @@ class ModelPackageLocalStore(LocalStorage):
         server = fmt_http_server(server)
         url = f"{server}/api/{SW_API_VERSION}/project/model/pull"
 
-        _spath = self._get_swmp_path(swmp)
+        _spath, _ = self._get_swmp_path(swmp)
         if _spath.exists() and not force:
             rprint(f":ghost: {swmp} is already existed, skip pull")
             return
@@ -154,11 +160,8 @@ class ModelPackageLocalStore(LocalStorage):
         # TODO: add workdir tree
 
     def get_swmp_info(self, _name: str, _version: str) -> t.Dict[str, t.Any]:
-        _workdir = self._guess(self.workdir / _name, _version)
-        _swmp_path = self._guess(
-            self.pkgdir / _name,
-            _version if _version == self.LATEST_TAG else f"{_version}{_SWMP_FILE_TYPE}",
-        )
+        _workdir, _ = self._guess(self.workdir / _name, _version)
+        _swmp_path, _ = self._guess(self.pkgdir / _name, _version)
 
         _manifest: t.Dict[str, t.Any] = {}
         if _workdir.exists():
@@ -183,7 +186,7 @@ class ModelPackageLocalStore(LocalStorage):
         _model, _version = self._parse_swobj(swmp)
 
         def _remove_workdir(_real_version: str) -> None:
-            workdir_fpath = self._guess(self.workdir / _model, _real_version)
+            workdir_fpath, _ = self._guess(self.workdir / _model, _real_version)
             if not (workdir_fpath.exists() and workdir_fpath.is_dir()):
                 return
 
@@ -191,7 +194,7 @@ class ModelPackageLocalStore(LocalStorage):
             empty_dir(workdir_fpath)
             rprint(f" :bomb: delete workdir {workdir_fpath}")
 
-        pkg_fpath = self._guess(self.pkgdir / _model, _version)
+        pkg_fpath, _ = self._guess(self.pkgdir / _model, _version)
         if pkg_fpath.exists():
             click.confirm(f"continue to delete {pkg_fpath}?", abort=True)
             pkg_fpath = pkg_fpath.resolve()
@@ -214,7 +217,7 @@ class ModelPackageLocalStore(LocalStorage):
         if _target:
             _target = Path(_target) / _version
         else:
-            _target = self._guess(self.workdir / _name, _version)
+            _target, _ = self._guess(self.workdir / _name, _version)
 
         if (
             _target.exists()
@@ -226,7 +229,7 @@ class ModelPackageLocalStore(LocalStorage):
             empty_dir(_target)
             ensure_dir(_target)
             self._console.print(":oncoming_police_car: try to extract swmp...")
-            _swmp_path = self._get_swmp_path(swmp)
+            _swmp_path, _ = self._get_swmp_path(swmp)
             with tarfile.open(_swmp_path, "r") as tar:
                 tar.extractall(path=str(_target.resolve()))
 
@@ -236,14 +239,17 @@ class ModelPackageLocalStore(LocalStorage):
         self._console.print(f":clap: extracted-swmp @ {_target.resolve()}")
         return _target
 
-    def _get_swmp_path(self, swmp: str) -> Path:
+    def _get_swmp_path(self, swmp: str) -> t.Tuple[Path, str]:
         _model, _version = self._parse_swobj(swmp)
-        return self._guess(self.pkgdir / _model, _version, ftype=_SWMP_FILE_TYPE)
+        _dir, _fullversion = self._guess(
+            self.pkgdir / _model, _version, ftype=_SWMP_FILE_TYPE
+        )
+        return _dir, f"{_model}:{_fullversion}"
 
     def pre_activate(self, swmp: str) -> None:
         if swmp.count(":") == 1:
             _name, _version = self._parse_swobj(swmp)
-            _workdir = self._guess(self.workdir / _name, _version)
+            _workdir, _ = self._guess(self.workdir / _name, _version)
         else:
             _workdir = Path(swmp)
 

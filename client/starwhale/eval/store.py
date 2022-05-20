@@ -66,7 +66,7 @@ class EvalLocalStorage(LocalStorage):
     def info(self, version: str) -> None:
         from .executor import EvalTaskType, render_cmp_report, RunSubDirType
 
-        _dir = self._guess(self.eval_run_dir / version[:VERSION_PREFIX_CNT], version)
+        _dir, _ = self._guess(self.eval_run_dir / version[:VERSION_PREFIX_CNT], version)
         _mf = _dir / DEFAULT_MANIFEST_NAME
         if not _mf.exists():
             self._console.print(f":tea: not found {_mf}")
@@ -88,7 +88,7 @@ class EvalLocalStorage(LocalStorage):
         self._console.print(f":camel: cmp: {_dir/EvalTaskType.CMP}")
 
     def delete(self, version: str) -> None:
-        _dir = self._guess(self.eval_run_dir / version[:VERSION_PREFIX_CNT], version)
+        _dir, _ = self._guess(self.eval_run_dir / version[:VERSION_PREFIX_CNT], version)
         if _dir.exists() and _dir.is_dir():
             click.confirm(f"continue to delete {_dir}", abort=True)
             empty_dir(_dir)
