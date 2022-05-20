@@ -153,8 +153,8 @@ const locales0 = {
     'Result Output Path': {
         en: 'Result Output Path',
     },
-    'Device Count': {
-        en: 'Device Count',
+    'Device Amount': {
+        en: 'Device Amount',
     },
     'Run time': {
         en: 'Run time',
