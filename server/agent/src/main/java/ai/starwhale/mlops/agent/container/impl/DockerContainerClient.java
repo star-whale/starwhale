@@ -31,6 +31,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -111,9 +112,8 @@ public class DockerContainerClient implements ContainerClient {
 
         } catch (NotFoundException e) {
             log.error("image:{} not found at local, try to pull from remote", imageConfig.getImage());
-            ResultCallback.Adapter<PullResponseItem> resultCallback = client.pullImageCmd(imageConfig.getImage()).start();
             try {
-                resultCallback.awaitCompletion();
+                pullImage(imageConfig.getImage(), imageConfig.getImagePullTimeout());
                 // one more again
                 this.createAndStartContainer(imageConfig);
             } catch (InterruptedException ex) {
@@ -121,6 +121,11 @@ public class DockerContainerClient implements ContainerClient {
             }
         }
         return Optional.empty();
+    }
+
+    private void pullImage(String image, Long timeout) throws InterruptedException {
+        ResultCallback.Adapter<PullResponseItem> resultCallback = client.pullImageCmd(image).start();
+        resultCallback.awaitCompletion(timeout, TimeUnit.MILLISECONDS);
     }
 
     @Override

@@ -32,6 +32,7 @@ public class ImageConfig {
     private Map<String, String> labels;
     private Boolean autoRemove;
     private List<String> entrypoint;
+    private Long imagePullTimeout;
     /**
      * Set the Network mode for the container
      * <ul>

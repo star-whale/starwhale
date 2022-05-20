@@ -43,6 +43,7 @@ public class AgentProperties {
         private String pypiIndexUrl;
         private String pypiExtraIndexUrl;
         private String pypiTrustedHost;
+        private Long imagePullTimeout = 60000L;
     }
 
     @Data
