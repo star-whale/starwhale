@@ -5,7 +5,7 @@ import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
 import { ILabels, INDICATORTYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
-import { getHeatmapConfig } from '@/components/Indicator/utils'
+import { getHeatmapConfig, getRocAucConfig } from '@/components/Indicator/utils'
 import { LabelMedium, LabelSmall } from 'baseui/typography'
 import { flattenObject } from '@/utils'
 import Card from '@/components/Card'
@@ -86,6 +86,16 @@ function JobResults() {
                     children = (
                         <React.Suspense fallback={<BusyPlaceholder />}>
                             <PlotlyVisualizer data={heatmapData} />
+                        </React.Suspense>
+                    )
+                    break
+                }
+                case INDICATORTYPE.ROC_AUC: {
+                    const rocaucData = getRocAucConfig(k, _.keys(v), v)
+                    outTitle = t('Roc Auc')
+                    children = (
+                        <React.Suspense fallback={<BusyPlaceholder />}>
+                            <PlotlyVisualizer data={rocaucData} />
                         </React.Suspense>
                     )
                     break
@@ -176,7 +186,7 @@ function JobResults() {
                 style={{
                     width: '100%',
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(800px, 1fr))',
                     gridGap: '16px',
                 }}
             >
