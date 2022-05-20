@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -202,8 +203,8 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public byte[] pull(ClientSWMPRequest pullRequest) {
-        return swmpService.pull(pullRequest);
+    public void pull(ClientSWMPRequest pullRequest, HttpServletResponse httpResponse) {
+        swmpService.pull(pullRequest,httpResponse);
     }
 
     @Override
@@ -224,8 +225,8 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public byte[] pullModel(ClientSWMPRequest pullRequest) {
-        return pull(pullRequest);
+    public void pullModel(ClientSWMPRequest pullRequest, HttpServletResponse httpResponse) {
+        pull(pullRequest,httpResponse);
     }
 
     @Override

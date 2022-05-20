@@ -50,6 +50,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -352,7 +354,7 @@ public class SWModelPackageService {
         return Long.valueOf(currentUserDetail.getIdTableKey());
     }
 
-    public byte[] pull(ClientSWMPRequest pullRequest) {
+    public void pull(ClientSWMPRequest pullRequest, HttpServletResponse httpResponse) {
         SWModelPackageEntity swModelPackageEntity = swmpMapper.findByName(pullRequest.name());
         if(null == swModelPackageEntity){
             throw new SWValidationException(ValidSubject.SWMP).tip("swmp not found");
@@ -373,9 +375,12 @@ public class SWModelPackageService {
         if(CollectionUtils.isEmpty(files)){
             throw new SWValidationException(ValidSubject.SWMP).tip("swmp version empty folder");
         }
-        try(InputStream fileInputStream = storageAccessService.get(
-            files.get(0))) {
-            return fileInputStream.readAllBytes();
+        String filePath = files.get(0);
+        try(InputStream fileInputStream = storageAccessService.get(filePath);ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+            fileInputStream.transferTo(outputStream);
+            String fileName = filePath.substring(swModelPackageVersionEntity.getStoragePath().length() + 1);
+            httpResponse.addHeader("Content-Disposition","attachment; filename=\""+fileName+"\"");
+            outputStream.flush();
         } catch (IOException e) {
             log.error("download file from storage failed {}",swModelPackageVersionEntity.getStoragePath(),e);
             throw new SWProcessException(ErrorType.STORAGE);
