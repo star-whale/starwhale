@@ -56,7 +56,7 @@ class LocalStorage(SWCliConfigMixed):
                 continue
 
             if fd.name.startswith(name) or name.startswith(fd.name):
-                return fd, fd.name.rsplit(ftype, 1)[1] if ftype else fd.name
+                return fd, fd.name.rsplit(ftype, 1)[0] if ftype else fd.name
         else:
             return _path, name
 
