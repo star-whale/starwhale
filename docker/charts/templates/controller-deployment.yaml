@@ -10,8 +10,6 @@ metadata:
 
 spec:
   replicas: 1
-  strategy:
-    type: "Recreate"
   selector:
     matchLabels:
       {{ include "chart.controller.labels" . | nindent 6}}
