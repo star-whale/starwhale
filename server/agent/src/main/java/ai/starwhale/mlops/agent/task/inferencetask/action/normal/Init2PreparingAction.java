@@ -55,6 +55,6 @@ public class Init2PreparingAction extends AbsBasePPLTaskAction {
     @Override
     public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
         // add the new task to the tail
-        taskPool.preparingTasks.offer(newTask);
+        taskPool.add2PreparingQueue(newTask);
     }
 }

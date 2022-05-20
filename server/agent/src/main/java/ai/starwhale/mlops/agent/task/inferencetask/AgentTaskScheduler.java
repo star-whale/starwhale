@@ -19,11 +19,11 @@ package ai.starwhale.mlops.agent.task.inferencetask;
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import org.springframework.scheduling.annotation.Scheduled;
 
-public class TaskScheduler {
+public class AgentTaskScheduler {
     private final TaskExecutor executor;
     private final LogRecorder logRecorder;
 
-    public TaskScheduler(TaskExecutor executor, LogRecorder logRecorder) {
+    public AgentTaskScheduler(TaskExecutor executor, LogRecorder logRecorder) {
         this.executor = executor;
         this.logRecorder = logRecorder;
     }
