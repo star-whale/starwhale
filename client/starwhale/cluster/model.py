@@ -82,7 +82,7 @@ class ClusterModel(SWCliConfigMixed):
                     "datasetVersionIds": ",".join([str(i) for i in dataset_ids]),
                     "baseImageId": baseimage_id,
                     "deviceId": _did,
-                    "deviceCount": _dcnt,
+                    "deviceAmount": _dcnt,
                 }
             ),
         )
