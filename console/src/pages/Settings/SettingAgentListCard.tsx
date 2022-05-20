@@ -8,6 +8,7 @@ import { useFetchAgents } from '@/domain/setting/hooks/useSettings'
 import { StyledLink } from 'baseui/link'
 import { deleteAgent } from '@/domain/setting/services/system'
 import { toaster } from 'baseui/toast'
+import { AgentStatus } from '@/domain/job/schemas/agent'
 
 export default function SettingAgentListCard() {
     const [page] = usePage()
@@ -36,16 +37,20 @@ export default function SettingAgentListCard() {
                             agent.status,
                             agent.version,
                             agent.connectedTime > 0 ? formatTimestampDateTime(agent.connectedTime) : '-',
-                            <StyledLink
-                                animateUnderline={false}
-                                className='row-center--inline gap4'
-                                key={agent.serialNumber}
-                                onClick={() => {
-                                    handleAction(agent.serialNumber)
-                                }}
-                            >
-                                {t('Delete')}
-                            </StyledLink>,
+                            AgentStatus.OFFLINE === agent.status ? (
+                                <StyledLink
+                                    animateUnderline={false}
+                                    className='row-center--inline gap4'
+                                    key={agent.serialNumber}
+                                    onClick={() => {
+                                        handleAction(agent.serialNumber)
+                                    }}
+                                >
+                                    {t('Delete')}
+                                </StyledLink>
+                            ) : (
+                                '-'
+                            ),
                         ]
                     }) ?? []
                 }
