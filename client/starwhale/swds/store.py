@@ -95,7 +95,7 @@ class DataSetLocalStore(LocalStorage):
         url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/project/dataset/push"
 
         _name, _version = self._parse_swobj(sw_name)
-        _dir = self._guess(self.dataset_dir / _name, _version)
+        _dir, _ = self._guess(self.dataset_dir / _name, _version)
         if not _dir.exists():
             self._console.print(
                 f"[red]failed to push {sw_name}[/], because of {_dir} not found"
@@ -185,7 +185,7 @@ class DataSetLocalStore(LocalStorage):
         # TODO: show dataset dir tree view
 
     def _do_get_info(self, _name: str, _version: str) -> t.Dict[t.Any, t.Any]:
-        _dir = self._guess(self.dataset_dir / _name, _version)
+        _dir, _ = self._guess(self.dataset_dir / _name, _version)
         if not _dir.exists():
             raise NotFoundError(f"{_dir} is not existed")
 
@@ -199,7 +199,7 @@ class DataSetLocalStore(LocalStorage):
 
     def delete(self, sw_name: str) -> None:
         _name, _version = self._parse_swobj(sw_name)
-        _dir = self._guess(self.dataset_dir / _name, _version)
+        _dir, _ = self._guess(self.dataset_dir / _name, _version)
 
         if _dir.exists() and _dir.is_dir():
             click.confirm(f"continue to delete {_dir}?", abort=True)
