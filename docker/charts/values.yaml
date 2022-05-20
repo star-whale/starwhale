@@ -124,9 +124,9 @@ resources:
       nvidia.com/gpu: 2
   controller:
     limits:
-      memory: 4Gi
+      memory: 8Gi
     requests:
-      memory: 2Gi
+      memory: 6Gi
 
 serviceAccount:
   create: true
