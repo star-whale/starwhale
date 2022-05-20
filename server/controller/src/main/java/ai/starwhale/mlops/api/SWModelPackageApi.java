@@ -34,6 +34,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -281,8 +282,8 @@ public interface SWModelPackageApi {
     @GetMapping(
         value = "/project/model/pull",
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    byte[] pull(
-        ClientSWMPRequest uploadRequest);
+    void pull(
+        ClientSWMPRequest uploadRequest, HttpServletResponse httpResponse);
 
     @Operation(summary = "Create a new swmp version",
         description = "Create a new version of the swmp. "
@@ -302,7 +303,7 @@ public interface SWModelPackageApi {
     @GetMapping(
         value = "/project/model",
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    byte[] pullModel(ClientSWMPRequest uploadRequest);
+    void pullModel(ClientSWMPRequest uploadRequest, HttpServletResponse httpResponse);
 
     @Operation(summary = "List SWMP versions",
         description = "List SWMP versions. ")
