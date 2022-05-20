@@ -22,7 +22,7 @@ import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
-import ai.starwhale.mlops.agent.task.inferencetask.TaskScheduler;
+import ai.starwhale.mlops.agent.task.inferencetask.AgentTaskScheduler;
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.inferencetask.initializer.TaskPoolInitializer;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
@@ -32,6 +32,8 @@ import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import java.util.List;
 
@@ -57,6 +59,13 @@ public class TaskConfiguration {
     @Bean
     public FileSystemPath fileSystemPath(AgentProperties agentProperties) {
         return new FileSystemPath(agentProperties.getBasePath());
+    }
+
+    @Bean
+    public TaskScheduler taskScheduler() {
+        ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+        taskScheduler.setPoolSize(6);
+        return taskScheduler;
     }
 
     @Bean
@@ -86,8 +95,8 @@ public class TaskConfiguration {
 
     @Bean
     @ConditionalOnProperty(name = "sw.agent.task.scheduler.enabled", havingValue = "true", matchIfMissing = true)
-    public TaskScheduler agentTaskScheduler(TaskExecutor agentTaskExecutor, LogRecorder logRecorder) {
-        return new TaskScheduler(agentTaskExecutor, logRecorder);
+    public AgentTaskScheduler agentTaskScheduler(TaskExecutor agentTaskExecutor, LogRecorder logRecorder) {
+        return new AgentTaskScheduler(agentTaskExecutor, logRecorder);
     }
 
 }
