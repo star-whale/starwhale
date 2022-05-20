@@ -106,7 +106,7 @@ class ModelPackageLocalStore(LocalStorage):
             )
             sys.exit(1)
 
-        rprint(":fire: try to push swmp...")
+        rprint(f":fire: try to push swmp({_full_swmp})...")
         upload_file(
             url=url,
             fpath=_spath,

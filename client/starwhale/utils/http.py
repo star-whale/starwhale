@@ -22,7 +22,11 @@ def wrap_sw_error_resp(
     silent: bool = False,
 ) -> None:
 
-    _rprint = lambda x: x if silent else rprint
+    if silent:
+        _rprint = lambda x: x
+    else:
+        _rprint = rprint
+
     if r.status_code == HTTPStatus.OK:
         _rprint(f":clap: {header} success")  # type: ignore
         return
