@@ -64,7 +64,7 @@ class MNISTInference(PipelineHandler):
 
     def _post(self, input):
         pred_value = input.argmax(1).flatten().tolist()
-        probability_matrix = np.exp(input).tolist()
+        probability_matrix = np.exp(input.tolist()).tolist()
         return pred_value, probability_matrix
 
     def _load_model(self, device):
