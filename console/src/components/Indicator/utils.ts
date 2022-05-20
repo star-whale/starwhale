@@ -68,7 +68,7 @@ export function getRocAucConfig(title = '', labels: string[], data: Record<strin
                     x: roc_auc.fpr,
                     y: roc_auc.tpr,
                     mode: 'lines+markers',
-                    name: 'label ' + label,
+                    name: `label ${label}`,
                     type: 'scatter',
                 }
             }),
@@ -87,7 +87,6 @@ export function getRocAucConfig(title = '', labels: string[], data: Record<strin
             ...layout,
         },
     }
-    console.log(rocAucData)
     return rocAucData
 }
 
@@ -115,7 +114,8 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
                 yref: 'y1',
                 x: xValues[j],
                 y: yValues[i],
-                text: zValues[i][j] + '', //.toFixed(2) === '0.00' ? zValues[i][j].toFixed(2) : zValues[i][j].toFixed(3),
+                // .toFixed(2) === '0.00' ? zValues[i][j].toFixed(2) : zValues[i][j].toFixed(3),
+                text: zValues[i][j],
                 font: {
                     size: 14,
                     color: textColor,

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
@@ -79,7 +79,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     const getValueLabel = useCallback(
         (args) => {
-            const dataset = datasetsInfo.data?.list?.find(({ id, version }) => version?.id === args.option.id)
+            const dataset = datasetsInfo.data?.list?.find(({ version }) => version?.id === args.option.id)
             return [dataset?.version?.id, dataset?.version?.name].join('-')
         },
         [datasetsInfo]
