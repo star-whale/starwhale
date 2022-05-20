@@ -190,7 +190,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         }}
                     />
                 </FormItem>
-                <FormItem label={t('Device Count')} name='deviceCount'>
+                <FormItem label={t('Device Amount')} name='deviceAmount'>
                     <NumberInput
                         overrides={{
                             Root: {

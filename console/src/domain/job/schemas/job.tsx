@@ -44,7 +44,7 @@ export interface ICreateJobSchema {
     datasetVersionIds?: string
     baseImageId?: string
     deviceId?: string
-    deviceCount?: number
+    deviceAmount?: number
 }
 
 export interface IJobFormSchema extends IJobSchema {
