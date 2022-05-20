@@ -32,10 +32,9 @@ public class TaskPool {
     public final List<InferenceTask> failedTasks = new Vector<>();
     public final List<Long> needToCancel = new Vector<>();
 
-    public boolean add2PreparingQueue(InferenceTask task) {
-        if (preparingTasks.contains(task)) return false;
+    public void add2PreparingQueue(InferenceTask task) {
+        if (preparingTasks.contains(task)) return;
         preparingTasks.offer(task);
-        return true;
     }
 
 
