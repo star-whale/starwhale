@@ -17,12 +17,13 @@ export function durationToStr(v: number) {
     while (newV >= basic) {
         unitIdx++
         newV /= basic
-        if (unitIdx > 2) {
+        if (unitIdx >= 2) {
             basic = 60
         }
         if (unitIdx > 4) {
             basic = 24
         }
     }
+
     return `${newV.toFixed(2)}${units[unitIdx]}`
 }
