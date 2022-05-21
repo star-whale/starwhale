@@ -41,6 +41,7 @@ import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.storage.LargeFileInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -326,7 +327,11 @@ public class SWModelPackageService {
             : storagePathCoordinator.generateSwmpPath(uploadRequest.name(), uploadRequest.version());
 
         try(final InputStream inputStream = dsFile.getInputStream()){
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),inputStream);
+            InputStream is = inputStream;
+            if(dsFile.getSize() >= Integer.MAX_VALUE){
+                is = new LargeFileInputStream(inputStream,dsFile.getSize());
+            }
+            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),is);
         } catch (IOException e) {
             log.error("upload swmp failed {}",uploadRequest.getSwmp(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),
