@@ -16,3 +16,4 @@ pytest-xdist >= 2.0
 pytest-cov>=3.0.0
 setuptools>=62.0.0
 wheel >= 0.35.0
+pyfakefs >= 4.5.6
