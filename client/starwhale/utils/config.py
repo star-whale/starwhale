@@ -110,30 +110,33 @@ class SWCliConfigMixed(object):
 
     @property
     def sw_remote_addr(self) -> str:
-        addr = self._controller.get("remote_addr", "")
+        addr = self._current_instance_obj.get("uri", "")
         return fmt_http_server(addr)
 
     @property
     def user_name(self) -> str:
-        return self._controller.get("user_name", "")
+        return self._current_instance_obj.get("user_name", "")
 
     @property
     def _sw_token(self) -> str:
-        return self._controller.get("sw_token", "")
+        return self._current_instance_obj.get("sw_token", "")
 
     @property
-    def _controller(self) -> t.Dict[str, t.Any]:
-        return self._config.get("controller", {})
+    def _current_instance_obj(self):
+        return self._config.get("instances", {}).get(self.current_instance, {})
 
     @property
     def user_role(self) -> str:
-        return self._controller.get("user_role", "")
+        return self._current_instance_obj.get("user_role", "")
 
     @property
     def current_instance(self) -> str:
         return self._config["current_instance"]  # type: ignore
 
     def delete_instance(self, uri: str) -> None:
+        if uri == STANDALONE_INSTANCE:
+            return
+
         _insts = self._config["instances"]
         _alias = uri
         if uri in _insts:
