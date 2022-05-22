@@ -12,7 +12,7 @@ ENV_LOG_LEVEL = "SW_LOG_LEVEL"
 DEFAULT_STARWHALE_API_VERSION = "1.0"
 DEFAULT_MODEL_YAML_NAME = "model.yaml"
 DEFAULT_MANIFEST_NAME = "_manifest.yaml"
-DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:6543"
+DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
 DEFAULT_DATASET_YAML_NAME = "dataset.yaml"
 LOCAL_FUSE_JSON_NAME = "local_fuse.json"
 DEFAULT_INPUT_JSON_FNAME = "input.json"
@@ -38,6 +38,11 @@ class HTTPMethod:
     PUT = "PUT"
     DELETE = "DELETE"
     PATCH = "PATCH"
+
+
+class UserRoleType:
+    ADMIN = "admin"
+    NORMAL = "normal"
 
 
 FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
@@ -72,3 +77,7 @@ SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDSSubFileType.BIN
 SWDS_LABEL_FNAME_FMT = "label_ubyte_{index}.%s" % SWDSSubFileType.BIN
 
 CURRENT_FNAME = "current"
+
+STANDALONE_INSTANCE = "local"
+DEFAULT_INSTANCE = STANDALONE_INSTANCE
+DEFAULT_PROJECT = "self"

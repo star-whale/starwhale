@@ -13,6 +13,7 @@ from .mngt import add_mngt_command
 from .eval import eval_cmd
 from .cluster import cluster_cmd
 from .project import project_cmd
+from .instance import instance_cmd
 
 
 def create_sw_cli() -> click.core.Group:
@@ -25,11 +26,12 @@ def create_sw_cli() -> click.core.Group:
 
     random.seed(time.time_ns)
 
+    cli.add_command(instance_cmd)
     cli.add_command(model_cmd)
     cli.add_command(dataset_cmd)
+    cli.add_command(project_cmd)
     cli.add_command(eval_cmd)
     cli.add_command(cluster_cmd)
-    cli.add_command(project_cmd)
     add_mngt_command(cli)
 
     return cli
