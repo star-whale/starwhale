@@ -11,7 +11,7 @@ class JobTermView(object):
         pass
 
     def remove(self) -> None:
-        #EvalLocalStorage().delete(version)
+        # EvalLocalStorage().delete(version)
         pass
 
     def cancel(self) -> None:
@@ -24,8 +24,8 @@ class JobTermView(object):
         pass
 
     def info(self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE) -> None:
-        #EvalLocalStorage().info(version)
-        #ClusterView().info_job(project, job, page, size)
+        # EvalLocalStorage().info(version)
+        # ClusterView().info_job(project, job, page, size)
         pass
 
     def create(
@@ -40,7 +40,7 @@ class JobTermView(object):
         gencmd: bool = False,
         docker_verbose: bool = False,
     ) -> None:
-        '''
+        """
         EvalExecutor(
             model,
             dataset,
@@ -50,10 +50,10 @@ class JobTermView(object):
             gencmd=gencmd,
             docker_verbose=docker_verbose,
         ).run(phase)
-        '''
-        '''
+        """
+        """
         ClusterView().run_job(model, dataset, project, baseimage, resource, name, desc)
-        '''
+        """
 
     @classmethod
     def list(
@@ -63,5 +63,6 @@ class JobTermView(object):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> None:
-        #EvalLocalStorage().list(fullname=fullname)
-        #ClusterView().list_jobs(project, page, size)
+        # EvalLocalStorage().list(fullname=fullname)
+        # ClusterView().list_jobs(project, page, size)
+        pass

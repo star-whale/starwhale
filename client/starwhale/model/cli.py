@@ -22,76 +22,73 @@ def model_cmd() -> None:
     default=DEFAULT_MODEL_YAML_NAME,
     help="mode yaml filename, default use ${workdir}/model.yaml file",
 )
-@click.option(
-    "--skip-gen-env", is_flag=True, help="does not gen conda or venv, only dump config"
-)
-def _build(workdir: str, model_yaml: str, skip_gen_env: bool) -> None:
-    ModelPackage.build(workdir, model_yaml, skip_gen_env)
+def _build(workdir: str, model_yaml: str) -> None:
+    ModelPackage.build(workdir, model_yaml)
 
 
-@model_cmd.command("delete", help="Delete swmp from local storage")
-@click.argument("swmp")
-def _delete(swmp: str) -> None:
-    ModelPackageLocalStore().delete(swmp)
+@model_cmd.command("remove", help="Remove model")
+@click.argument("model")
+def _remove(model: str) -> None:
+    ModelPackageLocalStore().delete(model)
 
 
-@model_cmd.command(
-    "push", help="Push swmp into starwhale controller or hub.starwhale.ai"
-)
-@click.argument("swmp")
-@click.option(
-    "-p",
-    "--project",
-    default="",
-    help="project name, if omit, starwhale will push swmp to your default project",
-)
-@click.option("-f", "--force", is_flag=True, help="force push swmp")
-def _push(swmp: str, project: str, force: bool) -> None:
-    ModelPackageLocalStore().push(swmp, project, force)
+@model_cmd.command("recover", help="Recover model")
+@click.argument("model")
+def _recover(model: str) -> None:
+    pass
 
 
-@model_cmd.command(
-    "pull", help="Pull swmp from starwhale controller or hub.starwhale.ai"
-)
-@click.argument("swmp")
-@click.option(
-    "-p",
-    "--project",
-    default="",
-    help="project name, if omit, starwhale will push swmp to your default project",
-)
-@click.option(
-    "-s",
-    "--starwhale",
-    default="",
-    help="starwhale controller server, default is swcli config remote_addr",
-)
-@click.option("-f", "--force", is_flag=True, help="force pull swmp")
-def _pull(swmp: str, project: str, starwhale: str, force: bool) -> None:
-    ModelPackageLocalStore().pull(swmp, project, starwhale, force)
+@model_cmd.command("copy", help="Copy model")
+@click.argument("src")
+@click.argument("dest")
+@click.option("-f", "--force", is_flag=True, help="force copy model")
+def _copy(src: str, dest: str, force: bool) -> None:
+    # ModelPackageLocalStore().push(swmp, project, force)
+    # ModelPackageLocalStore().pull(swmp, project, starwhale, force)
+    pass
 
 
-@model_cmd.command("info", help="Get more info abort local swmp")
-@click.argument("swmp")
-def _info(swmp: str) -> None:
-    ModelPackageLocalStore().info(swmp)
+@model_cmd.command("info", help="Inspect model(swmp)")
+@click.argument("model")
+def _info(model: str) -> None:
+    ModelPackageLocalStore().info(model)
 
 
-@model_cmd.command("list", help="List swmp from local storage")
+@model_cmd.command("list", help="List model(swmp)")
 @click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
 def _list(fullname: bool) -> None:
     ModelPackageLocalStore().list(fullname=fullname)
 
 
-@model_cmd.command("gendep", help="Generate venv or conda by swmp")
-def _gendep() -> None:
+@model_cmd.command("eval", help="Create model(swmp) evaluation")
+def _eval() -> None:
     pass
 
 
-@model_cmd.command("gc", help="GC useless model package files")
-@click.option("--dry-run", is_flag=True, help="Dry-run swmp gc")
-def _gc(dry_run: bool) -> None:
-    ModelPackageLocalStore().gc(dry_run)
+@model_cmd.command("tag", help="model(swmp) tag management")
+@click.argument("model")
+@click.option("-r", "--remove", is_flag=True, help="remove tag")
+@click.option(
+    "-t",
+    "--tag",
+    required=True,
+    multiple=True,
+    help="tag, one or more, splitted by comma",
+)
+def _tag(model, remove, tag) -> None:
+    pass
+
+
+@model_cmd.command("history", help="Show model history")
+@click.argument("model")
+def _history(model: str) -> None:
+    pass
+
+
+@model_cmd.command("revert", help="Revert model")
+@click.argument("model")
+def _revert(model: str) -> None:
+    pass
 
 
 @model_cmd.command("extract", help="Extract local swmp tar file into workdir")

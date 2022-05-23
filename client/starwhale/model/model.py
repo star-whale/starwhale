@@ -217,8 +217,8 @@ class ModelPackage(object):
         return _cls()
 
     @classmethod
-    def build(cls, workdir: str, mname: str, skip_gen_env: bool) -> None:
-        mp = ModelPackage(workdir, mname, skip_gen_env)
+    def build(cls, workdir: str, mname: str) -> None:
+        mp = ModelPackage(workdir, mname)
         mp._do_validate()
         mp._do_build()
 

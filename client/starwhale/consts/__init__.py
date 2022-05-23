@@ -24,6 +24,12 @@ ENV_CONDA = "CONDA_DEFAULT_ENV"
 ENV_CONDA_PREFIX = "CONDA_PREFIX"
 
 
+class YAMLType:
+    MODEL = "model.yaml"
+    DATASET = "dataset.yaml"
+    RUNTIME = "runtime.yaml"
+
+
 class PythonRunEnv:
     CONDA = "conda"
     VENV = "venv"

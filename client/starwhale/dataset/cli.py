@@ -27,21 +27,9 @@ def _build(workdir: str, dataset_yaml: str) -> None:
 
 @dataset_cmd.command("list", help="List local dataset")
 @click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
-def _list(fullname: bool) -> None:
+@click.option("-p", "--project", default="", help="Project URI")
+def _list(fullname: bool, project: str) -> None:
     DataSetLocalStore().list(fullname=fullname)
-
-
-@dataset_cmd.command("push", help="Push swds into starwhale controller")
-@click.argument("swds")
-@click.option(
-    "-p",
-    "--project",
-    default="",
-    help="project name, if omit, starwhale will push swmp to your default project",
-)
-@click.option("-f", "--force", is_flag=True, help="force push swds")
-def _push(swds: str, project: str, force: bool) -> None:
-    DataSetLocalStore().push(swds, project, force)
 
 
 @dataset_cmd.command("info", help="Show dataset details")
@@ -50,16 +38,42 @@ def _info(swds: str) -> None:
     DataSetLocalStore().info(swds)
 
 
-@dataset_cmd.command("delete", help="Delete dataset in local environment")
-@click.argument("swds")
-def _delete(swds: str) -> None:
-    DataSetLocalStore().delete(swds)
+@dataset_cmd.command("remove", help="Remove dataset")
+@click.argument("dataset")
+def _remove(dataset: str) -> None:
+    DataSetLocalStore().delete(dataset)
 
 
-@dataset_cmd.command("gc", help="Delete useless dataset dir")
-@click.option("--dry-run", is_flag=True, help="Dry-run swds gc")
-def _gc(dry_run: bool) -> None:
-    DataSetLocalStore().gc(dry_run)
+@dataset_cmd.command("recover", help="Recover dataset")
+@click.argument("dataset")
+def _recover(dataset: str) -> None:
+    pass
+
+
+@dataset_cmd.command("tag", help="dataset(swds) tag management")
+@click.argument("dataset")
+@click.option("-r", "--remove", is_flag=True, help="remove tag")
+@click.option(
+    "-t",
+    "--tag",
+    required=True,
+    multiple=True,
+    help="tag, one or more, splitted by comma",
+)
+def _tag(dataset, remove, tag) -> None:
+    pass
+
+
+@dataset_cmd.command("history", help="Show dataset history")
+@click.argument("dataset")
+def _history(dataset: str) -> None:
+    pass
+
+
+@dataset_cmd.command("revert", help="Revert dataset")
+@click.argument("model")
+def _revert(model: str) -> None:
+    pass
 
 
 @dataset_cmd.command("render-fuse", help="Render fuse input.json for local swds")
@@ -72,3 +86,12 @@ def _gc(dry_run: bool) -> None:
 )
 def _render_fuse(swds: str, force: bool) -> None:
     DataSet.render_fuse_json(swds, force)
+
+
+@dataset_cmd.command("copy", help="Copy dataset")
+@click.argument("src")
+@click.argument("dest")
+@click.option("-f", "--force", is_flag=True, help="force copy dataset")
+def _copy(src: str, dest: str, force: bool) -> None:
+    # DataSetLocalStore().push(swds, project, force)
+    pass
