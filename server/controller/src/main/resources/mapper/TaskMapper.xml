@@ -31,17 +31,20 @@
         left join
             agent_info as a
         on t.agent_id = a.id
-        where 1=1
     </sql>
     <select id="listTasks" resultMap="taskResultMap">
         <include refid="select_task" />
-        and t.job_id = #{jobId}
+        <where>
+            and t.job_id = #{jobId}
+        </where>
         order by t.id desc
     </select>
 
     <select id="findTaskById" resultMap="taskResultMap" >
         <include refid="select_task"/>
-        and t.id = #{taskId}
+        <where>
+            and t.id = #{taskId}
+        </where>
     </select>
 
     <insert id="addTask" parameterType="ai.starwhale.mlops.domain.task.TaskEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
@@ -81,16 +84,20 @@
 
     <select id="findTaskByStatus" resultMap="taskResultMap" >
         <include refid="select_task"/>
-        and t.task_status = #{taskStatus}
+        <where>
+            and t.task_status = #{taskStatus}
+        </where>
     </select>
 
     <select id="findTaskByStatusIn" resultMap="taskResultMap" >
         <include refid="select_task"/>
-        and t.task_status in
-        <foreach item="item" index="index" collection="taskStatusList"
-          open="(" separator="," close=")">
-            #{item}
-        </foreach>
+        <where>
+            and t.task_status in
+            <foreach item="item" index="index" collection="taskStatusList"
+              open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </where>
     </select>
 
     <resultMap id="taskResultMap" type="ai.starwhale.mlops.domain.task.TaskEntity" >
