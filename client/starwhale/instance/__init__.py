@@ -89,6 +89,7 @@ class Instance(SWCliConfigMixed):
             caption=f"Current Instance: [blink]{self.current_instance}",
             box=box.SIMPLE,
         )
+        table.add_column("")
         table.add_column("Name")
         table.add_column("URI")
         table.add_column("UserName")
@@ -97,12 +98,17 @@ class Instance(SWCliConfigMixed):
         table.add_column("Updated")
 
         for k, v in self._config["instances"].items():
+            _is_current = (
+                k == self.current_instance or v["uri"] == self.current_instance
+            )
             table.add_row(
+                ":backhand_index_pointing_right:" if _is_current else "",
                 k,
                 v["uri"],
                 v["user_name"],
                 v.get("user_role", "--"),
                 str(v.get("current_project", "--")),
                 v.get("updated_at", "--"),
+                style="magenta" if _is_current else "",
             )
         self._console.print(table)
