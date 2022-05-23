@@ -5,7 +5,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { Button, SIZE, KIND } from 'baseui/button'
 import { isModified } from '@/utils'
 import ModelSelector from '@/domain/model/components/ModelSelector'
-import { LabelLarge } from 'baseui/typography'
+import { LabelLarge, LabelMedium, LabelSmall } from 'baseui/typography'
 import Divider from '@/components/Divider'
 import { useParams } from 'react-router'
 import ModelVersionSelector from '@/domain/model/components/ModelVersionSelector'
@@ -87,10 +87,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
 
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
-            <Divider orientation='left'>
-                <LabelLarge>{t('Model Information')}</LabelLarge>
-            </Divider>
-            <div style={{ display: 'flex', alignItems: 'left', gap: 20 }}>
+            <Divider orientation='top'>{t('Model Information')}</Divider>
+            <div style={{ display: 'flex', alignItems: 'left', gap: 40, marginBottom: '36' }}>
                 <FormItem label={t('sth name', [t('Model')])} name='modelId' required>
                     <ModelSelector
                         projectId={projectId}
@@ -119,10 +117,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     </FormItem>
                 )}
             </div>
-            <Divider orientation='left'>
-                <LabelLarge>{t('Datasets')}</LabelLarge>
-            </Divider>
-            <div style={{ display: 'flex', alignItems: 'left', gap: 20, flexWrap: 'wrap' }}>
+            <Divider orientation='top'>{t('Datasets')}</Divider>
+            <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap' }}>
                 <FormItem label={t('sth name', [t('Dataset')])} name='datasetId'>
                     <DatasetSelector
                         projectId={projectId}
@@ -152,6 +148,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 )}
                 <div style={{ marginTop: 30 }}>
                     <Button
+                        size='compact'
                         type='button'
                         onClick={handleAddDataset}
                         startEnhancer={<IconFont type='add' kind='white' />}
@@ -165,10 +162,8 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     <MultiTags placeholder='' getValueLabel={getValueLabel} />
                 </FormItem>
             </div>
-            <Divider orientation='left'>
-                <LabelLarge>{t('Environment')}</LabelLarge>
-            </Divider>
-            <div style={{ display: 'flex', alignItems: 'left', gap: 20, flexWrap: 'wrap' }}>
+            <Divider orientation='top'>{t('Environment')}</Divider>
+            <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap' }}>
                 <FormItem label={t('BaseImage')} name='baseImageId'>
                     <BaseImageSelector
                         overrides={{
@@ -205,7 +200,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             </div>
 
             <FormItem>
-                <div style={{ display: 'flex', gap: 20 }}>
+                <div style={{ display: 'flex', gap: 20, marginTop: 60 }}>
                     <div style={{ flexGrow: 1 }} />
                     <Button
                         size={SIZE.compact}

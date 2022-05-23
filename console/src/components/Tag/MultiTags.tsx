@@ -37,13 +37,18 @@ export default function MultiTags({ value, placeholder, onChange, getValueLabel 
                         overrides: {
                             Root: {
                                 style: {
-                                    backgroundColor: 'var(--color-brandPrimary)',
+                                    'cursor': 'pointer',
+                                    'backgroundColor': 'var(--color-brandPrimary)',
+                                    ':hover': {
+                                        backgroundColor: 'var(--color-brandPrimaryHover)',
+                                    },
                                 },
                             },
                         },
                     },
                 },
             }}
+            size='compact'
             getValueLabel={getValueLabel}
             value={value?.map((item) => ({
                 id: item,
