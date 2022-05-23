@@ -13,7 +13,6 @@ def unpickle(file):
 class CIFAR10Slicer(BuildExecutor):
 
     def iter_data_slice(self, path: str):
-        print(f"iter_data_slice for {path}")
         content_dict = unpickle(path)
         data_numpy = content_dict.get(b'data')
         idx = 0
@@ -26,7 +25,6 @@ class CIFAR10Slicer(BuildExecutor):
             yield data_numpy[last_idx:idx].tobytes()
 
     def iter_label_slice(self, path: str):
-        print(f"iter_data_slice for {path}")
         content_dict = unpickle(path)
         labels_list = content_dict.get(b'labels')
         idx = 0

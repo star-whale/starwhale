@@ -6,6 +6,7 @@ import torch.optim as optim
 from model import Net
 from torch.optim.lr_scheduler import StepLR
 
+# https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 
 transform = transforms.Compose(
     [transforms.ToTensor(),

@@ -55,15 +55,13 @@ class CIFAR10Inference(PipelineHandler):
         batch_numpy_flatten_data = from_buffer.reshape(shape)
         batch_numpy_flatten_data = np.vstack([batch_numpy_flatten_data]).reshape(-1, 3, 32, 32)
         batch_numpy_flatten_data = batch_numpy_flatten_data.transpose((0, 2, 3, 1))
+        shape_image = (WIDTH_IMAGE, HEIGHT_IMAGE, CHANNEL_IMAGE)
         for i in range(0, batch_size):
             numpy_flatten_data_i_ = batch_numpy_flatten_data[i]
-            shape_image = (WIDTH_IMAGE, HEIGHT_IMAGE,CHANNEL_IMAGE)
             _image = Image.fromarray(numpy_flatten_data_i_.reshape(shape_image))
             _image = transforms.Compose(
                 [transforms.ToTensor(),
-                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])\
-                (_image)
-
+                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])(_image)
             images.append(_image)
         return torch.stack(images).to(self.device)
 
