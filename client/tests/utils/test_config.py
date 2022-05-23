@@ -8,11 +8,9 @@ from starwhale.utils.config import (
     get_swcli_config_path,
     SWCliConfigMixed,
 )
+from .. import get_predefined_config_yaml
 
-
-_current_dir = os.path.dirname(__file__)
-_existed_config_content = open(f"{_current_dir}/data/config.yaml").read()
-
+_existed_config_contents = get_predefined_config_yaml()
 
 class SWCliConfigTestCase(TestCase):
     def setUp(self):
@@ -41,7 +39,7 @@ class SWCliConfigTestCase(TestCase):
         path = get_swcli_config_path()
         self.assertFalse(os.path.exists(path))
 
-        self.fs.create_file(path, contents=_existed_config_content)
+        self.fs.create_file(path, contents=_existed_config_contents)
         _config = load_swcli_config()
 
         assert len(_config["instances"]) == 2
@@ -52,7 +50,7 @@ class SWCliConfigTestCase(TestCase):
 
     def test_swcli_config_mixed(self):
         path = get_swcli_config_path()
-        self.fs.create_file(path, contents=_existed_config_content)
+        self.fs.create_file(path, contents=_existed_config_contents)
 
         sw = SWCliConfigMixed()
         assert str(sw.rootdir).endswith(".cache/starwhale")

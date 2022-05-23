@@ -1,3 +1,6 @@
+from shutil import ExecError
+
+
 class FileTypeError(Exception):
     pass
 
@@ -19,4 +22,8 @@ class SWObjNameFormatError(Exception):
 
 
 class UnExpectedConfigFieldError(Exception):
+    pass
+
+
+class URIFormatError(ExecError):
     pass

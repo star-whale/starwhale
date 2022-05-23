@@ -1,6 +1,6 @@
 import click
 
-from . import Instance
+from .view import InstanceTermView
 
 
 @click.group("instance", help="Starwhale Instance management")
@@ -17,7 +17,7 @@ def _select(instance: str) -> None:
     INSTANCE: use alias name to select
     """
     # TODO: support URI select
-    Instance().select(instance)
+    InstanceTermView().select(instance)
 
 
 @instance_cmd.command("login")
@@ -30,7 +30,7 @@ def _login(instance: str, username: str, password: str, alias: str) -> None:
 
     * INSTANCE: instance uri, if ignore it, swcli will login current selected instance
     """
-    Instance().login(instance, username, password, alias)
+    InstanceTermView().login(instance, username, password, alias)
 
 
 @instance_cmd.command("logout")
@@ -42,12 +42,12 @@ def _logout(instance: str) -> None:
     * INSTANCE: instance alias name or uri, if ignore it, swcli will logout current selected instance
     """
     click.confirm("Do you want to continue?", abort=True)
-    Instance().logout(instance)
+    InstanceTermView().logout(instance)
 
 
 @instance_cmd.command("list", help="List logined Starwhale instances")
 def _list() -> None:
-    Instance().list()
+    InstanceTermView().list()
 
 
 @instance_cmd.command("info", help="Inspect instance details")

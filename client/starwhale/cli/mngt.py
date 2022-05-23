@@ -18,8 +18,8 @@ def add_mngt_command(cli: click.core.Group) -> None:
     def _gc(dry_run: bool) -> None:
         pass
 
-    @cli.command("tui", help="basic terminal ui for starwhale controller")
-    def _tui() -> None:
+    @cli.command("tui", help="web ui or terminal ui")
+    def _ui() -> None:
         # TODO: add fullscreen terminal ui base on rich and textual lib
         rprint(
             ":shell::clap::man_with_probing_cane: TUI(terminal ui) is comming soon..."

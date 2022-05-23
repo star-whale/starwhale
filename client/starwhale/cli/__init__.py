@@ -31,7 +31,6 @@ def create_sw_cli() -> click.core.Group:
     cli.add_command(project_cmd)
     cli.add_command(job_cmd)
     cli.add_command(runtime_cmd)
-
     cli.add_command(model_cmd)
     cli.add_command(dataset_cmd)
     add_mngt_command(cli)

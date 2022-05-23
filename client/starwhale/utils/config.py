@@ -21,11 +21,6 @@ _config: t.Dict[str, t.Any] = {}
 _CURRENT_SHELL_USERNAME = getpass.getuser()
 
 
-class InstanceType:
-    STANDALONE = "standalone"
-    CLOUD = "cloud"
-
-
 def load_swcli_config() -> t.Dict[str, t.Any]:
     global _config
 
@@ -45,6 +40,8 @@ def load_swcli_config() -> t.Dict[str, t.Any]:
 
 
 def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
+    from starwhale.instance.model import InstanceType
+
     c = dict(
         instances={
             STANDALONE_INSTANCE: dict(
@@ -133,6 +130,10 @@ class SWCliConfigMixed(object):
     def current_instance(self) -> str:
         return self._config["current_instance"]  # type: ignore
 
+    @property
+    def current_project(self) -> str:
+        return self._current_instance_obj.get("current_project", "")
+
     def delete_instance(self, uri: str) -> None:
         if uri == STANDALONE_INSTANCE:
             return
@@ -160,6 +161,8 @@ class SWCliConfigMixed(object):
         current_project: str = DEFAULT_PROJECT,
         alias: str = "",
     ) -> None:
+        from starwhale.instance.model import InstanceType
+
         # TODO: abstrace instance class
         uri = uri.strip()
         if not uri.startswith(("http://", "https://")):

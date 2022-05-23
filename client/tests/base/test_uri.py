@@ -1,0 +1,104 @@
+from starwhale.base.uri import URI
+from starwhale.instance.model import InstanceType
+
+from pyfakefs.fake_filesystem_unittest import TestCase
+from starwhale.utils import config as sw_config
+from starwhale.utils.config import get_swcli_config_path
+
+from .. import get_predefined_config_yaml
+
+
+_existed_config_contents = get_predefined_config_yaml()
+
+
+class URITestCase(TestCase):
+    def setUp(self):
+        self.setUpPyfakefs()
+        sw_config._config = {}
+        path = get_swcli_config_path()
+        self.fs.create_file(path, contents=_existed_config_contents)
+
+    def test_uri(self):
+        ts = {
+            "/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q": {
+                "instance": "http://1.1.1.1:8182",
+                "instance_type": "cloud",
+                "project": "self",
+                "obj_typ": "model",
+                "obj_name": "mm",
+                "obj_version": "meydczbrmi2ggnrtmftdgyjzpfuto6q",
+                "full_uri": "http://1.1.1.1:8182/project/self/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q",
+                "real_request_uri": "http://1.1.1.1:8182/api/v1/project/self/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q",
+            },
+            "http://10.131.0.2:8182/project/mnist/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q": {
+                "instance": "http://10.131.0.2:8182",
+                "instance_type": "cloud",
+                "project": "mnist",
+                "obj_typ": "model",
+                "obj_name": "mm",
+                "obj_version": "meydczbrmi2ggnrtmftdgyjzpfuto6q",
+                "real_request_uri": "http://10.131.0.2:8182/api/v1/project/mnist/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q",
+            },
+            "http://10.131.0.2:8182/project/mnist/": {
+                "instance": "http://10.131.0.2:8182",
+                "instance_type": "cloud",
+                "project": "mnist",
+                "obj_typ": "",
+                "obj_name": "",
+                "obj_version": "",
+                "real_request_uri": "http://10.131.0.2:8182/api/v1/project/mnist",
+            },
+            "local/project/mnist/runtime/rt": {
+                "instance": "local",
+                "instance_type": "standalone",
+                "project": "mnist",
+                "obj_typ": "runtime",
+                "obj_name": "rt",
+                "obj_version": "",
+                "real_request_uri": ".cache/starwhale/mnist/runtime/rt",
+            },
+            "local/project/mnist/dataset/dd/version/meydczbrmi2ggnrtmftdgyjzpfuto6q": {
+                "instance": "local",
+                "instance_type": "standalone",
+                "project": "mnist",
+                "obj_typ": "dataset",
+                "obj_name": "dd",
+                "obj_version": "meydczbrmi2ggnrtmftdgyjzpfuto6q",
+                "real_request_uri": ".cache/starwhale/mnist/dataset/dd/me/meydczbrmi2ggnrtmftdgyjzpfuto6q",
+            },
+            "cloud://pre-base/project/mnist/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q": {
+                "instance": "http://1.1.1.1:8182",
+                "instance_type": "cloud",
+                "project": "mnist",
+                "obj_typ": "model",
+                "obj_name": "mm",
+                "obj_version": "meydczbrmi2ggnrtmftdgyjzpfuto6q",
+                "full_uri": "http://1.1.1.1:8182/project/mnist/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q",
+                "real_request_uri": "http://1.1.1.1:8182/api/v1/project/mnist/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q",
+            },
+            "project/mnist/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q": {
+                "instance": "http://1.1.1.1:8182",
+                "instance_type": "cloud",
+                "project": "mnist",
+                "obj_typ": "model",
+                "obj_name": "mm",
+                "obj_version": "meydczbrmi2ggnrtmftdgyjzpfuto6q",
+                "full_uri": "http://1.1.1.1:8182/project/mnist/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q",
+                "real_request_uri": "http://1.1.1.1:8182/api/v1/project/mnist/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q",
+            },
+        }
+
+        for k, v in ts.items():
+            uri = URI(k)
+            assert uri.instance == v["instance"]
+            assert uri.project == v["project"]
+            assert uri.object.typ == v["obj_typ"]
+            assert uri.object.name == v["obj_name"]
+            assert uri.object.version == v["obj_version"]
+            assert uri.full_uri == v.get("full_uri", "").strip(
+                "/"
+            ) or uri.full_uri == k.strip("/")
+            assert uri.instance_type == v["instance_type"]
+            assert str(uri.real_request_uri) == v["real_request_uri"] or str(
+                uri.real_request_uri
+            ).endswith(v["real_request_uri"])
