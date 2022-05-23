@@ -7,7 +7,7 @@ import { Input } from 'baseui/input'
 import qs from 'qs'
 import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router-dom'
-import ZButton from '@/components/Button'
+import Button from '@/components/Button'
 import IconFont from '@/components/IconFont'
 import LoginLayout from './LoginLayout'
 
@@ -73,33 +73,32 @@ export default function Login() {
                         <Form onFinish={handleFinish}>
                             <div
                                 style={{
-                                    fontSize: '20px',
+                                    fontSize: '28px',
                                     fontWeight: 600,
-                                    lineHeight: '24px',
-                                    marginBottom: '36px',
+                                    lineHeight: '28px',
+                                    marginBottom: '40px',
                                 }}
                             >
                                 {t('LOGIN')}
                             </div>
                             <FormItem name='userName' label={t('Username')}>
-                                <Input startEnhancer={<IconFont type='user' />} />
+                                <Input startEnhancer={<IconFont type='user' kind='gray' />} />
                             </FormItem>
                             <FormItem name='userPwd' label={t('Password')}>
                                 <Input
-                                    startEnhancer={<IconFont type='password' />}
+                                    startEnhancer={<IconFont type='password' kind='gray' />}
                                     overrides={{
-                                        MaskToggleHideIcon: () => <IconFont type='eye_off' />,
-                                        MaskToggleShowIcon: () => <IconFont type='eye' />,
+                                        MaskToggleHideIcon: () => <IconFont type='eye_off' kind='gray' />,
+                                        MaskToggleShowIcon: () => <IconFont type='eye' kind='gray' />,
                                     }}
                                     type='password'
                                 />
                             </FormItem>
                             <FormItem>
-                                <div style={{ display: 'flex' }}>
-                                    <div style={{ flexGrow: 1 }} />
-                                    <ZButton isLoading={isLoading} size='compact'>
+                                <div style={{ display: 'flex', marginTop: '40px' }}>
+                                    <Button kind='full' isLoading={isLoading}>
                                         {t('login')}
-                                    </ZButton>
+                                    </Button>
                                 </div>
                             </FormItem>
                         </Form>

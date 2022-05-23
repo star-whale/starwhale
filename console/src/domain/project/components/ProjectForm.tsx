@@ -50,12 +50,12 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
     return (
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <FormItem name='projectName' label={t('sth name', [t('Project')])}>
-                <Input />
+                <Input size='compact' />
             </FormItem>
             <FormItem>
                 <div style={{ display: 'flex' }}>
                     <div style={{ flexGrow: 1 }} />
-                    <Button isLoading={loading} disabled={!isModified(project, values)}>
+                    <Button size='compact' isLoading={loading} disabled={!isModified(project, values)}>
                         {t('submit')}
                     </Button>
                 </div>

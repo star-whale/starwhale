@@ -51,7 +51,7 @@ export default function ModelVersionForm({ model, onSubmit }: IModelVersionFormP
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             {/* //TODO: display curret model name */}
             {/* <FormItem name='modelName' label={t('sth name', [t('Model Version')])}>
-                <Input disabled={model !== undefined ? true : undefined} />
+                <Input  size='compact' disabled={model !== undefined ? true : undefined} />
             </FormItem> */}
             <div style={{ marginBottom: 20 }}>
                 <RadioGroup
@@ -66,13 +66,13 @@ export default function ModelVersionForm({ model, onSubmit }: IModelVersionFormP
             </div>
             {importBy === 'server' && (
                 <FormItem name='importPath' label={t('Import Path')}>
-                    <Input disabled={model !== undefined ? true : undefined} />
+                    <Input size='compact' disabled={model !== undefined ? true : undefined} />
                 </FormItem>
             )}
             {importBy === 'upload' && (
                 // TODO: beauty file upload plugin
                 <FormItem name='zipFile' label={t('Upload')} valuePropName='files'>
-                    <Input name='files' disabled={model !== undefined ? true : undefined} type='file' />
+                    <Input size='compact' name='files' disabled={model !== undefined ? true : undefined} type='file' />
 
                     {/* <FileUploader
                     onDrop={(acceptedFiles, rejectedFiles) => {}}

@@ -50,7 +50,7 @@ export default function ModelForm({ model, onSubmit }: IModelFormProps) {
     return (
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <FormItem name='modelName' label={t('sth name', [t('Model')])}>
-                <Input disabled={model !== undefined ? true : undefined} />
+                <Input size='compact' disabled={model !== undefined ? true : undefined} />
             </FormItem>
             <div style={{ marginBottom: 20 }}>
                 <RadioGroup
@@ -65,13 +65,13 @@ export default function ModelForm({ model, onSubmit }: IModelFormProps) {
             </div>
             {importBy === 'server' && (
                 <FormItem name='importPath' label={t('Import Path')}>
-                    <Input disabled={model !== undefined ? true : undefined} />
+                    <Input size='compact' disabled={model !== undefined ? true : undefined} />
                 </FormItem>
             )}
             {importBy === 'upload' && (
                 // TODO: beauty file upload plugin
                 <FormItem name='zipFile' label={t('Upload')} valuePropName='files'>
-                    <Input name='files' disabled={model !== undefined ? true : undefined} type='file' />
+                    <Input size='compact' name='files' disabled={model !== undefined ? true : undefined} type='file' />
 
                     {/* <FileUploader
                     onDrop={(acceptedFiles, rejectedFiles) => {}}
