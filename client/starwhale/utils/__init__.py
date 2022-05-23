@@ -9,6 +9,7 @@ import platform
 import subprocess
 import typing as t
 from datetime import datetime
+import re
 
 from rich.console import Console
 
@@ -148,3 +149,25 @@ def pretty_bytes(b: t.Union[int, float]) -> str:
             return _c(b / 1024, idx + 1)
 
     return _c(b, 0)
+
+
+_valid_name_re = re.compile("^([a-zA-Z0-9_-])+$")
+
+
+def validate_obj_name(name: str) -> t.Tuple[bool, str]:
+    if len(name) < 1 or len(name) > 80:
+        return (
+            False,
+            f"length should be between 1 and 80, but {name} has {len(name)} characters",
+        )
+
+    if not (name[0] == "_" or name[0].isalpha()):
+        return False, "A name should always start with a letter or the _ character"
+
+    if not _valid_name_re.match(name):
+        return (
+            False,
+            "A name MUST only consist of letters A-Z a-z, digits 0-9, the hyphen character -, and the underscore character _",
+        )
+
+    return True, ""
