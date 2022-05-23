@@ -96,7 +96,7 @@ export default function Login() {
                             </FormItem>
                             <FormItem>
                                 <div style={{ display: 'flex', marginTop: '40px' }}>
-                                    <Button kind='full' isLoading={isLoading}>
+                                    <Button isFull isLoading={isLoading}>
                                         {t('login')}
                                     </Button>
                                 </div>

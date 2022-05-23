@@ -95,7 +95,11 @@ const overrides = {
             brandUserIcon: customPrimiaryColors.backgroundSecondary,
             brandMenuItemBackground: customPrimiaryColors.backgroundHover,
         },
-        typography: {},
+        typography: {
+            font250: {
+                lineHeight: '14px',
+            },
+        },
         borders: {
             inputBorderRadius: '4px',
             buttonBorderRadius: '4px',

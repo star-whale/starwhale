@@ -2,31 +2,62 @@ import React from 'react'
 import { createUseStyles } from 'react-jss'
 import { Button as BaseButton, ButtonProps, KIND } from 'baseui/button'
 import classNames from 'classnames'
+import { useOverrides } from '@/utils/baseui'
 
-export interface IButtonProps extends Omit<ButtonProps, 'kind'> {
-    kind?: KIND[keyof KIND] | 'full'
+export interface IButtonProps extends ButtonProps {
+    kind?: KIND[keyof KIND]
+    isFull?: boolean
     className?: string
 }
 
 const useStyles = createUseStyles({
     baseButton: {
         borderRadius: '4px',
-        color: '#fff',
     },
-    full: {
-        flexGrow: 1,
-    },
-    primary: {},
-    secondary: {},
-    tertiary: {},
 })
 
 /* eslint-disable react/jsx-props-no-spreading */
-export default function Button({ kind = 'primary', children, ...props }: IButtonProps) {
+export default function Button({
+    isFull = false,
+    size = 'compact',
+    kind = 'primary',
+    children,
+    ...props
+}: IButtonProps) {
     const styles = useStyles()
 
+    const overrides = useOverrides(
+        {
+            BaseButton: {
+                style: {
+                    borderRadius: '4px',
+                    lineHeight: '14px',
+                    padding: '9px',
+                    width: isFull ? '100%' : 'auto',
+                },
+            },
+        },
+        props.overrides
+    )
+
+    // const [, buttonProps] = getOverrides(props.overrides, StyledBaseButton)
+
+    // const overrides = mergeOverrides(
+    //     {
+    //         BaseButton: {
+    //             style: {
+    //                 borderRadius: '4px',
+    //                 lineHeight: '14px',
+    //                 padding: '9px',
+    //                 width: isFull ? '100%' : 'auto',
+    //             },
+    //         },
+    //     },
+    //     buttonProps.overrides
+    // )
+
     return (
-        <BaseButton className={classNames(styles.baseButton, styles[kind])} {...props}>
+        <BaseButton size={size} kind={kind} className={classNames(styles.baseButton)} {...props} overrides={overrides}>
             {children}
         </BaseButton>
     )
