@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { createForm } from '@/components/Form'
 import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
-import { Button } from 'baseui/button'
+import { Button, SIZE } from 'baseui/button'
 import { isModified } from '@/utils'
 import { ICreateBaseImageSchema, IBaseImageSchema } from '@/domain/runtime/schemas/runtime'
 
@@ -50,12 +50,12 @@ export default function BaseImageForm({ baseImage, onSubmit }: IBaseImageFormPro
     return (
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <FormItem name='imageName' label={t('sth name', [t('BaseImage')])}>
-                <Input />
+                <Input size={SIZE.compact} />
             </FormItem>
             <FormItem>
                 <div style={{ display: 'flex' }}>
                     <div style={{ flexGrow: 1 }} />
-                    <Button isLoading={loading} disabled={!isModified(baseImage, values)}>
+                    <Button size={SIZE.compact} isLoading={loading} disabled={!isModified(baseImage, values)}>
                         {t('submit')}
                     </Button>
                 </div>
