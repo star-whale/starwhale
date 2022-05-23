@@ -7,13 +7,14 @@ from starwhale import __version__
 from starwhale.utils.config import load_swcli_config
 from starwhale.utils.debug import init_logger
 
-from .model import model_cmd
-from .dataset import dataset_cmd
+from starwhale.project.cli import project_cmd
+from starwhale.job.cli import job_cmd
+from starwhale.instance.cli import instance_cmd
+from starwhale.runtime.cli import runtime_cmd
+from starwhale.dataset.cli import dataset_cmd
+from starwhale.model.cli import model_cmd
+
 from .mngt import add_mngt_command
-from .eval import eval_cmd
-from .cluster import cluster_cmd
-from .project import project_cmd
-from .instance import instance_cmd
 
 
 def create_sw_cli() -> click.core.Group:
@@ -27,11 +28,12 @@ def create_sw_cli() -> click.core.Group:
     random.seed(time.time_ns)
 
     cli.add_command(instance_cmd)
+    cli.add_command(project_cmd)
+    cli.add_command(job_cmd)
+    cli.add_command(runtime_cmd)
+
     cli.add_command(model_cmd)
     cli.add_command(dataset_cmd)
-    cli.add_command(project_cmd)
-    cli.add_command(eval_cmd)
-    cli.add_command(cluster_cmd)
     add_mngt_command(cli)
 
     return cli

@@ -1,5 +1,7 @@
 import click
 
+from rich import print as rprint
+
 
 def add_mngt_command(cli: click.core.Group) -> None:
     @cli.command("quickstart", help="StarWhale Quickstart")
@@ -15,3 +17,10 @@ def add_mngt_command(cli: click.core.Group) -> None:
     @click.option("--dry-run", is_flag=False, help="dry-run cleanup garbage collection")
     def _gc(dry_run: bool) -> None:
         pass
+
+    @cli.command("tui", help="basic terminal ui for starwhale controller")
+    def _tui() -> None:
+        # TODO: add fullscreen terminal ui base on rich and textual lib
+        rprint(
+            ":shell::clap::man_with_probing_cane: TUI(terminal ui) is comming soon..."
+        )

@@ -1,6 +1,6 @@
 import click
 
-from starwhale.instance import Instance
+from . import Instance
 
 
 @click.group("instance", help="Starwhale Instance management")
@@ -48,3 +48,10 @@ def _logout(instance: str) -> None:
 @instance_cmd.command("list", help="List logined Starwhale instances")
 def _list() -> None:
     Instance().list()
+
+
+@instance_cmd.command("info", help="Inspect instance details")
+def _info() -> None:
+    from starwhale.cluster.view import ClusterView
+
+    ClusterView().info()

@@ -5,8 +5,8 @@ import click
 
 from starwhale.consts import DEFAULT_MODEL_YAML_NAME
 from starwhale.consts.env import SWEnv
-from starwhale.swmp.model import ModelPackage
-from starwhale.swmp.store import ModelPackageLocalStore
+from .model import ModelPackage
+from .store import ModelPackageLocalStore
 
 
 @click.group("model", help="StarWhale Model Package(swmp) build/push/pull...")

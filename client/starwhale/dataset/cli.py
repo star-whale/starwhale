@@ -1,8 +1,8 @@
 import click
 
 from starwhale.consts import DEFAULT_DATASET_YAML_NAME, LOCAL_FUSE_JSON_NAME
-from starwhale.swds.dataset import DataSet
-from starwhale.swds.store import DataSetLocalStore
+from .dataset import DataSet
+from .store import DataSetLocalStore
 
 
 @click.group("dataset", help="StarWhale DataSet(swds) build/push/convert...")
