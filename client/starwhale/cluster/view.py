@@ -1,5 +1,4 @@
 import typing as t
-from functools import wraps
 
 from rich import print as rprint
 from rich.panel import Panel
@@ -8,55 +7,12 @@ from rich.tree import Tree
 from rich import box
 
 from .model import ClusterModel, DEFAULT_PAGE_NUM, DEFAULT_PAGE_SIZE, ProjectObjType
+from starwhale.base.view import BaseView
 from starwhale.utils import pretty_bytes, console
-from starwhale.utils.ui import comparsion
 
 
 # TODO: use model-view-control mode to refactor Cluster
-class ClusterView(ClusterModel):
-    def _pager(func):  # type: ignore
-        @wraps(func)  # type: ignore
-        def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
-            def _print(_r: t.Dict[str, t.Any]) -> None:
-                p = Panel(
-                    (
-                        f"Counts: [green] {_r['current']}/{_r['total']} [/] :sheep: ,"
-                        f"[red] {_r['remain']} [/] items does not show."
-                    ),
-                    title="Count Details",
-                    title_align="left",
-                )
-                rprint("\n", p)
-
-            rt = func(*args, **kwargs)  # type: ignore
-            if isinstance(rt, tuple) and len(rt) == 2 and "total" in rt[1]:
-                _print(rt[1])
-
-        return _wrapper
-
-    def _header(func):  # type: ignore
-        @wraps(func)  # type: ignore
-        def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
-            self: ClusterView = args[0]
-
-            def _print() -> None:
-                grid = Table.grid(expand=True)
-                grid.add_column(justify="center", ratio=1)
-                grid.add_column(justify="right")
-                grid.add_row(
-                    f":star: {self.sw_remote_addr} :whale:",
-                    f":clown_face:{self.user_name}@{self.user_role}",
-                )
-                p = Panel(
-                    grid, title="Starwhale Controller Cluster", title_align="left"
-                )
-                rprint(p, "\n")
-
-            _print()
-            return func(*args, **kwargs)  # type: ignore
-
-        return _wrapper
-
+class ClusterView(ClusterModel, BaseView):
     def run_job(
         self,
         model_id: int,
@@ -79,8 +35,8 @@ class ClusterView(ClusterModel):
         else:
             rprint(f":collision: failed to create job, notice: [red]{msg}[/]")
 
-    @_pager  # type: ignore
-    @_header  # type: ignore
+    @BaseView._pager  # type: ignore
+    @BaseView._header  # type: ignore
     def info_job(
         self,
         project: int,
@@ -162,7 +118,7 @@ class ClusterView(ClusterModel):
                 table.add_row(_k, *(f"{_v[_k2]:.4f}" for _k2 in keys))
 
             console.rule(f"[bold green]{report['kind'].upper()} Report")
-            console.print(comparsion(tree, table))
+            console.print(self.comparsion(tree, table))
 
         def _print_confusion_matrix() -> None:
             cm = report.get("confusion_matrix", {})
@@ -184,7 +140,7 @@ class ClusterView(ClusterModel):
                 mtable.add_row(sort_label_names[idx], *[str(_) for _ in ml[0] + ml[1]])
 
             console.rule(f"[bold green]{report['kind'].upper()} Confusion Matrix")
-            console.print(comparsion(mtable, btable))
+            console.print(self.comparsion(mtable, btable))
 
         _print_report()
         _print_confusion_matrix()
@@ -200,8 +156,8 @@ class ClusterView(ClusterModel):
             icon = ":fearful:"
         return status, style, icon
 
-    @_pager  # type: ignore
-    @_header  # type: ignore
+    @BaseView._pager  # type: ignore
+    @BaseView._header  # type: ignore
     def list_jobs(
         self, project: int, page: int = DEFAULT_PAGE_NUM, size: int = DEFAULT_PAGE_SIZE
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
@@ -243,8 +199,8 @@ class ClusterView(ClusterModel):
         else:
             rprint(f":collision: failed to create {project}, notice: [red]{msg}[/]")
 
-    @_pager  # type: ignore
-    @_header  # type: ignore
+    @BaseView._pager  # type: ignore
+    @BaseView._header  # type: ignore
     def list_projects(
         self,
         all_users: bool = False,
@@ -274,7 +230,7 @@ class ClusterView(ClusterModel):
 
         def _details(pid: int) -> Table:
             _r = self._inspect_project(pid)
-            return comparsion(
+            return self.comparsion(
                 _show_objects(_r["models"], ProjectObjType.MODEL),
                 _show_objects(_r["datasets"], ProjectObjType.DATASET),
             )
@@ -305,54 +261,3 @@ class ClusterView(ClusterModel):
         p = Panel(grid, title="Project Details", title_align="left")
         rprint(p)
         return projects, pager
-
-    @_header  # type: ignore
-    def info(self) -> None:
-        # TODO: user async to get
-        _baseimages = self._fetch_baseimage()
-        _version = self._fetch_version()
-        _agents = self._fetch_agents()
-
-        def _agents_table() -> Table:
-            table = Table(
-                show_edge=False,
-                show_header=True,
-                row_styles=["none", "dim"],
-                box=box.SIMPLE,
-            )
-            table.add_column("id")
-            table.add_column("ip", style="green")
-            table.add_column("status", style="blue")
-            table.add_column("version")
-            table.add_column("connected time")
-
-            for i, _agent in enumerate(_agents):
-                table.add_row(
-                    str(i),
-                    _agent["ip"],
-                    str(_agent["status"]),
-                    _agent["version"],
-                    str(_agent["connectedTime"]),
-                )
-            return table
-
-        def _details() -> Panel:
-            grid = Table.grid(padding=1, pad_edge=True)
-            grid.add_column(
-                "Category", no_wrap=True, justify="left", style="bold green"
-            )
-            grid.add_column("Information")
-
-            grid.add_row(
-                "Version",
-                _version,
-            )
-
-            grid.add_row("BaseImage", "\n".join([f"- {i}" for i in _baseimages]))
-            grid.add_row(
-                "Agents",
-                _agents_table(),
-            )
-            return Panel(grid, title_align="left")
-
-        rprint(_details())

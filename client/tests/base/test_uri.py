@@ -1,5 +1,4 @@
 from starwhale.base.uri import URI
-from starwhale.instance.model import InstanceType
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.utils import config as sw_config

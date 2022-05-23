@@ -51,7 +51,6 @@ def _list() -> None:
 
 
 @instance_cmd.command("info", help="Inspect instance details")
-def _info() -> None:
-    from starwhale.cluster.view import ClusterView
-
-    ClusterView().info()
+@click.argument("instance", default="")
+def _info(instance: str) -> None:
+    InstanceTermView().info(instance)

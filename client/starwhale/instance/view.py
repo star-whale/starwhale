@@ -4,6 +4,7 @@ from http import HTTPStatus
 import requests
 from rich.table import Table
 from rich import box
+from rich.panel import Panel
 
 from starwhale.utils.config import SWCliConfigMixed, update_swcli_config
 from starwhale.utils import console, fmt_http_server
@@ -14,12 +15,14 @@ from starwhale.consts import (
     DEFAULT_PROJECT,
 )
 from starwhale.utils.http import wrap_sw_error_resp
+from starwhale.base.view import BaseView
+from starwhale.cluster.model import ClusterModel
 
 
 DEFAULT_HTTP_TIMEOUT = 90
 
 
-class InstanceTermView(SWCliConfigMixed):
+class InstanceTermView(SWCliConfigMixed, BaseView):
     def __init__(self) -> None:
         super().__init__()
         self._console = console
@@ -82,6 +85,66 @@ class InstanceTermView(SWCliConfigMixed):
 
         self.delete_instance(instance)
         self._console.print(":wink: bye.")
+
+    @BaseView._header  # type: ignore
+    def info(self, instance: str = "") -> None:
+        instance = instance or self.current_instance
+
+        if instance == STANDALONE_INSTANCE:
+            self._console.print(
+                f":balloon: standalone instance, root dir @ {self.rootdir}"
+            )
+        else:
+            # TODO: support use uri directly
+            # TODO: user async to get
+            cm = ClusterModel()
+            _baseimages = cm._fetch_baseimage()
+            _version = cm._fetch_version()
+            _agents = cm._fetch_agents()
+
+            def _agents_table() -> Table:
+                table = Table(
+                    show_edge=False,
+                    show_header=True,
+                    row_styles=["none", "dim"],
+                    box=box.SIMPLE,
+                )
+                table.add_column("id")
+                table.add_column("ip", style="green")
+                table.add_column("status", style="blue")
+                table.add_column("version")
+                table.add_column("connected time")
+
+                for i, _agent in enumerate(_agents):
+                    table.add_row(
+                        str(i),
+                        _agent["ip"],
+                        str(_agent["status"]),
+                        _agent["version"],
+                        str(_agent["connectedTime"]),
+                    )
+                return table
+
+            def _details() -> Panel:
+                grid = Table.grid(padding=1, pad_edge=True)
+                grid.add_column(
+                    "Category", no_wrap=True, justify="left", style="bold green"
+                )
+                grid.add_column("Information")
+
+                grid.add_row(
+                    "Version",
+                    _version,
+                )
+
+                grid.add_row("BaseImage", "\n".join([f"- {i}" for i in _baseimages]))
+                grid.add_row(
+                    "Agents",
+                    _agents_table(),
+                )
+                return Panel(grid, title_align="left")
+
+            self._console.print(_details())
 
     def list(self) -> None:
         table = Table(
