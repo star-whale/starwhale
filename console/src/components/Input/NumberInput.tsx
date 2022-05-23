@@ -32,6 +32,7 @@ export default function NumberInput({
 
     return (
         <Input
+            size='compact'
             overrides={overrides}
             type='number'
             value={value}

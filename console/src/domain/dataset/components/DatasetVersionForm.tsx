@@ -66,13 +66,18 @@ export default function DatasetVersionForm({ dataset, onSubmit }: IDatasetVersio
             </div>
             {importBy === 'server' && (
                 <FormItem name='importPath' label={t('Import Path')}>
-                    <Input disabled={dataset !== undefined ? true : undefined} />
+                    <Input size='compact' disabled={dataset !== undefined ? true : undefined} />
                 </FormItem>
             )}
             {importBy === 'upload' && (
                 // TODO beauty file upload plugin
                 <FormItem name='zipFile' label={t('Upload')} valuePropName='files'>
-                    <Input name='files' disabled={dataset !== undefined ? true : undefined} type='file' />
+                    <Input
+                        size='compact'
+                        name='files'
+                        disabled={dataset !== undefined ? true : undefined}
+                        type='file'
+                    />
 
                     {/* <FileUploader
                     onDrop={(acceptedFiles, rejectedFiles) => {}}

@@ -7,10 +7,9 @@ import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
 import { SidebarContext } from '@/contexts/SidebarContext'
-import { FaTasks } from 'react-icons/fa'
-import { AiTwotoneExperiment } from 'react-icons/ai'
 import Card from '@/components/Card'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
+import IconFont from '../../components/IconFont/index'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -61,12 +60,12 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
                 title: t('Tasks'),
                 path: `/projects/${projectId}/jobs/${jobId}/tasks`,
                 pattern: '/\\/tasks\\/?',
-                icon: FaTasks,
+                icon: <IconFont type='tasks' />,
             },
             {
                 title: t('Results'),
                 path: `/projects/${projectId}/jobs/${jobId}/results`,
-                icon: AiTwotoneExperiment,
+                icon: <IconFont type='results' />,
             },
         ]
         return items
