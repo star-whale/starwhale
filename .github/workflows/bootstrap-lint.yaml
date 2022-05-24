@@ -46,7 +46,7 @@ jobs:
 
       - name: Install
         working-directory: ./bootstrap
-        run: make install
+        run: make install-dev
 
       - name: Lint Ansible Playbook
         working-directory: ./bootstrap
