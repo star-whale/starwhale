@@ -85,7 +85,7 @@ extra_vars:
 # List of additional kind:pattern to be added at the top of the default
 # match list, first match determines the file kind.
 kinds:
-  - playbook: "bootstrap.yaml"
-  - tasks: "**/tasks/*.yml"
-  - vars: "**/vars/*.yml"
-  - meta: "**/meta/main.yml"
+  - playbook: "starwhale/playbook/bootstrap.yaml"
+  - tasks: "starwhale/playbook/**/tasks/*.yml"
+  - vars: "starwhale/playbook/**/vars/*.yml"
+  - meta: "starwhale/playbook/**/meta/main.yml"

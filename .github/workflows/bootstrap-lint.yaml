@@ -50,4 +50,4 @@ jobs:
 
       - name: Lint Ansible Playbook
         working-directory: ./bootstrap
-        run: make lint
+        run: make ansible-lint

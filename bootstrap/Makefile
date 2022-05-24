@@ -1,14 +1,28 @@
+PY_CHANGED_FILES = $(shell git diff --name-only --relative -- '*.py')
 
-install:
+check:
+	python3 setup.py check
+
+clean:
+	rm -rf dist/*
+
+build-wheel: check clean
+	python3 setup.py sdist bdist_wheel
+	ls -alh dist
+
+upload-pypi:
+	python3 -m twine upload --repository pypi dist/* --verbose
+
+install-dev:
 	python3 -m pip install -r requirements.txt
 
-lint:
-	ansible-lint
+ansible-lint:
+	python3 -m ansible-lint
 
-# make check user={your admin name}
-check:
-	ansible-playbook bootstrap.yaml -i inventory --user $(user) --check
+# make check {your admin name}
+ansible-check:
+	ansible-playbook starwhale/playbook/bootstrap.yaml -i hosts --user $(user) --check
 
-# make play user={your admin name}
-play:
-	ansible-playbook bootstrap.yaml -i inventory --user $(user)
+# make play {your admin name}
+ansible-play:
+	ansible-playbook starwhale/playbook/bootstrap.yaml -i hosts --user $(user)
