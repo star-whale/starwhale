@@ -69,15 +69,10 @@
         <where>
             and project_id = #{projectId}
         </where>
-        <choose>
-            <when test="swmpId != null">
-                and swmp_id = #{swmpId}
-            </when>
-            <otherwise>
-                order by swmp_id,job_id desc
-            </otherwise>
-        </choose>
-
+        <if test="swmpId != null and swmpId != ''">
+            and swmp_id = #{swmpId}
+        </if>
+        order by job_id desc
     </select>
 
     <select id="findJobById" resultMap="jobResultMap" >
