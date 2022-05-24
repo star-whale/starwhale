@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.report.req.TaskLog;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.api.protocol.report.resp.LogReader;
 import ai.starwhale.mlops.common.IDConvertor;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.google.common.collect.Lists;
@@ -136,6 +137,9 @@ public class TaskLogWSServer {
     }
 
     private void report(TaskLog taskLog, String status) {
+        if(StrUtil.isEmpty(taskLog.getLog())) {
+            return;
+        }
         String readerId = taskLog.getReaderId();
         if(sockets.containsKey(readerId)) {
             JSONObject json = JSONUtil.createObj();
