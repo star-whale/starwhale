@@ -333,7 +333,7 @@ class DataSet(object):
             f"[step:prepare-snapshot]swds snapshot workdir: {self._snapshot_workdir}"
         )
         self._console.print(
-            f":file_folder: swmp workdir: [underline]{self._snapshot_workdir}[/]"
+            f":file_folder: swds workdir: [underline]{self._snapshot_workdir}[/]"
         )
 
     @property

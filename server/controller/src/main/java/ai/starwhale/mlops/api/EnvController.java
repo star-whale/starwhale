@@ -22,11 +22,14 @@ import ai.starwhale.mlops.api.protocol.runtime.BaseImageRequest;
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.OrderParams;
+import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.job.BaseImage;
 import ai.starwhale.mlops.domain.job.EnvService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import com.github.pagehelper.PageInfo;
 import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
@@ -45,8 +48,17 @@ public class EnvController implements EnvApi{
     private IDConvertor idConvertor;
 
     @Override
-    public ResponseEntity<ResponseMessage<List<BaseImageVO>>> listBaseImage(String imageName) {
-        List<BaseImageVO> baseImageVOS = envService.listImages(imageName);
+    public ResponseEntity<ResponseMessage<PageInfo<BaseImageVO>>> listBaseImage(String imageName,
+        Integer pageNum, Integer pageSize, String sort, Integer order) {
+        PageInfo<BaseImageVO> baseImageVOS = envService.listImages(imageName,
+            PageParams.builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build(),
+            OrderParams.builder()
+                .sort(sort)
+                .order(order)
+                .build());
 
         return ResponseEntity.ok(Code.success.asResponse(baseImageVOS));
     }

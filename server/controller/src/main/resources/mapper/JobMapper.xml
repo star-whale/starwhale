@@ -10,67 +10,71 @@
 <mapper namespace="ai.starwhale.mlops.domain.job.mapper.JobMapper">
 
     <sql id="select_jobs">
-        select j.id as job_id,
-               j.job_uuid,
-               j.project_id,
-               j.swmp_version_id,
-               j.owner_id,
-               j.created_time as job_created_time,
-               j.finished_time as job_finished_time,
-               j.duration_ms as job_duration_ms,
-               j.job_status,
-               j.base_image_id,
-               j.device_type,
-               j.device_amount,
-               j.result_output_path as job_result_output_path,
-               j.job_comment,
-               p.id as project_id,
-               p.project_name,
-               u.id as user_id,
-               u.user_name,
-               u.user_enabled,
-               u.role_id,
-               u.created_time as user_created_time,
-               u.modified_time as user_modified_time,
-               mv.id as mv_id,
-               mv.swmp_id,
-               mv.version_name as mv_version_name,
-               mv.version_tag as mv_version_tag,
-               mv.version_meta as mv_version_meta,
-               mv.created_time as mv_created_time,
-               mv.modified_time as mv_modified_time,
-               mv.storage_path as mv_storage_path,
-               b.id as image_id,
-               b.image_name,
-               b.created_time as image_created_time,
-               b.modified_time as image_modified_time,
-               r.role_name,
-               r.role_name_en,
-               m.swmp_name as swmp_name
-        from job_info as j,
-             user_info as u,
-             project_info as p,
-             swmp_version as mv,
-             swmp_info as m,
-             base_image as b,
-             user_role as r
-        where u.id = j.owner_id
-          and p.id = j.project_id
-          and r.id = u.role_id
-          and mv.id = j.swmp_version_id
-          and m.id = mv.swmp_id
-          and b.id = j.base_image_id
+        select * from (select j.id as job_id,
+                              j.job_uuid,
+                              j.project_id,
+                              j.swmp_version_id,
+                              j.owner_id,
+                              j.created_time as job_created_time,
+                              j.finished_time as job_finished_time,
+                              j.duration_ms as job_duration_ms,
+                              j.job_status,
+                              j.base_image_id as image_id,
+                              j.device_type,
+                              j.device_amount,
+                              j.result_output_path as job_result_output_path,
+                              j.job_comment,
+                              p.project_name,
+                              u.id as user_id,
+                              u.user_name,
+                              u.user_enabled,
+                              u.role_id,
+                              u.created_time as user_created_time,
+                              u.modified_time as user_modified_time,
+                              mv.id as mv_id,
+                              mv.swmp_id,
+                              mv.version_name as mv_version_name,
+                              mv.version_tag as mv_version_tag,
+                              mv.version_meta as mv_version_meta,
+                              mv.created_time as mv_created_time,
+                              mv.modified_time as mv_modified_time,
+                              mv.storage_path as mv_storage_path,
+                              r.role_name,
+                              r.role_name_en,
+                              m.swmp_name as swmp_name
+                       from job_info as j,
+                            user_info as u,
+                            project_info as p,
+                            swmp_version as mv,
+                            swmp_info as m,
+                            user_role as r
+                       where u.id = j.owner_id
+                         and p.id = j.project_id
+                         and r.id = u.role_id
+                         and mv.id = j.swmp_version_id
+                         and m.id = mv.swmp_id) as j2
+                          left join
+                      (select * from
+                          (select id as bid,
+                                  image_name as image_name,
+                                  created_time as image_created_time,
+                                  modified_time as image_modified_time from base_image) as b
+                      ) as b2
+                      on
+                          j2.image_id = b2.bid
     </sql>
 
     <select id="listJobs" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
-         and j.project_id = #{projectId}
+        <where>
+            and project_id = #{projectId}
+        </where>
         <choose>
             <when test="swmpId != null">
                 and swmp_id = #{swmpId}
             </when>
             <otherwise>
-                order by swmp_id,j.id desc
+                order by swmp_id,job_id desc
             </otherwise>
         </choose>
 
@@ -78,12 +82,16 @@
 
     <select id="findJobById" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
-        and j.id = #{jobId}
+        <where>
+            and job_id = #{jobId}
+        </where>
     </select>
 
     <select id="findJobByStatusIn" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
-        and j.job_status in
+        <where>
+            and job_status in
+        </where>
         <foreach item="item" index="index" collection="jobStatuses"
           open="(" separator="," close=")">
             #{item}
