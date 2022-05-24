@@ -9,15 +9,11 @@ here = pathlib.Path(__file__).parent.resolve()
 # Get the long description from the README file
 long_description = (here / "README.md").read_text(encoding="utf-8")
 
-install_requires = [
-    "click",
-    "ansible-runner",
-    "ansible"
-]
+install_requires = ["click", "ansible-runner", "ansible"]
 
 
 def _format_version() -> str:
-    _v = os.environ.get("PYPI_RELEASE_VERSION", "0.1.0.beta3")
+    _v = os.environ.get("PYPI_RELEASE_VERSION", "0.1.0.beta6")
     _v = _v.lstrip("v").replace("-", ".")
     _vs = _v.split(".", 3)
     if len(_vs) == 4:
@@ -27,7 +23,6 @@ def _format_version() -> str:
         return _v
 
 
-# 说明：https://github.com/pypa/sampleproject/blob/main/setup.py
 setup(
     name="starwhale-bootstrap",
     author="Starwhale Team",
@@ -44,12 +39,12 @@ setup(
     install_requires=install_requires,
     entry_points="""
       [console_scripts]
-      swbs = starwhale:bootstrap
-      bootstrap = starwhale:bootstrap
+      swbs = starwhale_bootstrap:bootstrap
+      starwhale-bootstrap = starwhale_bootstrap:bootstrap
       """,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: Free for non-commercial use",
         "Operating System :: OS Independent",
-    ]
+    ],
 )

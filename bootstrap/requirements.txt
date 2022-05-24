@@ -1,3 +1,0 @@
-ansible-lint
-twine == 4.0.0
-wheel >= 0.35.0

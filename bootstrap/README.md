@@ -1,5 +1,5 @@
 - use origin cmd
-  - first, install bootstrap: `pip install bootstrap`
+  - first, install bootstrap: `pip install starwhale-bootstarp`
   - second,(**important**) make sure this machine can access all hosts bellow with the user of ${sudoer} !! 
   - then, edit hosts file(/etc/hosts) at your machine,here is a content example:
       ``` text

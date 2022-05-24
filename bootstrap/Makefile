@@ -14,7 +14,21 @@ upload-pypi:
 	python3 -m twine upload --repository pypi dist/* --verbose
 
 install-dev:
-	python3 -m pip install -r requirements.txt
+	python3 -m pip install -r requirements-dev.txt
+
+
+black-format:
+	black --config pyproject.toml $(PY_CHANGED_FILES)
+
+ci-format-checker:
+	echo "run black"
+	black --check --config pyproject.toml .
+
+ci-lint:
+	echo "run flake8"
+	flake8 .
+
+all-check: ci-format-checker ci-lint
 
 ansible-lint:
 	ansible-lint
