@@ -52,6 +52,7 @@ export default function ModelVersionSelector({
 
     return (
         <Select
+            size='compact'
             disabled={disabled}
             overrides={overrides}
             isLoading={modelVersionsInfo.isFetching}

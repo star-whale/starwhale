@@ -29,6 +29,9 @@
   ],
   "exclude": [
     "src/stories",
+    "baseui/helpers/overrides",
+    "node_modules/baseui/helpers/**",
+    "node_modules/baseui/helpers/overrides.js"
   ],
   "extends": "./tsconfig.paths.json"
 }

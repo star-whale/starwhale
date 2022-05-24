@@ -71,6 +71,8 @@ const overrides = {
             borderSelected: customPrimiaryColors.primary,
             tickFillSelected: customPrimiaryColors.primary,
             tickFillSelectedHover: customPrimiaryColors.primary,
+            inputBorder: customPrimiaryColors.dividerSecondary,
+            borderFocus: customPrimiaryColors.primary,
             // ----------- custom -----------
             brandPrimary: customPrimiaryColors.primary,
             brandPrimaryHover: customPrimiaryColors.primaryHover,
@@ -95,7 +97,11 @@ const overrides = {
             brandUserIcon: customPrimiaryColors.backgroundSecondary,
             brandMenuItemBackground: customPrimiaryColors.backgroundHover,
         },
-        typography: {},
+        typography: {
+            font250: {
+                lineHeight: '14px',
+            },
+        },
         borders: {
             inputBorderRadius: '4px',
             buttonBorderRadius: '4px',

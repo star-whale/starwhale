@@ -87,14 +87,14 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     return (
         <Form form={form} initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
             <Divider orientation='top'>{t('Model Information')}</Divider>
-            <div style={{ display: 'flex', alignItems: 'left', gap: 40, marginBottom: '36' }}>
+            <div className='bfc' style={{ display: 'flex', alignItems: 'left', gap: 40, marginBottom: '36px' }}>
                 <FormItem label={t('sth name', [t('Model')])} name='modelId' required>
                     <ModelSelector
                         projectId={projectId}
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '200px',
+                                    width: '280px',
                                 },
                             },
                         }}
@@ -108,7 +108,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             overrides={{
                                 Root: {
                                     style: {
-                                        width: '400px',
+                                        width: '280px',
                                     },
                                 },
                             }}
@@ -117,14 +117,14 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                 )}
             </div>
             <Divider orientation='top'>{t('Datasets')}</Divider>
-            <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'left', columnGap: 40, flexWrap: 'wrap' }}>
                 <FormItem label={t('sth name', [t('Dataset')])} name='datasetId'>
                     <DatasetSelector
                         projectId={projectId}
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '200px',
+                                    width: '280px',
                                 },
                             },
                         }}
@@ -138,14 +138,14 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             overrides={{
                                 Root: {
                                     style: {
-                                        width: '400px',
+                                        width: '280px',
                                     },
                                 },
                             }}
                         />
                     </FormItem>
                 )}
-                <div style={{ marginTop: 30 }}>
+                <div className='fac'>
                     <Button
                         size='compact'
                         type='button'
@@ -156,19 +156,19 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     </Button>
                 </div>
             </div>
-            <div style={{ width: '620px' }}>
+            <div className='bfc' style={{ width: '280px', marginBottom: '36px' }}>
                 <FormItem label={t('Selected Dataset')} name='datasetVersionIdsArr' required>
                     <MultiTags placeholder='' getValueLabel={getValueLabel} />
                 </FormItem>
             </div>
             <Divider orientation='top'>{t('Environment')}</Divider>
-            <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap', marginBottom: '36px' }}>
                 <FormItem label={t('BaseImage')} name='baseImageId'>
                     <BaseImageSelector
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '400px',
+                                    width: '280px',
                                 },
                             },
                         }}
@@ -179,7 +179,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '200px',
+                                    width: '280px',
                                 },
                             },
                         }}
@@ -190,7 +190,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         overrides={{
                             Root: {
                                 style: {
-                                    width: '200px',
+                                    width: '280px',
                                 },
                             },
                         }}
