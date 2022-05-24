@@ -1,13 +1,20 @@
+from sre_constants import IN
 import typing as t
 
 from pathlib import Path
 
 from urllib.parse import urlparse
 
-from starwhale.instance.model import InstanceType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.error import URIFormatError
-from starwhale.consts import SW_API_VERSION, VERSION_PREFIX_CNT
+from starwhale.utils import validate_obj_name
+from starwhale.consts import (
+    SW_API_VERSION,
+    VERSION_PREFIX_CNT,
+    UserRoleType,
+    STANDALONE_INSTANCE,
+)
+from .type import InstanceType
 
 
 class URIType:
@@ -27,9 +34,10 @@ class ObjField(t.NamedTuple):
 
 
 class URI(object):
-    def __init__(self, raw: str) -> None:
-        self.raw = raw.strip().strip("/")
+    def __init__(self, raw: str, expected_type: str = URIType.UNKNOWN) -> None:
+        self.raw = raw.strip().strip("/").lower()
         self._sw_config = SWCliConfigMixed()
+        self.expected_type = expected_type
 
         self.full_uri = self.raw
 
@@ -40,10 +48,29 @@ class URI(object):
 
         self._do_parse()
 
+    def __str__(self) -> str:
+        return self.full_uri
+
+    def __repr__(self) -> str:
+        return f"instance:{self.instance}, instance_type:{self.instance_type}, projec:{self.project}, object:{self.object}"
+
     def _do_parse_instance_uri(self, raw: str) -> t.Tuple[str, str, str]:
         _remain: str = raw
         _inst: str = ""
         _inst_type: str = ""
+
+        if self.expected_type == URIType.INSTANCE:
+            ok, reason = validate_obj_name(raw)
+            if not ok:
+                raise Exception(reason)
+
+            return (
+                raw,
+                InstanceType.STANDALONE
+                if raw == STANDALONE_INSTANCE
+                else InstanceType.CLOUD,
+                "",
+            )
 
         if raw.startswith(("http://", "https://", "cloud://")):
             _up = urlparse(raw)
@@ -70,6 +97,14 @@ class URI(object):
         return _inst, _inst_type, _remain
 
     def _do_parse_project_uri(self, raw: str) -> t.Tuple[str, str]:
+        if self.expected_type == URIType.PROJECT and not raw.startswith(
+            URIType.PROJECT + "/"
+        ):
+            ok, reason = validate_obj_name(raw)
+            if not ok:
+                raise Exception(reason)
+            return raw, ""
+
         raw = raw.strip().strip("/")
         if not raw:
             _proj = self._sw_config.current_project
@@ -91,18 +126,24 @@ class URI(object):
         if not raw:
             return ObjField(), raw
 
-        _sp = raw.split("/")
-        if (
-            _sp[0]
-            not in (
-                URIType.DATASET,
-                URIType.INSTANCE,
-                URIType.MODEL,
-                URIType.JOB,
-                URIType.RUNTIME,
-            )
-            or len(_sp) < 2
+        _all_types = (
+            URIType.DATASET,
+            URIType.INSTANCE,
+            URIType.MODEL,
+            URIType.JOB,
+            URIType.RUNTIME,
+        )
+
+        if self.expected_type in _all_types and not raw.startswith(
+            self.expected_type + "/"
         ):
+            ok, reason = validate_obj_name(raw)
+            if not ok:
+                raise Exception(reason)
+            return ObjField(typ=self.expected_type, name=raw, version=""), ""
+
+        _sp = raw.split("/")
+        if _sp[0] not in _all_types or len(_sp) < 2:
             raise URIFormatError(f"raw: {self.raw}, failed to parse object")
 
         if len(_sp) >= 4 and _sp[2] == "version":
@@ -155,3 +196,19 @@ class URI(object):
                         )
 
             return rt
+
+    @property
+    def sw_instance_config(self) -> t.Dict[str, t.Any]:
+        return self._sw_config.get_sw_instance_config(self.instance)
+
+    @property
+    def sw_token(self) -> str:
+        return self.sw_instance_config.get("sw_token", "")
+
+    @property
+    def user_name(self) -> str:
+        return self.sw_instance_config.get("user_name", "")
+
+    @property
+    def user_role(self) -> str:
+        return self.sw_instance_config.get("user_role", UserRoleType.NORMAL)

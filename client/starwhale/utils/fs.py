@@ -5,7 +5,7 @@ import errno
 from pathlib import Path
 import hashlib
 
-from starwhale.utils import console
+from starwhale.utils import console, timestamp_to_datatimestr
 from starwhale.utils.process import check_call
 
 BLAKE2B_SIGNATURE_ALGO = "blake2b"
@@ -98,3 +98,8 @@ def blake2b_file(fpath: t.Union[str, Path]) -> str:
             _chunk = f.read(_chunk_size)
 
     return _hash.hexdigest()
+
+
+def get_path_created_time(p: Path) -> str:
+    created_at = os.path.getctime(str(p.absolute()))
+    return timestamp_to_datatimestr(created_at)

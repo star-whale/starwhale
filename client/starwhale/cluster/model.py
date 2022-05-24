@@ -53,14 +53,6 @@ class ClusterModel(SWCliConfigMixed):
         wrap_sw_error_resp(r, path, exit=False, use_raise=False, silent=True)
         return r
 
-    def _request_create_project(self, project: str) -> t.Tuple[bool, str]:
-        r = self.request(
-            "/project",
-            method=HTTPMethod.POST,
-            data=json.dumps({"projectName": project}),
-        )
-        return r.status_code == HTTPStatus.OK, r.json()["message"]
-
     def _request_create_job(
         self,
         project: int,
@@ -122,35 +114,6 @@ class ClusterModel(SWCliConfigMixed):
         r = self.request("/user/current").json()["data"]
         return dict(name=r["name"], role=r["role"]["roleName"])
 
-    @ignore_error(([], {}))
-    def _fetch_projects(
-        self,
-        user_name: str = "",
-        page: int = DEFAULT_PAGE_NUM,
-        size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        # TODO: user params for project api
-        r = self.request(
-            "/project",
-            params={"pageNum": page, "pageSize": size, "userName": user_name},
-        ).json()
-        projects = []
-        for _p in r["data"]["list"]:
-            owner = _p["owner"]["name"]
-            if user_name != "" and user_name != owner:
-                continue
-
-            projects.append(
-                dict(
-                    id=_p["id"],
-                    name=_p["name"],
-                    created_at=_fmt_timestamp(_p["createdTime"]),  # type: ignore
-                    is_default=_p["isDefault"],
-                    owner=owner,
-                )
-            )
-        return projects, self._parse_pager(r)
-
     def _parse_pager(self, resp: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
         _d = resp["data"]
         return dict(
@@ -158,49 +121,6 @@ class ClusterModel(SWCliConfigMixed):
             current=_d["size"],
             remain=_d["total"] - _d["size"],
         )
-
-    @ignore_error({})
-    def _inspect_project(self, pid: int, versions_size: int = 10) -> t.Dict[str, t.Any]:
-        return {
-            "models": self._fetch_project_objects(pid, "model", versions_size),
-            "datasets": self._fetch_project_objects(pid, "dataset", versions_size),
-        }
-
-    @ignore_error([])
-    def _fetch_model_files(self, pid: int, mid: int) -> t.List:
-        r = self.request(f"/project/{pid}/model/{mid}")
-        return r.json()["data"]["files"]
-
-    @ignore_error([])
-    def _fetch_project_objects(
-        self, pid: int, typ: str, versions_size: int = 10
-    ) -> t.List[t.Dict[str, t.Any]]:
-        r = self.request(f"/project/{pid}/{typ}", params={"pageSize": _SHOW_ALL})
-
-        ret = []
-        for _m in r.json()["data"]["list"]:
-            _m["created_at"] = (_fmt_timestamp(_m.pop("createdTime")),)  # type: ignore
-            _m.pop("owner", None)
-
-            mvr = self.request(
-                f"/project/{pid}/{typ}/{_m['id']}/version",
-                params={"pageSize": versions_size},
-            )
-            versions = []
-            for _v in mvr.json()["data"]["list"]:
-                _v["short_name"] = _v["name"][:SHORT_VERSION_CNT]
-                _v["created_at"] = _fmt_timestamp(_v.pop("createdTime"))  # type: ignore
-                _v.pop("owner", None)
-                if typ == ProjectObjType.DATASET:
-                    _v["meta"] = yaml.safe_load(_v["meta"])
-                versions.append(_v)
-
-            _m["latest_versions"] = versions
-            if typ == ProjectObjType.MODEL:
-                _m["files"] = self._fetch_model_files(pid, _m["id"])
-            ret.append(_m)
-
-        return ret
 
     @ignore_error(([], {}))
     def _fetch_jobs(

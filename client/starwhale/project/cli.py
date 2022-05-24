@@ -24,15 +24,8 @@ def project_cmd() -> None:
     default=DEFAULT_PAGE_SIZE,
     help="page size for projects list",
 )
-@click.option("--fullname", is_flag=True, help="show version fullname")
-@click.option(
-    "-a",
-    "--all",
-    is_flag=True,
-    help="show all project, include garbage collected projects",
-)
-def _list(instance: str, page: int, size: int, fullname: bool) -> None:
-    ProjectTermView.list(instance, page, size, fullname)
+def _list(instance: str, page: int, size: int) -> None:
+    ProjectTermView.list(instance, page, size)
 
 
 @project_cmd.command(

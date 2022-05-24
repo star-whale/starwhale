@@ -22,21 +22,20 @@ from starwhale.cluster.model import ClusterModel
 DEFAULT_HTTP_TIMEOUT = 90
 
 
-class InstanceTermView(SWCliConfigMixed, BaseView):
+class InstanceTermView(BaseView):
     def __init__(self) -> None:
         super().__init__()
-        self._console = console
 
     def select(self, instance: str) -> None:
-        # TODO: add login check for current instance
-        if instance not in self._config["instances"]:
+        try:
+            self.select_current_default(instance=instance)
+        except Exception as e:
             self._console.print(
-                f":person_shrugging: not found {instance} to select, please login first"
+                f":person_shrugging: failed to select {instance}, reason: {e}"
             )
             sys.exit(1)
-
-        update_swcli_config(current_instance=instance)
-        self._console.print(f":clap: select {self.current_instance} instance")
+        else:
+            self._console.print(f":clap: select {self.current_instance} instance")
 
     def login(self, instance: str, username: str, password: str, alias: str) -> None:
         if instance == STANDALONE_INSTANCE:
@@ -62,7 +61,6 @@ class InstanceTermView(SWCliConfigMixed, BaseView):
 
             _d = r.json()["data"]
             _role = _d.get("role", {}).get("roleName") if isinstance(_d, dict) else None
-            _project = _d.get("current_project", DEFAULT_PROJECT)
 
             self.update_instance(
                 uri=server,
@@ -70,7 +68,6 @@ class InstanceTermView(SWCliConfigMixed, BaseView):
                 user_role=_role or UserRoleType.NORMAL,
                 sw_token=token,
                 alias=alias,
-                current_project=_project,
             )
         else:
             wrap_sw_error_resp(r, "login failed!", exit=True)

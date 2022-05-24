@@ -4,14 +4,21 @@ from functools import wraps
 from rich import print as rprint
 from rich.panel import Panel
 from rich.table import Table
-
 from rich.console import RenderableType
+
 from starwhale.consts import UserRoleType
+from starwhale.utils.config import SWCliConfigMixed
+from starwhale.utils import console
 
 
-class BaseView(object):
-    def _pager(func):  # type: ignore
-        @wraps(func)  # type: ignore
+class BaseView(SWCliConfigMixed):
+    def __init__(self, swcli_config: t.Union[t.Dict[str, t.Any], None] = None) -> None:
+        super().__init__(swcli_config)
+        self._console = console
+
+    @staticmethod
+    def _pager(func):
+        @wraps(func)
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
             def _print(_r: t.Dict[str, t.Any]) -> None:
                 p = Panel(
@@ -22,7 +29,7 @@ class BaseView(object):
                     title="Count Details",
                     title_align="left",
                 )
-                rprint("\n", p)
+                rprint(p)
 
             rt = func(*args, **kwargs)  # type: ignore
             if isinstance(rt, tuple) and len(rt) == 2 and "total" in rt[1]:
@@ -30,19 +37,19 @@ class BaseView(object):
 
         return _wrapper
 
-    def _header(func):  # type: ignore
-        @wraps(func)  # type: ignore
+    @staticmethod
+    def _header(func):
+        @wraps(func)
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
-            self: BaseView = args[0]
+            sw = SWCliConfigMixed()
 
             def _print() -> None:
                 grid = Table.grid(expand=True)
                 grid.add_column(justify="center", ratio=1)
                 grid.add_column(justify="right")
-                # TODO: tune self for current_instance
                 grid.add_row(
-                    f":star: {self.current_instance } ({self._current_instance_obj['uri']}) :whale:",  # type: ignore
-                    f":clown_face:{self._current_instance_obj['user_name']}@{self._current_instance_obj.get('user_role', UserRoleType.NORMAL)}",  # type: ignore
+                    f":star: {sw.current_instance} ({sw._current_instance_obj['uri']}) :whale:",  # type: ignore
+                    f":clown_face:{sw._current_instance_obj['user_name']}@{sw._current_instance_obj.get('user_role', UserRoleType.NORMAL)}",  # type: ignore
                 )
                 p = Panel(grid, title="Starwhale Instance", title_align="left")
                 rprint(p)
@@ -52,7 +59,8 @@ class BaseView(object):
 
         return _wrapper
 
-    def comparsion(self, r1: RenderableType, r2: RenderableType) -> Table:
+    @staticmethod
+    def comparsion(r1: RenderableType, r2: RenderableType) -> Table:
         table = Table(show_header=False, pad_edge=False, box=None, expand=True)
         table.add_column("1", ratio=1)
         table.add_column("2", ratio=1)

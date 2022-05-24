@@ -10,6 +10,7 @@ import subprocess
 import typing as t
 from datetime import datetime
 import re
+import time
 
 from rich.console import Console
 
@@ -17,6 +18,11 @@ from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX, PythonRunEnv, FMT_DATE
 
 console = Console(soft_wrap=True)
 now_str = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
+
+
+def timestamp_to_datatimestr(timestamp: float) -> str:
+    ts = time.localtime(timestamp)
+    return time.strftime(FMT_DATETIME, ts)
 
 
 def gen_uniq_version(feature: str = "") -> str:
@@ -161,13 +167,16 @@ def validate_obj_name(name: str) -> t.Tuple[bool, str]:
             f"length should be between 1 and 80, but {name} has {len(name)} characters",
         )
 
-    if not (name[0] == "_" or name[0].isalpha()):
-        return False, "A name should always start with a letter or the _ character"
+    if not (name[0] == "_" or name[0].isalnum()):
+        return (
+            False,
+            f"A name should always start with a letter or the _ character, current name:{name}",
+        )
 
     if not _valid_name_re.match(name):
         return (
             False,
-            "A name MUST only consist of letters A-Z a-z, digits 0-9, the hyphen character -, and the underscore character _",
+            f"A name MUST only consist of letters A-Z a-z, digits 0-9, the hyphen character -, and the underscore character _, current name:{name}",
         )
 
     return True, ""

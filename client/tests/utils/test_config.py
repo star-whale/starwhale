@@ -12,6 +12,7 @@ from .. import get_predefined_config_yaml
 
 _existed_config_contents = get_predefined_config_yaml()
 
+
 class SWCliConfigTestCase(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
@@ -70,7 +71,6 @@ class SWCliConfigTestCase(TestCase):
         sw.update_instance(
             uri="console.pre.intra.starwhale.ai",
             user_name="test",
-            current_project="test",
             alias="pre-k8s",
         )
 
@@ -82,3 +82,14 @@ class SWCliConfigTestCase(TestCase):
             == _config["instances"]["pre-k8s"]["uri"]
         )
         assert "test" == _config["instances"]["pre-k8s"]["user_name"]
+
+    def test_select(self):
+        path = get_swcli_config_path()
+        self.fs.create_file(path, contents=_existed_config_contents)
+
+        sw = SWCliConfigMixed()
+        assert sw.current_instance == "pre-bare"
+        assert sw.current_project == "self"
+        sw.select_current_default(instance="pre-bare", project="first")
+        assert sw.current_project == "first"
+        sw.select_current_default(instance="local", project="self")

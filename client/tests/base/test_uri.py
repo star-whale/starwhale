@@ -1,6 +1,8 @@
-from starwhale.base.uri import URI
+from starwhale.base.type import InstanceType
+from starwhale.base.uri import URI, URIType
 
 from pyfakefs.fake_filesystem_unittest import TestCase
+from starwhale.consts import STANDALONE_INSTANCE
 from starwhale.utils import config as sw_config
 from starwhale.utils.config import get_swcli_config_path
 
@@ -19,6 +21,16 @@ class URITestCase(TestCase):
 
     def test_uri(self):
         ts = {
+            "": {
+                "instance": "http://1.1.1.1:8182",
+                "instance_type": "cloud",
+                "project": "self",
+                "obj_typ": "",
+                "obj_name": "",
+                "obj_version": "",
+                "full_uri": "http://1.1.1.1:8182/project/self",
+                "real_request_uri": "http://1.1.1.1:8182/api/v1/project/self",
+            },
             "/model/mm/version/meydczbrmi2ggnrtmftdgyjzpfuto6q": {
                 "instance": "http://1.1.1.1:8182",
                 "instance_type": "cloud",
@@ -101,3 +113,22 @@ class URITestCase(TestCase):
             assert str(uri.real_request_uri) == v["real_request_uri"] or str(
                 uri.real_request_uri
             ).endswith(v["real_request_uri"])
+
+    def test_expected_uri(self):
+        uri = URI("test", expected_type=URIType.PROJECT)
+        assert uri.instance == "http://1.1.1.1:8182"
+        assert uri.instance_type == InstanceType.CLOUD
+        assert uri.project == "test"
+
+        uri = URI("project_for_test1", expected_type=URIType.PROJECT)
+        assert uri.instance == "http://1.1.1.1:8182"
+        assert uri.instance_type == InstanceType.CLOUD
+        assert uri.project == "project_for_test1"
+
+        uri = URI("test", expected_type=URIType.MODEL)
+        assert uri.instance == "http://1.1.1.1:8182"
+        assert uri.instance_type == InstanceType.CLOUD
+        assert uri.project == "self"
+        assert uri.object.name == "test"
+        assert uri.object.typ == URIType.MODEL
+        assert uri.object.version == ""

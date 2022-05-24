@@ -3,7 +3,7 @@ import pathlib
 
 # TODO: use str path, not Path Class
 HOMEDIR = pathlib.Path.home()
-CONFIG_DIR = HOMEDIR / ".config/starwhale"
+CONFIG_DIR = HOMEDIR / ".config" / "starwhale"
 SW_CLI_CONFIG = CONFIG_DIR / "config.yaml"
 
 ENV_SW_CLI_CONFIG = "SW_CLI_CONFIG"
@@ -88,5 +88,7 @@ STANDALONE_INSTANCE = "local"
 DEFAULT_INSTANCE = STANDALONE_INSTANCE
 DEFAULT_PROJECT = "self"
 
-DEFAULT_PAGE_IDX = 0
+DEFAULT_PAGE_IDX = 1
 DEFAULT_PAGE_SIZE = 20
+
+RECOVER_DIRNAME = ".recover"
