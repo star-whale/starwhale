@@ -1,3 +1,4 @@
+import { useStyletron } from 'baseui'
 import { Select, SelectProps } from 'baseui/select'
 import React from 'react'
 
@@ -9,6 +10,8 @@ export interface IMultiTagsProps {
 }
 
 export default function MultiTags({ value, placeholder, onChange, getValueLabel }: IMultiTagsProps) {
+    const [, theme] = useStyletron()
+
     return (
         <Select
             clearable={false}
@@ -39,9 +42,17 @@ export default function MultiTags({ value, placeholder, onChange, getValueLabel 
                                 style: {
                                     'cursor': 'pointer',
                                     'backgroundColor': 'var(--color-brandPrimary)',
+                                    'margin': '2px',
+
                                     ':hover': {
                                         backgroundColor: 'var(--color-brandPrimaryHover)',
                                     },
+                                },
+                            },
+                            Text: {
+                                style: {
+                                    font: theme.typography.LabelXSmall,
+                                    lineHeight: '20px',
                                 },
                             },
                         },

@@ -71,6 +71,8 @@ const overrides = {
             borderSelected: customPrimiaryColors.primary,
             tickFillSelected: customPrimiaryColors.primary,
             tickFillSelectedHover: customPrimiaryColors.primary,
+            inputBorder: customPrimiaryColors.dividerSecondary,
+            borderFocus: customPrimiaryColors.primary,
             // ----------- custom -----------
             brandPrimary: customPrimiaryColors.primary,
             brandPrimaryHover: customPrimiaryColors.primaryHover,

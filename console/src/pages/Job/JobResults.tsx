@@ -6,11 +6,11 @@ import { fetchJobResult } from '@/domain/job/services/job'
 import { ILabels, INDICATORTYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
 import { getHeatmapConfig, getRocAucConfig } from '@/components/Indicator/utils'
-import { LabelMedium, LabelSmall } from 'baseui/typography'
-import { flattenObject } from '@/utils'
+import { LabelSmall } from 'baseui/typography'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
-import BusyPlaceholder from '../../components/BusyLoaderWrapper/BusyPlaceholder'
+import SummaryIndicator from '@/components/Indicator/SummaryIndicator'
+import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -36,48 +36,9 @@ function JobResults() {
                 case INDICATORTYPE.KIND:
                     break
                 case INDICATORTYPE.SUMMARY: {
-                    const data = _.isObject(v) ? flattenObject(v) : {}
+                    const data = v
                     outTitle = t('Summary')
-                    children = _.isObject(v) ? (
-                        <div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6 }}>
-                                {_(data)
-                                    .map((subV, subK) => (
-                                        <div
-                                            key={subK}
-                                            style={{
-                                                backgroundColor: '#F0F4FF',
-                                                borderRadius: '4px',
-                                                padding: '0 24px',
-                                                gap: 12,
-                                                display: 'flex',
-                                                lineHeight: '24px',
-                                            }}
-                                        >
-                                            <p
-                                                style={{
-                                                    color: 'rgba(2,16,43,0.60)',
-                                                }}
-                                            >
-                                                {subK}
-                                            </p>
-                                            <p>{subV}</p>
-                                        </div>
-                                    ))
-                                    .value()}
-                            </div>
-                        </div>
-                    ) : (
-                        <LabelMedium
-                            $style={{
-                                textOverflow: 'ellipsis',
-                                overflow: 'hidden',
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
-                            Sumary: {v}
-                        </LabelMedium>
-                    )
+                    children = <SummaryIndicator data={data} />
                     break
                 }
                 case INDICATORTYPE.CONFUSION_MATRIX: {
