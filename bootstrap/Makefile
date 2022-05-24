@@ -17,7 +17,7 @@ install-dev:
 	python3 -m pip install -r requirements.txt
 
 ansible-lint:
-	python3 -m ansible-lint
+	ansible-lint
 
 # make check {your admin name}
 ansible-check:
