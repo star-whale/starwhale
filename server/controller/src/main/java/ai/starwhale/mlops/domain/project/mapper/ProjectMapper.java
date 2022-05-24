@@ -26,6 +26,10 @@ public interface ProjectMapper {
 
     int deleteProject(@Param("id") Long id);
 
+    int recoverProject(@Param("id") Long id);
+
+    int recoverProjectByName(@Param("projectName") String projectName);
+
     List<ProjectEntity> listProjects(@Param("projectName") String projectName, @Param("order") String order);
 
     List<ProjectEntity> listProjectsByOwner(@Param("userId") Long userId, @Param("order") String order);

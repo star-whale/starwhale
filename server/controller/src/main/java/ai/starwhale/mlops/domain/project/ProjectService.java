@@ -24,6 +24,7 @@ import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
@@ -109,6 +110,28 @@ public class ProjectService {
         }
         int res = projectMapper.deleteProject(id);
         log.info("Project has been deleted. ID={}", entity.getId());
+        return res > 0;
+    }
+
+    public Boolean recoverProject(Project project) {
+        String projectName = project.getName();
+        if(project.getId() != null) {
+            ProjectEntity entity = projectMapper.findProject(project.getId());
+            projectName = entity.getProjectName();
+        }
+
+        if(StrUtil.isEmpty(projectName)) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                .tip("Recover project error. Project can not be found"), HttpStatus.BAD_REQUEST);
+        }
+
+        if(projectManager.existProject(projectName, false)) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                .tip(String.format("Recover project error. Project %s already exists", projectName)), HttpStatus.BAD_REQUEST);
+        }
+
+        int res = projectMapper.recoverProjectByName(projectName);
+        log.info("Project has been recovered. Name={}", projectName);
         return res > 0;
     }
 

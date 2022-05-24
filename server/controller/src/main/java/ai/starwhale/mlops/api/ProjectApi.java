@@ -76,6 +76,13 @@ public interface ProjectApi {
     ResponseEntity<ResponseMessage<String>> deleteProjectById(
         @Valid @PathVariable("projectId") String projectId);
 
+    @Operation(summary = "Recover a project")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/project/{projectUrl}/recover")
+    ResponseEntity<ResponseMessage<String>> recoverProject(
+        @Valid @PathVariable("projectUrl") String projectUrl);
+
 
     @Operation(summary = "Get a project by ID", description = "Returns a single project object.")
     @ApiResponses(value = {

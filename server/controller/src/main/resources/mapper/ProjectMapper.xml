@@ -13,11 +13,23 @@
         values (#{project.projectName}, #{project.ownerId})
     </insert>
 
-    <delete id="deleteProject" parameterType="java.lang.Long">
+    <update id="deleteProject" parameterType="java.lang.Long">
         update project_info
         set is_deleted = 1
         where id = #{id}
-    </delete>
+    </update>
+
+    <update id="recoverProject" parameterType="java.lang.Long">
+        update project_info
+        set is_deleted = 0
+        where id = #{id}
+    </update>
+
+    <update id="recoverProjectByName" parameterType="java.lang.String">
+        update project_info
+        set is_deleted = 0
+        where project_name = #{projectName}
+    </update>
 
     <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity">
         update project_info
@@ -79,7 +91,7 @@
         and p.id = #{id}
     </select>
 
-    <select id="findProjectByName" parameterType="java.lang.Long" resultMap="projectResultMap">
+    <select id="findProjectByName" parameterType="java.lang.String" resultMap="projectResultMap">
         <include refid="select_project"/>
         and p.project_name = #{projectName}
     </select>
