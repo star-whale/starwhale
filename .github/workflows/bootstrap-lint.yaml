@@ -51,3 +51,7 @@ jobs:
       - name: Lint Ansible Playbook
         working-directory: ./bootstrap
         run: make ansible-lint
+
+      - name: Lint Python
+        working-directory: ./bootstrap
+        run: make all-check
