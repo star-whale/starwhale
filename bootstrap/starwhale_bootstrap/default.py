@@ -12,6 +12,8 @@ SW_REPOSITORY = "starwhaleai"  # or else ghcr.io/star-whale
 MYSQL_IMAGE = "mysql:8.0-debian"
 MYSQL_PORT = "3406"
 MYSQL_ROOT_PWD = "starwhale"
+MYSQL_USER = "starwhale"
+MYSQL_PWD = "starwhale"
 MYSQL_DATA_DIR = "local-storage-mysql"
 
 # minio

@@ -43,6 +43,16 @@ def bootstrap_cmd() -> None:
     help="",
 )
 @click.option(
+    "--mysql-user",
+    default=default.MYSQL_USER,
+    help="",
+)
+@click.option(
+    "--mysql-password",
+    default=default.MYSQL_PWD,
+    help="",
+)
+@click.option(
     "--mysql-data-dir",
     default=default.MYSQL_DATA_DIR,
     help="A path relative to root-path "
@@ -178,6 +188,8 @@ def _deploy(
     mysql_image: str,
     mysql_port: str,
     mysql_root_password: str,
+    mysql_user: str,
+    mysql_password: str,
     mysql_data_dir: str,
     use_default_oss: bool,
     oss_image: str,
@@ -224,6 +236,8 @@ def _deploy(
             "mysql_image": mysql_image,
             "mysql_port": mysql_port,
             "mysql_root_pwd": mysql_root_password,
+            "mysql_user": mysql_user,
+            "mysql_pwd": mysql_password,
             "mysql_data_dir": "{{ base_root_path }}/" + mysql_data_dir,
             # minio
             "minio_image": oss_image,
