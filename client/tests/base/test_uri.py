@@ -2,7 +2,6 @@ from starwhale.base.type import InstanceType, URIType
 from starwhale.base.uri import URI
 
 from pyfakefs.fake_filesystem_unittest import TestCase
-from starwhale.consts import STANDALONE_INSTANCE
 from starwhale.utils import config as sw_config
 from starwhale.utils.config import get_swcli_config_path
 

@@ -17,8 +17,8 @@ from starwhale.consts import (
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
-from starwhale.dataset.dataset import DataSet
-from starwhale.model.store import ModelPackageLocalStore
+from starwhale.core.dataset.dataset import DataSet
+from starwhale.core.model.store import ModelPackageLocalStore
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
@@ -30,7 +30,7 @@ _CNTR_WORKDIR = "/opt/starwhale"
 _STATUS = PipelineHandler.STATUS
 
 
-#TODO: add DAG
+# TODO: add DAG
 class EvalExecutor(object):
     def __init__(
         self,

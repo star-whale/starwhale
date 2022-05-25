@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 import yaml
 
-from abc import ABCMeta, abstractmethod, abstractclassmethod
+from abc import ABCMeta, abstractmethod
 
 from starwhale.base.uri import URI
 from starwhale.base.type import InstanceType
@@ -59,7 +59,7 @@ class Project(object):
     def recover(self) -> t.Tuple[bool, str]:
         raise NotImplementedError
 
-    @abstractclassmethod
+    @classmethod
     def list(
         cls,
         instance_uri: str = "",
@@ -130,7 +130,12 @@ class StandaloneProject(Project):
         return move_dir(self.recover_dir / self.name, self.loc)
 
     @classmethod
-    def list(cls) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+    def list(
+        cls,
+        instance_uri: str = "",
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         sw = SWCliConfigMixed()
 
         if not sw.rootdir.exists():

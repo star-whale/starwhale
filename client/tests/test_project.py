@@ -3,13 +3,12 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.project.model import StandaloneProject, Project, CloudProject
-from starwhale.project.view import ProjectTermView
+from starwhale.core.project.model import StandaloneProject
+from starwhale.core.project.view import ProjectTermView
 from starwhale.base.uri import URI
 from starwhale.utils import config as sw_config
 from starwhale.utils.config import load_swcli_config
 from starwhale.consts import DEFAULT_PROJECT
-from . import get_predefined_config_yaml
 
 
 class ProjectTestCase(TestCase):

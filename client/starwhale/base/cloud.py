@@ -15,7 +15,7 @@ class CloudRequestMixed(object):
         return datetime.fromtimestamp(float(ts) / 1000.0).strftime(FMT_DATETIME)
 
     def fmt_duration(self, ts: t.Union[float, str]) -> str:
-        return str(timedelta(milliseconds=float(x)))
+        return str(timedelta(milliseconds=float(ts)))
 
     def do_http_request_simple_ret(
         self,

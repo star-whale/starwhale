@@ -6,7 +6,7 @@ import json
 
 import jsonlines
 
-from abc import ABCMeta, abstractclassmethod, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.base.type import InstanceType, EvalTaskType, JobOperationType
@@ -39,6 +39,8 @@ class Job(object):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
+        name: str = "",
+        desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         raise NotImplementedError
@@ -69,20 +71,19 @@ class Job(object):
     def pause(self, force: bool = False) -> t.Tuple[bool, str]:
         raise NotImplementedError
 
-    @abstractclassmethod
+    @classmethod
     def list(
         cls,
-        project_uri: str = "",
+        project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        _uri = URI(project_uri)
-        if _uri.instance_type == InstanceType.STANDALONE:
-            return StandaloneJob.list(_uri)
-        elif _uri.instance_type == InstanceType.CLOUD:
-            return CloudJob.list(_uri, page, size)
+        if project_uri.instance_type == InstanceType.STANDALONE:
+            return StandaloneJob.list(project_uri)
+        elif project_uri.instance_type == InstanceType.CLOUD:
+            return CloudJob.list(project_uri, page, size)
         else:
-            raise NoSupportError(f"{_uri}")
+            raise NoSupportError(f"{project_uri}")
 
     @classmethod
     def get_job(cls, job_uri: URI) -> Job:
@@ -103,26 +104,23 @@ class StandaloneJob(Job):
     def create(
         self,
         model_uri: str,
-        datasets_uri: t.List[str],
+        dataset_uris: t.List[str],
         runtime_uri: str,
         name: str = "",
         desc: str = "",
-        gencmd: bool = False,
-        docker_verbose: bool = False,
-        phase: str = EvalTaskType.ALL,
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         # TODO: support another job type
         EvalExecutor(
             model_uri,
-            datasets_uri,
+            dataset_uris,
             self.store,
             runtime_uri,
             name=name,
             desc=desc,
-            gencmd=gencmd,
-            docker_verbose=docker_verbose,
-        ).run(phase)
+            gencmd=kw.get("gen_cmd", False),
+            docker_verbose=kw.get("docker_verbose", False),
+        ).run(kw.get("phase", EvalTaskType.ALL))
         return True, "run standalone eval job successfully"
 
     def info(
@@ -188,6 +186,8 @@ class StandaloneJob(Job):
     def list(
         cls,
         project_uri: URI,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _rt = []
         for _mf in JobStorage.iter_all_jobs(project_uri):
@@ -209,10 +209,11 @@ class CloudJob(Job, CloudRequestMixed):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
-        device: str,
+        name: str = "",
+        desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
-        _did, _dcnt = self._parse_device(device)
+        _did, _dcnt = self._parse_device(kw["device"])
 
         # TODO: use argument for uri
         return self.do_http_request_simple_ret(
@@ -319,7 +320,7 @@ class CloudJob(Job, CloudRequestMixed):
 
         tasks = []
         for _t in r["data"]["list"]:
-            _t["created_at"] = _fmt_timestamp(_t["createdTime"])  # type: ignore
+            _t["created_at"] = self.fmt_timestamp(_t["createdTime"])  # type: ignore
             tasks.append(_t)
 
         return tasks, self.parse_pager(r)

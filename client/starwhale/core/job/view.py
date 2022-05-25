@@ -65,7 +65,7 @@ class JobTermView(BaseView):
     def info(self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE) -> None:
         _rt = self.job.info(page, size)
         if not _rt:
-            self._console.print(f":tea: not found info")
+            self._console.print(":tea: not found info")
             return
 
         if _rt.get("manifest"):
@@ -228,7 +228,7 @@ class JobTermView(BaseView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        _jobs, _pager = Job.list(project_uri, page, size)
+        _jobs, _pager = Job.list(URI(project_uri), page, size)
 
         title = "Job List"
 

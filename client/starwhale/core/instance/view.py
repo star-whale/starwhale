@@ -6,13 +6,11 @@ from rich.table import Table
 from rich import box
 from rich.panel import Panel
 
-from starwhale.utils.config import SWCliConfigMixed, update_swcli_config
-from starwhale.utils import console, fmt_http_server
+from starwhale.utils import fmt_http_server
 from starwhale.consts import (
     SW_API_VERSION,
     STANDALONE_INSTANCE,
     UserRoleType,
-    DEFAULT_PROJECT,
 )
 from starwhale.utils.http import wrap_sw_error_resp
 from starwhale.base.view import BaseView
