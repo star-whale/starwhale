@@ -152,6 +152,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
+            - name: SW_AGENT_PORT
+              value: "{{ .Values.agent.containerPort }}"
             - name: SW_CONTROLLER_URL
               value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}/"
             - name: SW_BASE_PATH
@@ -190,6 +192,24 @@ spec:
             - name: agent-storage
               mountPath: "/var/lib/docker"
               subPath: dind
+          ports:
+            - name: liveness-port
+              containerPort: {{ .Values.agent.containerPort }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: liveness-port
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 90
+            successThreshold: 1
+            failureThreshold: 5
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: liveness-port
+            failureThreshold: 30
+            periodSeconds: 1
         - name: taskset
           image: "{{ .Values.image.registry}}/{{ .Values.image.org }}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag }}"
           env:

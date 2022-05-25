@@ -15,7 +15,8 @@
       #
       SW_METADATA_STORAGE_IP: "{{ hostvars['storage.starwhale.com']['ansible_eth0']['ipv4']['address'] }}"
       SW_METADATA_STORAGE_PORT: "{{ mysql_port }}"
-      SW_METADATA_STORAGE_PASSWORD: "{{ mysql_root_pwd }}"
+      SW_METADATA_STORAGE_USER: "{{ mysql_user }}"
+      SW_METADATA_STORAGE_PASSWORD: "{{ mysql_pwd }}"
       SW_STORAGE_BUCKET: "{{ minio_default_bucket }}"
       SW_STORAGE_ACCESSKEY: "{{ minio_access_key }}"
       SW_STORAGE_SECRETKEY: "{{ minio_secret_key }}"

@@ -32,11 +32,3 @@ all-check: ci-format-checker ci-lint
 
 ansible-lint:
 	ansible-lint
-
-# make check {your admin name}
-ansible-check:
-	ansible-playbook starwhale/playbook/bootstrap.yaml -i hosts --user $(user) --check
-
-# make play {your admin name}
-ansible-play:
-	ansible-playbook starwhale/playbook/bootstrap.yaml -i hosts --user $(user)

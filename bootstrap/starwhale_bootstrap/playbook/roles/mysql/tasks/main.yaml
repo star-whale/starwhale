@@ -12,5 +12,7 @@
       - "{{ mysql_port }}:3306"
     env:
       MYSQL_ROOT_PASSWORD: "{{ mysql_root_pwd }}"
+      MYSQL_USER: "{{ mysql_user }}"
+      MYSQL_PASSWORD: "{{ mysql_pwd }}"
     volumes:
       - "{{ mysql_data_dir }}:/var/lib/mysql"
