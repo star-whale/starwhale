@@ -1,0 +1,63 @@
+@function toRem($value) {
+  $remValue: ($value / 14) + rem;
+  @return $remValue;
+}
+
+// feature: tabs
+.swMain {
+  background-image: linear-gradient(to bottom, #003499 50%, white 50%);
+  background-size: 100% 360px;
+  background-repeat: no-repeat;
+}
+.swTabs {
+  min-height: toRem(500);
+  box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+
+  //   --ifm-hover-overlay: #2b65d9;
+  --ifm-tabs-color-active-border: #2b65d9;
+  --ifm-tabs-color-active: #2b65d9;
+
+  .tabs {
+    &__body {
+      padding: 58px 80px 80px 80px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    &__code {
+      background: rgba(0, 0, 0, 0.78);
+      border-radius: 12px;
+      width: toRem(534);
+      min-height: toRem(300);
+      font-size: 14px;
+      color: #ffffff;
+      letter-spacing: 0;
+      line-height: 22px;
+      padding: 29px 35px;
+    }
+
+    &__desc {
+      display: flex;
+      flex-direction: column;
+      margin-left: toRem(100);
+      width: toRem(386);
+
+      .button {
+        align-self: flex-end;
+        margin-top: 40px;
+        background-color: #2b65d9;
+        border-color: transparent;
+      }
+    }
+  }
+
+  @media screen and (max-width: 768px) {
+    .tabs {
+      &__body {
+        padding: 58px 80px 80px;
+        flex-direction: column;
+      }
+    }
+  }
+}

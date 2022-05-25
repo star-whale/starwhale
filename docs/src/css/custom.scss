@@ -19,6 +19,26 @@ html {
   scroll-behavior: smooth;
 }
 
+/* @import '../static/fonts/iconfont.css'; */
+
+@font-face {
+  font-family: "Cousine";
+  font-style: normal;
+  font-weight: 400;
+  src: url("/static/fonts/cousine-v25-latin-regular.eot"); /* IE9 Compat Modes */
+  src: local(""),
+    url("/static/fonts/cousine-v25-latin-regular.eot?#iefix")
+      format("embedded-opentype"),
+    /* IE6-IE8 */ url("/static/fonts/cousine-v25-latin-regular.woff2")
+      format("woff2"),
+    /* Super Modern Browsers */
+      url("/static/fonts/cousine-v25-latin-regular.woff") format("woff"),
+    /* Modern Browsers */ url("/static/fonts/cousine-v25-latin-regular.ttf")
+      format("truetype"),
+    /* Safari, Android, iOS */
+      url("/static/fonts/cousine-v25-latin-regular.svg#Cousine") format("svg"); /* Legacy iOS */
+}
+
 :root {
   --ifm-color-primary: #14aa8c;
 
@@ -36,11 +56,15 @@ html {
 
   --ifm-navbar-item-padding-horizontal: 1rem;
   --ifm-hr-margin-vertical: 4rem;
-  --max-page-width: 1600px;
   --docusaurus-announcement-bar-height: 40px !important;
-}
 
-html[data-theme="dark"] {
+  --ifm-font-family-monospace: Cousine;
+  --ifm-font-family-base: Cousine;
+  --ifm-font-size-base: 14px;
+
+  --max-page-width: 1200px;
+}
+· html[data-theme="dark"] {
   --ifm-background-color: #1a1e2c;
   --ifm-footer-background-color: #1a1e2c;
   --ifm-footer-link-color: #a4a5aa;
@@ -124,8 +148,21 @@ html[data-theme="dark"] div[role="banner"] {
 }
 
 /* ===NAVBAR=== */
+.navbar {
+  padding: 11px;
+  height: 60px;
+  --ifm-navbar-shadow: none;
+
+  &__logo {
+    margin-right: 0;
+  }
+
+  &__brand {
+    margin-right: 87px;
+  }
+}
 .navbar--dark {
-  background-color: #0b2471;
+  background-color: #003499;
 }
 
 html[data-theme="dark"] .navbar--dark {
@@ -141,16 +178,12 @@ html[data-theme="dark"] .navbar--dark {
 
 /* header content */
 .hero--primary {
-  background: linear-gradient(
-    180deg,
-    rgba(11, 36, 113, 1) 0%,
-    rgba(21, 170, 140, 1) 100%
-  );
+  background: #003499;
 }
 
 @media only screen and (min-width: 767px) {
   .hero--primary h1 {
-    text-align: left;
+    text-align: center;
   }
 }
 
@@ -173,13 +206,20 @@ img[class^="heroLogo"] {
 }
 
 .hero .button.button--primary {
-  background-color: #afe61e;
-  border-color: #afe61e;
+  background-color: #2b65d9;
+  border-color: transparent;
+  box-shadow: none !important;
+}
+
+.hero .button.button--primary {
+  background-color: #2b65d9;
+  border-color: transparent;
+  box-shadow: none !important;
 }
 
 .hero .button.button--primary:hover {
-  background-color: #c0f830;
-  border-color: #c0f830;
+  /* background-color: #c0f830;
+  border-color: #c0f830; */
   box-shadow: none !important;
 }
 
@@ -188,7 +228,7 @@ img[class^="heroLogo"] {
 }
 
 html[data-theme="light"] .hero .button.button--primary {
-  color: var(--ifm-color-primary-darkest);
+  color: #fff;
 }
 
 .col--feature {
@@ -282,7 +322,7 @@ html[data-theme="light"] .hero .button.button--primary {
 }
 
 html[data-theme="light"] [class^="sidebarLogo"] {
-  background: url("/img/logo_36x36px.png") 1rem center no-repeat;
+  background: url("/img/starwhale-white.png") 1rem center no-repeat;
   background-size: 6rem;
 }
 
@@ -782,4 +822,9 @@ html[data-theme="dark"] .alert--info {
 
 .markdown .img-swt {
   margin-bottom: 2.4rem;
+}
+
+main > section {
+  margin: 0 auto;
+  max-width: var(--max-page-width);
 }
