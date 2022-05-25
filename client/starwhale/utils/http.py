@@ -31,18 +31,17 @@ def wrap_sw_error_resp(
         _rprint(f":clap: {header} success")  # type: ignore
         return
 
-    _rprint(f":fearful: {header} failed")  # type: ignore
-    msg = f"http status code: {r.status_code} \n"
+    msg = f":disappointed_face: url:{r.url}\n:dog: http status code: {r.status_code} \n"
 
     try:
         _resp = r.json()
     except Exception:
-        msg += f"error message: {r.text} \n"
+        msg += f":dragon:error message: {r.text} \n"
     else:
-        msg += f"starwhale code: {_resp['code']} \n"
-        msg += f"error message: {_resp['message']}"
+        msg += f":falafel: starwhale code: {_resp['code']} \n"
+        msg += f":dragon: error message: {_resp['message']}"
     finally:
-        _rprint(Panel.fit(msg, title=":space_invader: error details"))  # type: ignore
+        rprint(Panel.fit(msg, title=":space_invader: error details"))  # type: ignore
         if exit:
             sys.exit(1)
 

@@ -131,3 +131,18 @@ class URITestCase(TestCase):
         assert uri.object.name == "test"
         assert uri.object.typ == URIType.MODEL
         assert uri.object.version == ""
+
+        uri = URI("", expected_type=URIType.INSTANCE)
+        assert uri.instance == "http://1.1.1.1:8182"
+        assert uri.project == "self"
+        assert uri.object.name == ""
+
+        uri = URI("", expected_type=URIType.PROJECT)
+        assert uri.instance == "http://1.1.1.1:8182"
+        assert uri.project == "self"
+        assert uri.object.name == ""
+
+        uri = URI("http://12.2.2.2:8080/project/test2", expected_type=URIType.PROJECT)
+        assert uri.instance == "http://12.2.2.2:8080"
+        assert uri.project == "test2"
+        assert uri.object.name == ""

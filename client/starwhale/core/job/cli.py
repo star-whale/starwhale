@@ -11,7 +11,7 @@ def job_cmd() -> None:
 
 
 @job_cmd.command("list", help="List all jobs in current project")
-@click.option("-p", "--projecct", default="", help="Project URI")
+@click.option("-p", "--project", default="", help="Project URI")
 @click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
 @click.option(
     "--page", type=int, default=DEFAULT_PAGE_IDX, help="page number for projects list"
@@ -29,7 +29,7 @@ def _list(
 
 
 @job_cmd.command("create", help="Create job")
-@click.argument("job")
+@click.argument("project")
 @click.option("--model", required=True, help="model uri")
 @click.option(
     "--dataset",
@@ -57,7 +57,7 @@ def _list(
     help="[ONLY Standalone]evalution run phase",
 )
 def _create(
-    job: str,
+    project: str,
     model: str,
     dataset: t.List[str],
     runtime: str,
@@ -68,7 +68,8 @@ def _create(
     docker_verbose: bool,
     phase: str,
 ) -> None:
-    JobTermView(job).create(
+    JobTermView.create(
+        project_uri=project,
         model_uri=model,
         dataset_uris=dataset,
         runtime_uri=runtime,
@@ -85,6 +86,7 @@ def _create(
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="force to remove")
 def _remove(job: str, force: bool) -> None:
+    click.confirm("continue to remove?", abort=True)
     JobTermView(job).remove(force)
 
 
@@ -99,6 +101,7 @@ def _recover(job: str, force: bool) -> None:
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="force to pause")
 def _pause(job: str, force: bool) -> None:
+    click.confirm("continue to pause?", abort=True)
     JobTermView(job).pause(force)
 
 
@@ -113,6 +116,7 @@ def _resume(job: str, force: bool) -> None:
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="force to cancel")
 def _cancel(job: str, force: bool) -> None:
+    click.confirm("continue to cancel?", abort=True)
     JobTermView(job).cancel(force)
 
 

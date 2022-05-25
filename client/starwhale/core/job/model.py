@@ -1,4 +1,5 @@
 from __future__ import annotations
+from http import HTTPStatus
 
 import typing as t
 import yaml
@@ -33,9 +34,10 @@ class Job(object):
         self.project_name = uri.project
         self.sw_config = SWCliConfigMixed()
 
-    @abstractmethod
+    @classmethod
     def create(
-        self,
+        cls,
+        project_uri: URI,
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
@@ -43,7 +45,16 @@ class Job(object):
         desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
-        raise NotImplementedError
+        _cls = cls._get_job_cls(project_uri)
+        return _cls.create(
+            project_uri,
+            model_uri,
+            dataset_uris,
+            runtime_uri,
+            name,
+            desc,
+            **kw,
+        )
 
     @abstractmethod
     def info(
@@ -71,6 +82,15 @@ class Job(object):
     def pause(self, force: bool = False) -> t.Tuple[bool, str]:
         raise NotImplementedError
 
+    @staticmethod
+    def _get_job_cls(uri: URI) -> t.Union[t.Type[StandaloneJob], t.Type[CloudJob]]:
+        if uri.instance_type == InstanceType.STANDALONE:
+            return StandaloneJob
+        elif uri.instance_type == InstanceType.CLOUD:
+            return CloudJob
+        else:
+            raise NoSupportError(f"{uri}")
+
     @classmethod
     def list(
         cls,
@@ -78,21 +98,13 @@ class Job(object):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        if project_uri.instance_type == InstanceType.STANDALONE:
-            return StandaloneJob.list(project_uri)
-        elif project_uri.instance_type == InstanceType.CLOUD:
-            return CloudJob.list(project_uri, page, size)
-        else:
-            raise NoSupportError(f"{project_uri}")
+        _cls = cls._get_job_cls(project_uri)
+        return _cls.list(project_uri)
 
     @classmethod
     def get_job(cls, job_uri: URI) -> Job:
-        if job_uri.instance_type == InstanceType.STANDALONE:
-            return StandaloneJob(job_uri)
-        elif job_uri.instance_type == InstanceType.CLOUD:
-            return CloudJob(job_uri)
-        else:
-            raise NoSupportError(f"{job_uri}")
+        _cls = cls._get_job_cls(job_uri)
+        return _cls(job_uri)
 
 
 # TODO: Storage Class Mixed
@@ -101,8 +113,10 @@ class StandaloneJob(Job):
         super().__init__(uri)
         self.store = JobStorage(uri)
 
+    @classmethod
     def create(
-        self,
+        cls,
+        project_uri: URI,
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
@@ -114,7 +128,7 @@ class StandaloneJob(Job):
         EvalExecutor(
             model_uri,
             dataset_uris,
-            self.store,
+            project_uri.real_request_uri,  # type: ignore
             runtime_uri,
             name=name,
             desc=desc,
@@ -140,8 +154,8 @@ class StandaloneJob(Job):
             "manifest": self.store.mainfest,
             "report": report,
             "location": {
-                "ppl": self.store.ppl_dir,
-                "cmp": self.store.cmp_dir,
+                "ppl": str(self.store.ppl_dir.absolute()),
+                "cmp": str(self.store.cmp_dir.absolute()),
             },
         }
 
@@ -204,8 +218,10 @@ class CloudJob(Job, CloudRequestMixed):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
 
+    @classmethod
     def create(
-        self,
+        cls,
+        project_uri: URI,
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
@@ -213,12 +229,14 @@ class CloudJob(Job, CloudRequestMixed):
         desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
-        _did, _dcnt = self._parse_device(kw["device"])
+        _did, _dcnt = cls.parse_device(kw["resource"])
 
+        crm = CloudRequestMixed()
         # TODO: use argument for uri
-        return self.do_http_request_simple_ret(
-            f"/project/{self.project_name}/job",
+        r = crm.do_http_request(
+            f"/project/{project_uri.project}/job",
             method=HTTPMethod.POST,
+            instance_uri=project_uri,
             data=json.dumps(
                 {
                     "modelVersionId": model_uri,
@@ -229,6 +247,10 @@ class CloudJob(Job, CloudRequestMixed):
                 }
             ),
         )
+        if r.status_code == HTTPStatus.OK:
+            return True, r.json()["data"]
+        else:
+            return False, r.json()["message"]
 
     def info(
         self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
@@ -261,7 +283,7 @@ class CloudJob(Job, CloudRequestMixed):
     def _do_job_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: support force action
         return self.do_http_request_simple_ret(
-            f"/project/{self.uri.project}/job/{self.name}/action/{action}",
+            f"/project/{self.uri.project}/job/{self.name}/{action}",
             method=HTTPMethod.POST,
             instance_uri=self.uri,
         )
@@ -292,7 +314,8 @@ class CloudJob(Job, CloudRequestMixed):
 
         return jobs, crm.parse_pager(r)
 
-    def _parse_device(self, device: str) -> t.Tuple[int, int]:
+    @staticmethod
+    def parse_device(device: str) -> t.Tuple[int, int]:
         _t = device.split(":")
         _id = _device_id_map.get(_t[0].lower(), _device_id_map["cpu"])
         _cnt = int(_t[1]) if len(_t) == 2 else 1

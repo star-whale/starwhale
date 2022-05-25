@@ -49,6 +49,13 @@ class URI(object):
         _inst: str = ""
         _inst_type: str = ""
 
+        if not raw:
+            return (
+                self._sw_config._current_instance_obj["uri"],
+                self._sw_config._current_instance_obj["type"],
+                "",
+            )
+
         if self.expected_type == URIType.INSTANCE:
             ok, reason = validate_obj_name(raw)
             if not ok:
@@ -87,6 +94,10 @@ class URI(object):
         return _inst, _inst_type, _remain
 
     def _do_parse_project_uri(self, raw: str) -> t.Tuple[str, str]:
+        raw = raw.strip().strip("/")
+        if not raw:
+            return self._sw_config.current_project, ""
+
         if self.expected_type == URIType.PROJECT and not raw.startswith(
             URIType.PROJECT + "/"
         ):
@@ -95,7 +106,6 @@ class URI(object):
                 raise Exception(reason)
             return raw, ""
 
-        raw = raw.strip().strip("/")
         if not raw:
             _proj = self._sw_config.current_project
             _remain = ""
@@ -112,7 +122,6 @@ class URI(object):
 
     def _do_parse_obj_uri(self, raw: str) -> t.Tuple[ObjField, str]:
         raw = raw.strip().strip("/")
-
         if not raw:
             return ObjField(), raw
 

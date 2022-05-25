@@ -25,7 +25,14 @@ class CloudRequestMixed(object):
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         r = self.do_http_request(path, method, instance_uri, **kw)
-        return r.status_code == HTTPStatus.OK, r.json()["message"]
+        status = r.status_code == HTTPStatus.OK
+
+        try:
+            message = r.json()["message"]
+        except Exception as e:
+            message = r.text or str(e)
+
+        return status, message
 
     def do_http_request(
         self,

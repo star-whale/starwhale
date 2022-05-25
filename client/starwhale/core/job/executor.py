@@ -8,6 +8,7 @@ from loguru import logger
 
 from starwhale.utils import gen_uniq_version, console, now_str
 from starwhale.consts import (
+    VERSION_PREFIX_CNT,
     DataLoaderKind,
     DEFAULT_INPUT_JSON_FNAME,
     DEFAULT_MANIFEST_NAME,
@@ -23,7 +24,6 @@ from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
 from starwhale.base.type import EvalTaskType, RunSubDirType, URIType
-from .store import JobStorage
 
 DEFAULT_SW_TASK_RUN_IMAGE = "ghcr.io/star-whale/starwhale:latest"
 _CNTR_WORKDIR = "/opt/starwhale"
@@ -36,7 +36,7 @@ class EvalExecutor(object):
         self,
         model: str,
         datasets: t.List[str],
-        job_store: JobStorage,
+        project_dir: Path,
         baseimage: str = DEFAULT_SW_TASK_RUN_IMAGE,
         name: str = "",
         desc: str = "",
@@ -50,7 +50,7 @@ class EvalExecutor(object):
         self.baseimage = baseimage
         self.gencmd = gencmd
         self.docker_verbose = docker_verbose
-        self.job_store = job_store
+        self.project_dir = project_dir
 
         self._console = console
         self._version = ""
@@ -128,7 +128,12 @@ class EvalExecutor(object):
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
         # TODO: fix _workdir sequence-depent issue
-        self._workdir = self.job_store.loc
+        self._workdir = (
+            self.project_dir
+            / URIType.JOB
+            / self._version[:VERSION_PREFIX_CNT]
+            / self._version
+        )
 
         ensure_dir(self._workdir)
         for _w in (self._ppl_workdir, self._cmp_workdir):
@@ -238,7 +243,7 @@ class EvalExecutor(object):
         if typ == EvalTaskType.PPL:
             cmd += [
                 "-v",
-                f"{self.job_store.project_dir / URIType.DATASET }:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
+                f"{self.project_dir / URIType.DATASET }:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
             ]
         elif typ == EvalTaskType.CMP:
             cmd += [

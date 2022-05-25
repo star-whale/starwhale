@@ -1,7 +1,6 @@
 import typing as t
 import sys
 
-import click
 from rich.pretty import Pretty
 from rich.table import Table
 from rich import box
@@ -13,7 +12,7 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
     SHORT_VERSION_CNT,
 )
-from starwhale.base.type import EvalTaskType, JobOperationType, URIType
+from starwhale.base.type import EvalTaskType, InstanceType, JobOperationType, URIType
 from starwhale.base.uri import URI
 from starwhale.base.view import BaseView
 from starwhale.utils import console
@@ -23,6 +22,7 @@ from .model import Job
 
 class JobTermView(BaseView):
     def __init__(self, job_uri: str) -> None:
+        super().__init__()
         self.raw_uri = job_uri
         self.uri = URI(job_uri, expected_type=URIType.JOB)
         self.job = Job.get_job(self.uri)
@@ -50,8 +50,6 @@ class JobTermView(BaseView):
         self._do_action(JobOperationType.PAUSE, force)
 
     def _do_action(self, action: str, force: bool = False) -> None:
-        click.confirm(f"continue to {action}?", abort=True)
-
         ok, reason = self._action_run_map[action](force)
         if ok:
             self._console.print(f":clap: {action} job successfully : {self.uri}")
@@ -80,7 +78,7 @@ class JobTermView(BaseView):
             self._console.print(f":camel: cmp: {_rt['location']['cmp']}")
 
         if "tasks" in _rt:
-            self._print_tasks(_rt["tasks"])
+            self._print_tasks(_rt["tasks"][0])
 
         if "report" in _rt:
             self._render_job_report(_rt["report"])
@@ -180,8 +178,10 @@ class JobTermView(BaseView):
         _print_report()
         _print_confusion_matrix()
 
+    @classmethod
     def create(
-        self,
+        cls,
+        project_uri: str,
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
@@ -192,7 +192,9 @@ class JobTermView(BaseView):
         docker_verbose: bool = False,
         phase: str = EvalTaskType.ALL,
     ) -> None:
-        ok, reason = self.job.create(
+        _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
+        ok, reason = Job.create(
+            _project_uri,
             model_uri,
             dataset_uris,
             runtime_uri,
@@ -207,16 +209,13 @@ class JobTermView(BaseView):
         # TODO: show report in standalone mode directly
 
         if ok:
-            self._console.print(
-                f":clap: success to create job(project id: {self.job.uri}) {reason}"
-            )
-            self._console.print(
-                f":writing_hand: run cmd [green]swcli job info {self.job.uri} {reason}[/] to fetch job details"
-            )
+            console.print(f":clap: success to create job(project id: {project_uri})")
+            if _project_uri.instance_type == InstanceType.CLOUD:
+                console.print(
+                    f":writing_hand: run cmd [green]swcli job info project/{_project_uri.full_uri}/job/{reason} [/] to fetch job details"
+                )
         else:
-            self._console.print(
-                f":collision: failed to create job, notice: [red]{reason}[/]"
-            )
+            console.print(f":collision: failed to create job, notice: [red]{reason}[/]")
 
     @classmethod
     @BaseView._pager
@@ -228,11 +227,13 @@ class JobTermView(BaseView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        _jobs, _pager = Job.list(URI(project_uri), page, size)
+        _jobs, _pager = Job.list(
+            URI(project_uri, expected_type=URIType.PROJECT), page, size
+        )
 
         title = "Job List"
 
-        table = Table(title=title, box=box.SIMPLE)
+        table = Table(title=title, box=box.SIMPLE, expand=True)
         table.add_column("Name", justify="left", style="cyan", no_wrap=True)
         table.add_column("Model")
         table.add_column("Datasets")
@@ -255,7 +256,7 @@ class JobTermView(BaseView):
                 _m.get("jobStatus") or _m.get("status")
             )
             _datasets = "--"
-            if "datasets" in _m:
+            if _m.get("datasets"):
                 _datasets = "\n".join([_s(d) for d in _m["datasets"]])
 
             _model = "--"
