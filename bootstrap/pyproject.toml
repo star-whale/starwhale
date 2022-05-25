@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.egg-info
+    | \.git
+    | \.vscode
+    | \.tox
+    | \.mypy_cache
+    | \.venv
+    | __pycache__
+    | venv
+    | build
+    | dist
+    | \.history
+  )/
+)
+'''
