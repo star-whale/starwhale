@@ -89,6 +89,9 @@ controller:
     password: abcd1234
   containerPort: 8082
 
+agent:
+  containerPort: 8088
+
 storage:
   agentHostPathRoot: "/mnt/data/starwhale"
 
