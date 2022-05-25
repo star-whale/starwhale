@@ -1,4 +1,3 @@
-from sre_constants import IN
 import typing as t
 
 from pathlib import Path
@@ -14,17 +13,8 @@ from starwhale.consts import (
     UserRoleType,
     STANDALONE_INSTANCE,
 )
+from starwhale.base.type import URIType
 from .type import InstanceType
-
-
-class URIType:
-    INSTANCE = "instance"
-    PROJECT = "project"
-    MODEL = "model"
-    DATASET = "dataset"
-    RUNTIME = "runtime"
-    JOB = "job"
-    UNKNOWN = "unknown"
 
 
 class ObjField(t.NamedTuple):

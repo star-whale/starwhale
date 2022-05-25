@@ -1,5 +1,5 @@
-from starwhale.base.type import InstanceType
-from starwhale.base.uri import URI, URIType
+from starwhale.base.type import InstanceType, URIType
+from starwhale.base.uri import URI
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.consts import STANDALONE_INSTANCE

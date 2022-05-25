@@ -55,7 +55,6 @@ class SWCliConfigTestCase(TestCase):
 
         sw = SWCliConfigMixed()
         assert str(sw.rootdir).endswith(".cache/starwhale")
-        assert str(sw.eval_run_dir).endswith(".cache/starwhale/run/eval")
         assert sw.user_name == "starwhale"
         assert sw.user_role == "admin"
         assert sw.sw_remote_addr == "http://1.1.1.1:8182"

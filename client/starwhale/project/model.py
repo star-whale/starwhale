@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import typing as t
 from pathlib import Path
-import shutil
 import json
 import yaml
 
@@ -22,7 +21,7 @@ from starwhale.consts import (
 )
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils import validate_obj_name
-from starwhale.utils.fs import ensure_dir, get_path_created_time
+from starwhale.utils.fs import ensure_dir, get_path_created_time, move_dir
 from starwhale.utils.http import ignore_error
 
 
@@ -122,30 +121,13 @@ class StandaloneProject(Project):
             return False, f"prohibit to remove {self.name}"
 
         ensure_dir(self.recover_dir)
-        return self._do_move_project(self.loc, self.recover_dir / self.name, force)
+        return move_dir(self.loc, self.recover_dir / self.name, force)
 
     def recover(self) -> t.Tuple[bool, str]:
         if self.name == DEFAULT_PROJECT:
             return False, f"prohibit to recover {self.name}"
 
-        return self._do_move_project(self.recover_dir / self.name, self.loc)
-
-    @staticmethod
-    def _do_move_project(
-        src: Path, dest: Path, force: bool = False
-    ) -> t.Tuple[bool, str]:
-        if not src.exists():
-            return False, f"src:{src} not found"
-
-        if dest.exists() and not force:
-            return False, f"dest:{dest} existed"
-
-        try:
-            shutil.move(str(src.absolute()), str(dest.absolute()))
-        except Exception as e:
-            return False, f"failed to move {src} -> {dest}, reason: {e}"
-        else:
-            return True, f"{src} move to {dest}"
+        return move_dir(self.recover_dir / self.name, self.loc)
 
     @classmethod
     def list(cls) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:

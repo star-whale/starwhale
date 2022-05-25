@@ -66,3 +66,15 @@ class BaseView(SWCliConfigMixed):
         table.add_column("2", ratio=1)
         table.add_row(r1, r2)
         return table
+
+    @staticmethod
+    def pretty_status(status: str) -> t.Tuple[str, str, str]:
+        style = "blue"
+        icon = ":tractor:"
+        if status == "SUCCESS":
+            style = "green"
+            icon = ":clap:"
+        elif status == "FAIL":
+            style = "red"
+            icon = ":fearful:"
+        return status, style, icon

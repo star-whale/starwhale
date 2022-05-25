@@ -3,57 +3,40 @@ import yaml
 import json
 import os
 from pathlib import Path
-import jsonlines
 
 from loguru import logger
 
 from starwhale.utils import gen_uniq_version, console, now_str
-from .store import EvalLocalStorage
 from starwhale.consts import (
     DataLoaderKind,
     DEFAULT_INPUT_JSON_FNAME,
     DEFAULT_MANIFEST_NAME,
     JSON_INDENT,
     SWDSBackendType,
-    VERSION_PREFIX_CNT,
     CURRENT_FNAME,
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
-from starwhale.swds.dataset import DataSet
-from starwhale.swmp.store import ModelPackageLocalStore
+from starwhale.dataset.dataset import DataSet
+from starwhale.model.store import ModelPackageLocalStore
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
+from starwhale.base.type import EvalTaskType, RunSubDirType, URIType
+from .store import JobStorage
 
 DEFAULT_SW_TASK_RUN_IMAGE = "ghcr.io/star-whale/starwhale:latest"
-
-
-class EvalTaskType:
-    ALL = "all"
-    PPL = "ppl"
-    CMP = "cmp"
-
-
-class RunSubDirType:
-    RESULT = "result"
-    DATASET = "dataset"
-    PPL_RESULT = "ppl_result"
-    STATUS = "status"
-    LOG = "log"
-    SWMP = "swmp"
-    CONFIG = "config"
-
-
 _CNTR_WORKDIR = "/opt/starwhale"
 _STATUS = PipelineHandler.STATUS
 
 
+#TODO: add DAG
 class EvalExecutor(object):
     def __init__(
         self,
         model: str,
         datasets: t.List[str],
+        job_store: JobStorage,
         baseimage: str = DEFAULT_SW_TASK_RUN_IMAGE,
         name: str = "",
         desc: str = "",
@@ -67,7 +50,7 @@ class EvalExecutor(object):
         self.baseimage = baseimage
         self.gencmd = gencmd
         self.docker_verbose = docker_verbose
-        self._store = EvalLocalStorage()
+        self.job_store = job_store
 
         self._console = console
         self._version = ""
@@ -123,9 +106,6 @@ class EvalExecutor(object):
         elif phase == EvalTaskType.CMP:
             operations.append(_cmp)
 
-        if phase != EvalTaskType.PPL and not self.gencmd:
-            operations.append((self._render_report, 15, "render report"))
-
         run_with_progress_bar("eval run in local...", operations, self._console)
 
     def _gen_version(self) -> None:
@@ -148,11 +128,7 @@ class EvalExecutor(object):
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
         # TODO: fix _workdir sequence-depent issue
-        self._workdir = (
-            self._store.eval_run_dir
-            / self._version[:VERSION_PREFIX_CNT]
-            / self._version
-        )
+        self._workdir = self.job_store.loc
 
         ensure_dir(self._workdir)
         for _w in (self._ppl_workdir, self._cmp_workdir):
@@ -244,7 +220,14 @@ class EvalExecutor(object):
 
         rundir = self._workdir / typ
 
-        cmd = ["docker", "run", "--net=host"]
+        cmd = [
+            "docker",
+            "run",
+            "--net=host",
+            "--rm",
+            "--name",
+            f"{self._version}-{typ}",
+        ]
         cmd += [
             "-v",
             f"{rundir}:{_CNTR_WORKDIR}",
@@ -255,7 +238,7 @@ class EvalExecutor(object):
         if typ == EvalTaskType.PPL:
             cmd += [
                 "-v",
-                f"{self._store.dataset_dir}:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
+                f"{self.job_store.project_dir / URIType.DATASET }:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
             ]
         elif typ == EvalTaskType.CMP:
             cmd += [
@@ -288,15 +271,6 @@ class EvalExecutor(object):
         cmd += [self.baseimage, typ]
         return " ".join(cmd)
 
-    def _render_report(self) -> None:
-        _f = self._cmp_workdir / RunSubDirType.RESULT / CURRENT_FNAME
-        render_cmp_report(_f)
-
-        self._console.rule("[bold green]More Details[/]")
-        self._console.print(
-            f":helicopter: eval version: [green]{self._version}[/], :hedgehog: workdir: {self._workdir.resolve()} \n"
-        )
-
     def _render_manifest(self) -> None:
         _status = True
         for _d in (self._ppl_workdir, self._cmp_workdir):
@@ -318,15 +292,3 @@ class EvalExecutor(object):
         )
         _f = self._workdir / DEFAULT_MANIFEST_NAME
         ensure_file(_f, yaml.dump(self._manifest, default_flow_style=False))
-
-
-def render_cmp_report(rpath: Path) -> None:
-    from starwhale.cluster.view import ClusterView
-
-    _cv = ClusterView()
-
-    with jsonlines.open(str(rpath.resolve()), "r") as _reader:
-        for _report in _reader:
-            if not _report or not isinstance(_report, dict):
-                continue
-            _cv.render_job_report(_report)

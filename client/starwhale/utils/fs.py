@@ -9,6 +9,7 @@ from starwhale.utils import console, timestamp_to_datatimestr
 from starwhale.utils.process import check_call
 
 BLAKE2B_SIGNATURE_ALGO = "blake2b"
+_MIN_GUESS_NAME_LENGTH = 5
 
 
 def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> None:
@@ -103,3 +104,38 @@ def blake2b_file(fpath: t.Union[str, Path]) -> str:
 def get_path_created_time(p: Path) -> str:
     created_at = os.path.getctime(str(p.absolute()))
     return timestamp_to_datatimestr(created_at)
+
+
+def guess_real_path(rootdir: Path, name: str, ftype: str = "") -> t.Tuple[Path, str]:
+    # TODO: support more guess method, such as tag
+    _path = rootdir / name
+    if _path.exists():
+        return _path, name
+
+    if len(name) < _MIN_GUESS_NAME_LENGTH:
+        return _path, name
+
+    ftype = ftype.strip()
+    for fd in rootdir.iterdir():
+        if ftype and not fd.name.endswith(ftype):
+            continue
+
+        if fd.name.startswith(name) or name.startswith(fd.name):
+            return fd, fd.name.rsplit(ftype, 1)[0] if ftype else fd.name
+    else:
+        return _path, name
+
+
+def move_dir(src: Path, dest: Path, force: bool = False) -> t.Tuple[bool, str]:
+    if not src.exists():
+        return False, f"src:{src} not found"
+
+    if dest.exists() and not force:
+        return False, f"dest:{dest} existed"
+
+    try:
+        shutil.move(str(src.absolute()), str(dest.absolute()))
+    except Exception as e:
+        return False, f"failed to move {src} -> {dest}, reason: {e}"
+    else:
+        return True, f"{src} move to {dest}"

@@ -8,7 +8,8 @@ from rich.pretty import Pretty
 from rich import box
 
 from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, DEFAULT_PROJECT
-from starwhale.base.uri import URI, URIType
+from starwhale.base.uri import URI
+from starwhale.base.type import URIType
 from starwhale.base.view import BaseView
 from starwhale.utils import pretty_bytes, console
 

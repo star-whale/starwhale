@@ -16,8 +16,7 @@ from starwhale.consts import (
 )
 from starwhale.utils.http import wrap_sw_error_resp
 from starwhale.base.view import BaseView
-from starwhale.cluster.model import ClusterModel
-
+from .model import CloudInstance
 
 DEFAULT_HTTP_TIMEOUT = 90
 
@@ -94,10 +93,10 @@ class InstanceTermView(BaseView):
         else:
             # TODO: support use uri directly
             # TODO: user async to get
-            cm = ClusterModel()
-            _baseimages = cm._fetch_baseimage()
-            _version = cm._fetch_version()
-            _agents = cm._fetch_agents()
+            ci = CloudInstance(instance)
+            _baseimages = ci._fetch_baseimage()
+            _version = ci._fetch_version()
+            _agents = ci._fetch_agents()
 
             def _agents_table() -> Table:
                 table = Table(
@@ -128,17 +127,13 @@ class InstanceTermView(BaseView):
                     "Category", no_wrap=True, justify="left", style="bold green"
                 )
                 grid.add_column("Information")
-
-                grid.add_row(
-                    "Version",
-                    _version,
-                )
-
+                grid.add_row("Version", _version)
                 grid.add_row("BaseImage", "\n".join([f"- {i}" for i in _baseimages]))
                 grid.add_row(
                     "Agents",
                     _agents_table(),
                 )
+
                 return Panel(grid, title_align="left")
 
             self._console.print(_details())
