@@ -1,6 +1,6 @@
 import click
 
-from .default import RECORD_LOG_DIR
+import default
 from .deploy import deploy
 
 
@@ -13,38 +13,38 @@ def bootstrap_cmd() -> None:
 # common
 @click.option(
     "--root-path",
-    default="/mnt/data/starwhale",
+    default=default.ROOT_PATH,
     help="The root directory of the runtime on the host",
 )
 @click.option(
     "--version",
-    default="latest",
+    default=default.SW_VERSION,
     help="The product version number of this deployment",
 )
 @click.option(
     "--image-repository",
-    default="starwhaleai",
+    default=default.SW_REPOSITORY,
     help="Docker image repository, 'starwhaleai' or 'ghcr.io/star-whale'",
 )
 # mysql
 @click.option(
     "--mysql-image",
-    default="mysql:8.0-debian",
+    default=default.MYSQL_IMAGE,
     help="",
 )
 @click.option(
     "--mysql-port",
-    default="3406",
+    default=default.MYSQL_PORT,
     help="",
 )
 @click.option(
     "--mysql-root-password",
-    default="starwhale",
+    default=default.MYSQL_ROOT_PWD,
     help="",
 )
 @click.option(
     "--mysql-data-dir",
-    default="local-storage-mysql",
+    default=default.MYSQL_DATA_DIR,
     help="A path relative to root-path "
     "that will as the storage directory for the mysql",
 )
@@ -56,7 +56,7 @@ def bootstrap_cmd() -> None:
 )
 @click.option(
     "--oss-image",
-    default="quay.io/minio/minio",
+    default=default.MINIO_IMAGE,
     help="",
 )
 @click.option(
@@ -66,54 +66,54 @@ def bootstrap_cmd() -> None:
 )
 @click.option(
     "--oss-data-dir",
-    default="local-storage-oss",
+    default=default.MINIO_DATA_DIR,
     help="A path relative to root-path"
     " that will as the storage directory for the oss(default minio)",
 )
 @click.option(
     "--oss-default-bucket",
-    default="starwhale",
+    default=default.MINIO_DEFAULT_BUCKET,
     help="",
 )
 @click.option(
     "--oss-access-key",
-    default="minioadmin",
+    default=default.MINIO_ACCESS_KEY,
     help="",
 )
 @click.option(
     "--oss-secret-key",
-    default="minioadmin",
+    default=default.MINIO_SECRET_KEY,
     help="",
 )
 # controller
 @click.option(
     "--job-split-task-num",
-    default="2",
+    default=default.CONTROLLER_TASK_SPLIT_NUM,
     help="",
 )
 @click.option(
     "--controller-port",
-    default="8082",
+    default=default.CONTROLLER_PORT,
     help="The port for ui and server",
 )
 # agent
 @click.option(
     "--agent-runtime-dir",
-    default="agent/run",
-    help="A path relative to root-path "
-    "that will as the runtime directory for the agent",
+    default=default.AGENT_DATA_DIR,
+    help="A path relative to root-path that will as the runtime directory for the agent",
 )
 # artifacts cache
 @click.option(
     "--pypi-index-url",
-    default="http://10.131.0.1:3141/root/pypi-douban/+simple/",
+    default=default.PYPI_INDEX_URL,
     help="",
 )
 @click.option(
     "--pypi-extra-index-url",
-    default="https://pypi.tuna.tsinghua.edu.cn/simple/",
+    default=default.PYPI_EXTRA_INDEX_URL,
     help="",
 )
+# todo add this feature
 @click.option(
     "--image-registry-mirror",
     default="",
@@ -127,39 +127,40 @@ def bootstrap_cmd() -> None:
 # taskSet
 @click.option(
     "--task-set-docker-port",
-    default="2676",
+    default=default.TASKSET_DOCKER_PORT,
     help="The port for agent and task communication",
 )
 @click.option(
     "--task-set-runtime-dir",
-    default="agent/dind",
-    help="A path relative to root-path "
-    "that will as the runtime directory for the taskSet",
+    default=default.TASKSET_DIND_DIR,
+    help="A path relative to root-path that will as the runtime directory for the taskSet",
 )
 # deploy environment
 @click.option(
-    "--user", default="root", help="The user who deployed the product on the host"
+    "--user",
+    default=default.DEPLOY_USER,
+    help="The user who deployed the product on the host",
 )
 @click.option(
     "--ssh-key",
     default="",
     help="The ssh private key passed to ssh-agent " "as part of the deployment run",
 )
-@click.option("--log-record-dir", default=RECORD_LOG_DIR, help="")
+@click.option("--log-record-dir", default=default.RECORD_LOG_DIR, help="")
 @click.option("--inventory", default="", help="")
 @click.option(
     "--host-of-controller",
-    default="controller.starwhale.com",
+    default=default.HOST_OF_CONTROLLER,
     help="Only one,the controller host",
 )
 @click.option(
     "--host-of-storage",
-    default="storage.starwhale.com",
+    default=default.HOST_OF_STORAGE,
     help="Only one,the storage host",
 )
 @click.option(
     "--hosts-of-agent",
-    default="agent01.starwhale.com",
+    default=default.HOST_OF_AGENT,
     # multiple=True,
     # cls=PythonLiteralOption,
     help="At least one exists, in the format is 'agent[**].starwhale.com'",
@@ -167,7 +168,7 @@ def bootstrap_cmd() -> None:
 # common
 @click.option(
     "--cluster-mode",
-    default="docker",
+    default=default.CLUSTER_MODE,
     help="The mode of the cluster, which can be docker or k8s",
 )
 def _deploy(
