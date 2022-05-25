@@ -52,10 +52,10 @@ public class ProjectService {
      * @return Optional of a ProjectVO object.
      */
     public ProjectVO findProject(Project project) {
-        ProjectEntity projectEntity = projectMapper.findProject(project.getId());
+        ProjectEntity projectEntity = projectManager.findProject(project);
         if(projectEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
-                .tip(String.format("Unable to find project %s", project.getId())), HttpStatus.BAD_REQUEST);
+                .tip("Unable to find project"), HttpStatus.BAD_REQUEST);
         }
         return projectConvertor.convert(projectEntity);
     }
@@ -101,14 +101,17 @@ public class ProjectService {
      * @return Is the operation successful.
      */
     public Boolean deleteProject(Project project) {
-        Long id = project.getId();
-        ProjectEntity entity = projectMapper.findProject(id);
+        ProjectEntity entity = projectManager.findProject(project);
+        if(entity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                .tip("Unable to find project"), HttpStatus.BAD_REQUEST);
+        }
         if(entity.getIsDefault() > 0) {
             throw new StarWhaleApiException(
                 new SWValidationException(ValidSubject.PROJECT)
                     .tip("Default project cannot be deleted."), HttpStatus.BAD_REQUEST);
         }
-        int res = projectMapper.deleteProject(id);
+        int res = projectMapper.deleteProject(entity.getId());
         log.info("Project has been deleted. ID={}", entity.getId());
         return res > 0;
     }

@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.domain.project;
 
+import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.domain.user.User;
+import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,4 +38,11 @@ public class Project {
 
     private boolean isDefault;
 
+    public static Project fromUrl(String projectUrl) {
+        if(StrUtil.isNumeric(projectUrl)) {
+            return Project.builder().id(new IDConvertor().revert(projectUrl)).build();
+        } else {
+            return Project.builder().name(projectUrl).build();
+        }
+    }
 }

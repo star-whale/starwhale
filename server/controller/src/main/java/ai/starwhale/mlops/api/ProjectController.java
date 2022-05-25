@@ -88,8 +88,9 @@ public class ProjectController implements ProjectApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> deleteProjectById(String projectId) {
-        Boolean res = projectService.deleteProject(Project.builder().id(idConvertor.revert(projectId)).build());
+    public ResponseEntity<ResponseMessage<String>> deleteProjectByUrl(String projectUrl) {
+        Project project = Project.fromUrl(projectUrl);
+        Boolean res = projectService.deleteProject(project);
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete project failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -99,12 +100,7 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> recoverProject(String projectUrl) {
-        Project project = Project.builder().build();
-        if(StrUtil.isNumeric(projectUrl)) {
-            project.setId(Long.parseLong(projectUrl));
-        } else {
-            project.setName(projectUrl);
-        }
+        Project project = Project.fromUrl(projectUrl);
         Boolean res = projectService.recoverProject(project);
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover project failed."),
@@ -114,9 +110,10 @@ public class ProjectController implements ProjectApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<ProjectVO>> getProjectById(String projectId) {
-        ProjectVO project = projectService.findProject(Project.builder().id(idConvertor.revert(projectId)).build());
-        return ResponseEntity.ok(Code.success.asResponse(project));
+    public ResponseEntity<ResponseMessage<ProjectVO>> getProjectByUrl(String projectUrl) {
+        Project project = Project.fromUrl(projectUrl);
+        ProjectVO vo = projectService.findProject(project);
+        return ResponseEntity.ok(Code.success.asResponse(vo));
     }
 
     @Override

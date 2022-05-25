@@ -20,6 +20,7 @@ import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
@@ -82,6 +83,16 @@ public class ProjectManager {
             return false;
         }
         return isDeleted ? existProject.getIsDeleted() == 1 : existProject.getIsDeleted() == 0;
+    }
+
+    public ProjectEntity findProject(Project project) {
+        ProjectEntity projectEntity = null;
+        if (project.getId() != null) {
+            projectEntity = projectMapper.findProject(project.getId());
+        } else if (!StrUtil.isEmpty(project.getName())){
+            projectEntity = projectMapper.findProjectByName(project.getName());
+        }
+        return projectEntity;
     }
 
 

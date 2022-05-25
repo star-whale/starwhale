@@ -72,6 +72,7 @@
 
     <select id="listProjectsByOwner" parameterType="java.lang.Long" resultMap="projectResultMap">
         <include refid="select_project"/>
+        and p.is_deleted = 0
         and p.owner_id = #{userId}
         <if test="order != null and order != ''">
             order by ${order}
@@ -80,6 +81,7 @@
 
     <select id="listProjectsByOwnerName" parameterType="java.lang.String" resultMap="projectResultMap">
         <include refid="select_project"/>
+        and p.is_deleted = 0
         and u.user_name like concat(#{userName}, '%')
         <if test="order != null and order != ''">
             order by ${order}
@@ -94,6 +96,7 @@
     <select id="findProjectByName" parameterType="java.lang.String" resultMap="projectResultMap">
         <include refid="select_project"/>
         and p.project_name = #{projectName}
+        and p.is_deleted = 0
     </select>
 
     <select id="findDefaultProject" parameterType="java.lang.Long" resultMap="projectResultMap">
