@@ -15,6 +15,9 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import styles from "./styles.module.css";
 import "./index.scss";
+import CodeBlock from "@theme/CodeBlock";
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
 
 const features = [
   {
@@ -155,7 +158,47 @@ function Home() {
         {/* starwhale tabs show case of project/model/dataset/runtime */}
         <section className="card swTabs">
           <div className="card__body">
-            <ul className="tabs tabs--block">
+            <Tabs className="tabs tabs--block">
+              <TabItem value="apple" label="Apple" default>
+                <div className="tabs__body">
+                  <code className="tabs__code" id="project">
+                    （输入comand生成dataset示意图）
+                    <p>1 # MNIST目录下，根据dataset.yaml内容，构建swds </p>
+                    <p>2 # dataset.yaml 内容可以按需修改</p> 4{" "}
+                    <p>5 # 查看构建的swds</p>{" "}
+                    <p>6 swcli dataset list[project uri] </p>7
+                    <p> 8 # push swds到controller中</p>
+                    <p>
+                      9 swcli dataset push mnist:hbsgeyzxmq4deytfgy3gin3bhbrxo5a
+                    </p>
+                  </code>
+                  <div className="tabs__desc " id="project">
+                    <span>
+                      - starwhale public dataset- starwhale public dataset-
+                      starwhale public dataset - starwhale public dataset -
+                      starwhale public dataset- starwhale public dataset-
+                      starwhale public dataset- starwhale public dataset-
+                      starwhale public dataset- starwhale public dataset-
+                      starwhale public dataset - starwhale public dataset-
+                      starwhale public dataset- starwhale public dataset
+                    </span>
+                    <Link
+                      className="button button--primary  button--rounded"
+                      to="/docs"
+                    >
+                      Learn more
+                    </Link>
+                  </div>
+                </div>
+              </TabItem>
+              <TabItem value="orange" label="Orange">
+                <div className="tabs__body"></div>
+              </TabItem>
+              <TabItem value="banana" label="Banana">
+                <div className="tabs__body"></div>
+              </TabItem>
+            </Tabs>
+            {/* <ul className="tabs tabs--block">
               <li id="project" className="tabs__item tabs__item--active">
                 Starwhale Project
               </li>
@@ -172,17 +215,33 @@ function Home() {
             <div className="tabs__body">
               <code className="tabs__code" id="project">
                 （输入comand生成dataset示意图）
+                <p>1 # MNIST目录下，根据dataset.yaml内容，构建swds </p>
+                <p>2 # dataset.yaml 内容可以按需修改</p> 4{" "}
+                <p>5 # 查看构建的swds</p>{" "}
+                <p>6 swcli dataset list[project uri] </p>7
+                <p> 8 # push swds到controller中</p>
+                <p>
+                  9 swcli dataset push mnist:hbsgeyzxmq4deytfgy3gin3bhbrxo5a
+                </p>
               </code>
               <div className="tabs__desc " id="project">
-                <span>- starwhale public dataset</span>
+                <span>
+                  - starwhale public dataset- starwhale public dataset-
+                  starwhale public dataset - starwhale public dataset -
+                  starwhale public dataset- starwhale public dataset- starwhale
+                  public dataset- starwhale public dataset- starwhale public
+                  dataset- starwhale public dataset- starwhale public dataset -
+                  starwhale public dataset- starwhale public dataset- starwhale
+                  public dataset
+                </span>
                 <Link
                   className="button button--primary  button--rounded"
                   to="/docs"
                 >
-                  Get started
+                  Learn more
                 </Link>
               </div>
-            </div>
+            </div> */}
           </div>
         </section>
         {/* starwhale users */}
@@ -210,6 +269,10 @@ function Home() {
           </div>
         </section>
         {/* starwhale try now */}
+        <section className="swIntegrate">
+          <h1>Starwhale integrates with any framework</h1>
+          <div className="divider">Icon</div>
+        </section>
         <section className="swTry">
           <h1>Try today</h1>
           <div className="try">

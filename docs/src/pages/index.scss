@@ -39,6 +39,7 @@
 }
 
 .swTabs {
+  width: 100%;
   min-height: toRem(500);
   box-shadow: 0 2px 16px 0 rgba(0, 0, 0, 0.15);
   border-radius: 12px;
@@ -47,7 +48,12 @@
   --ifm-tabs-color-active-border: #2b65d9;
   --ifm-tabs-color-active: #2b65d9;
 
+  .margin-top--md {
+    margin-top: 0 !important;
+  }
+
   .tabs {
+    border-bottom: 2px solid #f2f2f2;
     &__body {
       padding: 58px 80px 80px 80px;
       display: flex;
