@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.project.Project;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
@@ -106,21 +107,23 @@ public class JobService {
 
     @Resource
     private ProjectManager projectManager;
-
     @Resource
     private JobManager jobManager;
 
-    public PageInfo<JobVO> listJobs(Long projectId, Long swmpId, PageParams pageParams) {
+    public PageInfo<JobVO> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        Long projectId = projectManager.getProjectId(projectUrl);
         List<JobEntity> jobEntities = jobMapper.listJobs(projectId, swmpId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
 
-    public JobVO findJob(Long projectId, Long jobId) {
-        JobEntity entity = jobMapper.findJobById(jobId);
+    public JobVO findJob(String projectUrl, String jobUrl) {
+        Job job = jobManager.fromUrl(jobUrl);
+        Project project = projectManager.fromUrl(projectUrl);
+        JobEntity entity = jobManager.findJob(project, job);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
-                .tip(String.format("Unable to find job %s", jobId)), HttpStatus.BAD_REQUEST);
+                .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);
         }
         JobVO jobVO = jobConvertor.convert(entity);
         List<SWDatasetVersionEntity> dsvEntities = jobSWDSVersionMapper.listSWDSVersionsByJobId(
@@ -135,16 +138,18 @@ public class JobService {
         return jobVO;
     }
 
-    public Object getJobResult(Long projectId, Long jobId) {
+    public Object getJobResult(String projectUrl, String jobUrl) {
+        Long jobId = jobManager.getJobId(jobUrl);
         return resultQuerier.resultOfJob(jobId);
     }
 
-    public Boolean updateJobComment(Long projectId, String jid, String comment) {
+    public Boolean updateJobComment(String projectUrl, String jobUrl, String comment) {
+        Job job = jobManager.fromUrl(jobUrl);
         int res;
-        if(StrUtil.isNumeric(jid)){
-            res = jobMapper.updateJobComment(Long.valueOf(jid), comment);
+        if(job.getId() != null){
+            res = jobMapper.updateJobComment(job.getId(), comment);
         } else {
-            res = jobMapper.updateJobCommentByUUID(jid, comment);
+            res = jobMapper.updateJobCommentByUUID(job.getUuid(), comment);
         }
         return res > 0;
     }
@@ -236,7 +241,8 @@ public class JobService {
      * jobStatus->TO_CANCEL; RUNNING/PREPARING/ASSIGNING->TO_CANCEL;CREATED/PAUSED/UNKNOWN->CANCELED
      */
     @Transactional
-    public void cancelJob(Long jobId){
+    public void cancelJob(String jobUrl){
+        Long jobId = jobManager.getJobId(jobUrl);
         Collection<Task> tasks = livingTaskCache.ofJob(jobId);
         if(null == tasks || tasks.isEmpty()){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB).tip("freeze job can't be canceled "),
@@ -272,7 +278,8 @@ public class JobService {
      * jobStatus RUNNING->PAUSED; taskStatus CREATED->PAUSED
      */
     @Transactional
-    public void pauseJob(Long jobId){
+    public void pauseJob(String jobUrl){
+        Long jobId = jobManager.getJobId(jobUrl);
         Collection<Task> tasks = livingTaskCache.ofJob(jobId);
         if(null == tasks || tasks.isEmpty()){
             throw new SWValidationException(ValidSubject.JOB).tip("freezing job can't be paused ");
@@ -321,7 +328,8 @@ public class JobService {
      * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED
      */
     @Transactional
-    public void resumeJob(Long jobId){
+    public void resumeJob(String jobUrl){
+        Long jobId = jobManager.getJobId(jobUrl);
         JobEntity jobEntity = jobMapper.findJobById(jobId);
         if(jobEntity.getJobStatus() != JobStatus.PAUSED){
             throw new SWValidationException(ValidSubject.JOB).tip("unpaused job can't be resumed ");

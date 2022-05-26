@@ -21,10 +21,15 @@ import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -88,6 +93,20 @@ public class ProjectManager {
         return isDeleted ? existProject.getIsDeleted() == 1 : existProject.getIsDeleted() == 0;
     }
 
+    public Long getProjectId(String projectUrl) {
+        Project project = fromUrl(projectUrl);
+        if(project.getId() != null) {
+            return project.getId();
+        }
+        ProjectEntity projectEntity = projectMapper.findProjectByName(project.getName());
+        if(projectEntity == null) {
+            if(projectEntity == null) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
+                    .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
+            }
+        }
+        return projectEntity.getId();
+    }
     public ProjectEntity findProject(Project project) {
         ProjectEntity projectEntity = null;
         if (project.getId() != null) {

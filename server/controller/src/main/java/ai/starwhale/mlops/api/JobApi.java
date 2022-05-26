@@ -53,14 +53,14 @@ public interface JobApi {
         @ApiResponse(responseCode = "200",
             description = "ok",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
-    @GetMapping(value = "/project/{projectId}/job")
+    @GetMapping(value = "/project/{projectUrl}/job")
     ResponseEntity<ResponseMessage<PageInfo<JobVO>>> listJobs(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Valid @RequestParam(value = "swmpId", required = false) String swmpId,
         @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
         @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
@@ -77,16 +77,16 @@ public interface JobApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = JobVO.class)))
         })
-    @GetMapping(value = "/project/{projectId}/job/{jobId}")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}")
     ResponseEntity<ResponseMessage<JobVO>> findJob( @Parameter(
         in = ParameterIn.PATH,
-        description = "Project id",
+        description = "Project url",
         schema = @Schema())
-    @PathVariable("projectId")
-        String projectId,
+    @PathVariable("projectUrl")
+        String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("jobId")
-            String jobId);
+        @PathVariable("jobUrl")
+            String jobUrl);
 
 
     @Operation(summary = "Get the list of tasks")
@@ -94,53 +94,53 @@ public interface JobApi {
         @ApiResponse(responseCode = "200",
             description = "ok",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
-    @GetMapping(value = "/project/{projectId}/job/{jobId}/task")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/task")
     ResponseEntity<ResponseMessage<PageInfo<TaskVO>>> listTasks(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Job id",
+            description = "Job Url",
             schema = @Schema())
-        @PathVariable("jobId")
-            String jobId,
+        @PathVariable("jobUrl")
+            String jobUrl,
         @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
         @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
     @Operation(summary = "Create a new job")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectId}/job")
+    @PostMapping(value = "/project/{projectUrl}/job")
     ResponseEntity<ResponseMessage<String>> createJob(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Valid @RequestBody JobRequest jobRequest);
 
     @Operation(summary = "Job Action")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectId}/job/{jobId}/{action}")
+    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/{action}")
     ResponseEntity<ResponseMessage<String>> action(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Job id",
+            description = "Job Url",
             schema = @Schema())
-        @PathVariable("jobId")
-            String jobId,
+        @PathVariable("jobUrl")
+            String jobUrl,
         @Parameter(
             in = ParameterIn.PATH,
             description = "Job action",
@@ -159,16 +159,16 @@ public interface JobApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = Object.class)))
         })
-    @GetMapping(value = "/project/{projectId}/job/{jobId}/result")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/result")
     ResponseEntity<ResponseMessage<Object>> getJobResult(@Parameter(
         in = ParameterIn.PATH,
-        description = "Project id",
+        description = "Project url",
         schema = @Schema())
-    @PathVariable("projectId")
-        String projectId,
+    @PathVariable("projectUrl")
+        String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("jobId")
-            String jobId);
+        @PathVariable("jobUrl")
+            String jobUrl);
 
     @Operation(summary = "Set Job Comment")
     @ApiResponses(
@@ -181,21 +181,21 @@ public interface JobApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = String.class)))
         })
-    @PutMapping(value = "/project/{projectId}/job/{jobId}/comment")
+    @PutMapping(value = "/project/{projectUrl}/job/{jobUrl}/comment")
     ResponseEntity<ResponseMessage<String>> modifyJobComment(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project url",
             schema = @Schema())
-        @PathVariable("projectId")
-        String projectId,
+        @PathVariable("projectUrl")
+        String projectUrl,
         @Parameter(
             in = ParameterIn.PATH,
             description = "Job id or uuid",
             required = true,
             schema = @Schema())
-        @PathVariable("jobId")
-        String jobId,
+        @PathVariable("jobUrl")
+        String jobUrl,
         @Valid @RequestParam(value = "comment", required = false)
         String comment);
 
@@ -210,16 +210,16 @@ public interface JobApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = GraphVO.class)))
         })
-    @GetMapping(value = "/project/{projectId}/job/{jobId}/dag")
+    @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/dag")
     ResponseEntity<ResponseMessage<GraphVO>> getJobDAG(@Parameter(
         in = ParameterIn.PATH,
-        description = "Project id",
+        description = "Project Url",
         schema = @Schema())
-    @PathVariable("projectId")
-        String projectId,
+    @PathVariable("projectUrl")
+        String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("jobId")
-            String jobId);
+        @PathVariable("jobUrl")
+            String jobUrl);
 
     @Operation(summary = "Remove job")
     @ApiResponses(

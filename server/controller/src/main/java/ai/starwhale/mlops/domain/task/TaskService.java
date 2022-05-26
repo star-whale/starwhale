@@ -18,9 +18,9 @@ package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
-import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.task.bo.ResultPathConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -56,9 +56,13 @@ public class TaskService {
     @Resource
     private StorageAccessService storageAccessService;
 
+    @Resource
+    private JobManager jobManager;
 
-    public PageInfo<TaskVO> listTasks(Long jobId, PageParams pageParams) {
+
+    public PageInfo<TaskVO> listTasks(String jobUrl, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        Long jobId = jobManager.getJobId(jobUrl);
         List<TaskEntity> tasks = taskMapper.listTasks(jobId);
 
         return PageUtil.toPageInfo(tasks, taskConvertor::convert);

@@ -19,9 +19,13 @@ package ai.starwhale.mlops.domain.job;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.project.Project;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -33,6 +37,20 @@ public class JobManager {
 
     @Resource
     private IDConvertor idConvertor;
+
+
+    public Long getJobId(String jobUrl) {
+        Job job = fromUrl(jobUrl);
+        if(job.getId() != null) {
+            return job.getId();
+        }
+        JobEntity jobEntity = jobMapper.findJobByUUID(job.getUuid());
+        if(jobEntity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
+                .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);
+        }
+        return jobEntity.getId();
+    }
 
     public JobEntity findJob(Project project, Job job) {
         JobEntity jobEntity = null;
