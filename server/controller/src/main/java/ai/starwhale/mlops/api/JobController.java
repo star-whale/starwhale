@@ -153,4 +153,23 @@ public class JobController implements JobApi{
         return ResponseEntity.ok(Code.success.asResponse(new GraphVO(dagQuerier.dagOfJob(iJobId,true))));
     }
 
+    @Override
+    public ResponseEntity<ResponseMessage<String>> removeJob(String projectUrl, String jobUrl) {
+        Boolean res = jobService.removeJob(projectUrl, jobUrl);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Remove job failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> recoverJob(String projectUrl, String jobUrl) {
+        Boolean res = jobService.recoverJob(projectUrl, jobUrl);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover job failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
 }

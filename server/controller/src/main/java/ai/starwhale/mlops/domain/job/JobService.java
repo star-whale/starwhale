@@ -21,17 +21,17 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.dag.DAGEditor;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
-import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.TaskJobStatusHelper;
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.User;
@@ -104,6 +104,12 @@ public class JobService {
     @Resource
     private DAGEditor dagEditor;
 
+    @Resource
+    private ProjectManager projectManager;
+
+    @Resource
+    private JobManager jobManager;
+
     public PageInfo<JobVO> listJobs(Long projectId, Long swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<JobEntity> jobEntities = jobMapper.listJobs(projectId, swmpId);
@@ -140,6 +146,30 @@ public class JobService {
         } else {
             res = jobMapper.updateJobCommentByUUID(jid, comment);
         }
+        return res > 0;
+    }
+
+    public Boolean removeJob(String projectUrl, String jobUrl) {
+        Job job = jobManager.fromUrl(jobUrl);
+        int res = 0;
+        if(job.getId() != null) {
+            res = jobMapper.removeJob(job.getId());
+        } else if (!StrUtil.isEmpty(job.getUuid())) {
+            res = jobMapper.removeJobByUUID(job.getUuid());
+        }
+
+        return res > 0;
+    }
+
+    public Boolean recoverJob(String projectUrl, String jobUrl) {
+        Job job = jobManager.fromUrl(jobUrl);
+        int res = 0;
+        if(job.getId() != null) {
+            res = jobMapper.recoverJob(job.getId());
+        } else if (!StrUtil.isEmpty(job.getUuid())) {
+            res = jobMapper.recoverJobByUUID(job.getUuid());
+        }
+
         return res > 0;
     }
 

@@ -13,32 +13,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package ai.starwhale.mlops.domain.project;
-
-import ai.starwhale.mlops.domain.user.User;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class Project {
-
-    private Long id;
-
-    private String name;
-
-    private User owner;
-
-    private boolean isDefault;
-
-    private boolean isDeleted;
-
-    public Integer getDeleteInt() {
-        return isDeleted ? 1 : 0;
-    }
-}
+ALTER TABLE `job_info`
+    ADD COLUMN `is_deleted` tinyint UNSIGNED NOT NULL DEFAULT 0 AFTER `job_comment`;

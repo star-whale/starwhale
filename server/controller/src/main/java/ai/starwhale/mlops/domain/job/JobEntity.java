@@ -19,11 +19,9 @@ package ai.starwhale.mlops.domain.job;
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
-import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserEntity;
 import java.time.LocalDateTime;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -75,4 +73,5 @@ public class JobEntity extends BaseEntity {
 
     private String comment;
 
+    private Integer isDeleted;
 }

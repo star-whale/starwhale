@@ -51,6 +51,7 @@ public interface ProjectApi {
     @GetMapping(value = "/project")
     ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(
         @Valid @RequestParam(value = "projectName", required = false) String projectName,
+        @Valid @RequestParam(value = "isDeleted", required = false, defaultValue = "false") Boolean isDeleted,
         @Parameter(in = ParameterIn.QUERY, description = "Id of the project owner", schema = @Schema())
         @Valid @RequestParam(value = "ownerId", required = false) String ownerId,
         @Parameter(in = ParameterIn.QUERY, description = "Name of the project owner", schema = @Schema())
@@ -69,12 +70,12 @@ public interface ProjectApi {
         @Valid @RequestBody ProjectRequest projectRequest);
 
 
-    @Operation(summary = "Delete a project by ID")
+    @Operation(summary = "Delete a project by Url")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/project/{projectId}")
-    ResponseEntity<ResponseMessage<String>> deleteProjectById(
-        @Valid @PathVariable("projectId") String projectId);
+    @DeleteMapping(value = "/project/{projectUrl}")
+    ResponseEntity<ResponseMessage<String>> deleteProjectByUrl(
+        @Valid @PathVariable("projectUrl") String projectUrl);
 
     @Operation(summary = "Recover a project")
     @ApiResponses(value = {
@@ -84,14 +85,14 @@ public interface ProjectApi {
         @Valid @PathVariable("projectUrl") String projectUrl);
 
 
-    @Operation(summary = "Get a project by ID", description = "Returns a single project object.")
+    @Operation(summary = "Get a project by Url", description = "Returns a single project object.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
             description = "ok.",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectVO.class)))})
-    @GetMapping(value = "/project/{projectId}")
-    ResponseEntity<ResponseMessage<ProjectVO>> getProjectById(
-        @PathVariable("projectId") String projectId);
+    @GetMapping(value = "/project/{projectUrl}")
+    ResponseEntity<ResponseMessage<ProjectVO>> getProjectByUrl(
+        @PathVariable("projectUrl") String projectUrl);
 
 
     @Operation(summary = "Modify project information")

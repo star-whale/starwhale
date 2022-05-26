@@ -48,14 +48,15 @@ public class ProjectService {
 
     /**
      * Find a project by parameters.
-     * @param project Project ID must be set.
+     * @param projectUrl Project URL must be set.
      * @return Optional of a ProjectVO object.
      */
-    public ProjectVO findProject(Project project) {
-        ProjectEntity projectEntity = projectMapper.findProject(project.getId());
+    public ProjectVO findProject(String projectUrl) {
+        Project project = projectManager.fromUrl(projectUrl);
+        ProjectEntity projectEntity = projectManager.findProject(project);
         if(projectEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
-                .tip(String.format("Unable to find project %s", project.getId())), HttpStatus.BAD_REQUEST);
+                .tip("Unable to find project"), HttpStatus.BAD_REQUEST);
         }
         return projectConvertor.convert(projectEntity);
     }
@@ -97,40 +98,59 @@ public class ProjectService {
 
     /**
      * Delete a project
-     * @param project Project ID must be set.
+     * @param projectUrl Project URL must be set.
      * @return Is the operation successful.
      */
-    public Boolean deleteProject(Project project) {
-        Long id = project.getId();
-        ProjectEntity entity = projectMapper.findProject(id);
+    public Boolean deleteProject(String projectUrl) {
+        Project project = projectManager.fromUrl(projectUrl);
+        ProjectEntity entity = projectManager.findProject(project);
+        if(entity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                .tip("Unable to find project"), HttpStatus.BAD_REQUEST);
+        }
         if(entity.getIsDefault() > 0) {
             throw new StarWhaleApiException(
                 new SWValidationException(ValidSubject.PROJECT)
                     .tip("Default project cannot be deleted."), HttpStatus.BAD_REQUEST);
         }
-        int res = projectMapper.deleteProject(id);
+        int res = projectMapper.deleteProject(entity.getId());
         log.info("Project has been deleted. ID={}", entity.getId());
         return res > 0;
     }
 
-    public Boolean recoverProject(Project project) {
+    public Boolean recoverProject(String projectUrl) {
+        Project project = projectManager.fromUrl(projectUrl);
         String projectName = project.getName();
-        if(project.getId() != null) {
+        Long id = project.getId();
+        if(id != null) {
             ProjectEntity entity = projectMapper.findProject(project.getId());
+            if(entity == null) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                    .tip("Recover project error. Project can not be found. "), HttpStatus.BAD_REQUEST);
+            }
             projectName = entity.getProjectName();
+        } else if (!StrUtil.isEmpty(projectName)) {
+            // To restore projects by name, need to check whether there are duplicate names
+            List<ProjectEntity> deletedProjects = projectMapper.listDeletedProjects(projectName);
+            if(deletedProjects.size() > 1) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                    .tip(StrUtil.format("Recover project error. Duplicate names [%s] of deleted project. ", projectName)),
+                    HttpStatus.BAD_REQUEST);
+            } else if (deletedProjects.size() == 0) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                    .tip(StrUtil.format("Recover project error. Can not find deleted project [%s].", projectName)),
+                    HttpStatus.BAD_REQUEST);
+            }
+            id = deletedProjects.get(0).getId();
         }
 
-        if(StrUtil.isEmpty(projectName)) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
-                .tip("Recover project error. Project can not be found"), HttpStatus.BAD_REQUEST);
-        }
-
+        // Check for duplicate names
         if(projectManager.existProject(projectName, false)) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                 .tip(String.format("Recover project error. Project %s already exists", projectName)), HttpStatus.BAD_REQUEST);
         }
 
-        int res = projectMapper.recoverProjectByName(projectName);
+        int res = projectMapper.recoverProject(id);
         log.info("Project has been recovered. Name={}", projectName);
         return res > 0;
     }
