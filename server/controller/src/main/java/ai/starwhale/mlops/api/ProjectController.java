@@ -30,7 +30,6 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
-import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageInfo;
 import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
