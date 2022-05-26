@@ -86,7 +86,7 @@ controller:
   taskSplitSize: 2
   jwt:
     tokenExpireMinutes: 43200
-  file:
+  upload:
     maxFileSize: 20480MB
   auth:
     username: starwhale
