@@ -12,6 +12,8 @@
       SW_TASK_SPLIT_SIZE: "{{ controller_task_split_num }}"
       JAR: "controller"
       SW_HOST_IP: "{{ ansible_eth0.ipv4.address }}"
+      SW_JWT_TOKEN_EXPIRE_MINUTES: "{{ token_expire_minutes }}"
+      SW_UPLOAD_MAX_FILE_SIZE: "{{ file_upload_size }}"
       #
       SW_METADATA_STORAGE_IP: "{{ hostvars['storage.starwhale.com']['ansible_eth0']['ipv4']['address'] }}"
       SW_METADATA_STORAGE_PORT: "{{ mysql_port }}"
