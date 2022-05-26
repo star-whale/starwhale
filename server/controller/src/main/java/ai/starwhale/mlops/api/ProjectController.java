@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageInfo;
 import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
@@ -91,6 +92,22 @@ public class ProjectController implements ProjectApi{
         Boolean res = projectService.deleteProject(Project.builder().id(idConvertor.revert(projectId)).build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete project failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> recoverProject(String projectUrl) {
+        Project project = Project.builder().build();
+        if(StrUtil.isNumeric(projectUrl)) {
+            project.setId(Long.parseLong(projectUrl));
+        } else {
+            project.setName(projectUrl);
+        }
+        Boolean res = projectService.recoverProject(project);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover project failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
