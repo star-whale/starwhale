@@ -6,7 +6,6 @@ import string
 import os
 import sys
 import platform
-import subprocess
 import typing as t
 from datetime import datetime
 import re
@@ -14,7 +13,7 @@ import time
 
 from rich.console import Console
 
-from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX, PythonRunEnv, FMT_DATETIME
+from starwhale.consts import FMT_DATETIME
 
 console = Console(soft_wrap=True)
 now_str = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
@@ -39,55 +38,12 @@ def random_str(cnt: int = 8) -> str:
     return "".join(random.sample(string.ascii_lowercase + string.digits, cnt))
 
 
-def get_external_python_version() -> t.Any:
-    return subprocess.check_output(
-        [
-            "python3",
-            "-c",
-            "import sys; _v = sys.version_info; print(f'{_v,major}.{_v.minor}.{_v.micro}')",
-        ],
-    )
-
-
 def in_dev() -> bool:
     return not in_production()
 
 
 def in_production() -> bool:
     return os.environ.get("SW_PRODUCTION", "") == "1"
-
-
-def is_venv() -> bool:
-    # TODO: refactor for get external venv attr
-    output = subprocess.check_output(
-        [
-            "python3",
-            "-c",
-            "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))",  # noqa: E501
-        ],
-    )
-    return "True" in str(output)
-
-
-def is_conda() -> bool:
-    return get_conda_env() != "" and get_conda_env_prefix() != ""
-
-
-def get_python_run_env() -> str:
-    if is_conda():
-        return PythonRunEnv.CONDA
-    elif is_venv():
-        return PythonRunEnv.VENV
-    else:
-        return PythonRunEnv.SYSTEM
-
-
-def get_conda_env() -> str:
-    return os.environ.get(ENV_CONDA, "")
-
-
-def get_conda_env_prefix() -> str:
-    return os.environ.get(ENV_CONDA_PREFIX, "")
 
 
 def is_windows() -> bool:

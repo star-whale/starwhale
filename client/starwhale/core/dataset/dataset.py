@@ -24,7 +24,7 @@ from starwhale.utils import (
     now_str,
 )
 from starwhale.utils.load import import_cls
-from starwhale.utils.venv import SUPPORTED_PIP_REQ, dump_python_dep_env, detect_pip_req
+from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.utils.error import FileTypeError, NoSupportError
 from starwhale.consts import (
     DEFAULT_STARWHALE_API_VERSION,
@@ -173,12 +173,11 @@ class DataSet(object):
             (self._prepare_snapshot, 5, "prepare snapshot"),
             (self._copy_src, 15, "copy src"),
             (self._call_make_swds, 30, "make swds"),
-            (self._dump_dep, 30, "dump dep"),
             (self._calculate_signature, 5, "calculate signature"),
             (self._render_manifest, 5, "render manifest"),
             (self._make_swds_meta_tar, 15, "make meta tar"),
         ]
-        run_with_progress_bar("swds building...", operations, self._console)
+        run_with_progress_bar("swds building...", operations)
 
     def _copy_src(self) -> None:
         logger.info(f"[step:copy]start to copy src {self.workdir} -> {self._src_dir}")
@@ -245,19 +244,6 @@ class DataSet(object):
         logger.info(
             f"[step:signature]finish calculate signature with {_algo} for {len(_sign)} files"
         )
-
-    def _dump_dep(self) -> None:
-        logger.info("[step:dump]dump conda or venv environment...")
-
-        _manifest = dump_python_dep_env(
-            dep_dir=self._snapshot_workdir / "dep",
-            pip_req_fpath=detect_pip_req(self.workdir, self._swds_config.pip_req),
-            skip_gen_env=True,  # TODO: add venv dump?
-            console=self._console,
-        )
-
-        self._manifest["dep"] = _manifest
-        logger.info("[step:dump]finish dump dep")
 
     def _call_make_swds(self) -> None:
         from starwhale.api._impl.dataset import BuildExecutor

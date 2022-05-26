@@ -41,3 +41,9 @@ class JobOperationType:
     REMOVE = "remove"
     RECOVER = "recover"
     INFO = "info"
+
+
+class BundleType:
+    MODEL = ".swmp"
+    DATASET = ".swds"
+    RUNTIME = ".swrt"

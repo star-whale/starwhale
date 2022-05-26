@@ -4,8 +4,10 @@ import typing as t
 import errno
 from pathlib import Path
 import hashlib
+import tarfile
 
 from starwhale.utils import console, timestamp_to_datatimestr
+from starwhale.utils.error import ExistedError
 from starwhale.utils.process import check_call
 
 BLAKE2B_SIGNATURE_ALGO = "blake2b"
@@ -133,9 +135,22 @@ def move_dir(src: Path, dest: Path, force: bool = False) -> t.Tuple[bool, str]:
     if dest.exists() and not force:
         return False, f"dest:{dest} existed"
 
+    ensure_dir(dest.parent)
+
     try:
         shutil.move(str(src.absolute()), str(dest.absolute()))
     except Exception as e:
         return False, f"failed to move {src} -> {dest}, reason: {e}"
     else:
         return True, f"{src} move to {dest}"
+
+
+def extract_tar(tar_path: Path, dest_dir: Path, force: bool = False) -> None:
+    if dest_dir.exists() and not force:
+        raise ExistedError(str(dest_dir))
+
+    empty_dir(dest_dir)
+    ensure_dir(dest_dir)
+
+    with tarfile.open(tar_path, "r") as tar:
+        tar.extractall(path=str(dest_dir.absolute()))

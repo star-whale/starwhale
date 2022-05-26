@@ -198,13 +198,3 @@ def _cmp(
             "input_config": input_config,
         },
     )
-
-
-@model_cmd.command(
-    "pre-activate", help="Prepare to restore and activate swmp runtime environment"
-)
-@click.argument("swmp")
-def _pre_activate(swmp: str) -> None:
-    # TODO: add auto decompress
-    # TODO: set activate.sw path
-    ModelPackageLocalStore().pre_activate(swmp)

@@ -230,10 +230,7 @@ class JobTermView(BaseView):
         _jobs, _pager = Job.list(
             URI(project_uri, expected_type=URIType.PROJECT), page, size
         )
-
-        title = "Job List"
-
-        table = Table(title=title, box=box.SIMPLE, expand=True)
+        table = Table(title="Job List", box=box.SIMPLE, expand=True)
         table.add_column("Name", justify="left", style="cyan", no_wrap=True)
         table.add_column("Model")
         table.add_column("Datasets")

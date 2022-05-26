@@ -12,25 +12,12 @@ from rich.pretty import Pretty
 from rich import print as rprint
 from fs import open_fs
 from fs.tarfs import TarFS
-from loguru import logger
 
 from starwhale.utils import fmt_http_server, pretty_bytes
 from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
     DEFAULT_MODEL_YAML_NAME,
     SW_API_VERSION,
-)
-from starwhale.utils.venv import (
-    CONDA_ENV_TAR,
-    DUMP_CONDA_ENV_FNAME,
-    DUMP_PIP_REQ_FNAME,
-    DUMP_USER_PIP_REQ_FNAME,
-    install_req,
-    venv_activate_render,
-    conda_activate_render,
-    conda_restore,
-    venv_setup,
-    SW_ACTIVATE_SCRIPT,
 )
 from starwhale.utils.fs import ensure_dir, empty_dir
 from starwhale.base.store import LocalStorage
@@ -179,9 +166,6 @@ class ModelPackageLocalStore(LocalStorage):
         _manifest["pkg"] = str(_swmp_path.resolve())
         return _manifest
 
-    def gc(self, dry_run: bool = False) -> None:
-        ...
-
     def delete(self, swmp: str) -> None:
         _model, _version = self._parse_swobj(swmp)
 
@@ -245,77 +229,3 @@ class ModelPackageLocalStore(LocalStorage):
             self.pkgdir / _model, _version, ftype=_SWMP_FILE_TYPE
         )
         return _dir, f"{_model}:{_fullversion}"
-
-    def pre_activate(self, swmp: str) -> None:
-        if swmp.count(":") == 1:
-            _name, _version = self._parse_swobj(swmp)
-            _workdir, _ = self._guess(self.workdir / _name, _version)
-        else:
-            _workdir = Path(swmp)
-
-        _workdir = _workdir.resolve()
-        _manifest = yaml.safe_load((_workdir / DEFAULT_MANIFEST_NAME).open())
-
-        _env = _manifest["dep"]["env"]
-        _f = getattr(self, f"_activate_{_env}")
-        _f(_workdir, _manifest["dep"])
-
-    def _activate_conda(self, _workdir: Path, _dep: t.Dict[str, t.Any]) -> None:
-        if not _dep["conda"]["use"]:
-            raise Exception("env set conda, but conda:use is false")
-
-        _ascript = _workdir / SW_ACTIVATE_SCRIPT
-        _conda_dir = _workdir / "dep" / "conda"
-        _tar_fpath = _conda_dir / CONDA_ENV_TAR
-        _env_dir = _conda_dir / "env"
-
-        if _dep["local_gen_env"] and _tar_fpath.exists():
-            empty_dir(_env_dir)
-            ensure_dir(_env_dir)
-            logger.info(f"extract {_tar_fpath} ...")
-            with tarfile.open(str(_tar_fpath)) as f:
-                f.extractall(str(_env_dir))
-
-            logger.info(f"render activate script: {_ascript}")
-            venv_activate_render(_env_dir, _ascript)
-        else:
-            logger.info("restore conda env ...")
-            _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
-            # TODO: controller will proceed in advance
-            conda_restore(_env_yaml, _env_dir)
-
-            logger.info(f"render activate script: {_ascript}")
-            conda_activate_render(_env_dir, _ascript)
-
-    def _activate_venv(
-        self, _workdir: Path, _dep: t.Dict[str, t.Any], _rebuild: bool = False
-    ) -> None:
-        if not _dep["venv"]["use"] and not _rebuild:
-            raise Exception("env set venv, but venv:use is false")
-
-        _ascript = _workdir / SW_ACTIVATE_SCRIPT
-        _python_dir = _workdir / "dep" / "python"
-        _venv_dir = _python_dir / "venv"
-
-        _relocate = True
-        if (
-            _rebuild
-            or not _dep["local_gen_env"]
-            or not (_venv_dir / "bin" / "activate").exists()
-        ):
-            logger.info(f"setup venv and pip install {_venv_dir}")
-            _relocate = False
-            venv_setup(_venv_dir)
-            for _name in (DUMP_PIP_REQ_FNAME, DUMP_USER_PIP_REQ_FNAME):
-                _path = _python_dir / _name
-                if not _path.exists():
-                    continue
-
-                logger.info(f"pip install {_path} ...")
-                install_req(_venv_dir, _path)
-
-        logger.info(f"render activate script: {_ascript}")
-        venv_activate_render(_venv_dir, _ascript, relocate=_relocate)
-
-    def _activate_system(self, _workdir: Path, _dep: t.Dict[str, t.Any]) -> None:
-        self._activate_venv(_workdir, _dep, _rebuild=True)

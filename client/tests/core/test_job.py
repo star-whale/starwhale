@@ -23,7 +23,7 @@ _cmp_report = open(f"{_job_data_dir}/cmp_report.jsonl").read()
 
 
 class StandaloneJobTestCase(TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.setUpPyfakefs()
         sw_config._config = {}
 
@@ -53,6 +53,7 @@ class StandaloneJobTestCase(TestCase):
             == (
                 Path(self.root)
                 / "self"
+                / URIType.JOB
                 / RECOVER_DIRNAME
                 / self.job_name[:2]
                 / self.job_name
@@ -98,6 +99,7 @@ class StandaloneJobTestCase(TestCase):
         assert (
             Path(self.root)
             / "self"
+            / URIType.JOB
             / RECOVER_DIRNAME
             / self.job_name[:2]
             / self.job_name
@@ -110,6 +112,7 @@ class StandaloneJobTestCase(TestCase):
             Path(self.root)
             / "self"
             / RECOVER_DIRNAME
+            / URIType.JOB
             / self.job_name[:2]
             / self.job_name
         ).exists()
@@ -151,7 +154,7 @@ class StandaloneJobTestCase(TestCase):
 
 
 class CloudJobTestCase(unittest.TestCase):
-    def setUp(self) -> None:
+    def setUp(self):
         self.instance_uri = "http://1.1.1.1:8888"
         self.project_uri = f"{self.instance_uri}/project/self"
         self.job_name = "15"

@@ -24,7 +24,7 @@ class URITestCase(TestCase):
                 "instance": "http://1.1.1.1:8182",
                 "instance_type": "cloud",
                 "project": "self",
-                "obj_typ": "",
+                "obj_typ": "unknown",
                 "obj_name": "",
                 "obj_version": "",
                 "full_uri": "http://1.1.1.1:8182/project/self",
@@ -53,7 +53,7 @@ class URITestCase(TestCase):
                 "instance": "http://10.131.0.2:8182",
                 "instance_type": "cloud",
                 "project": "mnist",
-                "obj_typ": "",
+                "obj_typ": "unknown",
                 "obj_name": "",
                 "obj_version": "",
                 "real_request_uri": "http://10.131.0.2:8182/api/v1/project/mnist",
@@ -137,6 +137,11 @@ class URITestCase(TestCase):
         assert uri.project == "self"
         assert uri.object.name == ""
 
+        uri = URI("pre-k8s", expected_type=URIType.INSTANCE)
+        assert uri.instance == "pre-k8s"
+        assert uri.project == "self"
+        assert uri.object.name == ""
+
         uri = URI("", expected_type=URIType.PROJECT)
         assert uri.instance == "http://1.1.1.1:8182"
         assert uri.project == "self"
@@ -146,3 +151,8 @@ class URITestCase(TestCase):
         assert uri.instance == "http://12.2.2.2:8080"
         assert uri.project == "test2"
         assert uri.object.name == ""
+
+        uri = URI("mnist/version/g4zwkyjumm2d", expected_type=URIType.RUNTIME)
+        assert uri.object.name == "mnist"
+        assert uri.object.typ == URIType.RUNTIME
+        assert uri.object.version == "g4zwkyjumm2d"

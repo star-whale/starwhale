@@ -1,4 +1,3 @@
-import yaml
 import typing as t
 from pathlib import Path
 
@@ -12,22 +11,18 @@ from starwhale.consts import (
     RECOVER_DIRNAME,
 )
 from starwhale.base.uri import URI
-
-
-class BaseStorage(object):
-    def __init__(self) -> None:
-        self.sw_config = SWCliConfigMixed()
+from starwhale.base.store import BaseStorage
 
 
 class JobStorage(BaseStorage):
-    def __init__(self, uri: URI) -> None:
-        super().__init__()
-
-        self.uri = uri
-        self.project_dir = Path(self.sw_config.rootdir / self.uri.project)
-        self.loc, self.id = self._guess()
-        self.recover_loc = (
-            self.project_dir / RECOVER_DIRNAME / self.id[:VERSION_PREFIX_CNT] / self.id
+    @property
+    def recover_loc(self) -> Path:
+        return (
+            self.project_dir
+            / URIType.JOB
+            / RECOVER_DIRNAME
+            / self.id[:VERSION_PREFIX_CNT]
+            / self.id
         )
 
     def _guess(self) -> t.Tuple[Path, str]:
@@ -35,14 +30,6 @@ class JobStorage(BaseStorage):
         return guess_real_path(
             self.project_dir / URIType.JOB / name[:VERSION_PREFIX_CNT], name
         )
-
-    @property
-    def mainfest(self) -> t.Dict[str, t.Any]:
-        _mf = self.loc / DEFAULT_MANIFEST_NAME
-        if not _mf.exists():
-            return {}
-        else:
-            return yaml.safe_load(_mf.open())
 
     @property
     def eval_report_path(self) -> Path:

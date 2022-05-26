@@ -17,18 +17,24 @@ from starwhale.base.type import URIType
 from .type import InstanceType
 
 
-class ObjField(t.NamedTuple):
-    typ: str = ""
-    name: str = ""
-    version: str = ""
+class ObjField(object):
+    def __init__(
+        self, typ: str = URIType.UNKNOWN, name: str = "", version: str = ""
+    ) -> None:
+        self.typ = typ
+        self.name = name
+        self.version = version
+
+    def __str__(self) -> str:
+        return f"{self.typ}-{self.name}-{self.version}"
 
 
 class URI(object):
     def __init__(self, raw: str, expected_type: str = URIType.UNKNOWN) -> None:
         self.raw = raw.strip().strip("/").lower()
         self._sw_config = SWCliConfigMixed()
-        self.expected_type = expected_type
 
+        self.expected_type = expected_type
         self.full_uri = self.raw
 
         self.instance = ""
@@ -136,10 +142,16 @@ class URI(object):
         if self.expected_type in _all_types and not raw.startswith(
             self.expected_type + "/"
         ):
-            ok, reason = validate_obj_name(raw)
+            if "/version/" in raw:
+                _name, _version = raw.split("/version/")
+            else:
+                _name, _version = raw, ""
+
+            ok, reason = validate_obj_name(_name)
             if not ok:
                 raise Exception(reason)
-            return ObjField(typ=self.expected_type, name=raw, version=""), ""
+
+            return ObjField(typ=self.expected_type, name=_name, version=_version), ""
 
         _sp = raw.split("/")
         if _sp[0] not in _all_types or len(_sp) < 2:
@@ -211,3 +223,42 @@ class URI(object):
     @property
     def user_role(self) -> str:
         return self.sw_instance_config.get("user_role", UserRoleType.NORMAL)
+
+    @classmethod
+    def capsulate_uri_str(
+        cls,
+        instance: str,
+        project: str = "",
+        obj_type: str = "",
+        obj_name: str = "",
+        obj_ver: str = "",
+    ) -> str:
+        _fmt = lambda x: x.strip().strip("/").lower()
+
+        _rt = f"{_fmt(instance)}"  # type: ignore
+        if project:
+            _rt = f"{_rt}/project/{project}"
+        else:
+            return _rt
+
+        if obj_name and obj_type:
+            _rt = f"{_rt}/{obj_type}/{obj_name}"
+        else:
+            return _rt
+
+        if obj_ver:
+            _rt = f"{_rt}/version/{obj_ver}"
+
+        return _rt
+
+    @classmethod
+    def capsulate_uri(
+        cls,
+        instance: str,
+        project: str = "",
+        obj_type: str = "",
+        obj_name: str = "",
+        obj_ver: str = "",
+    ) -> "URI":
+        _uri = cls.capsulate_uri_str(instance, project, obj_type, obj_name, obj_ver)
+        return cls(_uri)

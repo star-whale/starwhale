@@ -3,27 +3,29 @@ import platform
 import typing as t
 from pathlib import Path
 import shutil
+import subprocess
+import tarfile
 
 from loguru import logger
-import conda_pack  # type: ignore
-from rich import print as rprint
-from rich.console import Console
+import conda_pack
 
-from starwhale.utils.error import UnExpectedConfigFieldError
-
-
+from starwhale.utils import console
+from starwhale.utils.error import ExistedError, UnExpectedConfigFieldError
+from starwhale.consts import (
+    PythonRunEnv,
+    DEFAULT_PYTHON_VERSION,
+    ENV_VENV,
+    ENV_CONDA,
+    ENV_CONDA_PREFIX,
+)
 from starwhale.utils import (
-    get_python_run_env,
     get_python_version,
-    is_conda,
-    is_venv,
     is_darwin,
     is_linux,
     is_windows,
-    get_conda_env,
 )
-from starwhale.utils.error import NoSupportError
-from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.error import NoSupportError, FormatError
+from starwhale.utils.fs import ensure_dir, ensure_file, empty_dir
 from starwhale.utils.process import check_call
 
 
@@ -45,6 +47,13 @@ SW_PYPI_TRUSTED_HOST = os.environ.get(
     "SW_PYPI_TRUSTED_HOST",
     "pypi.tuna.tsinghua.edu.cn pypi.mirrors.ustc.edu.cn pypi.doubanio.com pypi.org",
 )
+_DUMMY_FIELD = -1
+
+
+class PythonVersionField(t.NamedTuple):
+    major: int = _DUMMY_FIELD
+    minor: int = _DUMMY_FIELD
+    micro: int = _DUMMY_FIELD
 
 
 def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
@@ -74,10 +83,58 @@ def venv_activate(venvdir: t.Union[str, Path]) -> None:
     check_call(cmd, shell=True, executable="/bin/bash")
 
 
-def venv_setup(venvdir: t.Union[str, Path]) -> None:
+def parse_python_version(s: str) -> PythonVersionField:
+    s = s.strip().lower()
+
+    if not s:
+        raise FormatError("python version empty")
+
+    if s.startswith("python"):
+        s = s.split("python", 1)[-1]
+
+    _vt = s.split(".")
+    _major, _minor, _micro = int(_vt[0]), _DUMMY_FIELD, _DUMMY_FIELD
+
+    if len(_vt) >= 2:
+        _minor = int(_vt[1])
+
+    if len(_vt) >= 3:
+        _micro = int(_vt[2])
+
+    return PythonVersionField(major=_major, minor=_minor, micro=_micro)
+
+
+def venv_setup(
+    venvdir: t.Union[str, Path], python_version: str = "", prompt: str = ""
+) -> None:
     # TODO: define starwhale virtualenv.py
     # TODO: use more elegant method to make venv portable
-    check_call(f"python3 -m venv {venvdir}", shell=True)
+
+    _default_bin = "python3"
+
+    def _call(pybin: str) -> None:
+        logger.info(f"use {pybin} to create virtualenv")
+        cmd = [f"{pybin}", "-m", "venv", f"{venvdir}"]
+        if prompt:
+            cmd += ["--prompt", prompt]
+        check_call(cmd)
+
+    if python_version:
+        _pvf = parse_python_version(python_version)
+
+        _v = f"{_pvf.major}"
+        if _pvf.minor != _DUMMY_FIELD:
+            _v = f"{_v}.{_pvf.minor}"
+
+        try:
+            _call(f"python{_v}")
+        except FileNotFoundError as e:
+            logger.warning(
+                f"not found python{_v}, fallback to use {_default_bin}, error: {e}"
+            )
+            _call(_default_bin)
+    else:
+        _call(_default_bin)
 
 
 def pip_freeze(path: t.Union[str, Path]) -> None:
@@ -85,11 +142,35 @@ def pip_freeze(path: t.Union[str, Path]) -> None:
     check_call(f"pip freeze > {path}", shell=True)
 
 
+def conda_create(
+    env: str,
+    python_version: str = DEFAULT_PYTHON_VERSION,
+    quiet: bool = False,
+) -> None:
+    cmd = ["conda", "create", "--namespace", env, "--yes"]
+
+    if quiet:
+        cmd += ["--quiet"]
+
+    cmd += [f"python={python_version}"]
+    check_call(cmd)
+
+
 def conda_export(path: t.Union[str, Path], env: str = "") -> None:
     # TODO: add cmd timeout
     cmd = f"{get_conda_bin()} env export"
     env = f"-n {env}" if env else ""
     check_call(f"{cmd} {env} > {path}", shell=True)
+
+
+def get_external_python_version() -> t.Any:
+    return subprocess.check_output(
+        [
+            "python3",
+            "-c",
+            "import sys; _v = sys.version_info; print(f'{_v,major}.{_v.minor}.{_v.micro}')",
+        ],
+    )
 
 
 def conda_restore(
@@ -138,9 +219,9 @@ echo 'source {venvdir}/bin/activate'
 
 def _render_sw_activate(content: str, path: Path) -> None:
     ensure_file(path, content, mode=0o755)
-    rprint(f" :clap: {path.name} is generated at {path}")
-    rprint(" :compass: run cmd:  ")
-    rprint(f" \t [bold red] $(sh {path}) [/]")
+    console.print(f" :clap: {path.name} is generated at {path}")
+    console.print(" :compass: run cmd:  ")
+    console.print(f" \t [bold red] $(sh {path}) [/]")
 
 
 def get_conda_bin() -> str:
@@ -160,15 +241,14 @@ def get_conda_bin() -> str:
 def dump_python_dep_env(
     dep_dir: t.Union[str, Path],
     pip_req_fpath: str,
-    skip_gen_env: bool = False,
-    console: t.Optional[Console] = None,
+    gen_all_bundles: bool = False,
     expected_runtime: str = "",
+    mode: str = PythonRunEnv.AUTO,
 ) -> t.Dict[str, t.Any]:
     # TODO: smart dump python dep by starwhale sdk-api, pip ast analysis?
     dep_dir = Path(dep_dir)
-    console = console or Console()
 
-    pr_env = get_python_run_env()
+    pr_env = get_python_run_env(mode)
     sys_name = platform.system()
     py_ver = get_python_version()
 
@@ -179,11 +259,12 @@ def dump_python_dep_env(
         )
 
     _manifest = dict(
+        expected_mode=mode,
         env=pr_env,
         system=sys_name,
         python=py_ver,
         local_gen_env=False,
-        venv=dict(use=not is_conda()),
+        venv=dict(use=is_venv()),
         conda=dict(use=is_conda()),
     )
 
@@ -203,10 +284,10 @@ def dump_python_dep_env(
     if os.path.exists(pip_req_fpath):
         shutil.copyfile(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
 
-    if is_conda():
+    if pr_env == PythonRunEnv.CONDA:
         logger.info(f"[info:dep]dump conda environment yaml: {_conda_lock_env}")
         conda_export(_conda_lock_env)
-    elif is_venv():
+    elif pr_env == PythonRunEnv.VENV:
         logger.info(f"[info:dep]dump pip-req with freeze: {_pip_lock_req}")
         pip_freeze(_pip_lock_req)
     else:
@@ -215,7 +296,7 @@ def dump_python_dep_env(
             "detect use system python, swcli does not pip freeze, only use custom pip-req"
         )
 
-    if is_windows() or is_darwin() or skip_gen_env:
+    if is_windows() or is_darwin() or not gen_all_bundles:
         # TODO: win/osx will produce env in controller agent with task
         logger.info(f"[info:dep]{sys_name} will skip conda/venv dump or generate")
     elif is_linux():
@@ -223,7 +304,7 @@ def dump_python_dep_env(
         # TODO: ignore some pkg when dump, like notebook?
         _manifest["local_gen_env"] = True  # type: ignore
 
-        if is_conda():
+        if pr_env == PythonRunEnv.CONDA:
             cenv = get_conda_env()
             dest = str(_conda_dir / CONDA_ENV_TAR)
             if not cenv:
@@ -268,3 +349,159 @@ def detect_pip_req(workdir: t.Union[str, Path], fname: str = "") -> str:
                 return str(workdir / p)
             else:
                 return ""
+    return ""
+
+
+def activate_python_env(
+    mode: str,
+    identity: str,
+) -> None:
+    # TODO: switch shell python environment
+    console.print(":cake: run command in shell :cake:")
+
+    if mode == PythonRunEnv.VENV:
+        cmd = f"source {identity}/bin/activate"
+    elif mode == PythonRunEnv.CONDA:
+        cmd = f"conda activate {identity}"
+    else:
+        raise NoSupportError(mode)
+
+    console.print(f"\t[red][blod]{cmd}")
+
+
+def create_python_env(
+    mode: str,
+    name: str,
+    workdir: Path,
+    python_version: str = DEFAULT_PYTHON_VERSION,
+    force: bool = False,
+) -> str:
+
+    if mode == PythonRunEnv.VENV:
+        venvdir = workdir / "venv"
+        if venvdir.exists() and not force:
+            raise ExistedError(str(venvdir))
+
+        logger.info(f"create venv @ {venvdir}...")
+        venv_setup(venvdir, python_version=python_version, prompt=name)
+        return str(venvdir.absolute())
+    elif mode == PythonRunEnv.CONDA:
+        logger.info(f"create conda {name}:{workdir}, use python {python_version}...")
+        conda_create(name, python_version)
+        return name
+    else:
+        raise NoSupportError(mode)
+
+
+def is_venv() -> bool:
+    # TODO: refactor for get external venv attr
+    output = subprocess.check_output(
+        [
+            "python3",
+            "-c",
+            "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))",  # noqa: E501
+        ],
+    )
+    return "True" in str(output) or get_venv_env() != ""
+
+
+def get_venv_env() -> str:
+    return os.environ.get(ENV_VENV, "")
+
+
+def is_conda() -> bool:
+    return get_conda_env() != "" and get_conda_env_prefix() != ""
+
+
+def get_python_run_env(mode: str = PythonRunEnv.AUTO) -> str:
+    if mode == PythonRunEnv.VENV:
+        if is_venv():
+            return PythonRunEnv.VENV
+        else:
+            raise EnvironmentError(
+                "expected venv mode, but cannot find venv environment"
+            )
+    elif mode == PythonRunEnv.CONDA:
+        if is_conda():
+            return PythonRunEnv.CONDA
+        else:
+            raise EnvironmentError("expected conda mmode, but cannot fing conda envs")
+    elif mode == PythonRunEnv.AUTO:
+        if is_conda() and is_venv():
+            raise EnvironmentError("find venv and conda both activate")
+
+        if is_conda():
+            return PythonRunEnv.CONDA
+        elif is_venv():
+            return PythonRunEnv.VENV
+        else:
+            return PythonRunEnv.SYSTEM
+    else:
+        raise NoSupportError(f"python run env: {mode}")
+
+
+def get_conda_env() -> str:
+    return os.environ.get(ENV_CONDA, "")
+
+
+def get_conda_env_prefix() -> str:
+    return os.environ.get(ENV_CONDA_PREFIX, "")
+
+
+def restore_python_env(
+    _workdir: Path, _mode: str, _local_gen_env: bool = False
+) -> None:
+    console.print(
+        f":bread: restore python {_mode} @ {_workdir}, use local env data: {_local_gen_env}"
+    )
+    _f = _do_restore_conda if _mode == PythonRunEnv.CONDA else _do_restore_venv
+    _f(_workdir, _local_gen_env)
+
+
+def _do_restore_conda(_workdir: Path, _local_gen_env: bool) -> None:
+    _ascript = _workdir / SW_ACTIVATE_SCRIPT
+    _conda_dir = _workdir / "dep" / "conda"
+    _tar_fpath = _conda_dir / CONDA_ENV_TAR
+    _env_dir = _conda_dir / "env"
+
+    if _local_gen_env and _tar_fpath.exists():
+        empty_dir(_env_dir)
+        ensure_dir(_env_dir)
+        logger.info(f"extract {_tar_fpath} ...")
+        with tarfile.open(str(_tar_fpath)) as f:
+            f.extractall(str(_env_dir))
+
+        logger.info(f"render activate script: {_ascript}")
+        venv_activate_render(_env_dir, _ascript)
+    else:
+        logger.info("restore conda env ...")
+        _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
+        # TODO: controller will proceed in advance
+        conda_restore(_env_yaml, _env_dir)
+
+        logger.info(f"render activate script: {_ascript}")
+        conda_activate_render(_env_dir, _ascript)
+
+
+def _do_restore_venv(
+    _workdir: Path, _local_gen_env: bool, _rebuild: bool = False
+) -> None:
+    _ascript = _workdir / SW_ACTIVATE_SCRIPT
+    _python_dir = _workdir / "dep" / "python"
+    _venv_dir = _python_dir / "venv"
+
+    _relocate = True
+    if _rebuild or not _local_gen_env or not (_venv_dir / "bin" / "activate").exists():
+        logger.info(f"setup venv and pip install {_venv_dir}")
+        _relocate = False
+        venv_setup(_venv_dir)
+        for _name in (DUMP_PIP_REQ_FNAME, DUMP_USER_PIP_REQ_FNAME):
+            _path = _python_dir / _name
+            if not _path.exists():
+                continue
+
+            logger.info(f"pip install {_path} ...")
+            install_req(_venv_dir, _path)
+
+    logger.info(f"render activate script: {_ascript}")
+    venv_activate_render(_venv_dir, _ascript, relocate=_relocate)

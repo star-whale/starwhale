@@ -22,9 +22,10 @@ SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
 
 ENV_CONDA = "CONDA_DEFAULT_ENV"
 ENV_CONDA_PREFIX = "CONDA_PREFIX"
+ENV_VENV = "VIRTUAL_ENV"
 
 
-class YAMLType:
+class DefaultYAMLName:
     MODEL = "model.yaml"
     DATASET = "dataset.yaml"
     RUNTIME = "runtime.yaml"
@@ -34,6 +35,8 @@ class PythonRunEnv:
     CONDA = "conda"
     VENV = "venv"
     SYSTEM = "system"
+    DOCKER = "docker"
+    AUTO = "auto"
 
 
 class HTTPMethod:
@@ -92,3 +95,9 @@ DEFAULT_PAGE_IDX = 1
 DEFAULT_PAGE_SIZE = 20
 
 RECOVER_DIRNAME = ".recover"
+
+DEFAULT_PYTHON_VERSION = "3.8"
+
+YAML_TYPES = (".yaml", ".yml")
+
+DEFAULT_SW_TASK_RUN_IMAGE = "ghcr.io/star-whale/starwhale:latest"

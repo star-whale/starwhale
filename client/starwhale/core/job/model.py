@@ -15,7 +15,7 @@ from starwhale.base.uri import URI
 from starwhale.consts import DEFAULT_PAGE_IDX, HTTPMethod, DEFAULT_PAGE_SIZE
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.error import NoSupportError
-from starwhale.utils.fs import ensure_dir, move_dir
+from starwhale.utils.fs import move_dir
 from starwhale.utils.http import ignore_error
 from starwhale.utils.process import check_call
 from .executor import EvalExecutor
@@ -82,14 +82,14 @@ class Job(object):
     def pause(self, force: bool = False) -> t.Tuple[bool, str]:
         raise NotImplementedError
 
-    @staticmethod
-    def _get_job_cls(uri: URI) -> t.Union[t.Type[StandaloneJob], t.Type[CloudJob]]:
+    @classmethod
+    def _get_job_cls(cls, uri: URI) -> t.Union[t.Type[StandaloneJob], t.Type[CloudJob]]:
         if uri.instance_type == InstanceType.STANDALONE:
             return StandaloneJob
         elif uri.instance_type == InstanceType.CLOUD:
             return CloudJob
         else:
-            raise NoSupportError(f"{uri}")
+            raise NoSupportError(f"job uri:{uri}")
 
     @classmethod
     def list(
@@ -160,11 +160,9 @@ class StandaloneJob(Job):
         }
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
-        ensure_dir(self.store.recover_loc.parent)
         return move_dir(self.store.loc, self.store.recover_loc, force)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
-        ensure_dir(self.store.loc.parent)
         return move_dir(self.store.recover_loc, self.store.loc, force)
 
     def cancel(self, force: bool = False) -> t.Tuple[bool, str]:

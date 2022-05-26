@@ -11,10 +11,15 @@ from fs.walk import Walker
 from fs import open_fs
 
 from starwhale import __version__
-from starwhale.utils.error import FileTypeError, FileFormatError, NotFoundError
+from starwhale.utils.error import (
+    ExistedError,
+    FileTypeError,
+    FileFormatError,
+    NotFoundError,
+)
 from starwhale.utils import gen_uniq_version, console, now_str
 from starwhale.utils.fs import ensure_dir, ensure_file, ensure_link
-from starwhale.utils.venv import detect_pip_req, dump_python_dep_env, SUPPORTED_PIP_REQ
+from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.utils.load import import_cls
 from starwhale.consts import (
     DEFAULT_STARWHALE_API_VERSION,
@@ -22,6 +27,7 @@ from starwhale.consts import (
     DEFAULT_MODEL_YAML_NAME,
     DEFAULT_COPY_WORKERS,
     SHORT_VERSION_CNT,
+    YAML_TYPES,
 )
 from .store import ModelPackageLocalStore
 from starwhale.utils.progress import run_with_progress_bar
@@ -241,11 +247,10 @@ class ModelPackage(object):
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),
             (self._copy_src, 15, "copy src"),
-            (self._dump_dep, 50, "dump python depency"),
             (self._render_manifest, 5, "render manifest"),
             (self._make_swmp_tar, 20, "build swmp"),
         ]
-        run_with_progress_bar("swmp building...", operations, self._console)
+        run_with_progress_bar("swmp building...", operations)
 
     def _gen_version(self) -> None:
         logger.info("[step:version]create swmp version...")
@@ -264,13 +269,11 @@ class ModelPackage(object):
         self._snapshot_workdir = self._store.workdir / self._name / self._version
         # TODO: graceful clear?
         if self._snapshot_workdir.exists():
-            raise Exception(f"{self._snapshot_workdir} has already existed, will abort")
+            raise ExistedError(str(self._snapshot_workdir))
 
         ensure_dir(self._swmp_store)
         ensure_dir(self._snapshot_workdir)
         ensure_dir(self._src_dir)
-        ensure_dir(self._conda_dir)
-        ensure_dir(self._python_dir / "venv")
 
         # TODO: cleanup garbage dir
         # TODO: add lock/flag file for gc
@@ -283,39 +286,8 @@ class ModelPackage(object):
         )
 
     @property
-    def _model_pip_req(self) -> str:
-        _run = self._swmp_config.run
-        return detect_pip_req(self.workdir, _run.pip_req)
-
-    @property
-    def _conda_dir(self) -> Path:
-        return self._snapshot_workdir / "dep" / "conda"
-
-    @property
-    def _python_dir(self) -> Path:
-        return self._snapshot_workdir / "dep" / "python"
-
-    @property
-    def _venv_dir(self) -> Path:
-        return self._python_dir / "venv"
-
-    @property
     def _src_dir(self) -> Path:
         return self._snapshot_workdir / "src"
-
-    def _dump_dep(self) -> None:
-        logger.info("[step:dep]start dump python dep...")
-
-        _dep = dump_python_dep_env(
-            dep_dir=self._snapshot_workdir / "dep",
-            pip_req_fpath=self._model_pip_req,
-            skip_gen_env=self._skip_gen_env,
-            console=self._console,
-            expected_runtime=self._swmp_config.run.runtime,
-        )
-        self._manifest["dep"] = _dep
-
-        logger.info("[step:dep]finish dump dep")
 
     def _copy_src(self) -> None:
         logger.info(
@@ -377,7 +349,7 @@ class ModelPackage(object):
         if not os.path.exists(fpath):
             raise FileExistsError(f"model yaml {fpath} is not existed")
 
-        if not fpath.endswith((".yaml", ".yml")):
+        if not fpath.endswith(YAML_TYPES):
             raise FileTypeError(f"{fpath} file type is not yaml|yml")
 
         return ModelConfig.create_by_yaml(fpath)

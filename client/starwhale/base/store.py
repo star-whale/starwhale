@@ -1,16 +1,54 @@
 import typing as t
 from pathlib import Path
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
+import yaml
 
 from rich import box
 from rich.table import Table
 
+from starwhale.base.uri import URI
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils import console
-from starwhale.consts import SHORT_VERSION_CNT
+from starwhale.consts import SHORT_VERSION_CNT, DEFAULT_MANIFEST_NAME
 
 
 _MIN_GUESS_NAME_LENGTH = 5
+
+
+class BaseStorage(object):
+    def __init__(self, uri: URI) -> None:
+        self.uri = uri
+        self.sw_config = SWCliConfigMixed()
+        self.project_dir = self.sw_config.rootdir / self.uri.project
+        self.loc, self.id = self._guess()
+
+    @abstractmethod
+    def _guess(self) -> t.Tuple[Path, str]:
+        raise NotImplementedError
+
+    @abstractproperty
+    def recover_loc(self) -> Path:
+        raise NotImplementedError
+
+    @property
+    def bundle_dir(self) -> Path:
+        raise NotImplementedError
+
+    @property
+    def latest_bundle_dir(self) -> Path:
+        raise NotImplementedError
+
+    @property
+    def snapshot_workdir(self) -> Path:
+        raise NotImplementedError
+
+    @property
+    def mainfest(self) -> t.Dict[str, t.Any]:
+        _mf = self.loc / DEFAULT_MANIFEST_NAME
+        if not _mf.exists():
+            return {}
+        else:
+            return yaml.safe_load(_mf.open())
 
 
 class LocalStorage(SWCliConfigMixed):
@@ -106,8 +144,4 @@ class LocalStorage(SWCliConfigMixed):
 
     @abstractmethod
     def delete(self, sw_name: str) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def gc(self, dry_run: bool = False) -> None:
         raise NotImplementedError

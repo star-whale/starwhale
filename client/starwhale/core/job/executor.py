@@ -15,6 +15,7 @@ from starwhale.consts import (
     JSON_INDENT,
     SWDSBackendType,
     CURRENT_FNAME,
+    DEFAULT_SW_TASK_RUN_IMAGE,
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.error import SWObjNameFormatError
@@ -25,7 +26,6 @@ from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
 from starwhale.base.type import EvalTaskType, RunSubDirType, URIType
 
-DEFAULT_SW_TASK_RUN_IMAGE = "ghcr.io/star-whale/starwhale:latest"
 _CNTR_WORKDIR = "/opt/starwhale"
 _STATUS = PipelineHandler.STATUS
 
@@ -106,7 +106,7 @@ class EvalExecutor(object):
         elif phase == EvalTaskType.CMP:
             operations.append(_cmp)
 
-        run_with_progress_bar("eval run in local...", operations, self._console)
+        run_with_progress_bar("eval run in local...", operations)
 
     def _gen_version(self) -> None:
         # TODO: abstract base class or mixin class for swmp/swds/
