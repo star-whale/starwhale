@@ -84,6 +84,10 @@ externalS3OSS:
 
 controller:
   taskSplitSize: 2
+  jwt:
+    tokenExpireMinutes: 43200
+  file:
+    maxFileSize: 20480MB
   auth:
     username: starwhale
     password: abcd1234

@@ -59,6 +59,10 @@ spec:
               value: controller
             - name: SW_CONTROLLER_PORT
               value: "{{ .Values.controller.containerPort }}"
+            - name: SW_JWT_TOKEN_EXPIRE_MINUTES
+              value: "{{ .Values.controller.jwt.tokenExpireMinutes }}"
+            - name: SW_UPLOAD_MAX_FILE_SIZE
+              value: "{{ .Values.controller.file.maxFileSize }}"
             - name: SW_STORAGE_PREFIX
               value: "{{ include "common.names.fullname" . }}"
             - name: SW_TASK_SPLIT_SIZE
