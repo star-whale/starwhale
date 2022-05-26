@@ -61,7 +61,7 @@
 
     <select id="listProjects" parameterType="java.lang.String" resultMap="projectResultMap" >
         <include refid="select_project"/>
-        and p.is_deleted = 0
+        and p.is_deleted = #{isDeleted}
         <if test="projectName != null and projectName != ''">
             and p.project_name like concat(#{projectName}, '%')
         </if>
@@ -70,9 +70,18 @@
         </if>
     </select>
 
+    <select id="listDeletedProjects" parameterType="java.lang.String" resultMap="projectResultMap">
+        <include refid="select_project"/>
+        and p.is_deleted = 1
+        <if test="projectName != null and projectName != ''">
+            and p.project_name = #{projectName}
+        </if>
+        order by p.modified_time desc
+    </select>
+
     <select id="listProjectsByOwner" parameterType="java.lang.Long" resultMap="projectResultMap">
         <include refid="select_project"/>
-        and p.is_deleted = 0
+        and p.is_deleted = #{isDeleted}
         and p.owner_id = #{userId}
         <if test="order != null and order != ''">
             order by ${order}
@@ -81,7 +90,7 @@
 
     <select id="listProjectsByOwnerName" parameterType="java.lang.String" resultMap="projectResultMap">
         <include refid="select_project"/>
-        and p.is_deleted = 0
+        and p.is_deleted = #{isDeleted}
         and u.user_name like concat(#{userName}, '%')
         <if test="order != null and order != ''">
             order by ${order}

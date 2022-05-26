@@ -51,6 +51,7 @@ public interface ProjectApi {
     @GetMapping(value = "/project")
     ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(
         @Valid @RequestParam(value = "projectName", required = false) String projectName,
+        @Valid @RequestParam(value = "isDeleted", required = false, defaultValue = "false") Boolean isDeleted,
         @Parameter(in = ParameterIn.QUERY, description = "Id of the project owner", schema = @Schema())
         @Valid @RequestParam(value = "ownerId", required = false) String ownerId,
         @Parameter(in = ParameterIn.QUERY, description = "Name of the project owner", schema = @Schema())

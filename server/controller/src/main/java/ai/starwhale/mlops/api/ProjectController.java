@@ -51,13 +51,14 @@ public class ProjectController implements ProjectApi{
     private IDConvertor idConvertor;
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(String projectName,
+    public ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(String projectName, Boolean isDeleted,
         String ownerId, String ownerName, Integer pageNum, Integer pageSize, String sort, Integer order) {
 
         PageInfo<ProjectVO> projects = projectService.listProject(
             Project.builder()
                 .name(projectName)
                 .owner(User.builder().id(idConvertor.revert(ownerId)).name(ownerName).build())
+                .isDeleted(isDeleted)
                 .build(),
             PageParams.builder()
                 .pageNum(pageNum)

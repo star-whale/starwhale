@@ -36,4 +36,9 @@ public class Project {
 
     private boolean isDefault;
 
+    private boolean isDeleted;
+
+    public Integer getDeleteInt() {
+        return isDeleted ? 1 : 0;
+    }
 }
