@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.common;
 
 import ai.starwhale.mlops.exception.ConvertException;
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -43,5 +44,9 @@ public class IDConvertor implements Convertor<Long, String>{
         } catch(NumberFormatException e) {
             throw new ConvertException("Convert ID: number format error.", e);
         }
+    }
+
+    public boolean isID(String str) {
+        return StrUtil.isNumeric(str);
     }
 }

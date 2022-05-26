@@ -21,7 +21,6 @@ import ai.starwhale.mlops.api.protocol.dag.GraphVO;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
-import ai.starwhale.mlops.domain.dag.bo.Graph;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -34,6 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -220,4 +220,36 @@ public interface JobApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("jobId")
             String jobId);
+
+    @Operation(summary = "Remove job")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "OK",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = String.class)))
+        })
+    @DeleteMapping (value = "/project/{projectUrl}/job/{jobUrl}")
+    ResponseEntity<ResponseMessage<String>> removeJob(
+        @Valid @PathVariable("projectUrl") String projectUrl,
+        @Valid @PathVariable("jobUrl") String jobUrl);
+
+    @Operation(summary = "Recover job")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "OK",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = String.class)))
+        })
+    @PostMapping  (value = "/project/{projectUrl}/job/{jobUrl}/recover")
+    ResponseEntity<ResponseMessage<String>> recoverJob(
+        @Valid @PathVariable("projectUrl") String projectUrl,
+        @Valid @PathVariable("jobUrl") String jobUrl);
 }

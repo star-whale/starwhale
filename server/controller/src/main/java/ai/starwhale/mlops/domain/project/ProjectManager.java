@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.project;
 
+import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.user.User;
@@ -37,6 +38,9 @@ public class ProjectManager {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private IDConvertor idConvertor;
 
     private static final Map<String, String> SORT_MAP = Map.of(
         "id", "project_id",
@@ -93,6 +97,14 @@ public class ProjectManager {
             projectEntity = projectMapper.findProjectByName(project.getName());
         }
         return projectEntity;
+    }
+
+    public Project fromUrl(String projectUrl) {
+        if(idConvertor.isID(projectUrl)) {
+            return Project.builder().id(new IDConvertor().revert(projectUrl)).build();
+        } else {
+            return Project.builder().name(projectUrl).build();
+        }
     }
 
 

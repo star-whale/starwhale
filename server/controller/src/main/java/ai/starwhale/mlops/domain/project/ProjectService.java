@@ -48,10 +48,11 @@ public class ProjectService {
 
     /**
      * Find a project by parameters.
-     * @param project Project ID must be set.
+     * @param projectUrl Project URL must be set.
      * @return Optional of a ProjectVO object.
      */
-    public ProjectVO findProject(Project project) {
+    public ProjectVO findProject(String projectUrl) {
+        Project project = projectManager.fromUrl(projectUrl);
         ProjectEntity projectEntity = projectManager.findProject(project);
         if(projectEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
@@ -97,10 +98,11 @@ public class ProjectService {
 
     /**
      * Delete a project
-     * @param project Project ID must be set.
+     * @param projectUrl Project URL must be set.
      * @return Is the operation successful.
      */
-    public Boolean deleteProject(Project project) {
+    public Boolean deleteProject(String projectUrl) {
+        Project project = projectManager.fromUrl(projectUrl);
         ProjectEntity entity = projectManager.findProject(project);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
@@ -116,7 +118,8 @@ public class ProjectService {
         return res > 0;
     }
 
-    public Boolean recoverProject(Project project) {
+    public Boolean recoverProject(String projectUrl) {
+        Project project = projectManager.fromUrl(projectUrl);
         String projectName = project.getName();
         if(project.getId() != null) {
             ProjectEntity entity = projectMapper.findProject(project.getId());

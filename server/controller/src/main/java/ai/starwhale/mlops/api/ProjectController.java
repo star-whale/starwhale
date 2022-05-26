@@ -30,7 +30,6 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
-import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageInfo;
 import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
@@ -89,8 +88,7 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> deleteProjectByUrl(String projectUrl) {
-        Project project = Project.fromUrl(projectUrl);
-        Boolean res = projectService.deleteProject(project);
+        Boolean res = projectService.deleteProject(projectUrl);
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete project failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -100,8 +98,7 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> recoverProject(String projectUrl) {
-        Project project = Project.fromUrl(projectUrl);
-        Boolean res = projectService.recoverProject(project);
+        Boolean res = projectService.recoverProject(projectUrl);
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover project failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -111,8 +108,7 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<ProjectVO>> getProjectByUrl(String projectUrl) {
-        Project project = Project.fromUrl(projectUrl);
-        ProjectVO vo = projectService.findProject(project);
+        ProjectVO vo = projectService.findProject(projectUrl);
         return ResponseEntity.ok(Code.success.asResponse(vo));
     }
 
