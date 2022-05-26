@@ -191,8 +191,8 @@ function Home() {
           <div className="divider">Icon</div>
           <div className="user__body">
             {sectionUsers.map((user, index) => (
-              <div class="card" key={index}>
-                <div class="card__image">
+              <div className="card" key={index}>
+                <div className="card__image">
                   <div
                     style={{
                       backgroundImage: `url(${user.image})`,
@@ -200,7 +200,7 @@ function Home() {
                     alt="Image alt text"
                   />
                 </div>
-                <div class="card__body">
+                <div className="card__body">
                   <h3>{user.title}</h3>
                   <div className="divider2">———— —— -</div>
                   <span>{user.description}</span>
@@ -235,7 +235,7 @@ function Home() {
                 className="button button--primary  button--rounded"
                 to="/docs"
               >
-                Get started
+                Request a Demo
               </Link>
             </div>
           </div>

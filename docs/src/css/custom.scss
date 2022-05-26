@@ -43,12 +43,12 @@ html {
   --ifm-color-primary: #2b65d9;
 
   --ifm-color-primary-dark: #2b65d9;
-  --ifm-color-primary-darker: #2b65d9;
-  --ifm-color-primary-darkest: #2b65d9;
+  --ifm-color-primary-darker: #5181e0;
+  --ifm-color-primary-darkest: #1c4cad;
 
   --ifm-color-primary-light: #2b65d9;
-  --ifm-color-primary-lighter: #2b65d9;
-  --ifm-color-primary-lightest: #2b65d9;
+  --ifm-color-primary-lighter: #5181e0;
+  --ifm-color-primary-lightest: #1c4cad;
   --ifm-toc-background-color: #141722;
 
   --ifm-code-font-size: 95%;
@@ -218,8 +218,11 @@ img[class^="heroLogo"] {
 }
 
 .hero .button.button--primary:hover {
-  /* background-color: #c0f830;
-  border-color: #c0f830; */
+  background-color: #5181e0;
+  box-shadow: none !important;
+}
+.hero .button.button--primary:active {
+  background-color: #1c4cad;
   box-shadow: none !important;
 }
 
@@ -252,7 +255,8 @@ html[data-theme="light"] .hero .button.button--primary {
 /* header social icons */
 .header-ico--github {
   background-image: url("/img/ico-github.svg");
-  margin-right: calc(var(--ifm-navbar-item-padding-horizontal) * 2);
+  background-position: 0 0;
+  margin-right: 30px;
 }
 
 .header-ico--slack {
@@ -260,12 +264,18 @@ html[data-theme="light"] .hero .button.button--primary {
 }
 
 .header-ico {
-  width: 24px;
+  width: 81px;
   height: 24px;
-  padding: 0 calc(var(--ifm-navbar-item-padding-horizontal) * 1.2);
+  padding: 0;
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: left;
   background-size: 24px;
+  padding-left: 30px;
+  line-height: 24px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0;
+  text-align: center;
 }
 
 .header-ico:hover {
@@ -391,11 +401,11 @@ html[data-theme="dark"] .navbar-sidebar .menu__link.header-ico--slack:before {
 }
 
 .navbar-sidebar .menu__link.header-ico--slack:hover {
-  background: url("/img/ico-slack.svg") no-repeat center;
+  background: url("/img/ico-slack.svg") no-repeat left;
 }
 
 .navbar-sidebar .menu__link.header-ico--github:hover {
-  background: url("/img/ico-github.svg") no-repeat center;
+  background: url("/img/ico-github.svg") no-repeat left;
 }
 
 .menu__link.header-ico {
@@ -827,4 +837,41 @@ html[data-theme="dark"] .alert--info {
 main > section {
   margin: 0 auto;
   max-width: var(--max-page-width);
+}
+
+/******* nav-bar *******/
+
+.navbar {
+  &__item {
+    color: rgba(255, 255, 255, 0.8);
+
+    a:hover {
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .dropdown__menu {
+      left: -30%;
+      padding: 21px 8px;
+      li {
+        height: 34px;
+        min-width: 148px;
+        text-align: center;
+      }
+    }
+  }
+  &__link:hover {
+    font-weight: bold;
+    color: #fff;
+  }
+}
+
+.button.button--primary:hover {
+  color: #fff !important;
+  background-color: #5181e0 !important;
+  box-shadow: none !important;
+}
+.button.button--primary:active {
+  background-color: #1c4cad !important;
+  box-shadow: none !important;
 }

@@ -1,5 +1,5 @@
 @function toRem($value) {
-  $remValue: ($value / 14) + rem;
+  $remValue: calc($value/14) + rem;
   @return $remValue;
 }
 
@@ -35,6 +35,7 @@
   align-items: center;
   flex-direction: column;
   gap: 80px;
+  padding-bottom: 80px;
 }
 
 .swTabs {
