@@ -116,7 +116,6 @@ def bootstrap_cmd() -> None:
     default=default.FILE_UPLOAD_MAX_SIZE,
     help="The max size of file for upload",
 )
-
 # agent
 @click.option(
     "--agent-runtime-dir",
