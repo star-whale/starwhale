@@ -62,6 +62,27 @@ const features = [
   },
 ];
 
+const sectionUsers = [
+  {
+    image: "img/swmp.png",
+    title: "Model Defination",
+    description:
+      "Text space occupation of detailed descriptionText space occupation of detailedscriptionText space occupation of detailscriptionText space occupation of detailscriptionText space occupation of detailscriptionText space occupation of detail",
+  },
+  {
+    image: "img/swmp.png",
+    title: "Model Defination",
+    description:
+      "Text space occupation of detailed descriptionText space occupation of detailed",
+  },
+  {
+    image: "img/swmp.png",
+    title: "Model Defination",
+    description:
+      "Text space occupation of detailed descriptionText space occupation of detailed",
+  },
+];
+
 function Feature({ imageUrl, title, description, newline }) {
   const imgUrl = useBaseUrl(imageUrl);
   return (
@@ -131,6 +152,7 @@ function Home() {
         </div>
       </header>
       <main className="swMain">
+        {/* starwhale tabs show case of project/model/dataset/runtime */}
         <section className="card swTabs">
           <div className="card__body">
             <ul className="tabs tabs--block">
@@ -154,7 +176,7 @@ function Home() {
               <div className="tabs__desc " id="project">
                 <span>- starwhale public dataset</span>
                 <Link
-                  className="button button--primary button--lg button--rounded"
+                  className="button button--primary  button--rounded"
                   to="/docs"
                 >
                   Get started
@@ -163,23 +185,61 @@ function Home() {
             </div>
           </div>
         </section>
-        {features && features.length > 0 && (
-          <section className={styles.features}>
-            <div className="container">
-              <div className="row">
-                {features.map(({ title, imageUrl, description, newline }) => (
-                  <Feature
-                    key={title}
-                    title={title}
-                    imageUrl={imageUrl}
-                    description={description}
-                    newline={newline}
+        {/* starwhale users */}
+        <section className="swUser">
+          <h1>Who is Starwhale for?</h1>
+          <div className="divider">Icon</div>
+          <div className="user__body">
+            {sectionUsers.map((user, index) => (
+              <div class="card" key={index}>
+                <div class="card__image">
+                  <div
+                    style={{
+                      backgroundImage: `url(${user.image})`,
+                    }}
+                    alt="Image alt text"
                   />
-                ))}
+                </div>
+                <div class="card__body">
+                  <h3>{user.title}</h3>
+                  <div className="divider2">———— —— -</div>
+                  <span>{user.description}</span>
+                </div>
               </div>
+            ))}
+          </div>
+        </section>
+        {/* starwhale try now */}
+        <section className="swTry">
+          <h1>Try today</h1>
+          <div className="try">
+            <div className="try__item">
+              <span>
+                <b>If</b> you want to know more detail about starwhale just
+                click the button "get started"ant to know more detail about
+                starwhale just click the button "get started"ant to know more
+                detail about starwhale just click the button "get started"ant to
+                know more detail about starwhale just click the button "get
+                started"
+              </span>
+              <Link
+                className="button button--primary  button--rounded"
+                to="/docs"
+              >
+                Get started
+              </Link>
             </div>
-          </section>
-        )}
+            <div className="try__item">
+              <span>- starwhale public dataset</span>
+              <Link
+                className="button button--primary  button--rounded"
+                to="/docs"
+              >
+                Get started
+              </Link>
+            </div>
+          </div>
+        </section>
       </main>
     </Layout>
   );
