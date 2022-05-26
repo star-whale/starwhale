@@ -58,5 +58,5 @@ jobs:
       - name: Build with Maven
         working-directory: ./server
         env:
-          COVERALL_TOKEN: ${{ secrets.COVERALL_TOKEN }}
+          COVERALL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: make ci-package-with-unit-test
