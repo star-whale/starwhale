@@ -106,7 +106,7 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
             case GPU:
                 imageConfig.setGpuConfig(
                         GPUConfig.builder()
-                                .count(oldTask.getDeviceAmount())
+                                // .count(oldTask.getDeviceAmount())
                                 .capabilities(List.of(List.of("gpu")))
                                 .deviceIds(oldTask.getDevices().stream().map(Device::getId).collect(Collectors.toList()))
                                 .build()
