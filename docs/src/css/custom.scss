@@ -211,11 +211,13 @@ img[class^="heroLogo"] {
   box-shadow: none !important;
 }
 
-.hero .button.button--primary:hover {
+.hero .button:hover {
   background-color: #5181e0;
   box-shadow: none !important;
+  border: none;
+  color: #fff;
 }
-.hero .button.button--primary:active {
+.hero .button:active {
   background-color: #1c4cad;
   box-shadow: none !important;
 }

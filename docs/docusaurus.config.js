@@ -177,6 +177,7 @@ module.exports = {
       ],
     },
   },
+  customFields: {},
   presets: [
     [
       "@docusaurus/preset-classic",

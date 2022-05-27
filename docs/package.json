@@ -30,6 +30,7 @@
         "markdownlint-cli": "^0.31.1",
         "medium-zoom": "^1.0.6",
         "prism-react-renderer": "^1.2.0",
+        "raw-loader": "^4.0.2",
         "react": "^16.8.4",
         "react-dom": "^16.8.4",
         "sass": "^1.52.1"

@@ -19,50 +19,66 @@ import CodeBlock from "@theme/CodeBlock";
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 import "/static/fonts/iconfont.js";
+import tabSectionProject from "!!raw-loader!./tabSectionProject.sh";
+import tabSectionDataset from "!!raw-loader!./tabSectionDataset.sh";
 
-const features = [
+const swTabs = [
   {
-    newline: "",
-    title: "New Model Defination",
-    description: (
+    tab: "Starwhale Project",
+    code: (
+      <CodeBlock className="tabs__code" language="shell">
+        {tabSectionProject}
+      </CodeBlock>
+    ),
+    desc: (
       <>
-        <b>SWMP</b> is design for MLOps.
+        - starwhale public dataset：starwhale provides massive public dataset -
+        easy to work：difine dataset.yaml, use swcli comand can easily generate
+        the dataset - fllexible:
       </>
     ),
+    button: {
+      label: "Learn more",
+      to: "/docs",
+    },
   },
   {
-    newline: "",
-    title: "New Dataset Defination",
-    description: (
+    tab: "Starwhale Model",
+    code: (
+      <CodeBlock className="tabs__code" language="shell">
+        1
+      </CodeBlock>
+    ),
+    desc: (
       <>
-        <b>SWDS</b> is design for MLOps.
+        - starwhale public dataset：starwhale provides massive public dataset -
+        easy to work：difine dataset.yaml, use swcli comand can easily generate
+        the dataset - fllexible:
       </>
     ),
+    button: {
+      label: "Learn more",
+      to: "/docs",
+    },
   },
   {
-    newline: "",
-    title: "Model Evaluation MLOps",
-    description: <>Model Evaluation is local or cluster.</>,
-  },
-  {
-    newline: "",
-    title: "Cluster Scaliabilty",
-    description: <>Easy to scale in cluster.</>,
-  },
-  {
-    newline: "",
-    title: "Easy Deployment",
-    description: (
+    tab: "Starwhale Dataset",
+    code: (
+      <CodeBlock className="tabs__code" language="shell">
+        {tabSectionDataset}
+      </CodeBlock>
+    ),
+    desc: (
       <>
-        One click <b>Model Evaluation</b> to your production Kubernetes or
-        BareMental Cluster <b>directly from the UI</b>.
+        - starwhale public dataset：starwhale provides massive public dataset -
+        easy to work：difine dataset.yaml, use swcli comand can easily generate
+        the dataset - fllexible:
       </>
     ),
-  },
-  {
-    newline: "",
-    title: "Zero Ops",
-    description: <>No ops.</>,
+    button: {
+      label: "Learn more",
+      to: "/docs",
+    },
   },
 ];
 
@@ -87,29 +103,11 @@ const sectionUsers = [
   },
 ];
 
-function Feature({ imageUrl, title, description, newline }) {
-  const imgUrl = useBaseUrl(imageUrl);
-  return (
-    <div
-      className={clsx(
-        `col col--4 col--feature text--justified  ${newline}`,
-        styles.feature
-      )}
-    >
-      {imgUrl && (
-        <div>
-          <img className={styles.featureImage} src={imgUrl} alt={title} />
-        </div>
-      )}
-      <h3>{title}</h3>
-      <p>{description}</p>
-    </div>
-  );
-}
-
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
+  const { customFields = {} } = siteConfig;
+
   return (
     <Layout
       title={`Hello from ${siteConfig.title}`}
@@ -155,89 +153,27 @@ function Home() {
         <section className="card swTabs">
           <div className="card__body">
             <Tabs className="tabs tabs--block">
-              <TabItem value="apple" label="Apple" default>
-                <div className="tabs__body">
-                  <code className="tabs__code" id="project">
-                    （输入comand生成dataset示意图）
-                    <p>1 # MNIST目录下，根据dataset.yaml内容，构建swds </p>
-                    <p>2 # dataset.yaml 内容可以按需修改</p> 4{" "}
-                    <p>5 # 查看构建的swds</p>{" "}
-                    <p>6 swcli dataset list[project uri] </p>7
-                    <p> 8 # push swds到controller中</p>
-                    <p>
-                      9 swcli dataset push mnist:hbsgeyzxmq4deytfgy3gin3bhbrxo5a
-                    </p>
-                  </code>
-                  <div className="tabs__desc " id="project">
-                    <span>
-                      - starwhale public dataset- starwhale public dataset-
-                      starwhale public dataset - starwhale public dataset -
-                      starwhale public dataset- starwhale public dataset-
-                      starwhale public dataset- starwhale public dataset-
-                      starwhale public dataset- starwhale public dataset-
-                      starwhale public dataset - starwhale public dataset-
-                      starwhale public dataset- starwhale public dataset
-                    </span>
-                    <Link
-                      className="button button--primary  button--rounded"
-                      to="/docs"
-                    >
-                      Learn more
-                    </Link>
-                  </div>
-                </div>
-              </TabItem>
-              <TabItem value="orange" label="Orange">
-                <div className="tabs__body"></div>
-              </TabItem>
-              <TabItem value="banana" label="Banana">
-                <div className="tabs__body"></div>
-              </TabItem>
-            </Tabs>
-            {/* <ul className="tabs tabs--block">
-              <li id="project" className="tabs__item tabs__item--active">
-                Starwhale Project
-              </li>
-              <li id="model" className="tabs__item">
-                Starwhale Model
-              </li>
-              <li id="dataset" className="tabs__item">
-                Starwhale Dataset
-              </li>
-              <li id="runtime" className="tabs__item">
-                Starwhale Runtime
-              </li>
-            </ul>
-            <div className="tabs__body">
-              <code className="tabs__code" id="project">
-                （输入comand生成dataset示意图）
-                <p>1 # MNIST目录下，根据dataset.yaml内容，构建swds </p>
-                <p>2 # dataset.yaml 内容可以按需修改</p> 4{" "}
-                <p>5 # 查看构建的swds</p>{" "}
-                <p>6 swcli dataset list[project uri] </p>7
-                <p> 8 # push swds到controller中</p>
-                <p>
-                  9 swcli dataset push mnist:hbsgeyzxmq4deytfgy3gin3bhbrxo5a
-                </p>
-              </code>
-              <div className="tabs__desc " id="project">
-                <span>
-                  - starwhale public dataset- starwhale public dataset-
-                  starwhale public dataset - starwhale public dataset -
-                  starwhale public dataset- starwhale public dataset- starwhale
-                  public dataset- starwhale public dataset- starwhale public
-                  dataset- starwhale public dataset- starwhale public dataset -
-                  starwhale public dataset- starwhale public dataset- starwhale
-                  public dataset
-                </span>
-                <Link
-                  className="button button--primary  button--rounded"
-                  to="/docs"
+              {swTabs.map((item, index) => (
+                <TabItem
+                  value={item.tab}
+                  label={item.tab}
+                  default={index === 0 ? true : undefined}
                 >
-                  Learn more
-                </Link>
-              </div>
-            </div> */}
+                  <div className="tabs__body">
+                    {item.code}
+                    <div className="tabs__desc " id="project">
+                      <span>{item.desc}</span>
+                      <Link
+                        className="button button--primary  button--rounded"
+                        to={item.button?.to}
+                      >
+                        {item.button?.label}
+                      </Link>
+                    </div>
+                  </div>
+                </TabItem>
+              ))}
+            </Tabs>
           </div>
         </section>
         {/* starwhale users */}
@@ -281,11 +217,7 @@ function Home() {
             <div className="try__item">
               <span>
                 <b>If</b> you want to know more detail about starwhale just
-                click the button "get started"ant to know more detail about
-                starwhale just click the button "get started"ant to know more
-                detail about starwhale just click the button "get started"ant to
-                know more detail about starwhale just click the button "get
-                started"
+                click the button "get started" started"
               </span>
               <Link
                 className="button button--primary  button--rounded"
@@ -295,12 +227,15 @@ function Home() {
               </Link>
             </div>
             <div className="try__item">
-              <span>- starwhale public dataset</span>
+              <span>
+                <b>If</b> you want more information or leave a message to us
+                just click the button "contact us"
+              </span>
               <Link
                 className="button button--primary  button--rounded"
                 to="/docs"
               >
-                Request a Demo
+                Contact us
               </Link>
             </div>
           </div>

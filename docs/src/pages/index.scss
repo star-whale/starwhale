@@ -69,7 +69,6 @@
     }
 
     &__code {
-      background: rgba(0, 0, 0, 0.78);
       border-radius: 12px;
       width: toRem(534);
       min-height: toRem(300);
@@ -77,7 +76,7 @@
       color: #ffffff;
       letter-spacing: 0;
       line-height: 22px;
-      padding: 29px 35px;
+      // padding: 29px 35px;
     }
 
     &__desc {
