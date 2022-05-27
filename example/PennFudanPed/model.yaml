@@ -1,0 +1,22 @@
+version: 1.0
+name: mask_rcnn
+
+model:
+  - models/maskrcnn.pth
+
+config:
+  - config/hyperparam.json
+
+run:
+  ppl: code.ppl:MARSKRCNN
+  pip_req: requirements.txt
+  exclude_pkg_data:
+    - venv
+    - .git
+    - .history
+    - .vscode
+
+desc: mask rcnn resnet50 by pytorch
+
+tag:
+  - instance segmentation & object dectection
