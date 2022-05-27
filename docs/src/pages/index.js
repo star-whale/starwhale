@@ -18,6 +18,7 @@ import "./index.scss";
 import CodeBlock from "@theme/CodeBlock";
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
+import "/static/fonts/iconfont.js";
 
 const features = [
   {
@@ -117,11 +118,6 @@ function Home() {
       <header className={clsx("hero hero--primary", styles.heroBanner)}>
         <div className="container">
           <h1 className={styles.heroProjectTagline}>
-            {/* <img
-              alt={siteConfig.title}
-              className={styles.heroLogo}
-              src={useBaseUrl("/img/starwhale-white.png")}
-            /> */}
             <span
               className={styles.heroTitleTextHtml}
               dangerouslySetInnerHTML={{
@@ -247,7 +243,9 @@ function Home() {
         {/* starwhale users */}
         <section className="swUser">
           <h1>Who is Starwhale for?</h1>
-          <div className="divider">Icon</div>
+          <div className="divider">
+            <span className="iconfont icon-value" />
+          </div>
           <div className="user__body">
             {sectionUsers.map((user, index) => (
               <div className="card" key={index}>
@@ -261,7 +259,9 @@ function Home() {
                 </div>
                 <div className="card__body">
                   <h3>{user.title}</h3>
-                  <div className="divider2">———— —— -</div>
+                  <div className="divider2">
+                    <span className="iconfont icon-line icon-blue" />
+                  </div>
                   <span>{user.description}</span>
                 </div>
               </div>
@@ -271,7 +271,9 @@ function Home() {
         {/* starwhale try now */}
         <section className="swIntegrate">
           <h1>Starwhale integrates with any framework</h1>
-          <div className="divider">Icon</div>
+          <div className="divider">
+            <span className="iconfont icon-integrates" />
+          </div>
         </section>
         <section className="swTry">
           <h1>Try today</h1>

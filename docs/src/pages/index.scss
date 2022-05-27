@@ -2,7 +2,15 @@
   $remValue: calc($value/14) + rem;
   @return $remValue;
 }
+.divider2 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
+  .icon-line {
+    font-size: 48px !important;
+  }
+}
 .divider {
   display: flex;
   justify-content: center;

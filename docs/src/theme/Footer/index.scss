@@ -17,6 +17,7 @@
       padding: 0 82px 0 120px;
       img {
         margin: 0;
+        margin-bottom: 30px;
       }
     }
   }
@@ -55,6 +56,17 @@
     color: rgba(255, 255, 255, 0.5);
     letter-spacing: 0;
     line-height: 12px;
+  }
+
+  .social {
+    display: flex;
+    gap: 16px;
+
+    .icon-Facebook,
+    .icon-Twitter,
+    .icon-Instagram {
+      color: #1978f3;
+    }
   }
 }
 

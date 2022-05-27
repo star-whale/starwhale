@@ -4,10 +4,11 @@ import FooterLinks from "@theme/Footer/Links";
 import FooterLogo from "@theme/Footer/Logo";
 import FooterCopyright from "@theme/Footer/Copyright";
 import clsx from "clsx";
+import Link from "@docusaurus/Link";
 import "./index.scss";
 // import FooterLayout from "@theme/Footer/Layout";
 
-function FooterLayout({ style, links, logo, copyright }) {
+function FooterLayout({ style, links, logo, copyright, socials = [] }) {
   return (
     <footer
       className={clsx("footer", {
@@ -15,7 +16,21 @@ function FooterLayout({ style, links, logo, copyright }) {
       })}
     >
       <div className="container container-fluid">
-        {logo && <div className="logo margin-bottom--sm">{logo}</div>}
+        <div className="logo margin-bottom--sm">
+          {logo}
+          <div className="social">
+            {socials.map((item) => {
+              return (
+                <Link to={item.to} key={item.icon}>
+                  {/* <span className={`iconfont ${item.icon}`}></span> */}
+                  <svg class="icon" aria-hidden="true">
+                    <use xlinkHref={`#${item.icon}`}></use>
+                  </svg>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
         {links}
       </div>
 
@@ -27,18 +42,21 @@ function FooterLayout({ style, links, logo, copyright }) {
 }
 
 function Footer() {
-  const { footer } = useThemeConfig();
+  const { footer, custom } = useThemeConfig();
 
   if (!footer) {
     return null;
   }
 
   const { copyright, links, logo, style } = footer;
+  const { footerSocials } = custom;
+
   return (
     <FooterLayout
       style={style}
       links={links && links.length > 0 && <FooterLinks links={links} />}
       logo={logo && <FooterLogo logo={logo} />}
+      socials={footerSocials}
       copyright={copyright && <FooterCopyright copyright={copyright} />}
     />
   );

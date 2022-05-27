@@ -6,6 +6,90 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "30022319",
+      "name": "line",
+      "font_class": "line",
+      "unicode": "e623",
+      "unicode_decimal": 58915
+    },
+    {
+      "icon_id": "30000202",
+      "name": "icon-kfckfc",
+      "font_class": "Twitter",
+      "unicode": "e624",
+      "unicode_decimal": 58916
+    },
+    {
+      "icon_id": "30000203",
+      "name": "Facebook",
+      "font_class": "Facebook",
+      "unicode": "e625",
+      "unicode_decimal": 58917
+    },
+    {
+      "icon_id": "30000204",
+      "name": "Instagram",
+      "font_class": "Instagram",
+      "unicode": "e626",
+      "unicode_decimal": 58918
+    },
+    {
+      "icon_id": "30000205",
+      "name": "Linkedin",
+      "font_class": "Linkedin",
+      "unicode": "e627",
+      "unicode_decimal": 58919
+    },
+    {
+      "icon_id": "30000206",
+      "name": "Youtub",
+      "font_class": "Youtub",
+      "unicode": "e628",
+      "unicode_decimal": 58920
+    },
+    {
+      "icon_id": "30000075",
+      "name": "arrow3",
+      "font_class": "arrow3",
+      "unicode": "e61f",
+      "unicode_decimal": 58911
+    },
+    {
+      "icon_id": "30000076",
+      "name": "email",
+      "font_class": "email",
+      "unicode": "e620",
+      "unicode_decimal": 58912
+    },
+    {
+      "icon_id": "30000077",
+      "name": "value",
+      "font_class": "value",
+      "unicode": "e621",
+      "unicode_decimal": 58913
+    },
+    {
+      "icon_id": "30000078",
+      "name": "integrates",
+      "font_class": "integrates",
+      "unicode": "e622",
+      "unicode_decimal": 58914
+    },
+    {
+      "icon_id": "29914993",
+      "name": "setting2",
+      "font_class": "setting2",
+      "unicode": "e61e",
+      "unicode_decimal": 58910
+    },
+    {
+      "icon_id": "29832564",
+      "name": "setting",
+      "font_class": "setting",
+      "unicode": "e61d",
+      "unicode_decimal": 58909
+    },
+    {
       "icon_id": "29795139",
       "name": "arrow2_down",
       "font_class": "arrow2_down",

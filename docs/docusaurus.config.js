@@ -97,6 +97,7 @@ module.exports = {
     footer: {
       style: "light",
       copyright: `Copyright © ${new Date().getFullYear()} Starwhale,Inc. All rights reserved. `,
+
       links: [
         {
           title: "Product",
@@ -150,6 +151,30 @@ module.exports = {
         alt: "Starwhale Open Source Logo",
         src: "img/starwhale-white.png",
       },
+    },
+    custom: {
+      footerSocials: [
+        {
+          icon: "icon-Facebook",
+          to: "#",
+        },
+        {
+          icon: "icon-Twitter",
+          to: "#",
+        },
+        {
+          icon: "icon-Linkedin",
+          to: "#",
+        },
+        {
+          icon: "icon-Instagram",
+          to: "#",
+        },
+        {
+          icon: "icon-Youtub",
+          to: "#",
+        },
+      ],
     },
   },
   presets: [
