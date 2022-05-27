@@ -85,19 +85,9 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
             switch (oldTask.getDeviceClass()) {
                 case CPU:
                     allocated = sourcePool.allocate(AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
-                    imageConfig.setCpuConfig(
-                            CPUConfig.builder().cpuCount(Long.valueOf(oldTask.getDeviceAmount())).build()
-                    );
                     break;
                 case GPU:
                     allocated = sourcePool.allocate(AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
-                    imageConfig.setGpuConfig(
-                            GPUConfig.builder()
-                                    .count(oldTask.getDeviceAmount())
-                                    .capabilities(List.of(List.of("gpu")))
-                                    .deviceIds(allocated.stream().map(Device::getId).collect(Collectors.toList()))
-                                    .build()
-                    );
                     break;
                 case UNKNOWN:
                     log.error("unknown device class");
@@ -105,6 +95,23 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
             }
             // allocate device to this task,if fail will throw exception, now it is blocked
             oldTask.setDevices(allocated);
+        }
+        // config for container
+        switch (oldTask.getDeviceClass()) {
+            case CPU:
+                imageConfig.setCpuConfig(
+                        CPUConfig.builder().cpuCount(Long.valueOf(oldTask.getDeviceAmount())).build()
+                );
+                break;
+            case GPU:
+                imageConfig.setGpuConfig(
+                        GPUConfig.builder()
+                                .count(oldTask.getDeviceAmount())
+                                .capabilities(List.of(List.of("gpu")))
+                                .deviceIds(oldTask.getDevices().stream().map(Device::getId).collect(Collectors.toList()))
+                                .build()
+                );
+                break;
         }
 
         switch (oldTask.getTaskType()) {
