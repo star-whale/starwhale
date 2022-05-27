@@ -84,19 +84,19 @@ const swTabs = [
 
 const sectionUsers = [
   {
-    image: "img/swmp.png",
+    image: "img/enterprise.svg",
     title: "Model Defination",
     description:
       "Text space occupation of detailed descriptionText space occupation of detailedscriptionText space occupation of detailscriptionText space occupation of detailscriptionText space occupation of detailscriptionText space occupation of detail",
   },
   {
-    image: "img/swmp.png",
+    image: "img/team.svg",
     title: "Model Defination",
     description:
       "Text space occupation of detailed descriptionText space occupation of detailed",
   },
   {
-    image: "img/swmp.png",
+    image: "img/individuals.svg",
     title: "Model Defination",
     description:
       "Text space occupation of detailed descriptionText space occupation of detailed",
@@ -155,6 +155,7 @@ function Home() {
             <Tabs className="tabs tabs--block">
               {swTabs.map((item, index) => (
                 <TabItem
+                  key={index}
                   value={item.tab}
                   label={item.tab}
                   default={index === 0 ? true : undefined}
@@ -188,7 +189,11 @@ function Home() {
                 <div className="card__image">
                   <div
                     style={{
-                      backgroundImage: `url(${user.image})`,
+                      backgroundImage: `url(${useBaseUrl(user.image)})`,
+                      backgroundSize: "100%",
+                      width: "100%",
+                      height: "100%",
+                      backgroundColor: "transparent",
                     }}
                     alt="Image alt text"
                   />
@@ -209,6 +214,36 @@ function Home() {
           <h1>Starwhale integrates with any framework</h1>
           <div className="divider">
             <span className="iconfont icon-integrates" />
+          </div>
+          <div className="integrate">
+            <div
+              className="integrate__bg map map--7"
+              style={{
+                background: `
+                url(${useBaseUrl("img/line5-top.svg")}) center top no-repeat,
+                url(${useBaseUrl(
+                  "img/line3-down.svg"
+                )}) center bottom no-repeat;
+                `,
+              }}
+            >
+              <div className="map__center map__item--center">
+                <div className="map__center--logo">
+                  <img
+                    src={useBaseUrl("img/starwhale.png")}
+                    alt="Starwhale"
+                    height="20px"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="integrate__body">
+              {new Array(7).fill("1").map((item, index) => (
+                <div className="map__item" key={index}>
+                  {index}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
         <section className="swTry">

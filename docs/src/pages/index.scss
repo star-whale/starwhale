@@ -35,7 +35,7 @@
 
 // feature: tabs
 .swMain {
-  background-image: linear-gradient(to bottom, #003499 50%, white 50%);
+  background-image: linear-gradient(to bottom, #050d46 50%, white 50%);
   background-size: 100% 360px;
   background-repeat: no-repeat;
   display: flex;
@@ -254,6 +254,92 @@
         color: #2b65d9;
         letter-spacing: 0;
         text-align: center;
+      }
+    }
+  }
+}
+
+.swIntegrate {
+  h1 {
+    text-align: center;
+  }
+  .integrate {
+    position: relative;
+
+    &__body {
+      height: 300px + 90 * 2px;
+      display: flex;
+      gap: 40px;
+    }
+  }
+
+  .map {
+    position: absolute;
+    z-index: -1;
+    top: 90px;
+    left: 0;
+    right: 0;
+    margin: auto;
+    width: 655px;
+    height: 220px + 80px;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+
+    &--6 {
+      background: url("/static/img/line3-top.svg") center 10px no-repeat,
+        url("/static/img/line3-down.svg") center 190px no-repeat;
+    }
+    &--7 {
+      background: url("/static/img/line3-top.svg") center 10px no-repeat,
+        url("/static/img/line4-down.svg") center 190px no-repeat;
+    }
+    &--8 {
+      background: url("/static/img/line4-top.svg") center 10px no-repeat,
+        url("/static/img/line4-down.svg") center 190px no-repeat;
+    }
+    &--9 {
+      background: url("/static/img/line4-top.svg") center 10px no-repeat,
+        url("/static/img/line5-down.svg") center bottom no-repeat;
+    }
+    &--10 {
+      background: url("/static/img/line5-top.svg") center top no-repeat,
+        url("/static/img/line5-down.svg") center bottom no-repeat;
+    }
+
+    &__item {
+      background: #ffffff;
+      border: 1px solid #dddddd;
+      border-radius: 6px;
+      width: 200px;
+      height: 90px;
+    }
+
+    &__center {
+      align-self: center;
+      justify-self: center;
+
+      &--logo {
+        background: #ffffff;
+        border: 1px solid #101099;
+        border-radius: 6px;
+        width: 200px;
+        height: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        img {
+          position: relative;
+          top: -5px;
+        }
+      }
+      &--center {
+        align-self: center;
+        justify-self: center;
+        background: rgba(43, 101, 217, 0.1);
+        border-radius: 10px;
+        padding: 16px 14px;
       }
     }
   }

@@ -23,7 +23,7 @@ function FooterLayout({ style, links, logo, copyright, socials = [] }) {
               return (
                 <Link to={item.to} key={item.icon}>
                   {/* <span className={`iconfont ${item.icon}`}></span> */}
-                  <svg class="icon" aria-hidden="true">
+                  <svg className="icon" aria-hidden="true">
                     <use xlinkHref={`#${item.icon}`}></use>
                   </svg>
                 </Link>

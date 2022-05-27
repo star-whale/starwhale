@@ -16,6 +16,7 @@
         "prettier:diff": "prettier --config .prettierrc --list-different \"**/*.{js,md}\""
     },
     "dependencies": {
+        "@antv/x6": "^1.32.2",
         "@cmfcmf/docusaurus-search-local": "^0.6.2",
         "@docusaurus/core": "^2.0.0-beta.20",
         "@docusaurus/plugin-content-blog": "^2.0.0-beta.20",
