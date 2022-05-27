@@ -23,8 +23,10 @@ import ai.starwhale.mlops.domain.dag.mapper.GraphNodeMapper;
 import ai.starwhale.mlops.domain.dag.po.GraphEdgeEntity;
 import ai.starwhale.mlops.domain.dag.po.GraphEntity;
 import ai.starwhale.mlops.domain.dag.po.GraphNodeEntity;
+import ai.starwhale.mlops.domain.job.JobManager;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,6 +36,9 @@ public class DAGQuerier {
     final GraphNodeMapper graphNodeMapper;
     final GraphEdgeMapper graphEdgeMapper;
 
+    @Resource
+    private JobManager jobManager;
+
     public DAGQuerier(GraphMapper graphMapper,
         GraphNodeMapper graphNodeMapper,
         GraphEdgeMapper graphEdgeMapper) {
@@ -41,7 +46,9 @@ public class DAGQuerier {
         this.graphNodeMapper = graphNodeMapper;
         this.graphEdgeMapper = graphEdgeMapper;
     }
-
+    public Graph dagOfJob(String jobUrl, Boolean withTask){
+        return dagOfJob(jobManager.getJobId(jobUrl), withTask);
+    }
     public Graph dagOfJob(Long jobId, Boolean withTask){
         GraphEntity graphEntity = graphMapper.findByJobId(jobId);
         if(null == graphEntity){
