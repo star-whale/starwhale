@@ -1,10 +1,10 @@
 from __future__ import annotations
+from copy import deepcopy
 
 import yaml
 import typing as t
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from pathlib import Path
-from fs.tarfs import TarFS
 from collections import defaultdict
 
 from loguru import logger
@@ -17,12 +17,10 @@ from starwhale.consts import (
     PythonRunEnv,
     DEFAULT_PYTHON_VERSION,
     DefaultYAMLName,
-    YAML_TYPES,
     DEFAULT_SW_TASK_RUN_IMAGE,
 )
-from starwhale.base.type import BundleType, InstanceType
+from starwhale.base.type import BundleType, InstanceType, URIType
 from starwhale.utils.progress import run_with_progress_bar
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.venv import (
     create_python_env,
     activate_python_env,
@@ -34,21 +32,18 @@ from starwhale.utils.venv import (
 from starwhale.utils.error import (
     ConfigFormatError,
     ExistedError,
-    FileFormatError,
     NoSupportError,
-    NotFoundError,
-    MissingFieldError,
 )
+from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils import console, validate_obj_name
 from starwhale.utils.fs import (
     ensure_dir,
     ensure_file,
     get_path_created_time,
     move_dir,
-    extract_tar,
 )
 
-from .store import RuntimeStorage, SWBundleMixin
+from .store import RuntimeStorage
 
 
 class RuntimeConfig(object):
@@ -59,12 +54,14 @@ class RuntimeConfig(object):
         python_version: str,
         pip_req: str = DUMP_USER_PIP_REQ_FNAME,
         base_image: str = DEFAULT_SW_TASK_RUN_IMAGE,
+        **kw: t.Any,
     ) -> None:
         self.name = name.strip().lower()
         self.mode = mode
         self.python_version = python_version.strip()
         self.pip_req = pip_req
         self.base_image = base_image
+        self.kw = kw
 
         self._do_validate()
 
@@ -86,59 +83,16 @@ class RuntimeConfig(object):
         c = yaml.safe_load(path.open())
         return cls(**c)
 
+    def as_dict(self) -> t.Dict[str, t.Any]:
+        return deepcopy(self.__dict__)
 
-class Runtime(object):
+
+class Runtime(BaseBundle):
     __metaclass__ = ABCMeta
-
-    def __init__(self, uri: URI) -> None:
-        self.uri = uri
-        self.name = self.uri.object.name
-        self.sw_config = SWCliConfigMixed()
-
-    @abstractmethod
-    def info(self) -> t.Dict[str, t.Any]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def remove(self, force: bool = False) -> t.Tuple[bool, str]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def recover(self, force: bool = False) -> t.Tuple[bool, str]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def history(self) -> t.List[t.Dict[str, t.Any]]:
-        raise NotImplementedError
-
-    def build(
-        self,
-        workdir: str,
-        runtime_yaml_name: str = DefaultYAMLName.RUNTIME,
-        gen_all_bundles: bool = False,
-    ) -> None:
-        raise NotImplementedError
-
-    def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:
-        raise NotImplementedError
 
     @classmethod
     def restore(cls, workdir: Path) -> None:
         StandaloneRuntime.restore(workdir)
-
-    @classmethod
-    def list(
-        cls,
-        project_uri: URI,
-        page: int = DEFAULT_PAGE_IDX,
-        size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        _cls = cls._get_runtime_cls(project_uri)
-        return _cls.list(project_uri, page, size)
-
-    @staticmethod
-    def copy(src_uri: URI, dest_uri: URI, force: bool = False) -> None:
-        pass
 
     @classmethod
     def create(
@@ -159,11 +113,11 @@ class Runtime(object):
 
     @classmethod
     def get_runtime(cls, uri: URI) -> Runtime:
-        _cls = cls._get_runtime_cls(uri)
+        _cls = cls._get_cls(uri)
         return _cls(uri)
 
     @classmethod
-    def _get_runtime_cls(
+    def _get_cls(  # type: ignore
         cls,
         uri: URI,
     ) -> t.Union[t.Type[StandaloneRuntime], t.Type[CloudRuntime]]:
@@ -175,40 +129,18 @@ class Runtime(object):
             raise NoSupportError(f"runtime uri:{uri}")
 
     def __str__(self) -> str:
-        return f"Starwhale runtime: {self.uri}"
+        return f"Starwhale Runtime: {self.uri}"
 
 
-class StandaloneRuntime(Runtime, SWBundleMixin):
+class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
+        self.typ = InstanceType.STANDALONE
         self.store = RuntimeStorage(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
 
     def info(self) -> t.Dict[str, t.Any]:
-        _manifest: t.Dict[str, t.Any] = {
-            "uri": self.uri.full_uri,
-            "project": self.uri.project,
-            "runtime": self.uri.object.name,
-            "snapshot_workdir": str(self.store.snapshot_workdir),
-            "bundle_path": str(self.store.bundle_path),
-        }
-
-        if self.uri.object.version:
-            _manifest["version"] = self.uri.object.version
-            _manifest["config"] = {}
-            if self.store.snapshot_workdir.exists():
-                _manifest["config"].update(self.store.mainfest)
-            elif self.store.bundle_path.exists():
-                with TarFS(str(self.store.bundle_path)) as tar:
-                    _om = yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
-                    _manifest["config"].update(_om)
-            else:
-                raise NotFoundError(
-                    f"{self.store.bundle_path} and {self.store.snapshot_workdir}"
-                )
-        else:
-            _manifest["history"] = self.history()
-        return _manifest
+        return self._get_bundle_info()
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove workdir
@@ -226,7 +158,7 @@ class StandaloneRuntime(Runtime, SWBundleMixin):
     def history(self) -> t.List[t.Dict[str, t.Any]]:
         # TODO: time order
         _r = []
-        for _version, _path in self.store.iter_history():
+        for _version, _path in self.store.iter_bundle_history():
             _r.append(
                 dict(
                     version=_version,
@@ -239,15 +171,14 @@ class StandaloneRuntime(Runtime, SWBundleMixin):
 
     def build(
         self,
-        workdir: str,
-        runtime_yaml_name: str = DefaultYAMLName.RUNTIME,
-        gen_all_bundles: bool = False,
+        workdir: Path,
+        yaml_name: str = DefaultYAMLName.RUNTIME,
+        **kw: t.Any,
     ) -> None:
         # TODO: tune for no runtime.yaml file
-        _workdir = Path(workdir)
-        _mp = _workdir / runtime_yaml_name
+        _mp = workdir / yaml_name
         _swrt_config = self._load_runtime_config(_mp)
-        _pip_req_path = detect_pip_req(_workdir, _swrt_config.pip_req)
+        _pip_req_path = detect_pip_req(workdir, _swrt_config.pip_req)
         _python_version = _swrt_config.python_version
 
         operations = [
@@ -258,7 +189,7 @@ class StandaloneRuntime(Runtime, SWBundleMixin):
                 50,
                 "dump python depency",
                 dict(
-                    gen_all_bundles=gen_all_bundles,
+                    gen_all_bundles=kw.get("gen_all_bundles", False),
                     pip_req_path=_pip_req_path,
                     python_version=_python_version,
                     mode=_swrt_config.mode,
@@ -268,7 +199,7 @@ class StandaloneRuntime(Runtime, SWBundleMixin):
                 self._render_manifest,
                 5,
                 "render manifest",
-                dict(user_raw_config=_swrt_config.__dict__),
+                dict(user_raw_config=_swrt_config.as_dict()),
             ),
             (self._make_tar, 20, "make runtime bundle", dict(ftype=BundleType.RUNTIME)),
         ]
@@ -308,21 +239,11 @@ class StandaloneRuntime(Runtime, SWBundleMixin):
         )
 
     def _load_runtime_config(self, path: Path) -> RuntimeConfig:
-        if not path.exists():
-            raise NotFoundError(str(path))
-
-        if not path.name.endswith(YAML_TYPES):
-            raise FileFormatError(path.name)
-
+        self._do_validate_yaml(path)
         return RuntimeConfig.create_by_yaml(path)
 
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:
-        if not self.uri.object.version:
-            raise MissingFieldError("no runtime version")
-
-        _target = Path(target) if target else self.store.snapshot_workdir
-        extract_tar(self.store.bundle_path, _target, force)
-        return _target
+        return self._do_extract(force, target)
 
     @classmethod
     def list(
@@ -337,7 +258,9 @@ class StandaloneRuntime(Runtime, SWBundleMixin):
             _rt_version,
             _path,
             _is_removed,
-        ) in RuntimeStorage.iter_all_runtime_bundles(project_uri):
+        ) in RuntimeStorage.iter_all_bundles(
+            project_uri, bundle_type=BundleType.RUNTIME, uri_type=URIType.RUNTIME
+        ):
             # TODO: add more manifest info
             rs[_rt_name].append(
                 {
@@ -384,7 +307,7 @@ class StandaloneRuntime(Runtime, SWBundleMixin):
             raise ExistedError(f"{_rm} was already existed")
 
         ensure_dir(workdir)
-        ensure_file(_rm, yaml.dump(config.__dict__, default_flow_style=False))
+        ensure_file(_rm, yaml.safe_dump(config.as_dict(), default_flow_style=False))
 
     @classmethod
     def restore(cls, workdir: Path) -> None:
@@ -404,6 +327,7 @@ class StandaloneRuntime(Runtime, SWBundleMixin):
 class CloudRuntime(Runtime):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
+        self.typ = InstanceType.CLOUD
         self.store = RuntimeStorage(uri)
 
     def info(self) -> t.Dict[str, t.Any]:

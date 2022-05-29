@@ -1,12 +1,12 @@
 import os
 import typing as t
-from starwhale.utils.venv import CONDA_ENV_TAR
 import yaml
 from pathlib import Path
 
 from unittest.mock import patch, MagicMock
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from starwhale.utils.venv import CONDA_ENV_TAR
 from starwhale.base.type import BundleType, URIType
 from starwhale.utils import config as sw_config
 from starwhale.utils.config import SWCliConfigMixed
@@ -74,11 +74,15 @@ class StandaloneRuntimeTestCase(TestCase):
         _rt_config = yaml.safe_load(open(runtime_path, "r"))
         assert _rt_config["python_version"] == "3.8"
 
+    @patch("starwhale.utils.venv.is_conda")
     @patch("starwhale.utils.venv.check_call")
-    def test_create_conda(self, m_call: MagicMock) -> None:
+    def test_create_conda(self, m_call: MagicMock, m_conda: MagicMock) -> None:
+        m_conda.return_value = True
         workdir = "/home/starwhale/myproject"
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         name = "test-conda"
+
+        os.environ["CONDA_DEFAULT_ENV"] = "1"
 
         StandaloneRuntime.create(
             workdir=workdir,
@@ -110,7 +114,7 @@ class StandaloneRuntimeTestCase(TestCase):
         runtime_config = self.get_runtime_config()
         self.fs.create_file(
             os.path.join(workdir, DefaultYAMLName.RUNTIME),
-            contents=yaml.dump(runtime_config),
+            contents=yaml.safe_dump(runtime_config),
         )
         self.fs.create_file(
             os.path.join(workdir, "requirements.txt"), contents="requests==2.0.0"
@@ -118,7 +122,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
-        sr.build(workdir)
+        sr.build(Path(workdir))
         assert sr.uri.object.version != ""
         assert len(sr._version) == 31
         build_version = sr._version
@@ -227,12 +231,12 @@ class StandaloneRuntimeTestCase(TestCase):
         runtime_config["mode"] = "conda"
         self.fs.create_file(
             os.path.join(workdir, DefaultYAMLName.RUNTIME),
-            contents=yaml.dump(runtime_config),
+            contents=yaml.safe_dump(runtime_config),
         )
         self.fs.create_file(os.path.join(workdir, "requirements.txt"), contents="")
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
-        sr.build(workdir)
+        sr.build(Path(workdir))
         sr.info()
         sr.history()
 
@@ -252,7 +256,7 @@ class StandaloneRuntimeTestCase(TestCase):
         ensure_dir(workdir)
         self.fs.create_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
-            contents=yaml.dump({"dep": {"env": "venv", "local_gen_env": False}}),
+            contents=yaml.safe_dump({"dep": {"env": "venv", "local_gen_env": False}}),
         )
         ensure_dir(python_dir)
         self.fs.create_file(
@@ -289,7 +293,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         self.fs.create_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
-            contents=yaml.dump({"dep": {"env": "conda", "local_gen_env": False}}),
+            contents=yaml.safe_dump({"dep": {"env": "conda", "local_gen_env": False}}),
         )
         ensure_dir(conda_dir)
 
@@ -311,7 +315,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         ensure_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
-            yaml.dump({"dep": {"env": "conda", "local_gen_env": True}}),
+            yaml.safe_dump({"dep": {"env": "conda", "local_gen_env": True}}),
         )
         tar_path = os.path.join(conda_dir, CONDA_ENV_TAR)
         ensure_file(tar_path, "test")

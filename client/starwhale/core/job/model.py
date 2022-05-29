@@ -126,13 +126,13 @@ class StandaloneJob(Job):
     ) -> t.Tuple[bool, str]:
         # TODO: support another job type
         EvalExecutor(
-            model_uri,
-            dataset_uris,
-            project_uri.real_request_uri,  # type: ignore
-            runtime_uri,
+            model_uri=model_uri,
+            dataset_uris=dataset_uris,
+            project_uri=project_uri,
+            runtime_uri=runtime_uri,
             name=name,
             desc=desc,
-            gencmd=kw.get("gen_cmd", False),
+            gencmd=kw.get("gencmd", False),
             docker_verbose=kw.get("docker_verbose", False),
         ).run(kw.get("phase", EvalTaskType.ALL))
         return True, "run standalone eval job successfully"
@@ -202,11 +202,16 @@ class StandaloneJob(Job):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _rt = []
-        for _mf in JobStorage.iter_all_jobs(project_uri):
+        for _path, _is_removed in JobStorage.iter_all_jobs(project_uri):
+            _manifest = yaml.safe_load(_path.open())
+            if not _manifest:
+                continue
+
             _rt.append(
                 {
-                    "location": str(_mf.absolute()),
-                    "manifest": yaml.safe_load(_mf.open()),
+                    "location": str(_path.absolute()),
+                    "manifest": _manifest,
+                    "is_removed": _is_removed,
                 }
             )
         return _rt, {}

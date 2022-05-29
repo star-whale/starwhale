@@ -69,7 +69,8 @@ class StandaloneJobTestCase(TestCase):
 
         all_jobs = [job for job in store.iter_all_jobs(uri)]
         assert len(all_jobs) == 1
-        assert all_jobs[0] == (Path(self.job_dir) / DEFAULT_MANIFEST_NAME).absolute()
+        assert all_jobs[0][0] == (Path(self.job_dir) / DEFAULT_MANIFEST_NAME).absolute()
+        assert not all_jobs[0][1]
 
     def test_standalone_list(self):
         uri = URI("")
@@ -135,22 +136,6 @@ class StandaloneJobTestCase(TestCase):
         assert m_call.call_args[0][0][1] == "pause"
 
         assert m_call.call_count == 3
-
-    @patch("starwhale.core.job.model.check_call")
-    def test_standalone_create(self, m_call: MagicMock):
-        ok, _ = StandaloneJob.create(
-            project_uri=URI("", expected_type=URIType.PROJECT),
-            model_uri="mnist:ge3geyjwg4ztenrtmftdgyjzg52hcoa",
-            dataset_uris=[
-                "mnist:gu2tgmbsgrqwcmlemuzgmnbtnb4xm5i",
-                "mnist:mm2gimjvheztqnrsga4dkmlbnyyxs2a",
-            ],
-            runtime_uri="",
-            name="test",
-            desc="test",
-            gen_cmd=False,
-        )
-        assert ok
 
 
 class CloudJobTestCase(unittest.TestCase):

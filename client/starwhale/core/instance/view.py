@@ -6,20 +6,20 @@ from rich.table import Table
 from rich import box
 from rich.panel import Panel
 
-from starwhale.utils import fmt_http_server
+from starwhale.utils import fmt_http_server, console
 from starwhale.consts import (
     SW_API_VERSION,
     STANDALONE_INSTANCE,
     UserRoleType,
 )
 from starwhale.utils.http import wrap_sw_error_resp
-from starwhale.base.view import BaseView
+from starwhale.base.view import BaseTermView
 from .model import CloudInstance
 
 DEFAULT_HTTP_TIMEOUT = 90
 
 
-class InstanceTermView(BaseView):
+class InstanceTermView(BaseTermView):
     def __init__(self) -> None:
         super().__init__()
 
@@ -27,16 +27,16 @@ class InstanceTermView(BaseView):
         try:
             self.select_current_default(instance=instance)
         except Exception as e:
-            self._console.print(
+            console.print(
                 f":person_shrugging: failed to select {instance}, reason: {e}"
             )
             sys.exit(1)
         else:
-            self._console.print(f":clap: select {self.current_instance} instance")
+            console.print(f":clap: select {self.current_instance} instance")
 
     def login(self, instance: str, username: str, password: str, alias: str) -> None:
         if instance == STANDALONE_INSTANCE:
-            self._console.print(f":pinching_hand: skip {instance} instance login")
+            console.print(f":pinching_hand: skip {instance} instance login")
             return
 
         server = fmt_http_server(instance)
@@ -48,12 +48,10 @@ class InstanceTermView(BaseView):
         )
 
         if r.status_code == HTTPStatus.OK:
-            self._console.print(f":man_cook: login {server} successfully!")
+            console.print(f":man_cook: login {server} successfully!")
             token = r.headers.get("Authorization")
             if not token:
-                self._console.print(
-                    ":do_not_litter: cannot get token, please contract starwhale."
-                )
+                console.print("cannot get token, please contract starwhale")
                 sys.exit(1)
 
             _d = r.json()["data"]
@@ -74,20 +72,17 @@ class InstanceTermView(BaseView):
         instance = instance or self.current_instance
 
         if instance == STANDALONE_INSTANCE:
-            self._console.print(f":pinching_hand: skip {instance} instance logout")
+            console.print(f":pinching_hand: skip {instance} instance logout")
             return
-
         self.delete_instance(instance)
-        self._console.print(":wink: bye.")
+        console.print(":wink: bye.")
 
-    @BaseView._header  # type: ignore
+    @BaseTermView._header  # type: ignore
     def info(self, instance: str = "") -> None:
         instance = instance or self.current_instance
 
         if instance == STANDALONE_INSTANCE:
-            self._console.print(
-                f":balloon: standalone instance, root dir @ {self.rootdir}"
-            )
+            console.print(f":balloon: standalone instance, root dir @ {self.rootdir}")
         else:
             # TODO: support use uri directly
             # TODO: user async to get
@@ -134,7 +129,7 @@ class InstanceTermView(BaseView):
 
                 return Panel(grid, title_align="left")
 
-            self._console.print(_details())
+            console.print(_details())
 
     def list(self) -> None:
         table = Table(
@@ -164,4 +159,4 @@ class InstanceTermView(BaseView):
                 v.get("updated_at", "--"),
                 style="magenta" if _is_current else "",
             )
-        self._console.print(table)
+        console.print(table)

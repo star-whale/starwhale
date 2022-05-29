@@ -425,7 +425,7 @@ def get_python_run_env(mode: str = PythonRunEnv.AUTO) -> str:
         if is_conda():
             return PythonRunEnv.CONDA
         else:
-            raise EnvironmentError("expected conda mmode, but cannot fing conda envs")
+            raise EnvironmentError("expected conda mmode, but cannot find conda envs")
     elif mode == PythonRunEnv.AUTO:
         if is_conda() and is_venv():
             raise EnvironmentError("find venv and conda both activate")

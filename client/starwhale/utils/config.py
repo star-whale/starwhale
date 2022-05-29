@@ -79,7 +79,7 @@ def get_swcli_config_path() -> str:
 def render_swcli_config(c: t.Dict[str, t.Any], path: str = "") -> None:
     fpath = path or get_swcli_config_path()
     ensure_dir(os.path.dirname(fpath), recursion=True)
-    ensure_file(fpath, yaml.dump(c, default_flow_style=False), mode=0o600)
+    ensure_file(fpath, yaml.safe_dump(c, default_flow_style=False), mode=0o600)
 
 
 # TODO: abstract better common base or mixed class

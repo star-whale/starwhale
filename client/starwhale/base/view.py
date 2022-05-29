@@ -1,21 +1,26 @@
 import typing as t
+import sys
+import os
+import yaml
 from functools import wraps
 
 from rich import print as rprint
 from rich.panel import Panel
 from rich.table import Table
 from rich.console import RenderableType
+from rich import box
+from rich.pretty import Pretty
 
-from starwhale.consts import UserRoleType
+from starwhale.base.uri import URI
+from starwhale.utils.error import FileFormatError
+from starwhale.consts import UserRoleType, SHORT_VERSION_CNT
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils import console
+from starwhale.base.type import URIType
+from starwhale.utils import pretty_bytes
 
 
-class BaseView(SWCliConfigMixed):
-    def __init__(self, swcli_config: t.Union[t.Dict[str, t.Any], None] = None) -> None:
-        super().__init__(swcli_config)
-        self._console = console
-
+class BaseTermView(SWCliConfigMixed):
     @staticmethod
     def _pager(func):
         @wraps(func)
@@ -60,6 +65,22 @@ class BaseView(SWCliConfigMixed):
         return _wrapper
 
     @staticmethod
+    def _simple_action_print(func):
+        @wraps(func)
+        def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
+            rt = func(*args, **kwargs)
+
+            if isinstance(rt, tuple) and len(rt) == 2:
+                if rt[0]:
+                    console.print(":clap: do successfully")
+                else:
+                    console.print(f":diving_mask: failed to run, reason:{rt[1]}")
+                    sys.exit(1)
+            return rt
+
+        return _wrapper
+
+    @staticmethod
     def comparsion(r1: RenderableType, r2: RenderableType) -> Table:
         table = Table(show_header=False, pad_edge=False, box=None, expand=True)
         table.add_column("1")
@@ -78,3 +99,89 @@ class BaseView(SWCliConfigMixed):
             style = "red"
             icon = ":fearful:"
         return status, style, icon
+
+    @staticmethod
+    def prepare_build_bundle(
+        workdir: str, project: str, yaml_name: str, typ: str
+    ) -> URI:
+        console.print(f":construction: start to build {typ} bundle...")
+        _project_uri = URI(project, expected_type=URIType.PROJECT)
+        _path = os.path.join(workdir, yaml_name)
+        _config = yaml.safe_load(open(_path, "r"))
+        if "name" not in _config:
+            raise FileFormatError(f"{_path}, no name field")
+
+        _uri = URI.capsulate_uri(
+            instance=_project_uri.instance,
+            project=_project_uri.project,
+            obj_type=typ,
+            obj_name=_config["name"],
+        )
+        console.print(f":construction_worker: uri:{_uri}")
+        return _uri
+
+    @staticmethod
+    def _print_history(
+        title: str,
+        history: t.List[t.Dict[str, t.Any]],
+        fullname: bool = False,
+    ) -> None:
+        table = Table(title=title, box=box.SIMPLE, expand=True)
+        table.add_column("Version", justify="left", style="cyan", no_wrap=True)
+        table.add_column("Size")
+        table.add_column("Runtime")
+        table.add_column("Created")
+
+        for _h in history:
+            table.add_row(
+                _h["version"] if fullname else _h["version"][:SHORT_VERSION_CNT],
+                pretty_bytes(_h["size"]),
+                _h.get("runtime", "--"),
+                _h["created_at"],
+            )
+        console.print(table)
+
+    @staticmethod
+    def _print_info(_info: t.Dict[str, t.Any], fullname: bool = False) -> None:
+        if not _info:
+            console.print(":tea: not found info")
+            return
+
+        _history = _info.pop("history", [])
+
+        console.rule("[green bold]Inspect Details")
+        console.print(Pretty(_info, expand_all=True))
+
+        if _history:
+            console.rule("[green bold] Version History")
+            BaseTermView._print_history(
+                title="History List", history=_history, fullname=fullname
+            )
+
+    @staticmethod
+    def _print_list(
+        _bundles: t.Dict[str, t.Any], show_removed: bool = False, fullname: bool = False
+    ) -> None:
+        table = Table(title="Bundle List", box=box.SIMPLE, expand=True)
+        table.add_column("Name", justify="left", style="cyan", no_wrap=True)
+        table.add_column("Version")
+        table.add_column("Size")
+        table.add_column("Runtime")
+        table.add_column("Created")
+
+        for _name, _versions in _bundles.items():
+            for _v in _versions:
+                if show_removed ^ _v["is_removed"]:
+                    continue
+
+                table.add_row(
+                    _name,
+                    _v["version"]
+                    if fullname or show_removed
+                    else _v["version"][:SHORT_VERSION_CNT],
+                    pretty_bytes(_v["size"]),
+                    _v.get("runtime", "--"),
+                    _v["created_at"],
+                )
+
+        console.print(table)

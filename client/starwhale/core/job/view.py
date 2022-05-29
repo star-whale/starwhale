@@ -1,5 +1,4 @@
 import typing as t
-import sys
 
 from rich.pretty import Pretty
 from rich.table import Table
@@ -14,13 +13,13 @@ from starwhale.consts import (
 )
 from starwhale.base.type import EvalTaskType, InstanceType, JobOperationType, URIType
 from starwhale.base.uri import URI
-from starwhale.base.view import BaseView
+from starwhale.base.view import BaseTermView
 from starwhale.utils import console
 
 from .model import Job
 
 
-class JobTermView(BaseView):
+class JobTermView(BaseTermView):
     def __init__(self, job_uri: str) -> None:
         super().__init__()
         self.raw_uri = job_uri
@@ -49,33 +48,27 @@ class JobTermView(BaseView):
     def pause(self, force: bool = False) -> None:
         self._do_action(JobOperationType.PAUSE, force)
 
-    def _do_action(self, action: str, force: bool = False) -> None:
-        ok, reason = self._action_run_map[action](force)
-        if ok:
-            self._console.print(f":clap: {action} job successfully : {self.uri}")
-        else:
-            self._console.print(
-                f":diving_mask: failed to {action} job({self.uri}), reason:{reason}"
-            )
-            sys.exit(1)
+    @BaseTermView._simple_action_print
+    def _do_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
+        return self._action_run_map[action](force)
 
-    @BaseView._header
+    @BaseTermView._header
     def info(self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE) -> None:
         _rt = self.job.info(page, size)
         if not _rt:
-            self._console.print(":tea: not found info")
+            console.print(":tea: not found info")
             return
 
         if _rt.get("manifest"):
-            self._console.rule(
+            console.rule(
                 f"[green bold]Inspect {DEFAULT_MANIFEST_NAME} for eval:{self.uri}"
             )
-            self._console.print(Pretty(_rt["manifest"], expand_all=True))
+            console.print(Pretty(_rt["manifest"], expand_all=True))
 
         if "location" in _rt:
-            self._console.rule("Evaluation process dirs")
-            self._console.print(f":cactus: ppl: {_rt['location']['ppl']}")
-            self._console.print(f":camel: cmp: {_rt['location']['cmp']}")
+            console.rule("Evaluation process dirs")
+            console.print(f":cactus: ppl: {_rt['location']['ppl']}")
+            console.print(f":camel: cmp: {_rt['location']['cmp']}")
 
         if "tasks" in _rt:
             self._print_tasks(_rt["tasks"][0])
@@ -105,14 +98,14 @@ class JobTermView(BaseView):
                 "",
             )
 
-        self._console.rule(
+        console.rule(
             f"[bold green]Project({self.uri.project} Job({self.job.name}) Tasks List"
         )
-        self._console.print(table)
+        console.print(table)
 
     def _render_job_report(self, report: t.Dict[str, t.Any]) -> None:
         if not report:
-            self._console.print(":turtle: no report")
+            console.print(":turtle: no report")
             return
 
         labels: t.Dict[str, t.Any] = report.get("labels", {})
@@ -150,8 +143,8 @@ class JobTermView(BaseView):
             for _k, _v in labels.items():
                 table.add_row(_k, *(f"{_v[_k2]:.4f}" for _k2 in keys))
 
-            self._console.rule(f"[bold green]{report['kind'].upper()} Report")
-            self._console.print(self.comparsion(tree, table))
+            console.rule(f"[bold green]{report['kind'].upper()} Report")
+            console.print(self.comparsion(tree, table))
 
         def _print_confusion_matrix() -> None:
             cm = report.get("confusion_matrix", {})
@@ -218,21 +211,22 @@ class JobTermView(BaseView):
             console.print(f":collision: failed to create job, notice: [red]{reason}[/]")
 
     @classmethod
-    @BaseView._pager
-    @BaseView._header
+    @BaseTermView._pager
+    @BaseTermView._header
     def list(
         cls,
         project_uri: str = "",
         fullname: bool = False,
+        show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         _jobs, _pager = Job.list(
             URI(project_uri, expected_type=URIType.PROJECT), page, size
         )
-        table = Table(title="Job List", box=box.SIMPLE, expand=True)
+        table = Table(title="Job List", box=box.SIMPLE)
         table.add_column("Name", justify="left", style="cyan", no_wrap=True)
-        table.add_column("Model")
+        table.add_column("Model", no_wrap=True)
         table.add_column("Datasets")
         table.add_column("Status", style="red")
         table.add_column("Resource", style="blue")
@@ -248,6 +242,9 @@ class JobTermView(BaseView):
                 return x[:_end]
 
         for _job in _jobs:
+            if show_removed ^ _job.get("is_removed", False):
+                continue
+
             _m = _job["manifest"]
             _status, _style, _icon = cls.pretty_status(
                 _m.get("jobStatus") or _m.get("status")

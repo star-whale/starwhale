@@ -16,7 +16,7 @@ exclude_pkg_data:
 
 desc: MNIST data and label test dataset
 tag:
- - bin
+  - bin
 
 attr:
   batch_size: 50

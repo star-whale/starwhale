@@ -13,6 +13,7 @@ def job_cmd() -> None:
 @job_cmd.command("list", help="List all jobs in current project")
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
+@click.option("--show-removed", is_flag=True, help="Show removed dataset")
 @click.option(
     "--page", type=int, default=DEFAULT_PAGE_IDX, help="page number for projects list"
 )
@@ -22,10 +23,13 @@ def job_cmd() -> None:
 def _list(
     project: str,
     fullname: bool,
+    show_removed: bool,
     page: int,
     size: int,
 ) -> None:
-    JobTermView.list(project, fullname=fullname, page=page, size=size)
+    JobTermView.list(
+        project, fullname=fullname, show_removed=show_removed, page=page, size=size
+    )
 
 
 @job_cmd.command("create", help="Create job")

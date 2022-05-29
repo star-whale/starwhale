@@ -1,41 +1,35 @@
-import typing as t
-from pathlib import Path
-
 import click
+import os
 
-from starwhale.consts import DEFAULT_MODEL_YAML_NAME
+from starwhale.base.type import EvalTaskType, URIType
+from starwhale.consts import (
+    LOCAL_FUSE_JSON_NAME,
+    DefaultYAMLName,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+)
+from starwhale.base.uri import URI
 from starwhale.consts.env import SWEnv
-from .model import ModelPackage
-from .store import ModelPackageLocalStore
+from starwhale.core.dataset.store import DatasetStorage
+from .view import ModelTermView
 
 
-@click.group("model", help="StarWhale Model Package(swmp) build/push/pull...")
+@click.group("model", help="StarWhale Model Management")
 def model_cmd() -> None:
     pass
 
 
-@model_cmd.command("build", help="build starwhale model package(swmp)")
+@model_cmd.command("build", help="[ONLY Standalone]Build starwhale model package(swmp)")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
+@click.option("-p", "--project", default="", help="Project URI")
 @click.option(
     "-f",
     "--model-yaml",
-    default=DEFAULT_MODEL_YAML_NAME,
+    default=DefaultYAMLName.MODEL,
     help="mode yaml filename, default use ${workdir}/model.yaml file",
 )
-def _build(workdir: str, model_yaml: str) -> None:
-    ModelPackage.build(workdir, model_yaml)
-
-
-@model_cmd.command("remove", help="Remove model")
-@click.argument("model")
-def _remove(model: str) -> None:
-    ModelPackageLocalStore().delete(model)
-
-
-@model_cmd.command("recover", help="Recover model")
-@click.argument("model")
-def _recover(model: str) -> None:
-    pass
+def _build(workdir: str, project: str, model_yaml: str) -> None:
+    ModelTermView.build(workdir, project, model_yaml)
 
 
 @model_cmd.command("copy", help="Copy model")
@@ -43,21 +37,30 @@ def _recover(model: str) -> None:
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="force copy model")
 def _copy(src: str, dest: str, force: bool) -> None:
-    # ModelPackageLocalStore().push(swmp, project, force)
-    # ModelPackageLocalStore().pull(swmp, project, starwhale, force)
-    pass
+    ModelTermView.copy(src, dest, force)
 
 
 @model_cmd.command("info", help="Inspect model(swmp)")
 @click.argument("model")
-def _info(model: str) -> None:
-    ModelPackageLocalStore().info(model)
+@click.option("--fullname", is_flag=True, help="show version fullname")
+def _info(model: str, fullname: bool) -> None:
+    ModelTermView(model).info(fullname)
 
 
-@model_cmd.command("list", help="List model(swmp)")
-@click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
-def _list(fullname: bool) -> None:
-    ModelPackageLocalStore().list(fullname=fullname)
+@model_cmd.command("list", help="List Model")
+@click.option("--project", default="", help="Project URI")
+@click.option("--fullname", is_flag=True, help="Show fullname of model version")
+@click.option("--show-removed", is_flag=True, help="Show removed model")
+@click.option(
+    "--page", type=int, default=DEFAULT_PAGE_IDX, help="page number for model list"
+)
+@click.option(
+    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for model list"
+)
+def _list(
+    project: str, fullname: bool, show_removed: bool, page: int, size: int
+) -> None:
+    ModelTermView.list(project, fullname, show_removed, page, size)
 
 
 @model_cmd.command("eval", help="Create model(swmp) evaluation")
@@ -65,53 +68,47 @@ def _eval() -> None:
     pass
 
 
-@model_cmd.command("tag", help="model(swmp) tag management")
-@click.argument("model")
-@click.option("-r", "--remove", is_flag=True, help="remove tag")
-@click.option(
-    "-t",
-    "--tag",
-    required=True,
-    multiple=True,
-    help="tag, one or more, splitted by comma",
-)
-def _tag(model, remove, tag) -> None:
-    pass
-
-
 @model_cmd.command("history", help="Show model history")
 @click.argument("model")
-def _history(model: str) -> None:
-    pass
+@click.option("--fullname", is_flag=True, help="show version fullname")
+def _history(model: str, fullname: bool) -> None:
+    ModelTermView(model).history(fullname)
 
 
-@model_cmd.command("revert", help="Revert model")
+@model_cmd.command("remove", help="Remove model")
 @click.argument("model")
-def _revert(model: str) -> None:
-    pass
+@click.option("-f", "--force", is_flag=True, help="force to remove model")
+def _remove(model: str, force: bool) -> None:
+    click.confirm("continue to delete?", abort=True)
+    ModelTermView(model).remove(force)
 
 
-@model_cmd.command("extract", help="Extract local swmp tar file into workdir")
-@click.argument("swmp")
-@click.option("-f", "--force", is_flag=True, help="force extract swmp")
+@model_cmd.command("recover", help="Recover model")
+@click.argument("model")
+@click.option("-f", "--force", is_flag=True, help="force to recover model")
+def _recover(model: str, force: bool) -> None:
+    ModelTermView(model).recover(force)
+
+
+@model_cmd.command("extract", help="Extract local model bundle tar file into workdir")
+@click.argument("model")
+@click.option("-f", "--force", is_flag=True, help="force extract model bundle")
 @click.option(
-    "-t",
-    "--target",
-    type=click.Path(),
-    default=None,
+    "--target-dir",
+    default="",
     help="extract target dir.if omitted, sw will use starwhale default workdir",
 )
-def _extract(swmp: str, force: bool, target: t.Optional[Path]) -> None:
-    ModelPackageLocalStore().extract(swmp, force, target)
+def _extract(model: str, force: bool, target_dir: str) -> None:
+    ModelTermView(model).extract(force, target_dir)
 
 
 # TODO: combine click option to one func for _ppl and _cmp
-@model_cmd.command("ppl", help="Run swmp pipeline")
-@click.argument("swmp")
+@model_cmd.command("ppl")
+@click.argument("target")
 @click.option(
     "-f",
     "--model-yaml",
-    default=DEFAULT_MODEL_YAML_NAME,
+    default=DefaultYAMLName.MODEL,
     help="mode yaml filename, default use ${workdir}/model.yaml file",
 )
 @click.option(
@@ -133,17 +130,31 @@ def _extract(swmp: str, force: bool, target: t.Optional[Path]) -> None:
     help=f"ppl swds config.json path, env is {SWEnv.input_config}",
 )
 def _ppl(
-    swmp: str,
+    target: str,
     model_yaml: str,
     status_dir: str,
     log_dir: str,
     result_dir: str,
     input_config: str,
 ) -> None:
-    ModelPackage.ppl(
-        swmp,
-        model_yaml,
-        {
+    """
+    [ONLY Standalone]Run PPL
+
+    TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
+    INPUT_JSON: dataset uri or dataset/input.json uri
+    """
+    if not os.path.exists(input_config):
+        uri = URI(input_config, expected_type=URIType.DATASET)
+        store = DatasetStorage(uri)
+        input_config = str((store.snapshot_workdir / LOCAL_FUSE_JSON_NAME).absolute())
+
+    # TODO: support render fuse json for cmp test
+
+    ModelTermView.eval(
+        target=target,
+        yaml_name=model_yaml,
+        typ=EvalTaskType.PPL,
+        kw={
             "status_dir": status_dir,
             "log_dir": log_dir,
             "result_dir": result_dir,
@@ -152,14 +163,12 @@ def _ppl(
     )
 
 
-@model_cmd.command(
-    "cmp", help="compare inference output with label, then generate result json"
-)
-@click.argument("swmp")
+@model_cmd.command("cmp")
+@click.argument("target")
 @click.option(
     "-f",
     "--model-yaml",
-    default=DEFAULT_MODEL_YAML_NAME,
+    default=DefaultYAMLName.MODEL,
     help="mode yaml filename, default use ${workdir}/model.yaml file",
 )
 @click.option(
@@ -181,17 +190,23 @@ def _ppl(
     help=f"ppl swds config.json path, env is {SWEnv.input_config}",
 )
 def _cmp(
-    swmp: str,
+    target: str,
     model_yaml: str,
     status_dir: str,
     log_dir: str,
     result_dir: str,
     input_config: str,
 ) -> None:
-    ModelPackage.cmp(
-        swmp,
-        model_yaml,
-        {
+    """
+    [ONLY Standalone]Run CMP, compare inference output with label, then generate result json
+
+    TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
+    """
+    ModelTermView.eval(
+        target=target,
+        yaml_name=model_yaml,
+        typ=EvalTaskType.CMP,
+        kw={
             "status_dir": status_dir,
             "log_dir": log_dir,
             "result_dir": result_dir,

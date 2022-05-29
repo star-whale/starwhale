@@ -32,6 +32,14 @@ class JobStorage(BaseStorage):
         )
 
     @property
+    def uri_type(self) -> str:
+        return URIType.JOB
+
+    @property
+    def manifest_path(self) -> Path:
+        return self.loc / DEFAULT_MANIFEST_NAME
+
+    @property
     def eval_report_path(self) -> Path:
         return self.cmp_dir / RunSubDirType.RESULT / CURRENT_FNAME
 
@@ -44,9 +52,9 @@ class JobStorage(BaseStorage):
         return self.loc / EvalTaskType.CMP
 
     @staticmethod
-    def iter_all_jobs(project_uri: URI) -> t.Generator[Path, None, None]:
+    def iter_all_jobs(project_uri: URI) -> t.Generator[t.Tuple[Path, bool], None, None]:
         # TODO: tune SWCliConfigMixed
         sw = SWCliConfigMixed()
         _job_dir = sw.rootdir / project_uri.project / URIType.JOB
-        for _mf in _job_dir.glob(f"**/**/{DEFAULT_MANIFEST_NAME}"):
-            yield _mf
+        for _path in _job_dir.glob(f"**/**/{DEFAULT_MANIFEST_NAME}"):
+            yield _path, RECOVER_DIRNAME in _path.parts

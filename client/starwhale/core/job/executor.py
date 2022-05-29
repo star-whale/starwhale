@@ -13,18 +13,20 @@ from starwhale.consts import (
     DEFAULT_INPUT_JSON_FNAME,
     DEFAULT_MANIFEST_NAME,
     JSON_INDENT,
+    DefaultYAMLName,
     SWDSBackendType,
     CURRENT_FNAME,
-    DEFAULT_SW_TASK_RUN_IMAGE,
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.utils.error import SWObjNameFormatError
-from starwhale.core.dataset.dataset import DataSet
-from starwhale.core.model.store import ModelPackageLocalStore
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
 from starwhale.base.type import EvalTaskType, RunSubDirType, URIType
+from starwhale.core.dataset.model import Dataset
+from starwhale.base.uri import URI
+from starwhale.core.model.model import StandaloneModel
+from starwhale.core.runtime.model import StandaloneRuntime
+from starwhale.core.dataset.store import DatasetStorage
 
 _CNTR_WORKDIR = "/opt/starwhale"
 _STATUS = PipelineHandler.STATUS
@@ -34,10 +36,10 @@ _STATUS = PipelineHandler.STATUS
 class EvalExecutor(object):
     def __init__(
         self,
-        model: str,
-        datasets: t.List[str],
-        project_dir: Path,
-        baseimage: str = DEFAULT_SW_TASK_RUN_IMAGE,
+        model_uri: str,
+        dataset_uris: t.List[str],
+        runtime_uri: str,
+        project_uri: URI,
         name: str = "",
         desc: str = "",
         gencmd: bool = False,
@@ -45,34 +47,30 @@ class EvalExecutor(object):
     ) -> None:
         self.name = name
         self.desc = desc
-        self.model = model
-        self.datasets = list(datasets)
-        self.baseimage = baseimage
+
+        self.model_uri = URI(model_uri, expected_type=URIType.MODEL)
+        self.project_uri = project_uri
+        self.dataset_uris = [
+            URI(u, expected_type=URIType.DATASET) for u in dataset_uris
+        ]
+        self.runtime_uri = URI(runtime_uri, expected_type=URIType.RUNTIME)
+        self.runtime = StandaloneRuntime(self.runtime_uri)
+        self.baseimage = self.runtime.store.get_docker_base_image()
+        self.project_dir = Path(self.project_uri.real_request_uri)
+
         self.gencmd = gencmd
         self.docker_verbose = docker_verbose
-        self.project_dir = project_dir
-
-        self._console = console
         self._version = ""
         self._manifest: t.Dict[str, t.Any] = {"status": _STATUS.START}
         self._workdir = Path()
         self._model_dir = Path()
-
-        self._validator()
+        self._runtime_dir = Path()
 
     def __str__(self) -> str:
         return f"Evaluation Executor: {self.name}"
 
     def __repr__(self) -> str:
         return f"Evaluation Executor: name -> {self.name}, version -> {self._version}"
-
-    def _validator(self) -> None:
-        if self.model.count(":") != 1:
-            raise SWObjNameFormatError
-
-        for d in self.datasets:
-            if d.count(":") != 1:
-                raise SWObjNameFormatError
 
     @logger.catch
     def run(self, phase: str = EvalTaskType.ALL) -> None:
@@ -92,7 +90,8 @@ class EvalExecutor(object):
         operations = [
             (self._gen_version, 5, "gen version"),
             (self._prepare_workdir, 5, "prepare workdir"),
-            (self._extract_swmp, 15, "extract swmp"),
+            (self._extract_swmp, 15, "extract model"),
+            (self._extract_swrt, 15, "extract runtime"),
             (self._gen_swds_fuse_json, 10, "gen swds fuse json"),
         ]
 
@@ -151,12 +150,17 @@ class EvalExecutor(object):
         logger.info(f"[step:prepare]eval workdir: {self._workdir}")
 
     def _extract_swmp(self) -> None:
-        self._model_dir = ModelPackageLocalStore().extract(self.model)
+        _m = StandaloneModel(self.model_uri)
+        self._model_dir = _m.extract()
+
+    def _extract_swrt(self) -> None:
+        self._runtime_dir = self.runtime.extract()
 
     def _gen_swds_fuse_json(self) -> Path:
         _fuse_jsons = []
-        for ds in self.datasets:
-            fname = DataSet.render_fuse_json(ds, force=False)
+        for _uri in self.dataset_uris:
+            _store = DatasetStorage(_uri)
+            fname = Dataset.render_fuse_json(_store.loc, force=False)
             _fuse_jsons.append(fname)
             logger.debug(f"[gen fuse input.json]{fname}")
 
@@ -210,9 +214,9 @@ class EvalExecutor(object):
     def _do_run_cmd(self, typ: str) -> None:
         cmd = self._gen_run_container_cmd(typ)
         logger.info(f"[run {typ}] docker run command output...")
-        self._console.rule(f":elephant: {typ} docker cmd", align="left")
-        self._console.print(f"{cmd}\n")
-        self._console.print(
+        console.rule(f":elephant: {typ} docker cmd", align="left")
+        console.print(f"{cmd}\n")
+        console.print(
             f":fish: eval run:{typ} dir @ [green blink]{self._workdir}/{typ}[/]"
         )
         if not self.gencmd:
@@ -237,18 +241,24 @@ class EvalExecutor(object):
             "-v",
             f"{rundir}:{_CNTR_WORKDIR}",
             "-v",
-            f"{self._model_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}",
+            f"{self._model_dir}/src:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/src",
+            "-v",
+            f"{self._model_dir}/{DefaultYAMLName.MODEL}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DefaultYAMLName.MODEL}",
+            "-v",
+            f"{self._runtime_dir}/dep:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/dep",
+            "-v",
+            f"{self._runtime_dir}/{DEFAULT_MANIFEST_NAME}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DEFAULT_MANIFEST_NAME}",
         ]
 
         if typ == EvalTaskType.PPL:
             cmd += [
                 "-v",
-                f"{self.project_dir / URIType.DATASET }:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
+                f"{self.project_dir / URIType.DATASET}:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
             ]
         elif typ == EvalTaskType.CMP:
             cmd += [
                 "-v",
-                f"{self._ppl_workdir / RunSubDirType.RESULT }:{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
+                f"{self._ppl_workdir / RunSubDirType.RESULT}:{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
             ]
 
         if self.docker_verbose:
@@ -265,14 +275,6 @@ class EvalExecutor(object):
                 continue
             cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
 
-        _mname, _mver = self.model.split(":")
-        cmd += [
-            "-e",
-            f"SW_SWMP_NAME={_mname}",
-            "-e",
-            f"SW_SWMP_VERSION={_mver}",
-        ]
-
         cmd += [self.baseimage, typ]
         return " ".join(cmd)
 
@@ -288,12 +290,12 @@ class EvalExecutor(object):
             dict(
                 name=self.name,
                 desc=self.desc,
-                model=self.model,
+                model=self.model_uri.full_uri,
+                datasets=[u.full_uri for u in self.dataset_uris],
+                runtime=self.runtime_uri.full_uri,
                 status=_STATUS.SUCCESS if _status else _STATUS.FAILED,
-                datasets=self.datasets,
-                baseimage=self.baseimage,
                 finished_at=now_str(),  # type: ignore
             )
         )
         _f = self._workdir / DEFAULT_MANIFEST_NAME
-        ensure_file(_f, yaml.dump(self._manifest, default_flow_style=False))
+        ensure_file(_f, yaml.safe_dump(self._manifest, default_flow_style=False))

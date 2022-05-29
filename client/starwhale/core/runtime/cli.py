@@ -58,7 +58,7 @@ def _build(
     RuntimeTermView.build(
         workdir=workdir,
         project=project,
-        runtime_yaml_name=runtime_yaml,
+        yaml_name=runtime_yaml,
         gen_all_bundles=gen_all_bundles,
     )
 

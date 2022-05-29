@@ -10,35 +10,26 @@ from rich import box
 from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
-from starwhale.base.view import BaseView
+from starwhale.base.view import BaseTermView
 from starwhale.utils import pretty_bytes, console
 
 from .model import Project, ProjectObjType
 
 
-class ProjectTermView(BaseView):
+class ProjectTermView(BaseTermView):
     def __init__(self, project_uri: str = "") -> None:
         super().__init__()
         self.raw_uri = project_uri
         self.uri = URI(project_uri, expected_type=URIType.PROJECT)
         self.project = Project.get_project(self.uri)
 
-    def create(self) -> None:
-        ok, reason = self.project.create()
-        if ok:
-            self._console.print(
-                f":clap: create project {self.project.name} successfully."
-            )
-        else:
-            self._console.print(
-                f":fearful: failed to create project {self.project.name}, reason:[red]{reason}"
-            )
-            # TODO: defined sys exit code
-            sys.exit(1)
+    @BaseTermView._simple_action_print
+    def create(self) -> t.Tuple[bool, str]:
+        return self.project.create()
 
     @classmethod
-    @BaseView._pager  # type: ignore
-    @BaseView._header  # type: ignore
+    @BaseTermView._pager  # type: ignore
+    @BaseTermView._header  # type: ignore
     def list(
         cls,
         instance_uri: str = "",
@@ -50,7 +41,6 @@ class ProjectTermView(BaseView):
         table = Table(
             title="List Projects",
             box=box.SIMPLE,
-            expand=True,
         )
         table.add_column("")
         table.add_column("Name")
@@ -86,23 +76,23 @@ class ProjectTermView(BaseView):
                 instance=self.uri.instance, project=self.uri.project
             )
         except Exception as e:
-            self._console.print(
+            console.print(
                 f":broken_heart: failed to select {self.raw_uri}, reason: {e}"
             )
             sys.exit(1)
         else:
-            self._console.print(
+            console.print(
                 f":clap: select instance:{self.current_instance}, project:{self.current_project} successfully"
             )
 
     def remove(self, force: bool = False) -> None:
         ok, reason = self.project.remove(force)
         if ok:
-            self._console.print(
+            console.print(
                 f":dog: remove project {self.project.name}, you can recover it, don't panic."
             )
         else:
-            self._console.print(
+            console.print(
                 f":fearful: failed to remove project {self.project.name}, reason: {reason}"
             )
             sys.exit(1)
@@ -110,14 +100,14 @@ class ProjectTermView(BaseView):
     def recover(self) -> None:
         ok, reason = self.project.recover()
         if ok:
-            self._console.print(f":clap: recover project {self.project.name}")
+            console.print(f":clap: recover project {self.project.name}")
         else:
-            self._console.print(
+            console.print(
                 f":fearful: failed to recover project {self.project.name}, reason: {reason}"
             )
             sys.exit(1)
 
-    @BaseView._header  # type: ignore
+    @BaseTermView._header  # type: ignore
     def info(self, fullname: bool = False) -> None:
         _r = self.project.info()
         _models = _r.pop("models", [])
@@ -140,15 +130,13 @@ class ProjectTermView(BaseView):
                     )
             return tree
 
-        self._console.print(
-            Panel(Pretty(_r), title="Project Details", title_align="left")
-        )
+        console.print(Panel(Pretty(_r), title="Project Details", title_align="left"))
         if _models or _datasets:
             _block = self.comparsion(
                 _show_objects(_models, ProjectObjType.MODEL),
                 _show_objects(_datasets, ProjectObjType.DATASET),
             )
-            self._console.print(_block)
+            console.print(_block)
 
 
 # TODO: add ProjectHTTPView for http request
