@@ -32,9 +32,8 @@ const swTabs = [
     ),
     desc: (
       <>
-        - starwhale public dataset：starwhale provides massive public dataset -
-        easy to work：difine dataset.yaml, use swcli comand can easily generate
-        the dataset - fllexible:
+        You can creat one or several projecs for a data scientist team, a product line or a specific model.
+        Every user in cloud instances has their personal project by defaul.
       </>
     ),
     button: {
