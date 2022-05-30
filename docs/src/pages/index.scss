@@ -35,14 +35,26 @@
 
 // feature: tabs
 .swMain {
-  background-image: linear-gradient(top, #050d46 180px, white 100%);
-  background-repeat: no-repeat;
+  background-color: white;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
   gap: 80px;
   padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
+
+  &:before {
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 180px;
+    content: "";
+    background-color: #050d46;
+  }
 }
 
 .swTabs {
@@ -264,11 +276,31 @@
   }
   .integrate {
     position: relative;
+    margin-top: 60px;
 
     &__body {
       height: 300px + 90 * 2px;
       display: flex;
       gap: 40px;
+      padding: 10px 130px 0;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-content: space-between;
+    }
+
+    &--8 {
+      .map__item {
+        &:nth-child(1),
+        &:nth-child(4) {
+          position: relative;
+          top: 20px;
+        }
+        &:nth-child(5),
+        &:nth-child(8) {
+          position: relative;
+          top: -20px;
+        }
+      }
     }
   }
 
@@ -279,7 +311,7 @@
     left: 0;
     right: 0;
     margin: auto;
-    width: 655px;
+    width: 720px;
     height: 220px + 80px;
     background-color: transparent;
     display: flex;
@@ -312,6 +344,31 @@
       border-radius: 6px;
       width: 200px;
       height: 90px;
+      padding: 19px 0 13px 0;
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #333333;
+      letter-spacing: 0;
+      text-align: center;
+      line-height: 14px;
+
+      &:hover {
+        // cursor: pointer;
+        box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.1);
+      }
+    }
+
+    &__divider {
+      display: flex;
+      width: 100px;
+      min-height: 1px;
+      height: 1px;
+      background-color: #f1f1f1;
     }
 
     &__center {

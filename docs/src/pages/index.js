@@ -32,8 +32,11 @@ const swTabs = [
     ),
     desc: (
       <>
-        You can creat one or several projecs for a data scientist team, a product line or a specific model.
-        Every user in cloud instances has their personal project by defaul.
+        You can creat one or several projecs for a data scientist team, a
+        product line or a specific model.
+        <p>
+          Every user in cloud instances has their personal project by defaul.
+        </p>
       </>
     ),
     button: {
@@ -99,6 +102,41 @@ const sectionUsers = [
     title: "Model Defination",
     description:
       "Text space occupation of detailed descriptionText space occupation of detailed",
+  },
+];
+
+const sectionsIntegratFrameworks = [
+  {
+    icon: "",
+    title: "TensorFlow",
+  },
+  {
+    icon: "img/intergrate_PyTorch.svg",
+    title: "PyTorch",
+  },
+  {
+    icon: "",
+    title: "Keras",
+  },
+  {
+    icon: "",
+    title: "XGBoost",
+  },
+  {
+    icon: "",
+    title: "Kubeflow",
+  },
+  {
+    icon: "",
+    title: "Kubernetes",
+  },
+  {
+    icon: "",
+    title: "Python",
+  },
+  {
+    icon: "",
+    title: "MXNet",
   },
 ];
 
@@ -214,9 +252,9 @@ function Home() {
           <div className="divider">
             <span className="iconfont icon-integrates" />
           </div>
-          <div className="integrate">
+          <div className="integrate integrate--8">
             <div
-              className="integrate__bg map map--7"
+              className="integrate__bg map map--8"
               style={{
                 background: `
                 url(${useBaseUrl("img/line5-top.svg")}) center top no-repeat,
@@ -237,9 +275,17 @@ function Home() {
               </div>
             </div>
             <div className="integrate__body">
-              {new Array(7).fill("1").map((item, index) => (
+              {sectionsIntegratFrameworks.map((item, index) => (
                 <div className="map__item" key={index}>
-                  {index}
+                  {item.icon && (
+                    <img
+                      src={useBaseUrl(item.icon)}
+                      alt={item.title}
+                      height="24px"
+                    />
+                  )}
+                  {item.icon && <div className="map__divider"></div>}
+                  <span>{item.title}</span>
                 </div>
               ))}
             </div>

@@ -3,16 +3,10 @@ import Layout from "@theme/Layout";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import "./index.scss";
 import { COUNTRIES } from "../../components/selector/countries";
-import { CountrySelector } from "../../components/selector";
 
 function ContactUs() {
   const { siteConfig = {} } = useDocusaurusContext();
   const { customFields = {} } = siteConfig;
-  const myRef = React.createRef();
-
-  const [isOpen, setIsOpen] = useState(false);
-  // Default this to a country's code to preselect it
-  const [country, setCountry] = useState("AF");
 
   return (
     <Layout
@@ -47,8 +41,8 @@ function ContactUs() {
                     <option>select country</option>
                     {COUNTRIES.map((country, index) => {
                       return (
-                        <option key={index} value={country.value}>
-                          {country.title}
+                        <option key={index} value={country.abb}>
+                          {country.name}
                         </option>
                       );
                     })}

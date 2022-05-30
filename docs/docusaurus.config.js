@@ -60,12 +60,13 @@ module.exports = {
           ],
         },
         {
-          to: "/docs/getting_started",
+          // to: "/docs/getting_started",
+          to: "https://github.com/star-whale/starwhale",
           label: "Documentation",
           position: "left",
         },
         {
-          to: "/docs/company/about",
+          to: "/contact-us",
           label: "Company",
           position: "left",
         },
