@@ -177,7 +177,9 @@ module.exports = {
       ],
     },
   },
-  customFields: {},
+  customFields: {
+    email: "contact@starwhale.ai",
+  },
   presets: [
     [
       "@docusaurus/preset-classic",
