@@ -24,6 +24,7 @@
                               j.device_amount,
                               j.result_output_path as job_result_output_path,
                               j.job_comment,
+                              j.is_deleted as job_is_deleted,
                               p.project_name,
                               u.id as user_id,
                               u.user_name,
@@ -67,17 +68,13 @@
     <select id="listJobs" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
         <where>
+            and job_is_deleted = 0
             and project_id = #{projectId}
         </where>
-        <choose>
-            <when test="swmpId != null">
-                and swmp_id = #{swmpId}
-            </when>
-            <otherwise>
-                order by swmp_id,job_id desc
-            </otherwise>
-        </choose>
-
+        <if test="swmpId != null and swmpId != ''">
+            and swmp_id = #{swmpId}
+        </if>
+        order by job_id desc
     </select>
 
     <select id="findJobById" resultMap="jobResultMap" >
@@ -87,9 +84,17 @@
         </where>
     </select>
 
+    <select id="findJobByUUID" resultMap="jobResultMap" >
+        <include refid="select_jobs"/>
+        <where>
+            and job_uuid = #{uuid}
+        </where>
+    </select>
+
     <select id="findJobByStatusIn" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
         <where>
+            and job_is_deleted = 0
             and job_status in
         </where>
         <foreach item="item" index="index" collection="jobStatuses"
@@ -124,6 +129,26 @@
 
     <update id="updateJobCommentByUUID">
         update job_info set job_comment = #{comment}
+        where job_uuid = #{uuid}
+    </update>
+
+    <update id="removeJob" >
+        update job_info set is_deleted = 1
+        where id = #{id}
+    </update>
+
+    <update id="removeJobByUUID" >
+        update job_info set is_deleted = 1
+        where job_uuid = #{uuid}
+    </update>
+
+    <update id="recoverJob" >
+        update job_info set is_deleted = 0
+        where id = #{id}
+    </update>
+
+    <update id="recoverJobByUUID" >
+        update job_info set is_deleted = 0
         where job_uuid = #{uuid}
     </update>
 
@@ -170,6 +195,7 @@
         <result property="deviceAmount" column="device_amount" />
         <result property="resultOutputPath" column="job_result_output_path" />
         <result property="comment" column="job_comment"/>
+        <result property="isDeleted" column="job_is_deleted"/>
         <association property="project" resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
         <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper.swmpVersionResultMap" />
         <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />

@@ -106,6 +106,16 @@ def bootstrap_cmd() -> None:
     default=default.CONTROLLER_PORT,
     help="The port for ui and server",
 )
+@click.option(
+    "--token-expire-minutes",
+    default=default.TOKEN_EXPIRE_MINUTES,
+    help="The login token expire time",
+)
+@click.option(
+    "--file-upload-size",
+    default=default.FILE_UPLOAD_MAX_SIZE,
+    help="The max size of file for upload",
+)
 # agent
 @click.option(
     "--agent-runtime-dir",
@@ -185,6 +195,8 @@ def _deploy(
     root_path: str,
     version: str,
     image_repository: str,
+    token_expire_minutes: str,
+    file_upload_size: str,
     mysql_image: str,
     mysql_port: str,
     mysql_root_password: str,
@@ -252,6 +264,8 @@ def _deploy(
             "controller_image": "{{ sw_repository }}/server:{{ sw_version }}",
             "controller_task_split_num": job_split_task_num,
             "controller_port": controller_port,
+            "token_expire_minutes": token_expire_minutes,
+            "file_upload_size": file_upload_size,
             # agent variables
             # agent
             "agent_image": "{{ sw_repository }}/server:{{ sw_version }}",

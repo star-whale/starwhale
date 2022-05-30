@@ -57,7 +57,7 @@ public class DockerContainerClient implements ContainerClient {
                 DeviceRequest deviceRequest = new DeviceRequest();
                 deviceRequest.withCapabilities(imageConfig.getGpuConfig().getCapabilities());
                 deviceRequest.withDeviceIds(imageConfig.getGpuConfig().getDeviceIds());
-                deviceRequest.withCount(imageConfig.getGpuConfig().getDeviceIds().size());
+                //deviceRequest.withCount(imageConfig.getGpuConfig().getDeviceIds().size());
                 hostConfig.withDeviceRequests(List.of(deviceRequest));
             }
 

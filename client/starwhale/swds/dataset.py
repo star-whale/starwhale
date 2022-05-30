@@ -286,6 +286,7 @@ class DataSet(object):
         if self._swds_config.mode == DSProcessMode.GENERATE:
             logger.info("[info:swds]do make swds_bin job...")
             _obj.make_swds()
+            _obj.__exit__()
             # TODO: need remove workdir in sys.path?
         else:
             # TODO: add some dry-run output

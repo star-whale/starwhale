@@ -16,7 +16,9 @@
 
 package ai.starwhale.mlops.domain.project;
 
+import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.domain.user.User;
+import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,4 +38,9 @@ public class Project {
 
     private boolean isDefault;
 
+    private boolean isDeleted;
+
+    public Integer getDeleteInt() {
+        return isDeleted ? 1 : 0;
+    }
 }

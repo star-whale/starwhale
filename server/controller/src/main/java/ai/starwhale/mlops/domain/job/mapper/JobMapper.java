@@ -28,6 +28,8 @@ public interface JobMapper {
 
     JobEntity findJobById(@Param("jobId") Long jobId);
 
+    JobEntity findJobByUUID(@Param("uuid") String uuid);
+
     int addJob(@Param("job")JobEntity jobEntity);
 
     List<JobEntity> findJobByStatusIn(@Param("jobStatuses") List<JobStatus> jobStatuses);
@@ -41,4 +43,12 @@ public interface JobMapper {
     int updateJobComment(@Param("id")Long id, @Param("comment")String comment);
 
     int updateJobCommentByUUID(@Param("uuid")String uuid, @Param("comment")String comment);
+
+    int removeJob(@Param("id")Long id);
+
+    int removeJobByUUID(@Param("uuid")String uuid);
+
+    int recoverJob(@Param("id")Long id);
+
+    int recoverJobByUUID(@Param("uuid")String uuid);
 }
