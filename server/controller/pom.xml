@@ -134,7 +134,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>copy static</id>
@@ -143,15 +142,15 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <!-- 复制前端打包文件到这里 -->
+                            <!-- Copy the front-end package file here -->
                             <outputDirectory>src/main/resources/static</outputDirectory>
                             <overwrite>true</overwrite>
                             <resources>
                                 <resource>
-                                    <!-- 从前端打包的目录dist进行指定文件、文件夹内容的复制-->
+                                    <!-- Copy the contents of specified files and folders from the front-end packaged directory dist-->
                                     <directory>../../console/build</directory>
                                     <includes>
-                                        <!-- 具体根据实际前端代码、及目录结构进行配置-->
+                                        <!-- Specifically, it is configured according to the actual front-end code and directory structure.-->
                                         <include>static/</include>
                                         <include>favicon.ico</include>
                                         <include>asset-manifest.json</include>
