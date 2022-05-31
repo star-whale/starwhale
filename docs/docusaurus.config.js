@@ -180,6 +180,8 @@ module.exports = {
   },
   customFields: {
     email: "contact@starwhale.ai",
+    description:
+      "Starwhale is a MLOps platform to manage machine learning projects, models and datasets.",
   },
   presets: [
     [

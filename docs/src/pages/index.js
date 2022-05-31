@@ -147,8 +147,8 @@ function Home() {
 
   return (
     <Layout
-      title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />"
+      title={`${siteConfig.title} | Starwhale`}
+      description="Starwhale is a MLOps platform to manage machine learning projects, models and datasets.  "
     >
       <header className={clsx("hero hero--primary", styles.heroBanner)}>
         <div className="container">
