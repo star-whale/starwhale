@@ -26,20 +26,19 @@ import org.springframework.stereotype.Service;
 public class Uploading2FinishedAction extends AbsBaseTaskAction {
 
     @Override
-    public InferenceTask processing(InferenceTask oldTask, Context context) throws Exception {
-        InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
+    public InferenceTask processing(InferenceTask originTask, Context context) throws Exception {
         // upload result file to the storage
-        taskPersistence.uploadResult(oldTask);
+        taskPersistence.uploadResult(originTask);
         // upload container log to the storage
-        taskPersistence.uploadLog(oldTask);
-        newTask.setStatus(InferenceTaskStatus.SUCCESS);
-        return newTask;
+        taskPersistence.uploadLog(originTask);
+        originTask.setStatus(InferenceTaskStatus.SUCCESS);
+        return originTask;
 
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
-        taskPool.uploadingTasks.remove(oldTask);
+    public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
+        taskPool.uploadingTasks.remove(originTask);
         taskPool.succeedTasks.add(newTask);
     }
 }

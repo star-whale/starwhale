@@ -115,13 +115,15 @@ public class TaskExecutor {
         if (sourcePool.isReady() && taskPool.isReady() && !taskPool.preparingTasks.isEmpty()) {
             // deal with the preparing task with FIFO sort
             // todo whether async more fit
-            execute.apply(
-                    taskPool.preparingTasks.peek(),
-                    Context.instance(),
-                    task -> !taskPool.needToCancel.contains(task.getId()) && task.getStatus() != InferenceTaskStatus.CANCELING,
-                    preparing2RunningAction,
-                    preparing2CanceledAction
-            );
+            for (InferenceTask preparingTask : new ArrayList<>(taskPool.preparingTasks)) {
+                execute.apply(
+                        preparingTask,
+                        Context.instance(),
+                        task -> !taskPool.needToCancel.contains(task.getId()) && task.getStatus() != InferenceTaskStatus.CANCELING,
+                        preparing2RunningAction,
+                        preparing2CanceledAction
+                );
+            }
         }
     }
 

@@ -33,8 +33,8 @@ public class Init2PreparingAction extends AbsBaseTaskAction {
 
     @Override
     public InferenceTask processing(InferenceTask originTask, Context context) throws Exception {
-        InferenceTask newTask = BeanUtil.toBean(originTask, InferenceTask.class);
-        // todo try to allocate device for task, otherwise just wait to allocate
+
+        // try to allocate device for task, otherwise just wait to allocate next action(preparing2Running)
         Set<Device> allocated = null;
         // allocate device(GPU or CPU) for task
         switch (originTask.getDeviceClass()) {
@@ -48,12 +48,12 @@ public class Init2PreparingAction extends AbsBaseTaskAction {
                 log.error("unknown device class");
                 throw ErrorCode.allocateError.asException("unknown device class");
         }
-        newTask.setDevices(allocated);
-        return newTask;
+        originTask.setDevices(allocated);
+        return originTask;
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
         // add the new task to the tail
         taskPool.add2PreparingQueue(newTask);
     }

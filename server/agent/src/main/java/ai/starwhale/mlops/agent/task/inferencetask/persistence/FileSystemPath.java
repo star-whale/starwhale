@@ -231,7 +231,8 @@ public class FileSystemPath {
             }
             if (argsNum != objs.length) throw new IllegalArgumentException();
             Collections.reverse(nodes);
-            String format = String.join(File.separator, nodes);
+            // String format = String.join(File.separator, nodes);
+            String format = String.join("/", nodes);
             return String.format(format, objs);
         }
     }

@@ -43,18 +43,18 @@ public abstract class AbsBaseCancelTaskAction extends AbsBaseTaskAction implemen
     }
 
     @Override
-    public InferenceTask processing(InferenceTask oldTask, Context context) {
-        return BeanUtil.toBean(oldTask, InferenceTask.class);
+    public InferenceTask processing(InferenceTask originTask, Context context) {
+        return originTask;
     }
 
     @Override
-    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void post(InferenceTask originTask, InferenceTask newTask, Context context) {
         newTask.setStatus(InferenceTaskStatus.CANCELED);
-        super.post(oldTask, newTask, context);
+        super.post(originTask, newTask, context);
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
         if (Objects.nonNull(newTask)) {
             taskPool.canceledTasks.add(newTask);
             // cancel success

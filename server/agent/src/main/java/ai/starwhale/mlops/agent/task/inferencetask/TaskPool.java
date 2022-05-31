@@ -16,25 +16,20 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask;
 
-import java.util.ArrayDeque;
-import java.util.List;
-import java.util.Queue;
-import java.util.Vector;
+import java.util.*;
 
 public class TaskPool {
 
-    public final Queue<InferenceTask> preparingTasks = new ArrayDeque<>();
-    public final List<InferenceTask> runningTasks = new Vector<>();
-    public final List<InferenceTask> uploadingTasks = new Vector<>();
-    public final List<InferenceTask> succeedTasks = new Vector<>();
-    //public final List<InferenceTask> archivedTasks = new Vector<>();
-    public final List<InferenceTask> canceledTasks = new Vector<>();
-    public final List<InferenceTask> failedTasks = new Vector<>();
-    public final List<Long> needToCancel = new Vector<>();
+    public final Set<InferenceTask> preparingTasks = new LinkedHashSet<>();
+    public final Set<InferenceTask> runningTasks = new LinkedHashSet<>();
+    public final Set<InferenceTask> uploadingTasks = new LinkedHashSet<>();
+    public final Set<InferenceTask> succeedTasks = new LinkedHashSet<>();
+    public final Set<InferenceTask> canceledTasks = new LinkedHashSet<>();
+    public final Set<InferenceTask> failedTasks = new LinkedHashSet<>();
+    public final Set<Long> needToCancel = new LinkedHashSet<>();
 
     public void add2PreparingQueue(InferenceTask task) {
-        if (preparingTasks.contains(task)) return;
-        preparingTasks.offer(task);
+        preparingTasks.add(task);
     }
 
 

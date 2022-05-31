@@ -36,22 +36,21 @@ public class ArchivedAction extends AbsBaseTaskAction {
     private LogRecorder logRecorder;
 
     @Override
-    public InferenceTask processing(InferenceTask oldTask, Context context)
+    public InferenceTask processing(InferenceTask originTask, Context context)
         throws Exception {
-        InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
-        newTask.setStatus(InferenceTaskStatus.ARCHIVED);
-        return newTask;
+        originTask.setStatus(InferenceTaskStatus.ARCHIVED);
+        return originTask;
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) throws Exception {
+    public void success(InferenceTask originTask, InferenceTask newTask, Context context) throws Exception {
         // upload log
-        if (StringUtils.isNotEmpty(oldTask.getContainerId())) {
+        if (StringUtils.isNotEmpty(originTask.getContainerId())) {
             try {
-                ContainerClient.ContainerInfo info = containerClient.containerInfo(oldTask.getContainerId());
-                taskPersistence.uploadContainerLog(oldTask, info.getLogPath());
+                ContainerClient.ContainerInfo info = containerClient.containerInfo(originTask.getContainerId());
+                taskPersistence.uploadContainerLog(originTask, info.getLogPath());
                 // remove container
-                containerClient.removeContainer(oldTask.getContainerId(), true);
+                containerClient.removeContainer(originTask.getContainerId(), true);
             } catch (Exception e) {
                 log.error("occur some error when upload container log:{}", e.getMessage(), e);
             }
@@ -59,11 +58,11 @@ public class ArchivedAction extends AbsBaseTaskAction {
         }
 
         // remove from origin list
-        taskPool.failedTasks.remove(oldTask);
-        taskPool.succeedTasks.remove(oldTask);
-        taskPool.canceledTasks.remove(oldTask);
+        taskPool.failedTasks.remove(originTask);
+        taskPool.succeedTasks.remove(originTask);
+        taskPool.canceledTasks.remove(originTask);
 
-        logRecorder.remove(oldTask.getId());
+        logRecorder.remove(originTask.getId());
 
     }
 }

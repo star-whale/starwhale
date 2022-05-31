@@ -32,10 +32,10 @@ public class Preparing2CanceledAction extends AbsBaseCancelTaskAction {
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
         if (Objects.nonNull(newTask)) {
-            taskPool.preparingTasks.remove(oldTask);
-            super.success(oldTask, newTask, context);
+            taskPool.preparingTasks.remove(originTask);
+            super.success(originTask, newTask, context);
         }
     }
 }

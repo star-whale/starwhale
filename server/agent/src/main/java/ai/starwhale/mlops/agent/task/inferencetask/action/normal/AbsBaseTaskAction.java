@@ -57,14 +57,10 @@ public abstract class AbsBaseTaskAction implements Action<InferenceTask, Inferen
         taskPersistence.save(task);
     }
 
+    // at normal action, the newTask don't use at post
     @Override
-    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) {
-        newTask.setActionStatus(ActionStatus.completed);
-        taskPersistence.save(newTask);
-    }
-
-    @Override
-    public void fail(InferenceTask task, Context context, Exception e) {
-        log.error("execute task:{}, error:{}", JSONUtil.toJsonStr(task), e.getMessage(), e);
+    public void post(InferenceTask originTask, InferenceTask newTask, Context context) {
+        originTask.setActionStatus(ActionStatus.completed);
+        taskPersistence.save(originTask);
     }
 }
