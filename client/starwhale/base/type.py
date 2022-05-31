@@ -1,3 +1,6 @@
+from starwhale.utils.error import NoSupportError
+
+
 class InstanceType:
     STANDALONE = "standalone"
     CLOUD = "cloud"
@@ -47,3 +50,14 @@ class BundleType:
     MODEL = ".swmp"
     DATASET = ".swds"
     RUNTIME = ".swrt"
+
+
+def get_bundle_type_by_uri(uri_type: str) -> str:
+    if uri_type == URIType.DATASET:
+        return BundleType.DATASET
+    elif uri_type == URIType.MODEL:
+        return BundleType.MODEL
+    elif uri_type == URIType.RUNTIME:
+        return BundleType.RUNTIME
+    else:
+        raise NoSupportError(uri_type)

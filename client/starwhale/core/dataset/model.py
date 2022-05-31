@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 import typing as t
 from abc import ABCMeta
+from starwhale.base.bundle_copy import BundleCopy
 import yaml
 from pathlib import Path
 import tarfile
@@ -62,6 +63,11 @@ class Dataset(BaseBundle):
     def get_dataset(cls, uri: URI) -> Dataset:
         _cls = cls._get_cls(uri)
         return _cls(uri)
+
+    @classmethod
+    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
+        bc = BundleCopy(src_uri, dest_uri, URIType.DATASET, force)
+        bc.do()
 
     @classmethod
     def _get_cls(  # type: ignore

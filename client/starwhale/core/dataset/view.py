@@ -72,7 +72,8 @@ class DatasetTermView(BaseTermView):
 
     @classmethod
     def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
-        Dataset.copy(URI(src_uri), URI(dest_uri), force)
+        Dataset.copy(src_uri, dest_uri, force)
+        console.print(":clap: copy done")
 
     @classmethod
     def render_fuse_json(cls, target: str, force: bool = False) -> None:

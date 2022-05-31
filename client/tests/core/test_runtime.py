@@ -74,15 +74,11 @@ class StandaloneRuntimeTestCase(TestCase):
         _rt_config = yaml.safe_load(open(runtime_path, "r"))
         assert _rt_config["python_version"] == "3.8"
 
-    @patch("starwhale.utils.venv.is_conda")
     @patch("starwhale.utils.venv.check_call")
-    def test_create_conda(self, m_call: MagicMock, m_conda: MagicMock) -> None:
-        m_conda.return_value = True
+    def test_create_conda(self, m_call: MagicMock) -> None:
         workdir = "/home/starwhale/myproject"
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         name = "test-conda"
-
-        os.environ["CONDA_DEFAULT_ENV"] = "1"
 
         StandaloneRuntime.create(
             workdir=workdir,
@@ -220,9 +216,15 @@ class StandaloneRuntimeTestCase(TestCase):
         assert not os.path.exists(recover_path)
         assert os.path.exists(swrt_path)
 
+    @patch("starwhale.utils.venv.is_conda")
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.subprocess.check_output")
-    def test_build_conda(self, m_venv: MagicMock, m_check_call: MagicMock) -> None:
+    def test_build_conda(
+        self, m_venv: MagicMock, m_check_call: MagicMock, m_conda: MagicMock
+    ) -> None:
+        m_conda.return_value = True
+        os.environ["CONDA_DEFAULT_ENV"] = "1"
+
         name = "rttest"
         m_venv.return_value = "True"
         workdir = "/home/starwhale/myproject"

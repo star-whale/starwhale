@@ -1,20 +1,32 @@
 from http import HTTPStatus
 import yaml
 from pathlib import Path
-import sys
 
-import requests
-
+from starwhale.base.cloud import CloudRequestMixed
+from starwhale.core.dataset.dataset import ARCHIVE_SWDS_META
+from starwhale.core.dataset.store import DatasetStorage
+from starwhale.core.model.store import ModelStorage
+from starwhale.core.runtime.store import RuntimeStorage
+from starwhale.utils.config import SWCliConfigMixed
+from starwhale.utils.fs import ensure_dir
+from starwhale.base.type import InstanceType, URIType, get_bundle_type_by_uri
 from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
-    SW_API_VERSION,
+    VERSION_PREFIX_CNT,
+    HTTPMethod,
 )
-from starwhale.utils.http import wrap_sw_error_resp, upload_file
-from starwhale.utils import console, fmt_http_server
-from starwhale.utils.error import NotFoundError
+from starwhale.utils import console
+from starwhale.utils.error import NoSupportError, NotFoundError
+from starwhale.base.uri import URI
 
 
 TMP_FILE_BUFSIZE = 8192
+
+_query_param_map = {
+    URIType.DATASET: "swds",
+    URIType.MODEL: "swmp",
+    URIType.RUNTIME: "swrt",
+}
 
 
 class _UploadPhase:
@@ -24,50 +36,157 @@ class _UploadPhase:
     CANCEL = "CANCEL"
 
 
-class BundleCopy(object):
-    def __init__(self) -> None:
-        self.sw_remote_addr = ""
-        self.sw_token = ""
-
-    def dataset_push(
-        self, sw_name: str, project: str = "", force: bool = False
+class BundleCopy(CloudRequestMixed):
+    def __init__(
+        self, src_uri: str, dest_uri: str, typ: str, force: bool = False
     ) -> None:
-        url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/project/dataset/push"
+        self.src_uri = URI(src_uri, expected_type=typ)
+        self.dest_uri = URI(dest_uri, expected_type=URIType.PROJECT)
+        self.typ = typ
+        self.force = force
 
-        _name = ""
-        # _name, _version = self._parse_swobj(sw_name)
-        # _dir, _ = self._guess(self.dataset_dir / _name, _version)
-        _dir = Path()
-        if not _dir.exists():
+        self.bundle_name = self.src_uri.object.name
+        self.bundle_version = self._guess_bundle_version()
+
+        self._sw_config = SWCliConfigMixed()
+        self._do_validate()
+
+    def _guess_bundle_version(self) -> str:
+        if self.src_uri.instance_type == InstanceType.CLOUD:
+            return self.src_uri.object.version
+        else:
+            if self.typ == URIType.DATASET:
+                _v = DatasetStorage(self.src_uri).id
+            elif self.typ == URIType.MODEL:
+                _v = ModelStorage(self.src_uri).id
+            elif self.typ == URIType.RUNTIME:
+                _v = RuntimeStorage(self.src_uri).id
+            else:
+                raise NoSupportError(self.typ)
+
+            return _v or self.src_uri.object.version
+
+    def _do_validate(self) -> None:
+        if self.typ not in (URIType.DATASET, URIType.MODEL, URIType.RUNTIME):
+            raise NoSupportError(f"{self.typ} copy does not work")
+
+        if self.bundle_version == "":
+            raise Exception(f"must specify version src:({self.bundle_version})")
+
+    def _check_cloud_obj_existed(self, uri: URI) -> bool:
+        # TODO: add more params for project
+        # TODO: tune controller api, use unified params name
+        ok, _ = self.do_http_request_simple_ret(
+            path=f"/project/{self.typ}",
+            method=HTTPMethod.HEAD,
+            instance_uri=uri,
+            params={
+                _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}"
+            },
+            ignore_status_codes=[HTTPStatus.NOT_FOUND],
+        )
+        return ok
+
+    def _get_target_path(self, uri: URI) -> Path:
+        if uri.instance_type != InstanceType.STANDALONE:
+            raise NoSupportError(f"{uri} to get target dir path")
+
+        return (
+            self._sw_config.rootdir
+            / uri.project
+            / self.typ
+            / self.bundle_name
+            / self.bundle_version[:VERSION_PREFIX_CNT]
+            / f"{self.bundle_version}{get_bundle_type_by_uri(self.typ)}"
+        )
+
+    def _is_existed(self, uri: URI) -> bool:
+        if uri.instance_type == InstanceType.CLOUD:
+            return self._check_cloud_obj_existed(uri)
+        else:
+            return self._get_target_path(uri).exists()
+
+    def _do_upload_bundle_tar(self) -> None:
+        file_path = self._get_target_path(self.src_uri)
+        console.print(f":bowling: upload {file_path}...")
+
+        self.do_multipart_upload_file(
+            url_path=f"/project/{self.typ}/push",
+            file_path=file_path,
+            instance_uri=self.dest_uri,
+            fields={
+                _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}",
+                "project": self.dest_uri.project,
+                "force": "1" if self.force else "0",
+            },
+            use_raise=True,
+        )
+
+    def _do_download_bundle_tar(self) -> None:
+        file_path = self._get_target_path(self.dest_uri)
+        console.print(f":bowling: download to {file_path}...")
+
+        self.do_download_file(
+            url_path=f"/project/{self.typ}/pull",
+            dest_path=self._get_target_path(self.dest_uri),
+            instance_uri=self.src_uri,
+            params={
+                _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}",
+                "project": self.src_uri.project,
+            },
+        )
+
+    def do(self) -> None:
+        if self._is_existed(self.dest_uri) and not self.force:
             console.print(
-                f"[red]failed to push {sw_name}[/], because of {_dir} not found"
+                f":tea: {self.dest_uri}-{self.bundle_name}-{self.bundle_version} was already existed, skip copy"
             )
-            sys.exit(1)
+            return
 
-        # TODO: refer to docker push
-        console.print(" :fire: try to push swds...")
-        _manifest_path = _dir / DEFAULT_MANIFEST_NAME
-        _swds = f"{_name}:{_dir.name}"
-        _headers = {"Authorization": self.sw_token}
+        # TODO: when controller api support dataset head, remove dataset type check
+        if self.typ != URIType.DATASET and self._is_existed(self.src_uri):
+            raise NotFoundError(str(self.src_uri))
+
+        console.print(
+            f":construction: start to copy {self.src_uri} -> {self.dest_uri}..."
+        )
+
+        if self.src_uri.instance_type == InstanceType.STANDALONE:
+            if self.typ == URIType.DATASET:
+                self._do_upload_bundle_dir()
+            else:
+                self._do_upload_bundle_tar()
+        else:
+            if self.typ == URIType.DATASET:
+                self._do_download_bundle_dir()
+            else:
+                self._do_download_bundle_tar()
+
+    def _do_upload_bundle_dir(self) -> None:
+        _workdir: Path = self._get_target_path(self.src_uri)
+        _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
+        _key = _query_param_map[self.typ]
+        _name = f"{self.bundle_name}:{self.bundle_version}"
+        _url_path = f"/project/{self.typ}/push"
 
         # TODO: use rich progress
-        r = upload_file(
-            url=url,
-            fpath=_manifest_path,
+        r = self.do_multipart_upload_file(
+            url_path=_url_path,
+            file_path=_manifest_path,
+            instance_uri=self.dest_uri,
             fields={
-                "swds": _swds,
+                _key: _name,
                 "phase": _UploadPhase.MANIFEST,
-                "project": project,
-                "force": "1" if force else "0",
+                "project": self.dest_uri.project,
+                "force": "1" if self.force else "0",
             },
-            headers=_headers,
-            exit=True,
+            use_raise=True,
         )
         console.print(f"\t :arrow_up: {DEFAULT_MANIFEST_NAME} :ok:")
         upload_id = r.json().get("data", {}).get("upload_id")
         if not upload_id:
             raise Exception("get invalid upload_id")
-        _headers["X-SW-UPLOAD-ID"] = upload_id
+        _headers = {"X-SW-UPLOAD-ID": upload_id}
         _manifest = yaml.safe_load(_manifest_path.open())
 
         # TODO: add retry deco
@@ -75,11 +194,12 @@ class BundleCopy(object):
             if not _fp.exists():
                 raise NotFoundError(f"{_fp} not found")
 
-            upload_file(
-                url=url,
-                fpath=_fp,
+            self.do_multipart_upload_file(
+                url_path=_url_path,
+                file_path=_fp,
+                instance_uri=self.dest_uri,
                 fields={
-                    "swds": _swds,
+                    _key: _name,
                     "phase": _UploadPhase.BLOB,
                 },
                 headers=_headers,
@@ -87,85 +207,71 @@ class BundleCopy(object):
             )
             console.print(f"\t :arrow_up: {_fp.name} :ok:")
 
-        # TODO: parallel upload
         try:
             from starwhale.core.dataset.dataset import ARCHIVE_SWDS_META
 
-            for p in [_dir / "data" / n for n in _manifest["signature"]] + [
-                _dir / ARCHIVE_SWDS_META
+            for p in [_workdir / "data" / n for n in _manifest["signature"]] + [
+                _workdir / ARCHIVE_SWDS_META
             ]:
                 _upload_blob(p)
         except Exception as e:
             console.print(
-                f"when upload blobs, we meet Exception{e}, will cancel upload"
+                f":confused_face: when upload blobs, we meet Exception{e}, will cancel upload"
             )
-            r = requests.post(
-                url,
-                data={"swds": _swds, "project": project, "phase": _UploadPhase.CANCEL},
+            self.do_http_request(
+                path=_url_path,
+                method=HTTPMethod.POST,
+                instance_uri=self.dest_uri,
                 headers=_headers,
+                data={
+                    _key: _name,
+                    "project": self.dest_uri.project,
+                    "phase": _UploadPhase.CANCEL,
+                },
+                use_raise=True,
+                disable_default_content_type=True,
             )
-            wrap_sw_error_resp(r, "cancel", use_raise=True)
         else:
-            console.print(" :clap: :clap: all uploaded.")
-            r = requests.post(
-                url,
-                data={"swds": _swds, "project": project, "phase": _UploadPhase.END},
+            console.print(":cow: end upload")
+            self.do_http_request(
+                path=_url_path,
+                method=HTTPMethod.POST,
+                instance_uri=self.dest_uri,
                 headers=_headers,
+                data={
+                    _key: _name,
+                    "project": self.dest_uri.project,
+                    "phase": _UploadPhase.END,
+                },
+                use_raise=True,
+                disable_default_content_type=True,
             )
-            wrap_sw_error_resp(r, "end", use_raise=True)
 
-    def push(self, swmp: str, project: str = "", force: bool = False) -> None:
-        # TODO: add more restful api for project, /api/v1/project/{project_id}/model/push
-        url = f"{self.sw_remote_addr}/api/{SW_API_VERSION}/project/model/push"
+    def _do_download_bundle_dir(self) -> None:
+        _workdir = self._get_target_path(self.dest_uri)
+        console.print(f":bowling: download to {_workdir}...")
+        ensure_dir(_workdir)
+        ensure_dir(_workdir / "data")
 
-        _spath, _full_swmp = self._get_swmp_path(swmp)  # type: ignore
-        if not _spath.exists():
-            console.print(
-                f"[red]failed to push {_full_swmp}[/], because of {_spath} not found"
+        def _download(_target: Path, _part: str) -> None:
+            self.do_download_file(
+                # TODO: use /project/{self.typ}/pull api
+                url_path=f"/project/{self.typ}",
+                dest_path=_target,
+                instance_uri=self.src_uri,
+                params={
+                    "name": self.bundle_name,
+                    "version": self.bundle_version,
+                    "part_name": _part,
+                },
             )
-            sys.exit(1)
+            console.print(f"\t :arrow_down: {_part} :ok:")
 
-        console.print(f":fire: try to push swmp({_full_swmp})...")
-        upload_file(
-            url=url,
-            fpath=_spath,
-            fields={
-                "swmp": _full_swmp,
-                "project": project,
-                "force": "1" if force else "0",
-            },
-            headers={"Authorization": self.sw_token},
-            exit=True,
-        )
-        console.print(" :clap: push done.")
+        _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
+        _download(_manifest_path, DEFAULT_MANIFEST_NAME)
+        _download(_workdir / ARCHIVE_SWDS_META, ARCHIVE_SWDS_META)
 
-    def pull(
-        self, swmp: str, project: str = "", server: str = "", force: bool = False
-    ) -> None:
-        server = server.strip() or self.sw_remote_addr
-        server = fmt_http_server(server)
-        url = f"{server}/api/{SW_API_VERSION}/project/model/pull"
-
-        # _spath, _ = self._get_swmp_path(swmp)
-        _spath = Path()
-        if _spath.exists() and not force:
-            console.print(f":ghost: {swmp} is already existed, skip pull")
-            return
-
-        # TODO: add progress bar and rich live
-        # TODO: multi phase for pull swmp
-        # TODO: get size in advance
-        console.print(f"try to pull {swmp}")
-        with requests.get(
-            url,
-            stream=True,
-            params={"swmp": swmp, "project": project},
-            headers={"Authorization": self.sw_token},
-        ) as r:
-            if r.status_code == HTTPStatus.OK:
-                with _spath.open("wb") as f:
-                    for chunk in r.iter_content(chunk_size=TMP_FILE_BUFSIZE):
-                        f.write(chunk)
-                console.print(":clap: pull completed")
-            else:
-                wrap_sw_error_resp(r, "pull failed", exit=True)
+        _manifest = yaml.safe_load(_manifest_path.open())
+        for _k in _manifest.get("signature", {}):
+            # TODO: parallel download
+            _download(_workdir / "data" / _k, _k)

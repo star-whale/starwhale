@@ -66,9 +66,9 @@ class BaseBundle(object):
     def _get_cls(cls, uri: URI) -> t.Any:
         raise NotImplementedError
 
-    @abstractclassmethod
-    def copy(cls, src_uri: URI, dest_uri: URI, force: bool = False) -> None:
-        pass
+    @classmethod
+    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
+        raise NotImplementedError
 
     @abstractmethod
     def build(

@@ -116,7 +116,6 @@ main() {
     pre_config
     pre_check
     set_python
-    activate_swmp_env
     restore_activate_runtime
 
     if [ "$1" = "cmp" ]; then

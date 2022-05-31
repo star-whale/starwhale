@@ -1,17 +1,13 @@
 from http import HTTPStatus
 import sys
 import typing as t
-from pathlib import Path
 from functools import wraps
 
 from loguru import logger
 import requests
-from requests_toolbelt.multipart.encoder import MultipartEncoder  # type: ignore
 
 from rich import print as rprint
 from rich.panel import Panel
-
-_UPLOAD_CHUNK_SIZE = 20 * 1024 * 1024
 
 
 def wrap_sw_error_resp(
@@ -20,6 +16,7 @@ def wrap_sw_error_resp(
     exit: bool = False,
     use_raise: bool = False,
     silent: bool = False,
+    ignore_status_codes: t.List[int] = [],
 ) -> None:
 
     if silent:
@@ -41,41 +38,15 @@ def wrap_sw_error_resp(
         msg += f":falafel: starwhale code: {_resp['code']} \n"
         msg += f":dragon: error message: {_resp['message']}"
     finally:
+        if r.status_code in ignore_status_codes:
+            return
+
         rprint(Panel.fit(msg, title=":space_invader: error details"))  # type: ignore
         if exit:
             sys.exit(1)
 
         if use_raise:
             r.raise_for_status()
-
-
-def upload_file(
-    url: str,
-    fpath: t.Union[str, Path],
-    fields: t.Dict[str, t.Any] = {},
-    headers: t.Dict[str, t.Any] = {},
-    exit: bool = False,
-    use_raise: bool = False,
-) -> requests.Response:
-    # TODO: add progress bar and rich live
-    # TODO: add more push log
-    # TODO: use head first to check swmp exists
-
-    _headers = headers.copy()
-    fpath = Path(fpath)
-    fields["file"] = (fpath.name, fpath.open("rb"), "text/plain")
-
-    _en = MultipartEncoder(fields=fields)
-    # default chunk is 8192 Bytes
-    _en._read = _en.read  # type: ignore
-    _en.read = lambda size: _en._read(_UPLOAD_CHUNK_SIZE)  # type: ignore
-
-    _headers["Content-Type"] = _en.content_type
-
-    r = requests.post(url, data=_en, headers=_headers, timeout=1200)  # type: ignore
-    if r.status_code != HTTPStatus.OK:
-        wrap_sw_error_resp(r, "upload failed", exit=exit)
-    return r
 
 
 def ignore_error(default_ret: t.Any = ""):

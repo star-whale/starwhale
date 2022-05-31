@@ -26,6 +26,7 @@ from starwhale.utils import console
 from starwhale.utils.fs import ensure_dir, move_dir
 from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.utils.load import import_cls
+from starwhale.base.bundle_copy import BundleCopy
 from starwhale.consts import (
     DEFAULT_STARWHALE_API_VERSION,
     DEFAULT_COPY_WORKERS,
@@ -158,6 +159,11 @@ class Model(BaseBundle):
             return CloudModel
         else:
             raise NoSupportError(f"model uri:{uri}")
+
+    @classmethod
+    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
+        bc = BundleCopy(src_uri, dest_uri, URIType.MODEL, force)
+        bc.do()
 
 
 class StandaloneModel(Model, LocalStorageBundleMixin):

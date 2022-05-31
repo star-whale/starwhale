@@ -32,7 +32,7 @@ def _build(workdir: str, project: str, model_yaml: str) -> None:
     ModelTermView.build(workdir, project, model_yaml)
 
 
-@model_cmd.command("copy", help="Copy model")
+@model_cmd.command("copy", help="Copy model, stanalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="force copy model")

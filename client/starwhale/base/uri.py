@@ -217,6 +217,10 @@ class URI(object):
         return self.sw_instance_config.get("sw_token", "")
 
     @property
+    def sw_remote_addr(self) -> str:
+        return self.sw_instance_config.get("uri", "")
+
+    @property
     def user_name(self) -> str:
         return self.sw_instance_config.get("user_name", "")
 

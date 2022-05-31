@@ -39,7 +39,9 @@ class DatasetAttr(object):
         self.kw = kw
 
     def as_dict(self) -> t.Dict[str, t.Any]:
-        return deepcopy(self.__dict__)
+        _rd = deepcopy(self.__dict__)
+        _rd.pop("kw")
+        return _rd
 
 
 # TODO: abstract base class from DataSetConfig and ModelConfig

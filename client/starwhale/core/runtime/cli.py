@@ -133,7 +133,7 @@ def _extract(runtime: str, force: bool, target_dir: str) -> None:
     RuntimeTermView(runtime).extract(force, target_dir)
 
 
-@runtime_cmd.command("copy", help="Copy runtime")
+@runtime_cmd.command("copy", help="Copy runtime, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="force copy")

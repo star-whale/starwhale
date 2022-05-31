@@ -93,7 +93,7 @@ def _render_fuse(target: str, force: bool) -> None:
     DatasetTermView.render_fuse_json(target, force)
 
 
-@dataset_cmd.command("copy", help="Copy dataset")
+@dataset_cmd.command("copy", help="Copy dataset, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="force copy dataset")

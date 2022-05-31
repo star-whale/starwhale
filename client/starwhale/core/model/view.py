@@ -101,4 +101,5 @@ class ModelTermView(BaseTermView):
 
     @classmethod
     def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
-        Model.copy(URI(src_uri), URI(dest_uri), force)
+        Model.copy(src_uri, dest_uri, force)
+        console.print(":clap: copy done.")

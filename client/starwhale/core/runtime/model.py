@@ -21,6 +21,7 @@ from starwhale.consts import (
 )
 from starwhale.base.type import BundleType, InstanceType, URIType
 from starwhale.utils.progress import run_with_progress_bar
+from starwhale.base.bundle_copy import BundleCopy
 from starwhale.utils.venv import (
     create_python_env,
     activate_python_env,
@@ -130,6 +131,11 @@ class Runtime(BaseBundle):
 
     def __str__(self) -> str:
         return f"Starwhale Runtime: {self.uri}"
+
+    @classmethod
+    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
+        bc = BundleCopy(src_uri, dest_uri, URIType.RUNTIME, force)
+        bc.do()
 
 
 class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
