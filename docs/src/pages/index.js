@@ -32,10 +32,10 @@ const swTabs = [
     ),
     desc: (
       <>
-        You can creat one or several projecs for a data scientist team, a
+        You can creat one or several projects for a data scientist team, a
         product line or a specific model.
         <p>
-          Every user in cloud instances has their personal project by defaul.
+          Every user in cloud instances has their personal project by default.
         </p>
       </>
     ),
@@ -53,9 +53,11 @@ const swTabs = [
     ),
     desc: (
       <>
-        - starwhale public dataset：starwhale provides massive public dataset -
-        easy to work：difine dataset.yaml, use swcli comand can easily generate
-        the dataset - fllexible:
+       Starwhale Model is the standard model format used in model delivery.
+       <p>
+       It is a directory containing arbitrary files, including the model generated 
+      by ML frameworks, the code to run the model, the metadata defined by Starwhale, and many other files.
+      </p>
       </>
     ),
     button: {
@@ -72,9 +74,11 @@ const swTabs = [
     ),
     desc: (
       <>
-        - starwhale public dataset：starwhale provides massive public dataset -
-        easy to work：difine dataset.yaml, use swcli comand can easily generate
-        the dataset - fllexible:
+        Starwhale public dataset：starwhale provides massive public dataset.
+        <p>
+        Easy to work：difine dataset.yaml, use swcli comand can easily generate
+        the dataset.
+       </p>
       </>
     ),
     button: {
@@ -87,21 +91,21 @@ const swTabs = [
 const sectionUsers = [
   {
     image: "img/enterprise.svg",
-    title: "Model Defination",
+    title: "Enterprise",
     description:
-      "Text space occupation of detailed descriptionText space occupation of detailedscriptionText space occupation of detailscriptionText space occupation of detailscriptionText space occupation of detailscriptionText space occupation of detail",
+      "Organizations use Starwhale to track all the organization's machine learning projects, manage access controls and reproduce more efficiently.",
   },
   {
     image: "img/team.svg",
-    title: "Model Defination",
+    title: "Team",
     description:
-      "Text space occupation of detailed descriptionText space occupation of detailed",
+      "Teams use Starwhale to standardize team's projects, share projects' updates and improve productivity.",
   },
   {
     image: "img/individuals.svg",
-    title: "Model Defination",
+    title: "Individuals",
     description:
-      "Text space occupation of detailed descriptionText space occupation of detailed",
+      "Individuals use Starwhale to track, compare and evaluate models. The visible metics and exact dataset versions build model better.",
   },
 ];
 
