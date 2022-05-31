@@ -50,7 +50,7 @@ mybatis:
 
 server:
   port: ${SW_CONTROLLER_PORT:8082}
-
+  shutdown: graceful
 logging:
   level:
     root: info
