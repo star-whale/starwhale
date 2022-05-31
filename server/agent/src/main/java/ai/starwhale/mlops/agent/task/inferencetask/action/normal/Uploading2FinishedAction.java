@@ -23,7 +23,7 @@ import cn.hutool.core.bean.BeanUtil;
 import org.springframework.stereotype.Service;
 
 @Service
-public class Uploading2FinishedAction extends AbsBasePPLTaskAction {
+public class Uploading2FinishedAction extends AbsBaseTaskAction {
 
     @Override
     public InferenceTask processing(InferenceTask oldTask, Context context) throws Exception {

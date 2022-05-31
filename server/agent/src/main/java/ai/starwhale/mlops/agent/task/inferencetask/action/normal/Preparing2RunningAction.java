@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class Preparing2RunningAction extends AbsBasePPLTaskAction {
+public class Preparing2RunningAction extends AbsBaseTaskAction {
     private static final String containerBasePath = "/opt/starwhale/";
     private static final String swmpDirEnv = "SW_SWMP_WORKDIR";
     private static final String statusFileEnv = "SW_TASK_STATUS_FILE";

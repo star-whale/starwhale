@@ -31,7 +31,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-public class MonitoringAction extends AbsBasePPLTaskAction {
+public class MonitoringAction extends AbsBaseTaskAction {
 
     @Autowired
     private LogRecorder logRecorder;

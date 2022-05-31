@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
-public abstract class AbsBasePPLTaskAction implements Action<InferenceTask, InferenceTask> {
+public abstract class AbsBaseTaskAction implements Action<InferenceTask, InferenceTask> {
 
     @Autowired
     protected TaskPersistence taskPersistence;

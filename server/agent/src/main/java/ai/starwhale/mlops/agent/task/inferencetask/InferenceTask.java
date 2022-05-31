@@ -112,7 +112,7 @@ public class InferenceTask {
     ActionStatus actionStatus;
 
     public enum ActionStatus {
-        inProgress, completed
+        init, inProgress, completed
     }
 
     public boolean equals(Object obj) {
@@ -129,7 +129,7 @@ public class InferenceTask {
                 .imageId(taskTrigger.getImageId())
                 .taskType(taskTrigger.getTaskType())
                 .status(InferenceTaskStatus.PREPARING)
-                .actionStatus(ActionStatus.inProgress)
+                .actionStatus(ActionStatus.init)
                 .cmpInputFilePaths(taskTrigger.getCmpInputFilePaths())
                 .deviceAmount(taskTrigger.getDeviceAmount())
                 .deviceClass(taskTrigger.getDeviceClass())

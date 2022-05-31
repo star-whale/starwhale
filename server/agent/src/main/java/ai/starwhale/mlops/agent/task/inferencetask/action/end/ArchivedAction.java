@@ -21,7 +21,7 @@ import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
-import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBasePPLTaskAction;
+import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBaseTaskAction;
 import cn.hutool.core.bean.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +30,7 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class ArchivedAction extends AbsBasePPLTaskAction {
+public class ArchivedAction extends AbsBaseTaskAction {
 
     @Autowired
     private LogRecorder logRecorder;

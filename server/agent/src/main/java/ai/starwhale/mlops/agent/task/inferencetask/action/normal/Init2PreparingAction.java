@@ -29,7 +29,7 @@ import java.util.Set;
 
 @Slf4j
 @Service
-public class Init2PreparingAction extends AbsBasePPLTaskAction {
+public class Init2PreparingAction extends AbsBaseTaskAction {
 
     @Override
     public InferenceTask processing(InferenceTask originTask, Context context) throws Exception {

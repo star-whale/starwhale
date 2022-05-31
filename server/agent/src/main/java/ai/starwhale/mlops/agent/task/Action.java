@@ -51,14 +51,15 @@ public interface Action<Old, New> {
     default void apply(Old old, Context context) {
         if (valid(old, context)) {
             pre(old, context);
+            New n = null;
             try {
-                New o = processing(old, context);
-                success(old, o, context);
-                post(old, o, context);
+                n = processing(old, context);
+                success(old, n, context);
             } catch (Exception e) {
                 //log.error(e.getMessage(), e);
                 fail(old, context, e);
             }
+            post(old, n, context);
         } else {
             orElse(old, context);
         }
