@@ -97,7 +97,8 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
                         .collect(Collectors.toList())));
         all.addAll(canceledTasks.stream().map(task -> task.toTaskReport(logRecorder.generateLogs(task.getId())))
                 .collect(Collectors.toList()));
-        reportRequest.setTasks(all);
+        // deduplication
+        reportRequest.setTasks(all.stream().distinct().collect(Collectors.toList()));
 
         SystemInfo systemInfo = systemDetect.detect()
                 .orElse(
