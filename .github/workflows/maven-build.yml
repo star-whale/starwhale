@@ -7,6 +7,11 @@ on:
   pull_request:
     branches:
       - main
+  workflow_call:
+    secrets:
+      COVERALL_TOKEN:
+        description: 'A token passed from the caller workflow'
+        required: true
 
 jobs:
 
@@ -47,9 +52,6 @@ jobs:
             ${{ runner.os }}-maven-
 
       - uses: actions/checkout@v3
-        env:
-          COVERALL_TOKEN: ${{ secrets.COVERALL_TOKEN }}
-
       - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
@@ -60,6 +62,6 @@ jobs:
 
       - name: Build with Maven
         working-directory: ./server
-#        env:
-#          COVERALL_TOKEN: $COVERALL_TOKEN
+        env:
+          COVERALL_TOKEN: ${{ secrets.COVERALL_TOKEN }}
         run: make ci-package-with-unit-test
