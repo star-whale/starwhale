@@ -1,17 +1,17 @@
-import typing as t
 import sys
+import typing as t
 
+from rich import box
+from rich.tree import Tree
 from rich.panel import Panel
 from rich.table import Table
-from rich.tree import Tree
 from rich.pretty import Pretty
-from rich import box
 
-from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, DEFAULT_PROJECT
+from starwhale.utils import console, pretty_bytes
+from starwhale.consts import DEFAULT_PROJECT, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.base.view import BaseTermView
-from starwhale.utils import pretty_bytes, console
 
 from .model import Project, ProjectObjType
 

@@ -1,20 +1,20 @@
 import typing as t
 
-from rich.pretty import Pretty
-from rich.table import Table
 from rich import box
 from rich.tree import Tree
+from rich.table import Table
+from rich.pretty import Pretty
 
+from starwhale.utils import console
 from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
-    DEFAULT_MANIFEST_NAME,
     SHORT_VERSION_CNT,
+    DEFAULT_MANIFEST_NAME,
 )
-from starwhale.base.type import EvalTaskType, InstanceType, JobOperationType, URIType
 from starwhale.base.uri import URI
+from starwhale.base.type import URIType, EvalTaskType, InstanceType, JobOperationType
 from starwhale.base.view import BaseTermView
-from starwhale.utils import console
 
 from .model import Job
 

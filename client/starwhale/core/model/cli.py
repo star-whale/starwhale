@@ -1,16 +1,18 @@
-import click
 import os
 
-from starwhale.base.type import EvalTaskType, URIType
+import click
+
 from starwhale.consts import (
-    LOCAL_FUSE_JSON_NAME,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
+    LOCAL_FUSE_JSON_NAME,
 )
 from starwhale.base.uri import URI
+from starwhale.base.type import URIType, EvalTaskType
 from starwhale.consts.env import SWEnv
 from starwhale.core.dataset.store import DatasetStorage
+
 from .view import ModelTermView
 
 

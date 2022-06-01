@@ -1,48 +1,39 @@
 from __future__ import annotations
-from copy import deepcopy
 
-import yaml
 import typing as t
 from abc import ABCMeta
+from copy import deepcopy
 from pathlib import Path
 from collections import defaultdict
 
+import yaml
 from loguru import logger
 
-from starwhale.base.uri import URI
+from starwhale.utils import console, validate_obj_name
 from starwhale.consts import (
-    DEFAULT_MANIFEST_NAME,
+    PythonRunEnv,
+    DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
-    PythonRunEnv,
+    DEFAULT_MANIFEST_NAME,
     DEFAULT_PYTHON_VERSION,
-    DefaultYAMLName,
     DEFAULT_SW_TASK_RUN_IMAGE,
 )
-from starwhale.base.type import BundleType, InstanceType, URIType
-from starwhale.utils.progress import run_with_progress_bar
-from starwhale.base.bundle_copy import BundleCopy
+from starwhale.base.uri import URI
+from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, get_path_created_time
+from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.utils.venv import (
-    create_python_env,
-    activate_python_env,
-    DUMP_USER_PIP_REQ_FNAME,
     detect_pip_req,
-    dump_python_dep_env,
+    create_python_env,
     restore_python_env,
-)
-from starwhale.utils.error import (
-    ConfigFormatError,
-    ExistedError,
-    NoSupportError,
+    activate_python_env,
+    dump_python_dep_env,
+    DUMP_USER_PIP_REQ_FNAME,
 )
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.utils import console, validate_obj_name
-from starwhale.utils.fs import (
-    ensure_dir,
-    ensure_file,
-    get_path_created_time,
-    move_dir,
-)
+from starwhale.utils.error import ExistedError, NoSupportError, ConfigFormatError
+from starwhale.utils.progress import run_with_progress_bar
+from starwhale.base.bundle_copy import BundleCopy
 
 from .store import RuntimeStorage
 

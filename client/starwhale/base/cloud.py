@@ -1,15 +1,15 @@
-from copy import deepcopy
 import typing as t
+from copy import deepcopy
 from http import HTTPStatus
-from datetime import datetime, timedelta
 from pathlib import Path
+from datetime import datetime, timedelta
 
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder  # type: ignore
 
-from starwhale.consts import SW_API_VERSION, HTTPMethod, FMT_DATETIME
-from starwhale.utils.http import wrap_sw_error_resp
+from starwhale.consts import HTTPMethod, FMT_DATETIME, SW_API_VERSION
 from starwhale.base.uri import URI
+from starwhale.utils.http import wrap_sw_error_resp
 
 _TMP_FILE_BUFSIZE = 8192
 _DEFAULT_TIMEOUT_SECS = 90

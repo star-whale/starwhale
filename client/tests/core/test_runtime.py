@@ -1,25 +1,25 @@
 import os
 import typing as t
-import yaml
 from pathlib import Path
-
 from unittest.mock import patch, MagicMock
+
+import yaml
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.utils.venv import CONDA_ENV_TAR
-from starwhale.base.type import BundleType, URIType
 from starwhale.utils import config as sw_config
-from starwhale.utils.config import SWCliConfigMixed
-from starwhale.base.uri import URI
-from starwhale.core.runtime.model import Runtime, StandaloneRuntime
-from starwhale.core.runtime.view import RuntimeTermView
 from starwhale.consts import (
-    DEFAULT_MANIFEST_NAME,
-    VERSION_PREFIX_CNT,
     PythonRunEnv,
     DefaultYAMLName,
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
 )
+from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
+from starwhale.base.type import URIType, BundleType
+from starwhale.utils.venv import CONDA_ENV_TAR
+from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.runtime.view import RuntimeTermView
+from starwhale.core.runtime.model import Runtime, StandaloneRuntime
 
 
 class StandaloneRuntimeTestCase(TestCase):

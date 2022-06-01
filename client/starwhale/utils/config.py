@@ -1,21 +1,22 @@
-import yaml
 import os
 import typing as t
-from pathlib import Path
 import getpass
+from pathlib import Path
+
+import yaml
 
 from starwhale.consts import (
+    UserRoleType,
     SW_CLI_CONFIG,
+    DEFAULT_PROJECT,
+    DEFAULT_INSTANCE,
     SW_LOCAL_STORAGE,
     ENV_SW_CLI_CONFIG,
-    DEFAULT_INSTANCE,
-    DEFAULT_PROJECT,
-    UserRoleType,
     STANDALONE_INSTANCE,
 )
 
+from . import console, now_str, fmt_http_server
 from .fs import ensure_dir, ensure_file
-from . import fmt_http_server, console, now_str
 
 _config: t.Dict[str, t.Any] = {}
 _CURRENT_SHELL_USERNAME = getpass.getuser()

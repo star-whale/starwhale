@@ -2,8 +2,8 @@ import os
 import sys
 import logging
 
-from loguru import logger
 from rich import traceback
+from loguru import logger
 
 from starwhale.consts import ENV_LOG_LEVEL
 

@@ -1,8 +1,8 @@
 import typing as t
 from pathlib import Path
 
-from starwhale.base.type import URIType, BundleType
 from starwhale.consts import DEFAULT_MANIFEST_NAME, DEFAULT_SW_TASK_RUN_IMAGE
+from starwhale.base.type import URIType, BundleType
 from starwhale.base.store import BaseStorage
 
 

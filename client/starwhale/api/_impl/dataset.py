@@ -1,18 +1,18 @@
-import struct
-from abc import ABCMeta, abstractmethod
-import typing as t
-from pathlib import Path
 import math
+import struct
+import typing as t
+from abc import ABCMeta, abstractmethod
+from pathlib import Path
 from binascii import crc32
 
 import jsonlines
 
+from starwhale.consts import SWDS_DATA_FNAME_FMT, SWDS_LABEL_FNAME_FMT
 from starwhale.core.dataset.dataset import (
     D_ALIGNMENT_SIZE,
     D_USER_BATCH_SIZE,
     D_FILE_VOLUME_SIZE,
 )
-from starwhale.consts import SWDS_DATA_FNAME_FMT, SWDS_LABEL_FNAME_FMT
 
 # TODO: tune header size
 _header_magic = struct.unpack(">I", b"SWDS")[0]

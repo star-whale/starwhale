@@ -2,18 +2,15 @@ import sys
 from http import HTTPStatus
 
 import requests
-from rich.table import Table
 from rich import box
 from rich.panel import Panel
+from rich.table import Table
 
-from starwhale.utils import fmt_http_server, console
-from starwhale.consts import (
-    SW_API_VERSION,
-    STANDALONE_INSTANCE,
-    UserRoleType,
-)
-from starwhale.utils.http import wrap_sw_error_resp
+from starwhale.utils import console, fmt_http_server
+from starwhale.consts import UserRoleType, SW_API_VERSION, STANDALONE_INSTANCE
 from starwhale.base.view import BaseTermView
+from starwhale.utils.http import wrap_sw_error_resp
+
 from .model import CloudInstance
 
 DEFAULT_HTTP_TIMEOUT = 90

@@ -1,33 +1,30 @@
 import os
-import platform
-import typing as t
-from pathlib import Path
 import shutil
-import subprocess
+import typing as t
 import tarfile
+import platform
+import subprocess
+from pathlib import Path
 
-from loguru import logger
 import conda_pack
+from loguru import logger
 
-from starwhale.utils import console
-from starwhale.utils.error import ExistedError, UnExpectedConfigFieldError
+from starwhale.utils import console, is_linux, is_darwin, is_windows, get_python_version
 from starwhale.consts import (
-    PythonRunEnv,
-    DEFAULT_PYTHON_VERSION,
     ENV_VENV,
     ENV_CONDA,
+    PythonRunEnv,
     ENV_CONDA_PREFIX,
+    DEFAULT_PYTHON_VERSION,
 )
-from starwhale.utils import (
-    get_python_version,
-    is_darwin,
-    is_linux,
-    is_windows,
+from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
+from starwhale.utils.error import (
+    FormatError,
+    ExistedError,
+    NoSupportError,
+    UnExpectedConfigFieldError,
 )
-from starwhale.utils.error import NoSupportError, FormatError
-from starwhale.utils.fs import ensure_dir, ensure_file, empty_dir
 from starwhale.utils.process import check_call
-
 
 CONDA_ENV_TAR = "env.tar.gz"
 DUMP_CONDA_ENV_FNAME = "env-lock.yaml"

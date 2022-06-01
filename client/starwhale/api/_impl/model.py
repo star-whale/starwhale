@@ -1,22 +1,24 @@
 from __future__ import annotations
+
 import os
 import sys
+import json
 import typing as t
+import logging
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
-import json
-import logging
 from functools import wraps
 
 import loguru
 import jsonlines
 
-from starwhale.consts.env import SWEnv
-from starwhale.utils.log import StreamWrapper
-from starwhale.utils.error import NotFoundError
-from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.utils import pretty_bytes, in_production, now_str
+from starwhale.utils import now_str, pretty_bytes, in_production
 from starwhale.consts import CURRENT_FNAME
+from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.log import StreamWrapper
+from starwhale.consts.env import SWEnv
+from starwhale.utils.error import NotFoundError
+
 from .loader import DataField, DataLoader, get_data_loader
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"

@@ -1,17 +1,18 @@
 from __future__ import annotations
+
 import os
 import json
 import typing as t
-from pathlib import Path
 from abc import ABCMeta, abstractmethod
+from pathlib import Path
 
+import boto3
 import loguru
 from loguru import logger as _logger
-import boto3
 from botocore.client import Config as S3Config
 
+from starwhale.consts import DataLoaderKind, SWDSBackendType
 from starwhale.utils.error import NoSupportError
-from starwhale.consts import SWDSBackendType, DataLoaderKind
 
 # TODO: config chunk size
 _CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
@@ -118,7 +119,7 @@ class SWDSDataLoader(DataLoader):
     def _do_iter(
         self, bucket: str, key_compose: str, ext_attr: t.Dict[str, t.Any]
     ) -> t.Iterator[DataField]:
-        from .dataset import _header_struct, _header_size
+        from .dataset import _header_size, _header_struct
 
         self.logger.info(f"@{bucket}/{key_compose}")
         _file = self.storage._make_file(bucket, key_compose)

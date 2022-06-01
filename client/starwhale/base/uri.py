@@ -1,19 +1,18 @@
 import typing as t
-
 from pathlib import Path
-
 from urllib.parse import urlparse
 
-from starwhale.utils.config import SWCliConfigMixed
-from starwhale.utils.error import URIFormatError
 from starwhale.utils import validate_obj_name
 from starwhale.consts import (
+    UserRoleType,
     SW_API_VERSION,
     VERSION_PREFIX_CNT,
-    UserRoleType,
     STANDALONE_INSTANCE,
 )
 from starwhale.base.type import URIType
+from starwhale.utils.error import URIFormatError
+from starwhale.utils.config import SWCliConfigMixed
+
 from .type import InstanceType
 
 

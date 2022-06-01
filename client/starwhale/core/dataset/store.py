@@ -1,13 +1,9 @@
-from pathlib import Path
 import typing as t
+from pathlib import Path
 
-
-from starwhale.base.store import BaseStorage
-from starwhale.consts import (
-    DEFAULT_MANIFEST_NAME,
-    VERSION_PREFIX_CNT,
-)
+from starwhale.consts import VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
 from starwhale.base.type import URIType, BundleType
+from starwhale.base.store import BaseStorage
 
 # TODO: refactor Dataset and ModelPackage LocalStorage
 

@@ -1,12 +1,11 @@
-from http import HTTPStatus
 import sys
 import typing as t
+from http import HTTPStatus
 from functools import wraps
 
-from loguru import logger
 import requests
-
 from rich import print as rprint
+from loguru import logger
 from rich.panel import Panel
 
 

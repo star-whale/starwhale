@@ -1,12 +1,13 @@
 import click
 
 from starwhale.consts import (
-    DEFAULT_PYTHON_VERSION,
+    PythonRunEnv,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
-    PythonRunEnv,
+    DEFAULT_PYTHON_VERSION,
 )
+
 from .view import RuntimeTermView
 
 
