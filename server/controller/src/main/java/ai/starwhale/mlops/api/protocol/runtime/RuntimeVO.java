@@ -14,25 +14,32 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.runtime;
+package ai.starwhale.mlops.api.protocol.runtime;
 
-import lombok.AllArgsConstructor;
+import ai.starwhale.mlops.api.protocol.user.UserVO;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class Runtime {
+@Validated
+@Schema(description = "Runtime object", title = "Runtime")
+public class RuntimeVO {
+    @JsonProperty("id")
+    private String id;
 
-    private Long id;
-
+    @JsonProperty("name")
     private String name;
 
-    private Long ownerId;
+    @JsonProperty("createdTime")
+    private Long createdTime;
 
-    private Long projectId;
+    @JsonProperty("owner")
+    private UserVO owner;
 
+    @JsonProperty("version")
+    private RuntimeVersionVO version;
 }

@@ -54,7 +54,8 @@ public class SWValidationException extends StarWhaleException {
         NODE("004","NODE"),
         SWDS("005","Star Whale Data Set"),
         SWMP("006","Star Whale Model Package"),
-        PROJECT("007","PROJECT");
+        PROJECT("007","PROJECT"),
+        RUNTIME("008","RUNTIME");
         final String code;
         final String tipSubject;
         ValidSubject(String code,String tipSubject){
