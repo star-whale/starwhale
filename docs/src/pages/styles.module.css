@@ -13,8 +13,7 @@
  */
 
 .heroBanner {
-  /* padding: 4rem 0; */
-  padding: 180px 0 190px 0;
+  padding: 4rem 0;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -53,11 +52,11 @@
 }
 
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
+   * Copyright (c) Facebook, Inc. and its affiliates.
+   *
+   * This source code is licensed under the MIT license found in the
+   * LICENSE file in the root directory of this source tree.
+   */
 
 .section {
   padding: 72px 0;
@@ -107,14 +106,13 @@
 
 .heroInner {
   margin: 0 auto;
-  max-width: 1200px;
+  max-width: 1100px;
   padding: 0 20px;
 }
 
 .heroProjectTagline {
   color: #fff;
-  font-size: 46px;
-  line-height: 46px;
+  font-size: 60px;
   margin: 0;
 }
 
@@ -156,31 +154,26 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  margin-top: 100px;
+  margin-top: 24px;
   justify-content: center;
 }
-.indexCtas a {
-  font-size: 16px;
-  height: 44px;
-  line-height: 44px;
-  min-width: 170px;
-  padding: 0;
-  border-radius: 24px;
-}
+
 .indexCtas a:last-of-type {
-  margin: 0px 60px;
+  margin: 20px 36px;
 }
+
 .indexCtasGitHubButtonWrapper {
   display: flex;
 }
+
 .indexCtasGitHubButton {
   border: none;
   overflow: hidden;
 }
 
-/* .indexCtaTryNowButton:hover {
+.indexCtaTryNowButton:hover {
   color: var(--ifm-color-primary);
-} */
+}
 
 @media only screen and (max-width: 768px) {
   .hero {

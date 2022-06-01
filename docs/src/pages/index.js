@@ -14,145 +14,80 @@ import Link from "@docusaurus/Link";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import styles from "./styles.module.css";
-import "./index.scss";
-import CodeBlock from "@theme/CodeBlock";
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
-import "/static/fonts/iconfont.js";
-import tabSectionProject from "!!raw-loader!./tabSectionProject.sh";
-import tabSectionDataset from "!!raw-loader!./tabSectionDataset.sh";
 
-const swTabs = [
+const features = [
   {
-    tab: "Starwhale Project",
-    code: (
-      <CodeBlock className="tabs__code" language="shell">
-        {tabSectionProject}
-      </CodeBlock>
-    ),
-    desc: (
+    newline: "",
+    title: "New Model Defination",
+    description: (
       <>
-        You can creat one or several projects for a data scientist team, a
-        product line or a specific model.
-        <p>
-          Every user in cloud instances has their personal project by default.
-        </p>
+        <b>SWMP</b> is design for MLOps.
       </>
     ),
-    button: {
-      label: "Learn more",
-      to: "/docs",
-    },
   },
   {
-    tab: "Starwhale Model",
-    code: (
-      <CodeBlock className="tabs__code" language="shell">
-        1
-      </CodeBlock>
-    ),
-    desc: (
+    newline: "",
+    title: "New Dataset Defination",
+    description: (
       <>
-       Starwhale Model is the standard model format used in model delivery.
-       <p>
-       It is a directory containing arbitrary files, including the model generated 
-      by ML frameworks, the code to run the model, the metadata defined by Starwhale, and many other files.
-      </p>
+        <b>SWDS</b> is design for MLOps.
       </>
     ),
-    button: {
-      label: "Learn more",
-      to: "/docs",
-    },
   },
   {
-    tab: "Starwhale Dataset",
-    code: (
-      <CodeBlock className="tabs__code" language="shell">
-        {tabSectionDataset}
-      </CodeBlock>
-    ),
-    desc: (
+    newline: "",
+    title: "Model Evaluation MLOps",
+    description: <>Model Evaluation is local or cluster.</>,
+  },
+  {
+    newline: "",
+    title: "Cluster Scaliabilty",
+    description: <>Easy to scale in cluster.</>,
+  },
+  {
+    newline: "",
+    title: "Easy Deployment",
+    description: (
       <>
-        Starwhale public dataset：starwhale provides massive public dataset.
-        <p>
-        Easy to work：difine dataset.yaml, use swcli comand can easily generate
-        the dataset.
-       </p>
+        One click <b>Model Evaluation</b> to your production Kubernetes or
+        BareMental Cluster <b>directly from the UI</b>.
       </>
     ),
-    button: {
-      label: "Learn more",
-      to: "/docs",
-    },
+  },
+  {
+    newline: "",
+    title: "Zero Ops",
+    description: <>No ops.</>,
   },
 ];
 
-const sectionUsers = [
-  {
-    image: "img/enterprise.svg",
-    title: "Enterprise",
-    description:
-      "Organizations use Starwhale to track all the organization's machine learning projects, manage access controls and reproduce more efficiently.",
-  },
-  {
-    image: "img/team.svg",
-    title: "Team",
-    description:
-      "Teams use Starwhale to standardize team's projects, share projects' updates and improve productivity.",
-  },
-  {
-    image: "img/individuals.svg",
-    title: "Individuals",
-    description:
-      "Individuals use Starwhale to track, compare and evaluate models. The visible metics and exact dataset versions build model better.",
-  },
-];
-
-const sectionsIntegratFrameworks = [
-  {
-    icon: "",
-    title: "TensorFlow",
-  },
-  {
-    icon: "img/intergrate_PyTorch.svg",
-    title: "PyTorch",
-  },
-  {
-    icon: "",
-    title: "Keras",
-  },
-  {
-    icon: "",
-    title: "XGBoost",
-  },
-  {
-    icon: "",
-    title: "Kubeflow",
-  },
-  {
-    icon: "",
-    title: "Kubernetes",
-  },
-  {
-    icon: "",
-    title: "Python",
-  },
-  {
-    icon: "",
-    title: "MXNet",
-  },
-];
+function Feature({ imageUrl, title, description, newline }) {
+  const imgUrl = useBaseUrl(imageUrl);
+  return (
+    <div
+      className={clsx(
+        `col col--4 col--feature text--justified  ${newline}`,
+        styles.feature
+      )}
+    >
+      {imgUrl && (
+        <div>
+          <img className={styles.featureImage} src={imgUrl} alt={title} />
+        </div>
+      )}
+      <h3>{title}</h3>
+      <p>{description}</p>
+    </div>
+  );
+}
 
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
-  const { customFields = {} } = siteConfig;
-
   return (
     <Layout
-      title={`${siteConfig.title} | Starwhale`}
-      description="Starwhale is a MLOps platform to manage machine learning projects, models and datasets.  "
+      title={`Hello from ${siteConfig.title}`}
+      description="Description will go into a meta tag in <head />"
     >
       <header className={clsx("hero hero--primary", styles.heroBanner)}>
         <div className="container">
@@ -166,18 +101,18 @@ function Home() {
           </h1>
           <div className={styles.indexCtas}>
             <Link
-              className="button button--primary button--secondary button--lg button--rounded"
+              className="button button--outline button--secondary button--lg button--rounded"
               to="/docs"
             >
-              Get started
+              Get Started
             </Link>
             <Link
-              className="button button--outline button--secondary button--lg button--rounded"
+              className="button button--primary button--lg button--rounded shadow--md"
               to="https://app.starwhale.ai"
             >
-              Request a Demo
+              Free Sign Up
             </Link>
-            {/* <span className={styles.indexCtasGitHubButtonWrapper}>
+            <span className={styles.indexCtasGitHubButtonWrapper}>
               <iframe
                 className={styles.indexCtasGitHubButton}
                 src="https://ghbtns.com/github-btn.html?user=star-whale&amp;repo=starwhale&amp;type=star&amp;count=true&amp;size=large"
@@ -185,145 +120,28 @@ function Home() {
                 height={30}
                 title="GitHub Stars"
               />
-            </span> */}
+            </span>
           </div>
         </div>
       </header>
-      <main className="swMain">
-        {/* starwhale tabs show case of project/model/dataset/runtime */}
-        <section className="card swTabs">
-          <div className="card__body">
-            <Tabs className="tabs tabs--block">
-              {swTabs.map((item, index) => (
-                <TabItem
-                  key={index}
-                  value={item.tab}
-                  label={item.tab}
-                  default={index === 0 ? true : undefined}
-                >
-                  <div className="tabs__body">
-                    {item.code}
-                    <div className="tabs__desc " id="project">
-                      <span>{item.desc}</span>
-                      <Link
-                        className="button button--primary  button--rounded"
-                        to={item.button?.to}
-                      >
-                        {item.button?.label}
-                      </Link>
-                    </div>
-                  </div>
-                </TabItem>
-              ))}
-            </Tabs>
-          </div>
-        </section>
-        {/* starwhale users */}
-        <section className="swUser">
-          <h1>Who is Starwhale for?</h1>
-          <div className="divider">
-            <span className="iconfont icon-value" />
-          </div>
-          <div className="user__body">
-            {sectionUsers.map((user, index) => (
-              <div className="card" key={index}>
-                <div className="card__image">
-                  <div
-                    style={{
-                      backgroundImage: `url(${useBaseUrl(user.image)})`,
-                      backgroundSize: "100%",
-                      width: "100%",
-                      height: "100%",
-                      backgroundColor: "transparent",
-                    }}
-                    alt="Image alt text"
+      <main>
+        {features && features.length > 0 && (
+          <section className={styles.features}>
+            <div className="container">
+              <div className="row">
+                {features.map(({ title, imageUrl, description, newline }) => (
+                  <Feature
+                    key={title}
+                    title={title}
+                    imageUrl={imageUrl}
+                    description={description}
+                    newline={newline}
                   />
-                </div>
-                <div className="card__body">
-                  <h3>{user.title}</h3>
-                  <div className="divider2">
-                    <span className="iconfont icon-line icon-blue" />
-                  </div>
-                  <span>{user.description}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-        {/* starwhale try now */}
-        <section className="swIntegrate">
-          <h1>Starwhale integrates with any framework</h1>
-          <div className="divider">
-            <span className="iconfont icon-integrates" />
-          </div>
-          <div className="integrate integrate--8">
-            <div
-              className="integrate__bg map map--8"
-              style={{
-                background: `
-                url(${useBaseUrl("img/line5-top.svg")}) center top no-repeat,
-                url(${useBaseUrl(
-                  "img/line3-down.svg"
-                )}) center bottom no-repeat;
-                `,
-              }}
-            >
-              <div className="map__center map__item--center">
-                <div className="map__center--logo">
-                  <img
-                    src={useBaseUrl("img/starwhale.png")}
-                    alt="Starwhale"
-                    height="20px"
-                  />
-                </div>
+                ))}
               </div>
             </div>
-            <div className="integrate__body">
-              {sectionsIntegratFrameworks.map((item, index) => (
-                <div className="map__item" key={index}>
-                  {item.icon && (
-                    <img
-                      src={useBaseUrl(item.icon)}
-                      alt={item.title}
-                      height="24px"
-                    />
-                  )}
-                  {item.icon && <div className="map__divider"></div>}
-                  <span>{item.title}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        <section className="swTry">
-          <h1>Try today</h1>
-          <div className="try">
-            <div className="try__item">
-              <span>
-                <b>If</b> you want to know more detail about starwhale just
-                click the button "get started" started"
-              </span>
-              <Link
-                className="button button--primary  button--rounded"
-                to="/docs"
-              >
-                Get started
-              </Link>
-            </div>
-            <div className="try__item">
-              <span>
-                <b>If</b> you want more information or leave a message to us
-                just click the button "contact us"
-              </span>
-              <Link
-                className="button button--primary  button--rounded"
-                to="/docs"
-              >
-                Contact us
-              </Link>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
     </Layout>
   );

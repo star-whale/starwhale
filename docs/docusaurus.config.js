@@ -38,43 +38,15 @@ module.exports = {
       },
       items: [
         {
-          label: "Product",
-          position: "left",
-          items: [
-            {
-              label: "Starwhale Project",
-              to: "#project",
-            },
-            {
-              label: "Starwhale Model",
-              to: "#model",
-            },
-            {
-              label: "Starwhale Dataset",
-              to: "#dataset",
-            },
-            {
-              label: "Starwhale Runtime",
-              to: "#runtime",
-            },
-          ],
-        },
-        {
-          // to: "/docs/getting_started",
-          to: "https://github.com/star-whale/starwhale",
+          to: "/docs/getting_started",
           label: "Documentation",
           position: "left",
         },
         {
-          to: "/contact-us",
-          label: "Company",
+          to: "/docs/faq",
+          label: "FAQ",
           position: "left",
         },
-        // {
-        //   to: "/docs/faq",
-        //   label: "FAQ",
-        //   position: "left",
-        // },
         {
           to: "https://github.com/star-whale/starwhale",
           position: "right",
@@ -90,8 +62,8 @@ module.exports = {
           label: "Slack",
         },
         // {
-        //     type: 'localeDropdown',
-        //     position: 'right',
+        //   type: "localeDropdown",
+        //   position: "right",
         // },
       ],
     },
@@ -100,58 +72,41 @@ module.exports = {
       copyright: `Copyright © ${new Date().getFullYear()} Starwhale,Inc. All rights reserved. `,
 
       links: [
-        {
-          title: "Product",
-          items: [
-            {
-              label: "Starwhale Project",
-              to: "#project",
-            },
-            {
-              label: "Starwhale Model",
-              to: "#model",
-            },
-            {
-              label: "Starwhale Dataset",
-              to: "#dataset",
-            },
-          ],
-        },
-        {
-          title: "Quickstart",
-          items: [
-            {
-              label: "Documentation",
-              to: "/docs",
-            },
-            {
-              label: "Examples",
-              to: "/docs/examples",
-            },
-            {
-              label: "Star us on Github",
-              to: "https://github.com/star-whale/starwhale",
-            },
-          ],
-        },
-        {
-          title: "Company",
-          items: [
-            {
-              label: "About Us",
-              to: "/docs/company/about",
-            },
-            {
-              label: "Contact Us",
-              to: "/docs/company/contact",
-            },
-          ],
-        },
+        // {
+        //   title: "Quickstart",
+        //   items: [
+        //     {
+        //       label: "Documentation",
+        //       to: "/docs",
+        //     },
+        //     {
+        //       label: "Examples",
+        //       to: "/docs/examples",
+        //     },
+        //     {
+        //       label: "Star us on Github",
+        //       to: "https://github.com/star-whale/starwhale",
+        //     },
+        //   ],
+        // },
+        // {
+        //   title: "Company",
+        //   items: [
+        //     {
+        //       label: "About Us",
+        //       to: "/docs/company/about",
+        //     },
+        //     {
+        //       label: "Contact Us",
+        //       to: "/docs/company/contact",
+        //     },
+        //   ],
+        // },
       ],
-      logo: {
-        alt: "Starwhale Open Source Logo",
-        src: "img/starwhale-white.png",
-      },
+      // logo: {
+      //   alt: "Starwhale Open Source Logo",
+      //   src: "img/starwhale-white.png",
+      // },
     },
     custom: {
       footerSocials: [
@@ -189,7 +144,7 @@ module.exports = {
       {
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
-          editUrl: "https://github.com/star-whale/starwhale/edit/main/",
+          editUrl: "https://github.com/star-whale/starwhale/tree/main/docs",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.scss"),
