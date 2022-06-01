@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
-public abstract class AbsBasePPLTaskAction implements Action<InferenceTask, InferenceTask> {
+public abstract class AbsBaseTaskAction implements Action<InferenceTask, InferenceTask> {
 
     @Autowired
     protected TaskPersistence taskPersistence;
@@ -57,14 +57,10 @@ public abstract class AbsBasePPLTaskAction implements Action<InferenceTask, Infe
         taskPersistence.save(task);
     }
 
+    // at normal action, the newTask don't use at post
     @Override
-    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) {
-        newTask.setActionStatus(ActionStatus.completed);
-        taskPersistence.save(newTask);
-    }
-
-    @Override
-    public void fail(InferenceTask task, Context context, Exception e) {
-        log.error("execute task:{}, error:{}", JSONUtil.toJsonStr(task), e.getMessage(), e);
+    public void post(InferenceTask originTask, InferenceTask newTask, Context context) {
+        originTask.setActionStatus(ActionStatus.completed);
+        taskPersistence.save(originTask);
     }
 }

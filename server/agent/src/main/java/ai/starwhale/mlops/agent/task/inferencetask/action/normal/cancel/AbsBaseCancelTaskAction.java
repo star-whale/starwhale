@@ -20,13 +20,13 @@ import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
-import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBasePPLTaskAction;
+import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBaseTaskAction;
 import cn.hutool.core.bean.BeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Objects;
 
-public abstract class AbsBaseCancelPPLTaskAction extends AbsBasePPLTaskAction implements ExecuteStage {
+public abstract class AbsBaseCancelTaskAction extends AbsBaseTaskAction implements ExecuteStage {
     @Autowired
     protected TaskPool taskPool;
 
@@ -43,18 +43,18 @@ public abstract class AbsBaseCancelPPLTaskAction extends AbsBasePPLTaskAction im
     }
 
     @Override
-    public InferenceTask processing(InferenceTask oldTask, Context context) {
-        return BeanUtil.toBean(oldTask, InferenceTask.class);
+    public InferenceTask processing(InferenceTask originTask, Context context) {
+        return originTask;
     }
 
     @Override
-    public void post(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void post(InferenceTask originTask, InferenceTask newTask, Context context) {
         newTask.setStatus(InferenceTaskStatus.CANCELED);
-        super.post(oldTask, newTask, context);
+        super.post(originTask, newTask, context);
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
         if (Objects.nonNull(newTask)) {
             taskPool.canceledTasks.add(newTask);
             // cancel success

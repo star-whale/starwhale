@@ -153,7 +153,7 @@ public class TaskExecutorTest {
         assertEquals(1, taskPool.runningTasks.size());
 
         // mockConfig
-        InferenceTask runningTask = taskPool.runningTasks.get(0);
+        InferenceTask runningTask = taskPool.runningTasks.iterator().next();
         Long id = runningTask.getId();
         // mock taskContainer already change status to uploading
         // Mockito.when(taskPersistence.getTaskById(id)).thenReturn(runningTask);

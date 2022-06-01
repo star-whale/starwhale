@@ -16,51 +16,61 @@
 
 package ai.starwhale.mlops.agent.task;
 
-public interface Action<Old, New> {
+import cn.hutool.json.JSONUtil;
+import org.slf4j.Logger;
 
-    default boolean valid(Old old, Context context) {
+import static org.slf4j.LoggerFactory.getLogger;
+
+public interface Action<Input, Output> {
+
+    default boolean valid(Input input, Context context) {
         return true;
     }
 
-    default void orElse(Old old, Context context) {
+    default void orElse(Input input, Context context) {
     }
 
-    default void pre(Old old, Context context) {
+    default void pre(Input input, Context context) {
 
     }
 
-    default New processing(Old old, Context context) throws Exception {
+    default Output processing(Input input, Context context) throws Exception {
         return null;
     }
 
-    default void post(Old old, New n, Context context) {
+    default void post(Input input, Output output, Context context) {
     }
 
-    default void success(Old old, New n, Context context) throws Exception {
+    default void success(Input input, Output output, Context context) throws Exception {
     }
 
     /**
      * when occur some exception
      *
-     * @param old old param
+     * @param input old param
      */
-    default void fail(Old old, Context context, Exception e) {
+    default void fail(Input input, Context context, Exception e) {
     }
 
 
-    default void apply(Old old, Context context) {
-        if (valid(old, context)) {
-            pre(old, context);
+    default void apply(Input input, Context context) {
+        if (valid(input, context)) {
+            pre(input, context);
+            Output output = null;
             try {
-                New o = processing(old, context);
-                success(old, o, context);
-                post(old, o, context);
+                output = processing(input, context);
+                success(input, output, context);
             } catch (Exception e) {
-                //log.error(e.getMessage(), e);
-                fail(old, context, e);
+                LogHolder.LOGGER.error("execute action:{}, input is:{} error:{}", this.getClass(), JSONUtil.toJsonStr(input), e.getMessage(), e);
+                fail(input, context, e);
             }
+            post(input, output, context);
         } else {
-            orElse(old, context);
+            orElse(input, context);
         }
     }
+}
+
+final class LogHolder { // not public
+    static final Logger LOGGER = getLogger(Action.class);
 }

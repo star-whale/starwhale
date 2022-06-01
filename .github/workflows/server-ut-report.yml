@@ -1,10 +1,7 @@
-name: Maven Package
+name: Server Unit test Report
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
@@ -59,4 +56,4 @@ jobs:
         working-directory: ./server
         env:
           COVERALL_TOKEN: ${{ secrets.COVERALL_TOKEN }}
-        run: make ci-package-with-unit-test
+        run: make ci-package-with-unit-test-report

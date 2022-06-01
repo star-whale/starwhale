@@ -1,5 +1,6 @@
 server:
   port: ${SW_AGENT_PORT:8088}
+  shutdown: graceful
 sw:
   agent:
     version: ${SW_AGENT_VERSION:0.1.0}

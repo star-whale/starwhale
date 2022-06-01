@@ -25,26 +25,26 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
-public class Running2CanceledAction extends AbsBaseCancelPPLTaskAction {
+public class Running2CanceledAction extends AbsBaseCancelTaskAction {
     @Override
     public Optional<InferenceStage> stage() {
         return Optional.of(InferenceStage.RUNNING);
     }
 
     @Override
-    public InferenceTask processing(InferenceTask oldTask, Context context) {
+    public InferenceTask processing(InferenceTask originTask, Context context) {
         // stop the container
-        if (containerClient.stopContainer(oldTask.getContainerId())) {
-            return super.processing(oldTask, context);
+        if (containerClient.stopContainer(originTask.getContainerId())) {
+            return super.processing(originTask, context);
         }
         return null;
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
         if (Objects.nonNull(newTask)) {
-            taskPool.runningTasks.remove(oldTask);
-            super.success(oldTask, newTask, context);
+            taskPool.runningTasks.remove(originTask);
+            super.success(originTask, newTask, context);
         }
     }
 }
