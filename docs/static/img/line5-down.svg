@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="_x35_-down" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 754 130" style="enable-background:new 0 0 754 130;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#101099;}
+	.st1{fill:url(#_x32__5_);}
+	.st2{fill:#DDDDDD;}
+	.st3{fill:url(#_x32__6_);}
+	.st4{fill:url(#_x33__5_);}
+	.st5{fill:url(#_x32__7_);}
+	.st6{fill:url(#_x32__8_);}
+</style>
+<g id="_x35__1_" transform="translate(0.000000, 40.000000)">
+	<rect id="_x33__4_" x="452.5" y="-40" class="st0" width="1" height="41"/>
+	
+		<linearGradient id="_x32__5_" gradientUnits="userSpaceOnUse" x1="-2329.5117" y1="948.4999" x2="-2328.5117" y2="948.4999" gradientTransform="matrix(-300 0 0 -1 -698099 948.9999)">
+		<stop  offset="0" style="stop-color:#DDDDDD"/>
+		<stop  offset="1" style="stop-color:#101099"/>
+	</linearGradient>
+	<rect id="_x32__4_" x="453" class="st1" width="300" height="1"/>
+	<polygon id="_x31__4_" class="st2" points="753.5,50 752.5,50 752.5,0 753.5,0 	"/>
+</g>
+<g id="_x34__1_" transform="translate(188.000000, 20.000000)">
+	<polygon id="_x33__3_" class="st0" points="227.5,51 226.5,51 226.5,-20 227.5,-20 	"/>
+	
+		<linearGradient id="_x32__6_" gradientUnits="userSpaceOnUse" x1="-3081.5066" y1="948.4999" x2="-3080.5066" y2="948.4999" gradientTransform="matrix(-150 0 0 -1 -461849 998.9999)">
+		<stop  offset="0" style="stop-color:#DDDDDD"/>
+		<stop  offset="1" style="stop-color:#101099"/>
+	</linearGradient>
+	<rect id="_x32__3_" x="227" y="50" class="st3" width="150" height="1"/>
+	<polygon id="_x31__3_" class="st2" points="377.5,90 376.5,90 376.5,50 377.5,50 	"/>
+</g>
+<linearGradient id="_x33__5_" gradientUnits="userSpaceOnUse" x1="0.5" y1="7.2923" x2="0.5" y2="8.2923" gradientTransform="matrix(1 0 0 -130 376.5 1078)">
+	<stop  offset="0" style="stop-color:#DDDDDD"/>
+	<stop  offset="1" style="stop-color:#101099"/>
+</linearGradient>
+<rect id="_x33_" x="376.5" class="st4" width="1" height="130"/>
+<g id="_x32_" transform="translate(188.000000, 20.000000)">
+	<polygon id="_x33__2_" class="st0" points="150.5,-20 151.5,-20 151.5,51 150.5,51 	"/>
+	
+		<linearGradient id="_x32__7_" gradientUnits="userSpaceOnUse" x1="-3064.48" y1="948.5" x2="-3063.48" y2="948.5" gradientTransform="matrix(150 0 0 -1 459673 999)">
+		<stop  offset="0" style="stop-color:#DDDDDD"/>
+		<stop  offset="1" style="stop-color:#101099"/>
+	</linearGradient>
+	<rect id="_x32__2_" x="1" y="50" class="st5" width="150" height="1"/>
+	<polygon id="_x31__2_" class="st2" points="0.5,50 1.5,50 1.5,90 0.5,90 	"/>
+</g>
+<g id="_x31_" transform="translate(0.000000, 40.000000)">
+	<rect id="_x33__1_" x="300.5" y="-40" class="st0" width="1" height="41"/>
+	
+		<linearGradient id="_x32__8_" gradientUnits="userSpaceOnUse" x1="-2320.2454" y1="948.5" x2="-2319.2454" y2="948.5" gradientTransform="matrix(300 0 0 -1 696073 949)">
+		<stop  offset="0" style="stop-color:#DDDDDD"/>
+		<stop  offset="1" style="stop-color:#101099"/>
+	</linearGradient>
+	<rect id="_x32__1_" x="1" class="st6" width="300" height="1"/>
+	<polygon id="_x31__1_" class="st2" points="0.5,0 1.5,0 1.5,50 0.5,50 	"/>
+</g>
+</svg>
