@@ -60,6 +60,6 @@ jobs:
 
       - name: Build with Maven
         working-directory: ./server
-        env:
-          COVERALL_TOKEN: $COVERALL_TOKEN
+#        env:
+#          COVERALL_TOKEN: $COVERALL_TOKEN
         run: make ci-package-with-unit-test
