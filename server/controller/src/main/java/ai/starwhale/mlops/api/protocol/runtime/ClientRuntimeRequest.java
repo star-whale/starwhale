@@ -14,25 +14,37 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.runtime;
+package ai.starwhale.mlops.api.protocol.runtime;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class Runtime {
+public class ClientRuntimeRequest {
 
-    private Long id;
+    static final String SEPARATOR = ":";
 
-    private String name;
+    static final String VERSION_LATEST = "LATEST";
 
-    private Long ownerId;
+    String runtime;
 
-    private Long projectId;
+    String project;
 
+    //String force;
+
+    public String name(){
+        return runtime.split(SEPARATOR)[0];
+    }
+
+    public String version(){
+        return runtime.split(SEPARATOR)[1];
+    }
+
+//    static final String FORCE = "1";
+//    public boolean force(){
+//        return FORCE.equals(force);
+//    }
+
+    public String getProject() {
+        return null == project ? "" : project;
+    }
 }

@@ -18,13 +18,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper">
     <sql id="select_runtime">
-        select rt.id as runtime_id,
-               rt.runtime_name,
-               rt.project_id,
-               rt.owner_id,
-               rt.is_deleted,
-               rt.created_time as runtime_created_time,
-               rt.modified_time as runtime_modified_time,
+        select s.id as runtime_id,
+               s.runtime_name,
+               s.project_id,
+               s.owner_id,
+               s.is_deleted,
+               s.created_time as runtime_created_time,
+               s.modified_time as runtime_modified_time,
                u.id as user_id,
                u.user_name,
                u.role_id,
@@ -33,14 +33,14 @@
                r.role_name,
                r.role_name_en,
                p.project_name
-        from runtime_info as rt,
+        from runtime_info as s,
              user_info as u,
              user_role as r,
              project_info as p
-        where rt.is_deleted = 0
-          and u.id = rt.owner_id
+        where s.is_deleted = 0
+          and u.id = s.owner_id
           and r.id = u.role_id
-          and p.id = rt.project_id
+          and p.id = s.project_id
     </sql>
 
 
@@ -65,6 +65,12 @@
             #{id}
         </foreach>
     </select>
+
+    <select id="findByNameForUpdate" resultMap="runtimeResultMap" >
+        <include refid="select_runtime"/>
+        and s.runtime_name = #{name} for update
+    </select>
+
     <select id="findByName" resultMap="runtimeResultMap" >
         <include refid="select_runtime"/>
         and s.runtime_name = #{name}
@@ -75,11 +81,46 @@
         values(#{runtime.runtimeName}, #{runtime.projectId}, #{runtime.ownerId})
     </insert>
 
-    <delete id="deleteRuntime" >
+    <update id="deleteRuntime" >
         update runtime_info
         set is_deleted = 1
         where id = #{id}
-    </delete>
+    </update>
+
+    <update id="recoverRuntime" >
+        update runtime_info
+        set is_deleted = 0
+        where id = #{id}
+    </update>
+
+    <select id="findDeletedRuntimeById" resultMap="runtimeResultMap" >
+        select id as runtime_id,
+               runtime_name,
+               project_id,
+               owner_id,
+               is_deleted,
+               created_time as runtime_created_time,
+               modified_time as runtime_modified_time
+        from runtime_info
+        where is_deleted = 1
+        and id = #{id}
+    </select>
+
+    <select id="listDeletedRuntimes" resultMap="runtimeResultMap">
+        select id as runtime_id,
+               runtime_name,
+               project_id,
+               owner_id,
+               is_deleted,
+               created_time as runtime_created_time,
+               modified_time as runtime_modified_time
+        from runtime_info
+        where is_deleted = 1
+        <if test="runtimeName != null and runtimeName != ''">
+            and runtime_name = #{runtimeName}
+        </if>
+        order by modified_time desc
+    </select>
 
     <resultMap id="runtimeResultMap" type="ai.starwhale.mlops.domain.runtime.RuntimeEntity" >
         <id property="id" column="runtime_id" />

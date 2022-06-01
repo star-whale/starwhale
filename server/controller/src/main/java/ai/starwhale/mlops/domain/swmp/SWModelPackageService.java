@@ -295,7 +295,7 @@ public class SWModelPackageService {
         SWModelPackageEntity entity = swmpMapper.findByNameForUpdate(uploadRequest.name());
         if (null == entity) {
             //create
-            ProjectEntity projectEntity = projectManager.findByName(uploadRequest.getProject());
+            ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject());
             entity = SWModelPackageEntity.builder().isDeleted(0)
                 .ownerId(getOwner())
                 .projectId(null == projectEntity ? null : projectEntity.getId())

@@ -130,7 +130,6 @@ public class SWDatasetService {
         SWDatasetVersionEntity entity = SWDatasetVersionEntity.builder()
             .id(version.getId())
             .versionTag(version.getTag())
-            .storagePath(version.getStoragePath())
             .build();
         int update = swdsVersionMapper.update(entity);
         log.info("SWDS Version has been modified. ID={}", entity.getId());
@@ -205,16 +204,8 @@ public class SWDatasetService {
             }
             return swDatasetInfoOfDs(ds);
         }
-        ProjectEntity projectEntity;
-        if(!StringUtils.hasText(project)){
-            projectEntity = projectManager.findDefaultProject();
-        }else {
-            projectEntity = projectManager.findByName(project);
-        }
+        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project);
 
-        if(null == projectEntity){
-            return List.of();
-        }
         List<SWDatasetEntity> swDatasetEntities = swdsMapper.listDatasets(projectEntity.getId(), null);
         if(null == swDatasetEntities || swDatasetEntities.isEmpty()){
             return List.of();

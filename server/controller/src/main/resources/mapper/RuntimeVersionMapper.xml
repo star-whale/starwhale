@@ -17,7 +17,7 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper">
-    <sql id="select_swmp_version">
+    <sql id="select_runtime_version">
         select rv.id as rv_id,
                rv.runtime_id,
                rv.owner_id,
@@ -40,6 +40,60 @@
         where owner_id = u.id
           and r.id = u.role_id
     </sql>
+
+    <select id="listVersions" resultMap="runtimeVersionResultMap" >
+        <include refid="select_runtime_version" />
+        and runtime_id = #{runtimeId}
+        <if test="namePrefix != null and namePrefix != ''">
+            and version_name like concat(#{namePrefix}, '%')
+        </if>
+        <if test="tag != null and tag != ''">
+            and version_tag like concat(#{tag}, '%')
+        </if>
+        order by rv.id desc
+    </select>
+
+    <select id="findVersionById" resultMap="runtimeVersionResultMap" >
+        <include refid="select_runtime_version" />
+        and rv.id = #{id}
+    </select>
+
+    <select id="findVersionsByIds" resultMap="runtimeVersionResultMap" >
+        <include refid="select_runtime_version" />
+        and rv.id in
+        <foreach collection="rtVersionIds" separator="," item="rtvId" open="(" close=")">
+            #{rtvId}
+        </foreach>
+    </select>
+
+    <select id="findByNameAndRuntimeId" resultMap="runtimeVersionResultMap" >
+        <include refid="select_runtime_version" />
+        and rv.runtime_id = #{runtimeId}
+        and rv.version_name = #{rtVersion}
+    </select>
+
+    <select id="getLatestVersion" resultMap="runtimeVersionResultMap" >
+        <include refid="select_runtime_version" />
+        and runtime_id = #{runtimeId}
+        order by rv.id desc
+        limit 1
+    </select>
+
+    <insert id="revertTo">
+        replace into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path)
+        select runtime_id, owner_id, version_name, version_tag, version_meta, storage_path
+        from runtime_version
+        where id = #{rtVersionId}
+    </insert>
+
+    <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity" useGeneratedKeys="true" keyProperty="id">
+        insert into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path)
+        values(#{version.runtimeId}, #{version.ownerId}, #{version.versionName}, #{version.versionTag}, #{version.versionMeta}, #{version.storagePath})
+    </insert>
+
+    <update id="update" parameterType="ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity">
+        update runtime_version set version_tag = #{version.versionTag} where id = #{version.id}
+    </update>
 
     <resultMap id="runtimeVersionResultMap" type="ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity" >
         <id property="id" column="rv_id" />

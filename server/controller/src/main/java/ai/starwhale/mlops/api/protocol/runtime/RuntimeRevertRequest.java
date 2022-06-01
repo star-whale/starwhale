@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.runtime;
+package ai.starwhale.mlops.api.protocol.runtime;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class Runtime {
+@Validated
+public class RuntimeRevertRequest {
 
-    private Long id;
+    @NotNull
+    @JsonProperty("versionId")
+    private String versionId;
 
-    private String name;
-
-    private Long ownerId;
-
-    private Long projectId;
-
+    @NotNull
+    @JsonProperty("versionUrl")
+    private String versionUrl;
 }
