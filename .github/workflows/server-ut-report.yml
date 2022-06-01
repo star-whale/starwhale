@@ -1,17 +1,9 @@
-name: Maven Package
+name: Server Unit test Report
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-  workflow_call:
-    secrets:
-      COVERALL_TOKEN:
-        description: 'A token passed from the caller workflow'
-        required: true
 
 jobs:
 
@@ -64,4 +56,4 @@ jobs:
         working-directory: ./server
         env:
           COVERALL_TOKEN: ${{ secrets.COVERALL_TOKEN }}
-        run: make ci-package-with-unit-test
+        run: make ci-package-with-unit-test-report
