@@ -29,7 +29,7 @@ public interface SWModelPackageVersionMapper {
 
     SWModelPackageVersionEntity getLatestVersion(@Param("swmpId")Long swmpId);
 
-    int revertTo(@Param("swmpVersionId")Long swmpVersionId);
+    int revertTo(@Param("swmpId")Long swmpId, @Param("swmpVersionId")Long swmpVersionId);
 
     int addNewVersion(@Param("version") SWModelPackageVersionEntity version);
 

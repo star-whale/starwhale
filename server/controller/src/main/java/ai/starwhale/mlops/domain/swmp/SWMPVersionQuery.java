@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.runtime;
+package ai.starwhale.mlops.domain.swmp;
 
-import cn.hutool.core.util.StrUtil;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import javax.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
-import org.springframework.validation.annotation.Validated;
 
 @Data
-@Validated
-public class RuntimeRevertRequest {
+@Builder
+public class SWMPVersionQuery {
 
-    @JsonProperty("versionId")
-    private String versionId;
+    private String projectUrl;
 
-    @JsonProperty("versionUrl")
-    private String versionUrl;
+    private String swmpUrl;
 
-    public String getVersion() {
-        if(StrUtil.isEmpty(versionUrl)) {
-            return versionId;
-        }
-        return  versionUrl;
-    }
+    private String versionName;
+
+    private String versionTag;
 }
