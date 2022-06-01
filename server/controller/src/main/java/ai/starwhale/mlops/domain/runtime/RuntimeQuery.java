@@ -16,23 +16,18 @@
 
 package ai.starwhale.mlops.domain.runtime;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class Runtime {
+public class RuntimeQuery {
 
-    private Long id;
+    private String projectUrl;
 
-    private String name;
+    private String runtimeUrl;
 
-    private Long ownerId;
+    private String runtimeVersionUrl;
 
-    private Long projectId;
-
+    private String namePrefix;
 }

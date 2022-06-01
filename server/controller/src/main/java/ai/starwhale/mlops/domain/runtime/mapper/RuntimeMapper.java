@@ -16,6 +16,27 @@
 
 package ai.starwhale.mlops.domain.runtime.mapper;
 
+import ai.starwhale.mlops.domain.runtime.RuntimeEntity;
+import java.util.List;
+import org.apache.ibatis.annotations.Param;
+
 public interface RuntimeMapper {
 
+    List<RuntimeEntity> listRuntimes(@Param("projectId") Long projectId, @Param("namePrefix")String namePrefix);
+
+    int addRuntime(@Param("runtime")RuntimeEntity runtime);
+
+    int deleteRuntime(@Param("id")Long id);
+
+    int recoverRuntime(@Param("id")Long id);
+
+    RuntimeEntity findRuntimeById(@Param("id")Long id);
+
+    List<RuntimeEntity> findRuntimesByIds(@Param("ids")List<Long> ids);
+
+    RuntimeEntity findByNameForUpdate(@Param("name")String name);
+    RuntimeEntity findByName(@Param("name")String name);
+
+    RuntimeEntity findDeletedRuntimeById(@Param("id")Long id);
+    List<RuntimeEntity> listDeletedRuntimes(@Param("runtimeName")String runtimeName);
 }

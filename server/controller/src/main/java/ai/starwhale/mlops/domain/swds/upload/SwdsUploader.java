@@ -309,7 +309,7 @@ public class SwdsUploader {
     }
 
     private SWDatasetEntity from(Manifest manifest,String project) {
-        ProjectEntity projectEntity = projectManager.findByName(project);
+        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project);
         return SWDatasetEntity.builder()
             .datasetName(manifest.getName())
             .isDeleted(0)

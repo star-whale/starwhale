@@ -72,6 +72,8 @@ public class StoragePathCoordinator {
      */
     static final String STORAGE_PATH_FORMATTER_SWMP = "%s/swmp/%s/%s";
 
+    static final String STORAGE_PATH_FORMATTER_SWRT = "%s/swrt/%s/%s";
+
     public StoragePathCoordinator(String systemStoragePathPrefix){
         this.systemStoragePathPrefix = systemStoragePathPrefix;
         this.prefix = String.format(STORAGE_PATH_FORMATTER_PREFIX,systemStoragePathPrefix,SYS_NAME);
@@ -118,6 +120,11 @@ public class StoragePathCoordinator {
     public String generateSwmpPath(String swmpName,String swmpVersion){
         checkKeyWord(swmpVersion,ValidSubject.SWMP);
         return String.format(STORAGE_PATH_FORMATTER_SWMP,prefix,swmpName,swmpVersion);
+    }
+
+    public String generateRuntimePath(String runtimeName,String runtimeVersion){
+        checkKeyWord(runtimeVersion,ValidSubject.RUNTIME);
+        return String.format(STORAGE_PATH_FORMATTER_SWRT,prefix, runtimeName, runtimeVersion);
     }
 
     private void checkKeyWord(String kw, ValidSubject validSubject){
