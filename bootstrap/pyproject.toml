@@ -22,3 +22,10 @@ exclude = '''
   )/
 )
 '''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 4
+length_sort = true
+order_by_type = true
+force_alphabetical_sort_within_sections = true

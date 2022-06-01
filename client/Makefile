@@ -22,6 +22,9 @@ install-dev-req:
 black-format:
 	black --config pyproject.toml $(PY_CHANGED_FILES)
 
+isort-format:
+	isort $(PY_CHANGED_FILES)
+
 ci-format-checker:
 	echo "run black"
 	black --check --config pyproject.toml .
@@ -34,8 +37,12 @@ ci-mypy:
 	echo "run mypy"
 	mypy --python-version=3.7 .
 
+ci-isort:
+	echo "run isort"
+	isort --check .
+
 ut:
 	echo "ut"
 	pytest tests -vvrfEsx --cov-config=.coveragerc --cov=starwhale --cov-report=xml:coverage.xml --cov-report=term-missing
 
-all-check: ci-format-checker ci-lint ci-mypy ut
+all-check: ci-format-checker ci-lint ci-mypy ci-isort ut
