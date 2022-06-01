@@ -1,19 +1,19 @@
 import typing as t
-from pathlib import Path
 from abc import ABCMeta, abstractmethod, abstractproperty
-import yaml
+from pathlib import Path
 
+import yaml
 from fs.tarfs import TarFS
 
-from starwhale.base.uri import URI
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.consts import (
+    RECOVER_DIRNAME,
     SHORT_VERSION_CNT,
     VERSION_PREFIX_CNT,
-    RECOVER_DIRNAME,
     DEFAULT_MANIFEST_NAME,
 )
+from starwhale.base.uri import URI
 from starwhale.utils.fs import guess_real_path
+from starwhale.utils.config import SWCliConfigMixed
 
 
 class BaseStorage(object):

@@ -1,17 +1,17 @@
 import typing as t
 from pathlib import Path
 
-from starwhale.base.type import EvalTaskType, URIType, RunSubDirType
-from starwhale.utils.config import SWCliConfigMixed
-from starwhale.utils.fs import guess_real_path
 from starwhale.consts import (
-    DEFAULT_MANIFEST_NAME,
-    VERSION_PREFIX_CNT,
     CURRENT_FNAME,
     RECOVER_DIRNAME,
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.uri import URI
+from starwhale.utils.fs import guess_real_path
+from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
 from starwhale.base.store import BaseStorage
+from starwhale.utils.config import SWCliConfigMixed
 
 
 class JobStorage(BaseStorage):

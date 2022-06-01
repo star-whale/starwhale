@@ -1,11 +1,12 @@
 import click
 
 from starwhale.consts import (
-    LOCAL_FUSE_JSON_NAME,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
+    LOCAL_FUSE_JSON_NAME,
 )
+
 from .view import DatasetTermView
 
 

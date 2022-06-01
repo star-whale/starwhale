@@ -1,52 +1,53 @@
 from __future__ import annotations
 
-from collections import defaultdict
-import typing as t
-from abc import ABCMeta
-from starwhale.base.bundle_copy import BundleCopy
-import yaml
-from pathlib import Path
-import tarfile
 import json
+import typing as t
+import tarfile
+from abc import ABCMeta
+from pathlib import Path
+from collections import defaultdict
 
-from loguru import logger
-from fs.walk import Walker
-from fs.copy import copy_fs, copy_file
+import yaml
 from fs import open_fs
+from loguru import logger
+from fs.copy import copy_fs, copy_file
+from fs.walk import Walker
 
 from starwhale.utils import console
-from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
+from starwhale.consts import (
+    JSON_INDENT,
+    DataLoaderKind,
+    DefaultYAMLName,
+    SWDSBackendType,
+    SWDSSubFileType,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+    VERSION_PREFIX_CNT,
+    SWDS_DATA_FNAME_FMT,
+    DEFAULT_COPY_WORKERS,
+    LOCAL_FUSE_JSON_NAME,
+    SWDS_LABEL_FNAME_FMT,
+    DEFAULT_MANIFEST_NAME,
+)
 from starwhale.base.uri import URI
-from starwhale.utils.error import ExistedError, NoSupportError
-from starwhale.base.cloud import CloudRequestMixed
-from starwhale.utils.venv import SUPPORTED_PIP_REQ
-from starwhale.utils.load import import_cls
 from starwhale.utils.fs import (
     move_dir,
     ensure_dir,
-    blake2b_file,
     ensure_file,
+    blake2b_file,
     BLAKE2B_SIGNATURE_ALGO,
 )
+from starwhale.base.type import URIType, BundleType, InstanceType
+from starwhale.base.cloud import CloudRequestMixed
+from starwhale.utils.load import import_cls
+from starwhale.utils.venv import SUPPORTED_PIP_REQ
+from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
+from starwhale.utils.error import ExistedError, NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
+from starwhale.base.bundle_copy import BundleCopy
+
 from .store import DatasetStorage
-from starwhale.base.type import BundleType, InstanceType, URIType
-from starwhale.consts import (
-    DEFAULT_PAGE_IDX,
-    DEFAULT_PAGE_SIZE,
-    DEFAULT_MANIFEST_NAME,
-    VERSION_PREFIX_CNT,
-    DefaultYAMLName,
-    DEFAULT_COPY_WORKERS,
-    LOCAL_FUSE_JSON_NAME,
-    JSON_INDENT,
-    SWDS_DATA_FNAME_FMT,
-    SWDS_LABEL_FNAME_FMT,
-    SWDSSubFileType,
-    SWDSBackendType,
-    DataLoaderKind,
-)
-from .dataset import DatasetConfig, ARCHIVE_SWDS_META, DSProcessMode
+from .dataset import DatasetConfig, DSProcessMode, ARCHIVE_SWDS_META
 
 
 class Dataset(BaseBundle):

@@ -1,7 +1,9 @@
-import click
 import typing as t
 
+import click
+
 from starwhale.base.type import EvalTaskType
+
 from .view import JobTermView, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 

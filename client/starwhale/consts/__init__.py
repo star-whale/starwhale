@@ -1,6 +1,5 @@
 import pathlib
 
-
 # TODO: use str path, not Path Class
 HOMEDIR = pathlib.Path.home()
 CONFIG_DIR = HOMEDIR / ".config" / "starwhale"

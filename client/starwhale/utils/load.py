@@ -1,7 +1,7 @@
-import typing as t
 import sys
-from pathlib import Path
+import typing as t
 import importlib
+from pathlib import Path
 
 
 def import_cls(workdir: Path, mc: str, parentClass: t.Any = object) -> t.Any:

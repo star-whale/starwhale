@@ -1,26 +1,25 @@
 from __future__ import annotations
+
+import json
+import typing as t
+from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 
-import typing as t
 import yaml
-import json
-
 import jsonlines
 
-from abc import ABCMeta, abstractmethod
-
-from starwhale.base.cloud import CloudRequestMixed
-from starwhale.base.type import InstanceType, EvalTaskType, JobOperationType
+from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
-from starwhale.consts import DEFAULT_PAGE_IDX, HTTPMethod, DEFAULT_PAGE_SIZE
-from starwhale.utils.config import SWCliConfigMixed
-from starwhale.utils.error import NoSupportError
 from starwhale.utils.fs import move_dir
+from starwhale.base.type import EvalTaskType, InstanceType, JobOperationType
+from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import ignore_error
+from starwhale.utils.error import NoSupportError
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
-from .executor import EvalExecutor
-from .store import JobStorage
 
+from .store import JobStorage
+from .executor import EvalExecutor
 
 _device_id_map = {"cpu": 1, "gpu": 2}
 

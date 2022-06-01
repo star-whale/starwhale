@@ -1,8 +1,8 @@
 # Always prefer setuptools over distutils
 import os
+import pathlib
 
 from setuptools import setup, find_packages
-import pathlib
 
 here = pathlib.Path(__file__).parent.resolve()
 

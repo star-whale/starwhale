@@ -42,3 +42,10 @@ warn_unused_ignores = false
 warn_unused_configs = false
 warn_redundant_casts = false
 warn_return_any = false
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+length_sort = true
+order_by_type = true
+force_alphabetical_sort_within_sections = true

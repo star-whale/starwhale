@@ -1,15 +1,16 @@
 from __future__ import annotations
+
 import typing as t
 from functools import wraps
 
 from sklearn.metrics import (  # type: ignore
+    auc,
+    roc_curve,
+    hamming_loss,
+    confusion_matrix,
+    cohen_kappa_score,
     classification_report,
     multilabel_confusion_matrix,
-    confusion_matrix,
-    hamming_loss,
-    cohen_kappa_score,
-    roc_curve,
-    auc,
 )
 
 

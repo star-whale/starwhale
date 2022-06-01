@@ -1,18 +1,17 @@
-import random
 import time
+import random
 
 import click
 
 from starwhale import __version__
-from starwhale.utils.config import load_swcli_config
 from starwhale.utils.debug import init_logger
-
-from starwhale.core.project.cli import project_cmd
 from starwhale.core.job.cli import job_cmd
-from starwhale.core.instance.cli import instance_cmd
-from starwhale.core.runtime.cli import runtime_cmd
-from starwhale.core.dataset.cli import dataset_cmd
+from starwhale.utils.config import load_swcli_config
 from starwhale.core.model.cli import model_cmd
+from starwhale.core.dataset.cli import dataset_cmd
+from starwhale.core.project.cli import project_cmd
+from starwhale.core.runtime.cli import runtime_cmd
+from starwhale.core.instance.cli import instance_cmd
 
 from .mngt import add_mngt_command
 

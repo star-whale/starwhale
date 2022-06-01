@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 import typing as t
-import yaml
-from pathlib import Path
 from copy import deepcopy
+from pathlib import Path
+
+import yaml
 
 from starwhale.utils import convert_to_bytes
+from starwhale.consts import SWDSSubFileType, DEFAULT_STARWHALE_API_VERSION
 from starwhale.utils.error import NoSupportError
-from starwhale.consts import (
-    DEFAULT_STARWHALE_API_VERSION,
-    SWDSSubFileType,
-)
 
 
 class DSProcessMode:

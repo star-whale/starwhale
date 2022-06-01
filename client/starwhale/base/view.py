@@ -1,23 +1,22 @@
-import typing as t
-import sys
 import os
-import yaml
+import sys
+import typing as t
 from functools import wraps
 
+import yaml
+from rich import box
 from rich import print as rprint
 from rich.panel import Panel
 from rich.table import Table
-from rich.console import RenderableType
-from rich import box
 from rich.pretty import Pretty
+from rich.console import RenderableType
 
-from starwhale.base.uri import URI
-from starwhale.utils.error import FileFormatError
+from starwhale.utils import console, pretty_bytes
 from starwhale.consts import UserRoleType, SHORT_VERSION_CNT
-from starwhale.utils.config import SWCliConfigMixed
-from starwhale.utils import console
+from starwhale.base.uri import URI
 from starwhale.base.type import URIType
-from starwhale.utils import pretty_bytes
+from starwhale.utils.error import FileFormatError
+from starwhale.utils.config import SWCliConfigMixed
 
 
 class BaseTermView(SWCliConfigMixed):

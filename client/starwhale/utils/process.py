@@ -1,8 +1,7 @@
 import os
 import typing as t
-from subprocess import Popen, CalledProcessError, PIPE, STDOUT
-
 from select import select
+from subprocess import PIPE, Popen, STDOUT, CalledProcessError
 
 from loguru import logger
 

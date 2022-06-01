@@ -1,32 +1,32 @@
-import typing as t
-import yaml
-import json
 import os
+import json
+import typing as t
 from pathlib import Path
 
+import yaml
 from loguru import logger
 
-from starwhale.utils import gen_uniq_version, console, now_str
+from starwhale.utils import console, now_str, gen_uniq_version
 from starwhale.consts import (
-    VERSION_PREFIX_CNT,
-    DataLoaderKind,
-    DEFAULT_INPUT_JSON_FNAME,
-    DEFAULT_MANIFEST_NAME,
     JSON_INDENT,
+    CURRENT_FNAME,
+    DataLoaderKind,
     DefaultYAMLName,
     SWDSBackendType,
-    CURRENT_FNAME,
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
+    DEFAULT_INPUT_JSON_FNAME,
 )
+from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
-from starwhale.base.type import EvalTaskType, RunSubDirType, URIType
-from starwhale.core.dataset.model import Dataset
-from starwhale.base.uri import URI
 from starwhale.core.model.model import StandaloneModel
-from starwhale.core.runtime.model import StandaloneRuntime
+from starwhale.core.dataset.model import Dataset
 from starwhale.core.dataset.store import DatasetStorage
+from starwhale.core.runtime.model import StandaloneRuntime
 
 _CNTR_WORKDIR = "/opt/starwhale"
 _STATUS = PipelineHandler.STATUS

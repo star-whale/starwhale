@@ -16,6 +16,8 @@ upload-pypi:
 install-dev:
 	python3 -m pip install -r requirements-dev.txt
 
+isort-format:
+	isort $(PY_CHANGED_FILES)
 
 black-format:
 	black --config pyproject.toml $(PY_CHANGED_FILES)
@@ -27,6 +29,10 @@ ci-format-checker:
 ci-lint:
 	echo "run flake8"
 	flake8 .
+
+ci-isort:
+	echo "run isort"
+	isort --check .
 
 all-check: ci-format-checker ci-lint
 

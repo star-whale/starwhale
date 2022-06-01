@@ -1,42 +1,38 @@
 from __future__ import annotations
 
-from abc import ABCMeta
-from copy import deepcopy
-import yaml
 import os
 import typing as t
+from abc import ABCMeta
+from copy import deepcopy
 from pathlib import Path
 from collections import defaultdict
 
-
+import yaml
+from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 from fs.walk import Walker
-from fs import open_fs
 
-from starwhale.utils.error import (
-    ExistedError,
-    FileFormatError,
-    NoSupportError,
-)
-from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.base.uri import URI
-from starwhale.base.type import BundleType, EvalTaskType, InstanceType, URIType
 from starwhale.utils import console
-from starwhale.utils.fs import ensure_dir, move_dir
-from starwhale.utils.venv import SUPPORTED_PIP_REQ
-from starwhale.utils.load import import_cls
-from starwhale.base.bundle_copy import BundleCopy
 from starwhale.consts import (
-    DEFAULT_STARWHALE_API_VERSION,
-    DEFAULT_COPY_WORKERS,
+    DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
-    DefaultYAMLName,
+    DEFAULT_COPY_WORKERS,
+    DEFAULT_STARWHALE_API_VERSION,
 )
-from .store import ModelStorage
+from starwhale.base.uri import URI
+from starwhale.utils.fs import move_dir, ensure_dir
+from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed
+from starwhale.utils.load import import_cls
+from starwhale.utils.venv import SUPPORTED_PIP_REQ
+from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
+from starwhale.utils.error import ExistedError, NoSupportError, FileFormatError
 from starwhale.utils.progress import run_with_progress_bar
+from starwhale.base.bundle_copy import BundleCopy
+
+from .store import ModelStorage
 
 
 class ModelRunConfig(object):

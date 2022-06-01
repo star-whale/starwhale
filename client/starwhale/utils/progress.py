@@ -1,6 +1,7 @@
 import typing as t
 
 from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
+
 from starwhale.utils import console
 
 

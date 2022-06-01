@@ -4,10 +4,11 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
 from starwhale.utils.config import (
+    SWCliConfigMixed,
     load_swcli_config,
     get_swcli_config_path,
-    SWCliConfigMixed,
 )
+
 from .. import get_predefined_config_yaml
 
 _existed_config_contents = get_predefined_config_yaml()
