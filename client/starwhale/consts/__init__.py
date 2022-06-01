@@ -3,17 +3,15 @@ import pathlib
 
 # TODO: use str path, not Path Class
 HOMEDIR = pathlib.Path.home()
-CONFIG_DIR = HOMEDIR / ".config/starwhale"
+CONFIG_DIR = HOMEDIR / ".config" / "starwhale"
 SW_CLI_CONFIG = CONFIG_DIR / "config.yaml"
 
 ENV_SW_CLI_CONFIG = "SW_CLI_CONFIG"
 ENV_LOG_LEVEL = "SW_LOG_LEVEL"
 
 DEFAULT_STARWHALE_API_VERSION = "1.0"
-DEFAULT_MODEL_YAML_NAME = "model.yaml"
 DEFAULT_MANIFEST_NAME = "_manifest.yaml"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
-DEFAULT_DATASET_YAML_NAME = "dataset.yaml"
 LOCAL_FUSE_JSON_NAME = "local_fuse.json"
 DEFAULT_INPUT_JSON_FNAME = "input.json"
 
@@ -22,12 +20,21 @@ SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
 
 ENV_CONDA = "CONDA_DEFAULT_ENV"
 ENV_CONDA_PREFIX = "CONDA_PREFIX"
+ENV_VENV = "VIRTUAL_ENV"
+
+
+class DefaultYAMLName:
+    MODEL = "model.yaml"
+    DATASET = "dataset.yaml"
+    RUNTIME = "runtime.yaml"
 
 
 class PythonRunEnv:
     CONDA = "conda"
     VENV = "venv"
     SYSTEM = "system"
+    DOCKER = "docker"
+    AUTO = "auto"
 
 
 class HTTPMethod:
@@ -81,3 +88,14 @@ CURRENT_FNAME = "current"
 STANDALONE_INSTANCE = "local"
 DEFAULT_INSTANCE = STANDALONE_INSTANCE
 DEFAULT_PROJECT = "self"
+
+DEFAULT_PAGE_IDX = 1
+DEFAULT_PAGE_SIZE = 20
+
+RECOVER_DIRNAME = ".recover"
+
+DEFAULT_PYTHON_VERSION = "3.8"
+
+YAML_TYPES = (".yaml", ".yml")
+
+DEFAULT_SW_TASK_RUN_IMAGE = "ghcr.io/star-whale/starwhale:latest"

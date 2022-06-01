@@ -21,15 +21,11 @@ _config: t.Dict[str, t.Any] = {}
 _CURRENT_SHELL_USERNAME = getpass.getuser()
 
 
-class InstanceType:
-    STANDALONE = "standalone"
-    CLOUD = "cloud"
-
-
 def load_swcli_config() -> t.Dict[str, t.Any]:
     global _config
 
     if _config:
+        ensure_dir(Path(_config["storage"]["root"]) / DEFAULT_PROJECT, recursion=True)
         return _config
 
     # TODO: add set_global_env func in cli startup
@@ -41,10 +37,13 @@ def load_swcli_config() -> t.Dict[str, t.Any]:
         with open(fpath) as f:
             _config = yaml.safe_load(f)
 
+    ensure_dir(Path(_config["storage"]["root"]) / DEFAULT_PROJECT, recursion=True)
     return _config
 
 
 def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
+    from starwhale.base.type import InstanceType
+
     c = dict(
         instances={
             STANDALONE_INSTANCE: dict(
@@ -80,7 +79,7 @@ def get_swcli_config_path() -> str:
 def render_swcli_config(c: t.Dict[str, t.Any], path: str = "") -> None:
     fpath = path or get_swcli_config_path()
     ensure_dir(os.path.dirname(fpath), recursion=True)
-    ensure_file(fpath, yaml.dump(c, default_flow_style=False), mode=0o600)
+    ensure_file(fpath, yaml.safe_dump(c, default_flow_style=False), mode=0o600)
 
 
 # TODO: abstract better common base or mixed class
@@ -122,7 +121,7 @@ class SWCliConfigMixed(object):
         return self._current_instance_obj.get("sw_token", "")
 
     @property
-    def _current_instance_obj(self):
+    def _current_instance_obj(self) -> t.Dict[str, t.Any]:
         return self._config.get("instances", {}).get(self.current_instance, {})
 
     @property
@@ -132,6 +131,37 @@ class SWCliConfigMixed(object):
     @property
     def current_instance(self) -> str:
         return self._config["current_instance"]  # type: ignore
+
+    def get_sw_instance_config(self, instance: str) -> t.Dict[str, t.Any]:
+        instance = self._get_instance_alias(instance)
+        return self._config["instances"].get(instance, {})
+
+    def get_sw_token(self, instance: str) -> str:
+        return self.get_sw_instance_config(instance).get("sw_token", "")
+
+    def _get_instance_alias(self, instance: str) -> str:
+        if not instance:
+            return self.current_instance
+
+        if instance not in self._config["instances"]:
+            for k, v in self._config["instances"].items():
+                if v["uri"] == instance:
+                    return k
+
+        return instance
+
+    @property
+    def current_project(self) -> str:
+        return self._current_instance_obj.get("current_project", DEFAULT_PROJECT)
+
+    def select_current_default(self, instance: str, project: str = "") -> None:
+        instance = self._get_instance_alias(instance)
+
+        self._config["current_instance"] = instance
+        if project:
+            self._config["instances"][instance]["current_project"] = project
+
+        update_swcli_config(**self._config)
 
     def delete_instance(self, uri: str) -> None:
         if uri == STANDALONE_INSTANCE:
@@ -157,9 +187,10 @@ class SWCliConfigMixed(object):
         user_name: str = _CURRENT_SHELL_USERNAME,
         user_role: str = UserRoleType.NORMAL,
         sw_token: str = "",
-        current_project: str = DEFAULT_PROJECT,
         alias: str = "",
     ) -> None:
+        from starwhale.base.type import InstanceType
+
         # TODO: abstrace instance class
         uri = uri.strip()
         if not uri.startswith(("http://", "https://")):
@@ -180,7 +211,6 @@ class SWCliConfigMixed(object):
             user_name=user_name,
             user_role=user_role,
             sw_token=sw_token,
-            current_project=current_project,
             type=InstanceType.CLOUD,
             updated_at=now_str(),  # type: ignore
         )

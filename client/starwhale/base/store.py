@@ -1,113 +1,167 @@
 import typing as t
 from pathlib import Path
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
+import yaml
 
-from rich import box
-from rich.table import Table
+from fs.tarfs import TarFS
 
+from starwhale.base.uri import URI
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.utils import console
-from starwhale.consts import SHORT_VERSION_CNT
+from starwhale.consts import (
+    SHORT_VERSION_CNT,
+    VERSION_PREFIX_CNT,
+    RECOVER_DIRNAME,
+    DEFAULT_MANIFEST_NAME,
+)
+from starwhale.utils.fs import guess_real_path
 
 
-_MIN_GUESS_NAME_LENGTH = 5
-
-
-class LocalStorage(SWCliConfigMixed):
-    LATEST_TAG = "latest"
-
-    class SWobjMeta(t.NamedTuple):
-        name: str
-        version: str
-        tag: str
-        environment: str
-        size: str
-        generate: str
-        created: str
-
+class BaseStorage(object):
     __metaclass__ = ABCMeta
 
-    def __init__(self, swcli_config: t.Optional[t.Dict[str, t.Any]] = None) -> None:
-        super().__init__(swcli_config)
-        self._console = console
-
-    def _parse_swobj(self, sw_name: str) -> t.Tuple[str, str]:
-        if ":" not in sw_name:
-            _name, _version = sw_name, self.LATEST_TAG
-        else:
-            if sw_name.count(":") > 1:
-                raise Exception(f"{sw_name} format wrong, use [name]:[version]")
-            _name, _version = sw_name.split(":")
-
-        return _name, _version
-
-    def _guess(self, rootdir: Path, name: str, ftype: str = "") -> t.Tuple[Path, str]:
-        # TODO: support more guess method, such as tag
-        _path = rootdir / name
-        if _path.exists():
-            return _path, name
-
-        if len(name) < _MIN_GUESS_NAME_LENGTH:
-            return _path, name
-
-        ftype = ftype.strip()
-        for fd in rootdir.iterdir():
-            if ftype and not fd.name.endswith(ftype):
-                continue
-
-            if fd.name.startswith(name) or name.startswith(fd.name):
-                return fd, fd.name.rsplit(ftype, 1)[0] if ftype else fd.name
-        else:
-            return _path, name
+    def __init__(self, uri: URI) -> None:
+        self.uri = uri
+        self.sw_config = SWCliConfigMixed()
+        self.project_dir = self.sw_config.rootdir / self.uri.project
+        self.loc, self.id = self._guess()
 
     @abstractmethod
-    def list(
-        self,
-        filter: str = "",
-        title: str = "",
-        caption: str = "",
-        fullname: bool = False,
-    ) -> None:
-        title = title or "List StarWhale obj[swmp|swds] in local storage"
-        caption = caption or f"@{self.rootdir}"
+    def _guess(self) -> t.Tuple[Path, str]:
+        raise NotImplementedError
 
-        table = Table(title=title, caption=caption, box=box.SIMPLE)
-        table.add_column("Name", justify="right", style="cyan", no_wrap=False)
-        table.add_column("Version", style="magenta")
-        table.add_column("Tag", style="magenta")
-        table.add_column("Size", style="magenta")
-        table.add_column("Environment", style="magenta")
-        table.add_column("Generate", style="magenta")
-        table.add_column("Created", justify="right")
+    @abstractproperty
+    def recover_loc(self) -> Path:
+        raise NotImplementedError
 
-        for s in self.iter_local_swobj():
-            _version = s.version if fullname else s.version[:SHORT_VERSION_CNT]
-            table.add_row(
-                s.name, _version, s.tag, s.size, s.environment, s.generate, s.created
+    @property
+    def snapshot_workdir(self) -> Path:
+        raise NotImplementedError
+
+    @property
+    def manifest_path(self) -> Path:
+        raise NotImplementedError
+
+    @property
+    def bundle_type(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def uri_type(self) -> str:
+        raise NotImplementedError
+
+    @property
+    def bundle_dir(self) -> Path:
+        version = self.uri.object.version
+        return (
+            self.project_dir
+            / self.uri_type
+            / self.uri.object.name
+            / version[:VERSION_PREFIX_CNT]
+        )
+
+    @property
+    def bundle_path(self) -> Path:
+        if self.uri.object.version:
+            return self.bundle_dir / f"{self.uri.object.version}{self.bundle_type}"
+        else:
+            return self.bundle_dir
+
+    @property
+    def latest_bundle_dir(self) -> Path:
+        return self.project_dir / self.uri_type / "latest"
+
+    @property
+    def mainfest(self) -> t.Dict[str, t.Any]:
+        if not self.manifest_path.exists():
+            return {}
+        else:
+            return yaml.safe_load(self.manifest_path.open())
+
+    def _get_snapshot_workdir_for_bundle(self) -> Path:
+        version = self.uri.object.version
+        return (
+            self.project_dir
+            / "workdir"
+            / self.uri_type
+            / self.uri.object.name
+            / version[:VERSION_PREFIX_CNT]
+            / version
+        )
+
+    def _get_recover_loc_for_bundle(self) -> Path:
+        loc = self.project_dir / self.uri_type / RECOVER_DIRNAME / self.uri.object.name
+
+        version = self.uri.object.version
+        if version:
+            loc = loc / version[:VERSION_PREFIX_CNT] / f"{version}{self.bundle_type}"
+
+        return loc
+
+    def _guess_for_bundle(self) -> t.Tuple[Path, str]:
+        name = self.uri.object.name
+        version = self.uri.object.version
+        if version:
+            _p, _v = guess_real_path(
+                self.project_dir / self.uri_type / name / version[:VERSION_PREFIX_CNT],
+                version,
             )
 
-        self._console.print(table)
+            if _v.endswith(self.bundle_type):
+                _v = _v.split(self.bundle_type)[0]
 
-    @abstractmethod
-    def iter_local_swobj(self) -> t.Generator["LocalStorage.SWobjMeta", None, None]:
-        raise NotImplementedError
+            self.uri.object.version = _v
+            return _p, _v
+        else:
+            return self.project_dir / self.uri_type / name, name
 
-    @abstractmethod
-    def push(self, sw_name: str) -> None:
-        raise NotImplementedError
+    def iter_bundle_history(self) -> t.Generator[t.Tuple[str, Path], None, None]:
+        rootdir = self.project_dir / self.uri_type / self.uri.object.name
+        for _path in rootdir.glob(f"**/*{self.bundle_type}"):
+            if not _path.name.endswith(self.bundle_type):
+                continue
+            _rt_version = _path.name.split(self.bundle_type)[0]
+            yield _rt_version, _path
 
-    @abstractmethod
-    def pull(self, sw_name: str) -> None:
-        raise NotImplementedError
+    @classmethod
+    def iter_all_bundles(
+        cls,
+        project_uri: URI,
+        bundle_type: str,
+        uri_type: str,
+    ) -> t.Generator[t.Tuple[str, str, Path, bool], None, None]:
+        sw = SWCliConfigMixed()
+        _runtime_dir = sw.rootdir / project_uri.project / uri_type
+        for _path in _runtime_dir.glob(f"**/*{bundle_type}"):
+            if not _path.name.endswith(bundle_type):
+                continue
 
-    @abstractmethod
-    def info(self, sw_name: str) -> None:
-        raise NotImplementedError
+            _rt_name = _path.parent.parent.name
+            _rt_version = _path.name.split(bundle_type)[0]
+            yield _rt_name, _rt_version, _path, RECOVER_DIRNAME in _path.parts
 
-    @abstractmethod
-    def delete(self, sw_name: str) -> None:
-        raise NotImplementedError
+    @classmethod
+    def get_manifest_by_path(
+        cls, fpath: Path, bundle_type: str, uri_type: str, direct: bool = False
+    ) -> t.Any:
+        if not direct and fpath.name.endswith(bundle_type):
+            _model_dir = fpath.parent.parent
+            _project_dir = _model_dir.parent.parent
 
-    @abstractmethod
-    def gc(self, dry_run: bool = False) -> None:
-        raise NotImplementedError
+            _mname = _model_dir.name
+            _mversion = fpath.name.split(bundle_type)[0]
+
+            _extracted_dir = (
+                _project_dir
+                / "workdir"
+                / uri_type
+                / _mname
+                / _mversion[:SHORT_VERSION_CNT]
+                / _mversion
+            )
+            _extracted_manifest = _extracted_dir / DEFAULT_MANIFEST_NAME
+
+            if _extracted_manifest.exists():
+                return yaml.safe_load(_extracted_manifest.open())
+
+        with TarFS(str(fpath)) as tar:
+            return yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))

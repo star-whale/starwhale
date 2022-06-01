@@ -7,7 +7,7 @@ from binascii import crc32
 
 import jsonlines
 
-from starwhale.swds.dataset import (
+from starwhale.core.dataset.dataset import (
     D_ALIGNMENT_SIZE,
     D_USER_BATCH_SIZE,
     D_FILE_VOLUME_SIZE,

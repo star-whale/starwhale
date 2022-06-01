@@ -20,3 +20,27 @@ class SWObjNameFormatError(Exception):
 
 class UnExpectedConfigFieldError(Exception):
     pass
+
+
+class URIFormatError(Exception):
+    pass
+
+
+class ConfigFormatError(Exception):
+    pass
+
+
+class ExistedError(Exception):
+    pass
+
+
+class MissingFieldError(Exception):
+    pass
+
+
+class FormatError(Exception):
+    pass
+
+
+class EnvironmentError(Exception):
+    pass

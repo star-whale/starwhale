@@ -1,0 +1,6 @@
+base_image: ghcr.io/star-whale/starwhale:latest
+kw: {}
+mode: venv
+name: mnist2
+pip_req: requirements.txt
+python_version: '3.7'

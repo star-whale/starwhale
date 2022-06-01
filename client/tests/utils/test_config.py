@@ -8,10 +8,9 @@ from starwhale.utils.config import (
     get_swcli_config_path,
     SWCliConfigMixed,
 )
+from .. import get_predefined_config_yaml
 
-
-_current_dir = os.path.dirname(__file__)
-_existed_config_content = open(f"{_current_dir}/data/config.yaml").read()
+_existed_config_contents = get_predefined_config_yaml()
 
 
 class SWCliConfigTestCase(TestCase):
@@ -41,7 +40,7 @@ class SWCliConfigTestCase(TestCase):
         path = get_swcli_config_path()
         self.assertFalse(os.path.exists(path))
 
-        self.fs.create_file(path, contents=_existed_config_content)
+        self.fs.create_file(path, contents=_existed_config_contents)
         _config = load_swcli_config()
 
         assert len(_config["instances"]) == 2
@@ -52,11 +51,10 @@ class SWCliConfigTestCase(TestCase):
 
     def test_swcli_config_mixed(self):
         path = get_swcli_config_path()
-        self.fs.create_file(path, contents=_existed_config_content)
+        self.fs.create_file(path, contents=_existed_config_contents)
 
         sw = SWCliConfigMixed()
         assert str(sw.rootdir).endswith(".cache/starwhale")
-        assert str(sw.eval_run_dir).endswith(".cache/starwhale/run/eval")
         assert sw.user_name == "starwhale"
         assert sw.user_role == "admin"
         assert sw.sw_remote_addr == "http://1.1.1.1:8182"
@@ -72,7 +70,6 @@ class SWCliConfigTestCase(TestCase):
         sw.update_instance(
             uri="console.pre.intra.starwhale.ai",
             user_name="test",
-            current_project="test",
             alias="pre-k8s",
         )
 
@@ -84,3 +81,14 @@ class SWCliConfigTestCase(TestCase):
             == _config["instances"]["pre-k8s"]["uri"]
         )
         assert "test" == _config["instances"]["pre-k8s"]["user_name"]
+
+    def test_select(self):
+        path = get_swcli_config_path()
+        self.fs.create_file(path, contents=_existed_config_contents)
+
+        sw = SWCliConfigMixed()
+        assert sw.current_instance == "pre-bare"
+        assert sw.current_project == "self"
+        sw.select_current_default(instance="pre-bare", project="first")
+        assert sw.current_project == "first"
+        sw.select_current_default(instance="local", project="self")

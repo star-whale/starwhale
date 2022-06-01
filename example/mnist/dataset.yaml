@@ -7,7 +7,12 @@ data_filter: "t10k-image*"
 label_filter: "t10k-label*"
 
 process: mnist.process:DataSetProcessExecutor
-pip_req: requirements.txt
+exclude_pkg_data:
+  - venv
+  - .venv
+  - .git
+  - .history
+  - .vscode
 
 desc: MNIST data and label test dataset
 tag:
