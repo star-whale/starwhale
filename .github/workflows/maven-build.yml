@@ -57,6 +57,8 @@ jobs:
 
       - name: Build with Maven
         working-directory: ./server
+        with:
+          COVERALL_TOKEN: ${{ secrets.COVERALL_TOKEN }}
         env:
           COVERALL_TOKEN: ${{ secrets.COVERALL_TOKEN }}
         run: make ci-package-with-unit-test
