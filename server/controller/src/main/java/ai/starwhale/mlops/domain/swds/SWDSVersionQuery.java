@@ -14,27 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.api.protocol.swds;
+package ai.starwhale.mlops.domain.swds;
 
-import cn.hutool.core.util.StrUtil;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import javax.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
-import org.springframework.validation.annotation.Validated;
 
 @Data
-@Validated
-public class RevertSWDSRequest {
-    @JsonProperty("versionId")
-    private String versionId;
+@Builder
+public class SWDSVersionQuery {
 
-    @JsonProperty("versionUrl")
-    private String versionUrl;
+    private String projectUrl;
 
-    public String getVersion() {
-        if(StrUtil.isEmpty(versionUrl)) {
-            return versionId;
-        }
-        return  versionUrl;
-    }
+    private String swdsUrl;
+
+    private String versionName;
+
+    private String versionTag;
 }

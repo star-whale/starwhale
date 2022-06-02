@@ -120,7 +120,7 @@ public interface SWModelPackageApi {
     @Operation(summary = "Delete a model")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/project/{projectUrl}/model/{modelUrl}")
-    ResponseEntity<ResponseMessage<String>> deleteModelById(
+    ResponseEntity<ResponseMessage<String>> deleteModel(
         @Parameter(
             in = ParameterIn.PATH,
             description = "Project Url",

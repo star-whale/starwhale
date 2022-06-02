@@ -174,7 +174,6 @@ public class SWModelPackageService {
         if(versionEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                 .tip("Unable to find the version of swmp " + query.getSwmpUrl()), HttpStatus.BAD_REQUEST);
-
         }
 
         return toSWModelPackageInfoVO(model, versionEntity);
