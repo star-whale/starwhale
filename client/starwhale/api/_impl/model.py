@@ -203,6 +203,7 @@ class PipelineHandler(object):
             except Exception as e:
                 self._update_status(self.STATUS.FAILED)
                 self._sw_logger.exception(f"{func} abort, exception: {e}")
+                raise
             else:
                 self._update_status(self.STATUS.SUCCESS)
                 self._sw_logger.info("finish.")
@@ -211,21 +212,16 @@ class PipelineHandler(object):
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_cmp(self) -> None:
-        ex = None
+        now = now_str()  # type: ignore
         try:
             output = self.cmp(self._data_loader)
         except Exception as e:
-            ex = e
             self._sw_logger.exception(f"cmp exception: {e}")
+            self._status_writer.write({"time": now, "status": False, "exception": e})
             raise
-
-        try:
-            self._status_writer.write(
-                {"time": now_str(), "status": ex is None, "exception": ex}  # type: ignore
-            )
+        else:
+            self._status_writer.write({"time": now, "status": True, "exception": ""})
             self._result_writer.write(output)
-        except Exception as e:
-            self._sw_logger.exception(f"cmp record exception: {e}")
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
@@ -271,10 +267,7 @@ class PipelineHandler(object):
                 exception = None
                 self._sw_logger.info(f"[{data.idx}] data handle -> success")
 
-            try:
-                self._do_record(pred, pr, data, label, exception)
-            except Exception as e:
-                self._sw_logger.exception(f"{data.idx} data record exception: {e}")
+            self._do_record(pred, pr, data, label, exception)
 
     def _do_record(
         self,
