@@ -38,5 +38,9 @@ public interface TaskMapper {
     List<TaskEntity> findTaskByStatusIn(@Param("taskStatusList") List<TaskStatus> taskStatusList);
 
     void updateTaskAgent(@Param("ids") List<Long> taskIds,@Param("agentId") Long agentId);
+
+    List<TaskEntity> findByStepId(@Param("stepId") Long stepId);
+
+    void updateTaskRequest(@Param("taskId") Long taskId,@Param("request") String request);
 }
 

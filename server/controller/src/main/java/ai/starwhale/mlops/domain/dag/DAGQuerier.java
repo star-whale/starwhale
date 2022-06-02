@@ -17,63 +17,189 @@
 package ai.starwhale.mlops.domain.dag;
 
 import ai.starwhale.mlops.domain.dag.bo.Graph;
-import ai.starwhale.mlops.domain.dag.mapper.GraphEdgeMapper;
-import ai.starwhale.mlops.domain.dag.mapper.GraphMapper;
-import ai.starwhale.mlops.domain.dag.mapper.GraphNodeMapper;
-import ai.starwhale.mlops.domain.dag.po.GraphEdgeEntity;
-import ai.starwhale.mlops.domain.dag.po.GraphEntity;
-import ai.starwhale.mlops.domain.dag.po.GraphNodeEntity;
+import ai.starwhale.mlops.domain.dag.bo.GraphEdge;
+import ai.starwhale.mlops.domain.dag.bo.GraphNode;
+import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.JobManager;
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.StepConverter;
+import ai.starwhale.mlops.domain.job.step.StepEntity;
+import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.status.StepStatus;
+import ai.starwhale.mlops.domain.task.StepHelper;
+import ai.starwhale.mlops.domain.task.TaskEntity;
+import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DAGQuerier {
 
-    final GraphMapper graphMapper;
-    final GraphNodeMapper graphNodeMapper;
-    final GraphEdgeMapper graphEdgeMapper;
+    final JobManager jobManager;
 
-    @Resource
-    private JobManager jobManager;
+    final HotJobHolder jobHolder;
 
-    public DAGQuerier(GraphMapper graphMapper,
-        GraphNodeMapper graphNodeMapper,
-        GraphEdgeMapper graphEdgeMapper) {
-        this.graphMapper = graphMapper;
-        this.graphNodeMapper = graphNodeMapper;
-        this.graphEdgeMapper = graphEdgeMapper;
+    final JobMapper jobMapper;
+
+    final StepMapper stepMapper;
+
+    final TaskMapper taskMapper;
+
+    final StepConverter stepConverter;
+
+    final StepHelper stepHelper;
+
+    public DAGQuerier(JobManager jobManager,
+        HotJobHolder jobHolder, JobMapper jobMapper,
+        StepMapper stepMapper, TaskMapper taskMapper,
+        StepConverter stepConverter, StepHelper stepHelper) {
+        this.jobManager = jobManager;
+        this.jobHolder = jobHolder;
+        this.jobMapper = jobMapper;
+        this.stepMapper = stepMapper;
+        this.taskMapper = taskMapper;
+        this.stepConverter = stepConverter;
+        this.stepHelper = stepHelper;
     }
     public Graph dagOfJob(String jobUrl, Boolean withTask){
         return dagOfJob(jobManager.getJobId(jobUrl), withTask);
     }
     public Graph dagOfJob(Long jobId, Boolean withTask){
-        GraphEntity graphEntity = graphMapper.findByJobId(jobId);
-        if(null == graphEntity){
-            return Graph.emptyInstance();
+
+        Collection<Job> jobs = jobHolder.ofIds(List.of(jobId));
+        if(null == jobs || jobs.isEmpty()){
+            return buildGraphFromDB(jobId);
         }
-        Long entityId = graphEntity.getId();
-        List<GraphNodeEntity> graphNodeEntities = graphNodeMapper.findByGraphId(entityId);
-        List<GraphEdgeEntity> graphEdgeEntities = graphEdgeMapper.findByGraphId(entityId);
-        return new Graph(graphEntity,graphNodeEntities,graphEdgeEntities);
+        Job job = jobs.stream().findAny().get();
+        return buildGraphFromCache(job);
     }
 
-    public Graph dagOfTask(Long taskId){
-        List<GraphNodeEntity> graphNodeEntities = graphNodeMapper.findByOwnerId(taskId);
-        Graph graph = Graph.emptyInstance();
-        if(null == graphNodeEntities || graphNodeEntities.isEmpty()){
-            return graph;
+    private Graph buildGraphFromCache(Job job) {
+        Graph graph = new Graph();
+        AtomicLong idx = new AtomicLong(0);
+        graph.add(jobInit(job.getId(), idx));
+        Step stepPointer = stepHelper.firsStep(job.getSteps());
+        long lastStepNodeId = idx.get();
+        List<Long> lastTaskNodeIds = new LinkedList<>();
+        do{
+            graph.add(stepNode(stepPointer.getId(), stepPointer.getStatus(),idx));
+            if(lastTaskNodeIds.isEmpty()){
+                graph.add(new GraphEdge(lastStepNodeId, idx.get(),null));
+            }else {
+                for(Long taskNodeId:lastTaskNodeIds){
+                    graph.add(new GraphEdge(taskNodeId, idx.get(),null));
+                }
+            }
+            lastTaskNodeIds.clear();
+            lastStepNodeId = idx.get();
+            List<Task> tasks = stepPointer.getTasks();
+            for(int j=0;j<tasks.size();j++){
+                Task task = tasks.get(j);
+                graph.add(taskNode(task.getId(),task.getStatus(), idx));
+                graph.add(new GraphEdge(lastStepNodeId, idx.get(),null));
+                lastTaskNodeIds.add(idx.get());
+            }
+            stepPointer = stepPointer.getNextStep();
+        }while (stepPointer != null);
+        graph.add(jobNode(job.getId(),job.getStatus(), idx));
+        for(Long taskNodeId:lastTaskNodeIds){
+            graph.add(new GraphEdge(taskNodeId, idx.get(),null));
         }
-        List<Long> nodeIds = graphNodeEntities.parallelStream().map(GraphNodeEntity::getId)
-            .collect(Collectors.toList());
-        List<GraphEdgeEntity> edgeEntities= graphEdgeMapper.scopeOf(nodeIds);
-        graph.setId(graphNodeEntities.get(0).getGraphId());
-        graphNodeEntities.forEach(graphNodeEntity -> graph.add(graphNodeEntity));
-        edgeEntities.forEach(edgeEntity -> graph.add(edgeEntity));
-
         return graph;
     }
+
+    private Graph buildGraphFromDB(Long jobId) {
+        Graph graph = new Graph();
+        AtomicLong idx = new AtomicLong(0);
+        JobEntity jobEntity = jobMapper.findJobById(jobId);
+        if(null == jobEntity){
+            throw new SWValidationException(ValidSubject.JOB).tip("Job doesn't exists ");
+        }
+        graph.add(jobInit(jobId, idx));
+        List<StepEntity> stepEntities = stepMapper.findByJobId(jobId);
+        Map<Long, Long> linkMap = stepEntities.parallelStream()
+            .collect(Collectors.toMap(StepEntity::getLastStepId, StepEntity::getId));
+        stepEntities = stepEntities.stream().sorted((e1,e2)->{
+            List<Long> e1NexIds = nextIds(linkMap,e1.getId());
+            if(e1NexIds.contains(e2.getId())){
+                return -1;
+            }
+            return 1;
+        }).collect(Collectors.toList());
+        long lastStepNodeId = idx.get();
+        List<Long> lastTaskNodeIds = new LinkedList<>();
+        for(int i=0;i<stepEntities.size();i++){
+            StepEntity stepEntity=stepEntities.get(i);
+            graph.add(stepNode(stepEntity.getId(),stepEntity.getStatus(), idx));
+            if(lastTaskNodeIds.isEmpty()){
+                graph.add(new GraphEdge(lastStepNodeId, idx.get(),null));
+            }else {
+                for(Long taskNodeId:lastTaskNodeIds){
+                    graph.add(new GraphEdge(taskNodeId, idx.get(),null));
+                }
+            }
+            lastTaskNodeIds.clear();
+            lastStepNodeId = idx.get();
+            List<TaskEntity> taskEntities = taskMapper.findByStepId(stepEntity.getId());
+            for(int j=0;j<taskEntities.size();j++){
+                TaskEntity taskEntity = taskEntities.get(j);
+                graph.add(taskNode(taskEntity.getId(),taskEntity.getTaskStatus(), idx));
+                graph.add(new GraphEdge(lastStepNodeId, idx.get(),null));
+                lastTaskNodeIds.add(idx.get());
+            }
+        }
+        graph.add(jobNode(jobEntity.getId(),jobEntity.getJobStatus(), idx));
+        for(Long taskNodeId:lastTaskNodeIds){
+            graph.add(new GraphEdge(taskNodeId, idx.get(),null));
+        }
+        return graph;
+    }
+
+    GraphNode taskNode(Long taskId, TaskStatus status, AtomicLong idx){
+        return GraphNode.builder().id(idx.incrementAndGet()).type(Task.class.getSimpleName()).content(
+            status.name()).entityId(taskId).group(Task.class.getSimpleName()).build();
+    }
+
+    GraphNode stepNode(Long stepId,StepStatus status, AtomicLong idx){
+        return GraphNode.builder().id(idx.incrementAndGet()).type(Step.class.getSimpleName()).content(
+            status.name()).entityId(stepId).group(Step.class.getSimpleName()).build();
+    }
+
+    GraphNode jobNode(Long jobId, JobStatus status, AtomicLong idx){
+        return GraphNode.builder().id(idx.incrementAndGet()).type(Job.class.getSimpleName()).content(
+            status.name()).entityId(jobId).group(Job.class.getSimpleName()).build();
+    }
+
+    GraphNode jobInit(Long jobId, AtomicLong idx){
+        return GraphNode.builder().id(idx.incrementAndGet()).type(Job.class.getSimpleName()).content(
+            JobStatus.CREATED.name()).entityId(jobId).group(Job.class.getSimpleName()).build();
+    }
+
+    private List<Long> nextIds(Map<Long, Long> linkMap,Long id){
+        Long nextId = linkMap.get(id);
+        List<Long> result = new LinkedList<>();
+        if(null == nextId){
+            return result;
+        }
+        result.add(nextId);
+        result.addAll(nextIds(linkMap,nextId));
+        return result;
+    }
+
 
 }

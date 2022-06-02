@@ -17,7 +17,9 @@
 package ai.starwhale.mlops.domain.task.status;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
+import java.util.Set;
 
 public interface TaskStatusChangeWatcher {
-    void onTaskStatusChange(Task task, TaskStatus newStatus);
+    ThreadLocal<Set<Integer>> APPLIED_WATCHERS = ThreadLocal.withInitial(() -> null);
+    void onTaskStatusChange(Task task, TaskStatus oldStatus);
 }

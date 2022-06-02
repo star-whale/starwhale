@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.task.status;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.step.Step;
 import ai.starwhale.mlops.domain.system.agent.Agent;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.TaskWrapper;
@@ -26,6 +27,7 @@ import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -37,23 +39,19 @@ public class WatchableTask extends Task implements TaskWrapper {
     /**
      * original task
      */
-    @JsonIgnore
     Task oTask;
 
-    @JsonIgnore
     List<TaskStatusChangeWatcher> watchers;
 
-    @JsonIgnore
     TaskStatusMachine taskStatusMachine;
 
-    public WatchableTask(){}
-
-    public WatchableTask(Task oTask,List<TaskStatusChangeWatcher> watchers){
+    public WatchableTask(Task oTask,List<TaskStatusChangeWatcher> watchers,TaskStatusMachine taskStatusMachine){
         if(oTask instanceof WatchableTask){
             throw new UnsupportedOperationException();//prevent watchers watched
         }
         this.oTask = oTask;
         this.watchers = watchers;
+        this.taskStatusMachine = taskStatusMachine;
     }
 
     @Override
@@ -82,8 +80,8 @@ public class WatchableTask extends Task implements TaskWrapper {
     }
 
     @Override
-    public Job getJob() {
-        return oTask.getJob();
+    public Step getStep() {
+        return oTask.getStep();
     }
 
     @Override
@@ -97,33 +95,29 @@ public class WatchableTask extends Task implements TaskWrapper {
     }
 
     @Override
-    public void setStatus(TaskStatus status){
-        watchers.forEach(watcher->watcher.onTaskStatusChange(oTask,status));
-    }
-
-    @Override
-    public void setId(Long id) {
-        oTask.setId(id);
-    }
-
-    @Override
-    public void setUuid(String uuid) {
-        oTask.setUuid(uuid);
-    }
-
-    @Override
-    public void setResultRootPath(ResultPath resultDir) {
-        oTask.setResultRootPath(resultDir);
-    }
-
-    @Override
-    public void setTaskRequest(TaskRequest taskRequest) {
-        oTask.setTaskRequest(taskRequest);
-    }
-
-    @Override
-    public void setJob(Job job) {
-        oTask.setJob(job);
+    public void updateStatus(TaskStatus status){
+        TaskStatus oldStatus = oTask.getStatus();
+        if(oldStatus == status){
+            return;
+        }
+        if(!taskStatusMachine.couldTransfer(oldStatus, status)){
+            log.warn("task status changed unexpectedly from {} to {}  of id {} forbidden",oldStatus,status,oTask.getId());
+            return;
+        }
+        oTask.updateStatus(status);
+        log.debug("task status changed from {} to {}  of id {}",oldStatus,status,oTask.getId());
+        watchers.stream().filter(w -> {
+                if (TaskStatusChangeWatcher.APPLIED_WATCHERS.get() == null) {
+                    log.debug("not watchers selected default to all");
+                    return true;
+                }
+                Order annotation = w.getClass().getAnnotation(Order.class);
+                if (null == annotation) {
+                    return false;
+                }
+                return TaskStatusChangeWatcher.APPLIED_WATCHERS.get().contains(annotation.value());
+            }
+        ).forEach(watcher -> watcher.onTaskStatusChange(this, oldStatus));
     }
 
     @Override
@@ -131,9 +125,12 @@ public class WatchableTask extends Task implements TaskWrapper {
         oTask.setAgent(agent);
     }
 
-    @Override
-    public void setTaskType(TaskType taskType) {
-        oTask.setTaskType(taskType);
+    public void setResultRootPath(ResultPath resultRootPath) {
+        oTask.setResultRootPath(resultRootPath);
+    }
+
+    public void setTaskRequest(TaskRequest taskRequest) {
+        oTask.setTaskRequest(taskRequest);
     }
 
     @Override

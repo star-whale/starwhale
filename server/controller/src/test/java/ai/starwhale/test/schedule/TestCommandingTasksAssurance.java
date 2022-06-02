@@ -26,14 +26,14 @@ import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.schedule.CommandingTasksChecker;
+import ai.starwhale.mlops.schedule.CommandingTasksAssurance;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestCommandingTasksChecker {
+public class TestCommandingTasksAssurance {
     final TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
-    final CommandingTasksChecker commandingTasksChecker = new CommandingTasksChecker(taskStatusMachine,
+    final CommandingTasksAssurance commandingTasksAssurance = new CommandingTasksAssurance(taskStatusMachine,
         null);
 
     @Test
@@ -42,17 +42,17 @@ public class TestCommandingTasksChecker {
         List<TaskCommand> taskCommands = List.of(
             new TaskCommand(CommandType.TRIGGER,Task.builder().id(1L).uuid("uu1").build()),
             new TaskCommand(CommandType.TRIGGER,Task.builder().id(2L).uuid("uu2").build()));
-        commandingTasksChecker.onTaskCommanding(taskCommands,new AgentUnModifiable(agent));
-        List<TaskCommand> unproperTasks = commandingTasksChecker.onNodeReporting(
+        commandingTasksAssurance.onTaskCommanding(taskCommands,new AgentUnModifiable(agent));
+        List<TaskCommand> unproperTasks = commandingTasksAssurance.onNodeReporting(
             new AgentUnModifiable(agent), List.of(ReportedTask.from(TaskReport.builder().id(3L).status(
                 TaskStatusInterface.PREPARING).build())));
         Assertions.assertEquals(2,unproperTasks.size());
-        unproperTasks = commandingTasksChecker.onNodeReporting(
+        unproperTasks = commandingTasksAssurance.onNodeReporting(
             new AgentUnModifiable(agent), List.of(
                 ReportedTask.from(TaskReport.builder().id(2L).status(TaskStatusInterface.PREPARING).build()),
             ReportedTask.from(TaskReport.builder().id(4L).status(TaskStatusInterface.RUNNING).build())));
         Assertions.assertEquals(1,unproperTasks.size());
-        unproperTasks = commandingTasksChecker.onNodeReporting(
+        unproperTasks = commandingTasksAssurance.onNodeReporting(
             new AgentUnModifiable(agent), List.of(ReportedTask.from(TaskReport.builder().id(1L).status(
                 TaskStatusInterface.FAIL).build())));
         Assertions.assertEquals(0,unproperTasks.size());

@@ -21,10 +21,12 @@ import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
+import ai.starwhale.mlops.domain.job.step.Step;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.task.TaskType;
+import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
 import ai.starwhale.mlops.domain.task.bo.ppl.PPLRequest;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -35,6 +37,7 @@ import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -69,22 +72,12 @@ public class TaskBoConverter {
         this.resultPathConverter = resultPathConverter;
     }
 
-    /**
-     * heavy opt
-     * @param id id of a task
-     * @return task
-     */
-    public Task fromId(Long id){
-        final TaskEntity entity = taskMapper.findTaskById(id);
-        final JobEntity jobById = jobMapper.findJobById(entity.getJobId());
-        return transformTask(jobBoConverter.fromEntity(jobById),entity);
+
+    public List<Task> fromTaskEntity(List<TaskEntity> entities, Step step){
+        return entities.parallelStream().map(entity -> transformTask(step, entity)).collect(Collectors.toList());
     }
 
-    public List<Task> fromTaskEntity(List<TaskEntity> entities,Job job){
-        return entities.parallelStream().map(entity -> transformTask(job, entity)).collect(Collectors.toList());
-    }
-
-    public Task transformTask(Job job, TaskEntity entity) {
+    public Task transformTask(Step step, TaskEntity entity) {
         try {
             TaskRequest taskRequest;
             TaskType taskType = entity.getTaskType();
@@ -93,7 +86,12 @@ public class TaskBoConverter {
                     taskRequest = new PPLRequest(swdsBlockSerializer.fromString(entity.getTaskRequest())) ;
                     break;
                 case CMP:
-                    taskRequest = new CMPRequest(entity.getTaskRequest()) ;
+                    if(null != entity.getTaskRequest()){
+                        taskRequest = new CMPRequest(entity.getTaskRequest()) ;
+                    }else {
+                        taskRequest = null;
+                    }
+
                     break;
                 case UNKNOWN:
                 default:
@@ -101,10 +99,10 @@ public class TaskBoConverter {
             }
             return Task.builder()
                 .id(entity.getId())
-                .job(job)
+                .step(step)
                 .agent(agentConverter.fromEntity(entity.getAgent()))
                 .status(entity.getTaskStatus())
-                .resultRootPath(resultPathConverter.fromString(entity.getResultPath()))
+                .resultRootPath(new ResultPath(entity.getResultPath()))
                 .uuid(entity.getTaskUuid())
                 .taskRequest(taskRequest)
                 .taskType(taskType)
@@ -125,13 +123,13 @@ public class TaskBoConverter {
             case PPL:
                 return TaskTrigger.builder()
                     .id(t.getId())
-                    .imageId(t.getJob().getJobRuntime().getBaseImage())
+                    .imageId(t.getStep().getJob().getJobRuntime().getBaseImage())
                     .resultPath(t.getResultRootPath())
                     .swdsBlocks(((PPLRequest)t.getTaskRequest()).getSwdsBlocks())
-                    .deviceAmount(t.getJob().getJobRuntime().getDeviceAmount())
-                    .deviceClass(t.getJob().getJobRuntime().getDeviceClass())
+                    .deviceAmount(t.getStep().getJob().getJobRuntime().getDeviceAmount())
+                    .deviceClass(t.getStep().getJob().getJobRuntime().getDeviceClass())
                     .taskType(t.getTaskType())
-                    .swModelPackage(t.getJob().getSwmp()).build();
+                    .swModelPackage(t.getStep().getJob().getSwmp()).build();
             case CMP:
                 return TaskTrigger.builder()
                     .id(t.getId())
@@ -140,8 +138,8 @@ public class TaskBoConverter {
                     .taskType(t.getTaskType())
                     .deviceAmount(1)
                     .deviceClass(Clazz.CPU)
-                    .imageId(t.getJob().getJobRuntime().getBaseImage())
-                    .swModelPackage(t.getJob().getSwmp()).build();
+                    .imageId(t.getStep().getJob().getJobRuntime().getBaseImage())
+                    .swModelPackage(t.getStep().getJob().getSwmp()).build();
             case UNKNOWN:
             default:
                 throw new SWValidationException(ValidSubject.TASK).tip("task type unknown "+t.getTaskType());
@@ -153,11 +151,17 @@ public class TaskBoConverter {
     public List<TaskCommand> toTaskCommand(List<Task> tasks) {
         return tasks.parallelStream()
             .map(this::toTaskCommand)
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
     }
 
     public TaskCommand toTaskCommand(Task task) {
-        return new TaskCommand(TaskCommand.CommandType.from(task.getStatus()), task);
+        CommandType commandType = CommandType.from(task.getStatus());
+        if(commandType == CommandType.UNKNOWN){
+            log.info("task already dispatched id: {} current status: {}",task.getId(),task.getStatus());
+            return null;
+        }
+        return new TaskCommand(commandType, task);
     }
 
 }

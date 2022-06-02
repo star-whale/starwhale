@@ -14,18 +14,40 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.split;
+package ai.starwhale.mlops.domain.job.cache;
 
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import java.util.List;
+import java.util.Collection;
+import java.util.Set;
 
 /**
- * split job to Steps. One job shall not to be split multiple times
+ * holds all the running jobs
  */
-public interface JobSpliterator {
+public interface HotJobHolder {
 
-    List<Step> split(Job job);
+    void adopt(Job job);
+
+    Collection<Job> ofIds(Collection<Long> ids);
+
+    /**
+     *
+     * @param jobStatuses
+     * @return
+     */
+    Collection<Job> ofStatus(Set<JobStatus> jobStatuses);
+
+    /**
+     *
+     * @param taskIds
+     * @return
+     */
+    Collection<Task> tasksOfIds(Collection<Long> taskIds);
+
+    /**
+     * remove job in cache
+     * @param jobId
+     */
+    void remove(Long jobId);
 }

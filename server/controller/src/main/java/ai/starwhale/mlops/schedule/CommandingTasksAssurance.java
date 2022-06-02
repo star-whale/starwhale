@@ -47,13 +47,13 @@ import org.springframework.util.CollectionUtils;
  */
 @Slf4j
 @Service
-public class CommandingTasksChecker implements AgentStatusWatcher {
+public class CommandingTasksAssurance implements AgentStatusWatcher {
 
     final TaskStatusMachine taskStatusMachine;
     final Map<Agent, Set<TaskCommand>> commandingTaskAgentMap;
     final SWTaskScheduler swTaskScheduler;
 
-    public CommandingTasksChecker(
+    public CommandingTasksAssurance(
         TaskStatusMachine taskStatusMachine,
         SWTaskScheduler swTaskScheduler){
         this.taskStatusMachine = taskStatusMachine;
@@ -89,7 +89,7 @@ public class CommandingTasksChecker implements AgentStatusWatcher {
         commandingTasks.forEach(taskCommand -> {
             Long taskId = taskCommand.getTask().getId();
             final ReportedTask rt = reportedTaskMap.get(taskId);
-            final boolean unproperlyExed = null == rt || !taskStatusMachine.couldTransfer(taskCommand.getCommandType().getCorrespondStatus(),rt.getStatus());
+            final boolean unproperlyExed = null == rt;
             if(unproperlyExed){
                 log.warn("unproper task found {}",taskId);
                 unProperTasks.add(taskCommand);
@@ -120,10 +120,10 @@ public class CommandingTasksChecker implements AgentStatusWatcher {
 
     private void reScheduleTasks(Set<TaskCommand> taskCommands) {
         taskCommands.forEach(taskCommand -> {
-            taskCommand.getTask().setStatus(TaskStatus.CREATED);
+            taskCommand.getTask().updateStatus(TaskStatus.READY);
         });
         Map<Clazz, List<Task>> deviceGroup = taskCommands.parallelStream().map(TaskCommand::getTask)
-            .collect(Collectors.groupingBy(task -> task.getJob().getJobRuntime().getDeviceClass()));
+            .collect(Collectors.groupingBy(task -> task.getStep().getJob().getJobRuntime().getDeviceClass()));
         deviceGroup.forEach((deviceClass,tasks)->{
             swTaskScheduler.adoptTasks(tasks,deviceClass);
         });

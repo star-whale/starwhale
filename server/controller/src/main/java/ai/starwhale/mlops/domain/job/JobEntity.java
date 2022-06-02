@@ -74,4 +74,6 @@ public class JobEntity extends BaseEntity {
     private String comment;
 
     private Integer isDeleted;
+
+    private JobType type;
 }

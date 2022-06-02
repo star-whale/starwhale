@@ -20,17 +20,17 @@ import static ai.starwhale.mlops.domain.swds.upload.SWDSVersionWithMetaConverter
 
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.common.util.Blake2bUtil;
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.SWDatasetEntity;
-import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
-import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWAuthException;
@@ -48,7 +48,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -87,8 +86,7 @@ public class SwdsUploader {
 
     final ObjectMapper yamlMapper;
 
-    final LivingTaskCache livingTaskCache;
-
+    final HotJobHolder jobHolder;
     final ProjectManager projectManager;
 
     public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
@@ -96,7 +94,7 @@ public class SwdsUploader {
         StorageAccessService storageAccessService, UserService userService,
         ProjectMapper projectMapper,
         @Qualifier("yamlMapper") ObjectMapper yamlMapper,
-        @Qualifier("cacheWrapperReadOnly") LivingTaskCache livingTaskCache,
+        HotJobHolder jobHolder,
         ProjectManager projectManager) {
         this.hotSwdsHolder = hotSwdsHolder;
         this.swdsMapper = swdsMapper;
@@ -106,7 +104,7 @@ public class SwdsUploader {
         this.userService = userService;
         this.projectMapper = projectMapper;
         this.yamlMapper = yamlMapper;
-        this.livingTaskCache = livingTaskCache;
+        this.jobHolder = jobHolder;
         this.projectManager = projectManager;
     }
 
@@ -269,8 +267,8 @@ public class SwdsUploader {
             //swds version create dup
             if(swDatasetVersionEntity.getStatus() == SWDatasetVersionEntity.STATUS_AVAILABLE){
                 if(uploadRequest.force()){
-                    Set<Long> runningDataSets = livingTaskCache.ofStatus(TaskStatus.RUNNING)
-                        .parallelStream().map(task -> task.getJob().getSwDataSets())
+                    Set<Long> runningDataSets = jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
+                        .parallelStream().map(job -> job.getSwDataSets())
                         .flatMap(Collection::stream)
                         .map(SWDataSet::getId)
                         .collect(Collectors.toSet());

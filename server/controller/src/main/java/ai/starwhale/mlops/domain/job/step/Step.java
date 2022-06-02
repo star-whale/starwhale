@@ -14,18 +14,40 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.split;
+package ai.starwhale.mlops.domain.job.step;
 
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.List;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
 
-/**
- * split job to Steps. One job shall not to be split multiple times
- */
-public interface JobSpliterator {
+@Builder
+@Data
+public class Step {
 
-    List<Step> split(Job job);
+    String name;
+
+    Long id;
+
+    Step nextStep;
+
+    /**
+     * the job where the task is derived from
+     */
+    Job job;
+
+    StepStatus status;
+
+    List<Task> tasks;
+
+    @Override
+    public String toString() {
+        return "Step{" +
+            "name='" + name + '\'' +
+            ", id=" + id +
+            '}';
+    }
 }

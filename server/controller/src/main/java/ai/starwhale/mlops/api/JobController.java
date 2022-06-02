@@ -26,6 +26,7 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.InvokerManager;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.dag.DAGQuerier;
+import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.task.TaskService;
@@ -148,8 +149,8 @@ public class JobController implements JobApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<GraphVO>> getJobDAG(String projectUrl, String jobUrl) {
-        return ResponseEntity.ok(Code.success.asResponse(new GraphVO(dagQuerier.dagOfJob(jobUrl,true))));
+    public ResponseEntity<ResponseMessage<Graph>> getJobDAG(String projectUrl, String jobUrl) {
+        return ResponseEntity.ok(Code.success.asResponse(dagQuerier.dagOfJob(jobUrl,true)));
     }
 
     @Override

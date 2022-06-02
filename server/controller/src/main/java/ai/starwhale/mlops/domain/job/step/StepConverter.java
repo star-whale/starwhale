@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.split;
+package ai.starwhale.mlops.domain.job.step;
 
-import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
-import ai.starwhale.mlops.domain.job.step.Step;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import java.util.List;
+import org.springframework.stereotype.Component;
 
-/**
- * split job to Steps. One job shall not to be split multiple times
- */
-public interface JobSpliterator {
+@Component
+public class StepConverter {
 
-    List<Step> split(Job job);
+    public Step fromEntity(StepEntity entity){
+        return Step.builder()
+            .id(entity.getId())
+            .status(entity.getStatus())
+            .name(entity.getName())
+            .build();
+    }
+
 }

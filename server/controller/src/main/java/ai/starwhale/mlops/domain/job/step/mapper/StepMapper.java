@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.split;
+package ai.starwhale.mlops.domain.job.step.mapper;
 
-import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
-import ai.starwhale.mlops.domain.job.step.Step;
-import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.job.step.StepEntity;
+import ai.starwhale.mlops.domain.job.step.status.StepStatus;
+import java.time.LocalDateTime;
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 
-/**
- * split job to Steps. One job shall not to be split multiple times
- */
-public interface JobSpliterator {
+public interface StepMapper {
 
-    List<Step> split(Job job);
+    void save(@Param("step") StepEntity stepEntity);
+
+    List<StepEntity> findByJobId(@Param("jobId") Long jobId);
+
+    void updateStatus(@Param("stepIds") List<Long> stepIds,@Param("status") StepStatus stepNewStatus);
+
+    void updateFinishedTime(@Param("stepIds")List<Long> stepIds,@Param("finishedTime")  LocalDateTime toLocalDateTime);
 }
