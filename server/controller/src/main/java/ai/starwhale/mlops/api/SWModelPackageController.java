@@ -107,7 +107,7 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> deleteModelById(String projectUrl,String modelUrl) {
+    public ResponseEntity<ResponseMessage<String>> deleteModel(String projectUrl,String modelUrl) {
         Boolean res = swmpService.deleteSWMP(SWMPQuery.builder()
             .projectUrl(projectUrl)
             .swmpUrl(modelUrl)

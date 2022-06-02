@@ -45,16 +45,16 @@ public class SwmpManager {
         }
     }
 
-    public SWMPVersion fromVersionUrl(String runtimeVersionUrl) {
-        if(idConvertor.isID(runtimeVersionUrl)) {
-            return SWMPVersion.builder().id(idConvertor.revert(runtimeVersionUrl)).build();
+    public SWMPVersion fromVersionUrl(String versionUrl) {
+        if(idConvertor.isID(versionUrl)) {
+            return SWMPVersion.builder().id(idConvertor.revert(versionUrl)).build();
         } else {
-            return SWMPVersion.builder().name(runtimeVersionUrl).build();
+            return SWMPVersion.builder().name(versionUrl).build();
         }
     }
 
-    public SWModelPackageEntity findSWMP(String runtimeUrl) {
-        return findSWMP(fromUrl(runtimeUrl));
+    public SWModelPackageEntity findSWMP(String swmpUrl) {
+        return findSWMP(fromUrl(swmpUrl));
     }
 
     public SWModelPackageEntity findSWMP(SWMPObject swmpObject) {
