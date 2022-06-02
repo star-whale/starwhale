@@ -103,7 +103,7 @@ export default function JobTasks() {
         }
 
         return (
-            <>
+            <span style={{ whiteSpace: 'nowrap' }}>
                 {columns
                     .filter((v) => !!v.value)
                     .map((v, k) => {
@@ -121,7 +121,7 @@ export default function JobTasks() {
                             </span>
                         )
                     })}
-            </>
+            </span>
         ) as any
     }, [])
 
