@@ -71,7 +71,7 @@ public class RuntimeController implements RuntimeApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(String projectUrl,
         String runtimeUrl, RuntimeRevertRequest revertRequest) {
-        Boolean res = runtimeService.revertVersionTo(runtimeUrl, revertRequest.getVersionUrl());
+        Boolean res = runtimeService.revertVersionTo(runtimeUrl, revertRequest.getVersion());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert runtime version failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -83,7 +83,10 @@ public class RuntimeController implements RuntimeApi {
     public ResponseEntity<ResponseMessage<String>> deleteRuntime(String projectUrl,
         String runtimeUrl) {
         Boolean res = runtimeService.deleteRuntime(
-            RuntimeQuery.builder().runtimeUrl(runtimeUrl).build());
+            RuntimeQuery.builder()
+                .projectUrl(projectUrl)
+                .runtimeUrl(runtimeUrl)
+                .build());
 
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete runtime failed."),
@@ -109,6 +112,7 @@ public class RuntimeController implements RuntimeApi {
         String runtimeUrl, String runtimeVersionUrl) {
         RuntimeInfoVO runtimeInfo = runtimeService.getRuntimeInfo(
             RuntimeQuery.builder()
+                .projectUrl(projectUrl)
                 .runtimeUrl(runtimeUrl)
                 .runtimeVersionUrl(runtimeVersionUrl)
                 .build());

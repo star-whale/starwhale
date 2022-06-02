@@ -136,7 +136,7 @@ public class RuntimeService {
         }
         if(versionEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                .tip("Unable to find the latest version of runtime " + rt.getId()), HttpStatus.BAD_REQUEST);
+                .tip("Unable to find the latest version of runtime " + rtUrl), HttpStatus.BAD_REQUEST);
         }
 
         return toRuntimeInfoVO(rt, versionEntity);

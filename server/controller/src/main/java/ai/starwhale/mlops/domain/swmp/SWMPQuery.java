@@ -27,13 +27,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SWMPQuery {
 
-    private String swmpId;
+    private String swmpUrl;
 
-    private String swmpName;
+    private String swmpVersionUrl;
 
-    private String projectId;
+    private String projectUrl;
 
-    private String projectName;
+    private String namePrefix;
 
     private String ownerId;
 
