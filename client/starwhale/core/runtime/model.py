@@ -22,6 +22,8 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, get_path_created_time
 from starwhale.base.type import URIType, BundleType, InstanceType
+from starwhale.base.cloud import CloudRequestMixed
+from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
     detect_pip_req,
     create_python_env,
@@ -152,7 +154,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         )
         return move_dir(self.store.recover_loc, dest_path, force)
 
-    def history(self) -> t.List[t.Dict[str, t.Any]]:
+    def history(
+        self,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+
         # TODO: time order
         _r = []
         for _version, _path in self.store.iter_bundle_history():
@@ -164,7 +171,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     size=_path.stat().st_size,
                 )
             )
-        return _r
+        return _r, {}
 
     def build(
         self,
@@ -321,29 +328,18 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         )
 
 
-class CloudRuntime(Runtime):
+class CloudRuntime(CloudRequestMixed, Runtime):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
         self.typ = InstanceType.CLOUD
-        self.store = RuntimeStorage(uri)
-
-    def info(self) -> t.Dict[str, t.Any]:
-        raise NotImplementedError
-
-    def remove(self, force: bool = False) -> t.Tuple[bool, str]:
-        raise NotImplementedError
-
-    def recover(self, force: bool = False) -> t.Tuple[bool, str]:
-        raise NotImplementedError
-
-    def history(self) -> t.List[t.Dict[str, t.Any]]:
-        raise NotImplementedError
 
     @classmethod
+    @ignore_error(({}, {}))
     def list(
         cls,
         project_uri: URI,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
-        raise NotImplementedError
+        crm = CloudRequestMixed()
+        return crm._fetch_bundle_all_list(project_uri, URIType.RUNTIME, page, size)

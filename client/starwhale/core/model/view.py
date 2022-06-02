@@ -5,7 +5,7 @@ from pathlib import Path
 from starwhale.utils import console, in_production
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, EvalTaskType
+from starwhale.base.type import URIType, EvalTaskType, InstanceType
 from starwhale.base.view import BaseTermView
 from starwhale.core.model.store import ModelStorage
 
@@ -32,9 +32,13 @@ class ModelTermView(BaseTermView):
     def info(self, fullname: bool = False) -> None:
         self._print_info(self.model.info(), fullname=fullname)
 
+    @BaseTermView._pager
     @BaseTermView._header
-    def history(self, fullname: bool = False) -> None:
-        self._print_history(
+    def history(
+        self, fullname: bool = False
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        return self._print_history(
             title="Model History List", history=self.model.history(), fullname=fullname
         )
 
@@ -81,6 +85,7 @@ class ModelTermView(BaseTermView):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _models, _pager = Model.list(_uri, page, size)
         BaseTermView._print_list(_models, show_removed, fullname)
         return _models, _pager

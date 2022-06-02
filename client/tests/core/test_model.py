@@ -103,9 +103,9 @@ class StandaloneModelTestCase(TestCase):
         sm = StandaloneModel(model_uri)
         _info = sm.info()
 
-        assert len(_info["history"]) == 1
-        assert _info["history"][0]["name"] == name
-        assert _info["history"][0]["version"] == build_version
+        assert len(_info["history"][0]) == 1
+        assert _info["history"][0][0]["name"] == name
+        assert _info["history"][0][0]["version"] == build_version
 
         _history = sm.history()
         assert _info["history"] == _history

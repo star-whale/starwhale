@@ -15,7 +15,7 @@ def dataset_cmd() -> None:
     pass
 
 
-@dataset_cmd.command("build", help="Build swds with dataset.yaml")
+@dataset_cmd.command("build", help="[Only Standalone]Build swds with dataset.yaml")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option(
@@ -76,7 +76,9 @@ def _history(dataset: str, fullname: bool = False) -> None:
     DatasetTermView(dataset).history(fullname)
 
 
-@dataset_cmd.command("render-fuse", help="Render fuse input.json for local swds")
+@dataset_cmd.command(
+    "render-fuse", help="[Only Standalone]Render fuse input.json for local swds"
+)
 @click.argument("target")
 @click.option(
     "-f",

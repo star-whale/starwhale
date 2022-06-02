@@ -11,7 +11,7 @@ from starwhale.consts import (
     DEFAULT_PYTHON_VERSION,
 )
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType
+from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
 from starwhale.core.runtime.store import RuntimeStorage
 
@@ -34,9 +34,13 @@ class RuntimeTermView(BaseTermView):
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         return self.runtime.recover(force)
 
+    @BaseTermView._pager
     @BaseTermView._header
-    def history(self, fullname: bool = False) -> None:
-        self._print_history(
+    def history(
+        self, fullname: bool = False
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        return self._print_history(
             title="Runtime History", history=self.runtime.history(), fullname=fullname
         )
 
@@ -75,6 +79,7 @@ class RuntimeTermView(BaseTermView):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _runtimes, _pager = Runtime.list(_uri, page, size)
         BaseTermView._print_list(_runtimes, show_removed, fullname)
         return _runtimes, _pager

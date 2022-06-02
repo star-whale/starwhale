@@ -122,23 +122,28 @@ class BaseTermView(SWCliConfigMixed):
     @staticmethod
     def _print_history(
         title: str,
-        history: t.List[t.Dict[str, t.Any]],
+        history: t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]],
         fullname: bool = False,
-    ) -> None:
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         table = Table(title=title, box=box.SIMPLE, expand=True)
         table.add_column("Version", justify="left", style="cyan", no_wrap=True)
         table.add_column("Size")
         table.add_column("Runtime")
         table.add_column("Created")
 
-        for _h in history:
+        for _h in history[0]:
+            _version = _h["version"] if fullname else _h["version"][:SHORT_VERSION_CNT]
+            if _h.get("id"):
+                _version = f"[{_h['id']:2}] {_version}"
+
             table.add_row(
-                _h["version"] if fullname else _h["version"][:SHORT_VERSION_CNT],
+                _version,
                 pretty_bytes(_h["size"]),
                 _h.get("runtime", "--"),
                 _h["created_at"],
             )
         console.print(table)
+        return history
 
     @staticmethod
     def _print_info(_info: t.Dict[str, t.Any], fullname: bool = False) -> None:
@@ -162,7 +167,7 @@ class BaseTermView(SWCliConfigMixed):
         _bundles: t.Dict[str, t.Any], show_removed: bool = False, fullname: bool = False
     ) -> None:
         table = Table(title="Bundle List", box=box.SIMPLE, expand=True)
-        table.add_column("Name", justify="left", style="cyan", no_wrap=True)
+
         table.add_column("Version")
         table.add_column("Size")
         table.add_column("Runtime")
@@ -173,11 +178,17 @@ class BaseTermView(SWCliConfigMixed):
                 if show_removed ^ _v["is_removed"]:
                     continue
 
-                table.add_row(
-                    _name,
+                _version = (
                     _v["version"]
                     if fullname or show_removed
-                    else _v["version"][:SHORT_VERSION_CNT],
+                    else _v["version"][:SHORT_VERSION_CNT]
+                )
+                if _v.get("id"):
+                    _version = f"[{_v['id']:2}] {_version}"
+
+                table.add_row(
+                    _name,
+                    _version,
                     pretty_bytes(_v["size"]),
                     _v.get("runtime", "--"),
                     _v["created_at"],
