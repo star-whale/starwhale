@@ -140,7 +140,7 @@ class BundleCopy(CloudRequestMixed):
             return
 
         # TODO: when controller api support dataset head, remove dataset type check
-        if self.typ != URIType.DATASET and self._is_existed(self.src_uri):
+        if self.typ != URIType.DATASET and not self._is_existed(self.src_uri):
             raise NotFoundError(str(self.src_uri))
 
         console.print(
