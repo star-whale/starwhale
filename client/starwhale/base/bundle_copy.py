@@ -21,7 +21,7 @@ TMP_FILE_BUFSIZE = 8192
 _query_param_map = {
     URIType.DATASET: "swds",
     URIType.MODEL: "swmp",
-    URIType.RUNTIME: "swrt",
+    URIType.RUNTIME: "runtime",
 }
 
 

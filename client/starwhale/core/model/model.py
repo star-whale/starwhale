@@ -24,7 +24,8 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
-from starwhale.base.cloud import CloudRequestMixed
+from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
+from starwhale.utils.http import ignore_error
 from starwhale.utils.load import import_cls
 from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
@@ -198,7 +199,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
 
-    def history(self) -> t.List[t.Dict[str, t.Any]]:
+    def history(
+        self,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+
         _r = []
         for _version, _path in self.store.iter_bundle_history():
             _manifest = ModelStorage.get_manifest_by_path(
@@ -217,7 +223,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     .get("runtime", "--"),
                 )
             )
-        return _r
+        return _r, {}
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove workdir
@@ -375,7 +381,18 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         return self._do_extract(force, target)
 
 
-class CloudModel(Model, CloudRequestMixed):
+class CloudModel(CloudBundleModelMixin, Model):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
         self.typ = InstanceType.CLOUD
+
+    @classmethod
+    @ignore_error(({}, {}))
+    def list(
+        cls,
+        project_uri: URI,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        crm = CloudRequestMixed()
+        return crm._fetch_bundle_all_list(project_uri, URIType.MODEL, page, size)

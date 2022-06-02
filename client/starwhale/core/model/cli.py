@@ -21,7 +21,7 @@ def model_cmd() -> None:
     pass
 
 
-@model_cmd.command("build", help="[ONLY Standalone]Build starwhale model package(swmp)")
+@model_cmd.command("build", help="[ONLY Standalone]Build starwhale model")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option(
@@ -42,7 +42,7 @@ def _copy(src: str, dest: str, force: bool) -> None:
     ModelTermView.copy(src, dest, force)
 
 
-@model_cmd.command("info", help="Inspect model(swmp)")
+@model_cmd.command("info", help="Inspect model")
 @click.argument("model")
 @click.option("--fullname", is_flag=True, help="show version fullname")
 def _info(model: str, fullname: bool) -> None:
@@ -63,11 +63,6 @@ def _list(
     project: str, fullname: bool, show_removed: bool, page: int, size: int
 ) -> None:
     ModelTermView.list(project, fullname, show_removed, page, size)
-
-
-@model_cmd.command("eval", help="Create model(swmp) evaluation")
-def _eval() -> None:
-    pass
 
 
 @model_cmd.command("history", help="Show model history")
@@ -92,7 +87,9 @@ def _recover(model: str, force: bool) -> None:
     ModelTermView(model).recover(force)
 
 
-@model_cmd.command("extract", help="Extract local model bundle tar file into workdir")
+@model_cmd.command(
+    "extract", help="[ONLY Standalone]Extract local model bundle tar file into workdir"
+)
 @click.argument("model")
 @click.option("-f", "--force", is_flag=True, help="force extract model bundle")
 @click.option(
