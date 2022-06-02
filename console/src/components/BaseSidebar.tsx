@@ -92,7 +92,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
             const { icon: Icon } = item
             return {
                 title: (
-                    <div className={styles.siderNavLink} style={{ paddingLeft: ctx.expanded ? 24 : 20 }}>
+                    <div className={styles.siderNavLink} style={{ paddingLeft: ctx.expanded ? 24 : 18 }}>
                         {Icon}
                         {ctx.expanded && <span>{item.title}</span>}
                     </div>

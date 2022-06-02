@@ -11,7 +11,7 @@ import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import User from '@/domain/user/components/User'
 import { simulationJump } from '@/utils'
 import { BsChevronDown } from 'react-icons/bs'
-import { AiOutlineSetting, AiOutlineCloudServer } from 'react-icons/ai'
+import { AiOutlineCloudServer } from 'react-icons/ai'
 import { GrDocker } from 'react-icons/gr'
 import { Link } from 'react-router-dom'
 import IconFont from '../IconFont'
@@ -200,7 +200,7 @@ export default function Header() {
                 <div className={styles.systemWrapper}>
                     <div className={styles.roundWrapper}>
                         <Link to='/settings'>
-                            <AiOutlineSetting size={20} />
+                            <IconFont type='setting2' size={20} />
                         </Link>
                     </div>
                     <div className={styles.systemMenu}>

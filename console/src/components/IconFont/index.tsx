@@ -1,6 +1,7 @@
 import React from 'react'
 
 import projectSvg from '@/assets/fonts/project.svg'
+import settingSvg from '@/assets/fonts/setting.svg'
 
 interface IIconFontProps {
     size?: number
@@ -34,6 +35,7 @@ interface IIconFontProps {
         | 'search'
         | 'tasks'
         | 'add'
+        | 'setting2'
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit' }: IIconFontProps) {
@@ -56,11 +58,9 @@ export default function IconFont({ size = 14, type = 'user', kind = 'inherit' }:
                 fontWeight: 'normal',
             }}
         >
-            {type === 'project' ? (
-                <img src={projectSvg} alt='project' width={20} />
-            ) : (
-                <span className={`iconfont icon-${type}`} />
-            )}
+            {type === 'project' && <img src={projectSvg} alt={type} width={20} />}
+            {type === 'setting2' && <img src={settingSvg} alt={type} width={20} />}
+            {!['project', 'setting2'].includes(type) && <span className={`iconfont icon-${type}`} />}
         </div>
     )
 }

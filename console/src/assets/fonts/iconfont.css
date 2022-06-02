@@ -1,16 +1,68 @@
 @font-face {
   font-family: "iconfont"; /* Project id 3410006 */
-  src: url('./iconfont.woff2?t=1652847054257') format('woff2'),
-       url('./iconfont.woff?t=1652847054257') format('woff'),
-       url('./iconfont.ttf?t=1652847054257') format('truetype');
+  src: url('iconfont.woff2?t=1654143120476') format('woff2'),
+       url('iconfont.woff?t=1654143120476') format('woff'),
+       url('iconfont.ttf?t=1654143120476') format('truetype');
 }
 
 .iconfont {
   font-family: "iconfont" !important;
-  font-size: inherit;
+  font-size: 16px;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-setting2:before {
+  content: "\e61e";
+}
+
+.icon-success:before {
+  content: "\e629";
+}
+
+.icon-line:before {
+  content: "\e623";
+}
+
+.icon-Twitter:before {
+  content: "\e624";
+}
+
+.icon-Facebook:before {
+  content: "\e625";
+}
+
+.icon-Instagram:before {
+  content: "\e626";
+}
+
+.icon-Linkedin:before {
+  content: "\e627";
+}
+
+.icon-Youtub:before {
+  content: "\e628";
+}
+
+.icon-arrow3:before {
+  content: "\e61f";
+}
+
+.icon-email:before {
+  content: "\e620";
+}
+
+.icon-value:before {
+  content: "\e621";
+}
+
+.icon-integrates:before {
+  content: "\e622";
+}
+
+.icon-setting:before {
+  content: "\e61d";
 }
 
 .icon-arrow2_down:before {
