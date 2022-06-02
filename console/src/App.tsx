@@ -19,7 +19,7 @@ export default function App(): any {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const sidebarData = useSidebar()
     // const themeType = useCurrentThemeType()
-    const theme = themes['deep']
+    const theme = themes.deep
 
     return (
         <QueryClientProvider client={queryClient}>
