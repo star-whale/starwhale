@@ -2,6 +2,16 @@ from http import HTTPStatus
 from pathlib import Path
 
 import yaml
+from rich.progress import (
+    TaskID,
+    Progress,
+    BarColumn,
+    TextColumn,
+    SpinnerColumn,
+    TimeElapsedColumn,
+    TotalFileSizeColumn,
+    TransferSpeedColumn,
+)
 
 from starwhale.utils import console
 from starwhale.consts import HTTPMethod, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
@@ -102,9 +112,12 @@ class BundleCopy(CloudRequestMixed):
         else:
             return self._get_target_path(uri).exists()
 
-    def _do_upload_bundle_tar(self) -> None:
+    def _do_upload_bundle_tar(self, progress: Progress) -> None:
         file_path = self._get_target_path(self.src_uri)
-        console.print(f":bowling: upload {file_path}...")
+        task_id = progress.add_task(
+            f":bowling: upload {file_path.name}",
+            total=file_path.stat().st_size,
+        )
 
         self.do_multipart_upload_file(
             url_path=f"/project/{self.typ}/push",
@@ -116,11 +129,13 @@ class BundleCopy(CloudRequestMixed):
                 "force": "1" if self.force else "0",
             },
             use_raise=True,
+            progress=progress,
+            task_id=task_id,
         )
 
-    def _do_download_bundle_tar(self) -> None:
+    def _do_download_bundle_tar(self, progress: Progress) -> None:
         file_path = self._get_target_path(self.dest_uri)
-        console.print(f":bowling: download to {file_path}...")
+        task_id = progress.add_task(f":bowling: download to {file_path}...")
 
         self.do_download_file(
             url_path=f"/project/{self.typ}/pull",
@@ -130,6 +145,8 @@ class BundleCopy(CloudRequestMixed):
                 _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}",
                 "project": self.src_uri.project,
             },
+            progress=progress,
+            task_id=task_id,
         )
 
     def do(self) -> None:
@@ -147,23 +164,39 @@ class BundleCopy(CloudRequestMixed):
             f":construction: start to copy {self.src_uri} -> {self.dest_uri}..."
         )
 
-        if self.src_uri.instance_type == InstanceType.STANDALONE:
-            if self.typ == URIType.DATASET:
-                self._do_upload_bundle_dir()
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeElapsedColumn(),
+            TotalFileSizeColumn(),
+            TransferSpeedColumn(),
+            console=console,
+            refresh_per_second=0.2,
+        ) as progress:
+            if self.src_uri.instance_type == InstanceType.STANDALONE:
+                if self.typ == URIType.DATASET:
+                    self._do_upload_bundle_dir(progress)
+                else:
+                    self._do_upload_bundle_tar(progress)
             else:
-                self._do_upload_bundle_tar()
-        else:
-            if self.typ == URIType.DATASET:
-                self._do_download_bundle_dir()
-            else:
-                self._do_download_bundle_tar()
+                if self.typ == URIType.DATASET:
+                    self._do_download_bundle_dir(progress)
+                else:
+                    self._do_download_bundle_tar(progress)
 
-    def _do_upload_bundle_dir(self) -> None:
+    def _do_upload_bundle_dir(self, progress: Progress) -> None:
         _workdir: Path = self._get_target_path(self.src_uri)
         _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
         _key = _query_param_map[self.typ]
         _name = f"{self.bundle_name}:{self.bundle_version}"
         _url_path = f"/project/{self.typ}/push"
+
+        task_id = progress.add_task(
+            f":arrow_up: {_manifest_path.name}",
+            total=_manifest_path.stat().st_size,
+        )
 
         # TODO: use rich progress
         r = self.do_multipart_upload_file(
@@ -177,8 +210,9 @@ class BundleCopy(CloudRequestMixed):
                 "force": "1" if self.force else "0",
             },
             use_raise=True,
+            progress=progress,
+            task_id=task_id,
         )
-        console.print(f"\t :arrow_up: {DEFAULT_MANIFEST_NAME} :ok:")
         upload_id = r.json().get("data", {}).get("upload_id")
         if not upload_id:
             raise Exception("get invalid upload_id")
@@ -186,7 +220,7 @@ class BundleCopy(CloudRequestMixed):
         _manifest = yaml.safe_load(_manifest_path.open())
 
         # TODO: add retry deco
-        def _upload_blob(_fp: Path) -> None:
+        def _upload_blob(_fp: Path, _tid: TaskID) -> None:
             if not _fp.exists():
                 raise NotFoundError(f"{_fp} not found")
 
@@ -200,16 +234,26 @@ class BundleCopy(CloudRequestMixed):
                 },
                 headers=_headers,
                 use_raise=True,
+                progress=progress,
+                task_id=_tid,
             )
-            console.print(f"\t :arrow_up: {_fp.name} :ok:")
 
         try:
             from starwhale.core.dataset.dataset import ARCHIVE_SWDS_META
 
-            for p in [_workdir / "data" / n for n in _manifest["signature"]] + [
+            _p_map = {}
+            for _p in [_workdir / "data" / n for n in _manifest["signature"]] + [
                 _workdir / ARCHIVE_SWDS_META
             ]:
-                _upload_blob(p)
+                _tid = progress.add_task(
+                    f":arrow_up: {_p.name}",
+                    total=_p.stat().st_size,
+                )
+                _p_map[_tid] = _p
+
+            for _tid, _p in _p_map.items():
+                _upload_blob(_p, _tid)
+
         except Exception as e:
             console.print(
                 f":confused_face: when upload blobs, we meet Exception{e}, will cancel upload"
@@ -228,7 +272,6 @@ class BundleCopy(CloudRequestMixed):
                 disable_default_content_type=True,
             )
         else:
-            console.print(":cow: end upload")
             self.do_http_request(
                 path=_url_path,
                 method=HTTPMethod.POST,
@@ -243,13 +286,12 @@ class BundleCopy(CloudRequestMixed):
                 disable_default_content_type=True,
             )
 
-    def _do_download_bundle_dir(self) -> None:
+    def _do_download_bundle_dir(self, progress: Progress) -> None:
         _workdir = self._get_target_path(self.dest_uri)
-        console.print(f":bowling: download to {_workdir}...")
         ensure_dir(_workdir)
         ensure_dir(_workdir / "data")
 
-        def _download(_target: Path, _part: str) -> None:
+        def _download(_target: Path, _part: str, _tid: TaskID) -> None:
             self.do_download_file(
                 # TODO: use /project/{self.typ}/pull api
                 url_path=f"/project/{self.typ}",
@@ -260,14 +302,23 @@ class BundleCopy(CloudRequestMixed):
                     "version": self.bundle_version,
                     "part_name": _part,
                 },
+                progress=progress,
+                task_id=_tid,
             )
-            console.print(f"\t :arrow_down: {_part} :ok:")
 
         _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
-        _download(_manifest_path, DEFAULT_MANIFEST_NAME)
-        _download(_workdir / ARCHIVE_SWDS_META, ARCHIVE_SWDS_META)
-
+        _tid = progress.add_task(f":arrow_down: {DEFAULT_MANIFEST_NAME}")
+        _download(_manifest_path, DEFAULT_MANIFEST_NAME, _tid)
         _manifest = yaml.safe_load(_manifest_path.open())
+
+        _p_map = {}
         for _k in _manifest.get("signature", {}):
             # TODO: parallel download
-            _download(_workdir / "data" / _k, _k)
+            _tid = progress.add_task(f":arrow_down: {_k}")
+            _p_map[_tid] = {"path": _workdir / "data" / _k, "part": _k}
+
+        _tid = progress.add_task(f":arrow_down: {ARCHIVE_SWDS_META}")
+        _p_map[_tid] = {"path": _workdir / ARCHIVE_SWDS_META, "part": ARCHIVE_SWDS_META}
+
+        for _tid, _info in _p_map.items():
+            _download(_info["path"], _info["part"], _tid)
