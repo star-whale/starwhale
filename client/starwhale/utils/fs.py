@@ -35,6 +35,9 @@ def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> No
 
 
 def empty_dir(p: t.Union[str, Path]) -> None:
+    if not p:
+        return
+
     path = Path(p)
     if not path.exists() or path.resolve() == Path("/"):
         return
