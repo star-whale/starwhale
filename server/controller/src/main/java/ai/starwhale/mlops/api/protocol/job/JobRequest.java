@@ -35,8 +35,8 @@ public class JobRequest implements Serializable {
     private String datasetVersionIds;
 
     @NotNull
-    @JsonProperty("swrtVersionId")
-    private String swrtVersionId;
+    @JsonProperty("runtimeVersionId")
+    private String runtimeVersionId;
 
     @NotNull
     @JsonProperty("deviceId")

@@ -105,7 +105,7 @@ public class JobController implements JobApi{
     public ResponseEntity<ResponseMessage<String>> createJob(String projectUrl,
         JobRequest jobRequest) {
         Long jobId = jobService.createJob(projectManager.getProjectId(projectUrl),
-            idConvertor.revert(jobRequest.getSwrtVersionId()),
+            idConvertor.revert(jobRequest.getRuntimeVersionId()),
             idConvertor.revert(jobRequest.getModelVersionId()),
             Arrays.stream(jobRequest.getDatasetVersionIds().split("[,;]"))
             .map(idConvertor::revert)
