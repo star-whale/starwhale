@@ -119,17 +119,4 @@ public class TaskService {
         return taskConvertor.convert(entity);
     }
 
-    public Boolean addTask(Task task) {
-        String uuid = task.getUuid();
-        if(!StringUtils.hasText(uuid)) {
-            uuid = IdUtil.simpleUUID();
-            task.setUuid(uuid);
-        }
-        TaskEntity entity = TaskEntity.builder()
-            .jobId(task.getJob().getId())
-            .taskUuid(uuid)
-            .taskStatus(task.getStatus())
-            .build();
-        return taskMapper.addTask(entity) > 0;
-    }
 }

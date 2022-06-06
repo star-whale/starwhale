@@ -199,7 +199,7 @@ spec:
             httpGet:
               path: /actuator/health
               port: liveness-port
-            initialDelaySeconds: 5
+            initialDelaySeconds: 50
             periodSeconds: 10
             timeoutSeconds: 90
             successThreshold: 1
@@ -208,6 +208,7 @@ spec:
             httpGet:
               path: /actuator/health
               port: liveness-port
+            initialDelaySeconds: 30
             failureThreshold: 30
             periodSeconds: 1
         - name: taskset

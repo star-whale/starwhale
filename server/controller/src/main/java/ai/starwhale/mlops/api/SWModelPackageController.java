@@ -33,6 +33,7 @@ import ai.starwhale.mlops.domain.swmp.SWMPFile;
 import ai.starwhale.mlops.domain.swmp.SWMPObject;
 import ai.starwhale.mlops.domain.swmp.SWMPQuery;
 import ai.starwhale.mlops.domain.swmp.SWMPVersion;
+import ai.starwhale.mlops.domain.swmp.SWMPVersionQuery;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageService;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -72,7 +73,7 @@ public class SWModelPackageController implements SWModelPackageApi{
     private IDConvertor idConvertor;
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(String projectId, String versionId,
+    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(String projectUrl, String versionId,
         String modelName, Integer pageNum, Integer pageSize) {
         PageInfo<SWModelPackageVO> pageInfo;
         if(StringUtils.hasText(versionId)) {
@@ -83,8 +84,8 @@ public class SWModelPackageController implements SWModelPackageApi{
         } else {
             pageInfo = swmpService.listSWMP(
                 SWMPQuery.builder()
-                    .projectId(projectId)
-                    .swmpName(modelName)
+                    .projectUrl(projectUrl)
+                    .namePrefix(modelName)
                     .build(),
                 PageParams.builder()
                     .pageNum(pageNum)
@@ -95,14 +96,9 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> revertModelVersion(String projectId,String modelId,
+    public ResponseEntity<ResponseMessage<String>> revertModelVersion(String projectUrl, String swmpUrl,
         RevertSWMPVersionRequest revertRequest) {
-        SWMPObject swmp = SWMPObject.builder()
-            .id(idConvertor.revert(modelId))
-            .project(Project.builder().id(idConvertor.revert(projectId)).build())
-            .version(SWMPVersion.builder().id(idConvertor.revert(revertRequest.getVersionId())).build())
-            .build();
-        Boolean res = swmpService.revertVersionTo(swmp);
+        Boolean res = swmpService.revertVersionTo(swmpUrl, revertRequest.getVersion());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert swmp version failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -111,12 +107,11 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> deleteModelById(String projectId,String modelId) {
-        Boolean res = swmpService.deleteSWMP(
-            SWMPObject.builder()
-                .project(Project.builder().id(idConvertor.revert(projectId)).build())
-                .id(idConvertor.revert(modelId))
-                .build());
+    public ResponseEntity<ResponseMessage<String>> deleteModel(String projectUrl,String modelUrl) {
+        Boolean res = swmpService.deleteSWMP(SWMPQuery.builder()
+            .projectUrl(projectUrl)
+            .swmpUrl(modelUrl)
+            .build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete swmp failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -125,32 +120,25 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(String projectId,String modelId, String versionId) {
-        SWMPObject swmp = SWMPObject.builder()
-            .project(Project.builder().id(idConvertor.revert(projectId)).build())
-            .id(idConvertor.revert(modelId)).build();
-        if(Strings.hasText(versionId)) {
-            swmp.setVersion(SWMPVersion.builder().id(idConvertor.revert(versionId)).build());
-        }
+    public ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(String projectUrl, String modelUrl, String versionUrl) {
         SWModelPackageInfoVO swmpInfo = swmpService.getSWMPInfo(
-            SWMPObject.builder()
-                .project(Project.builder().id(idConvertor.revert(projectId)).build())
-                .id(idConvertor.revert(modelId))
-                .build());
+           SWMPQuery.builder()
+               .projectUrl(projectUrl)
+               .swmpUrl(modelUrl)
+               .swmpVersionUrl(versionUrl)
+               .build());
         return ResponseEntity.ok(Code.success.asResponse(swmpInfo));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(String projectId,
-        String modelId, String vName, String tag, Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(String projectUrl,
+        String modelUrl, String vName, String tag, Integer pageNum, Integer pageSize) {
         PageInfo<SWModelPackageVersionVO> pageInfo = swmpService.listSWMPVersionHistory(
-            SWMPObject.builder()
-                .project(Project.builder().id(idConvertor.revert(projectId)).build())
-                .id(idConvertor.revert(modelId))
-                .build(),
-            SWMPVersion.builder()
-                .name(vName)
-                .tag(tag)
+            SWMPVersionQuery.builder()
+                .projectUrl(projectUrl)
+                .swmpUrl(modelUrl)
+                .versionName(vName)
+                .versionTag(tag)
                 .build(),
             PageParams.builder()
                 .pageNum(pageNum)
@@ -159,21 +147,21 @@ public class SWModelPackageController implements SWModelPackageApi{
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> createModelVersion(String projectId, String modelId,
-        MultipartFile zipFile, SWMPVersionRequest request) {
-        User user = userService.currentUserDetail();
-        Long versionId = createVersion(projectId, idConvertor.revert(modelId), zipFile, request.getImportPath(), user.getId());
-        log.info("Create swmp version successfully, id = {}", versionId);
-        return ResponseEntity.ok(Code.success
-            .asResponse("success"));
-    }
+//    @Override
+//    public ResponseEntity<ResponseMessage<String>> createModelVersion(String projectId, String modelId,
+//        MultipartFile zipFile, SWMPVersionRequest request) {
+//        User user = userService.currentUserDetail();
+//        Long versionId = createVersion(projectId, idConvertor.revert(modelId), zipFile, request.getImportPath(), user.getId());
+//        log.info("Create swmp version successfully, id = {}", versionId);
+//        return ResponseEntity.ok(Code.success
+//            .asResponse("success"));
+//    }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> modifyModel(String projectId, String modelId, String versionId,
+    public ResponseEntity<ResponseMessage<String>> modifyModel(String projectUrl, String modelUrl, String versionUrl,
         String tag) {
-        Boolean res = swmpService.modifySWMPVersion(
-            SWMPVersion.builder().id(idConvertor.revert(versionId)).tag(tag).build());
+        Boolean res = swmpService.modifySWMPVersion(modelUrl, versionUrl,
+            SWMPVersion.builder().tag(tag).build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update swmp failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -181,19 +169,19 @@ public class SWModelPackageController implements SWModelPackageApi{
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> createModel(String projectId, MultipartFile zipFile, SWMPRequest swmpRequest) {
-        User user = userService.currentUserDetail();
-        Long modelId = swmpService.addSWMP(
-            SWMPObject.builder()
-                .project(Project.builder().id(idConvertor.revert(projectId)).build())
-                .name(swmpRequest.getModelName())
-                .owner(user)
-                .build());
-        Long versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
-        log.info("Create swmp successfully, version id = {}", versionId);
-        return ResponseEntity.ok(Code.success.asResponse("success"));
-    }
+//    @Override
+//    public ResponseEntity<ResponseMessage<String>> createModel(String projectId, MultipartFile zipFile, SWMPRequest swmpRequest) {
+//        User user = userService.currentUserDetail();
+//        Long modelId = swmpService.addSWMP(
+//            SWMPObject.builder()
+//                .project(Project.builder().id(idConvertor.revert(projectId)).build())
+//                .name(swmpRequest.getModelName())
+//                .owner(user)
+//                .build());
+//        Long versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
+//        log.info("Create swmp successfully, version id = {}", versionId);
+//        return ResponseEntity.ok(Code.success.asResponse("success"));
+//    }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> upload(MultipartFile dsFile,
@@ -210,11 +198,7 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public ResponseEntity<ResponseMessage<List<SWModelPackageInfoVO>>> listModel(String project,
         String name) {
-        List<SWModelPackageInfoVO> swModelPackageInfoVOS = swmpService.listSWMPInfo(
-            SWMPQuery.builder()
-                .projectName(project)
-                .swmpName(name)
-                .build());
+        List<SWModelPackageInfoVO> swModelPackageInfoVOS = swmpService.listSWMPInfo(project, name);
         return ResponseEntity.ok(Code.success.asResponse(swModelPackageInfoVOS));
     }
 
@@ -234,32 +218,32 @@ public class SWModelPackageController implements SWModelPackageApi{
         return ResponseEntity.ok(swmpService.query(queryRequest));
     }
 
-    private Long createVersion(String projectId, Long modelId, MultipartFile zipFile, String importPath, Long userId) {
-        String path = importPath;
-        String meta = "";
-        if (zipFile != null) {
-            // upload file
-            SWMPFile swmpFile = new SWMPFile(projectId, String.valueOf(modelId));
-            String fileName = swmpFile.generateZipFileName();
-            File dest = new File(swmpFile.getZipFilePath(), fileName);
-            try {
-                zipFile.transferTo(dest);
-            } catch (IOException e) {
-                throw new ApiOperationException("Model File upload error.");
-            }
-            path = dest.getPath();
-            meta = swmpFile.meta();
-        }
-        SWMPObject swmp = SWMPObject.builder()
-            .id(modelId)
-            .version(SWMPVersion.builder()
-                .storagePath(path)
-                .meta(meta)
-                .name(RandomUtil.randomHexString(8))
-                .tag("")
-                .ownerId(userId)
-                .build())
-            .build();
-        return swmpService.addVersion(swmp);
-    }
+//    private Long createVersion(String projectId, Long modelId, MultipartFile zipFile, String importPath, Long userId) {
+//        String path = importPath;
+//        String meta = "";
+//        if (zipFile != null) {
+//            // upload file
+//            SWMPFile swmpFile = new SWMPFile(projectId, String.valueOf(modelId));
+//            String fileName = swmpFile.generateZipFileName();
+//            File dest = new File(swmpFile.getZipFilePath(), fileName);
+//            try {
+//                zipFile.transferTo(dest);
+//            } catch (IOException e) {
+//                throw new ApiOperationException("Model File upload error.");
+//            }
+//            path = dest.getPath();
+//            meta = swmpFile.meta();
+//        }
+//        SWMPObject swmp = SWMPObject.builder()
+//            .id(modelId)
+//            .version(SWMPVersion.builder()
+//                .storagePath(path)
+//                .meta(meta)
+//                .name(RandomUtil.randomHexString(8))
+//                .tag("")
+//                .ownerId(userId)
+//                .build())
+//            .build();
+//        return swmpService.addVersion(swmp);
+//    }
 }

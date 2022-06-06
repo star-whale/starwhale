@@ -20,10 +20,9 @@ import static ai.starwhale.mlops.domain.task.status.TaskStatus.ASSIGNING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELED;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELLING;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.FAIL;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.READY;
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.SUCCESS;
 
-import ai.starwhale.mlops.domain.task.TaskWrapper;
-import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -41,45 +40,26 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @Order(1)
-public class TaskWatcherForCache implements TaskStatusChangeWatcher {
+public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
 
     final TaskStatusMachine taskStatusMachine;
 
     final TaskMapper taskMapper;
 
-    final LivingTaskCache taskCache;
-
-    public TaskWatcherForCache(
+    public TaskWatcherForPersist(
         TaskStatusMachine taskStatusMachine,
-        TaskMapper taskMapper, LivingTaskCache taskCache) {
+        TaskMapper taskMapper) {
         this.taskStatusMachine = taskStatusMachine;
         this.taskMapper = taskMapper;
-        this.taskCache = taskCache;
     }
 
     @Override
-    public void onTaskStatusChange(Task task, TaskStatus newStatus) {
-        if(task.getStatus() == newStatus){
-            return;
-        }
-        if(!taskStatusMachine.couldTransfer(task.getStatus(),newStatus)){
-            log.error("task status changed unexpectedly from {} to {} of id {}",task.getStatus(),newStatus,task.getId());
-            return;
-        }
-        if(easyLost(newStatus)){
-            taskMapper.updateTaskStatus(List.of(task.getId()),newStatus);
+    public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
+
+        if(easyLost(task.getStatus())){
+            taskMapper.updateTaskStatus(List.of(task.getId()), task.getStatus());
         }
 
-        if(!taskCache.update(task.getId(),newStatus)){
-            log.warn("task doesn't exists in cache, update it's status directly");
-            if(task instanceof TaskWrapper){
-                TaskWrapper taskWrapper = (TaskWrapper) task;
-                taskWrapper.unwrap().setStatus(ASSIGNING);
-            }else {
-                task.setStatus(ASSIGNING);
-            }
-
-        }
     }
 
     final static Set<TaskStatus> easyLostStatuses = Set.of(SUCCESS, FAIL,

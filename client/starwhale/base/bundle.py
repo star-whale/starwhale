@@ -45,7 +45,11 @@ class BaseBundle(object):
         raise NotImplementedError
 
     @abstractmethod
-    def history(self) -> t.List[t.Dict[str, t.Any]]:
+    def history(
+        self,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         raise NotImplementedError
 
     @classmethod

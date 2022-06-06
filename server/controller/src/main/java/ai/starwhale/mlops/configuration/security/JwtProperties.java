@@ -29,5 +29,5 @@ public class JwtProperties {
     private String issuer = "starWhale";
 
     /* jwt expire time,by minutes */
-    private Integer expireMinutes = 24 * 60;
+    private Long expireMinutes = 24 * 60l;
 }

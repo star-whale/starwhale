@@ -60,36 +60,36 @@ public interface DatasetApi {
         description =
             "Select a historical version of the dataset and revert the latest version of the current dataset to this version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/project/{projectId}/dataset/{datasetId}/revert")
+    @PostMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/revert")
     ResponseEntity<ResponseMessage<String>> revertDatasetVersion(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Dataset id",
+            description = "Dataset Url",
             required = true,
             schema = @Schema())
-        @PathVariable("datasetId")
-            String datasetId,
+        @PathVariable("datasetUrl")
+            String datasetUrl,
         @Valid @RequestBody RevertSWDSRequest revertRequest);
 
     @Operation(summary = "Delete a dataset")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @DeleteMapping(value = "/project/{projectId}/dataset/{datasetId}")
-    ResponseEntity<ResponseMessage<String>> deleteDatasetById(
+    @DeleteMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}")
+    ResponseEntity<ResponseMessage<String>> deleteDataset(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("datasetId")
-            String datasetId);
+        @PathVariable("datasetUrl")
+            String datasetUrl);
 
     @Operation(summary = "Get the information of a dataset",
         description = "Return the information of the latest version of the current dataset")
@@ -103,17 +103,21 @@ public interface DatasetApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = SWDatasetInfoVO.class)))
         })
-    @GetMapping(value = "/project/{projectId}/dataset/{datasetId}")
+    @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}")
     ResponseEntity<ResponseMessage<SWDatasetInfoVO>> getDatasetInfo(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("datasetId")
-            String datasetId);
+        @PathVariable("datasetUrl")
+            String datasetUrl,
+        @Parameter(in = ParameterIn.QUERY, description = "Dataset versionUrl. (Return the current version as default when the versionUrl is not set.)", schema = @Schema())
+        @Valid
+        @RequestParam(value = "versionUrl", required = false)
+        String versionUrl);
 
     @Operation(summary = "Get the list of the dataset versions")
     @ApiResponses(
@@ -126,21 +130,21 @@ public interface DatasetApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = PageInfo.class)))
         })
-    @GetMapping(value = "/project/{projectId}/dataset/{datasetId}/version")
+    @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVO>>> listDatasetVersion(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Dataset ID",
+            description = "Dataset Url",
             required = true,
             schema = @Schema())
-        @PathVariable("datasetId")
-            String datasetId,
+        @PathVariable("datasetUrl")
+            String datasetUrl,
         @Parameter(
             in = ParameterIn.QUERY,
             description = "Dataset version name prefix",
@@ -162,30 +166,30 @@ public interface DatasetApi {
         @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
-    @Operation(summary = "Create a new dataset version",
-        description = "Create a new version of the dataset. "
-            + "The data resources can be selected by uploading the file package or entering the server path.")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(
-        value = "/project/{projectId}/dataset/{datasetId}/version",
-        produces = {"application/json"},
-        consumes = {"multipart/form-data"})
-    ResponseEntity<ResponseMessage<String>> createDatasetVersion(
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Project id",
-            schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Dataset ID",
-            required = true,
-            schema = @Schema())
-        @PathVariable("datasetId")
-            String datasetId,
-        @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
-        SWDSVersionRequest swdsVersionRequest);
+//    @Operation(summary = "Create a new dataset version",
+//        description = "Create a new version of the dataset. "
+//            + "The data resources can be selected by uploading the file package or entering the server path.")
+//    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+//    @PostMapping(
+//        value = "/project/{projectId}/dataset/{datasetId}/version",
+//        produces = {"application/json"},
+//        consumes = {"multipart/form-data"})
+//    ResponseEntity<ResponseMessage<String>> createDatasetVersion(
+//        @Parameter(
+//            in = ParameterIn.PATH,
+//            description = "Project id",
+//            schema = @Schema())
+//        @PathVariable("projectId")
+//            String projectId,
+//        @Parameter(
+//            in = ParameterIn.PATH,
+//            description = "Dataset ID",
+//            required = true,
+//            schema = @Schema())
+//        @PathVariable("datasetId")
+//            String datasetId,
+//        @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
+//        SWDSVersionRequest swdsVersionRequest);
 
     @Operation(summary = "Create a new dataset version",
         description = "Create a new version of the dataset. "
@@ -203,12 +207,12 @@ public interface DatasetApi {
         description = "Pull SWDS files part by part. ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
-        value = "/project/dataset",
+        value = "/project/dataset/pull",
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     byte[] pullDS(
         @Parameter(name = "name", description = "the name of the SWDS attempt to pull", required = true) String name,
         @Parameter(name = "version", description = "the version of the SWDS attempt to pull", required = true) String version,
-        @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified", required = false) @RequestParam(name = "part_name",required = false) String partName);
+        @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified") @RequestParam(name = "part_name",required = false) String partName);
 
     @Operation(summary = "List SWDS versions",
         description = "List SWDS versions. ")
@@ -217,25 +221,25 @@ public interface DatasetApi {
         value = "/project/dataset/list",
         produces = {"application/json"})
     ResponseEntity<ResponseMessage<List<SWDatasetInfoVO>>> listDS(
-        @Parameter(name = "project", description = "the project name", required = false) @RequestParam(name = "project",required = false) String project,
-        @Parameter(name = "name", description = "the name of SWDS", required = false) @RequestParam(name = "name",required = false) String name);
+        @Parameter(name = "project", description = "the project name") @RequestParam(name = "project",required = false) String project,
+        @Parameter(name = "name", description = "the name of SWDS") @RequestParam(name = "name",required = false) String name);
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectId}/dataset/{datasetId}/version/{versionId}")
+    @PutMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}")
     ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("datasetId")
-            String datasetId,
+        @PathVariable("datasetUrl")
+            String datasetUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("versionId")
-            String versionId,
+        @PathVariable("versionUrl")
+            String versionUrl,
         @NotNull
         @Parameter(in = ParameterIn.QUERY, required = true, schema = @Schema())
         @Valid
@@ -253,14 +257,14 @@ public interface DatasetApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = PageInfo.class)))
         })
-    @GetMapping(value = "/project/{projectId}/dataset")
+    @GetMapping(value = "/project/{projectUrl}/dataset")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(
         @Parameter(
             in = ParameterIn.PATH,
-            description = "Project id",
+            description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
+        @PathVariable("projectUrl")
+            String projectUrl,
         @Parameter(in = ParameterIn.QUERY, description = "Dataset versionId", schema = @Schema())
         @Valid
         @RequestParam(value = "versionId", required = false)
@@ -274,25 +278,25 @@ public interface DatasetApi {
         @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
-    @Operation(summary = "Create a new dataset",
-        description = "Create a new data set and create an initial version. "
-            + "The data resources are selected by uploading a file package or entering a server path.")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(
-        value = "/project/{projectId}/dataset",
-        produces = {"application/json"},
-        consumes = {"multipart/form-data"})
-    ResponseEntity<ResponseMessage<String>> createDataset(
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Project id",
-            schema = @Schema())
-        @PathVariable("projectId")
-            String projectId,
-        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
-        @RequestParam(value = "datasetName")
-            String datasetName,
-        @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
-        SWDSRequest swdsRequest);
+//    @Operation(summary = "Create a new dataset",
+//        description = "Create a new data set and create an initial version. "
+//            + "The data resources are selected by uploading a file package or entering a server path.")
+//    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+//    @PostMapping(
+//        value = "/project/{projectId}/dataset",
+//        produces = {"application/json"},
+//        consumes = {"multipart/form-data"})
+//    ResponseEntity<ResponseMessage<String>> createDataset(
+//        @Parameter(
+//            in = ParameterIn.PATH,
+//            description = "Project id",
+//            schema = @Schema())
+//        @PathVariable("projectId")
+//            String projectId,
+//        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
+//        @RequestParam(value = "datasetName")
+//            String datasetName,
+//        @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
+//        SWDSRequest swdsRequest);
 
 }

@@ -34,36 +34,36 @@
         and p.id = s.project_id
     </sql>
 
-    <select id="listSWModelPackagesByQuery" parameterType="ai.starwhale.mlops.domain.swmp.SWMPQuery" resultMap="swmpResultMap">
-        <include refid="select_swmp"/>
-        <if test="query.projectId != null and query.projectId != ''">
-            and s.project_id = #{query.projectId}
-        </if>
-        <if test="query.projectName != null and query.projectName != ''">
-            and p.project_name like concat(#{query.projectName}, '%')
-        </if>
-        <if test="query.swmpId != null and query.swmpId != ''">
-            and s.id = #{query.swmpId}
-        </if>
-        <if test="query.swmpName != null and query.swmpName != ''">
-            and s.swmp_name like concat(#{query.swmpName}, '%')
-        </if>
-        <if test="query.ownerId != null and query.ownerId != ''">
-            and s.owner_id = #{query.ownerId}
-        </if>
-        <if test="query.ownerName != null and query.ownerName != ''">
-            and u.user_name like concat(#{query.ownerName}, '%')
-        </if>
-    </select>
-
-<!--    <select id="listSWModelPackages" resultMap="swmpResultMap">-->
+<!--    <select id="listSWModelPackagesByQuery" parameterType="ai.starwhale.mlops.domain.swmp.SWMPQuery" resultMap="swmpResultMap">-->
 <!--        <include refid="select_swmp"/>-->
-<!--        and project_id = #{projectId}-->
-<!--        <if test="namePrefix != null and namePrefix != ''">-->
-<!--            and s.swmp_name like concat(#{namePrefix}, '%')-->
+<!--        <if test="query.projectId != null and query.projectId != ''">-->
+<!--            and s.project_id = #{query.projectId}-->
 <!--        </if>-->
-<!--        order by s.id desc-->
+<!--        <if test="query.projectName != null and query.projectName != ''">-->
+<!--            and p.project_name like concat(#{query.projectName}, '%')-->
+<!--        </if>-->
+<!--        <if test="query.swmpId != null and query.swmpId != ''">-->
+<!--            and s.id = #{query.swmpId}-->
+<!--        </if>-->
+<!--        <if test="query.swmpName != null and query.swmpName != ''">-->
+<!--            and s.swmp_name like concat(#{query.swmpName}, '%')-->
+<!--        </if>-->
+<!--        <if test="query.ownerId != null and query.ownerId != ''">-->
+<!--            and s.owner_id = #{query.ownerId}-->
+<!--        </if>-->
+<!--        <if test="query.ownerName != null and query.ownerName != ''">-->
+<!--            and u.user_name like concat(#{query.ownerName}, '%')-->
+<!--        </if>-->
 <!--    </select>-->
+
+    <select id="listSWModelPackages" resultMap="swmpResultMap">
+        <include refid="select_swmp"/>
+        and project_id = #{projectId}
+        <if test="namePrefix != null and namePrefix != ''">
+            and s.swmp_name like concat(#{namePrefix}, '%')
+        </if>
+        order by s.id desc
+    </select>
 
     <select id="findSWModelPackageById" resultMap="swmpResultMap" >
         <include refid="select_swmp"/>

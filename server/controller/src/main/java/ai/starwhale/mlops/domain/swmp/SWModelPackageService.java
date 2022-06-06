@@ -24,15 +24,15 @@ import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.runtime.RuntimeEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWAuthException;
@@ -43,22 +43,24 @@ import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.storage.LargeFileInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -96,26 +98,42 @@ public class SWModelPackageService {
     private ProjectManager projectManager;
 
     @Resource
-    @Qualifier("cacheWrapperReadOnly")
-    private LivingTaskCache livingTaskCache;
+    private HotJobHolder jobHolder;
+
+    @Resource
+    private SwmpManager swmpManager;
 
 
     public PageInfo<SWModelPackageVO> listSWMP(SWMPQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackagesByQuery(query);
-            //idConvertor.revert(swmp.getProject().getId()), swmp.getName());
+        Long projectId = projectManager.getProjectId(query.getProjectUrl());
+        List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackages(projectId, query.getNamePrefix());
         return PageUtil.toPageInfo(entities, swmpConvertor::convert);
     }
 
-    public Boolean deleteSWMP(SWMPObject swmp) {
-        Long id = swmp.getId();
+    public Boolean deleteSWMP(SWMPQuery query) {
+        Long id = swmpManager.getSWMPId(query.getSwmpUrl());
         int res = swmpMapper.deleteSWModelPackage(id);
         log.info("SWMP has been deleted. ID={}", id);
         return res > 0;
     }
 
-    public List<SWModelPackageInfoVO> listSWMPInfo(SWMPQuery query) {
-        List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackagesByQuery(query);
+    public List<SWModelPackageInfoVO> listSWMPInfo(String project, String name) {
+
+        if(StringUtils.hasText(name)){
+            SWModelPackageEntity swmp = swmpMapper.findByName(name);
+            if(swmp == null) {
+                throw new SWValidationException(ValidSubject.SWMP)
+                    .tip("Unable to find the swmp with name " + name);
+            }
+            return listSWMPInfoOfModel(swmp);
+        }
+
+        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project);
+        List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackages(projectEntity.getId(), null);
+        if(entities == null || entities.isEmpty()) {
+            return List.of();
+        }
 
         return entities.parallelStream()
             .map(this::listSWMPInfoOfModel)
@@ -134,56 +152,29 @@ public class SWModelPackageService {
             .collect(Collectors.toList());
     }
 
-    public SWModelPackageInfoVO getSWMPInfo(SWMPObject swmp) {
-        Long modelID = swmp.getId();
-        SWModelPackageEntity model = swmpMapper.findSWModelPackageById(modelID);
+    public SWModelPackageInfoVO getSWMPInfo(SWMPQuery query) {
+        SWModelPackageEntity model = swmpManager.findSWMP(query.getSwmpUrl());
         if (model == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip("Unable to find swmp " + modelID), HttpStatus.BAD_REQUEST);
+                .tip("Unable to find swmp " + query.getSwmpUrl()), HttpStatus.BAD_REQUEST);
         }
-        String swmpName = swmp.getName();
 
-        SWModelPackageVersionEntity versionEntity;
-        if(swmp.getVersion() != null) {
+        SWModelPackageVersionEntity versionEntity = null;
+        if(!StrUtil.isEmpty(query.getSwmpVersionUrl())) {
             // find version by versionId
-            Long versionId = swmp.getVersion().getId();
+            Long versionId = swmpManager.getSWMPVersionId(query.getSwmpVersionUrl(), model.getId());
             versionEntity = swmpVersionMapper.findVersionById(versionId);
-            if(versionEntity == null) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                    .tip("Unable to find the version of id " + versionId), HttpStatus.BAD_REQUEST);
-            }
-        } else {
+        }
+        if(versionEntity == null) {
             // find current version
-            versionEntity = swmpVersionMapper.getLatestVersion(modelID);
-            if(versionEntity == null) {
-                log.error("Unable to find the latest version of swmp {}", modelID);
-                SWModelPackageInfoVO vo = SWModelPackageInfoVO.empty();
-                vo.setSwmpName(swmpName);
-                return vo;
-//                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-//                    .tip("Unable to find the latest version of swmp " + modelID), HttpStatus.BAD_REQUEST);
-            }
+            versionEntity = swmpVersionMapper.getLatestVersion(model.getId());
+        }
+        if(versionEntity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                .tip("Unable to find the version of swmp " + query.getSwmpUrl()), HttpStatus.BAD_REQUEST);
         }
 
-        //Get file list in storage
-        try {
-            String storagePath = versionEntity.getStoragePath();
-            List<StorageFileVO> collect = storageService.listStorageFile(storagePath);
-
-            return SWModelPackageInfoVO.builder()
-                .swmpName(swmpName)
-                .versionName(versionEntity.getVersionName())
-                .versionTag(versionEntity.getVersionTag())
-                .versionMeta(versionEntity.getVersionMeta())
-                .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))
-                .files(collect)
-                .build();
-
-        } catch (IOException e) {
-            log.error("list swmp storage", e);
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE)
-                .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return toSWModelPackageInfoVO(model, versionEntity);
     }
 
     private SWModelPackageInfoVO toSWModelPackageInfoVO(SWModelPackageEntity model,
@@ -210,28 +201,31 @@ public class SWModelPackageService {
         }
     }
 
-    public Boolean modifySWMPVersion(SWMPVersion version) {
+    public Boolean modifySWMPVersion(String swmpUrl, String versionUrl, SWMPVersion version) {
+        Long swmpId = swmpManager.getSWMPId(swmpUrl);
+        Long versionId = swmpManager.getSWMPVersionId(versionUrl, swmpId);
         SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
-            .id(version.getId())
+            .id(versionId)
             .versionTag(version.getTag())
-            .storagePath(version.getStoragePath())
             .build();
         int update = swmpVersionMapper.update(entity);
         log.info("SWMPVersion has been modified. ID={}", version.getId());
         return update > 0;
     }
 
-    public Boolean revertVersionTo(SWMPObject swmp) {
-        Long vid = swmp.getVersion().getId();
-        int res = swmpVersionMapper.revertTo(vid);
+    public Boolean revertVersionTo(String swmpUrl, String versionUrl) {
+        Long id = swmpManager.getSWMPId(swmpUrl);
+        Long vid = swmpManager.getSWMPVersionId(versionUrl, id);
+        int res = swmpVersionMapper.revertTo(id, vid);
         log.info("SWMP Version has been revert to {}", vid);
         return res > 0;
     }
 
-    public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPObject swmp, SWMPVersion version, PageParams pageParams) {
+    public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPVersionQuery query, PageParams pageParams) {
+        Long swmpId = swmpManager.getSWMPId(query.getSwmpUrl());
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWModelPackageVersionEntity> entities = swmpVersionMapper.listVersions(
-            swmp.getId(), version.getName(), version.getTag());
+            swmpId, query.getVersionName(), query.getVersionTag());
         return PageUtil.toPageInfo(entities, versionConvertor::convert);
     }
 
@@ -311,8 +305,7 @@ public class SWModelPackageService {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip("swmp version duplicate"+uploadRequest.version()),
                 HttpStatus.BAD_REQUEST);
         }else if(entityExists && uploadRequest.force()){
-            livingTaskCache.ofStatus(TaskStatus.RUNNING).parallelStream()
-                .map(Task::getJob).collect(Collectors.toSet())
+            jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
                 .parallelStream().forEach(job -> {
                     SWModelPackage swmp = job.getSwmp();
                     if(swmp.getName().equals(uploadRequest.name()) && swmp.getVersion().equals(uploadRequest.version())){
@@ -356,7 +349,7 @@ public class SWModelPackageService {
         if(null == currentUserDetail){
             throw new SWAuthException(SWAuthException.AuthType.SWMP_UPLOAD);
         }
-        return Long.valueOf(currentUserDetail.getIdTableKey());
+        return currentUserDetail.getIdTableKey();
     }
 
     public void pull(ClientSWMPRequest pullRequest, HttpServletResponse httpResponse) {

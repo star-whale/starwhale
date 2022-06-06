@@ -27,13 +27,14 @@ import org.springframework.stereotype.Component;
 public class TaskStatusMachine {
 
     final static Map<TaskStatus, Set<TaskStatus>> transferMap = Map.ofEntries(
-        new SimpleEntry<>(CREATED, Set.of(ASSIGNING,PAUSED,PREPARING,RUNNING,SUCCESS,FAIL,CANCELED))
-        , new SimpleEntry<>(PAUSED, Set.of(CREATED,CANCELED,SUCCESS))
+        new SimpleEntry<>(CREATED, Set.of(ASSIGNING,READY,PREPARING,RUNNING,SUCCESS,FAIL,CANCELED))
+        , new SimpleEntry<>(READY, Set.of(ASSIGNING,PAUSED,PREPARING,RUNNING,SUCCESS,FAIL,CANCELED))
+        , new SimpleEntry<>(PAUSED, Set.of(PREPARING,ASSIGNING,RUNNING,READY,CANCELED,SUCCESS))
         , new SimpleEntry<>(ASSIGNING, Set.of(CREATED,PREPARING,RUNNING,SUCCESS,FAIL,TO_CANCEL))
         , new SimpleEntry<>(PREPARING, Set.of(RUNNING,SUCCESS,FAIL,TO_CANCEL))
         , new SimpleEntry<>(RUNNING, Set.of(SUCCESS,FAIL,TO_CANCEL))
         , new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING,CANCELED,SUCCESS,FAIL))
-        , new SimpleEntry<>(CANCELLING, Set.of(CANCELLING,CANCELED,FAIL))
+        , new SimpleEntry<>(CANCELLING, Set.of(CANCELED,FAIL))
         , new SimpleEntry<>(CANCELED, Set.of())
         , new SimpleEntry<>(SUCCESS, Set.of())
         , new SimpleEntry<>(FAIL, Set.of())

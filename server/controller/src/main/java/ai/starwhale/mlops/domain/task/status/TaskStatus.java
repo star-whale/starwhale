@@ -22,9 +22,14 @@ package ai.starwhale.mlops.domain.task.status;
 public enum TaskStatus {
 
     /**
-     * after created before assigned to an Agent. Ready to be scheduled
+     * before ready to be scheduled
      */
     CREATED,
+
+    /**
+     * ready to be scheduled
+     */
+    READY,
 
     /**
      * after created before assigned to an Agent. Ready to be scheduled

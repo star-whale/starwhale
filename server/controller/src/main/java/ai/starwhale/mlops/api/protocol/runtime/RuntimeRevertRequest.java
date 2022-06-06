@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.runtime;
 
+import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -25,11 +26,16 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class RuntimeRevertRequest {
 
-    @NotNull
     @JsonProperty("versionId")
     private String versionId;
 
-    @NotNull
     @JsonProperty("versionUrl")
     private String versionUrl;
+
+    public String getVersion() {
+        if(StrUtil.isEmpty(versionUrl)) {
+            return versionId;
+        }
+        return  versionUrl;
+    }
 }

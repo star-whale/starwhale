@@ -32,6 +32,7 @@ import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
@@ -66,10 +67,14 @@ public class SWDatasetService {
     @Resource
     private ProjectManager projectManager;
 
-    public PageInfo<DatasetVO> listSWDataset(SWDSObject swds, PageParams pageParams) {
+    @Resource
+    private SwdsManager swdsManager;
+
+    public PageInfo<DatasetVO> listSWDataset(SWDSQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<SWDatasetEntity> entities = swdsMapper.listDatasets(
-            swds.getProjectId(), swds.getName());
+        Long projectId = projectManager.getProjectId(query.getProjectUrl());
+        List<SWDatasetEntity> entities = swdsMapper.listDatasets(projectId,
+            query.getNamePrefix());
 
         return PageUtil.toPageInfo(entities, ds -> {
             SWDatasetVersionEntity version = swdsVersionMapper.getLatestVersion(ds.getId());
@@ -79,25 +84,31 @@ public class SWDatasetService {
         });
     }
 
-    public Boolean deleteSWDS(SWDSObject swds) {
-        Long id = swds.getId();
+    public Boolean deleteSWDS(SWDSQuery query) {
+        Long id = swdsManager.getSWDSId(query.getSwdsUrl());
         int res = swdsMapper.deleteDataset(id);
-        log.info("SWDS has been deleted. ID={}", swds.getId());
+        log.info("SWDS has been deleted. ID={}", id);
         return res > 0;
     }
 
-    public SWDatasetInfoVO getSWDSInfo(SWDSObject swds) {
-        Long dsID = swds.getId();
-        SWDatasetEntity ds = swdsMapper.findDatasetById(dsID);
+    public SWDatasetInfoVO getSWDSInfo(SWDSQuery query) {
+        SWDatasetEntity ds = swdsManager.findSWDS(query.getSwdsUrl());
         if(ds == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                .tip("Unable to find swds " + dsID), HttpStatus.BAD_REQUEST);
+                .tip("Unable to find swds " + query.getSwdsUrl()), HttpStatus.BAD_REQUEST);
         }
 
-        SWDatasetVersionEntity versionEntity = swdsVersionMapper.getLatestVersion(dsID);
+        SWDatasetVersionEntity versionEntity = null;
+        if(!StrUtil.isEmpty(query.getSwdsVersionUrl())) {
+            Long versionId = swdsManager.getSWDSVersionId(query.getSwdsVersionUrl(), ds.getId());
+            versionEntity = swdsVersionMapper.getVersionById(versionId);
+        }
+        if(versionEntity == null) {
+            versionEntity = swdsVersionMapper.getLatestVersion(ds.getId());
+        }
         if(versionEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                .tip("Unable to find the latest version of swds " + ds.getId()), HttpStatus.BAD_REQUEST);
+                .tip("Unable to find the latest version of swds " + query.getSwdsUrl()), HttpStatus.BAD_REQUEST);
         }
         return toSWDatasetInfoVO(ds, versionEntity);
 
@@ -126,9 +137,11 @@ public class SWDatasetService {
     }
 
 
-    public Boolean modifySWDSVersion(SWDSVersion version) {
+    public Boolean modifySWDSVersion(String swdsUrl, String versionUrl, SWDSVersion version) {
+        Long swdsId = swdsManager.getSWDSId(swdsUrl);
+        Long versionId = swdsManager.getSWDSVersionId(versionUrl, swdsId);
         SWDatasetVersionEntity entity = SWDatasetVersionEntity.builder()
-            .id(version.getId())
+            .id(versionId)
             .versionTag(version.getTag())
             .build();
         int update = swdsVersionMapper.update(entity);
@@ -136,18 +149,19 @@ public class SWDatasetService {
         return update > 0;
     }
 
-    public Boolean revertVersionTo(SWDSObject swds) {
-        Long swdsId = swds.getId();
-        Long revertTo = swds.getCurrentVersion().getId();
-        int res = swdsVersionMapper.revertTo(swdsId, revertTo);
-        log.info("SWDS Version {} has been revert to {}", swdsId, revertTo);
+    public Boolean revertVersionTo(String swdsUrl, String versionUrl) {
+        Long id = swdsManager.getSWDSId(swdsUrl);
+        Long vid = swdsManager.getSWDSVersionId(versionUrl, id);
+        int res = swdsVersionMapper.revertTo(id, vid);
+        log.info("SWDS Version has been revert to {}" , vid);
         return res > 0;
     }
 
-    public PageInfo<DatasetVersionVO> listDatasetVersionHistory(SWDSObject swds, SWDSVersion version, PageParams pageParams) {
+    public PageInfo<DatasetVersionVO> listDatasetVersionHistory(SWDSVersionQuery query, PageParams pageParams) {
+        Long swdsId = swdsManager.getSWDSId(query.getSwdsUrl());
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWDatasetVersionEntity> entities = swdsVersionMapper.listVersions(
-            swds.getId(), version.getName(), version.getTag());
+            swdsId, query.getVersionName(), query.getVersionTag());
         return PageUtil.toPageInfo(entities, versionConvertor::convert);
     }
 

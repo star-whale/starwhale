@@ -38,7 +38,8 @@ from starwhale.utils.fs import (
     BLAKE2B_SIGNATURE_ALGO,
 )
 from starwhale.base.type import URIType, BundleType, InstanceType
-from starwhale.base.cloud import CloudRequestMixed
+from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
+from starwhale.utils.http import ignore_error
 from starwhale.utils.load import import_cls
 from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
@@ -140,7 +141,11 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         console.print(f":mag: {_f}")
         return str(_f.resolve())
 
-    def history(self) -> t.List[t.Dict[str, t.Any]]:
+    def history(
+        self,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _r = []
 
         for _version, _dir in self.store.iter_bundle_history():
@@ -156,7 +161,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 )
             )
 
-        return _r
+        return _r, {}
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove by tag
@@ -363,7 +368,18 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         return _config
 
 
-class CloudDataset(Dataset, CloudRequestMixed):
+class CloudDataset(CloudBundleModelMixin, Dataset):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
         self.typ = InstanceType.CLOUD
+
+    @classmethod
+    @ignore_error(({}, {}))
+    def list(
+        cls,
+        project_uri: URI,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        crm = CloudRequestMixed()
+        return crm._fetch_bundle_all_list(project_uri, URIType.DATASET, page, size)

@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.swds;
 
+import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -24,7 +25,16 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 public class RevertSWDSRequest {
-    @NotNull
     @JsonProperty("versionId")
     private String versionId;
+
+    @JsonProperty("versionUrl")
+    private String versionUrl;
+
+    public String getVersion() {
+        if(StrUtil.isEmpty(versionUrl)) {
+            return versionId;
+        }
+        return  versionUrl;
+    }
 }

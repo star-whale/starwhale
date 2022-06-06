@@ -5,7 +5,7 @@ from pathlib import Path
 from starwhale.utils import console
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType
+from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
 from starwhale.core.dataset.store import DatasetStorage
 
@@ -28,9 +28,13 @@ class DatasetTermView(BaseTermView):
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
         return self.dataset.recover(force)
 
+    @BaseTermView._pager
     @BaseTermView._header
-    def history(self, fullname: bool = False) -> None:
-        self._print_history(
+    def history(
+        self, fullname: bool = False
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        fullname = fullname or self.uri.instance_type == InstanceType.CLOUD
+        return self._print_history(
             title="Dataset History List",
             history=self.dataset.history(),
             fullname=fullname,
@@ -52,6 +56,7 @@ class DatasetTermView(BaseTermView):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
+        fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _datasets, _pager = Dataset.list(_uri, page, size)
         BaseTermView._print_list(_datasets, show_removed, fullname)
         return _datasets, _pager

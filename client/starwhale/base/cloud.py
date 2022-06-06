@@ -7,9 +7,15 @@ from datetime import datetime, timedelta
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder  # type: ignore
 
-from starwhale.consts import HTTPMethod, FMT_DATETIME, SW_API_VERSION
+from starwhale.consts import (
+    HTTPMethod,
+    FMT_DATETIME,
+    SW_API_VERSION,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+)
 from starwhale.base.uri import URI
-from starwhale.utils.http import wrap_sw_error_resp
+from starwhale.utils.http import ignore_error, wrap_sw_error_resp
 
 _TMP_FILE_BUFSIZE = 8192
 _DEFAULT_TIMEOUT_SECS = 90
@@ -137,4 +143,131 @@ class CloudRequestMixed(object):
             total=_d["total"],
             current=_d["size"],
             remain=_d["total"] - _d["size"],
+        )
+
+    def _fetch_bundle_info(self, uri: URI, typ: str) -> t.Dict[str, t.Any]:
+        _manifest: t.Dict[str, t.Any] = {
+            "uri": uri.full_uri,
+            "project": uri.project,
+            "name": uri.object.name,
+        }
+
+        if uri.object.version:
+            # TODO: add manifest info by controller api
+            _manifest["version"] = uri.object.version
+            _info = self._fetch_bundle_version_info(uri, typ)
+            _manifest["created_at"] = self.fmt_timestamp(_info["createdTime"])
+            _manifest["size"] = _info["files"][0]["size"]
+        else:
+            _manifest["history"] = self._fetch_bundle_history(
+                name=uri.object.name,
+                project_uri=uri,
+                typ=typ,
+            )[0]
+        return _manifest
+
+    def _fetch_bundle_version_info(self, uri: URI, typ: str) -> t.Dict[str, t.Any]:
+        r = self.do_http_request(
+            f"/project/{uri.project}/{typ}/{uri.object.name}",
+            method=HTTPMethod.GET,
+            params={"versionName": uri.object.version},
+        ).json()
+        return r["data"]
+
+    def _fetch_bundle_history(
+        self,
+        name: str,
+        project_uri: URI,
+        typ: str,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        r = self.do_http_request(
+            f"/project/{project_uri.project}/{typ}/{name}/version",
+            method=HTTPMethod.GET,
+            params={"pageNum": page, "pageSize": size},
+        ).json()
+
+        _history = []
+        for _h in r["data"]["list"]:
+            # TODO: add manifest
+            _history.append(
+                {
+                    "id": _h["id"],
+                    "name": name,
+                    "version": _h["name"],
+                    "size": _h.get("size", 0),
+                    "created_at": self.fmt_timestamp(_h["createdTime"]),
+                    "is_removed": _h.get("is_removed", False),
+                }
+            )
+
+        return _history, self.parse_pager(r)
+
+    def _fetch_bundle_all_list(
+        self,
+        project_uri: URI,
+        uri_typ: str,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+        r = self.do_http_request(
+            f"/project/{project_uri.project}/{uri_typ}",
+            params={"pageNum": page, "pageSize": size},
+            instance_uri=project_uri,
+        ).json()
+
+        objects = {}
+
+        for o in r["data"]["list"]:
+            _name = f"[{o['id']}] {o['name']}"
+            objects[_name] = self._fetch_bundle_history(
+                name=o["id"],
+                project_uri=project_uri,
+                typ=uri_typ,
+                page=page,
+                size=size,
+            )[0]
+
+        return objects, self.parse_pager(r)
+
+
+class CloudBundleModelMixin(CloudRequestMixed):
+    def info(self) -> t.Dict[str, t.Any]:
+        uri: URI = self.uri  # type: ignore
+        return self._fetch_bundle_info(uri, uri.object.typ)
+
+    @ignore_error(({}, {}))
+    def history(
+        self,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        uri: URI = self.uri  # type: ignore
+        return self._fetch_bundle_history(
+            name=uri.object.name,
+            project_uri=uri,
+            typ=uri.object.typ,
+            page=page,
+            size=size,
+        )
+
+    def remove(self, force: bool = False) -> t.Tuple[bool, str]:
+        # TODO: remove specific version
+        # TODO: add force flag
+        uri: URI = self.uri  # type: ignore
+        return self.do_http_request_simple_ret(
+            f"/project/{uri.project}/{uri.object.typ}/{uri.object.name}",
+            method=HTTPMethod.DELETE,
+            instance_uri=uri,
+        )
+
+    def recover(self, force: bool = False) -> t.Tuple[bool, str]:
+        # TODO: recover specific version
+        # TODO: add force flag
+        uri: URI = self.uri  # type: ignore
+        return self.do_http_request_simple_ret(
+            f"/project/{uri.project}/{uri.object.typ}/{uri.object.name}/recover",
+            method=HTTPMethod.PUT,
+            instance_uri=uri,
         )

@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.step.Step;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
@@ -38,6 +40,8 @@ public class Job {
     Long id;
 
     String uuid;
+
+    Step currentStep;
 
     /**
      * the SWDSs to run on
@@ -59,21 +63,14 @@ public class Job {
      */
     JobStatus status;
 
+    JobType type;
+
     /**
      * evaluation metrics holding dir
      */
     String resultDir;
 
-    public Job deepCopy(){
-        return Job.builder()
-            .id(this.id)
-            .uuid(this.uuid)
-            .jobRuntime(this.jobRuntime.copy())
-            .swDataSets(List.copyOf(this.swDataSets))
-            .status(this.status)
-            .swmp(this.swmp.copy())
-            .build();
-    }
+    List<Step> steps;
 
     @Override
     public boolean equals(Object o) {
@@ -90,5 +87,13 @@ public class Job {
     @Override
     public int hashCode() {
         return Objects.hash(uuid);
+    }
+
+    @Override
+    public String toString() {
+        return "Job{" +
+            "id=" + id +
+            ", uuid='" + uuid + '\'' +
+            '}';
     }
 }

@@ -87,9 +87,9 @@ class StandaloneDatasetTestCase(TestCase):
         dataset_uri = URI(name, expected_type=URIType.DATASET)
         sd = StandaloneDataset(dataset_uri)
         _info = sd.info()
-        assert len(_info["history"]) == 1
-        assert _info["history"][0]["name"] == name
-        assert _info["history"][0]["version"] == build_version
+        assert len(_info["history"][0]) == 1
+        assert _info["history"][0][0]["name"] == name
+        assert _info["history"][0][0]["version"] == build_version
 
         _history = sd.history()
         assert _info["history"] == _history

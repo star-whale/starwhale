@@ -26,9 +26,6 @@ public class TestGraph {
 
     @Test
     public void testEmptyGraph(){
-        Graph graph = Graph.emptyInstance();
-        GraphNode lastNodeOf = graph.findLastNodeOf("", NodeType.TASK_PPL, 1L);
-        Assertions.assertTrue(lastNodeOf.empty());
     }
 
 }

@@ -50,7 +50,8 @@ public class SWProcessException extends StarWhaleException {
     public enum ErrorType{
         STORAGE("001","STORAGE"),
         DB("002","DB"),
-        NETWORK("003","NETWORK");
+        NETWORK("003","NETWORK"),
+        SYSTEM("004","SYSTEM");
         final String code;
         final String tipSubject;
         ErrorType(String code,String tipSubject){

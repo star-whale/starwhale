@@ -26,12 +26,17 @@ public enum JobStatus {
     CREATED(),
 
     /**
+     * ready to be scheduled
+     */
+    READY,
+
+    /**
      * paused by user
      */
     PAUSED(),
 
     /**
-     * split but no task is assigned to an Agent
+     * scheduling
      */
     RUNNING(),
 
@@ -43,22 +48,12 @@ public enum JobStatus {
     /**
      * CANCEL triggered by user( at least one task is TO_CANCEL)
      */
-    CANCELING(),
+    CANCELLING(),
 
     /**
-     * canceling is done
+     * CANCELLING is done
      */
     CANCELED(),
-
-    /**
-     * all ppl tasks are finished, cmp task should be triggered
-     */
-    TO_COLLECT_RESULT(),
-
-    /**
-     *  cmp task created but not finished
-     */
-    COLLECTING_RESULT(),
 
     /**
      * all the tasks are finished

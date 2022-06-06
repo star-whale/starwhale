@@ -53,17 +53,6 @@ public class Graph {
 
     List<GraphEdge> edges = Collections.synchronizedList(new ArrayList<>());
 
-    public Graph(GraphEntity graphEntity,List<GraphNodeEntity> nodeEntities,List<GraphEdgeEntity> edgeEntities){
-        this.id = graphEntity.getId();
-        nodeEntities.parallelStream().map(entity->new GraphNode(entity)).forEach(graphNode -> {
-            safeGetNodesOfGroup(graphNode.getGroup()).add(graphNode);
-        });
-        edgeEntities.parallelStream().map(entity-> new GraphEdge(entity)).forEach(graphEdge -> {
-            this.edges.add(graphEdge);
-        });
-
-    }
-
     private List<GraphNode> safeGetNodesOfGroup(String group) {
         return groupingNodes.computeIfAbsent(group,
             k -> Collections.synchronizedList(new LinkedList<>()));
@@ -74,23 +63,14 @@ public class Graph {
     }
 
     public boolean empty(){
-        return null == id;
+        return false;
     }
 
-    public void add(GraphNodeEntity nodeEntity) {
-        GraphNode graphNode = new GraphNode(nodeEntity);
+    public void add(GraphNode graphNode) {
         safeGetNodesOfGroup(graphNode.getGroup()).add(graphNode);
     }
 
-    public GraphNode findLastNodeOf(String group,NodeType nodeType, Long ownerId) {
-
-        GraphNode lastNode = List.copyOf(safeGetNodesOfGroup(group)).parallelStream().filter(graphNode -> graphNode.getNodeOwnerId().equals(ownerId)
-            && graphNode.getType() == nodeType)
-            .reduce(GraphNode.emptyInstance(), BinaryOperator.maxBy(Comparator.comparing(GraphNode::getId)) );
-        return lastNode;
-    }
-
-    public void add(GraphEdgeEntity graphEdgeEntity) {
-        edges.add(new GraphEdge(graphEdgeEntity));
+    public void add(GraphEdge graphEdge) {
+        edges.add(graphEdge);
     }
 }

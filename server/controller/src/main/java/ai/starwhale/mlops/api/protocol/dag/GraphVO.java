@@ -45,7 +45,7 @@ public class GraphVO {
             edges = new ArrayList<>(0);
             return;
         }
-        this.id = graph.getId().toString();
+//        this.id = graph.getId().toString();
         graph.getGroupingNodes().entrySet().stream().forEach(entry->{
             List<GraphNodeVO> nodeVOS = entry.getValue().parallelStream()
                 .map(graphNode -> new GraphNodeVO(graphNode)).collect(
@@ -65,7 +65,7 @@ public class GraphVO {
         /**
          * type of the node e.g. TaskStatus or JobStatus
          */
-        NodeType type;
+        String type;
 
         /**
          * content for the node e.g. status name

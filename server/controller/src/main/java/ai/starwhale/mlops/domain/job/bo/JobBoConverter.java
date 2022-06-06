@@ -64,6 +64,7 @@ public class JobBoConverter {
             .jobRuntime(JobRuntime.builder().baseImage(jobEntity.getBaseImage().getImageName()).deviceAmount(jobEntity.getDeviceAmount()).deviceClass(
                 Device.Clazz.from(jobEntity.getDeviceType())).build())
             .status(jobEntity.getJobStatus())
+            .type(jobEntity.getType())
             .swmp(SWModelPackage
                 .builder()
                 .id(jobEntity.getSwmpVersionId())

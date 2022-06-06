@@ -18,13 +18,14 @@ package ai.starwhale.mlops.domain.job.split;
 
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
+import ai.starwhale.mlops.domain.job.step.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.List;
 
 /**
- * split job to tasks. One job shall not to be split multiple times
+ * split job to Steps. One job shall not to be split multiple times
  */
 public interface JobSpliterator {
 
-    List<Task> split(Job job);
+    List<Step> split(Job job);
 }

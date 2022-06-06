@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.dag.GraphVO;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
+import ai.starwhale.mlops.domain.dag.bo.Graph;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -208,10 +209,10 @@ public interface JobApi {
                 content =
                 @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = GraphVO.class)))
+                    schema = @Schema(implementation = Graph.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/dag")
-    ResponseEntity<ResponseMessage<GraphVO>> getJobDAG(@Parameter(
+    ResponseEntity<ResponseMessage<Graph>> getJobDAG(@Parameter(
         in = ParameterIn.PATH,
         description = "Project Url",
         schema = @Schema())

@@ -39,14 +39,9 @@ public class GraphNode {
     Long id;
 
     /**
-     * type of the node e.g. TaskStatus or JobStatus
+     * type of the node e.g. Task, Step, Job
      */
-    NodeType type;
-
-    /**
-     * taskId or jobId
-     */
-    Long nodeOwnerId;
+    String type;
 
     /**
      * content for the node e.g. status name
@@ -55,13 +50,7 @@ public class GraphNode {
 
     String group;
 
-    public GraphNode(GraphNodeEntity entity){
-        this.id = entity.getId();
-        this.type = entity.getType();
-        this.nodeOwnerId = entity.getNodeOwnerId();
-        this.content = entity.getContent();
-        this.group = entity.getGroup();
-    }
+    Long entityId;
 
     public static final Long ID_FAKE=-1l;
 
