@@ -17,6 +17,7 @@ from starwhale.consts import (
     SHORT_VERSION_CNT,
     DEFAULT_MANIFEST_NAME,
 )
+from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import ensure_dir, ensure_file, ensure_link, extract_tar
 from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldError
 from starwhale.utils.config import SWCliConfigMixed
@@ -155,8 +156,10 @@ class LocalStorageBundleMixin(object):
         }
 
         if _uri.object.version:
+            _tag = StandaloneTag(_uri)
             _manifest["version"] = _uri.object.version
             _manifest["config"] = {}
+            _manifest["tags"] = _tag.list()
 
             if _store.bundle_path.is_dir():
                 _manifest["config"].update(_store.mainfest)

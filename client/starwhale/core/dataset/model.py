@@ -156,16 +156,17 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _r = []
 
-        for _version, _dir in self.store.iter_bundle_history():
-            _manifest = yaml.safe_load((_dir / DEFAULT_MANIFEST_NAME).open())
+        for _bf in self.store.iter_bundle_history():
+            _manifest = yaml.safe_load((_bf.path / DEFAULT_MANIFEST_NAME).open())
 
             _r.append(
                 dict(
                     name=_manifest["name"],
-                    version=_version,
+                    version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
                     created_at=_manifest["created_at"],
-                    path=_dir,
+                    tags=_bf.tags,
+                    path=_bf.path,
                 )
             )
 
@@ -193,21 +194,22 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         rs = defaultdict(list)
 
-        for _name, _version, _dir, _is_removed in DatasetStorage.iter_all_bundles(
+        for _bf in DatasetStorage.iter_all_bundles(
             project_uri,
             bundle_type=BundleType.DATASET,
             uri_type=URIType.DATASET,
         ):
-            _manifest = yaml.safe_load((_dir / DEFAULT_MANIFEST_NAME).open())
+            _manifest = yaml.safe_load((_bf.path / DEFAULT_MANIFEST_NAME).open())
 
-            rs[_name].append(
+            rs[_bf.name].append(
                 dict(
                     name=_manifest["name"],
-                    version=_version,
+                    version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
                     created_at=_manifest["created_at"],
-                    is_removed=_is_removed,
-                    path=_dir,
+                    is_removed=_bf.is_removed,
+                    path=_bf.path,
+                    tags=_bf.tags,
                 )
             )
 

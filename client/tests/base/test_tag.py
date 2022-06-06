@@ -1,7 +1,3 @@
-import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_MANIFEST_NAME

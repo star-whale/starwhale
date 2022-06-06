@@ -11,9 +11,18 @@ from starwhale.consts import (
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
 )
+from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import guess_real_path
 from starwhale.utils.config import SWCliConfigMixed
+
+
+class BundleField(t.NamedTuple):
+    name: str = ""
+    version: str = ""
+    tags: t.List[str] = []
+    path: Path = Path()
+    is_removed: bool = False
 
 
 class BaseStorage(object):
@@ -100,11 +109,20 @@ class BaseStorage(object):
     def _guess_for_bundle(self) -> t.Tuple[Path, str]:
         name = self.uri.object.name
         version = self.uri.object.version
+        rootdir = self.project_dir / self.uri_type / name
         if version:
-            _p, _v = guess_real_path(
-                self.project_dir / self.uri_type / name / version[:VERSION_PREFIX_CNT],
+            _p, _v, _ok = guess_real_path(
+                rootdir / version[:VERSION_PREFIX_CNT],
                 version,
             )
+
+            if not _ok:
+                _manifest = StandaloneTag.get_manifest_by_dir(rootdir)
+                _tag_version = _manifest.get("tags", {}).get(version, "")
+                if _tag_version:
+                    _p, _v, _ok = guess_real_path(
+                        rootdir / _tag_version[:VERSION_PREFIX_CNT], _tag_version
+                    )
 
             if _v.endswith(self.bundle_type):
                 _v = _v.split(self.bundle_type)[0]
@@ -114,13 +132,23 @@ class BaseStorage(object):
         else:
             return self.project_dir / self.uri_type / name, name
 
-    def iter_bundle_history(self) -> t.Generator[t.Tuple[str, Path], None, None]:
+    def iter_bundle_history(self) -> t.Generator[BundleField, None, None]:
         rootdir = self.project_dir / self.uri_type / self.uri.object.name
+        _manifest = StandaloneTag.get_manifest_by_dir(rootdir)
+        tags_map: t.Dict[str, t.Any] = _manifest.get("versions", {})
+
         for _path in rootdir.glob(f"**/*{self.bundle_type}"):
             if not _path.name.endswith(self.bundle_type):
                 continue
             _rt_version = _path.name.split(self.bundle_type)[0]
-            yield _rt_version, _path
+            _tags = tags_map.get(_rt_version, {}).keys()
+            yield BundleField(
+                name=_path.name,
+                version=_rt_version,
+                tags=list(_tags),
+                path=_path,
+                is_removed=False,
+            )
 
     @classmethod
     def iter_all_bundles(
@@ -128,16 +156,28 @@ class BaseStorage(object):
         project_uri: URI,
         bundle_type: str,
         uri_type: str,
-    ) -> t.Generator[t.Tuple[str, str, Path, bool], None, None]:
+    ) -> t.Generator[BundleField, None, None]:
         sw = SWCliConfigMixed()
-        _runtime_dir = sw.rootdir / project_uri.project / uri_type
-        for _path in _runtime_dir.glob(f"**/*{bundle_type}"):
+        _obj_dir = sw.rootdir / project_uri.project / uri_type
+        _tags_map = {}
+        for _path in _obj_dir.glob(f"**/*{bundle_type}"):
             if not _path.name.endswith(bundle_type):
                 continue
 
             _rt_name = _path.parent.parent.name
+            if _rt_name not in _tags_map:
+                _manifest = StandaloneTag.get_manifest_by_dir(_obj_dir / _rt_name)
+                _tags_map[_rt_name] = _manifest.get("versions", {})
+
             _rt_version = _path.name.split(bundle_type)[0]
-            yield _rt_name, _rt_version, _path, RECOVER_DIRNAME in _path.parts
+            _tags = _tags_map.get(_rt_name, {}).get(_rt_version, {}).keys()
+            yield BundleField(
+                name=_rt_name,
+                version=_rt_version,
+                tags=list(_tags),
+                path=_path,
+                is_removed=RECOVER_DIRNAME in _path.parts,
+            )
 
     @classmethod
     def get_manifest_by_path(

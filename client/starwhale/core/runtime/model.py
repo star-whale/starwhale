@@ -170,13 +170,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         # TODO: time order
         _r = []
-        for _version, _path in self.store.iter_bundle_history():
+        for _bf in self.store.iter_bundle_history():
             _r.append(
                 dict(
-                    version=_version,
-                    path=str(_path.resolve()),
-                    created_at=get_path_created_time(_path),
-                    size=_path.stat().st_size,
+                    version=_bf.version,
+                    path=str(_bf.path.resolve()),
+                    created_at=get_path_created_time(_bf.path),
+                    size=_bf.path.stat().st_size,
+                    tags=_bf.tags,
                 )
             )
         return _r, {}
@@ -265,22 +266,18 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         rs = defaultdict(list)
-        for (
-            _rt_name,
-            _rt_version,
-            _path,
-            _is_removed,
-        ) in RuntimeStorage.iter_all_bundles(
+        for _bf in RuntimeStorage.iter_all_bundles(
             project_uri, bundle_type=BundleType.RUNTIME, uri_type=URIType.RUNTIME
         ):
             # TODO: add more manifest info
-            rs[_rt_name].append(
+            rs[_bf.name].append(
                 {
-                    "version": _rt_version,
-                    "path": str(_path.absolute()),
-                    "created_at": get_path_created_time(_path),
-                    "size": _path.stat().st_size,
-                    "is_removed": _is_removed,
+                    "version": _bf.version,
+                    "path": str(_bf.path.absolute()),
+                    "created_at": get_path_created_time(_bf.path),
+                    "size": _bf.path.stat().st_size,
+                    "is_removed": _bf.is_removed,
+                    "tags": _bf.tags,
                 }
             )
         return rs, {}

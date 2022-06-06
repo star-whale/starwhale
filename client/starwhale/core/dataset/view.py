@@ -92,8 +92,8 @@ class DatasetTermView(BaseTermView):
     def tag(self, tags: str, remove: bool = False, quiet: bool = False) -> None:
         _tags = tags.split(",")
         if remove:
-            console.print(f":golfer:, try to remove tags {tags} @ {self.uri}...")
+            console.print(f":golfer: remove tags {tags} @ {self.uri}...")
             self.dataset.remove_tags(_tags, quiet)
         else:
-            console.print(f":surfer:, try to add tags {tags} @ {self.uri}...")
+            console.print(f":surfer: add tags {tags} @ {self.uri}...")
             self.dataset.add_tags(_tags, quiet)

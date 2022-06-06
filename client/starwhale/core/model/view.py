@@ -109,8 +109,8 @@ class ModelTermView(BaseTermView):
     def tag(self, tags: str, remove: bool = False, quiet: bool = False) -> None:
         _tags = tags.split(",")
         if remove:
-            console.print(f":golfer:, try to remove tags {tags} @ {self.uri}...")
+            console.print(f":golfer: remove tags [red]{tags}[/] @ {self.uri}...")
             self.model.remove_tags(_tags, quiet)
         else:
-            console.print(f":surfer:, try to add tags {tags} @ {self.uri}...")
+            console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
             self.model.add_tags(_tags, quiet)

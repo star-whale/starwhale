@@ -121,8 +121,8 @@ class RuntimeTermView(BaseTermView):
         # TODO: refactor model/runtime/dataset tag view-model
         _tags = tags.split(",")
         if remove:
-            console.print(f":golfer:, try to remove tags {tags} @ {self.uri}...")
+            console.print(f":golfer: remove tags [red]{tags}[/] @ {self.uri}...")
             self.runtime.remove_tags(_tags, quiet)
         else:
-            console.print(f":surfer:, try to add tags {tags} @ {self.uri}...")
+            console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
             self.runtime.add_tags(_tags, quiet)

@@ -1,6 +1,5 @@
 import typing as t
 from pathlib import Path
-from xml.dom import NotFoundErr
 
 import yaml
 
@@ -9,7 +8,12 @@ from starwhale.consts import DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import InstanceType
-from starwhale.utils.error import FormatError, NoSupportError, MissingFieldError
+from starwhale.utils.error import (
+    FormatError,
+    NotFoundError,
+    NoSupportError,
+    MissingFieldError,
+)
 
 
 class StandaloneTag(object):
@@ -95,7 +99,7 @@ class StandaloneTag(object):
                 if quiet:
                     continue
                 else:
-                    raise NotFoundErr(f"tag:{_t}, version:{_version}")
+                    raise NotFoundError(f"tag:{_t}, version:{_version}")
 
             _manifest["versions"][_version].pop(_t, None)
             if not _manifest["versions"][_version]:
@@ -108,6 +112,15 @@ class StandaloneTag(object):
         _version = self.uri.object.version
 
         if _version:
-            return _manifest["versions"].get(_version, {}).keys()
+            _tags = _manifest["versions"].get(_version, {}).keys()
         else:
-            return _manifest["tags"].keys()
+            _tags = _manifest["tags"].keys()
+        return list(_tags)
+
+    @classmethod
+    def get_manifest_by_dir(cls, dir: Path) -> t.Dict[str, t.Any]:
+        _mf = dir / DEFAULT_MANIFEST_NAME
+        if _mf.exists():
+            return yaml.safe_load(_mf.open()) or {}
+        else:
+            return {}
