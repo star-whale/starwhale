@@ -15,6 +15,7 @@ from starwhale.utils.error import FormatError, NoSupportError, MissingFieldError
 class StandaloneTag(object):
     def __init__(self, uri: URI) -> None:
         self.uri = uri
+        self._do_validate()
 
     def _do_validate(self) -> None:
         if self.uri.instance_type != InstanceType.STANDALONE:
@@ -36,6 +37,7 @@ class StandaloneTag(object):
                 "tags": {},
                 "versions": {},
             }
+            ensure_dir(self._manifest_path.parent)
             ensure_file(self._manifest_path, yaml.safe_dump(_dft))
             return _dft
         else:
@@ -70,8 +72,8 @@ class StandaloneTag(object):
                 else:
                     raise FormatError(f"{_t}, reason:{_reason}")
 
-            if _manifest["tags"].get(_t, "") != _version:
-                _pre_version = _manifest["tags"][_t]
+            _pre_version = _manifest["tags"].get(_t, "")
+            if _pre_version and _pre_version != _version:
                 _manifest["versions"][_pre_version].pop(_t, None)
                 if not _manifest["versions"][_pre_version]:
                     _manifest["versions"].pop(_pre_version, None)
@@ -95,9 +97,9 @@ class StandaloneTag(object):
                 else:
                     raise NotFoundErr(f"tag:{_t}, version:{_version}")
 
-            _manifest["version"][_version].pop(_t, None)
-            if not _manifest["version"][_version]:
-                _manifest["version"].pop(_version, None)
+            _manifest["versions"][_version].pop(_t, None)
+            if not _manifest["versions"][_version]:
+                _manifest["versions"].pop(_version, None)
 
         self._save_manifest(_manifest)
 

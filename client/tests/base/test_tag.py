@@ -1,0 +1,79 @@
+import os
+from pathlib import Path
+from unittest.mock import patch, MagicMock
+
+from pyfakefs.fake_filesystem_unittest import TestCase
+
+from starwhale.consts import DEFAULT_MANIFEST_NAME
+from starwhale.base.tag import StandaloneTag
+from starwhale.base.uri import URI
+from starwhale.base.type import URIType
+from starwhale.utils.error import NoSupportError
+from starwhale.utils.config import SWCliConfigMixed
+
+
+class StandaloneTagTestCase(TestCase):
+    def setUp(self) -> None:
+        self.setUpPyfakefs()
+
+    def test_tag_instance(self) -> None:
+        self.assertRaises(
+            NoSupportError, StandaloneTag, URI("http://1.1.1.1:8.8.8.8/project/self")
+        )
+
+    def test_tag_workflow(self) -> None:
+        sw = SWCliConfigMixed()
+
+        st = StandaloneTag(
+            URI(
+                "mnist/version/me3dmn3gg4ytanrtmftdgyjzpbrgimi",
+                expected_type=URIType.MODEL,
+            )
+        )
+
+        assert st._manifest_path.name == DEFAULT_MANIFEST_NAME
+        assert (
+            st._manifest_path
+            == sw.rootdir / "self" / "model" / "mnist" / DEFAULT_MANIFEST_NAME
+        )
+
+        _manifest = st._get_manifest()
+        assert len(_manifest["tags"]) == 0
+        assert len(_manifest["versions"]) == 0
+
+        st.add(["test", "latest", "me3"])
+        _manifest = st._get_manifest()
+        _version = "me3dmn3gg4ytanrtmftdgyjzpbrgimi"
+        assert _manifest["name"] == "mnist"
+        assert _manifest["typ"] == "model"
+        assert _manifest["tags"]["latest"] == _version
+        assert _manifest["tags"]["test"] == _version
+        assert _manifest["versions"][_version]["latest"]
+        assert _manifest["versions"][_version]["test"]
+
+        assert set(st.list()) == {"test", "latest", "me3"}
+
+        st.remove(["latest", "notfound"], quiet=True)
+        assert set(st.list()) == {"test", "me3"}
+        _manifest = st._get_manifest()
+        assert "latest" not in _manifest["tags"]
+        assert _manifest["versions"][_version].get("test")
+        assert not _manifest["versions"][_version].get("latest")
+
+        st = StandaloneTag(
+            URI(
+                "mnist/version/gnstmntggi4tinrtmftdgyjzo5wwy2y",
+                expected_type=URIType.MODEL,
+            )
+        )
+        st.add(["latest", "test2", "test"])
+        assert set(st.list()) == {"latest", "test2", "test"}
+
+        _manifest = st._get_manifest()
+        assert set(_manifest["tags"]) == {"latest", "test", "test2", "me3"}
+        assert _manifest["tags"]["test"] == "gnstmntggi4tinrtmftdgyjzo5wwy2y"
+        assert _manifest["tags"]["me3"] == "me3dmn3gg4ytanrtmftdgyjzpbrgimi"
+        assert _manifest["tags"]["latest"] == "gnstmntggi4tinrtmftdgyjzo5wwy2y"
+        assert _manifest["tags"]["test2"] == "gnstmntggi4tinrtmftdgyjzo5wwy2y"
+        assert _manifest["versions"]["me3dmn3gg4ytanrtmftdgyjzpbrgimi"]["me3"]
+        assert _manifest["versions"]["gnstmntggi4tinrtmftdgyjzo5wwy2y"]["test"]
