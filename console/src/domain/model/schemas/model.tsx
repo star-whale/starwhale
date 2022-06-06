@@ -7,8 +7,8 @@ export interface IModelSchema extends IResourceSchema {
 }
 
 export interface IModelDetailSchema {
-    swmpId?: string
-    swmpName?: string
+    id?: string
+    name?: string
     versionMeta?: string
     versionName?: string
     versionTag?: string

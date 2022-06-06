@@ -26,8 +26,8 @@ export default function ModelOverview() {
             value: model?.versionTag ?? '',
         },
         {
-            label: t('Swmp ID'),
-            value: model?.swmpId ?? '',
+            label: t('Model ID'),
+            value: model?.id ?? '',
         },
         {
             label: t('Created time'),

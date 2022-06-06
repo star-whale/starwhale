@@ -30,6 +30,9 @@ const locales0 = {
     'Model Information': {
         en: 'Model Information',
     },
+    'Model ID': {
+        en: 'Model ID',
+    },
     'Dataset': {
         en: 'Dataset',
     },
@@ -293,9 +296,6 @@ const locales0 = {
     },
     'Version Tag': {
         en: 'Version Tag',
-    },
-    'Swmp ID': {
-        en: 'Swmp ID',
     },
     'Files': {
         en: 'Files',

@@ -10,7 +10,8 @@ export interface IDatasetSchema extends IResourceSchema {
 }
 
 export interface IDatasetDetailSchema {
-    swdsName?: string
+    id?: string
+    name?: string
     createdTime?: number
     versionMeta?: string
     versionName?: string

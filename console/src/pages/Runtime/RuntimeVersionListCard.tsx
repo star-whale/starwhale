@@ -5,7 +5,7 @@ import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import { Button } from 'baseui/button'
 import User from '@/domain/user/components/User'
-import Table from '@/components/Table'
+import Table from '@/components/Table/TableTyped'
 import { useParams } from 'react-router-dom'
 import { useFetchRuntimeVersions } from '@/domain/runtime/hooks/useFetchRuntimeVersions'
 
