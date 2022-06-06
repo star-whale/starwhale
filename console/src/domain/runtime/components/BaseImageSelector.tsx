@@ -29,7 +29,7 @@ export default function BaseImageSelector({ value, onChange, overrides, disabled
     useEffect(() => {
         if (baseImagesInfo.isSuccess) {
             setOptions(
-                baseImagesInfo.data?.map((item) => ({
+                baseImagesInfo.data?.list?.map((item) => ({
                     id: item.id,
                     label: item.name,
                 })) ?? []

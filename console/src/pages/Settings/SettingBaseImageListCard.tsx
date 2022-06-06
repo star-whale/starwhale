@@ -54,7 +54,7 @@ export default function SettingBaseImageListCard() {
                 isLoading={baseImagesInfo.isLoading}
                 columns={[t('sth name'), t('Action')]}
                 data={
-                    baseImagesInfo.data?.map((baseImage) => {
+                    baseImagesInfo.data?.list?.map((baseImage) => {
                         return [
                             baseImage.name,
                             <StyledLink
