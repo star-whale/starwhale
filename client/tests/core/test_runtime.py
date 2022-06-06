@@ -124,7 +124,6 @@ class StandaloneRuntimeTestCase(TestCase):
         build_version = sr._version
 
         runtime_dir = os.path.join(sw.rootdir, "self", "runtime")
-        latest_path = os.path.join(runtime_dir, "latest")
         bundle_path = os.path.join(
             runtime_dir,
             name,
@@ -143,7 +142,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert os.path.exists(bundle_path)
         assert os.path.exists(runtime_workdir)
-        assert os.path.realpath(latest_path) == bundle_path
+        assert "latest" in sr.tag.list()
 
         _manifest = yaml.safe_load(
             open(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))

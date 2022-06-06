@@ -76,10 +76,6 @@ class BaseStorage(object):
             return self.bundle_dir
 
     @property
-    def latest_bundle_dir(self) -> Path:
-        return self.project_dir / self.uri_type / "latest"
-
-    @property
     def mainfest(self) -> t.Dict[str, t.Any]:
         if not self.manifest_path.exists():
             return {}

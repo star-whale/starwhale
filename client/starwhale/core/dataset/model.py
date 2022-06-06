@@ -253,6 +253,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 dict(user_raw_config=_dataset_config.as_dict()),
             ),
             (self._make_swds_meta_tar, 15, "make meta tar"),
+            (self._make_latest_tag, 5, "make latest tag"),
         ]
         run_with_progress_bar("swds building...", operations)
 

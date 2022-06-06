@@ -150,9 +150,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self.tag.remove(tags, quiet)
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
-        # TODO: remove workdir
-        # TODO: remove by tag
-        # TODO: remove latest tag
         return move_dir(self.store.loc, self.store.recover_loc, force)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
@@ -215,6 +212,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 dict(user_raw_config=_swrt_config.as_dict()),
             ),
             (self._make_tar, 20, "make runtime bundle", dict(ftype=BundleType.RUNTIME)),
+            (self._make_latest_tag, 5, "make latest tag"),
         ]
         run_with_progress_bar("runtime bundle building...", operations)
 

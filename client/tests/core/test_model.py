@@ -86,8 +86,7 @@ class StandaloneModelTestCase(TestCase):
         assert m_copy_file.call_args_list[2][0][1] == "models/mnist_cnn.pt"
 
         assert bundle_path.exists()
-        latest_path = sw.rootdir / "self" / URIType.MODEL / "latest"
-        assert latest_path.resolve().absolute() == bundle_path.absolute()
+        assert "latest" in sm.tag.list()
 
         model_uri = URI(f"mnist/version/{build_version}", expected_type=URIType.MODEL)
 

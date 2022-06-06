@@ -236,8 +236,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove workdir
-        # TODO: remove by tag
-        # TODO: remove latest tag
         return move_dir(self.store.loc, self.store.recover_loc, force)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
@@ -302,6 +300,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 dict(user_raw_config=_model_config.as_dict()),
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
+            (self._make_latest_tag, 5, "make latest tag"),
         ]
         run_with_progress_bar("model bundle building...", operations)
 
