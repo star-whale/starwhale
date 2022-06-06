@@ -29,6 +29,7 @@ from starwhale.consts import (
     SWDS_LABEL_FNAME_FMT,
     DEFAULT_MANIFEST_NAME,
 )
+from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     move_dir,
@@ -88,7 +89,14 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         super().__init__(uri)
         self.typ = InstanceType.STANDALONE
         self.store = DatasetStorage(uri)
+        self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+
+    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.add(tags, quiet)
+
+    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.remove(tags, quiet)
 
     @classmethod
     def render_fuse_json(cls, workdir: Path, force: bool = False) -> str:
@@ -148,16 +156,17 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _r = []
 
-        for _version, _dir in self.store.iter_bundle_history():
-            _manifest = yaml.safe_load((_dir / DEFAULT_MANIFEST_NAME).open())
+        for _bf in self.store.iter_bundle_history():
+            _manifest = yaml.safe_load((_bf.path / DEFAULT_MANIFEST_NAME).open())
 
             _r.append(
                 dict(
                     name=_manifest["name"],
-                    version=_version,
+                    version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
                     created_at=_manifest["created_at"],
-                    path=_dir,
+                    tags=_bf.tags,
+                    path=_bf.path,
                 )
             )
 
@@ -185,21 +194,22 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         rs = defaultdict(list)
 
-        for _name, _version, _dir, _is_removed in DatasetStorage.iter_all_bundles(
+        for _bf in DatasetStorage.iter_all_bundles(
             project_uri,
             bundle_type=BundleType.DATASET,
             uri_type=URIType.DATASET,
         ):
-            _manifest = yaml.safe_load((_dir / DEFAULT_MANIFEST_NAME).open())
+            _manifest = yaml.safe_load((_bf.path / DEFAULT_MANIFEST_NAME).open())
 
-            rs[_name].append(
+            rs[_bf.name].append(
                 dict(
                     name=_manifest["name"],
-                    version=_version,
+                    version=_bf.version,
                     size=_manifest.get("dataset_byte_size", 0),
                     created_at=_manifest["created_at"],
-                    is_removed=_is_removed,
-                    path=_dir,
+                    is_removed=_bf.is_removed,
+                    path=_bf.path,
+                    tags=_bf.tags,
                 )
             )
 
@@ -243,6 +253,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 dict(user_raw_config=_dataset_config.as_dict()),
             ),
             (self._make_swds_meta_tar, 15, "make meta tar"),
+            (self._make_latest_tag, 5, "make latest tag"),
         ]
         run_with_progress_bar("swds building...", operations)
 

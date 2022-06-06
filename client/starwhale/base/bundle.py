@@ -17,7 +17,8 @@ from starwhale.consts import (
     SHORT_VERSION_CNT,
     DEFAULT_MANIFEST_NAME,
 )
-from starwhale.utils.fs import ensure_dir, ensure_file, ensure_link, extract_tar
+from starwhale.base.tag import StandaloneTag
+from starwhale.utils.fs import ensure_dir, ensure_file, extract_tar
 from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldError
 from starwhale.utils.config import SWCliConfigMixed
 
@@ -42,6 +43,14 @@ class BaseBundle(object):
 
     @abstractmethod
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -113,6 +122,9 @@ class LocalStorageBundleMixin(object):
         logger.info(f"[step:version]version: {self._version}")
         console.print(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
 
+    def _make_latest_tag(self) -> None:
+        self.tag.add(["latest"], quiet=True)  # type: ignore
+
     def _make_tar(self, ftype: str = "") -> None:
         out = self.store.bundle_dir / f"{self._version}{ftype}"  # type: ignore
         ensure_dir(self.store.bundle_dir)  # type: ignore
@@ -121,7 +133,6 @@ class LocalStorageBundleMixin(object):
         with tarfile.open(out, "w:") as tar:
             tar.add(str(self.store.snapshot_workdir), arcname="")  # type: ignore
 
-        ensure_link(out, self.store.latest_bundle_dir)  # type: ignore
         console.print(f":butterfly: {ftype} bundle:{out}")
         logger.info("[step:tar]finish to make bundle tar")
 
@@ -147,8 +158,10 @@ class LocalStorageBundleMixin(object):
         }
 
         if _uri.object.version:
+            _tag = StandaloneTag(_uri)
             _manifest["version"] = _uri.object.version
             _manifest["config"] = {}
+            _manifest["tags"] = _tag.list()
 
             if _store.bundle_path.is_dir():
                 _manifest["config"].update(_store.mainfest)

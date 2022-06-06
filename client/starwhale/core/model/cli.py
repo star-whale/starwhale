@@ -34,6 +34,20 @@ def _build(workdir: str, project: str, model_yaml: str) -> None:
     ModelTermView.build(workdir, project, model_yaml)
 
 
+@model_cmd.command("tag", help="Model Tag Management, add or remove")
+@click.argument("model")
+@click.argument("tags")
+@click.option("-r", "--remove", is_flag=True, help="remove tags")
+@click.option(
+    "-q",
+    "--quiet",
+    is_flag=True,
+    help="ignore tag name errors like name duplication, name absence",
+)
+def _tag(model: str, tags: str, remove: bool, quiet: bool) -> None:
+    ModelTermView(model).tag(tags, remove, quiet)
+
+
 @model_cmd.command("copy", help="Copy model, stanalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")

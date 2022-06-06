@@ -111,14 +111,19 @@ def get_path_created_time(p: Path) -> str:
     return timestamp_to_datatimestr(created_at)
 
 
-def guess_real_path(rootdir: Path, name: str, ftype: str = "") -> t.Tuple[Path, str]:
+def guess_real_path(
+    rootdir: Path, name: str, ftype: str = ""
+) -> t.Tuple[Path, str, bool]:
     # TODO: support more guess method, such as tag
     _path = rootdir / name
     if _path.exists():
-        return _path, name
+        return _path, name, True
+
+    if not rootdir.exists():
+        return _path, name, False
 
     if len(name) < _MIN_GUESS_NAME_LENGTH:
-        return _path, name
+        return _path, name, False
 
     ftype = ftype.strip()
     for fd in rootdir.iterdir():
@@ -126,9 +131,9 @@ def guess_real_path(rootdir: Path, name: str, ftype: str = "") -> t.Tuple[Path, 
             continue
 
         if fd.name.startswith(name) or name.startswith(fd.name):
-            return fd, fd.name.rsplit(ftype, 1)[0] if ftype else fd.name
+            return fd, fd.name.rsplit(ftype, 1)[0] if ftype else fd.name, True
     else:
-        return _path, name
+        return _path, name, False
 
 
 def move_dir(src: Path, dest: Path, force: bool = False) -> t.Tuple[bool, str]:

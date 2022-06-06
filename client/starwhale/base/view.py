@@ -127,6 +127,7 @@ class BaseTermView(SWCliConfigMixed):
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         table = Table(title=title, box=box.SIMPLE, expand=True)
         table.add_column("Version", justify="left", style="cyan", no_wrap=True)
+        table.add_column("Tags")
         table.add_column("Size")
         table.add_column("Runtime")
         table.add_column("Created")
@@ -138,6 +139,7 @@ class BaseTermView(SWCliConfigMixed):
 
             table.add_row(
                 _version,
+                ",".join(_h.get("tags", [])),
                 pretty_bytes(_h["size"]),
                 _h.get("runtime", "--"),
                 _h["created_at"],
@@ -168,7 +170,9 @@ class BaseTermView(SWCliConfigMixed):
     ) -> None:
         table = Table(title="Bundle List", box=box.SIMPLE, expand=True)
 
+        table.add_column("Name")
         table.add_column("Version")
+        table.add_column("Tags")
         table.add_column("Size")
         table.add_column("Runtime")
         table.add_column("Created")
@@ -189,6 +193,7 @@ class BaseTermView(SWCliConfigMixed):
                 table.add_row(
                     _name,
                     _version,
+                    ",".join(_v.get("tags", [])),
                     pretty_bytes(_v["size"]),
                     _v.get("runtime", "--"),
                     _v["created_at"],

@@ -27,9 +27,10 @@ class JobStorage(BaseStorage):
 
     def _guess(self) -> t.Tuple[Path, str]:
         name = self.uri.object.name
-        return guess_real_path(
+        _p, _v, _ok = guess_real_path(
             self.project_dir / URIType.JOB / name[:VERSION_PREFIX_CNT], name
         )
+        return _p, _v
 
     @property
     def uri_type(self) -> str:

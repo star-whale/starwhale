@@ -21,6 +21,7 @@ from starwhale.consts import (
     DEFAULT_COPY_WORKERS,
     DEFAULT_STARWHALE_API_VERSION,
 )
+from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
@@ -168,7 +169,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         super().__init__(uri)
         self.typ = InstanceType.STANDALONE
         self.store = ModelStorage(uri)
+        self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+
+    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.add(tags, quiet)
+
+    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.remove(tags, quiet)
 
     @classmethod
     def eval_user_handler(
@@ -206,18 +214,19 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
 
         _r = []
-        for _version, _path in self.store.iter_bundle_history():
+        for _bf in self.store.iter_bundle_history():
             _manifest = ModelStorage.get_manifest_by_path(
-                _path, BundleType.MODEL, URIType.MODEL
+                _bf.path, BundleType.MODEL, URIType.MODEL
             )
 
             _r.append(
                 dict(
                     name=self.name,
-                    version=_version,
-                    path=str(_path.resolve()),
+                    version=_bf.version,
+                    path=str(_bf.path.resolve()),
+                    tags=_bf.tags,
                     created_at=_manifest["created_at"],
-                    size=_path.stat().st_size,
+                    size=_bf.path.stat().st_size,
                     runtime=_manifest["user_raw_config"]
                     .get("run", {})
                     .get("runtime", "--"),
@@ -227,8 +236,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove workdir
-        # TODO: remove by tag
-        # TODO: remove latest tag
         return move_dir(self.store.loc, self.store.recover_loc, force)
 
     def recover(self, force: bool = False) -> t.Tuple[bool, str]:
@@ -246,31 +253,27 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         rs = defaultdict(list)
-        for (
-            _rt_name,
-            _rt_version,
-            _path,
-            _is_removed,
-        ) in ModelStorage.iter_all_bundles(
+        for _bf in ModelStorage.iter_all_bundles(
             project_uri,
             bundle_type=BundleType.MODEL,
             uri_type=URIType.MODEL,
         ):
             _manifest = ModelStorage.get_manifest_by_path(
-                _path, BundleType.MODEL, URIType.MODEL
+                _bf.path, BundleType.MODEL, URIType.MODEL
             )
 
-            rs[_rt_name].append(
+            rs[_bf.name].append(
                 {
                     "name": _manifest["name"],
-                    "version": _rt_version,
-                    "path": str(_path.absolute()),
-                    "size": _path.stat().st_size,
-                    "is_removed": _is_removed,
+                    "version": _bf.version,
+                    "path": str(_bf.path.absolute()),
+                    "size": _bf.path.stat().st_size,
+                    "is_removed": _bf.is_removed,
                     "runtime": _manifest["user_raw_config"]
                     .get("run", {})
                     .get("runtime", "--"),
                     "created_at": _manifest["created_at"],
+                    "tags": _bf.tags,
                 }
             )
         return rs, {}
@@ -297,6 +300,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 dict(user_raw_config=_model_config.as_dict()),
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
+            (self._make_latest_tag, 5, "make latest tag"),
         ]
         run_with_progress_bar("model bundle building...", operations)
 

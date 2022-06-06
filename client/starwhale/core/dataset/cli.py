@@ -102,3 +102,17 @@ def _render_fuse(target: str, force: bool) -> None:
 @click.option("-f", "--force", is_flag=True, help="force copy dataset")
 def _copy(src: str, dest: str, force: bool) -> None:
     DatasetTermView.copy(src, dest, force)
+
+
+@dataset_cmd.command("tag", help="Dataset Tag Management, add or remove")
+@click.argument("dataset")
+@click.argument("tags")
+@click.option("-r", "--remove", is_flag=True, help="remove tags")
+@click.option(
+    "-q",
+    "--quiet",
+    is_flag=True,
+    help="ignore tag name errors like name duplication, name absence",
+)
+def _tag(dataset: str, tags: str, remove: bool, quiet: bool) -> None:
+    DatasetTermView(dataset).tag(tags, remove, quiet)
