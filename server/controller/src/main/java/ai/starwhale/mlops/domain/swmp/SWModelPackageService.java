@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
+import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -28,7 +29,6 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.runtime.RuntimeEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
@@ -72,6 +72,9 @@ public class SWModelPackageService {
 
     @Resource
     private SWModelPackageVersionMapper swmpVersionMapper;
+
+    @Resource
+    private IDConvertor idConvertor;
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
@@ -186,7 +189,8 @@ public class SWModelPackageService {
             List<StorageFileVO> collect = storageService.listStorageFile(storagePath);
 
             return SWModelPackageInfoVO.builder()
-                .swmpName(model.getSwmpName())
+                .id(idConvertor.convert(model.getId()))
+                .name(model.getSwmpName())
                 .versionName(version.getVersionName())
                 .versionTag(version.getVersionTag())
                 .versionMeta(version.getVersionMeta())
@@ -284,7 +288,7 @@ public class SWModelPackageService {
     public void upload(MultipartFile dsFile,
         ClientSWMPRequest uploadRequest){
 
-        Long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
         log.debug("access received at {}",startTime);
         SWModelPackageEntity entity = swmpMapper.findByNameForUpdate(uploadRequest.name());
         if (null == entity) {

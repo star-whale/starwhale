@@ -33,8 +33,11 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class SWDatasetInfoVO implements Serializable {
 
-    @JsonProperty("swdsName")
-    private String swdsName;
+    @JsonProperty("id")
+    private String id;
+
+    @JsonProperty("name")
+    private String name;
 
     @JsonProperty("versionName")
     private String versionName;
@@ -53,7 +56,7 @@ public class SWDatasetInfoVO implements Serializable {
     private List<StorageFileVO> files;
 
     public static SWDatasetInfoVO empty() {
-        return new SWDatasetInfoVO("", "", "", "", 0L , new ArrayList<>());
+        return new SWDatasetInfoVO("", "", "", "", "", 0L , new ArrayList<>());
     }
 
 }

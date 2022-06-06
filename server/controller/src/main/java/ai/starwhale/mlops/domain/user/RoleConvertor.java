@@ -37,8 +37,8 @@ public class RoleConvertor implements Convertor<RoleEntity, RoleVO> {
         }
         return RoleVO.builder()
             .id(idConvertor.convert(entity.getId()))
-            .roleName(entity.getRoleName())
-            .roleNameEn(entity.getRoleNameEn())
+            .name(entity.getRoleName())
+            .nameEn(entity.getRoleNameEn())
             .build();
     }
 
@@ -47,8 +47,8 @@ public class RoleConvertor implements Convertor<RoleEntity, RoleVO> {
         Objects.requireNonNull(vo, "RoleVO");
         return RoleEntity.builder()
             .id(idConvertor.revert(vo.getId()))
-            .roleName(vo.getRoleName())
-            .roleNameEn(vo.getRoleNameEn())
+            .roleName(vo.getName())
+            .roleNameEn(vo.getNameEn())
             .build();
     }
 }
