@@ -67,7 +67,7 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
 
         ImageConfig imageConfig = ImageConfig.builder()
                 .autoRemove(false) // finally rm
-                .image(originTask.getImageId())
+                // .image(originTask.getImageId())
                 .labels(Map.of(
                         "task-id", originTask.getId().toString(),
                         "task-type", originTask.getTaskType().name(),
@@ -122,6 +122,10 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                 imageConfig.setCmd(List.of("cmp"));
                 break;
         }
+        taskPersistence.preloadingSWRT(originTask);
+        // must be swrt file preloaded
+        imageConfig.setImage(taskPersistence.runtimeManifest(originTask).getBaseImage());
+
         taskPersistence.preloadingSWMP(originTask);
         imageConfig.setMounts(List.of(
                 Mount.builder()

@@ -16,11 +16,12 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask.persistence;
 
-import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
+import ai.starwhale.mlops.agent.task.inferencetask.RuntimeManifest;
 import ai.starwhale.mlops.agent.utils.FileUtil;
 import ai.starwhale.mlops.agent.utils.TarUtil;
+import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
@@ -28,6 +29,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
@@ -41,7 +43,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -194,12 +195,36 @@ public class FileSystemTaskPersistence implements TaskPersistence {
         SWModelPackage model = task.getSwModelPackage();
 
         String cachePathStr = fileSystemPath.oneSwmpCacheDir(model.getName(), model.getVersion());
+        String targetDirStr = fileSystemPath.oneActiveTaskModelDir(task.getId());
+
+        cacheDir(model.getPath(), cachePathStr, targetDirStr);
+    }
+
+    @Override
+    public void preloadingSWRT(InferenceTask task) throws Exception {
+        SWRunTime runTime = task.getSwRunTime();
+
+        String cachePathStr = fileSystemPath.oneSwrtCacheDir(runTime.getName(), runTime.getVersion());
+        String targetDirStr = fileSystemPath.oneActiveTaskResultDir(task.getId());
+
+        cacheDir(runTime.getPath(), cachePathStr, targetDirStr);
+    }
+
+    private static final YAMLMapper yamlMapper = new YAMLMapper();
+
+    @Override
+    public RuntimeManifest runtimeManifest(InferenceTask task) throws IOException {
+        String pathStr = fileSystemPath.oneActiveTaskRuntimeManifestFile(task.getId());
+        return yamlMapper.readValue(new File(pathStr), RuntimeManifest.class);
+    }
+
+    private void cacheDir(String ossPath, String cachePathStr, String targetDirStr) throws IOException {
 
         // check if exist todo check with md5
         if (Files.notExists(Path.of(cachePathStr))) {
-            download(cachePathStr, model.getPath());
+            download(cachePathStr, ossPath);
         }
-        File targetDir = new File(fileSystemPath.oneActiveTaskModelDir(task.getId()));
+        File targetDir = new File(targetDirStr);
         Files.find(Path.of(cachePathStr), 1, (p, u) -> !p.toString().equals(cachePathStr)).forEach(path -> {
             try {
                 File src = path.toFile();
@@ -209,12 +234,13 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                     FileUtil.copyFileToDirectory(src, targetDir);
                 }
             } catch (IOException e) {
-                log.error("copy swmp:{} to {} error", path, targetDir.getPath());
+                log.error("copy dir:{} to {} error", path, targetDir.getPath());
             }
         });
     }
 
     /**
+     * todo lock with task id
      * lock avoid multi task download single file
      */
     private synchronized void download(String localPath, String remotePath) throws IOException {
@@ -264,8 +290,8 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                             .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
                     );
                     ds.set("ext_attr", JSONUtil.createObj()
-                        .set("swds_name", swdsBlock.getDsName())
-                        .set("swds_version", swdsBlock.getDsVersion())
+                            .set("swds_name", swdsBlock.getDsName())
+                            .set("swds_version", swdsBlock.getDsVersion())
                     );
                     swds.add(ds);
                 });

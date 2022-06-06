@@ -36,6 +36,7 @@ public class FileSystemPath {
         String InferenceTaskInfoFile = "taskInfo.json";
         String InferenceTaskInputConfigFile = "input.json";
         String InferenceTaskStatusFile = "current";
+        String InferenceTaskRuntimeManifestFile = "read_manifest.yaml";
     }
 
     private final String basePath;
@@ -55,6 +56,8 @@ public class FileSystemPath {
     private static final PathNode oneActiveInferenceTaskInputConfigFile = new PathNode(FileName.InferenceTaskInputConfigFile, PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskResultDir = new PathNode("result", PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskModelDir = new PathNode("swmp", PathNode.Type.value);
+    private static final PathNode oneActiveInferenceTaskRuntimeDir = new PathNode("swrt", PathNode.Type.value);
+    private static final PathNode oneActiveInferenceTaskRuntimeManifestFile = new PathNode(FileName.InferenceTaskRuntimeManifestFile, PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskLogsDir = new PathNode("log", PathNode.Type.value);
 
     // archived dir
@@ -66,6 +69,10 @@ public class FileSystemPath {
     private static final PathNode swmpCacheDir = new PathNode("swmp", PathNode.Type.value);
     private static final PathNode swmpNameDir = new PathNode("%s", PathNode.Type.variable);
     private static final PathNode oneSwmpDir = new PathNode("%s", PathNode.Type.variable);
+    // swrt cache dir
+    private static final PathNode swrtCacheDir = new PathNode("swrt", PathNode.Type.value);
+    private static final PathNode swrtNameDir = new PathNode("%s", PathNode.Type.variable);
+    private static final PathNode oneSwrtDir = new PathNode("%s", PathNode.Type.variable);
 
 
     static {
@@ -79,6 +86,9 @@ public class FileSystemPath {
                                                 .child(oneActiveInferenceTaskInputConfigFile)
                                         )
                                         .child(oneActiveInferenceTaskModelDir)
+                                        .child(oneActiveInferenceTaskRuntimeDir
+                                                .child(oneActiveInferenceTaskRuntimeManifestFile)
+                                        )
                                         .child(oneActiveInferenceTaskResultDir)
                                         .child(oneActiveInferenceTaskLogsDir)
                                 )
@@ -89,6 +99,9 @@ public class FileSystemPath {
                 )
                 .child(swmpCacheDir
                         .child(swmpNameDir.child(oneSwmpDir))
+                )
+                .child(swrtCacheDir
+                        .child(swrtNameDir.child(oneSwrtDir))
                 );
     }
 
@@ -140,11 +153,22 @@ public class FileSystemPath {
         return oneActiveInferenceTaskModelDir.path(basePath, id);
     }
 
+    public String oneActiveTaskRuntimeDir(Long id) {
+        return oneActiveInferenceTaskRuntimeDir.path(basePath, id);
+    }
+
     /**
      * swds config file path,Eg:/var/starwhale/tasks/active/{taskId}/config/input.json(format:json)
      */
     public String oneActiveTaskInputConfigFile(Long id) {
         return oneActiveInferenceTaskInputConfigFile.path(basePath, id);
+    }
+
+    /**
+     * swds config file path,Eg:/var/starwhale/tasks/active/{taskId}/runtime/read_manifest.yaml(format:yaml)
+     */
+    public String oneActiveTaskRuntimeManifestFile(Long id) {
+        return oneActiveInferenceTaskRuntimeManifestFile.path(basePath, id);
     }
 
     /**
@@ -173,6 +197,13 @@ public class FileSystemPath {
      */
     public String oneSwmpCacheDir(String name, String version) {
         return oneSwmpDir.path(basePath, name, version);
+    }
+
+    /**
+     * swmp dir path,Eg:/var/starwhale/task/swrt/{name}/{version}(dir)
+     */
+    public String oneSwrtCacheDir(String name, String version) {
+        return oneSwrtDir.path(basePath, name, version);
     }
 
     /**

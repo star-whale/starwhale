@@ -101,5 +101,6 @@ public class TaskDirTest {
 
         // swmp local cache dir test
         Assertions.assertEquals("var/sw/swmp/mnist/v1", fileSystemPath.oneSwmpCacheDir( "mnist", "v1"));
+        Assertions.assertEquals("var/sw/swrt/mnist/v1", fileSystemPath.oneSwrtCacheDir( "mnist", "v1"));
     }
 }

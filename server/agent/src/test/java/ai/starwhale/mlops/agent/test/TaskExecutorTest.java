@@ -25,6 +25,7 @@ import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
+import ai.starwhale.mlops.agent.task.inferencetask.RuntimeManifest;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
@@ -32,6 +33,7 @@ import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence.E
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
+import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
@@ -100,6 +102,7 @@ public class TaskExecutorTest {
                                 .status(InferenceTaskStatus.PREPARING)
                                 .deviceClass(Device.Clazz.GPU)
                                 .deviceAmount(1)
+                                .swRunTime(SWRunTime.builder().name("swrt-name").version("swrt-version").build())
                                 .swModelPackage(SWModelPackage.builder().name("swmp-name").version("swmp-version").build())
                                 .build(),
                         InferenceTask.builder()
@@ -107,12 +110,14 @@ public class TaskExecutorTest {
                                 .taskType(TaskType.PPL)
                                 .status(InferenceTaskStatus.PREPARING)
                                 .deviceClass(Device.Clazz.GPU)
+                                .swRunTime(SWRunTime.builder().name("swrt-name2").version("swrt-version2").build())
                                 .swModelPackage(SWModelPackage.builder().name("swmp-name2").version("swmp-version2").build())
                                 .deviceAmount(1)
                                 .build()
                 ))
         );
         Mockito.when(taskPersistence.save(any())).thenReturn(true);
+        Mockito.when(taskPersistence.runtimeManifest(any())).thenReturn(RuntimeManifest.builder().baseImage("base-image").build());
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(
                 List.of(
                         GPUInfo.builder()
@@ -188,7 +193,7 @@ public class TaskExecutorTest {
                                 .code("success")
                                 .data(ReportResponse.builder().tasksToRun(List.of(
                                         TaskTrigger.builder()
-                                                .imageId("test-image")
+                                                .swrt(SWRunTime.builder().build())
                                                 .taskType(TaskType.PPL)
                                                 .deviceClass(Device.Clazz.GPU)
                                                 .deviceAmount(1)

@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.report.req.TaskLog;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
+import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
@@ -51,7 +52,13 @@ public class InferenceTask {
     /**
      * the proper image to get swmp run
      */
+    @Deprecated
     String imageId;
+
+    /**
+     * sw runtime info
+     */
+    SWRunTime swRunTime;
 
     /**
      * swmp meta info
@@ -126,7 +133,7 @@ public class InferenceTask {
 
     public static InferenceTask fromTaskTrigger(TaskTrigger taskTrigger) {
         return InferenceTask.builder().id(taskTrigger.getId())
-                .imageId(taskTrigger.getImageId())
+                .swRunTime(taskTrigger.getSwrt())
                 .taskType(taskTrigger.getTaskType())
                 .status(InferenceTaskStatus.PREPARING)
                 .actionStatus(ActionStatus.init)
