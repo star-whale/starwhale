@@ -121,6 +121,43 @@ public class SWModelPackageService {
         return res > 0;
     }
 
+    public Boolean recoverSWMP(String projectUrl, String modelUrl) {
+        SWMPObject swmp = swmpManager.fromUrl(modelUrl);
+        String name = swmp.getName();
+        Long id = swmp.getId();
+        if(id != null) {
+            SWModelPackageEntity entity = swmpMapper.findDeletedSWModelPackageById(id);
+            if(entity == null) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                    .tip("Recover runtime error. Runtime can not be found. "), HttpStatus.BAD_REQUEST);
+            }
+            name = entity.getSwmpName();
+        } else if (!StrUtil.isEmpty(name)) {
+            // To restore projects by name, need to check whether there are duplicate names
+            List<SWModelPackageEntity> deletedSWModelPackages = swmpMapper.listDeletedSWModelPackages(name);
+            if(deletedSWModelPackages.size() > 1) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                    .tip(StrUtil.format("Recover runtime error. Duplicate names [%s] of deleted model. ", name)),
+                    HttpStatus.BAD_REQUEST);
+            } else if (deletedSWModelPackages.size() == 0) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                    .tip(StrUtil.format("Recover runtime error. Can not find deleted model [%s].", name)),
+                    HttpStatus.BAD_REQUEST);
+            }
+            id = deletedSWModelPackages.get(0).getId();
+        }
+
+        // Check for duplicate names
+        if(swmpMapper.findByName(name) != null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                .tip(String.format("Recover model error. Model %s already exists", name)), HttpStatus.BAD_REQUEST);
+        }
+
+        int res = swmpMapper.recoverSWModelPackage(id);
+        log.info("Runtime has been recovered. Name={}", name);
+        return res > 0;
+    }
+
     public List<SWModelPackageInfoVO> listSWMPInfo(String project, String name) {
 
         if(StringUtils.hasText(name)){

@@ -19,8 +19,6 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
-import ai.starwhale.mlops.api.protocol.swmp.SWMPRequest;
-import ai.starwhale.mlops.api.protocol.swmp.SWMPVersionRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
@@ -130,6 +128,21 @@ public interface SWModelPackageApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("modelUrl")
             String modelUrl);
+
+    @Operation(summary = "Recover a model")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/recover",
+        produces = {"application/json"})
+    ResponseEntity<ResponseMessage<String>> recoverModel(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project Url",
+            schema = @Schema())
+        @PathVariable("projectUrl")
+        String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("modelUrl")
+        String modelUrl);
 
     @Operation(summary = "Model information",
         description = "Return the file information in the model package of the latest version of the current model")

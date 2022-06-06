@@ -101,6 +101,41 @@
         where id = #{id}
     </delete>
 
+    <update id="recoverSWModelPackage" >
+        update swmp_info
+        set is_deleted = 0
+        where id = #{id}
+    </update>
+
+    <select id="findDeletedSWModelPackageById" resultMap="swmpResultMap" >
+        select id as swmp_id,
+               swmp_name,
+               project_id,
+               owner_id,
+               is_deleted,
+               created_time as runtime_created_time,
+               modified_time as runtime_modified_time
+        from swmp_info
+        where is_deleted = 1
+          and id = #{id}
+    </select>
+
+    <select id="listDeletedSWModelPackages" resultMap="swmpResultMap">
+        select id as swmp_id,
+        swmp_name,
+        project_id,
+        owner_id,
+        is_deleted,
+        created_time as runtime_created_time,
+        modified_time as runtime_modified_time
+        from swmp_info
+        where is_deleted = 1
+        <if test="name != null and name != ''">
+            and swmp_name = #{name}
+        </if>
+        order by modified_time desc
+    </select>
+
     <resultMap id="swmpResultMap" type="ai.starwhale.mlops.domain.swmp.SWModelPackageEntity" >
         <id property="id" column="swmp_id" />
         <result property="swmpName" column="swmp_name" />
