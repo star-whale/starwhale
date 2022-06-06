@@ -6,7 +6,7 @@ import { listRuntimeVersions } from '../services/runtimeVersion'
 
 export interface IRuntimeVersionSelectorProps {
     projectId: string
-    modelId?: string
+    runtimeId?: string
     value?: string
     onChange?: (newValue: string) => void
     overrides?: SelectProps['overrides']
@@ -15,7 +15,7 @@ export interface IRuntimeVersionSelectorProps {
 
 export default function RuntimeVersionSelector({
     projectId,
-    modelId,
+    runtimeId,
     value,
     onChange,
     overrides,
@@ -24,9 +24,9 @@ export default function RuntimeVersionSelector({
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
     const runtimeVersionsInfo = useQuery(
-        `listRuntimeVersions:${projectId}:${modelId}:${keyword}`,
-        () => listRuntimeVersions(projectId, modelId as string, { pageNum: 1, pageSize: 100, search: keyword }),
-        { enabled: !!modelId }
+        `listRuntimeVersions:${projectId}:${runtimeId}:${keyword}`,
+        () => listRuntimeVersions(projectId, runtimeId as string, { pageNum: 1, pageSize: 100, search: keyword }),
+        { enabled: !!runtimeId }
     )
 
     const handleRuntimeVersionInputChange = _.debounce((term: string) => {

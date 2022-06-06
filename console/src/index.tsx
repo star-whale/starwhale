@@ -1,7 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import './styles/_global.scss'
-import './assets/fonts/iconfont'
 import './i18n'
 import App from './App'
 import reportWebVitals from './reportWebVitals'

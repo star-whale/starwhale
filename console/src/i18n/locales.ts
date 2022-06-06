@@ -355,7 +355,7 @@ const locales0 = {
         en: 'Runtime Version',
     },
     'runtime versions': {
-        en: 'Runtime versions',
+        en: 'Runtime Versions',
     },
 }
 

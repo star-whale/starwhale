@@ -32,7 +32,7 @@ export default function RuntimeSelector({ projectId, value, onChange, overrides,
             setOptions(
                 runtimesInfo.data?.list.map((item) => ({
                     id: item.id,
-                    label: item.version.meta,
+                    label: item.name,
                 })) ?? []
             )
         } else {

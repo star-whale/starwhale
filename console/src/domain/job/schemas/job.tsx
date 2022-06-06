@@ -42,19 +42,23 @@ export type IJobDetailSchema = IJobSchema
 export interface ICreateJobSchema {
     modelVersionId: string
     datasetVersionIds?: string
-    baseImageId?: string
+    runtimeVersionId?: string
     deviceId?: string
     deviceAmount?: number
 }
 
 export interface IJobFormSchema extends IJobSchema {
     modelId: string
+    runtimeId: string
+    runtimeVersionId: string
     datasetId: string
     datasetVersionId: string
     datasetVersionIdsArr?: Array<string>
 }
 export interface ICreateJobFormSchema extends ICreateJobSchema {
     modelId: string
+    runtimeId: string
+    runtimeVersionId: string
     datasetId: string
     datasetVersionId: string
     datasetVersionIdsArr?: Array<string>

@@ -1,13 +1,12 @@
 import axios from 'axios'
-import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
+import { IListSchema } from '@/domain/base/schemas/list'
+import qs from 'qs'
 import {
-    ICreateRuntimeVersionSchema,
     IRuntimeVersionSchema,
     IUpdateRuntimeVersionSchema,
     IRuntimeVersionDetailSchema,
     IRuntimeVersionListQuerySchema,
 } from '../schemas/runtimeVersion'
-import qs from 'qs'
 
 export async function listRuntimeVersions(
     projectId: string,

@@ -29,6 +29,7 @@
   ],
   "exclude": [
     "src/stories",
+    "**/iconfont.js",
     "baseui/helpers/overrides",
     "node_modules/baseui/helpers/**",
     "node_modules/baseui/helpers/overrides.js"
