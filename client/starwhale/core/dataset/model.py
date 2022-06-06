@@ -29,6 +29,7 @@ from starwhale.consts import (
     SWDS_LABEL_FNAME_FMT,
     DEFAULT_MANIFEST_NAME,
 )
+from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     move_dir,
@@ -88,7 +89,14 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         super().__init__(uri)
         self.typ = InstanceType.STANDALONE
         self.store = DatasetStorage(uri)
+        self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+
+    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.add(tags, quiet)
+
+    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.remove(tags, quiet)
 
     @classmethod
     def render_fuse_json(cls, workdir: Path, force: bool = False) -> str:

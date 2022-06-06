@@ -19,6 +19,7 @@ from starwhale.consts import (
     DEFAULT_PYTHON_VERSION,
     DEFAULT_SW_TASK_RUN_IMAGE,
 )
+from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, get_path_created_time
 from starwhale.base.type import URIType, BundleType, InstanceType
@@ -136,10 +137,17 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         super().__init__(uri)
         self.typ = InstanceType.STANDALONE
         self.store = RuntimeStorage(uri)
+        self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
+
+    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.add(tags, quiet)
+
+    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.remove(tags, quiet)
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
         # TODO: remove workdir

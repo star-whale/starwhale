@@ -140,3 +140,17 @@ def _extract(runtime: str, force: bool, target_dir: str) -> None:
 @click.option("-f", "--force", is_flag=True, help="force copy")
 def _copy(src: str, dest: str, force: bool) -> None:
     RuntimeTermView.copy(src, dest, force)
+
+
+@runtime_cmd.command("tag", help="Runtime Tag Management, add or remove")
+@click.argument("runtime")
+@click.argument("tags")
+@click.option("-r", "--remove", is_flag=True, help="remove tags")
+@click.option(
+    "-q",
+    "--quiet",
+    is_flag=True,
+    help="ignore tag name errors like name duplication, name absence",
+)
+def _tag(runtime: str, tags: str, remove: bool, quiet: bool) -> None:
+    RuntimeTermView(runtime).tag(tags, remove, quiet)

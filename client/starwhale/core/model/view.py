@@ -104,3 +104,13 @@ class ModelTermView(BaseTermView):
     def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
         Model.copy(src_uri, dest_uri, force)
         console.print(":clap: copy done.")
+
+    @BaseTermView._header
+    def tag(self, tags: str, remove: bool = False, quiet: bool = False) -> None:
+        _tags = tags.split(",")
+        if remove:
+            console.print(f":golfer:, try to remove tags {tags} @ {self.uri}...")
+            self.model.remove_tags(_tags, quiet)
+        else:
+            console.print(f":surfer:, try to add tags {tags} @ {self.uri}...")
+            self.model.add_tags(_tags, quiet)

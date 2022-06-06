@@ -21,6 +21,7 @@ from starwhale.consts import (
     DEFAULT_COPY_WORKERS,
     DEFAULT_STARWHALE_API_VERSION,
 )
+from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
@@ -168,7 +169,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         super().__init__(uri)
         self.typ = InstanceType.STANDALONE
         self.store = ModelStorage(uri)
+        self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+
+    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.add(tags, quiet)
+
+    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        self.tag.remove(tags, quiet)
 
     @classmethod
     def eval_user_handler(

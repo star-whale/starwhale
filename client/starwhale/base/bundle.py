@@ -45,6 +45,14 @@ class BaseBundle(object):
         raise NotImplementedError
 
     @abstractmethod
+    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     def history(
         self,
         page: int = DEFAULT_PAGE_IDX,
