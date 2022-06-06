@@ -11,13 +11,14 @@ import ModelVersionSelector from '@/domain/model/components/ModelVersionSelector
 import MultiTags from '@/components/Tag/MultiTags'
 import DatasetSelector from '@/domain/dataset/components/DatasetSelector'
 import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
-import BaseImageSelector from '@/domain/runtime/components/BaseImageSelector'
 import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
 import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
 import { usePage } from '@/hooks/usePage'
 import IconFont from '@/components/IconFont'
-import DeviceSelector from '../../runtime/components/DeviceSelector'
+import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
+import RuntimeSelector from '@/domain/runtime/components/RuntimeSelector'
+import DeviceSelector from '@/domain/setting/components/DeviceSelector'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
@@ -32,6 +33,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
     const { projectId } = useParams<{ projectId: string }>()
     const [modelId, setModelId] = useState('')
     const [datasetId, setDatasetId] = useState('')
+    const [runtimeId, setRuntimeId] = useState('')
     const [datasetVersionsByIds, setDatasetVersionIds] = useState('')
     const [page] = usePage()
     const [form] = useForm()
@@ -43,6 +45,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
         setValues(values_)
         if (values_.modelId) setModelId(values_.modelId)
         if (values_.datasetId) setDatasetId(values_.datasetId)
+        if (values_.runtimeId) setRuntimeId(values_.runtimeId)
     }, [])
 
     const handleFinish = useCallback(
@@ -50,7 +53,13 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             setLoading(true)
             try {
                 await onSubmit({
-                    ..._.omit(values_, ['modelId', 'datasetId', 'datasetVersionId', 'datasetVersionIdsArr']),
+                    ..._.omit(values_, [
+                        'modelId',
+                        'datasetId',
+                        'datasetVersionId',
+                        'datasetVersionIdsArr',
+                        'runtimeId',
+                    ]),
                     datasetVersionIds: values_.datasetVersionIdsArr?.join(','),
                 })
                 history.goBack()
@@ -161,10 +170,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     <MultiTags placeholder='' getValueLabel={getValueLabel} />
                 </FormItem>
             </div>
-            <Divider orientation='top'>{t('Environment')}</Divider>
+            <Divider orientation='top'>{t('Runtime')}</Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap', marginBottom: '36px' }}>
-                <FormItem label={t('BaseImage')} name='baseImageId'>
-                    <BaseImageSelector
+                <FormItem label={t('Runtime')} name='runtimeId' required>
+                    <RuntimeSelector
+                        projectId={projectId}
                         overrides={{
                             Root: {
                                 style: {
@@ -174,7 +184,25 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         }}
                     />
                 </FormItem>
-                <FormItem label={t('Device')} name='deviceId'>
+                {runtimeId && (
+                    <FormItem key={runtimeId} label={t('Version')} required name='runtimeVersionId'>
+                        <RuntimeVersionSelector
+                            projectId={projectId}
+                            runtimeId={runtimeId}
+                            overrides={{
+                                Root: {
+                                    style: {
+                                        width: '280px',
+                                    },
+                                },
+                            }}
+                        />
+                    </FormItem>
+                )}
+            </div>
+            <Divider orientation='top'>{t('Environment')}</Divider>
+            <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap', marginBottom: '36px' }}>
+                <FormItem label={t('Device')} name='deviceId' required>
                     <DeviceSelector
                         overrides={{
                             Root: {
@@ -185,7 +213,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         }}
                     />
                 </FormItem>
-                <FormItem label={t('Device Amount')} name='deviceAmount'>
+                <FormItem label={t('Device Amount')} name='deviceAmount' required>
                     <NumberInput
                         overrides={{
                             Root: {

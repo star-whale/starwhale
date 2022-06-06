@@ -1,37 +1,37 @@
 import React from 'react'
 import Table from '@/components/Table/index'
 import useTranslation from '@/hooks/useTranslation'
-import { useModel, useModelLoading } from '@model/hooks/useModel'
+import { useRuntime, useRuntimeLoading } from '@/domain/runtime/hooks/useRuntime'
 import Card from '@/components/Card'
-import { IModelFileSchema } from '@model/schemas/model'
+import { IRuntimeFileSchema } from '@/domain/runtime/schemas/runtime'
 import { formatTimestampDateTime } from '@/utils/datetime'
 
-export default function ModelOverview() {
-    const { model } = useModel()
-    const { modelLoading } = useModelLoading()
+export default function RuntimeOverview() {
+    const { runtime } = useRuntime()
+    const { runtimeLoading } = useRuntimeLoading()
 
     const [t] = useTranslation()
 
     const items = [
         {
+            label: t('Runtime Name'),
+            value: runtime?.runtimeName ?? '',
+        },
+        {
             label: t('Version Name'),
-            value: model?.versionName ?? '',
+            value: runtime?.versionName ?? '',
         },
         {
             label: t('Version Meta'),
-            value: model?.versionMeta ?? '',
+            value: runtime?.versionMeta ?? '',
         },
         {
             label: t('Version Tag'),
-            value: model?.versionTag ?? '',
-        },
-        {
-            label: t('Model ID'),
-            value: model?.id ?? '',
+            value: runtime?.versionTag ?? '',
         },
         {
             label: t('Created time'),
-            value: model?.createdTime && formatTimestampDateTime(model.createdTime),
+            value: runtime?.createdTime && formatTimestampDateTime(runtime.createdTime),
         },
     ]
 
@@ -80,9 +80,9 @@ export default function ModelOverview() {
                 }}
             >
                 <Table
-                    isLoading={modelLoading}
+                    isLoading={runtimeLoading}
                     columns={[t('File'), t('Size')]}
-                    data={model?.files?.map((file: IModelFileSchema) => [file?.name, file?.size]) ?? []}
+                    data={runtime?.files?.map((file: IRuntimeFileSchema) => [file?.name, file?.size]) ?? []}
                 />
             </Card>
         </>

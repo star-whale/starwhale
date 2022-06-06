@@ -28,7 +28,11 @@ import JobResults from './pages/Job/JobResults'
 import JobOverviewLayout from './pages/Job/JobOverviewLayout'
 import SettingsOverviewLayout from './pages/Settings/SettingsOverviewLayout'
 import SettingAgentListCard from './pages/Settings/SettingAgentListCard'
-import SettingBaseImageListCard from './pages/Settings/SettingBaseImageListCard'
+import RuntimeVersionListCard from './pages/Runtime/RuntimeVersionListCard'
+import RuntimeVersionLayout from './pages/Runtime/RuntimeVersionLayout'
+import RuntimeLayout from './pages/Runtime/RuntimeLayout'
+import RuntimeOverview from './pages/Runtime/Overview'
+import ProjectRuntimes from './pages/Project/Runtimes'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -58,8 +62,7 @@ const Routes = () => {
                         <SettingsOverviewLayout>
                             <Switch>
                                 <Route exact path='/settings/agents' component={SettingAgentListCard} />
-                                <Route exact path='/settings/images' component={SettingBaseImageListCard} />
-                                <Redirect from='/settings/:path?' to='/settings/images' />
+                                <Redirect from='/settings/:path?' to='/settings/agents' />
                             </Switch>
                         </SettingsOverviewLayout>
                     </Route>
@@ -78,6 +81,7 @@ const Routes = () => {
                                 <Route exact path='/projects/:projectId/models' component={ProjectModels} />
                                 <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
                                 <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
+                                <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
                                 <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
                                 <Redirect from='/projects/:projectId' to='/projects/:projectId/models' />
                             </Switch>
@@ -114,6 +118,29 @@ const Routes = () => {
                                 />
                             </Switch>
                         </DatasetLayout>
+                    </Route>
+                    {/* runtime */}
+                    <Route exact path='/projects/:projectId/runtimes/:runtimeId/versions'>
+                        <RuntimeVersionLayout>
+                            <Switch>
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/runtimes/:runtimeId/versions'
+                                    component={RuntimeVersionListCard}
+                                />
+                            </Switch>
+                        </RuntimeVersionLayout>
+                    </Route>
+                    <Route exact path='/projects/:projectId/runtimes/:runtimeId/:path?/:path?'>
+                        <RuntimeLayout>
+                            <Switch>
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/runtimes/:runtimeId'
+                                    component={RuntimeOverview}
+                                />
+                            </Switch>
+                        </RuntimeLayout>
                     </Route>
                     {/* model */}
                     <Route exact path='/projects/:projectId/models/:modelId/versions'>

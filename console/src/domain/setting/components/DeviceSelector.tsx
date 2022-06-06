@@ -2,23 +2,23 @@ import { Select, SelectProps, SIZE } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
-import { listBaseImages } from '../services/runtime'
+import { listDevices } from '../services/system'
 
-export interface IBaseImageSelectorProps {
+export interface IDeviceSelectorProps {
     value?: string
     onChange?: (newValue: string) => void
     overrides?: SelectProps['overrides']
     disabled?: boolean
 }
 
-export default function BaseImageSelector({ value, onChange, overrides, disabled }: IBaseImageSelectorProps) {
+export default function DeviceSelector({ value, onChange, overrides, disabled }: IDeviceSelectorProps) {
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
-    const baseImagesInfo = useQuery(`listBaseImages:${keyword}`, () =>
-        listBaseImages({ pageNum: 1, pageSize: 100, search: keyword })
+    const devicesInfo = useQuery(`listDevices:${keyword}`, () =>
+        listDevices({ pageNum: 1, pageSize: 100, search: keyword })
     )
 
-    const handleBaseImageInputChange = _.debounce((term: string) => {
+    const handleDeviceInputChange = _.debounce((term: string) => {
         if (!term) {
             setOptions([])
             return
@@ -27,9 +27,9 @@ export default function BaseImageSelector({ value, onChange, overrides, disabled
     })
 
     useEffect(() => {
-        if (baseImagesInfo.isSuccess) {
+        if (devicesInfo.isSuccess) {
             setOptions(
-                baseImagesInfo.data?.map((item) => ({
+                devicesInfo.data?.map((item) => ({
                     id: item.id,
                     label: item.name,
                 })) ?? []
@@ -37,14 +37,14 @@ export default function BaseImageSelector({ value, onChange, overrides, disabled
         } else {
             setOptions([])
         }
-    }, [baseImagesInfo.data, baseImagesInfo.isSuccess])
+    }, [devicesInfo.data, devicesInfo.isSuccess])
 
     return (
         <Select
             size={SIZE.compact}
             disabled={disabled}
             overrides={overrides}
-            isLoading={baseImagesInfo.isFetching}
+            isLoading={devicesInfo.isFetching}
             options={options}
             onChange={(params) => {
                 if (!params.option) {
@@ -54,7 +54,7 @@ export default function BaseImageSelector({ value, onChange, overrides, disabled
             }}
             onInputChange={(e) => {
                 const target = e.target as HTMLInputElement
-                handleBaseImageInputChange(target.value)
+                handleDeviceInputChange(target.value)
             }}
             value={
                 value

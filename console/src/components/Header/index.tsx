@@ -11,8 +11,6 @@ import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import User from '@/domain/user/components/User'
 import { simulationJump } from '@/utils'
 import { BsChevronDown } from 'react-icons/bs'
-import { AiOutlineCloudServer } from 'react-icons/ai'
-import { GrDocker } from 'react-icons/gr'
 import { Link } from 'react-router-dom'
 import IconFont from '../IconFont'
 
@@ -203,16 +201,12 @@ export default function Header() {
                             <IconFont type='setting2' size={20} />
                         </Link>
                     </div>
-                    <div className={styles.systemMenu}>
-                        <Link className={styles.systemMenuItem} to='/settings/images'>
-                            <GrDocker size={20} />
-                            <span>{t('Base Images')}</span>
-                        </Link>
+                    {/* <div className={styles.systemMenu}>
                         <Link className={styles.systemMenuItem} to='/settings/agents'>
                             <AiOutlineCloudServer size={20} />
                             <span>{t('Agent List')}</span>
                         </Link>
-                    </div>
+                    </div> */}
                 </div>
             )}
             {currentUser && (

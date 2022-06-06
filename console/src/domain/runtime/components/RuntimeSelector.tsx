@@ -2,23 +2,24 @@ import { Select, SelectProps, SIZE } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
-import { listDevices } from '../services/runtime'
+import { listRuntimes } from '../services/runtime'
 
-export interface IDeviceSelectorProps {
+export interface IRuntimeSelectorProps {
+    projectId: string
     value?: string
     onChange?: (newValue: string) => void
     overrides?: SelectProps['overrides']
     disabled?: boolean
 }
 
-export default function DeviceSelector({ value, onChange, overrides, disabled }: IDeviceSelectorProps) {
+export default function RuntimeSelector({ projectId, value, onChange, overrides, disabled }: IRuntimeSelectorProps) {
     const [keyword, setKeyword] = useState<string>()
     const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
-    const devicesInfo = useQuery(`listDevices:${keyword}`, () =>
-        listDevices({ pageNum: 1, pageSize: 100, search: keyword })
+    const runtimesInfo = useQuery(`listRuntimes:${projectId}:${keyword}`, () =>
+        listRuntimes(projectId, { pageNum: 1, pageSize: 100, search: keyword })
     )
 
-    const handleDeviceInputChange = _.debounce((term: string) => {
+    const handleRuntimeInputChange = _.debounce((term: string) => {
         if (!term) {
             setOptions([])
             return
@@ -27,9 +28,9 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
     })
 
     useEffect(() => {
-        if (devicesInfo.isSuccess) {
+        if (runtimesInfo.isSuccess) {
             setOptions(
-                devicesInfo.data?.map((item) => ({
+                runtimesInfo.data?.list.map((item) => ({
                     id: item.id,
                     label: item.name,
                 })) ?? []
@@ -37,14 +38,14 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
         } else {
             setOptions([])
         }
-    }, [devicesInfo.data, devicesInfo.isSuccess])
+    }, [runtimesInfo.data?.list, runtimesInfo.isSuccess])
 
     return (
         <Select
             size={SIZE.compact}
             disabled={disabled}
             overrides={overrides}
-            isLoading={devicesInfo.isFetching}
+            isLoading={runtimesInfo.isFetching}
             options={options}
             onChange={(params) => {
                 if (!params.option) {
@@ -54,7 +55,7 @@ export default function DeviceSelector({ value, onChange, overrides, disabled }:
             }}
             onInputChange={(e) => {
                 const target = e.target as HTMLInputElement
-                handleDeviceInputChange(target.value)
+                handleRuntimeInputChange(target.value)
             }}
             value={
                 value

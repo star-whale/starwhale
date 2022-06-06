@@ -2,7 +2,6 @@ import useTranslation from '@/hooks/useTranslation'
 import React, { useMemo } from 'react'
 import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
 import { AiOutlineSetting, AiOutlineCloudServer } from 'react-icons/ai'
-import { GrDocker } from 'react-icons/gr'
 
 export default function SettingsSidebar({ style }: IComposedSidebarProps) {
     const [t] = useTranslation()
@@ -10,12 +9,6 @@ export default function SettingsSidebar({ style }: IComposedSidebarProps) {
 
     const navItems: INavItem[] = useMemo(() => {
         return [
-            {
-                title: t('BaseImage'),
-                path: '/settings/images',
-                activePathPattern: /\/(images)\/?/,
-                icon: <GrDocker size={20} />,
-            },
             {
                 title: t('Agent'),
                 path: '/settings/agents',
