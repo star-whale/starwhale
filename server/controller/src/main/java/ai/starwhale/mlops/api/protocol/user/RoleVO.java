@@ -29,9 +29,9 @@ public class RoleVO {
 
     private String id;
 
-    private String roleName;
+    private String name;
 
-    private String roleNameEn;
+    private String nameEn;
 
     public static RoleVO empty() {
         return new RoleVO("", "", "");

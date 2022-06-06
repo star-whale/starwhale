@@ -20,6 +20,8 @@ import ai.starwhale.mlops.api.protocol.StorageFileVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
+import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
@@ -69,6 +71,12 @@ public class SWDatasetService {
 
     @Resource
     private SwdsManager swdsManager;
+
+    @Resource
+    private IDConvertor idConvertor;
+
+    @Resource
+    private LocalDateTimeConvertor localDateTimeConvertor;
 
     public PageInfo<DatasetVO> listSWDataset(SWDSQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -122,10 +130,12 @@ public class SWDatasetService {
             List<StorageFileVO> collect = storageService.listStorageFile(storagePath);
 
             return SWDatasetInfoVO.builder()
-                .swdsName(ds.getDatasetName())
+                .id(idConvertor.convert(ds.getId()))
+                .name(ds.getDatasetName())
                 .versionName(versionEntity.getVersionName())
                 .versionTag(versionEntity.getVersionTag())
                 .versionMeta(versionEntity.getVersionMeta())
+                .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))
                 .files(collect)
                 .build();
 

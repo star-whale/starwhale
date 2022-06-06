@@ -33,11 +33,11 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class SWModelPackageInfoVO implements Serializable {
 
-    @JsonProperty("swmpId")
-    private String swmpId;
+    @JsonProperty("id")
+    private String id;
 
-    @JsonProperty("swmpName")
-    private String swmpName;
+    @JsonProperty("name")
+    private String name;
 
     @JsonProperty("versionName")
     private String versionName;

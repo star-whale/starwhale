@@ -33,8 +33,11 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class RuntimeInfoVO implements Serializable  {
 
-    @JsonProperty("runtimeName")
-    private String runtimeName;
+    @JsonProperty("id")
+    private String id;
+
+    @JsonProperty("name")
+    private String name;
 
     @JsonProperty("versionName")
     private String versionName;
@@ -53,6 +56,6 @@ public class RuntimeInfoVO implements Serializable  {
     private List<StorageFileVO> files;
 
     public static RuntimeInfoVO empty() {
-        return new RuntimeInfoVO("", "", "", "", 0L , new ArrayList<>());
+        return new RuntimeInfoVO("", "", "", "", "", 0L , new ArrayList<>());
     }
 }

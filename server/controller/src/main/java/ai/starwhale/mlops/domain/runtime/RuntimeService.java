@@ -21,6 +21,8 @@ import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVO;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
+import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
@@ -91,6 +93,12 @@ public class RuntimeService {
     @Resource
     private UserService userService;
 
+    @Resource
+    private IDConvertor idConvertor;
+
+    @Resource
+    private LocalDateTimeConvertor localDateTimeConvertor;
+
     public PageInfo<RuntimeVO> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(runtimeQuery.getProjectUrl());
@@ -143,10 +151,12 @@ public class RuntimeService {
             List<StorageFileVO> collect = storageService.listStorageFile(storagePath);
 
             return RuntimeInfoVO.builder()
-                .runtimeName(rt.getRuntimeName())
+                .id(idConvertor.convert(rt.getId()))
+                .name(rt.getRuntimeName())
                 .versionName(versionEntity.getVersionName())
                 .versionTag(versionEntity.getVersionTag())
                 .versionMeta(versionEntity.getVersionMeta())
+                .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))
                 .files(collect)
                 .build();
 
