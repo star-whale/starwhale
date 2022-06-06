@@ -18,15 +18,14 @@ package ai.starwhale.mlops.domain.job.status;
 
 
 import static ai.starwhale.mlops.domain.job.status.JobStatus.CANCELED;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.CANCELING;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.COLLECTING_RESULT;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.CANCELLING;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.CREATED;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.FAIL;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.PAUSED;
+import static ai.starwhale.mlops.domain.job.status.JobStatus.READY;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.RUNNING;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.SUCCESS;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.TO_CANCEL;
-import static ai.starwhale.mlops.domain.job.status.JobStatus.TO_COLLECT_RESULT;
 import static ai.starwhale.mlops.domain.job.status.JobStatus.UNKNOWN;
 
 import java.util.AbstractMap.SimpleEntry;
@@ -38,20 +37,24 @@ import org.springframework.stereotype.Component;
 public class JobStatusMachine {
 
     final static Map<JobStatus, Set<JobStatus>> transferMap = Map.ofEntries(
-        new SimpleEntry<>(CREATED, Set.of(PAUSED,RUNNING,SUCCESS,TO_CANCEL,FAIL))
-        , new SimpleEntry<>(PAUSED, Set.of(RUNNING,CANCELED,FAIL))
-        , new SimpleEntry<>(RUNNING, Set.of(PAUSED,TO_COLLECT_RESULT,SUCCESS,FAIL))
-        , new SimpleEntry<>(TO_COLLECT_RESULT, Set.of(COLLECTING_RESULT,SUCCESS,TO_CANCEL,FAIL))
-        , new SimpleEntry<>(COLLECTING_RESULT, Set.of(SUCCESS,TO_CANCEL,FAIL))
+        new SimpleEntry<>(CREATED, Set.of(READY,PAUSED,RUNNING,SUCCESS,TO_CANCEL,FAIL))
+        , new SimpleEntry<>(READY, Set.of(PAUSED,RUNNING,SUCCESS,TO_CANCEL,FAIL))
+        , new SimpleEntry<>(PAUSED, Set.of(READY,RUNNING,CANCELED,FAIL))
+        , new SimpleEntry<>(RUNNING, Set.of(PAUSED,SUCCESS,FAIL))
         , new SimpleEntry<>(SUCCESS, Set.of())
         , new SimpleEntry<>(FAIL, Set.of())
-        , new SimpleEntry<>(TO_CANCEL, Set.of(CANCELING,CANCELED,FAIL))
-        , new SimpleEntry<>(CANCELING, Set.of(CANCELED,FAIL))
+        , new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING,CANCELED,FAIL))
+        , new SimpleEntry<>(CANCELLING, Set.of(CANCELED,FAIL))
         , new SimpleEntry<>(CANCELED, Set.of())
         , new SimpleEntry<>(UNKNOWN, Set.of(JobStatus.values())));
 
+    final static Set<JobStatus> HOT_JOB_STATUS=Set.of(READY, RUNNING, TO_CANCEL, CANCELLING, PAUSED);
     public boolean couldTransfer(JobStatus statusNow,JobStatus statusNew) {
         return transferMap.get(statusNow).contains(statusNew);
+    }
+
+    public boolean isHot(JobStatus status) {
+        return HOT_JOB_STATUS.contains(status);
     }
 
     public boolean isFinal(JobStatus status) {

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022.1-2022
+  ~ StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="ai.starwhale.mlops.domain.job.step.mapper.StepMapper">
+    <sql id="select_step">
+        select t.id as step_id,
+               t.step_uuid,
+               t.step_name,
+               t.job_id,
+               t.last_step_id,
+               t.step_status,
+               t.created_time as step_created_time,
+               t.modified_time as step_modified_time
+        from step as t
+    </sql>
+    <select id="findByJobId" resultMap="stepResultMap">
+        <include refid="select_step" />
+        <where>
+            and t.job_id = #{jobId}
+        </where>
+        order by t.id
+    </select>
+
+    <insert id="save" parameterType="ai.starwhale.mlops.domain.job.step.StepEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        insert into step(step_name, job_id, last_step_id, step_status, step_uuid)
+        values(#{step.name}, #{step.jobId}, #{step.lastStepId}, #{step.status}, #{step.uuid})
+    </insert>
+
+    <update id="updateStatus">
+        update step set step_status = #{status} WHERE id in
+        <foreach item="item" index="index" collection="stepIds"
+          open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateFinishedTime">
+        update step set finished_time = #{finishedTime} WHERE id in
+        <foreach item="item" index="index" collection="stepIds"
+          open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+
+    <resultMap id="stepResultMap" type="ai.starwhale.mlops.domain.job.step.StepEntity" >
+        <id property="id" column="step_id" />
+        <result property="lastStepId" column="last_step_id" />
+        <result property="name" column="step_name" />
+        <result property="jobId" column="job_id" />
+        <result property="status" column="step_status" />
+        <result property="uuid" column="step_uuid" />
+        <result property="createdTime" column="task_created_time" />
+        <result property="modifiedTime" column="task_modified_time" />
+    </resultMap>
+</mapper>

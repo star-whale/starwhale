@@ -24,6 +24,8 @@ import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.RuntimeEntity;
@@ -31,9 +33,6 @@ import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWAuthException;
@@ -51,12 +50,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,8 +98,7 @@ public class SWModelPackageService {
     private ProjectManager projectManager;
 
     @Resource
-    @Qualifier("cacheWrapperReadOnly")
-    private LivingTaskCache livingTaskCache;
+    private HotJobHolder jobHolder;
 
     @Resource
     private SwmpManager swmpManager;
@@ -307,8 +305,7 @@ public class SWModelPackageService {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip("swmp version duplicate"+uploadRequest.version()),
                 HttpStatus.BAD_REQUEST);
         }else if(entityExists && uploadRequest.force()){
-            livingTaskCache.ofStatus(TaskStatus.RUNNING).parallelStream()
-                .map(Task::getJob).collect(Collectors.toSet())
+            jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
                 .parallelStream().forEach(job -> {
                     SWModelPackage swmp = job.getSwmp();
                     if(swmp.getName().equals(uploadRequest.name()) && swmp.getVersion().equals(uploadRequest.version())){

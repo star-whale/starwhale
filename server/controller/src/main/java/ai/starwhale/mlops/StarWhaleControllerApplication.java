@@ -25,7 +25,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @EnableScheduling
-@MapperScan("ai.starwhale.mlops.domain.*.mapper")
+@MapperScan({"ai.starwhale.mlops.domain.*.mapper","ai.starwhale.mlops.domain.job.step.mapper"})
 @EnableConfigurationProperties(ControllerProperties.class)
 public class StarWhaleControllerApplication {
     public static void main(String[] args) {

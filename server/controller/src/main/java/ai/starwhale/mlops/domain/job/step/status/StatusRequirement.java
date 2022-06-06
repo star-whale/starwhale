@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.status;
+package ai.starwhale.mlops.domain.job.step.status;
 
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,14 +32,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class TaskStatusRequirement {
+public class StatusRequirement<T> {
 
-    Set<TaskStatus> taskStatuses;
-
-    /**
-     * if null, no constrain on this field
-     */
-    TaskType taskType;
+    Set<T> requiredStatuses;
 
     RequireType requireType;
 
@@ -62,26 +57,45 @@ public class TaskStatusRequirement {
         MUST;
     }
 
-    public boolean fit(Collection<Task> tasks){
-        Collection<Task> tobeCheckedTasks = tasks;
-        if(taskType != null){
-            tobeCheckedTasks = tasks.parallelStream().filter(t -> t.getTaskType() == taskType)
-                .collect(Collectors.toList());
-        }
-        List<TaskStatus> taskStatusList = tobeCheckedTasks.parallelStream()
-            .map(Task::getStatus).collect(Collectors.toList());
+    public boolean fit(Collection<T> statuses){
         switch (requireType){
             case ANY:
             case MUST:
-                return taskStatusList.stream().anyMatch(ts -> getTaskStatuses().contains(ts));
+                return statuses.stream().anyMatch(ts -> getRequiredStatuses().contains(ts));
             case ALL:
-                return taskStatusList.stream().allMatch(ts -> getTaskStatuses().contains(ts));
+                return statuses.stream().allMatch(ts -> getRequiredStatuses().contains(ts));
             case HAVE_NO:
-                return taskStatusList.stream().allMatch(ts -> !getTaskStatuses().contains(ts));
+                return statuses.stream().allMatch(ts -> !getRequiredStatuses().contains(ts));
             default:
                 return false;
 
         }
+    }
+
+    public  static <T> boolean match(Collection<T> tasks, Set<StatusRequirement<T>> requirements) {
+        Map<Boolean, List<StatusRequirement<T>>> requireTypeListMap = requirements.stream()
+            .collect(Collectors.groupingBy(tr -> tr.getRequireType() == RequireType.ANY));
+
+        List<StatusRequirement<T>> anyR = requireTypeListMap.get(true);
+        if (null != anyR) {
+            for (StatusRequirement tr : anyR) {
+                if (tr.fit(tasks)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        List<StatusRequirement<T>> negativeR = requireTypeListMap.get(false);
+        if (null != negativeR) {
+            for (StatusRequirement tr : negativeR) {
+                if (!tr.fit(tasks)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -92,13 +106,13 @@ public class TaskStatusRequirement {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        TaskStatusRequirement that = (TaskStatusRequirement) o;
-        return taskStatuses == that.taskStatuses && taskType == that.taskType
+        StatusRequirement that = (StatusRequirement) o;
+        return requiredStatuses == that.requiredStatuses
             && requireType == that.requireType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(taskStatuses, taskType, requireType);
+        return Objects.hash(requiredStatuses, requireType);
     }
 }

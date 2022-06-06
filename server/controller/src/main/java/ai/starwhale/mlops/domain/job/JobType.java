@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.split;
+package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
-import ai.starwhale.mlops.domain.job.step.Step;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import java.util.List;
-
-/**
- * split job to Steps. One job shall not to be split multiple times
- */
-public interface JobSpliterator {
-
-    List<Step> split(Job job);
+public enum JobType {
+    EVALUATION,TRAIN,SERVING
 }

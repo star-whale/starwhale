@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.status;
+package ai.starwhale.mlops.domain.job.step.status;
 
-/**
- * possible job statuses
- */
-public enum JobStatus {
+public enum StepStatus {
     /**
      * created by user
      */
@@ -66,5 +63,4 @@ public enum JobStatus {
     FAIL(),
 
     UNKNOWN();
-
 }

@@ -19,6 +19,7 @@
                               j.finished_time as job_finished_time,
                               j.duration_ms as job_duration_ms,
                               j.job_status,
+                              j.job_type,
                               j.base_image_id as image_id,
                               j.device_type,
                               j.device_amount,
@@ -161,6 +162,7 @@
                              finished_time,
                              duration_ms,
                              job_status,
+                             job_type,
                              base_image_id,
                              device_type,
                              device_amount,
@@ -173,6 +175,7 @@
                 #{job.finishedTime},
                 #{job.durationMs},
                 #{job.jobStatus},
+                #{job.type},
                 #{job.baseImageId},
                 #{job.deviceType},
                 #{job.deviceAmount},
@@ -191,6 +194,7 @@
         <result property="finishedTime" column="job_finished_time" />
         <result property="durationMs" column="job_duration_ms" />
         <result property="jobStatus" column="job_status" />
+        <result property="type" column="job_type" />
         <result property="deviceType" column="device_type" />
         <result property="deviceAmount" column="device_amount" />
         <result property="resultOutputPath" column="job_result_output_path" />
