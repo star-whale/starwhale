@@ -27,7 +27,6 @@ import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask.ActionStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.domain.node.Device;
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,6 +41,8 @@ import java.util.stream.Collectors;
 @Service
 public class Preparing2RunningAction extends AbsBaseTaskAction {
     private static final String containerBasePath = "/opt/starwhale/";
+    private static final String runtimeDepPath = "/opt/starwhale/swmp/dep";
+    private static final String runtimeManifestFilePath = "/opt/starwhale/swmp/_manifest.yaml";
     private static final String swmpDirEnv = "SW_SWMP_WORKDIR";
     private static final String statusFileEnv = "SW_TASK_STATUS_FILE";
     private static final String logDirEnv = "SW_TASK_LOG_DIR";
@@ -133,7 +134,20 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                         .source(fileSystemPath.oneActiveTaskDir(originTask.getId()))
                         .target(containerBasePath)
                         .type("BIND")
+                        .build(),
+                Mount.builder()
+                        .readOnly(false)
+                        .source(fileSystemPath.oneActiveTaskRuntimeDir(originTask.getId()))
+                        .target(runtimeDepPath)
+                        .type("BIND")
+                        .build(),
+                Mount.builder()
+                        .readOnly(false)
+                        .source(fileSystemPath.oneActiveTaskRuntimeManifestFile(originTask.getId()))
+                        .target(runtimeManifestFilePath)
+                        .type("BIND")
                         .build()
+
         ));
         // generate the file used by container(default dir)
         taskPersistence.generateConfigFile(originTask);
