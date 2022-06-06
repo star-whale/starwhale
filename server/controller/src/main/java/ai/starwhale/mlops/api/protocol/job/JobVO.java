@@ -17,6 +17,8 @@
 package ai.starwhale.mlops.api.protocol.job;
 
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -49,8 +51,8 @@ public class JobVO implements Serializable {
     @Valid
     private List<String> datasets;
 
-    @JsonProperty("baseImage")
-    private BaseImageVO baseImage;
+    @JsonProperty("runtime")
+    private RuntimeVO runtime;
 
     @JsonProperty("device")
     private String device;

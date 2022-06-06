@@ -29,7 +29,6 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
-import ai.starwhale.mlops.domain.task.cache.LivingTaskCache;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
@@ -88,10 +87,6 @@ public class RuntimeService {
 
     @Resource
     private StorageAccessService storageAccessService;
-
-    @Resource
-    @Qualifier("cacheWrapperReadOnly")
-    private LivingTaskCache livingTaskCache;
 
     @Resource
     private UserService userService;

@@ -48,9 +48,9 @@ public class TaskTrigger {
     List<String> cmpInputFilePaths;
 
     /**
-     * the proper image to get swmp run
+     * the runtime to get swmp run
      */
-    private String imageId;
+    private SWRunTime swrt;
 
     /**
      * swmp meta info

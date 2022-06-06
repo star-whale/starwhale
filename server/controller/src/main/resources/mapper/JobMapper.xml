@@ -20,7 +20,7 @@
                               j.duration_ms as job_duration_ms,
                               j.job_status,
                               j.job_type,
-                              j.base_image_id as image_id,
+                              j.swrt_version_id as swrt_version_id,
                               j.device_type,
                               j.device_amount,
                               j.result_output_path as job_result_output_path,
@@ -55,15 +55,6 @@
                          and r.id = u.role_id
                          and mv.id = j.swmp_version_id
                          and m.id = mv.swmp_id) as j2
-                          left join
-                      (select * from
-                          (select id as bid,
-                                  image_name as image_name,
-                                  created_time as image_created_time,
-                                  modified_time as image_modified_time from base_image) as b
-                      ) as b2
-                      on
-                          j2.image_id = b2.bid
     </sql>
 
     <select id="listJobs" resultMap="jobResultMap" >
@@ -163,7 +154,7 @@
                              duration_ms,
                              job_status,
                              job_type,
-                             base_image_id,
+                             swrt_version_id,
                              device_type,
                              device_amount,
                              result_output_path)
@@ -176,7 +167,7 @@
                 #{job.durationMs},
                 #{job.jobStatus},
                 #{job.type},
-                #{job.baseImageId},
+                #{job.runtimeVersionId},
                 #{job.deviceType},
                 #{job.deviceAmount},
                 #{job.resultOutputPath}
@@ -200,9 +191,9 @@
         <result property="resultOutputPath" column="job_result_output_path" />
         <result property="comment" column="job_comment"/>
         <result property="isDeleted" column="job_is_deleted"/>
+        <result property="runtimeVersionId" column="swrt_version_id"/>
         <association property="project" resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
         <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper.swmpVersionResultMap" />
         <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
-        <association property="baseImage" resultMap="ai.starwhale.mlops.domain.job.mapper.BaseImageMapper.baseImageResultMap" />
     </resultMap>
 </mapper>

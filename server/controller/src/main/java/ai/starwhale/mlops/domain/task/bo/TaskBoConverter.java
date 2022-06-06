@@ -17,8 +17,10 @@
 package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.JobEntity;
+import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.step.Step;
@@ -119,17 +121,20 @@ public class TaskBoConverter {
     }
 
     public TaskTrigger toTaskTrigger(Task t){
+        Job job = t.getStep().getJob();
+        JobRuntime jobRuntime = job.getJobRuntime();
         switch (t.getTaskType()){
             case PPL:
                 return TaskTrigger.builder()
                     .id(t.getId())
-                    .imageId(t.getStep().getJob().getJobRuntime().getBaseImage())
+                    .swrt(SWRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
+                        jobRuntime.getStoragePath()).build())
                     .resultPath(t.getResultRootPath())
                     .swdsBlocks(((PPLRequest)t.getTaskRequest()).getSwdsBlocks())
-                    .deviceAmount(t.getStep().getJob().getJobRuntime().getDeviceAmount())
-                    .deviceClass(t.getStep().getJob().getJobRuntime().getDeviceClass())
+                    .deviceAmount(jobRuntime.getDeviceAmount())
+                    .deviceClass(jobRuntime.getDeviceClass())
                     .taskType(t.getTaskType())
-                    .swModelPackage(t.getStep().getJob().getSwmp()).build();
+                    .swModelPackage(job.getSwmp()).build();
             case CMP:
                 return TaskTrigger.builder()
                     .id(t.getId())
@@ -137,9 +142,10 @@ public class TaskBoConverter {
                     .cmpInputFilePaths(((CMPRequest)t.getTaskRequest()).getPplResultPaths())
                     .taskType(t.getTaskType())
                     .deviceAmount(1)
-                    .deviceClass(Clazz.CPU)
-                    .imageId(t.getStep().getJob().getJobRuntime().getBaseImage())
-                    .swModelPackage(t.getStep().getJob().getSwmp()).build();
+                    .deviceClass(jobRuntime.getDeviceClass())
+                    .swrt(SWRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
+                        jobRuntime.getStoragePath()).build())
+                    .swModelPackage(job.getSwmp()).build();
             case UNKNOWN:
             default:
                 throw new SWValidationException(ValidSubject.TASK).tip("task type unknown "+t.getTaskType());

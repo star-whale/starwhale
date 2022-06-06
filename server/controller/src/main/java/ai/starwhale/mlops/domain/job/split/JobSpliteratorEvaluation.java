@@ -188,7 +188,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
             final String taskUuid = UUID.randomUUID().toString();
             taskEntities.add(TaskEntity.builder()
                 .stepId(stepEntityPPL.getId())
-                .resultPath(resultPathConverter.toString(new ResultPath(storagePath(job.getUuid(), taskUuid))))
+                .resultPath(storagePath(job.getUuid(), taskUuid))
                 .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
                 .taskStatus(TaskStatus.READY)
                 .taskUuid(taskUuid)

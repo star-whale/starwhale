@@ -18,7 +18,6 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.dag.GraphVO;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
@@ -106,7 +105,7 @@ public class JobController implements JobApi{
     public ResponseEntity<ResponseMessage<String>> createJob(String projectUrl,
         JobRequest jobRequest) {
         Long jobId = jobService.createJob(projectManager.getProjectId(projectUrl),
-            idConvertor.revert(jobRequest.getBaseImageId()),
+            idConvertor.revert(jobRequest.getSwrtVersionId()),
             idConvertor.revert(jobRequest.getModelVersionId()),
             Arrays.stream(jobRequest.getDatasetVersionIds().split("[,;]"))
             .map(idConvertor::revert)

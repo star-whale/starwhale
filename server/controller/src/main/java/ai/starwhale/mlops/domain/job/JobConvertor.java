@@ -17,16 +17,22 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.api.protocol.job.JobVO;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
+import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import java.util.List;
 import java.util.Objects;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 @Component
 public class JobConvertor implements Convertor<JobEntity, JobVO> {
@@ -43,8 +49,16 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
 
+    @Resource
+    private RuntimeService runtimeService;
+
     @Override
     public JobVO convert(JobEntity jobEntity) throws ConvertException {
+        List<RuntimeVO> runtimeByVersionIds = runtimeService.findRuntimeByVersionIds(
+            List.of(jobEntity.getRuntimeVersionId()));
+        if(CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size()>1){
+            throw new SWProcessException(ErrorType.SYSTEM).tip("data not consistent between job and runtime ");
+        }
         return JobVO.builder()
             .id(idConvertor.convert(jobEntity.getId()))
             .uuid(jobEntity.getJobUuid())
@@ -52,7 +66,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
             .modelName(jobEntity.getModelName())
             .modelVersion(jobEntity.getSwmpVersion().getVersionName())
             .createdTime(localDateTimeConvertor.convert(jobEntity.getCreatedTime()))
-            .baseImage(baseImageConvertor.convert(jobEntity.getBaseImage()))
+            .runtime(runtimeByVersionIds.get(0))
             .device(getDeviceName(jobEntity.getDeviceType()))
             .deviceAmount(jobEntity.getDeviceAmount())
             .jobStatus(jobEntity.getJobStatus())
