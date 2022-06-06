@@ -1,6 +1,6 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
+import { IBaseImageSchema, IDeviceSchema } from '@/domain/setting/schemas/system'
 import { IUserSchema } from '@user/schemas/user'
-import { IBaseImageSchema, IDeviceSchema } from '../../runtime/schemas/runtime'
 
 export enum JobActionType {
     CANCEL = 'cancel',

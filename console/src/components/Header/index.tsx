@@ -204,10 +204,6 @@ export default function Header() {
                         </Link>
                     </div>
                     <div className={styles.systemMenu}>
-                        <Link className={styles.systemMenuItem} to='/settings/images'>
-                            <GrDocker size={20} />
-                            <span>{t('Base Images')}</span>
-                        </Link>
                         <Link className={styles.systemMenuItem} to='/settings/agents'>
                             <AiOutlineCloudServer size={20} />
                             <span>{t('Agent List')}</span>

@@ -1,14 +1,20 @@
-import { IListQuerySchema } from '@/domain/base/schemas/list'
-import { useQuery } from 'react-query'
-import qs from 'qs'
-import { listBaseImages, listDevices } from '../services/runtime'
+import React from 'react'
+import useGlobalState from '@/hooks/global'
 
-export function useFetchDevices(query: IListQuerySchema) {
-    const info = useQuery(`listDevices:${qs.stringify(query)}`, () => listDevices(query))
-    return info
+export const useRuntime = () => {
+    const [runtime, setRuntime] = useGlobalState('runtime')
+
+    return {
+        runtime,
+        setRuntime,
+    }
 }
 
-export function useFetchBaseImages(query: IListQuerySchema) {
-    const info = useQuery(`listBaseImages:${qs.stringify(query)}`, () => listBaseImages(query))
-    return info
+export const useRuntimeLoading = () => {
+    const [runtimeLoading, setRuntimeLoading] = useGlobalState('runtimeLoading')
+
+    return {
+        runtimeLoading,
+        setRuntimeLoading,
+    }
 }

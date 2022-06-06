@@ -342,6 +342,21 @@ const locales0 = {
     'Delete': {
         en: 'Delete',
     },
+    'Runtime': {
+        en: 'Runtime',
+    },
+    'Runtimes': {
+        en: 'Runtimes',
+    },
+    'Runtime Name': {
+        en: 'Runtime Name',
+    },
+    'Runtime Version': {
+        en: 'Runtime Version',
+    },
+    'runtime versions': {
+        en: 'Runtime versions',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

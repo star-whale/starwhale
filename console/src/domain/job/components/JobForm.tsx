@@ -11,14 +11,14 @@ import ModelVersionSelector from '@/domain/model/components/ModelVersionSelector
 import MultiTags from '@/components/Tag/MultiTags'
 import DatasetSelector from '@/domain/dataset/components/DatasetSelector'
 import DatasetVersionSelector from '@/domain/dataset/components/DatasetVersionSelector'
-import BaseImageSelector from '@/domain/runtime/components/BaseImageSelector'
 import NumberInput from '@/components/Input/NumberInput'
 import _ from 'lodash'
 import { useFetchDatasetVersionsByIds } from '@/domain/dataset/hooks/useFetchDatasetVersions'
 import { usePage } from '@/hooks/usePage'
 import IconFont from '@/components/IconFont'
-import DeviceSelector from '../../runtime/components/DeviceSelector'
+import DeviceSelector from '../../setting/components/DeviceSelector'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
+import RuntimeSelector from '../../runtime/components/RuntimeSelector'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
 
@@ -161,10 +161,11 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     <MultiTags placeholder='' getValueLabel={getValueLabel} />
                 </FormItem>
             </div>
-            <Divider orientation='top'>{t('Environment')}</Divider>
+            <Divider orientation='top'>{t('Runtime')}</Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap', marginBottom: '36px' }}>
-                <FormItem label={t('BaseImage')} name='baseImageId'>
-                    <BaseImageSelector
+                <FormItem label={t('Runtime')} name='baseImageId'>
+                    <RuntimeSelector
+                        projectId={projectId}
                         overrides={{
                             Root: {
                                 style: {
@@ -174,6 +175,9 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         }}
                     />
                 </FormItem>
+            </div>
+            <Divider orientation='top'>{t('Environment')}</Divider>
+            <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap', marginBottom: '36px' }}>
                 <FormItem label={t('Device')} name='deviceId'>
                     <DeviceSelector
                         overrides={{

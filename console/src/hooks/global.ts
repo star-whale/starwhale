@@ -8,6 +8,8 @@ import { IDatasetVersionDetailSchema } from '@/domain/dataset/schemas/datasetVer
 import { IJobSchema } from '@/domain/job/schemas/job'
 import { ITaskDetailSchema } from '@/domain/job/schemas/task'
 import { ThemeType } from '@/theme'
+import { IRuntimeDetailSchema } from '../domain/runtime/schemas/runtime'
+import { IRuntimeVersionDetailSchema } from '../domain/runtime/schemas/runtimeVersion'
 
 const initialState = {
     token: undefined as string | undefined,
@@ -25,6 +27,10 @@ const initialState = {
     datasetLoading: false,
     datasetVersion: undefined as IDatasetVersionDetailSchema | undefined,
     datasetVersionLoading: false,
+    runtime: undefined as IRuntimeDetailSchema | undefined,
+    runtimeLoading: false,
+    runtimeVersion: undefined as IRuntimeVersionDetailSchema | undefined,
+    runtimeVersionLoading: false,
     job: undefined as IJobSchema | undefined,
     jobLoading: false,
     task: undefined as ITaskDetailSchema | undefined,
