@@ -1,8 +1,8 @@
-import { IListQuerySchema } from '@/domain/base/schemas/list'
+import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import axios from 'axios'
 import { IBaseImageSchema, ICreateBaseImageSchema, IDeviceSchema } from '../schemas/runtime'
 
-export async function listBaseImages(query: IListQuerySchema): Promise<Array<IBaseImageSchema>> {
+export async function listBaseImages(query: IListQuerySchema): Promise<IListSchema<IBaseImageSchema>> {
     const resp = await axios.get('/api/v1/runtime/baseImage', {
         params: query,
     })
