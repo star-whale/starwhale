@@ -20,31 +20,20 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
-import ai.starwhale.mlops.api.protocol.swmp.SWMPRequest;
-import ai.starwhale.mlops.api.protocol.swmp.SWMPVersionRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.util.RandomUtil;
-import ai.starwhale.mlops.domain.project.Project;
-import ai.starwhale.mlops.domain.swmp.SWMPFile;
-import ai.starwhale.mlops.domain.swmp.SWMPObject;
 import ai.starwhale.mlops.domain.swmp.SWMPQuery;
 import ai.starwhale.mlops.domain.swmp.SWMPVersion;
 import ai.starwhale.mlops.domain.swmp.SWMPVersionQuery;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageService;
-import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
-import ai.starwhale.mlops.exception.ApiOperationException;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
-import io.jsonwebtoken.lang.Strings;
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -107,13 +96,24 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> deleteModel(String projectUrl,String modelUrl) {
+    public ResponseEntity<ResponseMessage<String>> deleteModel(String projectUrl, String modelUrl) {
         Boolean res = swmpService.deleteSWMP(SWMPQuery.builder()
             .projectUrl(projectUrl)
             .swmpUrl(modelUrl)
             .build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete swmp failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> recoverModel(String projectUrl, String modelUrl) {
+
+        Boolean res = swmpService.recoverSWMP(projectUrl, modelUrl);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover model failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

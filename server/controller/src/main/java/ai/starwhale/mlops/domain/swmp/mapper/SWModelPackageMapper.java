@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.swmp.mapper;
 
-import ai.starwhale.mlops.domain.swmp.SWMPQuery;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
@@ -30,6 +29,8 @@ public interface SWModelPackageMapper {
 
     int deleteSWModelPackage(@Param("id")Long id);
 
+    int recoverSWModelPackage(@Param("id")Long id);
+
     SWModelPackageEntity findSWModelPackageById(@Param("id")Long id);
 
     List<SWModelPackageEntity> findSWModelPackagesByIds(@Param("ids")List<Long> ids);
@@ -37,5 +38,9 @@ public interface SWModelPackageMapper {
     SWModelPackageEntity findByNameForUpdate(@Param("name")String name);
 
     SWModelPackageEntity findByName(@Param("name")String name);
+
+    SWModelPackageEntity findDeletedSWModelPackageById(@Param("id")Long id);
+
+    List<SWModelPackageEntity> listDeletedSWModelPackages(@Param("name")String name);
 
 }
