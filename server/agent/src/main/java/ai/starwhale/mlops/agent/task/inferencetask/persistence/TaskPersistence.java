@@ -17,7 +17,9 @@
 package ai.starwhale.mlops.agent.task.inferencetask.persistence;
 
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.RuntimeManifest;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -77,6 +79,15 @@ public interface TaskPersistence {
      * @return disk dir path
      */
     void preloadingSWMP(InferenceTask task) throws Exception;
+
+    /**
+     * preloading task's swrt tar,and untar it to the dir
+     * @param task task
+     * @return disk dir path
+     */
+    void preloadingSWRT(InferenceTask task) throws Exception;
+
+    RuntimeManifest runtimeManifest(InferenceTask task) throws IOException;
 
     /**
      * pre generate config file

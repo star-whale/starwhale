@@ -30,6 +30,7 @@ import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
+import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -120,10 +122,22 @@ public class TaskActionTest {
 
     @Test
     public void testPreparing2Running() throws IOException {
+        Long taskId = 1234567890L;
+
         pre();
+        // mock swmp download
         String modelName = "test-swmp", modelVersion = "v1";
         String cachePathStr = fileSystemPath.oneSwmpCacheDir(modelName, modelVersion);
         Files.createDirectories(Path.of(cachePathStr));
+        // mock swrt download
+        String runtimeName = "swrt-name", runtimeVersion = "swrt-version";
+        String cacheRuntimePathStr = fileSystemPath.oneSwrtCacheDir(runtimeName, runtimeVersion);
+        Files.createDirectories(Path.of(cacheRuntimePathStr));
+
+        Files.createDirectories(Path.of(fileSystemPath.oneActiveTaskRuntimeDir(taskId)));
+        Files.writeString(Path.of(fileSystemPath.oneActiveTaskRuntimeManifestFile(taskId)),
+                "base_image: ghcr.io/star-whale/starwhale:latest", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
         Mockito.when(containerClient.createAndStartContainer(any()))
                 .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
         Mockito.when(nvidiaDetect.detect()).thenReturn(Optional.of(
@@ -145,14 +159,19 @@ public class TaskActionTest {
                 )
         ));
         Mockito.when(storageAccessService.list(any())).thenReturn(Stream.<String>builder().build());
+
+//        Mockito.when(taskPersistence.runtimeManifest(any()))
+//                .thenReturn(RuntimeManifest.builder().baseImage("starwhaleai/starwhale:0.1.0-nightly-2022041203").build());
+
         List<InferenceTask> tasks = List.of(
                 InferenceTask.builder()
-                        .id(1234567890L)
+                        .id(taskId)
                         .status(InferenceTaskStatus.PREPARING)
                         .taskType(TaskType.PPL)
                         .deviceClass(Device.Clazz.GPU)
                         .deviceAmount(1)
-                        .imageId("starwhaleai/starwhale:0.1.0-nightly-2022041203")
+                        //.imageId("starwhaleai/starwhale:0.1.0-nightly-2022041203")
+                        .swRunTime(SWRunTime.builder().name(runtimeName).version(runtimeVersion).build())
                         .swModelPackage(SWModelPackage.builder()
                                 .id(1234567L)
                                 .name(modelName)
