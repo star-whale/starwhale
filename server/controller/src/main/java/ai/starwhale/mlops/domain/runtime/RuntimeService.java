@@ -51,7 +51,6 @@ import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -372,11 +371,11 @@ public class RuntimeService {
             List<RuntimeEntity> deletedRuntimes = runtimeMapper.listDeletedRuntimes(runtimeName);
             if(deletedRuntimes.size() > 1) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                    .tip(StrUtil.format("Recover runtime error. Duplicate names [%s] of deleted runtime. ", runtimeName)),
+                    .tip(String.format("Recover runtime error. Duplicate names [%s] of deleted runtime. ", runtimeName)),
                     HttpStatus.BAD_REQUEST);
             } else if (deletedRuntimes.size() == 0) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
-                    .tip(StrUtil.format("Recover runtime error. Can not find deleted runtime [%s].", runtimeName)),
+                    .tip(String.format("Recover runtime error. Can not find deleted runtime [%s].", runtimeName)),
                     HttpStatus.BAD_REQUEST);
             }
             id = deletedRuntimes.get(0).getId();

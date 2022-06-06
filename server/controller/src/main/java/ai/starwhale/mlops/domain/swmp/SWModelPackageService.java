@@ -129,19 +129,19 @@ public class SWModelPackageService {
             SWModelPackageEntity entity = swmpMapper.findDeletedSWModelPackageById(id);
             if(entity == null) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                    .tip("Recover runtime error. Runtime can not be found. "), HttpStatus.BAD_REQUEST);
+                    .tip("Recover model error. Model can not be found. "), HttpStatus.BAD_REQUEST);
             }
             name = entity.getSwmpName();
         } else if (!StrUtil.isEmpty(name)) {
-            // To restore projects by name, need to check whether there are duplicate names
+            // To restore models by name, need to check whether there are duplicate names
             List<SWModelPackageEntity> deletedSWModelPackages = swmpMapper.listDeletedSWModelPackages(name);
             if(deletedSWModelPackages.size() > 1) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                    .tip(StrUtil.format("Recover runtime error. Duplicate names [%s] of deleted model. ", name)),
+                    .tip(String.format("Recover model error. Duplicate names [%s] of deleted model. ", name)),
                     HttpStatus.BAD_REQUEST);
             } else if (deletedSWModelPackages.size() == 0) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
-                    .tip(StrUtil.format("Recover runtime error. Can not find deleted model [%s].", name)),
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                    .tip(String.format("Recover model error. Can not find deleted model [%s].", name)),
                     HttpStatus.BAD_REQUEST);
             }
             id = deletedSWModelPackages.get(0).getId();
@@ -154,7 +154,7 @@ public class SWModelPackageService {
         }
 
         int res = swmpMapper.recoverSWModelPackage(id);
-        log.info("Runtime has been recovered. Name={}", name);
+        log.info("Model has been recovered. Name={}", name);
         return res > 0;
     }
 

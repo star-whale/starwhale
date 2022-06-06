@@ -28,9 +28,14 @@ public interface SWDatasetMapper {
 
     int deleteDataset(@Param("id")Long id);
 
+    int recoverDataset(@Param("id")Long id);
     SWDatasetEntity findDatasetById(@Param("id")Long id);
 
     List<SWDatasetEntity> findDatasetsByIds(@Param("ids")List<Long> ids);
 
     SWDatasetEntity findByName(@Param("name")String name);
+
+    SWDatasetEntity findDeletedDatasetById(@Param("id")Long id);
+
+    List<SWDatasetEntity> listDeletedDatasets(@Param("name")String name);
 }

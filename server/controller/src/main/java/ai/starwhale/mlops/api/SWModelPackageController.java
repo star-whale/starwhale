@@ -110,7 +110,6 @@ public class SWModelPackageController implements SWModelPackageApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> recoverModel(String projectUrl, String modelUrl) {
-
         Boolean res = swmpService.recoverSWMP(projectUrl, modelUrl);
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover model failed."),
