@@ -19,6 +19,8 @@ package ai.starwhale.mlops.domain.job;
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
+import ai.starwhale.mlops.domain.runtime.RuntimeEntity;
+import ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserEntity;
 import java.time.LocalDateTime;
@@ -61,9 +63,7 @@ public class JobEntity extends BaseEntity {
 
     private JobStatus jobStatus;
 
-    private Long baseImageId;
-
-    private BaseImageEntity baseImage;
+    private Long runtimeVersionId;
 
     private Integer deviceType;
 

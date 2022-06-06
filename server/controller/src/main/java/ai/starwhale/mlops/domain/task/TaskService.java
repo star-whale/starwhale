@@ -98,14 +98,7 @@ public class TaskService {
 
     private ResultPath resultPathOfTask(Long taskId) {
         TaskEntity taskById = taskMapper.findTaskById(taskId);
-        ResultPath resultPath;
-        try {
-            resultPath = resultPathConverter.fromString(taskById.getResultPath());
-        } catch (JsonProcessingException e) {
-            log.error("read result path from db failed {}", taskId,e);
-            throw new SWProcessException(ErrorType.DB).tip("read log path from db failed");
-        }
-        return resultPath;
+        return new ResultPath(taskById.getResultPath());
     }
 
     static final String PATH_SPLITERATOR ="/";

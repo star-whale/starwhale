@@ -66,7 +66,7 @@ public class Job {
     JobType type;
 
     /**
-     * evaluation metrics holding dir
+     * job result holding dir
      */
     String resultDir;
 

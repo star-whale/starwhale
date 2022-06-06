@@ -171,7 +171,7 @@ public class JobService {
         return res > 0;
     }
 
-    public Long createJob(Long projectId, Long imageId, Long modelVersionId, List<Long> datasetVersionIds, Integer deviceType, int deviceCount) {
+    public Long createJob(Long projectId, Long swrtVersionId, Long modelVersionId, List<Long> datasetVersionIds, Integer deviceType, int deviceCount) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         JobEntity jobEntity = JobEntity.builder()
@@ -180,7 +180,7 @@ public class JobService {
             .createdTime(LocalDateTime.now())
             //.finishedTime(LocalDateTime.now())
             .durationMs(0L)
-            .baseImageId(imageId)
+            .runtimeVersionId(swrtVersionId)
             .projectId(projectId)
             .swmpVersionId(modelVersionId)
             .deviceType(deviceType)

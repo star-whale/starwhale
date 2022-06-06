@@ -64,7 +64,7 @@ public class TestJobStatusCalculator {
         JobStatus canceled = JobStatus.CANCELED;
         Assertions.assertEquals(canceled, jobStatusCalculator.desiredJobStatus(Set.of(SUCCESS,CANCELED)));
 
-        Assertions.assertEquals(canceled, jobStatusCalculator.desiredJobStatus(Set.of(UNKNOWN,CANCELED)));
+        Assertions.assertEquals(JobStatus.UNKNOWN, jobStatusCalculator.desiredJobStatus(Set.of(UNKNOWN,CANCELED)));
     }
 
     @Test

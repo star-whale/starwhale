@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS job_info
     duration_ms     bigint           NOT NULL,
     job_status      varchar(50)      NOT NULL,
     job_type        varchar(50)      NOT NULL,
-    base_image_id   bigint           NOT NULL,
+    swrt_version_id bigint           NOT NULL,
     device_type     tinyint UNSIGNED NOT NULL,
     device_amount   int              NOT NULL,
     result_output_path text          NOT NULL,

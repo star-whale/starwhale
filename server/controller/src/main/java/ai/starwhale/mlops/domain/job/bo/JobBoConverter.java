@@ -21,6 +21,10 @@ import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.runtime.RuntimeEntity;
+import ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
+import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
 import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
@@ -41,10 +45,18 @@ public class JobBoConverter {
 
     final SWModelPackageMapper swModelPackageMapper;
 
+    final RuntimeMapper runtimeMapper;
+
+    final RuntimeVersionMapper runtimeVersionMapper;
+
     public JobBoConverter(JobSWDSVersionMapper jobSWDSVersionMapper,
-        SWModelPackageMapper swModelPackageMapper) {
+        SWModelPackageMapper swModelPackageMapper,
+        RuntimeMapper runtimeMapper,
+        RuntimeVersionMapper runtimeVersionMapper) {
         this.jobSWDSVersionMapper = jobSWDSVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
+        this.runtimeMapper = runtimeMapper;
+        this.runtimeVersionMapper = runtimeVersionMapper;
     }
 
     public Job fromEntity(JobEntity jobEntity){
@@ -59,10 +71,19 @@ public class JobBoConverter {
             .collect(Collectors.toList());
         SWModelPackageEntity modelPackageEntity = swModelPackageMapper.findSWModelPackageById(
             jobEntity.getSwmpVersion().getSwmpId());
+        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findVersionById(
+            jobEntity.getRuntimeVersionId());
+        RuntimeEntity runtimeEntity = runtimeMapper.findRuntimeById(
+            runtimeVersionEntity.getRuntimeId());
         return Job.builder()
             .id(jobEntity.getId())
-            .jobRuntime(JobRuntime.builder().baseImage(jobEntity.getBaseImage().getImageName()).deviceAmount(jobEntity.getDeviceAmount()).deviceClass(
-                Device.Clazz.from(jobEntity.getDeviceType())).build())
+            .jobRuntime(JobRuntime.builder()
+                .name(runtimeEntity.getRuntimeName())
+                .version(runtimeVersionEntity.getVersionName())
+                .storagePath(runtimeVersionEntity.getStoragePath())
+                .deviceAmount(jobEntity.getDeviceAmount())
+                .deviceClass(Device.Clazz.from(jobEntity.getDeviceType()))
+                .build())
             .status(jobEntity.getJobStatus())
             .type(jobEntity.getType())
             .swmp(SWModelPackage
