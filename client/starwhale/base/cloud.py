@@ -5,7 +5,11 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 import requests
-from requests_toolbelt.multipart.encoder import MultipartEncoder  # type: ignore
+from rich.progress import TaskID, Progress
+from requests_toolbelt.multipart.encoder import (  # type: ignore
+    MultipartEncoder,
+    MultipartEncoderMonitor,
+)
 
 from starwhale.consts import (
     HTTPMethod,
@@ -34,6 +38,8 @@ class CloudRequestMixed(object):
         url_path: str,
         dest_path: Path,
         instance_uri: t.Optional[URI] = None,
+        progress: t.Optional[Progress] = None,
+        task_id: TaskID = TaskID(0),
         **kw: t.Any,
     ) -> None:
         r = self.do_http_request(
@@ -43,10 +49,16 @@ class CloudRequestMixed(object):
             use_raise=True,
             **kw,
         )
-
+        total = float(r.headers.get("content-length", 0))
         with dest_path.open("wb") as f:
             for chunk in r.iter_content(chunk_size=_TMP_FILE_BUFSIZE):
+                if progress:
+                    progress.update(task_id, total=total, advance=len(chunk))
                 f.write(chunk)
+
+        if progress:
+            # TODO: remove the hack code when api support content-length header
+            progress.update(task_id, total=1, completed=1)
 
     def do_multipart_upload_file(
         self,
@@ -55,27 +67,34 @@ class CloudRequestMixed(object):
         fields: t.Dict[str, t.Any] = {},
         instance_uri: t.Optional[URI] = None,
         headers: t.Dict[str, t.Any] = {},
+        progress: t.Optional[Progress] = None,
+        task_id: TaskID = TaskID(0),
         **kw: t.Any,
     ) -> requests.Response:
         # TODO: add progress bar and rich live
+
+        def _progress_bar(monitor: MultipartEncoderMonitor):
+            if progress:
+                progress.update(task_id, completed=monitor.bytes_read)
 
         _headers = deepcopy(headers)
         fpath = Path(file_path)
         fields["file"] = (fpath.name, fpath.open("rb"), "text/plain")
 
-        _en = MultipartEncoder(fields=fields)
+        _encoder = MultipartEncoder(fields=fields)
         # default chunk is 8192 Bytes
-        _en._read = _en.read  # type: ignore
-        _en.read = lambda size: _en._read(_UPLOAD_CHUNK_SIZE)  # type: ignore
+        _encoder._read = _encoder.read  # type: ignore
+        _encoder.read = lambda size: _encoder._read(_UPLOAD_CHUNK_SIZE)  # type: ignore
 
-        _headers["Content-Type"] = _en.content_type
+        _headers["Content-Type"] = _encoder.content_type
+        _monitor = MultipartEncoderMonitor(_encoder, callback=_progress_bar)
 
         return self.do_http_request(
             url_path,
             method=HTTPMethod.POST,
             instance_uri=instance_uri,
             timeout=1200,
-            data=_en,
+            data=_monitor,
             headers=_headers,
             **kw,
         )
@@ -239,9 +258,7 @@ class CloudBundleModelMixin(CloudRequestMixed):
 
     @ignore_error(({}, {}))
     def history(
-        self,
-        page: int = DEFAULT_PAGE_IDX,
-        size: int = DEFAULT_PAGE_SIZE,
+        self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         uri: URI = self.uri  # type: ignore
         return self._fetch_bundle_history(
