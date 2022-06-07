@@ -216,8 +216,9 @@ class LocalStorageBundleMixin(object):
         if _sw_ignore_path.exists():
             for _l in _sw_ignore_path.read_text().splitlines():
                 _l = _l.strip()
-                if not _l:
+                if not _l or _l.startswith("#"):
                     continue
+
                 _exclude.append(_l)
 
         return Walker(filter=_filter, exclude_dirs=_exclude)
