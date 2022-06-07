@@ -6,7 +6,6 @@ from starwhale.api.dataset import BuildExecutor
 
 class PennFudanPedSlicer(BuildExecutor):
 
-    idx_
     def iter_data_slice(self, path: str):
         img = Image.open(path).convert("RGB")
         img_byte_arr = io.BytesIO()

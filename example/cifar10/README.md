@@ -1,4 +1,4 @@
-Example of simple classification model trained on CIFAR-10
+Example of simple image classification model trained on CIFAR-10
 -----------------
 This example will illustrate how to evaluate a pre-trained classification model on StarWhale under 5 steps
 * Train the model
