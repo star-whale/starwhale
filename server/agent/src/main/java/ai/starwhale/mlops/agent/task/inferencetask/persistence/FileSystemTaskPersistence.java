@@ -205,7 +205,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
         SWRunTime runTime = task.getSwRunTime();
 
         String cachePathStr = fileSystemPath.oneSwrtCacheDir(runTime.getName(), runTime.getVersion());
-        String targetDirStr = fileSystemPath.oneActiveTaskResultDir(task.getId());
+        String targetDirStr = fileSystemPath.oneActiveTaskRuntimeDir(task.getId());
 
         cacheDir(runTime.getPath(), cachePathStr, targetDirStr);
     }
