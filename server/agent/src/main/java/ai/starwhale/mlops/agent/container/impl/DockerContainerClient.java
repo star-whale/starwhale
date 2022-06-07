@@ -24,6 +24,7 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.*;
 import lombok.extern.slf4j.Slf4j;
@@ -124,8 +125,7 @@ public class DockerContainerClient implements ContainerClient {
     }
 
     private void pullImage(String image, Long timeout) throws InterruptedException {
-        ResultCallback.Adapter<PullResponseItem> resultCallback = client.pullImageCmd(image).start();
-        resultCallback.awaitCompletion(timeout, TimeUnit.MILLISECONDS);
+        client.pullImageCmd(image).exec(new PullImageResultCallback()).awaitCompletion(timeout, TimeUnit.MILLISECONDS);
     }
 
     @Override
