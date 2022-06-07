@@ -136,7 +136,31 @@ public class TaskActionTest {
 
         Files.createDirectories(Path.of(fileSystemPath.oneActiveTaskRuntimeDir(taskId)));
         Files.writeString(Path.of(fileSystemPath.oneActiveTaskRuntimeManifestFile(taskId)),
-                "base_image: ghcr.io/star-whale/starwhale:latest", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                "base_image: ghcr.io/star-whale/starwhale:0.2.0-alpha.2\n" +
+                        "build:\n" +
+                        "  os: Linux\n" +
+                        "  sw_version: 0.1.0a1\n" +
+                        "created_at: 2022-06-07 13:11:13 CST\n" +
+                        "dep:\n" +
+                        "  conda:\n" +
+                        "    use: true\n" +
+                        "  env: venv\n" +
+                        "  expected_mode: venv\n" +
+                        "  local_gen_env: false\n" +
+                        "  python: 3.7.13\n" +
+                        "  system: Linux\n" +
+                        "  venv:\n" +
+                        "    use: true\n" +
+                        "name: mnist2\n" +
+                        "user_raw_config:\n" +
+                        "  base_image: ghcr.io/star-whale/starwhale:0.2.0-alpha.2\n" +
+                        "  kw:\n" +
+                        "    kw: {}\n" +
+                        "  mode: venv\n" +
+                        "  name: mnist2\n" +
+                        "  pip_req: requirements.txt\n" +
+                        "  python_version: '3.7'\n" +
+                        "version: gqydiylfge2gknzsga3toztcnqzxi4a", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
         Mockito.when(containerClient.createAndStartContainer(any()))
                 .thenReturn(Optional.of("0dbb121b-1c5a-3a75-8063-0e1620edefe5"));
