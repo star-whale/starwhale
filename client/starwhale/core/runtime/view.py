@@ -57,7 +57,7 @@ class RuntimeTermView(BaseTermView):
         gen_all_bundles: bool = False,
     ) -> None:
         _runtime_uri = cls.prepare_build_bundle(
-            workdir, project, yaml_name, URIType.MODEL
+            workdir, project, yaml_name, URIType.RUNTIME
         )
         _rt = Runtime.get_runtime(_runtime_uri)
         _rt.build(Path(workdir), yaml_name, gen_all_bundles=gen_all_bundles)
