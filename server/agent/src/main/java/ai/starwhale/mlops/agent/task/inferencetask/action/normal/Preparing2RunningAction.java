@@ -144,7 +144,7 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                         .build(),
                 Mount.builder()
                         .readOnly(false)
-                        .source(fileSystemPath.oneActiveTaskRuntimeDir(originTask.getId()))
+                        .source(fileSystemPath.oneActiveTaskRuntimeDir(originTask.getId()) + "/dep")
                         .target(runtimeDepPath)
                         .type("BIND")
                         .build(),
