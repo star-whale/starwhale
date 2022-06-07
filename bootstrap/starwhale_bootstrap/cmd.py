@@ -269,6 +269,7 @@ def _deploy(
             # agent variables
             # agent
             "agent_image": "{{ sw_repository }}/server:{{ sw_version }}",
+            "task_default_image": "{{ sw_repository }}/starwhale:latest",
             # task storage dir
             "agent_data_dir": "{{ base_root_path }}/" + agent_runtime_dir,
             # pypi url

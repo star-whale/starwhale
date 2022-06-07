@@ -38,6 +38,7 @@ public class AgentProperties {
 
     @Data
     public static class Task {
+        private String defaultImage;
         private int retryRunMaxNum = 10;
         private int retryRestartMaxNum = 10;
         private String pypiIndexUrl;

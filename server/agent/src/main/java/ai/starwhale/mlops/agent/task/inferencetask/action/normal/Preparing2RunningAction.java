@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.node.Device;
 import cn.hutool.core.collection.CollectionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -124,8 +125,14 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                 break;
         }
         taskPersistence.preloadingSWRT(originTask);
+        String image = taskPersistence.runtimeManifest(originTask).getBaseImage();
+        // use default image
+        if (!StringUtils.hasText(image)) {
+            image = agentProperties.getTask().getDefaultImage();
+        }
+        originTask.setImageId(image);
         // must be swrt file preloaded
-        imageConfig.setImage(taskPersistence.runtimeManifest(originTask).getBaseImage());
+        imageConfig.setImage(image);
 
         taskPersistence.preloadingSWMP(originTask);
         imageConfig.setMounts(List.of(

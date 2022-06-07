@@ -7,6 +7,7 @@ sw:
     basePath: ${SW_BASE_PATH:/opt/starwhale}
     hostIP: ${SW_HOST_IP:127.0.0.1}
     task:
+      defaultImage: ${SW_TASK_DEFAULT_IMAGE:ghcr.io/star-whale/starwhale:latest}
       retryRunMaxNum: ${SW_TASK_RETRY_RUN_MAX_NUM:10}
       retryRestartMaxNum: ${SW_TASK_RESTART_MAX_NUM:10}
       imagePullTimeout: ${SW_TASK_IMAGE_PULL_TIMEOUT:60000}
