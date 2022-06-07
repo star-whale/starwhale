@@ -260,6 +260,7 @@ class CloudJob(Job, CloudRequestMixed):
         return {
             "tasks": self._fetch_tasks(page, size),
             "report": self._fetch_job_report(),
+            "manifest": self._fetch_job_info(),
         }
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:
@@ -327,6 +328,14 @@ class CloudJob(Job, CloudRequestMixed):
     def _fetch_job_report(self) -> t.Dict[str, t.Any]:
         r = self.do_http_request(
             f"/project/{self.project_name}/job/{self.name}/result",
+            instance_uri=self.uri,
+        ).json()
+        return r["data"]  # type: ignore
+
+    @ignore_error({})
+    def _fetch_job_info(self) -> t.Dict[str, t.Any]:
+        r = self.do_http_request(
+            f"/project/{self.project_name}/job/{self.name}",
             instance_uri=self.uri,
         ).json()
         return r["data"]  # type: ignore
