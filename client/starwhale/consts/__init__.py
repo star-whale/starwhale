@@ -98,3 +98,4 @@ DEFAULT_PYTHON_VERSION = "3.8"
 YAML_TYPES = (".yaml", ".yml")
 
 DEFAULT_SW_TASK_RUN_IMAGE = "ghcr.io/star-whale/starwhale:latest"
+SW_IGNORE_FILE_NAME = ".swignore"

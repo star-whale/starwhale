@@ -6,6 +6,7 @@ from pathlib import Path
 
 import yaml
 from loguru import logger
+from fs.walk import Walker
 from fs.tarfs import TarFS
 
 from starwhale import __version__
@@ -15,10 +16,12 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     SHORT_VERSION_CNT,
+    SW_IGNORE_FILE_NAME,
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.utils.fs import ensure_dir, ensure_file, extract_tar
+from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.utils.error import FileTypeError, NotFoundError, MissingFieldError
 from starwhale.utils.config import SWCliConfigMixed
 
@@ -199,3 +202,22 @@ class LocalStorageBundleMixin(object):
             extract_tar(_store.bundle_path, _target, force)
 
         return _target
+
+    def _get_src_walker(
+        self,
+        workdir: Path,
+        include_files: t.List[str] = [],
+        exclude_files: t.List[str] = [],
+    ) -> Walker:
+        _filter = ["*.py", "*.sh", "*.yaml"] + SUPPORTED_PIP_REQ + include_files
+        _exclude = exclude_files
+
+        _sw_ignore_path = workdir / SW_IGNORE_FILE_NAME
+        if _sw_ignore_path.exists():
+            for _l in _sw_ignore_path.read_text().splitlines():
+                _l = _l.strip()
+                if not _l:
+                    continue
+                _exclude.append(_l)
+
+        return Walker(filter=_filter, exclude_dirs=_exclude)

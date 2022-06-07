@@ -11,7 +11,6 @@ import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
-from fs.walk import Walker
 
 from starwhale.utils import console
 from starwhale.consts import (
@@ -42,7 +41,6 @@ from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.utils.load import import_cls
-from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import ExistedError, NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
@@ -360,10 +358,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         copy_fs(
             workdir_fs,
             src_fs,
-            walker=Walker(
-                filter=["*.py", yaml_name] + SUPPORTED_PIP_REQ + pkg_data,
-                exclude_dirs=exclude_pkg_data,
-            ),
+            walker=self._get_src_walker(workdir, pkg_data, exclude_pkg_data),
             workers=DEFAULT_COPY_WORKERS,
         )
 

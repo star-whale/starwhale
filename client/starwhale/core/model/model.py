@@ -11,7 +11,6 @@ import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
-from fs.walk import Walker
 
 from starwhale.utils import console
 from starwhale.consts import (
@@ -28,7 +27,6 @@ from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.utils.load import import_cls
-from starwhale.utils.venv import SUPPORTED_PIP_REQ
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import ExistedError, NoSupportError, FileFormatError
 from starwhale.utils.progress import run_with_progress_bar
@@ -350,16 +348,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         workdir_fs = open_fs(str(workdir.resolve()))
         snapshot_fs = open_fs(str(self.store.snapshot_workdir.resolve()))
         src_fs = open_fs(str(self.store.src_dir.resolve()))
-        # TODO: support exclude dir
         # TODO: support glob pkg_data
-        # TODO: ignore some folders, such as __pycache__
         copy_file(workdir_fs, yaml_name, snapshot_fs, DefaultYAMLName.MODEL)
         copy_fs(
             workdir_fs,
             src_fs,
-            walker=Walker(
-                filter=["*.py", yaml_name] + SUPPORTED_PIP_REQ + _mc.run.pkg_data,
-                exclude_dirs=_mc.run.exclude_pkg_data,
+            walker=self._get_src_walker(
+                workdir, _mc.run.pkg_data, _mc.run.exclude_pkg_data
             ),
             workers=DEFAULT_COPY_WORKERS,
         )
