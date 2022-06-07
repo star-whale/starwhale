@@ -228,6 +228,7 @@ class JobTermView(BaseTermView):
         table.add_column("Name", justify="left", style="cyan", no_wrap=True)
         table.add_column("Model", no_wrap=True)
         table.add_column("Datasets")
+        table.add_column("Runtime")
         table.add_column("Status", style="red")
         table.add_column("Resource", style="blue")
         table.add_column("Created At", style="magenta")
@@ -265,10 +266,19 @@ class JobTermView(BaseTermView):
             else:
                 _name = _s(_m["version"])
 
+            _runtime = "--"
+            if "runtime" in _m:
+                if isinstance(_m["runtime"], str):
+                    _runtime = _m["runtime"]
+                else:
+                    _r = _m["runtime"]
+                    _runtime = f"[{_r['version']['id']}] {_r['name']}:{_r['version']['name'][:SHORT_VERSION_CNT]}"
+
             table.add_row(
                 _name,
                 _model,
                 _datasets,
+                _runtime,
                 f"[{_style}]{_icon}{_status}[/]",
                 f"{_m['device']}:{_m['deviceAmount']}" if "device" in _m else "--",
                 _m["created_at"],
