@@ -52,7 +52,6 @@ public class InferenceTask {
     /**
      * the proper image to get swmp run
      */
-    @Deprecated
     String imageId;
 
     /**

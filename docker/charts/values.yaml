@@ -8,6 +8,8 @@ image:
   #org: "starwhaleai"
   registry: "ghcr.io"
   org: "star-whale"
+  base:
+    repo: "starwhale"
   server:
     repo: "server"
   taskset:
