@@ -99,6 +99,43 @@ public class SWDatasetService {
         return res > 0;
     }
 
+    public Boolean recoverSWDS(String projectUrl, String datasetUrl) {
+        SWDSObject swds = swdsManager.fromUrl(datasetUrl);
+        String name = swds.getName();
+        Long id = swds.getId();
+        if(id != null) {
+            SWDatasetEntity entity = swdsMapper.findDeletedDatasetById(id);
+            if(entity == null) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                    .tip("Recover dataset error. Dataset can not be found. "), HttpStatus.BAD_REQUEST);
+            }
+            name = entity.getDatasetName();
+        } else if (!StrUtil.isEmpty(name)) {
+            // To restore datasets by name, need to check whether there are duplicate names
+            List<SWDatasetEntity> deletedDatasets = swdsMapper.listDeletedDatasets(name);
+            if(deletedDatasets.size() > 1) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                    .tip(String.format("Recover dataset error. Duplicate names [%s] of deleted dataset. ", name)),
+                    HttpStatus.BAD_REQUEST);
+            } else if (deletedDatasets.size() == 0) {
+                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                    .tip(String.format("Recover dataset error. Can not find deleted dataset [%s].", name)),
+                    HttpStatus.BAD_REQUEST);
+            }
+            id = deletedDatasets.get(0).getId();
+        }
+
+        // Check for duplicate names
+        if(swdsMapper.findByName(name) != null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                .tip(String.format("Recover dataset error. Model %s already exists", name)), HttpStatus.BAD_REQUEST);
+        }
+
+        int res = swdsMapper.recoverDataset(id);
+        log.info("Dataset has been recovered. Name={}", name);
+        return res > 0;
+    }
+
     public SWDatasetInfoVO getSWDSInfo(SWDSQuery query) {
         SWDatasetEntity ds = swdsManager.findSWDS(query.getSwdsUrl());
         if(ds == null) {

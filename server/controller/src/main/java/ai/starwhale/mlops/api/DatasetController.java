@@ -21,22 +21,16 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
-import ai.starwhale.mlops.api.protocol.swds.SWDSRequest;
-import ai.starwhale.mlops.api.protocol.swds.SWDSVersionRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.util.RandomUtil;
-import ai.starwhale.mlops.domain.swds.SWDSFile;
-import ai.starwhale.mlops.domain.swds.SWDSObject;
 import ai.starwhale.mlops.domain.swds.SWDSQuery;
 import ai.starwhale.mlops.domain.swds.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.SWDSVersionQuery;
 import ai.starwhale.mlops.domain.swds.SWDatasetService;
 import ai.starwhale.mlops.domain.swds.upload.SwdsUploader;
-import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.ApiOperationException;
 import ai.starwhale.mlops.exception.SWProcessException;
@@ -47,7 +41,6 @@ import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.lang.Assert;
 import com.github.pagehelper.PageInfo;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -103,6 +96,17 @@ public class DatasetController implements DatasetApi{
                 .build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete swds failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> recoverDataset(String projectUrl,
+        String datasetUrl) {
+        Boolean res = swDatasetService.recoverSWDS(projectUrl, datasetUrl);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover dataset failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

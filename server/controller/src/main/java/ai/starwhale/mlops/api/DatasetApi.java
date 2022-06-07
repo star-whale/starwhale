@@ -20,8 +20,6 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
-import ai.starwhale.mlops.api.protocol.swds.SWDSRequest;
-import ai.starwhale.mlops.api.protocol.swds.SWDSVersionRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
@@ -90,6 +88,21 @@ public interface DatasetApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("datasetUrl")
             String datasetUrl);
+
+    @Operation(summary = "Recover a dataset")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/recover",
+        produces = {"application/json"})
+    ResponseEntity<ResponseMessage<String>> recoverDataset(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project Url",
+            schema = @Schema())
+        @PathVariable("projectUrl")
+        String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("datasetUrl")
+        String datasetUrl);
 
     @Operation(summary = "Get the information of a dataset",
         description = "Return the information of the latest version of the current dataset")
