@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.runtime;
 
 import ai.starwhale.mlops.api.protocol.StorageFileVO;
+import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVO;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
@@ -25,6 +26,9 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.domain.job.JobRuntime;
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
@@ -46,6 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
@@ -94,6 +99,9 @@ public class RuntimeService {
 
     @Resource
     private IDConvertor idConvertor;
+
+    @Resource
+    private HotJobHolder jobHolder;
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
@@ -279,14 +287,25 @@ public class RuntimeService {
         }
         log.debug("Runtime checked time use {}", System.currentTimeMillis() - startTime);
         RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(uploadRequest.version(), entity.getId());
-        if(runtimeVersionEntity != null){
+        boolean entityExists = (null != runtimeVersionEntity);
+        if(entityExists && !uploadRequest.force()){
             log.debug("Runtime version checked time use {}",System.currentTimeMillis() - startTime);
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip("Runtime version duplicate" + uploadRequest.version()),
                 HttpStatus.BAD_REQUEST);
+        } else if (entityExists && uploadRequest.force()) {
+            jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
+                .parallelStream().forEach(job -> {
+                    JobRuntime runtime = job.getJobRuntime();
+                    if(runtime.getName().equals(uploadRequest.name()) && runtime.getVersion().equals(uploadRequest.version())) {
+                        throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip("job's are running on runtime version "+uploadRequest.version() +" you can't force push now"),
+                            HttpStatus.BAD_REQUEST);
+                    }
+                });
         }
         log.debug("Runtime version checked time use {}",System.currentTimeMillis() - startTime);
         //upload to storage
-        final String runtimePath = storagePathCoordinator.generateRuntimePath(uploadRequest.name(), uploadRequest.version());
+        final String runtimePath = entityExists ? runtimeVersionEntity.getStoragePath()
+            : storagePathCoordinator.generateRuntimePath(uploadRequest.name(), uploadRequest.version());
 
         try(final InputStream inputStream = dsFile.getInputStream()){
             InputStream is = inputStream;
@@ -300,14 +319,15 @@ public class RuntimeService {
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
         /* create new entity */
-        runtimeVersionMapper.addNewVersion(RuntimeVersionEntity.builder()
-            .ownerId(userService.currentUserDetail().getId())
-            .storagePath(runtimePath)
-            .runtimeId(entity.getId())
-            .versionName(uploadRequest.version())
-            .versionMeta(uploadRequest.getRuntime())
-            .build());
-
+        if(!entityExists) {
+            runtimeVersionMapper.addNewVersion(RuntimeVersionEntity.builder()
+                .ownerId(userService.currentUserDetail().getId())
+                .storagePath(runtimePath)
+                .runtimeId(entity.getId())
+                .versionName(uploadRequest.version())
+                .versionMeta(uploadRequest.getRuntime())
+                .build());
+        }
     }
 
     public void pull(ClientRuntimeRequest pullRequest, HttpServletResponse httpResponse) {
