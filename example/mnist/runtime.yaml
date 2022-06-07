@@ -1,4 +1,4 @@
-base_image: ghcr.io/star-whale/starwhale:latest
+base_image: ghcr.io/star-whale/starwhale:0.2.0-alpha.2
 kw: {}
 mode: venv
 name: mnist2
