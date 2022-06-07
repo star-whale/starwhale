@@ -96,6 +96,7 @@ class Runtime(BaseBundle):
         name: str,
         python_version: str = DEFAULT_PYTHON_VERSION,
         mode: str = PythonRunEnv.VENV,
+        base_image: str = DEFAULT_SW_TASK_RUN_IMAGE,
         force: bool = False,
     ) -> None:
         StandaloneRuntime.create(
@@ -103,6 +104,7 @@ class Runtime(BaseBundle):
             name=name,
             python_version=python_version,
             mode=mode,
+            base_image=base_image,
             force=force,
         )
 
@@ -300,6 +302,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         name: str,
         python_version: str = DEFAULT_PYTHON_VERSION,
         mode: str = PythonRunEnv.VENV,
+        base_image: str = DEFAULT_SW_TASK_RUN_IMAGE,
         force: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
@@ -313,7 +316,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             force=force,
         )
 
-        config = RuntimeConfig(name=name, mode=mode, python_version=python_version)
+        config = RuntimeConfig(
+            name=name, mode=mode, python_version=python_version, base_image=base_image
+        )
         cls.render_runtime_yaml(config, workdir, force)
         activate_python_env(mode=mode, identity=_id)
 
