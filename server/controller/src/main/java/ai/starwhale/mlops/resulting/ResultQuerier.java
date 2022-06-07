@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.resulting;
 
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -63,7 +64,7 @@ public class ResultQuerier {
             throw new SWValidationException(ValidSubject.JOB).tip("job is not finished yet");
         }
         try {
-            List<String> results = storageAccessService.list(jobEntity.getResultOutputPath()).collect(
+            List<String> results = storageAccessService.list(new ResultPath(jobEntity.getResultOutputPath()).resultDir()).collect(
                 Collectors.toList());
             if(null == results || results.isEmpty()){
                 throw new SWValidationException(ValidSubject.JOB).tip("no result found of job");
