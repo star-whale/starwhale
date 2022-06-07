@@ -269,4 +269,8 @@ public class DatasetController implements DatasetApi{
 //    }
 
 
+    @Override
+    public ResponseEntity<String> headDataset(UploadRequest uploadRequest) {
+        return ResponseEntity.ok(swDatasetService.query(uploadRequest));
+    }
 }

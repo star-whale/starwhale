@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
+import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,6 +46,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
@@ -311,5 +314,14 @@ public interface DatasetApi {
 //            String datasetName,
 //        @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
 //        SWDSRequest swdsRequest);
+
+    @Operation(summary = "head for swds info ",
+        description = "head for swds info")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @RequestMapping(
+        value = "/project/dataset",
+        produces = {"application/json"},
+        method = RequestMethod.HEAD)
+    ResponseEntity<String> headDataset(UploadRequest uploadRequest);
 
 }
