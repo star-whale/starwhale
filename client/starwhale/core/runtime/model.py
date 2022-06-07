@@ -206,6 +206,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 ),
             ),
             (
+                self._dump_base_image,
+                5,
+                "dump base image",
+                dict(config=_swrt_config),
+            ),
+            (
                 self._render_manifest,
                 5,
                 "render manifest",
@@ -215,6 +221,13 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             (self._make_latest_tag, 5, "make latest tag"),
         ]
         run_with_progress_bar("runtime bundle building...", operations)
+
+    def _dump_base_image(self, config: RuntimeConfig) -> None:
+        base_image = config.base_image or DEFAULT_SW_TASK_RUN_IMAGE
+        console.print(
+            f":rainbow: runtime docker image: [red]{base_image}[/]  :rainbow:"
+        )
+        self._manifest["base_image"] = base_image
 
     def _dump_dep(
         self,
