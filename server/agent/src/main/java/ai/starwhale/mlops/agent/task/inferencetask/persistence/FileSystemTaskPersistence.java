@@ -29,6 +29,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
@@ -211,6 +212,10 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     }
 
     private static final YAMLMapper yamlMapper = new YAMLMapper();
+
+    static {
+        yamlMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
 
     @Override
     public RuntimeManifest runtimeManifest(InferenceTask task) throws IOException {
