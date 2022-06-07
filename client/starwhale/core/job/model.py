@@ -243,7 +243,7 @@ class CloudJob(Job, CloudRequestMixed):
                 {
                     "modelVersionId": model_uri,
                     "datasetVersionIds": ",".join([str(i) for i in dataset_uris]),
-                    "baseImageId": runtime_uri,
+                    "runtimeVersionId": runtime_uri,
                     "deviceId": _did,
                     "deviceAmount": _dcnt,
                 }
