@@ -169,6 +169,7 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
 
         // task container env
         imageConfig.setEnv(List.of(
+                env("SW_PIP_CACHE_DIR", String.format(pipCachePathFormat, "root")), // todo specified by user
                 env("SW_PYPI_INDEX_URL", agentProperties.getTask().getPypiIndexUrl()),
                 env("SW_PYPI_EXTRA_INDEX_URL", agentProperties.getTask().getPypiExtraIndexUrl()),
                 env("SW_PYPI_TRUSTED_HOST", agentProperties.getTask().getPypiTrustedHost()),
