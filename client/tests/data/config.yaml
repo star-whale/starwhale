@@ -16,3 +16,4 @@ instances:
     user_role: admin
 storage:
   root: /home/liutianwei/.cache/starwhale
+version: "2.0"
