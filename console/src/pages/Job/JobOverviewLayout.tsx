@@ -110,7 +110,7 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
             style: {
                 gridColumnStart: 'span 2',
             },
-            value: `${job?.modelName ?? '-'} : ${job?.modelVersion ?? '-'}`,
+            value: `${job?.modelName ?? '-'}:${job?.modelVersion ?? '-'}`,
         },
         {
             label: t('Datasets'),
@@ -120,11 +120,11 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
             value: job?.datasets?.join(', '),
         },
         {
-            label: t('BaseImage'),
+            label: t('Runtime'),
             style: {
                 gridColumnStart: 'span 2',
             },
-            value: job?.baseImage?.name ?? '-',
+            value: [job?.runtime?.name ?? '-', job?.runtime?.version?.name ?? '-'].join(':'),
         },
     ]
 

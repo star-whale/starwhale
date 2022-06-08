@@ -1,5 +1,6 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
-import { IBaseImageSchema, IDeviceSchema } from '@/domain/setting/schemas/system'
+import { IDeviceSchema } from '@/domain/setting/schemas/system'
+import { IRuntimeSchema } from '@/domain/runtime/schemas/runtime'
 import { IUserSchema } from '@user/schemas/user'
 
 export enum JobActionType {
@@ -28,7 +29,7 @@ export interface IJobSchema extends IResourceSchema {
     modelName?: string
     modelVersion?: string
     datasets?: string[]
-    baseImage?: IBaseImageSchema
+    runtime?: IRuntimeSchema
     device?: IDeviceSchema
     deviceAmount: number
     duration: number
