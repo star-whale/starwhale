@@ -205,7 +205,7 @@ class JobTermView(BaseTermView):
             console.print(f":clap: success to create job(project id: {project_uri})")
             if _project_uri.instance_type == InstanceType.CLOUD:
                 console.print(
-                    f":writing_hand: run cmd [green]swcli job info project/{_project_uri.full_uri}/job/{reason} [/] to fetch job details"
+                    f":writing_hand: run cmd [green]swcli job info {_project_uri.full_uri}/job/{reason} [/] to fetch job details"
                 )
         else:
             console.print(f":collision: failed to create job, notice: [red]{reason}[/]")
