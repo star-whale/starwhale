@@ -89,12 +89,13 @@ class BaseTermView(SWCliConfigMixed):
 
     @staticmethod
     def pretty_status(status: str) -> t.Tuple[str, str, str]:
+        status = status.lower()
         style = "blue"
         icon = ":tractor:"
-        if status == "SUCCESS":
+        if status == "success":
             style = "green"
             icon = ":clap:"
-        elif status == "FAIL":
+        elif status in ("fail", "failed"):
             style = "red"
             icon = ":fearful:"
         return status, style, icon

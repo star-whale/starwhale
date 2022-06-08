@@ -229,7 +229,9 @@ class CloudProject(Project, CloudRequestMixed):
 
     @ignore_error([])
     def _fetch_model_files(self, mid: int) -> t.List:
-        r = self.do_http_request(f"/project/{self.name}/model/{mid}")
+        r = self.do_http_request(
+            f"/project/{self.name}/model/{mid}", instance_uri=self.uri
+        )
         return r.json()["data"]["files"]
 
     @ignore_error([])
@@ -237,7 +239,9 @@ class CloudProject(Project, CloudRequestMixed):
         self, typ: str, versions_size: int = 10
     ) -> t.List[t.Dict[str, t.Any]]:
         r = self.do_http_request(
-            f"/project/{self.name}/{typ}", params={"pageSize": _SHOW_ALL}
+            f"/project/{self.name}/{typ}",
+            params={"pageSize": _SHOW_ALL},
+            instance_uri=self.uri,
         )
 
         ret = []
@@ -248,6 +252,7 @@ class CloudProject(Project, CloudRequestMixed):
             mvr = self.do_http_request(
                 f"/project/{self.name}/{typ}/{_m['id']}/version",
                 params={"pageSize": versions_size},
+                instance_uri=self.uri,
             )
             versions = []
             for _v in mvr.json()["data"]["list"]:

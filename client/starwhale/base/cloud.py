@@ -37,15 +37,15 @@ class CloudRequestMixed(object):
         self,
         url_path: str,
         dest_path: Path,
-        instance_uri: t.Optional[URI] = None,
+        instance_uri: URI,
         progress: t.Optional[Progress] = None,
         task_id: TaskID = TaskID(0),
         **kw: t.Any,
     ) -> None:
         r = self.do_http_request(
             path=url_path,
-            method=HTTPMethod.GET,
             instance_uri=instance_uri,
+            method=HTTPMethod.GET,
             use_raise=True,
             **kw,
         )
@@ -63,9 +63,9 @@ class CloudRequestMixed(object):
     def do_multipart_upload_file(
         self,
         url_path: str,
+        instance_uri: URI,
         file_path: t.Union[str, Path],
         fields: t.Dict[str, t.Any] = {},
-        instance_uri: t.Optional[URI] = None,
         headers: t.Dict[str, t.Any] = {},
         progress: t.Optional[Progress] = None,
         task_id: TaskID = TaskID(0),
@@ -91,8 +91,8 @@ class CloudRequestMixed(object):
 
         return self.do_http_request(
             url_path,
-            method=HTTPMethod.POST,
             instance_uri=instance_uri,
+            method=HTTPMethod.POST,
             timeout=1200,
             data=_monitor,
             headers=_headers,
@@ -102,11 +102,11 @@ class CloudRequestMixed(object):
     def do_http_request_simple_ret(
         self,
         path: str,
+        instance_uri: URI,
         method: str = HTTPMethod.GET,
-        instance_uri: t.Optional[URI] = None,
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
-        r = self.do_http_request(path, method, instance_uri, **kw)
+        r = self.do_http_request(path, instance_uri, method, **kw)
         status = r.status_code == HTTPStatus.OK
 
         try:
@@ -119,14 +119,13 @@ class CloudRequestMixed(object):
     def do_http_request(
         self,
         path: str,
+        instance_uri: URI,
         method: str = HTTPMethod.GET,
-        instance_uri: t.Optional[URI] = None,
         timeout: int = _DEFAULT_TIMEOUT_SECS,
         headers: t.Dict[str, t.Any] = {},
         disable_default_content_type: bool = False,
         **kw: t.Any,
     ) -> requests.Response:
-        instance_uri = instance_uri or URI("")
         _url = f"{instance_uri.instance}/api/{SW_API_VERSION}/{path.lstrip('/')}"
         _headers = {
             "Authorization": instance_uri.sw_token,
@@ -189,6 +188,7 @@ class CloudRequestMixed(object):
         r = self.do_http_request(
             f"/project/{uri.project}/{typ}/{uri.object.name}",
             method=HTTPMethod.GET,
+            instance_uri=uri,
             params={"versionName": uri.object.version},
         ).json()
         return r["data"]
@@ -203,6 +203,7 @@ class CloudRequestMixed(object):
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         r = self.do_http_request(
             f"/project/{project_uri.project}/{typ}/{name}/version",
+            instance_uri=project_uri,
             method=HTTPMethod.GET,
             params={"pageNum": page, "pageSize": size},
         ).json()

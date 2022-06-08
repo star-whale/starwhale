@@ -205,7 +205,7 @@ class JobTermView(BaseTermView):
             console.print(f":clap: success to create job(project id: {project_uri})")
             if _project_uri.instance_type == InstanceType.CLOUD:
                 console.print(
-                    f":writing_hand: run cmd [green]swcli job info project/{_project_uri.full_uri}/job/{reason} [/] to fetch job details"
+                    f":writing_hand: run cmd [green]swcli job info {_project_uri.full_uri}/job/{reason} [/] to fetch job details"
                 )
         else:
             console.print(f":collision: failed to create job, notice: [red]{reason}[/]")
@@ -228,6 +228,7 @@ class JobTermView(BaseTermView):
         table.add_column("Name", justify="left", style="cyan", no_wrap=True)
         table.add_column("Model", no_wrap=True)
         table.add_column("Datasets")
+        table.add_column("Runtime")
         table.add_column("Status", style="red")
         table.add_column("Resource", style="blue")
         table.add_column("Created At", style="magenta")
@@ -265,10 +266,19 @@ class JobTermView(BaseTermView):
             else:
                 _name = _s(_m["version"])
 
+            _runtime = "--"
+            if "runtime" in _m:
+                if isinstance(_m["runtime"], str):
+                    _runtime = _m["runtime"]
+                else:
+                    _r = _m["runtime"]
+                    _runtime = f"[{_r['version']['id']}] {_r['name']}:{_r['version']['name'][:SHORT_VERSION_CNT]}"
+
             table.add_row(
                 _name,
                 _model,
                 _datasets,
+                _runtime,
                 f"[{_style}]{_icon}{_status}[/]",
                 f"{_m['device']}:{_m['deviceAmount']}" if "device" in _m else "--",
                 _m["created_at"],
