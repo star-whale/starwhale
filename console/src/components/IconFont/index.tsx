@@ -4,6 +4,7 @@ import projectSvg from '@/assets/fonts/project.svg'
 import settingSvg from '@/assets/fonts/setting.svg'
 
 interface IIconFontProps {
+    style?: React.CSSProperties
     size?: number
     kind?: 'inherit' | 'white' | 'gray' | 'white2' | 'primary'
     type:
@@ -36,9 +37,10 @@ interface IIconFontProps {
         | 'tasks'
         | 'add'
         | 'setting2'
+        | 'success'
 }
 
-export default function IconFont({ size = 14, type = 'user', kind = 'inherit' }: IIconFontProps) {
+export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {
     const colors = {
         gray: 'var(--color-brandFontTip)',
         white: 'var(--color-brandFontWhite)',
@@ -56,6 +58,7 @@ export default function IconFont({ size = 14, type = 'user', kind = 'inherit' }:
                 color: kind === 'inherit' ? 'inherit' : colors[kind],
                 padding: 0,
                 fontWeight: 'normal',
+                ...style,
             }}
         >
             {type === 'project' && <img src={projectSvg} alt={type} width={20} />}

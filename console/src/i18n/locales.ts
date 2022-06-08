@@ -358,7 +358,7 @@ const locales0 = {
         en: 'Runtime Versions',
     },
     'DAG': {
-        en: 'DAG',
+        en: 'Actions',
     },
 }
 
