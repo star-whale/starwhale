@@ -56,12 +56,27 @@ class RuntimeTermView(BaseTermView):
         project: str = "",
         yaml_name: str = DefaultYAMLName.RUNTIME,
         gen_all_bundles: bool = False,
+        include_editable: bool = False,
     ) -> None:
         _runtime_uri = cls.prepare_build_bundle(
             workdir, project, yaml_name, URIType.RUNTIME
         )
+        if include_editable:
+            console.print(
+                ":bell: [red bold]runtime will include pypi editable package[/] :bell:"
+            )
+        else:
+            console.print(
+                ":bird: [red bold]runtime will ignore pypi editable package[/]"
+            )
+
         _rt = Runtime.get_runtime(_runtime_uri)
-        _rt.build(Path(workdir), yaml_name, gen_all_bundles=gen_all_bundles)
+        _rt.build(
+            Path(workdir),
+            yaml_name,
+            gen_all_bundles=gen_all_bundles,
+            include_editable=include_editable,
+        )
 
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> None:
         console.print(":oncoming_police_car: try to extract ...")

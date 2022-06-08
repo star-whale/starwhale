@@ -92,7 +92,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_call.call_args[0][0] == [
             "conda",
             "create",
-            "--namespace",
+            "--name",
             name,
             "--yes",
             "python=3.7",

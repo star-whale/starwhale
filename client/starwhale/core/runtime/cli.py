@@ -62,14 +62,20 @@ def _create(
 @click.option(
     "--gen-all-bundles", is_flag=True, help="gen conda or venv files into runtime"
 )
+@click.option("--include-editable", is_flag=True, help="include editable package")
 def _build(
-    workdir: str, project: str, runtime_yaml: str, gen_all_bundles: bool
+    workdir: str,
+    project: str,
+    runtime_yaml: str,
+    gen_all_bundles: bool,
+    include_editable: bool,
 ) -> None:
     RuntimeTermView.build(
         workdir=workdir,
         project=project,
         yaml_name=runtime_yaml,
         gen_all_bundles=gen_all_bundles,
+        include_editable=include_editable,
     )
 
 
