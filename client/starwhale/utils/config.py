@@ -13,6 +13,7 @@ from starwhale.consts import (
     SW_LOCAL_STORAGE,
     ENV_SW_CLI_CONFIG,
     STANDALONE_INSTANCE,
+    LOCAL_CONFIG_VERSION,
 )
 
 from . import console, now_str, fmt_http_server
@@ -38,6 +39,16 @@ def load_swcli_config() -> t.Dict[str, t.Any]:
         with open(fpath) as f:
             _config = yaml.safe_load(f)
 
+            _version = _config.get("version")
+            if _version != LOCAL_CONFIG_VERSION:
+                console.print(
+                    f":cherries: {fpath} use unexpected version({_version}), swcli only support {LOCAL_CONFIG_VERSION} version."
+                )
+                console.print(
+                    f":carrot: {fpath} will be upgraded to {LOCAL_CONFIG_VERSION} automatically."
+                )
+                _config = render_default_swcli_config(fpath)
+
     ensure_dir(Path(_config["storage"]["root"]) / DEFAULT_PROJECT, recursion=True)
     return _config
 
@@ -46,6 +57,7 @@ def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
     from starwhale.base.type import InstanceType
 
     c = dict(
+        version=LOCAL_CONFIG_VERSION,
         instances={
             STANDALONE_INSTANCE: dict(
                 uri=DEFAULT_INSTANCE,

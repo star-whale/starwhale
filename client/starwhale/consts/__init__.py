@@ -13,6 +13,7 @@ DEFAULT_MANIFEST_NAME = "_manifest.yaml"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
 LOCAL_FUSE_JSON_NAME = "local_fuse.json"
 DEFAULT_INPUT_JSON_FNAME = "input.json"
+LOCAL_CONFIG_VERSION = "2.0"
 
 # TODO: use ~/.starwhale or ~/.cache/starwhale?
 SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
