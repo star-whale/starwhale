@@ -51,4 +51,8 @@ public class StepStatusMachine {
         return transferMap.get(statusNow).contains(statusNew);
     }
 
+    public boolean isFinal(StepStatus status){
+        return transferMap.get(status).isEmpty();
+    }
+
 }

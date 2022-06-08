@@ -46,7 +46,7 @@ public class GraphNode {
     /**
      * content for the node e.g. status name
      */
-    String content;
+    Object content;
 
     String group;
 

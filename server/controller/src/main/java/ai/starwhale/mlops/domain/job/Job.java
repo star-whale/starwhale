@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job;
 
+import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.Step;
 import ai.starwhale.mlops.domain.swds.SWDataSet;
@@ -35,7 +36,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Job {
+public class Job extends TimeConcern {
 
     Long id;
 

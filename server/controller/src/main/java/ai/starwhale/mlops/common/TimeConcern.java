@@ -14,37 +14,19 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.step;
+package ai.starwhale.mlops.common;
 
-import ai.starwhale.mlops.common.BaseEntity;
-import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class StepEntity  extends BaseEntity {
+public class TimeConcern {
 
-    String name;
+    Long startTime = System.currentTimeMillis();
+    Long finishTime;
 
-    Long id;
-
-    Long lastStepId;
-
-    Long jobId;
-
-    StepStatus status;
-
-    String uuid;
-
-    LocalDateTime startedTime;
-
-    LocalDateTime finishedTime;
 }
