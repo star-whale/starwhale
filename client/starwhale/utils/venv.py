@@ -160,14 +160,22 @@ def conda_export(path: t.Union[str, Path], env: str = "") -> None:
     check_call(f"{cmd} {env} > {path}", shell=True)
 
 
-def get_external_python_version() -> t.Any:
-    return subprocess.check_output(
+def get_external_python_version() -> str:
+    out = subprocess.check_output(
         [
             "python3",
             "-c",
             "import sys; _v = sys.version_info; print(f'{_v,major}.{_v.minor}.{_v.micro}')",
         ],
     )
+    return out.decode().strip()
+
+
+def get_pip_cache_dir() -> str:
+    out = subprocess.check_output(
+        ["python3", "-m", "pip", "cache", "dir"],
+    )
+    return out.decode().strip()
 
 
 def conda_restore(

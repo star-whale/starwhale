@@ -16,6 +16,7 @@ from starwhale.consts import (
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_INPUT_JSON_FNAME,
+    CNTR_DEFAULT_PIP_CACHE_DIR,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -260,6 +261,11 @@ class EvalExecutor(object):
                 "-v",
                 f"{self._ppl_workdir / RunSubDirType.RESULT}:{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
             ]
+
+        cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
+        host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
+
+        cmd += ["-v", f"{host_cache_dir}:{cntr_cache_dir}"]
 
         if self.docker_verbose:
             cmd += ["-e", "DEBUG=1"]

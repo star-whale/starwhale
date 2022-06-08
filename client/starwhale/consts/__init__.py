@@ -99,3 +99,5 @@ YAML_TYPES = (".yaml", ".yml")
 
 DEFAULT_SW_TASK_RUN_IMAGE = "ghcr.io/star-whale/starwhale:latest"
 SW_IGNORE_FILE_NAME = ".swignore"
+
+CNTR_DEFAULT_PIP_CACHE_DIR = "/root/.cache/pip"

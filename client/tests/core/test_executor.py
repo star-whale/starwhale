@@ -1,3 +1,4 @@
+import os
 import json
 from unittest.mock import patch, MagicMock
 
@@ -5,7 +6,11 @@ import yaml
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
-from starwhale.consts import VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
+from starwhale.consts import (
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
+    CNTR_DEFAULT_PIP_CACHE_DIR,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
@@ -121,6 +126,7 @@ class StandaloneEvalExecutor(TestCase):
         pull_cmd = m_call.call_args_list[0][0][0]
         ppl_cmd = m_call.call_args_list[1][0][0]
         cmp_cmd = m_call.call_args_list[3][0][0]
+        host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
         assert pull_cmd == "docker pull ghcr.io/star-whale/starwhale:latest"
         assert ppl_cmd == " ".join(
             [
@@ -131,6 +137,7 @@ class StandaloneEvalExecutor(TestCase):
                 f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/dep:/opt/starwhale/swmp/dep",
                 f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/_manifest.yaml:/opt/starwhale/swmp/_manifest.yaml",
                 f"-v {project_dir}/dataset:/opt/starwhale/dataset",
+                f"-v {host_cache_dir}:{CNTR_DEFAULT_PIP_CACHE_DIR}",
                 "ghcr.io/star-whale/starwhale:latest ppl",
             ]
         )
@@ -143,6 +150,7 @@ class StandaloneEvalExecutor(TestCase):
                 f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/dep:/opt/starwhale/swmp/dep",
                 f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/_manifest.yaml:/opt/starwhale/swmp/_manifest.yaml",
                 f"-v {project_dir}/job/{build_version[:VERSION_PREFIX_CNT]}/{build_version}/ppl/result:/opt/starwhale/ppl_result",
+                f"-v {host_cache_dir}:{CNTR_DEFAULT_PIP_CACHE_DIR}",
                 "ghcr.io/star-whale/starwhale:latest cmp",
             ]
         )
