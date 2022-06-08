@@ -428,7 +428,7 @@ public class SWModelPackageService {
     }
 
     public String query(ClientSWMPRequest queryRequest) {
-        SWModelPackageEntity entity = swmpMapper.findByNameForUpdate(queryRequest.name());
+        SWModelPackageEntity entity = swmpMapper.findByName(queryRequest.name());
         if(null == entity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP),HttpStatus.NOT_FOUND);
         }
