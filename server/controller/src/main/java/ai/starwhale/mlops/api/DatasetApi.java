@@ -34,6 +34,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import org.springframework.http.MediaType;
@@ -228,7 +229,8 @@ public interface DatasetApi {
     byte[] pullDS(
         @Parameter(name = "name", description = "the name of the SWDS attempt to pull", required = true) String name,
         @Parameter(name = "version", description = "the version of the SWDS attempt to pull", required = true) String version,
-        @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified") @RequestParam(name = "part_name",required = false) String partName);
+        @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified") @RequestParam(name = "part_name",required = false) String partName,
+        HttpServletResponse httpResponse);
 
     @Operation(summary = "List SWDS versions",
         description = "List SWDS versions. ")

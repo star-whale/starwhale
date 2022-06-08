@@ -50,6 +50,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -184,11 +185,11 @@ public class DatasetController implements DatasetApi{
 
     @Override
     public byte[] pullDS(String name, String version,
-        String partName) {
+        String partName, HttpServletResponse httpResponse) {
         if(!StringUtils.hasText(name) || !StringUtils.hasText(version) ){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("please provide name and version for the DS "),HttpStatus.BAD_REQUEST);
         }
-        return swdsUploader.pull(name,version,partName);
+        return swdsUploader.pull(name,version,partName, httpResponse);
     }
 
     @Override

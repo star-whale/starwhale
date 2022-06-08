@@ -20,6 +20,7 @@ import static ai.starwhale.mlops.domain.swds.upload.SWDSVersionWithMetaConverter
 
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.common.util.Blake2bUtil;
+import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
@@ -53,6 +54,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -265,10 +267,10 @@ public class SwdsUploader {
             uploadManifest(swDatasetVersionEntity,fileName,yamlContent.getBytes(StandardCharsets.UTF_8));
         }else{
             //swds version create dup
-            if(swDatasetVersionEntity.getStatus() == SWDatasetVersionEntity.STATUS_AVAILABLE){
+            if(swDatasetVersionEntity.getStatus().equals(SWDatasetVersionEntity.STATUS_AVAILABLE)){
                 if(uploadRequest.force()){
                     Set<Long> runningDataSets = jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
-                        .parallelStream().map(job -> job.getSwDataSets())
+                        .parallelStream().map(Job::getSwDataSets)
                         .flatMap(Collection::stream)
                         .map(SWDataSet::getId)
                         .collect(Collectors.toSet());
@@ -321,7 +323,7 @@ public class SwdsUploader {
         if(null == currentUserDetail){
             throw new StarWhaleApiException(new SWAuthException(SWAuthException.AuthType.SWDS_UPLOAD),HttpStatus.FORBIDDEN);
         }
-        return Long.valueOf(currentUserDetail.getIdTableKey());
+        return currentUserDetail.getIdTableKey();
     }
 
 
@@ -332,7 +334,7 @@ public class SwdsUploader {
     }
 
     final static String SWDS_MANIFEST="_manifest.yaml";
-    public byte[] pull(String name, String version, String partName) {
+    public byte[] pull(String name, String version, String partName, HttpServletResponse httpResponse) {
         SWDatasetEntity datasetEntity = swdsMapper.findByName(name);
         if(null == datasetEntity){
             throw new SWValidationException(ValidSubject.SWDS).tip("dataset name doesn't exists");
@@ -346,7 +348,9 @@ public class SwdsUploader {
             partName = SWDS_MANIFEST;
         }
         try(InputStream inputStream = storageAccessService.get(datasetVersionEntity.getStoragePath() + "/" + partName.trim())){
-            return inputStream.readAllBytes();
+            byte[] res = inputStream.readAllBytes();
+            httpResponse.addHeader("Content-Length", String.valueOf(res.length));
+            return res;
         } catch (IOException e) {
             log.error("pull file from storage failed",e);
             throw new SWProcessException(ErrorType.STORAGE).tip("pull file from storage failed: "+ e.getMessage());
