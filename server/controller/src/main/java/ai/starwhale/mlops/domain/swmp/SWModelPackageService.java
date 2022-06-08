@@ -231,6 +231,7 @@ public class SWModelPackageService {
                 .versionName(version.getVersionName())
                 .versionTag(version.getVersionTag())
                 .versionMeta(version.getVersionMeta())
+                .manifest(version.getManifest())
                 .createdTime(localDateTimeConvertor.convert(version.getCreatedTime()))
                 .files(collect)
                 .build();
@@ -379,6 +380,7 @@ public class SWModelPackageService {
                 .swmpId(entity.getId())
                 .versionName(uploadRequest.version())
                 .versionMeta(uploadRequest.getSwmp())
+                .manifest(uploadRequest.getManifest())
                 .build();
             swmpVersionMapper.addNewVersion(swModelPackageVersionEntity);
         }

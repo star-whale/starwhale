@@ -41,6 +41,9 @@ public class RuntimeVersionVO implements Serializable {
     @JsonProperty("meta")
     private Object meta;
 
+    @JsonProperty("manifest")
+    private String manifest;
+
     @JsonProperty("createdTime")
     private Long createdTime;
 

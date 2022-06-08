@@ -326,6 +326,7 @@ public class RuntimeService {
                 .runtimeId(entity.getId())
                 .versionName(uploadRequest.version())
                 .versionMeta(uploadRequest.getRuntime())
+                .manifest(uploadRequest.getManifest())
                 .build());
         }
     }

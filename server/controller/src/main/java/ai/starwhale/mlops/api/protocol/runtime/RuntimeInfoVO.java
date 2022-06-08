@@ -48,6 +48,9 @@ public class RuntimeInfoVO implements Serializable  {
     @JsonProperty("versionMeta")
     private String versionMeta;
 
+    @JsonProperty("manifest")
+    private String manifest;
+
     @JsonProperty("createdTime")
     private Long createdTime;
 
@@ -56,6 +59,6 @@ public class RuntimeInfoVO implements Serializable  {
     private List<StorageFileVO> files;
 
     public static RuntimeInfoVO empty() {
-        return new RuntimeInfoVO("", "", "", "", "", 0L , new ArrayList<>());
+        return new RuntimeInfoVO("", "", "", "", "", "", 0L , new ArrayList<>());
     }
 }

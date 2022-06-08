@@ -25,6 +25,7 @@
                rv.version_tag as rv_version_tag,
                rv.version_meta as rv_version_meta,
                rv.storage_path as rv_storage_path,
+               rv.manifest as rv_manifest,
                rv.created_time as rv_created_time,
                rv.modified_time as rv_modified_time,
                u.id as user_id,
@@ -80,15 +81,21 @@
     </select>
 
     <insert id="revertTo">
-        replace into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path)
-        select runtime_id, owner_id, version_name, version_tag, version_meta, storage_path
+        replace into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
+        select runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest
         from runtime_version
         where id = #{rtVersionId}
     </insert>
 
     <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path)
-        values(#{version.runtimeId}, #{version.ownerId}, #{version.versionName}, #{version.versionTag}, #{version.versionMeta}, #{version.storagePath})
+        insert into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
+        values(#{version.runtimeId},
+               #{version.ownerId},
+               #{version.versionName},
+               #{version.versionTag},
+               #{version.versionMeta},
+               #{version.storagePath},
+               #{version.manifest})
     </insert>
 
     <update id="update" parameterType="ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity">
@@ -102,6 +109,7 @@
         <result property="versionTag" column="rv_version_tag" />
         <result property="versionMeta" column="rv_version_meta" />
         <result property="storagePath" column="rv_storage_path" />
+        <result property="manifest" column="rv_manifest" />
         <result property="createdTime" column="rv_created_time"/>
         <result property="modifiedTime" column="rv_modified_time"/>
         <result property="ownerId" column="owner_id" />

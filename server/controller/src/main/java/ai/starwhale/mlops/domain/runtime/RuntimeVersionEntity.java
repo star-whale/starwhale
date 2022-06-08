@@ -47,4 +47,6 @@ public class RuntimeVersionEntity extends BaseEntity {
 
     private String storagePath;
 
+    private String manifest;
+
 }
