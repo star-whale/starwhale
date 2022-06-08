@@ -134,9 +134,14 @@ def venv_setup(
         _call(_default_bin)
 
 
-def pip_freeze(path: t.Union[str, Path]) -> None:
+def pip_freeze(path: t.Union[str, Path], include_editable: bool = False) -> None:
     # TODO: add cmd timeout and error log
-    check_call(f"pip freeze > {path}", shell=True)
+    cmd = ["pip", "freeze", "--require-virtualenv"]
+    if not include_editable:
+        cmd += ["--exclude-editable"]
+    cmd += [">", str(path)]
+
+    check_call(" ".join(cmd), shell=True)
 
 
 def conda_create(
@@ -144,7 +149,7 @@ def conda_create(
     python_version: str = DEFAULT_PYTHON_VERSION,
     quiet: bool = False,
 ) -> None:
-    cmd = ["conda", "create", "--namespace", env, "--yes"]
+    cmd = ["conda", "create", "--name", env, "--yes"]
 
     if quiet:
         cmd += ["--quiet"]
@@ -198,6 +203,7 @@ def venv_activate_render(
 ) -> None:
     bin = f"{venvdir}/bin"
     if relocate:
+        # TODO: support relocatable editable python package
         content = f"""
 sed -i '1d' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
 sed -i '1i\#!{bin}/python3' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
@@ -241,6 +247,7 @@ def dump_python_dep_env(
     gen_all_bundles: bool = False,
     expected_runtime: str = "",
     mode: str = PythonRunEnv.AUTO,
+    include_editable: bool = False,
 ) -> t.Dict[str, t.Any]:
     # TODO: smart dump python dep by starwhale sdk-api, pip ast analysis?
     dep_dir = Path(dep_dir)
@@ -275,18 +282,22 @@ def dump_python_dep_env(
     ensure_dir(_conda_dir)
     ensure_dir(_python_dir)
 
-    logger.info(f"[info:dep]python env({pr_env}), os({sys_name}, python({py_ver}))")
-    console.print(f":dizzy: python{py_ver}@{pr_env}, try to export environment...")
+    console.print(
+        f":dizzy: python{py_ver}@{pr_env}, os({sys_name}), include-editable({include_editable}), try to export environment..."
+    )
 
     if os.path.exists(pip_req_fpath):
         shutil.copyfile(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
 
     if pr_env == PythonRunEnv.CONDA:
+        if include_editable:
+            raise NoSupportError("conda cannot support export pip editable package")
+
         logger.info(f"[info:dep]dump conda environment yaml: {_conda_lock_env}")
         conda_export(_conda_lock_env)
     elif pr_env == PythonRunEnv.VENV:
         logger.info(f"[info:dep]dump pip-req with freeze: {_pip_lock_req}")
-        pip_freeze(_pip_lock_req)
+        pip_freeze(_pip_lock_req, include_editable)
     else:
         # TODO: add other env tools
         logger.warning(
@@ -310,7 +321,10 @@ def dump_python_dep_env(
             # TODO: add env/env-name into model.yaml, user can set custom vars.
             logger.info("[info:dep]try to pack conda...")
             conda_pack.pack(
-                name=cenv, force=True, output=dest, ignore_editable_packages=True
+                name=cenv,
+                force=True,
+                output=dest,
+                ignore_editable_packages=not include_editable,
             )
             logger.info(f"[info:dep]finish conda pack {dest})")
             console.print(f":beer_mug: conda pack @ [underline]{dest}[/]")
@@ -326,6 +340,7 @@ def dump_python_dep_env(
                 logger.info(
                     f"[info:dep]install custom pip({pip_req_fpath}) to venv: {_venv_dir}"
                 )
+                # TODO: support ignore editable package
                 install_req(_venv_dir, pip_req_fpath)
             console.print(f":beer_mug: venv @ [underline]{_venv_dir}[/]")
 
