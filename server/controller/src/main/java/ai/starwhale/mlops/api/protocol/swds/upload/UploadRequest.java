@@ -24,6 +24,8 @@ import org.springframework.validation.annotation.Validated;
 @Data
 public class UploadRequest {
 
+    static final String SEPARATOR = ":";
+
     @NotNull
     String swds;
     @NotNull
@@ -39,6 +41,14 @@ public class UploadRequest {
 
     public String getProject() {
         return null == project ? "" : project;
+    }
+
+    public String name(){
+        return swds.split(SEPARATOR)[0];
+    }
+
+    public String version(){
+        return swds.split(SEPARATOR)[1];
     }
 
 }

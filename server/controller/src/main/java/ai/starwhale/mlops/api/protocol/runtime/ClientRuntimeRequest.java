@@ -29,7 +29,7 @@ public class ClientRuntimeRequest {
 
     String project;
 
-    //String force;
+    String force;
 
     public String name(){
         return runtime.split(SEPARATOR)[0];
@@ -39,10 +39,10 @@ public class ClientRuntimeRequest {
         return runtime.split(SEPARATOR)[1];
     }
 
-//    static final String FORCE = "1";
-//    public boolean force(){
-//        return FORCE.equals(force);
-//    }
+    static final String FORCE = "1";
+    public boolean force(){
+        return FORCE.equals(force);
+    }
 
     public String getProject() {
         return null == project ? "" : project;

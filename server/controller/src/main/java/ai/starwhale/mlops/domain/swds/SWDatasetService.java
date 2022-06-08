@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.StorageFileVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
+import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
@@ -285,5 +286,17 @@ public class SWDatasetService {
         }
         return swDatasetVersionEntities.parallelStream()
             .map(entity -> toSWDatasetInfoVO(ds, entity)).collect(Collectors.toList());
+    }
+
+    public String query(UploadRequest uploadRequest) {
+        SWDatasetEntity entity = swdsMapper.findByNameForUpdate(uploadRequest.name());
+        if(null == entity) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS), HttpStatus.NOT_FOUND);
+        }
+        SWDatasetVersionEntity versionEntity = swdsVersionMapper.findByDSIdAndVersionName(entity.getId(), uploadRequest.version());
+        if(null == versionEntity) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS), HttpStatus.NOT_FOUND);
+        }
+        return "";
     }
 }

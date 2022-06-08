@@ -52,6 +52,12 @@
             #{id}
         </foreach>
     </select>
+
+    <select id="findByNameForUpdate" resultMap="swdsResultMap" >
+        <include refid="select_swds"/>
+        and s.dataset_name = #{name} for update
+    </select>
+
     <select id="findByName" resultMap="swdsResultMap" >
         <include refid="select_swds"/>
         and s.dataset_name = #{name}
