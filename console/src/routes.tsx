@@ -33,6 +33,7 @@ import RuntimeVersionLayout from './pages/Runtime/RuntimeVersionLayout'
 import RuntimeLayout from './pages/Runtime/RuntimeLayout'
 import RuntimeOverview from './pages/Runtime/Overview'
 import ProjectRuntimes from './pages/Project/Runtimes'
+import JobDAG from './pages/Job/JobDAG'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -93,6 +94,7 @@ const Routes = () => {
                             <Switch>
                                 <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={JobTasks} />
                                 <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResults} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/dag' component={JobDAG} />
                             </Switch>
                         </JobOverviewLayout>
                     </Route>
