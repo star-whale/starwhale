@@ -50,6 +50,8 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
     private static final String resultDirEnv = "SW_TASK_RESULT_DIR";
     private static final String swdsFileEnv = "SW_TASK_INPUT_CONFIG";
 
+    private static final String pipCachePathFormat = "%s/.cache/pip";
+
     /*@Override
     public boolean valid(InferenceTask task, Context context) {
         // todo: Check if the previous steps have been prepared
@@ -152,6 +154,12 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                         .readOnly(false)
                         .source(fileSystemPath.oneActiveTaskRuntimeManifestFile(originTask.getId()))
                         .target(runtimeManifestFilePath)
+                        .type("BIND")
+                        .build(),
+                Mount.builder()
+                        .readOnly(false)
+                        .source(String.format(pipCachePathFormat, agentProperties.getBasePath()))
+                        .target(String.format(pipCachePathFormat, "root"))
                         .type("BIND")
                         .build()
 
