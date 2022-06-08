@@ -15,6 +15,7 @@ from starwhale.consts import (
     STANDALONE_INSTANCE,
     LOCAL_CONFIG_VERSION,
 )
+from starwhale.utils.error import NotFoundError
 
 from . import console, now_str, fmt_http_server
 from .fs import ensure_dir, ensure_file
@@ -170,8 +171,17 @@ class SWCliConfigMixed(object):
     def select_current_default(self, instance: str, project: str = "") -> None:
         instance = self._get_instance_alias(instance)
 
+        if instance not in self._config["instances"]:
+            raise NotFoundError(f"need to login instance {instance}")
+
         self._config["current_instance"] = instance
         if project:
+            if (
+                instance == STANDALONE_INSTANCE
+                and not (self.rootdir / project).exists()
+            ):
+                raise NotFoundError(f"need to create project {project}")
+            # TODO: check cloud project existence
             self._config["instances"][instance]["current_project"] = project
 
         update_swcli_config(**self._config)

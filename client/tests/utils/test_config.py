@@ -3,6 +3,7 @@ import os
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
+from starwhale.utils.error import NotFoundError
 from starwhale.utils.config import (
     SWCliConfigMixed,
     load_swcli_config,
@@ -93,3 +94,11 @@ class SWCliConfigTestCase(TestCase):
         sw.select_current_default(instance="pre-bare", project="first")
         assert sw.current_project == "first"
         sw.select_current_default(instance="local", project="self")
+
+        self.assertRaises(NotFoundError, sw.select_current_default, instance="notfound")
+        self.assertRaises(
+            NotFoundError,
+            sw.select_current_default,
+            instance="local",
+            project="notfound",
+        )
