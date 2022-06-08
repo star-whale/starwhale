@@ -30,12 +30,11 @@ import ai.starwhale.mlops.domain.job.step.Step;
 import ai.starwhale.mlops.domain.project.Project;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
-import ai.starwhale.mlops.domain.task.StepHelper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
+import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
 import ai.starwhale.mlops.domain.user.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -118,17 +117,8 @@ public class JobService {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
                 .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);
         }
-        JobVO jobVO = jobConvertor.convert(entity);
-        List<SWDatasetVersionEntity> dsvEntities = jobSWDSVersionMapper.listSWDSVersionsByJobId(
-            entity.getId());
 
-        List<String> idList = dsvEntities.stream()
-            .map(SWDatasetVersionEntity::getVersionName)
-            .collect(Collectors.toList());
-
-        jobVO.setDatasets(idList);
-
-        return jobVO;
+        return jobConvertor.convert(entity);
     }
 
     public Object getJobResult(String projectUrl, String jobUrl) {
@@ -247,23 +237,21 @@ public class JobService {
             && job.getStatus() != JobStatus.PAUSED){
             throw new SWValidationException(ValidSubject.JOB).tip("not RUNNING/PAUSED job can't be canceled ");
         }
-        updateJobStatus(job, JobStatus.TO_CANCEL);
 
         tasksOfJob(job).filter(task ->
                 task.getStatus() == TaskStatus.RUNNING
                     || task.getStatus() == TaskStatus.PREPARING
                     || task.getStatus() == TaskStatus.ASSIGNING)
             .forEach(task -> task.updateStatus(TaskStatus.TO_CANCEL));
-        TaskStatusChangeWatcher.APPLIED_WATCHERS.set(Set.of(2,3,4));
         List<Task> directlyCanceledTasks = tasksOfJob(job)
             .filter(task -> task.getStatus() == TaskStatus.CREATED
                 || task.getStatus() == TaskStatus.READY
                 || task.getStatus() == TaskStatus.PAUSED
                 || task.getStatus() == TaskStatus.UNKNOWN)
             .collect(Collectors.toList());
-        directlyCanceledTasks.forEach(task -> task.updateStatus(TaskStatus.CANCELED));
-        persistTaskStatus(directlyCanceledTasks,TaskStatus.CANCELED);
-        TaskStatusChangeWatcher.APPLIED_WATCHERS.remove();
+        updateJobStatus(job, JobStatus.TO_CANCEL);
+        batchPersistTaskStatus(directlyCanceledTasks,TaskStatus.CANCELED);
+        updateWithoutPersistWatcher(directlyCanceledTasks, TaskStatus.CANCELED);
     }
 
     private void updateJobStatus(Job job, JobStatus jobStatus) {
@@ -296,16 +284,22 @@ public class JobService {
             throw new SWValidationException(ValidSubject.JOB).tip("all tasks are assigned to agent, this job can't be paused now");
         }
         updateJobStatus(job, JobStatus.PAUSED);
-        persistTaskStatus(readyToScheduleTasks,TaskStatus.PAUSED);
-        readyToScheduleTasks.forEach(task -> task.updateStatus(TaskStatus.PAUSED));
+        batchPersistTaskStatus(readyToScheduleTasks,TaskStatus.PAUSED);
+        updateWithoutPersistWatcher(readyToScheduleTasks, TaskStatus.PAUSED);
 
+    }
+
+    private void updateWithoutPersistWatcher(List<Task> tasks, TaskStatus taskStatus) {
+        TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForPersist.class));
+        tasks.forEach(task -> task.updateStatus(taskStatus));
+        TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
     }
 
     /**
      * prevent send packet greater than @@GLOBAL.max_allowed_packet
      */
     static final Integer MAX_BATCH_SIZE = 1000;
-    private void persistTaskStatus(Collection<Task> tasks,TaskStatus taskStatus) {
+    private void batchPersistTaskStatus(Collection<Task> tasks,TaskStatus taskStatus) {
         if(CollectionUtils.isEmpty(tasks)){
             return;
         }
@@ -337,7 +331,6 @@ public class JobService {
             throw new SWValidationException(ValidSubject.JOB).tip("unpaused job can't be resumed ");
         }
 
-        updateJobStatus(job, JobStatus.RUNNING);
         List<Task> pausedTasks = tasksOfJob(job)
             .filter(task -> task.getStatus().equals(TaskStatus.PAUSED))
             .collect(
@@ -345,8 +338,9 @@ public class JobService {
         if(null == pausedTasks || pausedTasks.isEmpty()){
             return;
         }
-        persistTaskStatus(pausedTasks,TaskStatus.READY);
-        pausedTasks.forEach(task -> task.updateStatus(TaskStatus.READY));
+        updateJobStatus(job, JobStatus.RUNNING);
+        batchPersistTaskStatus(pausedTasks,TaskStatus.READY);
+        updateWithoutPersistWatcher(pausedTasks, TaskStatus.READY);
 
     }
 

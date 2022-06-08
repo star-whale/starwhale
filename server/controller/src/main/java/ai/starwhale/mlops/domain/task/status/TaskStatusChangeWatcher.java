@@ -17,9 +17,10 @@
 package ai.starwhale.mlops.domain.task.status;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
+import java.util.HashSet;
 import java.util.Set;
 
 public interface TaskStatusChangeWatcher {
-    ThreadLocal<Set<Integer>> APPLIED_WATCHERS = ThreadLocal.withInitial(() -> null);
+    ThreadLocal<Set<Class>> SKIPPED_WATCHERS = ThreadLocal.withInitial(() -> new HashSet<>());
     void onTaskStatusChange(Task task, TaskStatus oldStatus);
 }
