@@ -17,18 +17,15 @@
 package ai.starwhale.mlops.domain.task.status;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
-import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.step.Step;
 import ai.starwhale.mlops.domain.system.agent.Agent;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.TaskWrapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * make task status change watchalbe
@@ -107,15 +104,11 @@ public class WatchableTask extends Task implements TaskWrapper {
         oTask.updateStatus(status);
         log.debug("task status changed from {} to {}  of id {}",oldStatus,status,oTask.getId());
         watchers.stream().filter(w -> {
-                if (TaskStatusChangeWatcher.APPLIED_WATCHERS.get() == null) {
+                if (TaskStatusChangeWatcher.SKIPPED_WATCHERS.get() == null) {
                     log.debug("not watchers selected default to all");
                     return true;
                 }
-                Order annotation = w.getClass().getAnnotation(Order.class);
-                if (null == annotation) {
-                    return false;
-                }
-                return TaskStatusChangeWatcher.APPLIED_WATCHERS.get().contains(annotation.value());
+                return !TaskStatusChangeWatcher.SKIPPED_WATCHERS.get().contains(w.getClass());
             }
         ).forEach(watcher -> watcher.onTaskStatusChange(this, oldStatus));
     }

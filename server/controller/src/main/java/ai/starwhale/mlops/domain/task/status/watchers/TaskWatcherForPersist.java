@@ -55,16 +55,7 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
 
     @Override
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
-
-        if(easyLost(task.getStatus())){
-            taskMapper.updateTaskStatus(List.of(task.getId()), task.getStatus());
-        }
-
+        taskMapper.updateTaskStatus(List.of(task.getId()), task.getStatus());
     }
 
-    final static Set<TaskStatus> easyLostStatuses = Set.of(SUCCESS, FAIL,
-        CANCELED,ASSIGNING,CANCELLING);
-    private boolean easyLost(TaskStatus status){
-        return easyLostStatuses.contains(status);
-    }
 }

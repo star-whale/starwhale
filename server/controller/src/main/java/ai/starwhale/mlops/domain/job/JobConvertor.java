@@ -21,15 +21,18 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
+import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -44,13 +47,13 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
     private UserConvertor userConvertor;
 
     @Resource
-    private BaseImageConvertor baseImageConvertor;
-
-    @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Resource
     private RuntimeService runtimeService;
+
+    @Resource
+    private JobSWDSVersionMapper jobSWDSVersionMapper;
 
     @Override
     public JobVO convert(JobEntity jobEntity) throws ConvertException {
@@ -59,6 +62,13 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
         if(CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size()>1){
             throw new SWProcessException(ErrorType.SYSTEM).tip("data not consistent between job and runtime ");
         }
+        List<SWDatasetVersionEntity> dsvEntities = jobSWDSVersionMapper.listSWDSVersionsByJobId(
+            jobEntity.getId());
+
+        List<String> idList = dsvEntities.stream()
+            .map(SWDatasetVersionEntity::getVersionName)
+            .collect(Collectors.toList());
+
         return JobVO.builder()
             .id(idConvertor.convert(jobEntity.getId()))
             .uuid(jobEntity.getJobUuid())
@@ -67,6 +77,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
             .modelVersion(jobEntity.getSwmpVersion().getVersionName())
             .createdTime(localDateTimeConvertor.convert(jobEntity.getCreatedTime()))
             .runtime(runtimeByVersionIds.get(0))
+            .datasets(idList)
             .device(getDeviceName(jobEntity.getDeviceType()))
             .deviceAmount(jobEntity.getDeviceAmount())
             .jobStatus(jobEntity.getJobStatus())
