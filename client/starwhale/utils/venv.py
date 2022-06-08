@@ -376,7 +376,7 @@ def activate_python_env(
     mode: str,
     identity: str,
 ) -> None:
-    # TODO: switch shell python environment
+    # TODO: switch shell python environment directly
     console.print(":cake: run command in shell :cake:")
 
     if mode == PythonRunEnv.VENV:

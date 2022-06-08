@@ -169,3 +169,18 @@ def _copy(src: str, dest: str, force: bool) -> None:
 )
 def _tag(runtime: str, tags: str, remove: bool, quiet: bool) -> None:
     RuntimeTermView(runtime).tag(tags, remove, quiet)
+
+
+@runtime_cmd.command(
+    "activate",
+    help="[Only Standalone]Activate python runtime environment for development",
+)
+@click.option(
+    "-f",
+    "--runtime-yaml",
+    default=DefaultYAMLName.RUNTIME,
+    help="runtime yaml filename, default use ${workdir}/runtime.yaml file",
+)
+@click.argument("workdir")
+def _activate(workdir: str, runtime_yaml: str) -> None:
+    RuntimeTermView.activate(workdir, runtime_yaml)

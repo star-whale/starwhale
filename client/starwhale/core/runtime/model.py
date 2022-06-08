@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import typing as t
 from abc import ABCMeta
 from copy import deepcopy
@@ -34,7 +35,12 @@ from starwhale.utils.venv import (
     DUMP_USER_PIP_REQ_FNAME,
 )
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.utils.error import ExistedError, NoSupportError, ConfigFormatError
+from starwhale.utils.error import (
+    ExistedError,
+    NotFoundError,
+    NoSupportError,
+    ConfigFormatError,
+)
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
 
@@ -132,6 +138,10 @@ class Runtime(BaseBundle):
     def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
         bc = BundleCopy(src_uri, dest_uri, URIType.RUNTIME, force)
         bc.do()
+
+    @classmethod
+    def activate(cls, workdir: str, yaml_name: str) -> None:
+        StandaloneRuntime.activate(workdir, yaml_name)
 
 
 class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
@@ -324,6 +334,19 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         )
         cls.render_runtime_yaml(config, workdir, force)
         activate_python_env(mode=mode, identity=_id)
+
+    @classmethod
+    def activate(cls, workdir: str, yaml_name: str) -> None:
+        _rf = Path(workdir) / yaml_name
+        if not _rf.exists():
+            raise NotFoundError(_rf)
+
+        _run_config = RuntimeConfig.create_by_yaml(_rf)
+        if _run_config.mode == PythonRunEnv.VENV:
+            _id = os.path.join(workdir, "venv")
+        else:
+            _id = _run_config.name
+        activate_python_env(mode=_run_config.mode, identity=_id)
 
     @staticmethod
     def render_runtime_yaml(
