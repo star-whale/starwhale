@@ -16,20 +16,13 @@
 
 package ai.starwhale.mlops.domain.task.status.watchers;
 
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.ASSIGNING;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELED;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELLING;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.FAIL;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.READY;
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.SUCCESS;
-
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import java.util.List;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -46,16 +39,30 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
 
     final TaskMapper taskMapper;
 
+    final LocalDateTimeConvertor localDateTimeConvertor;
+
     public TaskWatcherForPersist(
         TaskStatusMachine taskStatusMachine,
-        TaskMapper taskMapper) {
+        TaskMapper taskMapper,
+        LocalDateTimeConvertor localDateTimeConvertor) {
         this.taskStatusMachine = taskStatusMachine;
         this.taskMapper = taskMapper;
+        this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
     @Override
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
-        taskMapper.updateTaskStatus(List.of(task.getId()), task.getStatus());
+        TaskStatus status = task.getStatus();
+        long now = System.currentTimeMillis();
+        if(taskStatusMachine.isFinal(status)){
+            task.setFinishTime(now);
+            taskMapper.updateTaskFinishedTime(task.getId(),localDateTimeConvertor.revert(now));
+        }
+        if(status == TaskStatus.PREPARING){
+            task.setStartTime(now);
+            taskMapper.updateTaskStartedTime(task.getId(),localDateTimeConvertor.revert(now));
+        }
+        taskMapper.updateTaskStatus(List.of(task.getId()), status);
     }
 
 }

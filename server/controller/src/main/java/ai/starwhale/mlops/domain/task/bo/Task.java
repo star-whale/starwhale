@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.step.Step;
 import ai.starwhale.mlops.domain.system.agent.Agent;
@@ -37,7 +38,7 @@ import lombok.NoArgsConstructor;
 /**
  * Tasks are derived from a Job. Tasks are the executing units of a Job.
  */
-public class Task {
+public class Task extends TimeConcern {
 
     /**
      * unique id for the task

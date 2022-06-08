@@ -16,17 +16,27 @@
 
 package ai.starwhale.mlops.domain.job.step;
 
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import org.springframework.stereotype.Component;
 
 @Component
 public class StepConverter {
 
+    final LocalDateTimeConvertor localDateTimeConvertor;
+
+    public StepConverter(LocalDateTimeConvertor localDateTimeConvertor) {
+        this.localDateTimeConvertor = localDateTimeConvertor;
+    }
+
     public Step fromEntity(StepEntity entity){
-        return Step.builder()
+        Step step = Step.builder()
             .id(entity.getId())
             .status(entity.getStatus())
             .name(entity.getName())
             .build();
+        step.setStartTime(localDateTimeConvertor.convert(entity.getStartedTime()));
+        step.setFinishTime(localDateTimeConvertor.convert(entity.getFinishedTime()));
+        return step;
     }
 
 }

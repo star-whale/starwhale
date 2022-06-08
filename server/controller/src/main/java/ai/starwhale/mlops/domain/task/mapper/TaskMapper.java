@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.task.mapper;
 
 import ai.starwhale.mlops.domain.task.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
@@ -38,6 +39,10 @@ public interface TaskMapper {
     List<TaskEntity> findTaskByStatusIn(@Param("taskStatusList") List<TaskStatus> taskStatusList);
 
     void updateTaskAgent(@Param("ids") List<Long> taskIds,@Param("agentId") Long agentId);
+
+    void updateTaskFinishedTime(@Param("taskId") Long taskId,@Param("finishedTime") LocalDateTime finishedTime);
+
+    void updateTaskStartedTime(@Param("taskId") Long taskId,@Param("startedTime")LocalDateTime startedTime);
 
     List<TaskEntity> findByStepId(@Param("stepId") Long stepId);
 

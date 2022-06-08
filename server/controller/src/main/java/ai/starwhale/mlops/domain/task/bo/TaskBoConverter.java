@@ -18,13 +18,12 @@ package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.JobEntity;
 import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.step.Step;
-import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.task.TaskType;
@@ -37,7 +36,6 @@ import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -63,15 +61,19 @@ public class TaskBoConverter {
 
     final ResultPathConverter resultPathConverter;
 
+    final LocalDateTimeConvertor localDateTimeConvertor;
+
     public TaskBoConverter(SWDSBlockSerializer swdsBlockSerializer, TaskMapper taskMapper,
         JobMapper jobMapper, JobBoConverter jobBoConverter,
-        AgentConverter agentConverter, ResultPathConverter resultPathConverter) {
+        AgentConverter agentConverter, ResultPathConverter resultPathConverter,
+        ai.starwhale.mlops.common.LocalDateTimeConvertor localDateTimeConvertor) {
         this.swdsBlockSerializer = swdsBlockSerializer;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.jobBoConverter = jobBoConverter;
         this.agentConverter = agentConverter;
         this.resultPathConverter = resultPathConverter;
+        this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
 
@@ -99,7 +101,7 @@ public class TaskBoConverter {
                 default:
                     throw new SWValidationException(ValidSubject.TASK).tip("unknown task type "+entity.getTaskType());
             }
-            return Task.builder()
+            Task task = Task.builder()
                 .id(entity.getId())
                 .step(step)
                 .agent(agentConverter.fromEntity(entity.getAgent()))
@@ -109,6 +111,9 @@ public class TaskBoConverter {
                 .taskRequest(taskRequest)
                 .taskType(taskType)
                 .build();
+            task.setStartTime(localDateTimeConvertor.convert(entity.getStartedTime()));
+            task.setFinishTime(localDateTimeConvertor.convert(entity.getFinishedTime()));
+            return task;
         } catch (JsonProcessingException e) {
             log.error("read swds blocks or resultPath from db failed ",e);
             throw new SWValidationException(ValidSubject.TASK);

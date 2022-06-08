@@ -70,7 +70,7 @@ public class GraphVO {
         /**
          * content for the node e.g. status name
          */
-        String content;
+        Object content;
 
         public GraphNodeVO(GraphNode graphNode){
             this.id = graphNode.getId().toString();

@@ -30,5 +30,7 @@ public interface StepMapper {
 
     void updateStatus(@Param("stepIds") List<Long> stepIds,@Param("status") StepStatus stepNewStatus);
 
-    void updateFinishedTime(@Param("stepIds")List<Long> stepIds,@Param("finishedTime")  LocalDateTime toLocalDateTime);
+    void updateFinishedTime(@Param("stepId")Long stepId,@Param("finishedTime")  LocalDateTime finishedTime);
+
+    void updateStartedTime(@Param("stepId")Long stepId,@Param("startedTime")  LocalDateTime startedTime);
 }

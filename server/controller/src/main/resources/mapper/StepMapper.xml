@@ -15,6 +15,8 @@
                t.job_id,
                t.last_step_id,
                t.step_status,
+               t.started_time as step_started_time,
+               t.finished_time as step_finished_time,
                t.created_time as step_created_time,
                t.modified_time as step_modified_time
         from step as t
@@ -41,11 +43,11 @@
     </update>
 
     <update id="updateFinishedTime">
-        update step set finished_time = #{finishedTime} WHERE id in
-        <foreach item="item" index="index" collection="stepIds"
-          open="(" separator="," close=")">
-            #{item}
-        </foreach>
+        update step set finished_time = #{finishedTime} WHERE id = #{stepId}
+    </update>
+
+    <update id="updateStartedTime">
+        update step set started_time = #{startedTime} WHERE id = #{stepId}
     </update>
 
 
@@ -56,7 +58,9 @@
         <result property="jobId" column="job_id" />
         <result property="status" column="step_status" />
         <result property="uuid" column="step_uuid" />
-        <result property="createdTime" column="task_created_time" />
-        <result property="modifiedTime" column="task_modified_time" />
+        <result property="startedTime" column="step_started_time" />
+        <result property="finishedTime" column="step_finished_time" />
+        <result property="createdTime" column="step_created_time" />
+        <result property="modifiedTime" column="step_modified_time" />
     </resultMap>
 </mapper>

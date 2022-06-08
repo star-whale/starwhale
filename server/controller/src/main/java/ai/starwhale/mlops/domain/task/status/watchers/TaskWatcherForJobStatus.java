@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.task.status.watchers;
 
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
@@ -54,19 +55,23 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
 
     final JobUpdateHelper jobUpdateHelper;
 
+    final LocalDateTimeConvertor localDateTimeConvertor;
+
     public TaskWatcherForJobStatus(
         StepHelper stepHelper,
         SWTaskScheduler swTaskScheduler,
         StepStatusMachine stepStatusMachine,
         StepMapper stepMapper,
         StepTriggerContext stepTriggerContext,
-        JobUpdateHelper jobUpdateHelper) {
+        JobUpdateHelper jobUpdateHelper,
+        LocalDateTimeConvertor localDateTimeConvertor) {
         this.stepHelper = stepHelper;
         this.swTaskScheduler = swTaskScheduler;
         this.stepStatusMachine = stepStatusMachine;
         this.stepMapper = stepMapper;
         this.stepTriggerContext = stepTriggerContext;
         this.jobUpdateHelper = jobUpdateHelper;
+        this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
     @Override
@@ -98,6 +103,15 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
             step.getId());
         step.setStatus(stepNewStatus);
         stepMapper.updateStatus(List.of(step.getId()), stepNewStatus);
+        long now = System.currentTimeMillis();
+        if(stepStatusMachine.isFinal(stepNewStatus)){
+            step.setFinishTime(now);
+            stepMapper.updateFinishedTime(step.getId(),localDateTimeConvertor.revert(now));
+        }
+        if(StepStatus.RUNNING == stepNewStatus){
+            step.setStartTime(now);
+            stepMapper.updateStartedTime(step.getId(),localDateTimeConvertor.revert(now));
+        }
     }
 
 }

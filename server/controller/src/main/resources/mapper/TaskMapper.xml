@@ -17,6 +17,8 @@
                t.task_type,
                t.result_path as task_result_path,
                t.task_request as task_task_request,
+               t.started_time as task_started_time,
+               t.finished_time as task_finished_time,
                t.created_time as task_created_time,
                t.modified_time as task_modified_time,
                a.id as agent_id,
@@ -48,6 +50,14 @@
             and t.id = #{taskId}
         </where>
     </select>
+
+    <update id="updateTaskFinishedTime">
+        update task_info set finished_time = #{finishedTime} WHERE id = #{taskId}
+    </update>
+
+    <update id="updateTaskStartedTime">
+        update task_info set started_time = #{startedTime} WHERE id = #{taskId}
+    </update>
 
     <insert id="addTask" parameterType="ai.starwhale.mlops.domain.task.TaskEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into task_info(task_uuid, step_id, agent_id, task_status, task_type,result_path, task_request)
@@ -122,6 +132,8 @@
         <result property="taskRequest" column="task_task_request" />
         <result property="createdTime" column="task_created_time" />
         <result property="modifiedTime" column="task_modified_time" />
+        <result property="startedTime" column="task_started_time" />
+        <result property="finishedTime" column="task_finished_time" />
         <association property="agent" resultMap="ai.starwhale.mlops.domain.system.mapper.AgentMapper.agentResultMap" />
     </resultMap>
 </mapper>

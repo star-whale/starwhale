@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.step;
 
+import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.job.Job;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -26,7 +27,7 @@ import lombok.Getter;
 
 @Builder
 @Data
-public class Step {
+public class Step extends TimeConcern {
 
     String name;
 
