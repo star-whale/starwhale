@@ -94,7 +94,11 @@ const Routes = () => {
                             <Switch>
                                 <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={JobTasks} />
                                 <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResults} />
-                                <Route exact path='/projects/:projectId/jobs/:jobId/dag' component={JobDAG} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/actions' component={JobDAG} />
+                                <Redirect
+                                    from='/projects/:projectId/jobs/:jobId'
+                                    to='/projects/:projectId/jobs/:jobId/actions'
+                                />
                             </Switch>
                         </JobOverviewLayout>
                     </Route>

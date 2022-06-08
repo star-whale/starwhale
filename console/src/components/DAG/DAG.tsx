@@ -2,24 +2,51 @@ import React, { useRef } from 'react'
 import { Canvas, Node, Edge, Port, MarkerArrow, Label, CanvasPosition, CanvasRef } from 'reaflow'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
 import IconFont from '../IconFont/index'
-import { Spinner, SIZE } from 'baseui/spinner'
+import { Spinner } from 'baseui/spinner'
 import './index.scss'
-import classNames from 'classnames'
 import { Link } from 'react-router-dom'
+import { durationToStr } from '@/utils/datetime'
 
 enum Status {
     CREATED = 'CREATED',
     RUNNING = 'RUNNING',
     SUCCESS = 'SUCCESS',
     FAILED = 'FAILED',
+    FAIL = 'FAIL',
     CANCELED = 'CANCELED',
     ASSIGNING = 'ASSIGNING',
 }
 
-enum Group {
+enum Type {
     JOB = 'Job',
     STEP = 'Step',
     TASK = 'Task',
+}
+
+type JobT = {
+    id: string
+    finishTime: number
+    startTime: number
+    jobType: 'EVALUATION'
+    status: Status
+}
+
+type StepT = {
+    id: string
+    name: 'PPL' | 'CMP'
+    startTime: number
+    finishTime: number
+    status: Status
+}
+
+type TaskT = {
+    id: string
+    name: string
+    startTime: number
+    finishTime: number
+    status: Status
+    agentIp: string
+    type: 'PPL' | 'CMP'
 }
 
 export default function DAG({ nodes = [], edges = [] }: any) {
@@ -34,12 +61,12 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                 icon = <IconFont type='success' style={{ color: 'green' }} />
                 break
             case Status.FAILED:
+            case Status.FAIL:
                 icon = <IconFont type='clear' style={{ color: 'red' }} />
                 break
             case Status.CANCELED:
                 icon = <IconFont type='clear' />
                 break
-
             case Status.RUNNING:
             case Status.ASSIGNING:
                 icon = <Spinner $size={20} />
@@ -140,19 +167,43 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                                         }
                                     >
                                         {(event) => {
-                                            const conf = getStatusMap(event.node?.data?.content)
+                                            const data = event.node?.data
+                                            const conf = getStatusMap(data?.content?.status)
+
+                                            let content: JobT | StepT | TaskT | undefined
+                                            let sectionContent: string = ''
+
+                                            if (data?.type === Type.JOB) {
+                                                content = data.content as JobT
+                                                sectionContent = [content.jobType].join(' ')
+                                            } else if (data?.type === Type.STEP) {
+                                                content = data.content as StepT
+                                                sectionContent = [content.name].join(' ')
+                                            } else if (data?.type === Type.TASK) {
+                                                content = data.content as TaskT
+                                                sectionContent = [content.type, content.name, content.agentIp].join(' ')
+                                            }
+
+                                            let sectionTime =
+                                                content && content?.startTime > 0 && content?.finishTime > 0
+                                                    ? durationToStr(content?.finishTime - content?.startTime)
+                                                    : ''
+
                                             return (
                                                 <foreignObject height={event.height} width={event.width} x={0} y={0}>
-                                                    <Link to='tasks'>
+                                                    <Link to={`tasks?id=${data?.entityId}`}>
                                                         <div className='flow-card'>
-                                                            <div className='flow-title'>{event.node?.data?.type}</div>
-                                                            {conf.icon ?? ''}
-                                                            <div className='flow-content'>
-                                                                {event.node?.data?.content}
+                                                            <div className='flow-title'>
+                                                                {data?.type} {content?.status}
                                                             </div>
-                                                            <div className='flow-time'>3s</div>
+                                                            {conf.icon ?? ''}
+                                                            <div className='flow-content'>{sectionContent}</div>
+                                                            <div className='flow-time'>{sectionTime}</div>
                                                         </div>
                                                     </Link>
+                                                    {/* <div className='flow-card'>
+                                                        <div className='flow-title'>{data?.type}</div>
+                                                    </div> */}
                                                 </foreignObject>
                                             )
                                         }}

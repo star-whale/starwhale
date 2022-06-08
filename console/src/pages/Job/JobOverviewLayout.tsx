@@ -58,7 +58,7 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
         const items = [
             {
                 title: t('DAG'),
-                path: `/projects/${projectId}/jobs/${jobId}/dag`,
+                path: `/projects/${projectId}/jobs/${jobId}/actions`,
                 icon: <IconFont type='results' />,
             },
             {

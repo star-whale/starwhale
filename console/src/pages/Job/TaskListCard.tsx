@@ -1,13 +1,14 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import Card from '@/components/Card'
 import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table/index'
-import { useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import { useFetchTasks } from '@job/hooks/useFetchTasks'
 import { StyledLink } from 'baseui/link'
 import _ from 'lodash'
+import qs from 'qs'
 
 export interface ITaskListCardProps {
     header: React.ReactNode
@@ -17,8 +18,21 @@ export interface ITaskListCardProps {
 export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
     const [page] = usePage()
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    const location = useLocation()
+    const id = qs.parse(location.search, { ignoreQueryPrefix: true })?.id ?? ''
+
     const tasksInfo = useFetchTasks(projectId, jobId, page)
     const [t] = useTranslation()
+
+    useEffect(() => {
+        if (id && tasksInfo.data?.list) {
+            let task = tasksInfo.data?.list.find((task) => task.id === id)
+            task &&
+                onAction?.('viewlog', {
+                    ...task,
+                })
+        }
+    }, [tasksInfo.isSuccess, tasksInfo.data, id])
 
     return (
         <Card>
