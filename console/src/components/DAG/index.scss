@@ -1,0 +1,120 @@
+
+.flowContainer {
+    background-color: '#f6f8fa';
+    overflow: hidden;
+    a {
+        text-decoration: none;
+        color: var(--color-contentPrimary) !important;
+    }
+
+    .port {
+        &:hover {
+            fill: '#2B65D9' !important;;
+            stroke: '#2B65D9' !important;;
+        }
+    }    
+    .edge {
+        stroke: #b1b1b7;
+        stroke-width: 1;
+
+        &:hover {
+            fill: '#2B65D9' !important;;
+            stroke: '#2B65D9' !important;;
+        }
+    }
+    .marker {
+        @extend .edge;
+        stroke-width: 1 !important;
+    }
+
+    .edge--dash {
+        stroke: #b1b1b7;
+        stroke-dasharray: 5;
+        animation: dashdraw .5s linear infinite;
+        stroke-width: 1;
+    }
+    @keyframes dashdraw {
+        0% { stroke-dashoffset: 10; }
+    }
+
+    foreignObject {
+        // padding: 8px 0 8px 4px;
+        overflow: visible;
+    }
+    
+    .flow-tools {
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        display: flex;
+        gap: 4px;
+
+        button {
+            color: #8c959f;
+            background: #fff;
+            border: 1px solid #8c959f;
+            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            font-size: 16px;
+            line-height: 24px;
+            display: table;
+            cursor: pointer;
+        }
+    }
+    
+    .flow-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        height: 100%;
+        padding: 12px;
+        transition: background-color ease-out .12s,border-color ease-out .12s,box-shadow ease-out .12s,opacity ease-out .12s;
+        border: 1px solid rgb(208, 215, 222);
+        border-radius: 6px;;
+        cursor: grab;
+        background-color: #fff;
+
+        &:hover {
+            box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    .flow-body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .flow-content {
+        font-size: 14px;
+        font-weight: bold;
+
+        
+    }
+
+    .flow-time {
+        font-size: 12px;
+        color: #57606a;
+    }
+    
+    .flow-title {
+        position: absolute;
+        left: 0;
+        top: -20px;
+        line-height: 20px;
+        font-size: 12px;
+        color: #57606a;
+    }
+    
+    .flow-title::after {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        content: ""
+    }
+}
+

@@ -115,7 +115,7 @@ export default function JobListCard() {
                             }
 
                             return [
-                                <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}/tasks`}>
+                                <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>
                                     {job.uuid}
                                 </Link>,
                                 job.modelName,

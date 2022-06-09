@@ -57,6 +57,11 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
     const navItems: INavItem[] = useMemo(() => {
         const items = [
             {
+                title: t('DAG'),
+                path: `/projects/${projectId}/jobs/${jobId}/actions`,
+                icon: <IconFont type='results' />,
+            },
+            {
                 title: t('Tasks'),
                 path: `/projects/${projectId}/jobs/${jobId}/tasks`,
                 pattern: '/\\/tasks\\/?',
@@ -105,7 +110,7 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
             style: {
                 gridColumnStart: 'span 2',
             },
-            value: `${job?.modelName ?? '-'} : ${job?.modelVersion ?? '-'}`,
+            value: `${job?.modelName ?? '-'}:${job?.modelVersion ?? '-'}`,
         },
         {
             label: t('Datasets'),
@@ -115,11 +120,11 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
             value: job?.datasets?.join(', '),
         },
         {
-            label: t('BaseImage'),
+            label: t('Runtime'),
             style: {
                 gridColumnStart: 'span 2',
             },
-            value: job?.baseImage?.name ?? '-',
+            value: [job?.runtime?.name ?? '-', job?.runtime?.version?.name ?? '-'].join(':'),
         },
     ]
 

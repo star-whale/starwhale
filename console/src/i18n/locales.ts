@@ -357,6 +357,9 @@ const locales0 = {
     'runtime versions': {
         en: 'Runtime Versions',
     },
+    'DAG': {
+        en: 'Actions',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0
