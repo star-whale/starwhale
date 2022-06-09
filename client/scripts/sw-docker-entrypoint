@@ -44,16 +44,18 @@ EOF
         echo -e "\t ** use image builtin pip.conf"
     fi
 
-    echo "\t ** set pip cache dir:"
-    python3 -m pip cache set global.cache-dir ${PIP_CACHE_DIR} || true
-    python3 -m pip cache dir
-
     if [ "${SW_RESET_CONDA_CONFIG}" = "1" ]; then
         echo -e "\t ** REMOVE CONDA custom config, use default"
         mv ~/.condarc ~/.condarc_sw_backup || true
     else
         echo -e "\t ** use image builtin condarc"
     fi
+}
+
+set_pip_cache() {
+    echo "\t ** set pip cache dir:"
+    python3 -m pip cache set global.cache-dir ${PIP_CACHE_DIR} || true
+    python3 -m pip cache dir || true
 }
 
 pre_check() {
@@ -121,6 +123,7 @@ main() {
     pre_config
     pre_check
     set_python
+    set_pip_cache
     restore_activate_runtime
 
     if [ "$1" = "cmp" ]; then
