@@ -6,6 +6,7 @@ import { Spinner } from 'baseui/spinner'
 import './index.scss'
 import { Link } from 'react-router-dom'
 import { durationToStr } from '@/utils/datetime'
+import { BsClockHistory } from 'react-icons/bs'
 
 enum Status {
     CREATED = 'CREATED',
@@ -57,19 +58,21 @@ export default function DAG({ nodes = [], edges = [] }: any) {
             edge = { className: '' }
         switch (status) {
             case Status.SUCCESS:
-            case Status.CREATED:
                 icon = <IconFont type='success' style={{ color: 'green' }} />
                 break
             case Status.FAILED:
             case Status.FAIL:
                 icon = <IconFont type='clear' style={{ color: 'red' }} />
                 break
+            case Status.CREATED:
+                icon = <BsClockHistory size={14} />
+                break
             case Status.CANCELED:
                 icon = <IconFont type='clear' />
                 break
             case Status.RUNNING:
             case Status.ASSIGNING:
-                icon = <Spinner $size={20} />
+                icon = <Spinner $size={16} />
                 edge = {
                     className: 'edge--dash',
                 }
