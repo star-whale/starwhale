@@ -74,7 +74,7 @@ public class EnvService {
         List<DeviceVO> list = new ArrayList<>();
         for(Device.Clazz cl : Device.Clazz.values()) {
             list.add(DeviceVO.builder()
-                .id(String.valueOf(cl.ordinal() + 1))
+                .id(String.valueOf(cl.getValue()))
                 .name(cl.name())
                 .build());
         }

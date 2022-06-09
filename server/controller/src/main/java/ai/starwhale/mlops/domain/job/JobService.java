@@ -27,9 +27,13 @@ import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.project.Project;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.runtime.RuntimeManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.swds.SwdsManager;
+import ai.starwhale.mlops.domain.swmp.SwmpManager;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -47,6 +51,8 @@ import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -101,6 +107,15 @@ public class JobService {
     private ProjectManager projectManager;
     @Resource
     private JobManager jobManager;
+
+    @Resource
+    private SwmpManager swmpManager;
+
+    @Resource
+    private SwdsManager swdsManager;
+
+    @Resource
+    private RuntimeManager runtimeManager;
 
     public PageInfo<JobVO> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -161,19 +176,38 @@ public class JobService {
         return res > 0;
     }
 
-    public Long createJob(Long projectId, Long swrtVersionId, Long modelVersionId, List<Long> datasetVersionIds, Integer deviceType, int deviceCount) {
+    private static Device.Clazz getDeviceClazz(String device) {
+        try {
+            if(StrUtil.isNumeric(device)) {
+                return Device.Clazz.from(Integer.parseInt(device));
+
+            } else {
+                return Enum.valueOf(Device.Clazz.class, device);
+            }
+        } catch (IllegalArgumentException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
+                .tip(String.format("Unable to find device %s", device)), HttpStatus.BAD_REQUEST);
+        }
+    }
+    public Long createJob(String projectUrl,
+        String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
+        String deviceType, int deviceCount) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
+        Long projectId = projectManager.getProjectId(projectUrl);
+        Long runtimeVersionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, null);
+        Long modelVersionId = swmpManager.getSWMPVersionId(modelVersionUrl, null);
+        Integer deviceValue = getDeviceClazz(deviceType).getValue();
         JobEntity jobEntity = JobEntity.builder()
             .ownerId(user.getId())
             .jobUuid(jobUuid)
             .createdTime(LocalDateTime.now())
             //.finishedTime(LocalDateTime.now())
             .durationMs(0L)
-            .runtimeVersionId(swrtVersionId)
+            .runtimeVersionId(runtimeVersionId)
             .projectId(projectId)
             .swmpVersionId(modelVersionId)
-            .deviceType(deviceType)
+            .deviceType(deviceValue)
             .deviceAmount(deviceCount)
             .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
             .jobStatus(JobStatus.CREATED)
@@ -192,6 +226,9 @@ public class JobService {
 //            .map(idConvertor::revert)
 //            .collect(Collectors.toList());
 
+        List<Long> datasetVersionIds = Arrays.stream(datasetVersionUrls.split("[,;]"))
+            .map(url -> swdsManager.getSWDSVersionId(url, null))
+            .collect(Collectors.toList());
         jobSWDSVersionMapper.addJobSWDSVersions(jobEntity.getId(), datasetVersionIds);
         return jobEntity.getId();
     }
@@ -261,7 +298,7 @@ public class JobService {
 
     private Stream<Task> tasksOfJob(Job job) {
         return job.getSteps().stream()
-            .map(step -> step.getTasks())
+            .map(Step::getTasks)
             .flatMap(Collection::stream);
     }
 
@@ -309,7 +346,7 @@ public class JobService {
         BatchOperateHelper.doBatch(taskIds
             , taskStatus
             , (tsks, status) -> taskMapper.updateTaskStatus(
-                tsks.stream().collect(Collectors.toList()),
+                new ArrayList<>(tsks),
                 status)
             , MAX_BATCH_SIZE);
     }

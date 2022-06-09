@@ -27,20 +27,20 @@ import org.springframework.validation.annotation.Validated;
 public class JobRequest implements Serializable {
 
     @NotNull
-    @JsonProperty("modelVersionId")
-    private String modelVersionId;
+    @JsonProperty("modelVersionUrl")
+    private String modelVersionUrl;
 
     @NotNull
-    @JsonProperty("datasetVersionIds")
-    private String datasetVersionIds;
+    @JsonProperty("datasetVersionUrls")
+    private String datasetVersionUrls;
 
     @NotNull
-    @JsonProperty("runtimeVersionId")
-    private String runtimeVersionId;
+    @JsonProperty("runtimeVersionUrl")
+    private String runtimeVersionUrl;
 
     @NotNull
-    @JsonProperty("deviceId")
-    private String deviceId;
+    @JsonProperty("device")
+    private String device;
 
     @NotNull
     @JsonProperty("deviceAmount")
