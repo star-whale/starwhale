@@ -326,6 +326,7 @@ public class RuntimeService {
                 .runtimeId(entity.getId())
                 .versionName(uploadRequest.version())
                 .versionMeta(uploadRequest.getRuntime())
+                .manifest(uploadRequest.getManifest())
                 .build());
         }
     }
@@ -364,7 +365,7 @@ public class RuntimeService {
     }
 
     public String query(ClientRuntimeRequest queryRequest) {
-        RuntimeEntity entity = runtimeMapper.findByNameForUpdate(queryRequest.name());
+        RuntimeEntity entity = runtimeMapper.findByName(queryRequest.name());
         if(null == entity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME),HttpStatus.NOT_FOUND);
         }

@@ -40,6 +40,8 @@ public class ClientSWMPRequest {
 
     String force;
 
+    String manifest;
+
     public String name(){
         return swmp.split(SEPERATOR)[0];
     }

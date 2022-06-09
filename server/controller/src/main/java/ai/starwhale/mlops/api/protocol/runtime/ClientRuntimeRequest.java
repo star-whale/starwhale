@@ -31,6 +31,8 @@ public class ClientRuntimeRequest {
 
     String force;
 
+    String manifest;
+
     public String name(){
         return runtime.split(SEPARATOR)[0];
     }

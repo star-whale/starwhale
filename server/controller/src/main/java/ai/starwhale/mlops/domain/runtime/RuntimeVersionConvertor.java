@@ -46,6 +46,7 @@ public class RuntimeVersionConvertor implements Convertor<RuntimeVersionEntity, 
             .owner(userConvertor.convert(entity.getOwner()))
             .tag(entity.getVersionTag())
             .meta(entity.getVersionMeta())
+            .manifest(entity.getManifest())
             .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
             .build();
     }

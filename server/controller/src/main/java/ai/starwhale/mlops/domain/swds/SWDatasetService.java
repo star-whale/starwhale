@@ -289,7 +289,7 @@ public class SWDatasetService {
     }
 
     public String query(UploadRequest uploadRequest) {
-        SWDatasetEntity entity = swdsMapper.findByNameForUpdate(uploadRequest.name());
+        SWDatasetEntity entity = swdsMapper.findByName(uploadRequest.name());
         if(null == entity) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS), HttpStatus.NOT_FOUND);
         }

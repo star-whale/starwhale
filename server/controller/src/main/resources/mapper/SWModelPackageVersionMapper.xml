@@ -15,6 +15,7 @@
                mv.version_tag as mv_version_tag,
                mv.version_meta as mv_version_meta,
                mv.storage_path as mv_storage_path,
+               mv.manifest as mv_manifest,
                mv.created_time as mv_created_time,
                mv.modified_time as mv_modified_time,
                u.id as user_id,
@@ -69,15 +70,21 @@
     </select>
 
     <insert id="revertTo">
-        replace into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path)
-        select swmp_id, owner_id, version_name, version_tag, version_meta, storage_path
+        replace into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
+        select swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest
         from swmp_version
         where id = #{swmpVersionId}
     </insert>
 
     <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path)
-        values(#{version.swmpId}, #{version.ownerId}, #{version.versionName}, #{version.versionTag}, #{version.versionMeta}, #{version.storagePath})
+        insert into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
+        values(#{version.swmpId},
+               #{version.ownerId},
+               #{version.versionName},
+               #{version.versionTag},
+               #{version.versionMeta},
+               #{version.storagePath},
+               #{version.manifest})
     </insert>
 
     <update id="update" parameterType="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity">
@@ -91,6 +98,7 @@
         <result property="versionTag" column="mv_version_tag" />
         <result property="versionMeta" column="mv_version_meta" />
         <result property="storagePath" column="mv_storage_path" />
+        <result property="manifest" column="mv_manifest" />
         <result property="createdTime" column="mv_created_time"/>
         <result property="modifiedTime" column="mv_modified_time"/>
         <result property="ownerId" column="owner_id" />

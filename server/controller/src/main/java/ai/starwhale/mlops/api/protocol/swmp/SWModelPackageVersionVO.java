@@ -42,6 +42,9 @@ public class SWModelPackageVersionVO implements Serializable {
     @JsonProperty("meta")
     private Object meta;
 
+    @JsonProperty("manifest")
+    private String manifest;
+
     @JsonProperty("createdTime")
     private Long createdTime;
 
@@ -49,6 +52,6 @@ public class SWModelPackageVersionVO implements Serializable {
     private UserVO owner;
 
     public static SWModelPackageVersionVO empty() {
-        return new SWModelPackageVersionVO("", "", "", "{}", -1L, UserVO.empty());
+        return new SWModelPackageVersionVO("", "", "", "{}", "", -1L, UserVO.empty());
     }
 }
