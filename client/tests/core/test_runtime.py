@@ -27,8 +27,8 @@ class StandaloneRuntimeTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
-    @patch("starwhale.utils.venv.check_call")
-    def test_create_venv(self, m_call: MagicMock) -> None:
+    @patch("starwhale.utils.venv.virtualenv.cli_run")
+    def test_create_venv(self, m_venv: MagicMock) -> None:
         workdir = "/home/starwhale/myproject"
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         name = "test-venv"
@@ -41,15 +41,15 @@ class StandaloneRuntimeTestCase(TestCase):
         )
 
         assert os.path.exists(os.path.join(workdir, runtime_path))
-        assert m_call.call_count == 1
-        assert m_call.call_args[0][0] == [
-            "python3.9",
-            "-m",
-            "venv",
+        assert m_venv.call_count == 1
+        assert m_venv.call_args[0][0] == [
             os.path.join(workdir, "venv"),
             "--prompt",
             name,
+            "--python",
+            "3.9",
         ]
+
         _rt_config = yaml.safe_load(open(runtime_path, "r"))
         assert _rt_config["name"] == name
         assert _rt_config["mode"] == "venv"
@@ -63,13 +63,12 @@ class StandaloneRuntimeTestCase(TestCase):
             workdir=workdir,
             name=name,
         )
-        assert m_call.call_args[0][0] == [
-            "python3.8",
-            "-m",
-            "venv",
+        assert m_venv.call_args[0][0] == [
             os.path.join(workdir, "venv"),
             "--prompt",
             name,
+            "--python",
+            "3.8",
         ]
         _rt_config = yaml.safe_load(open(runtime_path, "r"))
         assert _rt_config["python_version"] == "3.8"
@@ -250,8 +249,9 @@ class StandaloneRuntimeTestCase(TestCase):
             "python_version": "3.7",
         }
 
+    @patch("starwhale.utils.venv.virtualenv.cli_run")
     @patch("starwhale.utils.venv.check_call")
-    def test_restore_venv(self, m_call: MagicMock):
+    def test_restore_venv(self, m_call: MagicMock, m_venv: MagicMock):
         workdir = "/home/starwhale/myproject"
         python_dir = os.path.join(workdir, "dep", "python")
         ensure_dir(workdir)
@@ -268,15 +268,11 @@ class StandaloneRuntimeTestCase(TestCase):
         )
 
         Runtime.restore(Path(workdir))
-        assert m_call.call_count == 3
-        create_venv_cmd = m_call.call_args_list[0][0][0]
-        pip_lock_cmd = m_call.call_args_list[1][0][0]
-        pip_cmd = m_call.call_args_list[2][0][0]
+        assert m_call.call_count == 2
+        pip_lock_cmd = m_call.call_args_list[0][0][0]
+        pip_cmd = m_call.call_args_list[1][0][0]
 
-        assert create_venv_cmd == [
-            "python3",
-            "-m",
-            "venv",
+        assert m_venv.call_args[0][0] == [
             os.path.join(python_dir, "venv"),
         ]
         assert pip_lock_cmd[-1] == os.path.join(python_dir, "requirements-lock.txt")
