@@ -166,13 +166,6 @@ def get_external_python_version() -> str:
     return out.decode().strip()
 
 
-def get_pip_cache_dir() -> str:
-    out = subprocess.check_output(
-        ["python3", "-m", "pip", "cache", "dir"],
-    )
-    return out.decode().strip()
-
-
 def conda_restore(
     env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]
 ) -> None:
