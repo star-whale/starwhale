@@ -41,11 +41,11 @@ SW_PYPI_INDEX_URL = os.environ.get(
 )
 SW_PYPI_EXTRA_INDEX_URL = os.environ.get(
     "SW_PYPI_EXTRA_INDEX_URL",
-    "https://pypi.tuna.tsinghua.edu.cn/simple/ https://pypi.org/simple",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/ https://pypi.org/simple https://mirrors.bfsu.edu.cn/pypi/web/simple/",
 )
 SW_PYPI_TRUSTED_HOST = os.environ.get(
     "SW_PYPI_TRUSTED_HOST",
-    "pypi.tuna.tsinghua.edu.cn pypi.doubanio.com pypi.org",
+    "pypi.tuna.tsinghua.edu.cn pypi.doubanio.com pypi.org mirrors.bfsu.edu.cn",
 )
 _DUMMY_FIELD = -1
 
