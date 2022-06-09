@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 import time
 import uuid
 import base64
@@ -58,12 +57,6 @@ def is_darwin() -> bool:
 
 def is_linux() -> bool:
     return platform.system() in ("Linux", "Unix")
-
-
-def get_python_version() -> str:
-    # TODO: check user ppl environment or starwhale-cli env? need test
-    _v = sys.version_info
-    return f"{_v.major}.{_v.minor}.{_v.micro}"
 
 
 def fmt_http_server(server: str, https: bool = False) -> str:

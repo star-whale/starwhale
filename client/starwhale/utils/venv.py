@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import typing as t
 import tarfile
@@ -10,7 +11,7 @@ import conda_pack
 import virtualenv
 from loguru import logger
 
-from starwhale.utils import console, is_linux, is_darwin, is_windows, get_python_version
+from starwhale.utils import console, is_linux, is_darwin, is_windows
 from starwhale.consts import (
     ENV_VENV,
     ENV_CONDA,
@@ -22,6 +23,7 @@ from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.utils.error import (
     FormatError,
     ExistedError,
+    NotFoundError,
     NoSupportError,
     UnExpectedConfigFieldError,
 )
@@ -39,11 +41,11 @@ SW_PYPI_INDEX_URL = os.environ.get(
 )
 SW_PYPI_EXTRA_INDEX_URL = os.environ.get(
     "SW_PYPI_EXTRA_INDEX_URL",
-    "https://pypi.tuna.tsinghua.edu.cn/simple/ http://pypi.mirrors.ustc.edu.cn/simple/ https://pypi.org/simple",
+    "https://pypi.tuna.tsinghua.edu.cn/simple/ https://pypi.org/simple",
 )
 SW_PYPI_TRUSTED_HOST = os.environ.get(
     "SW_PYPI_TRUSTED_HOST",
-    "pypi.tuna.tsinghua.edu.cn pypi.mirrors.ustc.edu.cn pypi.doubanio.com pypi.org",
+    "pypi.tuna.tsinghua.edu.cn pypi.doubanio.com pypi.org",
 )
 _DUMMY_FIELD = -1
 
@@ -55,7 +57,6 @@ class PythonVersionField(t.NamedTuple):
 
 
 def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
-    # TODO: use custom pip source
     venvdir = str(venvdir)
     req = str(req)
     cmd = [
@@ -124,9 +125,12 @@ def venv_setup(
     console.print(f":clap: create venv@{venvdir}, python:{session.interpreter.version}")  # type: ignore
 
 
-def pip_freeze(path: t.Union[str, Path], include_editable: bool = False) -> None:
+def pip_freeze(
+    py_env: str, path: t.Union[str, Path], include_editable: bool = False
+) -> None:
     # TODO: add cmd timeout and error log
-    cmd = ["pip", "freeze", "--require-virtualenv"]
+    _py_bin = get_user_runtime_python_bin(py_env)
+    cmd = [_py_bin, "-m", "pip", "freeze", "--require-virtualenv"]
     if not include_editable:
         cmd += ["--exclude-editable"]
     cmd += [">", str(path)]
@@ -153,17 +157,6 @@ def conda_export(path: t.Union[str, Path], env: str = "") -> None:
     cmd = f"{get_conda_bin()} env export"
     env = f"-n {env}" if env else ""
     check_call(f"{cmd} {env} > {path}", shell=True)
-
-
-def get_external_python_version() -> str:
-    out = subprocess.check_output(
-        [
-            "python3",
-            "-c",
-            "import sys; _v = sys.version_info; print(f'{_v,major}.{_v.minor}.{_v.micro}')",
-        ],
-    )
-    return out.decode().strip()
 
 
 def conda_restore(
@@ -245,7 +238,7 @@ def dump_python_dep_env(
 
     pr_env = get_python_run_env(mode)
     sys_name = platform.system()
-    py_ver = get_python_version()
+    py_ver = get_python_version(pr_env)
 
     expected_runtime = expected_runtime.strip().lower()
     if expected_runtime and not py_ver.startswith(expected_runtime):
@@ -288,7 +281,7 @@ def dump_python_dep_env(
         conda_export(_conda_lock_env)
     elif pr_env == PythonRunEnv.VENV:
         logger.info(f"[info:dep]dump pip-req with freeze: {_pip_lock_req}")
-        pip_freeze(_pip_lock_req, include_editable)
+        pip_freeze(pr_env, _pip_lock_req, include_editable)
     else:
         # TODO: add other env tools
         logger.warning(
@@ -396,6 +389,41 @@ def create_python_env(
         raise NoSupportError(mode)
 
 
+def get_python_version(py_env: str) -> str:
+    _py_bin = get_user_runtime_python_bin(py_env)
+    output = subprocess.check_output(
+        [
+            _py_bin,
+            "-c",
+            "import sys; _v=sys.version_info;print(f'{_v.major}.{_v.minor}.{_v.micro}')",
+        ]
+    )
+    return output.decode().strip()
+
+
+def get_user_runtime_python_bin(py_env: str) -> str:
+    _prefix = get_base_prefix(py_env)
+    _py_bin = os.path.join(_prefix, "bin", "python3")
+    if not os.path.exists(_py_bin):
+        raise NotFoundError(_py_bin)
+
+    console.print(f":snake: [blink red bold]{_py_bin}[/] :snake:")
+    return _py_bin
+
+
+def get_base_prefix(py_env: str) -> str:
+    if py_env == PythonRunEnv.VENV:
+        _path = os.environ.get(ENV_VENV, "")
+    elif py_env == PythonRunEnv.CONDA:
+        _path = os.environ.get(ENV_CONDA_PREFIX, "")
+    else:
+        _path = sys.prefix
+
+    if not _path or os.path.exists(_path):
+        raise NotFoundError(f"mode:{py_env}, base_prefix:{_path}")
+    return _path
+
+
 def is_venv() -> bool:
     # TODO: refactor for get external venv attr
     output = subprocess.check_output(
@@ -405,7 +433,7 @@ def is_venv() -> bool:
             "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))",  # noqa: E501
         ],
     )
-    return "True" in str(output) or get_venv_env() != ""
+    return "True" in output.decode() or get_venv_env() != ""
 
 
 def get_venv_env() -> str:
@@ -428,7 +456,7 @@ def get_python_run_env(mode: str = PythonRunEnv.AUTO) -> str:
         if is_conda():
             return PythonRunEnv.CONDA
         else:
-            raise EnvironmentError("expected conda mmode, but cannot find conda envs")
+            raise EnvironmentError("expected conda mode, but cannot find conda envs")
     elif mode == PythonRunEnv.AUTO:
         if is_conda() and is_venv():
             raise EnvironmentError("find venv and conda both activate")
