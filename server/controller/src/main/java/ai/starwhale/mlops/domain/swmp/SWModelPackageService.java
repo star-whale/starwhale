@@ -268,7 +268,11 @@ public class SWModelPackageService {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWModelPackageVersionEntity> entities = swmpVersionMapper.listVersions(
             swmpId, query.getVersionName(), query.getVersionTag());
-        return PageUtil.toPageInfo(entities, versionConvertor::convert);
+        return PageUtil.toPageInfo(entities, entity -> {
+            SWModelPackageVersionVO vo = versionConvertor.convert(entity);
+            vo.setSize(storageService.getStorageSize(entity.getStoragePath()));
+            return vo;
+        });
     }
 
     public Long addSWMP(SWMPObject swmp) {

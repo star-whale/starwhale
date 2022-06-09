@@ -26,7 +26,9 @@ import ai.starwhale.mlops.storage.StorageObjectInfo;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import java.io.IOException;
+import java.lang.ref.Reference;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
@@ -66,6 +68,31 @@ public class StorageService {
                     .size(FileUtil.readableFileSize(length))
                     .build();
             }).collect(Collectors.toList());
+        } catch (IOException e) {
+            log.error("list swmp storage", e);
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE)
+                .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public long getStorageSize(String storagePath) {
+        if(!StringUtils.hasText(storagePath)) {
+            log.error("Cannot list storage files. Storage path is empty");
+            return 0L;
+        }
+
+        try {
+            Stream<String> list = storageAccessService.list(storagePath);
+            final AtomicLong length = new AtomicLong(0);
+            list.forEach(filePath -> {
+                try {
+                    StorageObjectInfo info = storageAccessService.head(filePath);
+                    length.addAndGet(info.getContentLength());
+                } catch (IOException e) {
+                    log.error("storage head", e);
+                }
+            });
+            return length.get();
         } catch (IOException e) {
             log.error("list swmp storage", e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE)
