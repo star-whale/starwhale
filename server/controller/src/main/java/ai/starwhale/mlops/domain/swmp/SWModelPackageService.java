@@ -417,10 +417,12 @@ public class SWModelPackageService {
             throw new SWValidationException(ValidSubject.SWMP).tip("swmp version empty folder");
         }
         String filePath = files.get(0);
-        try(InputStream fileInputStream = storageAccessService.get(filePath);ServletOutputStream outputStream = httpResponse.getOutputStream()) {
-            fileInputStream.transferTo(outputStream);
+        try(InputStream fileInputStream = storageAccessService.get(filePath);
+            ServletOutputStream outputStream = httpResponse.getOutputStream()) {
+            long length = fileInputStream.transferTo(outputStream);
             String fileName = filePath.substring(swModelPackageVersionEntity.getStoragePath().length() + 1);
             httpResponse.addHeader("Content-Disposition","attachment; filename=\""+fileName+"\"");
+            httpResponse.addHeader("Content-Length", String.valueOf(length));
             outputStream.flush();
         } catch (IOException e) {
             log.error("download file from storage failed {}",swModelPackageVersionEntity.getStoragePath(),e);

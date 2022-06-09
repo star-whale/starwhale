@@ -353,9 +353,10 @@ public class RuntimeService {
         }
         String filePath = files.get(0);
         try(InputStream fileInputStream = storageAccessService.get(filePath); ServletOutputStream outputStream = httpResponse.getOutputStream()) {
-            fileInputStream.transferTo(outputStream);
+            long length = fileInputStream.transferTo(outputStream);
             String fileName = filePath.substring(runtimeVersionEntity.getStoragePath().length() + 1);
             httpResponse.addHeader("Content-Disposition","attachment; filename=\""+fileName+"\"");
+            httpResponse.addHeader("Content-Length", String.valueOf(length));
             outputStream.flush();
         } catch (IOException e) {
             log.error("download runtime file from storage failed {}",runtimeVersionEntity.getStoragePath(),e);

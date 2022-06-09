@@ -104,13 +104,11 @@ public class JobController implements JobApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> createJob(String projectUrl,
         JobRequest jobRequest) {
-        Long jobId = jobService.createJob(projectManager.getProjectId(projectUrl),
-            idConvertor.revert(jobRequest.getRuntimeVersionId()),
-            idConvertor.revert(jobRequest.getModelVersionId()),
-            Arrays.stream(jobRequest.getDatasetVersionIds().split("[,;]"))
-            .map(idConvertor::revert)
-            .collect(Collectors.toList()),
-            Integer.valueOf(jobRequest.getDeviceId()),
+        Long jobId = jobService.createJob(projectUrl,
+            jobRequest.getModelVersionUrl(),
+            jobRequest.getDatasetVersionUrls(),
+            jobRequest.getRuntimeVersionUrl(),
+            jobRequest.getDevice(),
             jobRequest.getDeviceAmount());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));

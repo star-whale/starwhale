@@ -69,7 +69,9 @@
 
     <select id="findByNameAndRuntimeId" resultMap="runtimeVersionResultMap" >
         <include refid="select_runtime_version" />
-        and rv.runtime_id = #{runtimeId}
+        <if test="runtimeId != null">
+            and rv.runtime_id = #{runtimeId}
+        </if>
         and rv.version_name = #{rtVersion}
     </select>
 
