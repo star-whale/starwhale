@@ -73,7 +73,6 @@ class EvalExecutor(object):
     def __repr__(self) -> str:
         return f"Evaluation Executor: name -> {self.name}, version -> {self._version}"
 
-    @logger.catch
     def run(self, phase: str = EvalTaskType.ALL) -> None:
         try:
             self._do_run(phase)
