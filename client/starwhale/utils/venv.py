@@ -105,7 +105,7 @@ def parse_python_version(s: str) -> PythonVersionField:
 
 def venv_setup(
     venvdir: t.Union[str, Path],
-    python_version: str = "",
+    python_version: str,
     prompt: str = "",
     clear: bool = False,
 ) -> None:
@@ -130,6 +130,7 @@ def pip_freeze(
 ) -> None:
     # TODO: add cmd timeout and error log
     _py_bin = get_user_runtime_python_bin(py_env)
+    console.print(f":snake: [blink red bold]{_py_bin} pip [/] :snake:")
     cmd = [_py_bin, "-m", "pip", "freeze", "--require-virtualenv"]
     if not include_editable:
         cmd += ["--exclude-editable"]
@@ -315,7 +316,7 @@ def dump_python_dep_env(
         else:
             # TODO: tune venv create performance, use clone?
             logger.info(f"[info:dep]build venv dir: {_venv_dir}")
-            venv_setup(_venv_dir)
+            venv_setup(_venv_dir, python_version=expected_runtime)
             logger.info(
                 f"[info:dep]install pip freeze({_pip_lock_req}) to venv: {_venv_dir}"
             )
@@ -391,6 +392,7 @@ def create_python_env(
 
 def get_python_version(py_env: str) -> str:
     _py_bin = get_user_runtime_python_bin(py_env)
+    console.print(f":snake: [blink red bold]{_py_bin} version [/] :snake:")
     output = subprocess.check_output(
         [
             _py_bin,
@@ -407,7 +409,6 @@ def get_user_runtime_python_bin(py_env: str) -> str:
     if not os.path.exists(_py_bin):
         raise NotFoundError(_py_bin)
 
-    console.print(f":snake: [blink red bold]{_py_bin}[/] :snake:")
     return _py_bin
 
 
@@ -419,9 +420,10 @@ def get_base_prefix(py_env: str) -> str:
     else:
         _path = sys.prefix
 
-    if not _path or os.path.exists(_path):
+    if _path and os.path.exists(_path):
+        return _path
+    else:
         raise NotFoundError(f"mode:{py_env}, base_prefix:{_path}")
-    return _path
 
 
 def is_venv() -> bool:
@@ -480,16 +482,18 @@ def get_conda_env_prefix() -> str:
 
 
 def restore_python_env(
-    _workdir: Path, _mode: str, _local_gen_env: bool = False
+    workdir: Path, mode: str, python_version: str, local_gen_env: bool = False
 ) -> None:
     console.print(
-        f":bread: restore python {_mode} @ {_workdir}, use local env data: {_local_gen_env}"
+        f":bread: restore python:{python_version} {mode}@{workdir}, use local env data: {local_gen_env}"
     )
-    _f = _do_restore_conda if _mode == PythonRunEnv.CONDA else _do_restore_venv
-    _f(_workdir, _local_gen_env)
+    _f = _do_restore_conda if mode == PythonRunEnv.CONDA else _do_restore_venv
+    _f(workdir, local_gen_env, python_version)
 
 
-def _do_restore_conda(_workdir: Path, _local_gen_env: bool) -> None:
+def _do_restore_conda(
+    _workdir: Path, _local_gen_env: bool, _python_version: str
+) -> None:
     _ascript = _workdir / SW_ACTIVATE_SCRIPT
     _conda_dir = _workdir / "dep" / "conda"
     _tar_fpath = _conda_dir / CONDA_ENV_TAR
@@ -515,7 +519,7 @@ def _do_restore_conda(_workdir: Path, _local_gen_env: bool) -> None:
 
 
 def _do_restore_venv(
-    _workdir: Path, _local_gen_env: bool, _rebuild: bool = False
+    _workdir: Path, _local_gen_env: bool, _python_version: str, _rebuild: bool = False
 ) -> None:
     _ascript = _workdir / SW_ACTIVATE_SCRIPT
     _python_dir = _workdir / "dep" / "python"
@@ -525,7 +529,7 @@ def _do_restore_venv(
     if _rebuild or not _local_gen_env or not (_venv_dir / "bin" / "activate").exists():
         logger.info(f"setup venv and pip install {_venv_dir}")
         _relocate = False
-        venv_setup(_venv_dir)
+        venv_setup(_venv_dir, python_version=_python_version)
         for _name in (DUMP_PIP_REQ_FNAME, DUMP_USER_PIP_REQ_FNAME):
             _path = _python_dir / _name
             if not _path.exists():
