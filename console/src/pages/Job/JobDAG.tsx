@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { fetchJobDAG } from '@/domain/job/services/job'
 import _ from 'lodash'
-import useTranslation from '@/hooks/useTranslation'
+// import useTranslation from '@/hooks/useTranslation'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import DAG from '@/components/DAG/DAG'
 import Card from '../../components/Card/index'
@@ -14,7 +14,7 @@ function JobDAG() {
         refetchOnWindowFocus: false,
     })
 
-    const [t] = useTranslation()
+    // const [t] = useTranslation()
 
     const nodes = useMemo(() => {
         if (!jobDAG.data?.groupingNodes) return []

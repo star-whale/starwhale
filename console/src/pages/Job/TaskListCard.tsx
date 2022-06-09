@@ -26,13 +26,13 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
 
     useEffect(() => {
         if (id && tasksInfo.data?.list) {
-            let task = tasksInfo.data?.list.find((task) => task.id === id)
-            task &&
+            const taskInfo = tasksInfo.data?.list.find((task) => task.id === id)
+            if (taskInfo)
                 onAction?.('viewlog', {
-                    ...task,
+                    ...taskInfo,
                 })
         }
-    }, [tasksInfo.isSuccess, tasksInfo.data, id])
+    }, [tasksInfo.isSuccess, tasksInfo.data, id, onAction])
 
     return (
         <Card>

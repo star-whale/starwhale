@@ -1,12 +1,12 @@
 import React, { useRef } from 'react'
 import { Canvas, Node, Edge, Port, MarkerArrow, Label, CanvasPosition, CanvasRef } from 'reaflow'
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch'
-import IconFont from '../IconFont/index'
 import { Spinner } from 'baseui/spinner'
-import './index.scss'
 import { Link } from 'react-router-dom'
 import { durationToStr } from '@/utils/datetime'
 import { BsClockHistory } from 'react-icons/bs'
+import IconFont from '../IconFont/index'
+import './index.scss'
 
 enum Status {
     CREATED = 'CREATED',
@@ -54,8 +54,8 @@ export default function DAG({ nodes = [], edges = [] }: any) {
     const ref = useRef<CanvasRef | null>(null)
 
     const getStatusMap = (status: string) => {
-        let icon,
-            edge = { className: '' }
+        let icon
+        let edge = { className: '' }
         switch (status) {
             case Status.SUCCESS:
                 icon = <IconFont type='success' style={{ color: 'green' }} />
@@ -87,7 +87,7 @@ export default function DAG({ nodes = [], edges = [] }: any) {
         }
     }
 
-    const $nodes = nodes.map((node: any, index: number) => {
+    const $nodes = nodes.map((node: any) => {
         return {
             ...node,
             // use foreignObject , default text should be empty string
@@ -113,7 +113,7 @@ export default function DAG({ nodes = [], edges = [] }: any) {
         }
     })
 
-    const $edges = edges.map((edge: any, index: number) => {
+    const $edges = edges.map((edge: any) => {
         return {
             ...edge,
             fromPort: `${edge.from}-from`,
@@ -132,12 +132,18 @@ export default function DAG({ nodes = [], edges = [] }: any) {
             }}
         >
             <TransformWrapper wheel={{ disabled: true }} limitToBounds={false} maxScale={1.2} minScale={0.8}>
-                {({ zoomIn, zoomOut, resetTransform, ...rest }) => (
-                    <React.Fragment>
+                {({ zoomIn, zoomOut, resetTransform }) => (
+                    <>
                         <div className='flow-tools'>
-                            <button onClick={() => zoomIn()}>+</button>
-                            <button onClick={() => zoomOut()}>-</button>
-                            <button onClick={() => resetTransform()}>x</button>
+                            <button type='button' onClick={() => zoomIn()}>
+                                +
+                            </button>
+                            <button type='button' onClick={() => zoomOut()}>
+                                -
+                            </button>
+                            <button type='button' onClick={() => resetTransform()}>
+                                x
+                            </button>
                         </div>
                         <TransformComponent>
                             <Canvas
@@ -174,7 +180,7 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                                             const conf = getStatusMap(data?.content?.status)
 
                                             let content: JobT | StepT | TaskT | undefined
-                                            let sectionContent: string = ''
+                                            let sectionContent = ''
 
                                             if (data?.type === Type.JOB) {
                                                 content = data.content as JobT
@@ -187,7 +193,7 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                                                 sectionContent = [content.type, content.name, content.agentIp].join(' ')
                                             }
 
-                                            let sectionTime =
+                                            const sectionTime =
                                                 content && content?.startTime > 0 && content?.finishTime > 0
                                                     ? durationToStr(content?.finishTime - content?.startTime)
                                                     : ''
@@ -220,7 +226,7 @@ export default function DAG({ nodes = [], edges = [] }: any) {
                                 }}
                             />
                         </TransformComponent>
-                    </React.Fragment>
+                    </>
                 )}
             </TransformWrapper>
         </div>
