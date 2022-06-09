@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 
 import conda_pack
+import virtualenv
 from loguru import logger
 
 from starwhale.utils import console, is_linux, is_darwin, is_windows, get_python_version
@@ -102,36 +103,25 @@ def parse_python_version(s: str) -> PythonVersionField:
 
 
 def venv_setup(
-    venvdir: t.Union[str, Path], python_version: str = "", prompt: str = ""
+    venvdir: t.Union[str, Path],
+    python_version: str = "",
+    prompt: str = "",
+    clear: bool = False,
 ) -> None:
     # TODO: define starwhale virtualenv.py
     # TODO: use more elegant method to make venv portable
-
-    _default_bin = "python3"
-
-    def _call(pybin: str) -> None:
-        logger.info(f"use {pybin} to create virtualenv")
-        cmd = [f"{pybin}", "-m", "venv", f"{venvdir}"]
-        if prompt:
-            cmd += ["--prompt", prompt]
-        check_call(cmd)
+    args = [str(venvdir)]
+    if prompt:
+        args += ["--prompt", prompt]
 
     if python_version:
-        _pvf = parse_python_version(python_version)
+        args += ["--python", python_version]
 
-        _v = f"{_pvf.major}"
-        if _pvf.minor != _DUMMY_FIELD:
-            _v = f"{_v}.{_pvf.minor}"
+    if clear:
+        args += ["--clear"]
 
-        try:
-            _call(f"python{_v}")
-        except FileNotFoundError as e:
-            logger.warning(
-                f"not found python{_v}, fallback to use {_default_bin}, error: {e}"
-            )
-            _call(_default_bin)
-    else:
-        _call(_default_bin)
+    session = virtualenv.cli_run(args)
+    console.print(f":clap: create venv@{venvdir}, python:{session.interpreter.version}")  # type: ignore
 
 
 def pip_freeze(path: t.Union[str, Path], include_editable: bool = False) -> None:
