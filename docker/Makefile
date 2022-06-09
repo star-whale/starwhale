@@ -7,7 +7,7 @@ GHCR_IO_REPO := ghcr.io/star-whale
 
 # Please update base/nodejs/taskset/base_server image version by manual, DOT NOT USE RELEASE TAG.
 # These images versions are slow to release.
-FIXED_VERSION_BASE_IMAGE := 0.1.1
+FIXED_VERSION_BASE_IMAGE := 0.2.0
 FIXED_VERSION_NODEJS_IMAGE := 0.1.1
 FIXED_VERSION_TASKSET_IMAGE := 0.1.1
 FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.1
