@@ -167,10 +167,10 @@ class LocalStorageBundleMixin(object):
             _manifest["tags"] = _tag.list()
 
             if _store.bundle_path.is_dir():
-                _manifest["config"].update(_store.mainfest)
+                _manifest["config"].update(_store.manifest)
             else:
                 if _store.snapshot_workdir.exists():
-                    _manifest["config"].update(_store.mainfest)
+                    _manifest["config"].update(_store.manifest)
                 elif _store.bundle_path.exists():
                     with TarFS(str(_store.bundle_path)) as tar:
                         _om = yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))

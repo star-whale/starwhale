@@ -76,7 +76,7 @@ class BaseStorage(object):
             return self.bundle_dir
 
     @property
-    def mainfest(self) -> t.Dict[str, t.Any]:
+    def manifest(self) -> t.Dict[str, t.Any]:
         if not self.manifest_path.exists():
             return {}
         else:

@@ -150,7 +150,7 @@ class StandaloneJob(Job):
                 break
 
         return {
-            "manifest": self.store.mainfest,
+            "manifest": self.store.manifest,
             "report": report,
             "location": {
                 "ppl": str(self.store.ppl_dir.absolute()),
