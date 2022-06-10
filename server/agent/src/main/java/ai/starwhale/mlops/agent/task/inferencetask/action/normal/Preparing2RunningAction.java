@@ -159,7 +159,7 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                 Mount.builder()
                         .readOnly(false)
                         .source(String.format(pipCachePathFormat, agentProperties.getBasePath()))
-                        .target(String.format(pipCachePathFormat, "root"))
+                        .target(String.format(pipCachePathFormat, "/root"))
                         .type("BIND")
                         .build()
 
