@@ -88,12 +88,20 @@ public class MonitoringAction extends AbsBaseTaskAction {
                     if (originTask.getRetryRestartNum() >= agentProperties.getTask().getRetryRestartMaxNum()) {
                         log.error("task:{} maximum number of restart retries:{} has been reached, task failed",
                                 originTask.getId(), agentProperties.getTask().getRetryRestartMaxNum());
+
+                        recordLog(originTask,
+                                String.format("stage:running, task:%s container is dead, maximum number of restart retries num has been reached, task failed", originTask.getId()), null);
+
                         sourcePool.release(newTask.getDevices());
                         newTask.setStatus(InferenceTaskStatus.FAIL);
                         taskPool.runningTasks.remove(originTask);
                         taskPool.failedTasks.add(newTask);
                     } else {
                         log.warn("container:{} is dead, now will restart it", originTask.getContainerId());
+
+                        recordLog(originTask,
+                                String.format("stage:running, task:%s container:%s is dead, now will restart it", originTask.getId(), originTask.getContainerId()), null);
+
                         originTask.retryRestart();
                         // this invokes must before restart
                         logRecorder.restart(originTask.getId(), originTask.getContainerId());
@@ -105,6 +113,10 @@ public class MonitoringAction extends AbsBaseTaskAction {
                 case NO_SUCH_CONTAINER:
                     // already be removed or any else error
                     log.error("container:{} may be removed, now will return error", newTask.getContainerId());
+
+                    recordLog(originTask,
+                            String.format("stage:running, task:%s container:%s not found, may be removed, now will return error", originTask.getId(), originTask.getContainerId()), null);
+
                     newTask.setStatus(InferenceTaskStatus.FAIL);
                     taskPool.failedTasks.add(newTask);
                     // if run success, release device to available device pool

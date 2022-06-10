@@ -209,7 +209,9 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
     @Override
     public void fail(InferenceTask originTask, Context context, Exception e) {
         log.error("execute task:{}, error:{}", originTask.getId(), e.getMessage());
-        
+
+        recordLog(originTask, String.format("stage:preparing to running, execute task:%s error", originTask.getId()), e);
+
         if (originTask.getRetryRunNum() >= agentProperties.getTask().getRetryRunMaxNum()) {
             // release device and move to failed list
             log.error("task:{} maximum number of failed retries:{} has been reached, task failed",

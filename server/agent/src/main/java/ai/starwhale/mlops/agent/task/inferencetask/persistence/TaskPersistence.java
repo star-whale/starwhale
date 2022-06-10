@@ -103,6 +103,7 @@ public interface TaskPersistence {
      */
     void uploadResult(InferenceTask task) throws Exception;
     void uploadLog(InferenceTask task) throws Exception;
+    void recordLog(InferenceTask task, String toAppend);
     void uploadContainerLog(InferenceTask task, String logPath);
 
 }

@@ -19,7 +19,6 @@ package ai.starwhale.mlops.agent.task.inferencetask.persistence;
 import cn.hutool.core.collection.CollectionUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +36,7 @@ public class FileSystemPath {
         String InferenceTaskInputConfigFile = "input.json";
         String InferenceTaskStatusFile = "current";
         String InferenceTaskRuntimeManifestFile = "_manifest.yaml";
+        String InferenceTaskAgentLogFile = "agent.log";
     }
 
     private final String basePath;
@@ -59,6 +59,7 @@ public class FileSystemPath {
     private static final PathNode oneActiveInferenceTaskRuntimeDir = new PathNode("swrt", PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskRuntimeManifestFile = new PathNode(FileName.InferenceTaskRuntimeManifestFile, PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskLogsDir = new PathNode("log", PathNode.Type.value);
+    private static final PathNode oneActiveInferenceTaskAgentLogFile = new PathNode(FileName.InferenceTaskAgentLogFile, PathNode.Type.value);
 
     // archived dir
     private static final PathNode archivedTaskDir = new PathNode("archived", PathNode.Type.value);
@@ -90,7 +91,7 @@ public class FileSystemPath {
                                                 .child(oneActiveInferenceTaskRuntimeManifestFile)
                                         )
                                         .child(oneActiveInferenceTaskResultDir)
-                                        .child(oneActiveInferenceTaskLogsDir)
+                                        .child(oneActiveInferenceTaskLogsDir.child(oneActiveInferenceTaskAgentLogFile))
                                 )
                         )
                         .child(archivedTaskDir
@@ -204,6 +205,15 @@ public class FileSystemPath {
      */
     public String oneSwrtCacheDir(String name, String version) {
         return oneSwrtDir.path(basePath, name, version);
+    }
+
+
+    /**
+     * @param id taskId
+     * @return task running log file path,Eg:/var/starwhale/task/{taskId}/log/agent.log(format:txt)
+     */
+    public String oneActiveTaskAgentLogFile(Long id) {
+        return oneActiveInferenceTaskAgentLogFile.path(basePath, id);
     }
 
     /**
