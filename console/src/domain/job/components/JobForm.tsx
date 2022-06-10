@@ -60,7 +60,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                         'datasetVersionIdsArr',
                         'runtimeId',
                     ]),
-                    datasetVersionIds: values_.datasetVersionIdsArr?.join(','),
+                    datasetVersionUrls: values_.datasetVersionIdsArr?.join(','),
                 })
                 history.goBack()
             } finally {
@@ -110,7 +110,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     />
                 </FormItem>
                 {modelId && (
-                    <FormItem key={modelId} label={t('Version')} required name='modelVersionId'>
+                    <FormItem key={modelId} label={t('Version')} required name='modelVersionUrl'>
                         <ModelVersionSelector
                             projectId={projectId}
                             modelId={modelId}
@@ -185,7 +185,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                     />
                 </FormItem>
                 {runtimeId && (
-                    <FormItem key={runtimeId} label={t('Version')} required name='runtimeVersionId'>
+                    <FormItem key={runtimeId} label={t('Version')} required name='runtimeVersionUrl'>
                         <RuntimeVersionSelector
                             projectId={projectId}
                             runtimeId={runtimeId}
@@ -202,7 +202,7 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
             </div>
             <Divider orientation='top'>{t('Environment')}</Divider>
             <div style={{ display: 'flex', alignItems: 'left', gap: 40, flexWrap: 'wrap', marginBottom: '36px' }}>
-                <FormItem label={t('Device')} name='deviceId' required>
+                <FormItem label={t('Device')} name='device' required>
                     <DeviceSelector
                         overrides={{
                             Root: {

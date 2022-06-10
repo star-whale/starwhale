@@ -4,7 +4,6 @@ import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseS
 import { useParams } from 'react-router'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import IconFont from '@/components/IconFont'
-import { GrDocker } from 'react-icons/gr'
 
 export default function ProjectSidebar({ style }: IComposedSidebarProps) {
     const [t] = useTranslation()
