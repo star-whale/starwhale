@@ -30,6 +30,10 @@ import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Objects;
+
 @Slf4j
 public abstract class AbsBaseTaskAction implements Action<InferenceTask, InferenceTask> {
 
@@ -62,5 +66,19 @@ public abstract class AbsBaseTaskAction implements Action<InferenceTask, Inferen
     public void post(InferenceTask originTask, InferenceTask newTask, Context context) {
         originTask.setActionStatus(ActionStatus.completed);
         taskPersistence.save(originTask);
+    }
+
+    protected void recordLog(InferenceTask task, String simpleMsg, Exception e) {
+        taskPersistence.recordLog(task, simpleMsg + ":" + getStackTrace(e));
+    }
+
+    private String getStackTrace(Throwable throwable) {
+        if (Objects.isNull(throwable)) return "";
+        StringWriter sw = new StringWriter();
+
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            throwable.printStackTrace(pw);
+            return sw.toString();
+        }
     }
 }

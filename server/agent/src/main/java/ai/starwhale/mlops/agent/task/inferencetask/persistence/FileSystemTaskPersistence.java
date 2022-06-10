@@ -332,6 +332,21 @@ public class FileSystemTaskPersistence implements TaskPersistence {
         uploadLocalDir2Storage(fileSystemPath.oneActiveTaskLogDir(task.getId()), task.getResultPath().logDir());
     }
 
+    @Override
+    public void recordLog(InferenceTask task, String toAppend) {
+        try {
+            Path logDir = Path.of(fileSystemPath.oneActiveTaskLogDir(task.getId()));
+            if (Files.notExists(logDir)) {
+                Files.createDirectories(logDir);
+            }
+            Path logFilePath = Path.of(fileSystemPath.oneActiveTaskAgentLogFile(task.getId()));
+
+            Files.writeString(logFilePath, toAppend, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (Exception e) {
+            log.error("record log for task:{} error, info:{}", task.getId(), e.getMessage());
+        }
+    }
+
     private void uploadLocalDir2Storage(String srcDir, String destDir) throws IOException {
         // results is a set of files
         List<Path> results = Files.find(
