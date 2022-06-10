@@ -221,4 +221,6 @@ class LocalStorageBundleMixin(object):
 
                 _exclude.append(_l)
 
+        # Notice: if pass [] as exclude_dirs value, walker will failed
+        _exclude = _exclude or None
         return Walker(filter=_filter, exclude_dirs=_exclude)
