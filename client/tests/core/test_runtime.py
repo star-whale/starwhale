@@ -8,6 +8,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
 from starwhale.consts import (
+    ENV_VENV,
     PythonRunEnv,
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
@@ -97,11 +98,16 @@ class StandaloneRuntimeTestCase(TestCase):
             "python=3.7",
         ]
 
+    @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.check_call")
-    @patch("starwhale.utils.venv.subprocess.check_output")
-    def test_build_venv(self, m_venv: MagicMock, m_check_call: MagicMock) -> None:
+    @patch("starwhale.utils.venv.subprocess.check_output", return_value=b"3.7")
+    def test_build_venv(
+        self, m_output: MagicMock, m_check_call: MagicMock, m_py_bin: MagicMock
+    ) -> None:
         name = "rttest"
-        m_venv.return_value = "True"
+        venv_path = "/home/starwhale/venv/bin/python3"
+        os.environ[ENV_VENV] = venv_path
+        m_py_bin.return_value = venv_path
         build_version = ""
 
         sw = SWCliConfigMixed()
@@ -146,10 +152,12 @@ class StandaloneRuntimeTestCase(TestCase):
         _manifest = yaml.safe_load(
             open(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
         )
+
         assert (
             _manifest["user_raw_config"]["python_version"]
             == runtime_config["python_version"]
         )
+        assert _manifest["dep"]["python"] == runtime_config["python_version"]
         assert _manifest["version"] == sr.uri.object.version
         assert _manifest["dep"]["env"] == "venv"
         assert _manifest["dep"]["venv"]["use"]
@@ -214,17 +222,27 @@ class StandaloneRuntimeTestCase(TestCase):
         assert not os.path.exists(recover_path)
         assert os.path.exists(swrt_path)
 
+    @patch("starwhale.utils.venv.get_user_runtime_python_bin")
+    @patch("starwhale.utils.venv.is_venv")
     @patch("starwhale.utils.venv.is_conda")
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.subprocess.check_output")
     def test_build_conda(
-        self, m_venv: MagicMock, m_check_call: MagicMock, m_conda: MagicMock
+        self,
+        m_call: MagicMock,
+        m_check_call: MagicMock,
+        m_conda: MagicMock,
+        m_venv: MagicMock,
+        m_py_bin: MagicMock,
     ) -> None:
+        m_py_bin.return_value = "/home/starwhale/anaconda3/envs/starwhale/bin/python3"
         m_conda.return_value = True
+        m_venv.return_value = False
+        m_call.return_value = b"3.7.13"
+
         os.environ["CONDA_DEFAULT_ENV"] = "1"
 
         name = "rttest"
-        m_venv.return_value = "True"
         workdir = "/home/starwhale/myproject"
 
         runtime_config = self.get_runtime_config()
@@ -257,7 +275,9 @@ class StandaloneRuntimeTestCase(TestCase):
         ensure_dir(workdir)
         self.fs.create_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
-            contents=yaml.safe_dump({"dep": {"env": "venv", "local_gen_env": False}}),
+            contents=yaml.safe_dump(
+                {"dep": {"env": "venv", "local_gen_env": False, "python": "3.7"}}
+            ),
         )
         ensure_dir(python_dir)
         self.fs.create_file(
@@ -274,6 +294,8 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert m_venv.call_args[0][0] == [
             os.path.join(python_dir, "venv"),
+            "--python",
+            "3.7",
         ]
         assert pip_lock_cmd[-1] == os.path.join(python_dir, "requirements-lock.txt")
         assert pip_cmd[-1] == os.path.join(python_dir, "requirements.txt")
@@ -290,7 +312,9 @@ class StandaloneRuntimeTestCase(TestCase):
 
         self.fs.create_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
-            contents=yaml.safe_dump({"dep": {"env": "conda", "local_gen_env": False}}),
+            contents=yaml.safe_dump(
+                {"dep": {"env": "conda", "local_gen_env": False, "python": "3.7"}}
+            ),
         )
         ensure_dir(conda_dir)
 
@@ -312,7 +336,9 @@ class StandaloneRuntimeTestCase(TestCase):
 
         ensure_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
-            yaml.safe_dump({"dep": {"env": "conda", "local_gen_env": True}}),
+            yaml.safe_dump(
+                {"dep": {"env": "conda", "local_gen_env": True, "python": "3.7"}}
+            ),
         )
         tar_path = os.path.join(conda_dir, CONDA_ENV_TAR)
         ensure_file(tar_path, "test")

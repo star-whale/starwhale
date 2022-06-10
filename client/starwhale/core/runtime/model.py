@@ -209,7 +209,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             (
                 self._dump_dep,
                 50,
-                "dump python depency",
+                "dump python dependency",
                 dict(
                     gen_all_bundles=kw.get("gen_all_bundles", False),
                     pip_req_path=_pip_req_path,
@@ -263,7 +263,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         logger.info("[step:dep]finish dump dep")
 
     def _prepare_snapshot(self) -> None:
-        logger.info("[step:prepare-snapshot]prepare runtime snapshort dirs...")
+        logger.info("[step:prepare-snapshot]prepare runtime snapshot dirs...")
 
         # TODO: graceful clear?
         if self.store.snapshot_workdir.exists():
@@ -371,7 +371,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         _manifest = yaml.safe_load((workdir / DEFAULT_MANIFEST_NAME).open())
         restore_python_env(
-            workdir, _manifest["dep"]["env"], _manifest["dep"]["local_gen_env"]
+            workdir=workdir,
+            mode=_manifest["dep"]["env"],
+            python_version=_manifest["dep"]["python"],
+            local_gen_env=_manifest["dep"]["local_gen_env"],
         )
 
 
