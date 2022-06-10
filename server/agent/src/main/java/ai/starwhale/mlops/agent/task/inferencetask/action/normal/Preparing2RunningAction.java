@@ -210,12 +210,14 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
     public void fail(InferenceTask originTask, Context context, Exception e) {
         log.error("execute task:{}, error:{}", originTask.getId(), e.getMessage());
 
-        recordLog(originTask, String.format("stage:preparing to running, execute task:%s error", originTask.getId()), e);
-
         if (originTask.getRetryRunNum() >= agentProperties.getTask().getRetryRunMaxNum()) {
             // release device and move to failed list
             log.error("task:{} maximum number of failed retries:{} has been reached, task failed",
                     originTask.getId(), agentProperties.getTask().getRetryRunMaxNum());
+
+            recordLog(originTask, String.format(
+                    "stage:preparing to running, execute task:%s error, maximum number of rerun retries num has been reached, task failed", originTask.getId()), e);
+
             sourcePool.release(originTask.getDevices());
             originTask.setStatus(InferenceTaskStatus.FAIL);
             taskPool.preparingTasks.remove(originTask);
@@ -223,6 +225,10 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
             taskPersistence.save(originTask);
         } else {
             // todo: retry or take it to the tail of queue
+
+            recordLog(originTask, String.format(
+                    "stage:preparing to running, execute task:%s error, now will rerun it", originTask.getId()), e);
+
             originTask.retryRun();
             taskPersistence.save(originTask);
         }
