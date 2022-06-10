@@ -4,7 +4,6 @@ import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseS
 import { useParams } from 'react-router'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import IconFont from '@/components/IconFont'
-import { GrDocker } from 'react-icons/gr'
 
 export default function ProjectSidebar({ style }: IComposedSidebarProps) {
     const [t] = useTranslation()
@@ -35,8 +34,7 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 title: t('Runtime'),
                 path: `/projects/${projectId}/runtimes`,
                 activePathPattern: /\/(runtimes|new_runtime)\/?/,
-                // icon: <IconFont type='job' kind='white' size={20} />,
-                icon: <GrDocker size={20} />,
+                icon: <IconFont type='runtime' kind='white' size={20} />,
             },
             {
                 title: t('Job'),
