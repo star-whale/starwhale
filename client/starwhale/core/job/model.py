@@ -241,10 +241,10 @@ class CloudJob(Job, CloudRequestMixed):
             instance_uri=project_uri,
             data=json.dumps(
                 {
-                    "modelVersionId": model_uri,
-                    "datasetVersionIds": ",".join([str(i) for i in dataset_uris]),
-                    "runtimeVersionId": runtime_uri,
-                    "deviceId": _did,
+                    "modelVersionUrl": model_uri,
+                    "datasetVersionUrls": ",".join([str(i) for i in dataset_uris]),
+                    "runtimeVersionUrl": runtime_uri,
+                    "device": _did,
                     "deviceAmount": _dcnt,
                 }
             ),

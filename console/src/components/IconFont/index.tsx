@@ -38,6 +38,7 @@ interface IIconFontProps {
         | 'add'
         | 'setting2'
         | 'success'
+        | 'runtime'
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {
