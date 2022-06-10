@@ -25,7 +25,6 @@ from starwhale.utils.error import (
     ExistedError,
     NotFoundError,
     NoSupportError,
-    UnExpectedConfigFieldError,
 )
 from starwhale.utils.process import check_call
 
@@ -233,6 +232,7 @@ def dump_python_dep_env(
     expected_runtime: str = "",
     mode: str = PythonRunEnv.AUTO,
     include_editable: bool = False,
+    identity: str = "",
 ) -> t.Dict[str, t.Any]:
     # TODO: smart dump python dep by starwhale sdk-api, pip ast analysis?
     dep_dir = Path(dep_dir)
@@ -241,11 +241,7 @@ def dump_python_dep_env(
     sys_name = platform.system()
     py_ver = get_python_version(pr_env)
 
-    expected_runtime = expected_runtime.strip().lower()
-    if expected_runtime and not py_ver.startswith(expected_runtime):
-        raise UnExpectedConfigFieldError(
-            f"expected runtime({expected_runtime}) is not equal to detected runtime{py_ver}"
-        )
+    validate_python_environment(mode, expected_runtime, identity)
 
     _manifest = dict(
         expected_mode=mode,
@@ -540,3 +536,27 @@ def _do_restore_venv(
 
     logger.info(f"render activate script: {_ascript}")
     venv_activate_render(_venv_dir, _ascript, relocate=_relocate)
+
+
+def validate_python_environment(mode: str, py_version: str, identity: str = "") -> None:
+    # TODO: add os platform check
+    current_py_env = get_python_run_env(mode)
+    current_py_version = get_python_version(current_py_env)
+
+    if py_version and not current_py_version.startswith(py_version):
+        raise EnvironmentError(
+            f"expected python({py_version}) is not equal to detected python({current_py_version})"
+        )
+
+    if current_py_env != mode:
+        raise EnvironmentError(
+            f"expected mode({mode}), detected mode({current_py_env})"
+        )
+
+    # TODO: add venv identity check
+    if mode == PythonRunEnv.CONDA and not identity:
+        conda_name = os.environ.get(ENV_CONDA, "")
+        if conda_name != identity:
+            raise EnvironmentError(
+                f"expected conda name({identity}), detected current conda name({conda_name})"
+            )

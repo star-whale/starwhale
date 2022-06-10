@@ -216,6 +216,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     python_version=_python_version,
                     mode=_swrt_config.mode,
                     include_editable=kw.get("include_editable", False),
+                    identity=_swrt_config.name,
                 ),
             ),
             (
@@ -249,6 +250,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         python_version: str = DEFAULT_PYTHON_VERSION,
         mode: str = PythonRunEnv.AUTO,
         include_editable: bool = False,
+        identity: str = "",
     ) -> None:
         logger.info("[step:dep]start dump python dep...")
         _dep = dump_python_dep_env(
@@ -258,6 +260,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             expected_runtime=python_version,
             mode=mode,
             include_editable=include_editable,
+            identity=identity,
         )
         self._manifest["dep"] = _dep
         logger.info("[step:dep]finish dump dep")
