@@ -35,8 +35,7 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 title: t('Runtime'),
                 path: `/projects/${projectId}/runtimes`,
                 activePathPattern: /\/(runtimes|new_runtime)\/?/,
-                // icon: <IconFont type='job' kind='white' size={20} />,
-                icon: <GrDocker size={20} />,
+                icon: <IconFont type='runtime' kind='white' size={20} />,
             },
             {
                 title: t('Job'),

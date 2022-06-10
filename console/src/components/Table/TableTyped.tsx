@@ -41,17 +41,11 @@ export default function TableTyped({
     const wrapperRef = useRef<HTMLDivElement>(null)
     const [width, setWidth] = useState(wrapperRef?.current?.offsetWidth)
 
-    const throttled = useRef(
-        _.debounce(() => {
-            if (wrapperRef?.current?.offsetWidth !== width) {
-                setWidth(wrapperRef?.current?.offsetWidth)
-                setKey(key + 1)
-            }
-        }, 100)
-    )
-
-    useResizeObserver(() => {
-        throttled.current()
+    useResizeObserver((entries) => {
+        if (entries[0].contentRect?.width !== width) {
+            setWidth(entries[0].contentRect?.width)
+            setKey(key + 1)
+        }
     }, wrapperRef)
 
     const renderCell = (props: any) => {
@@ -62,24 +56,35 @@ export default function TableTyped({
         )
     }
 
-    const mapDataToValue = (item: any, column: any) => {
-        return item[column.index]
-    }
-
     const $columns = columns.map((raw: any, index) => {
         let column = raw
-        if (typeof raw === 'string') {
-            column = { type: 'string', title: raw, index }
-        }
+        let rowItem = data?.[0]?.[index]
 
         const initColumns = {
-            title: column.title,
-            sortable: typeof raw === 'string',
-            mapDataToValue: (item: any) => mapDataToValue(item, column),
+            title: raw,
+            sortable: !React.isValidElement(data?.[0]?.[index]),
+            sortFn: function (a: any, b: any) {
+                return a.localeCompare(b)
+            },
+            mapDataToValue: (item: any) => item[index],
+        }
+
+        // fit for sample column
+        if (typeof raw == 'string') {
+            if (_.isString(rowItem)) {
+                return StringColumn({
+                    ...initColumns,
+                    ...column,
+                })
+            } else if (React.isValidElement(rowItem)) {
+                return CustomColumn({
+                    ...initColumns,
+                    renderCell: (props: any) => props.value,
+                })
+            }
         }
 
         switch (column.type) {
-            default:
             case 'string':
                 return StringColumn({
                     ...initColumns,
@@ -90,10 +95,17 @@ export default function TableTyped({
                     ...initColumns,
                     ...column,
                 })
+            default:
             case 'custom':
                 return CustomColumn({
                     ...initColumns,
-                    renderCell,
+                    filterable: true,
+                    buildFilter: function (params: any) {
+                        return function (data: any) {
+                            return params.selection.has(data)
+                        }
+                    },
+                    renderCell: (props: any) => props.value,
                     ...column,
                 })
         }
@@ -102,9 +114,7 @@ export default function TableTyped({
     const $rows = data.map((raw, index) => {
         return {
             id: index + '',
-            data: {
-                ...raw,
-            },
+            data: raw,
         }
     })
 
@@ -121,6 +131,7 @@ export default function TableTyped({
                     rowActions={rowActions}
                     columns={$columns}
                     rows={$rows}
+                    resizableColumnWidths={true}
                     overrides={{
                         TableBodyRow: {
                             style: {
@@ -157,8 +168,8 @@ export default function TableTyped({
                         },
                         ...overrides,
                     }}
-                    loadingMessage={<Skeleton rows={3} height='100px' width='100%' animation />}
-                    emptyMessage={
+                    loadingMessage={() => <Skeleton rows={3} height='100px' width='100%' animation />}
+                    emptyMessage={() => (
                         <div
                             style={{
                                 display: 'flex',
@@ -166,13 +177,12 @@ export default function TableTyped({
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 8,
-                                height: 100,
                             }}
                         >
                             <FiInbox size={30} />
                             <Text>{t('no data')}</Text>
                         </div>
-                    }
+                    )}
                 />
             </div>
             {paginationProps && (
