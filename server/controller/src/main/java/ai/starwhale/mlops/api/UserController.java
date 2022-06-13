@@ -19,6 +19,8 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
+import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
+import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
@@ -84,16 +86,16 @@ public class UserController implements UserApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> updateUserPwd(String userId, String userPwd) {
-        Boolean res = userService.changePassword(User.builder().id(idConvertor.revert(userId)).build(), userPwd);
+    public ResponseEntity<ResponseMessage<String>> updateUserPwd(String userId, UserUpdatePasswordRequest userUpdatePasswordRequest) {
+        Boolean res = userService.changePassword(User.builder().id(idConvertor.revert(userId)).build(), userUpdatePasswordRequest.getUserPwd());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(res)));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> updateUserState(String userId,
-        Boolean isEnabled) {
+        UserUpdateStateRequest userUpdateStateRequest) {
         Boolean res = userService.updateUserState(User.builder().id(idConvertor.revert(userId)).build(),
-            isEnabled);
+            userUpdateStateRequest.getIsEnabled());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(res)));
     }
 }

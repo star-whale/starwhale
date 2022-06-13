@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
+import ai.starwhale.mlops.api.protocol.swds.SWDSTagRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
@@ -258,13 +259,12 @@ public interface DatasetApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("versionUrl")
             String versionUrl,
-        @NotNull
-        @Parameter(in = ParameterIn.QUERY, required = true, schema = @Schema())
-        @Valid
-        @RequestParam(value = "tag")
-            String tag);
+        @Valid @RequestBody SWDSTagRequest swdsTagRequest);
 
-    @Operation(summary = "Manage tag of the dataset version")
+    @Operation(
+        summary = "Manage tag of the dataset version",
+        description = "add|remove|set tags"
+    )
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag")
     ResponseEntity<ResponseMessage<String>> manageDatasetTag(
@@ -280,17 +280,7 @@ public interface DatasetApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("versionUrl")
         String versionUrl,
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "add | remove | set",
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "action")
-        String action,
-        @Parameter(in = ParameterIn.QUERY, schema = @Schema())
-        @Valid
-        @RequestParam(value = "tags")
-        String tags);
+        @Valid @RequestBody SWDSTagRequest swdsTagRequest);
 
     @Operation(summary = "Get the list of the datasets")
     @ApiResponses(

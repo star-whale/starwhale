@@ -115,11 +115,11 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> updateProject(String projectId,
-        String projectName) {
+        ProjectRequest projectRequest) {
         Boolean res = projectService
             .modifyProject(Project.builder()
                 .id(idConvertor.revert(projectId))
-                .name(projectName)
+                .name(projectRequest.getProjectName())
                 .build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update project failed."),

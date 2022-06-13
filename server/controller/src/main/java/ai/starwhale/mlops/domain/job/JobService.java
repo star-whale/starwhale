@@ -198,7 +198,7 @@ public class JobService {
     }
     public Long createJob(String projectUrl,
         String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
-        String deviceType, int deviceCount) {
+        String deviceType, int deviceCount, String comment) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         Long projectId = projectManager.getProjectId(projectUrl);
@@ -216,6 +216,7 @@ public class JobService {
             .swmpVersionId(modelVersionId)
             .deviceType(deviceValue)
             .deviceAmount(deviceCount)
+            .comment(comment)
             .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
             .jobStatus(JobStatus.CREATED)
             .type(JobType.EVALUATION)

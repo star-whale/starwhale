@@ -18,6 +18,8 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
+import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
+import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -124,15 +126,7 @@ public interface UserApi {
             schema = @Schema())
         @PathVariable("userId")
             String userId,
-        @NotNull
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "New password",
-            required = true,
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "userPwd")
-            String userPwd);
+        @Valid @RequestBody UserUpdatePasswordRequest userUpdatePasswordRequest);
 
     @Operation(summary = "Enable or disable a user")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -145,13 +139,5 @@ public interface UserApi {
             schema = @Schema())
         @PathVariable("userId")
             String userId,
-        @NotNull
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "Is enabled: ture or false",
-            required = true,
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "isEnabled")
-            Boolean isEnabled);
+        @Valid @RequestBody UserUpdateStateRequest userUpdateStateRequest);
 }

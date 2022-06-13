@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVO;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
 import com.github.pagehelper.PageInfo;
@@ -175,10 +176,7 @@ public interface RuntimeApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("runtimeVersionUrl")
         String runtimeVersionUrl,
-        @Parameter(in = ParameterIn.QUERY, schema = @Schema())
-        @Valid
-        @RequestParam(value = "tag", required = false)
-        String tag);
+        @Valid @RequestBody RuntimeTagRequest tagRequest);
 
     @Operation(summary = "Manage tag of the runtime version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -196,17 +194,7 @@ public interface RuntimeApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("versionUrl")
         String versionUrl,
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "add | remove | set",
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "action")
-        String action,
-        @Parameter(in = ParameterIn.QUERY, schema = @Schema())
-        @Valid
-        @RequestParam(value = "tags")
-        String tags);
+        @Valid @RequestBody RuntimeTagRequest tagRequest);
 
     @Operation(summary = "List Runtime versions info",
         description = "List Runtime versions info. ")

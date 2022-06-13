@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
@@ -38,9 +39,11 @@ import com.github.pagehelper.PageInfo;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -60,9 +63,6 @@ public class JobController implements JobApi{
 
     @Resource
     private DAGQuerier dagQuerier;
-
-    @Resource
-    private ProjectManager projectManager;
 
 
     private final InvokerManager<String, String> JOB_ACTIONS = InvokerManager.<String, String>create()
@@ -109,7 +109,8 @@ public class JobController implements JobApi{
             jobRequest.getDatasetVersionUrls(),
             jobRequest.getRuntimeVersionUrl(),
             jobRequest.getDevice(),
-            jobRequest.getDeviceAmount());
+            jobRequest.getDeviceAmount(),
+            jobRequest.getComment());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }
@@ -135,8 +136,8 @@ public class JobController implements JobApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyJobComment(String projectUrl, String jobUrl,
-        String comment) {
-        Boolean res = jobService.updateJobComment(projectUrl, jobUrl, comment);
+        JobModifyRequest jobModifyRequest) {
+        Boolean res = jobService.updateJobComment(projectUrl, jobUrl, jobModifyRequest.getComment());
 
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update job comment failed."),

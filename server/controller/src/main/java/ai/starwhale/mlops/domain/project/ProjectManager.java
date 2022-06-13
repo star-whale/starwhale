@@ -81,9 +81,9 @@ public class ProjectManager {
 
     public ProjectEntity findByNameOrDefault(String projectName){
         if(!StrUtil.isEmpty(projectName)) {
-            List<ProjectEntity> projectEntities = projectMapper.listProjects(projectName, null, 0);
-            if (null != projectEntities && !projectEntities.isEmpty()) {
-                return projectEntities.get(0);
+            ProjectEntity entity = projectMapper.findProjectByName(projectName);
+            if(entity != null) {
+                return entity;
             }
         }
         return findDefaultProject();

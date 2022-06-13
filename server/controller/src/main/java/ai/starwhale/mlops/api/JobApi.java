@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.dag.GraphVO;
+import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
 import ai.starwhale.mlops.api.protocol.job.JobVO;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
@@ -182,7 +182,7 @@ public interface JobApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = String.class)))
         })
-    @PutMapping(value = "/project/{projectUrl}/job/{jobUrl}/comment")
+    @PutMapping(value = "/project/{projectUrl}/job/{jobUrl}")
     ResponseEntity<ResponseMessage<String>> modifyJobComment(
         @Parameter(
             in = ParameterIn.PATH,
@@ -197,8 +197,7 @@ public interface JobApi {
             schema = @Schema())
         @PathVariable("jobUrl")
         String jobUrl,
-        @Valid @RequestParam(value = "comment", required = false)
-        String comment);
+        @Valid @RequestBody JobModifyRequest jobRequest);
 
     @Operation(summary = "DAG of Job")
     @ApiResponses(

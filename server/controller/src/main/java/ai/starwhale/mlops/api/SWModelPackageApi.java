@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
+import ai.starwhale.mlops.api.protocol.swmp.SWMPTagRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
@@ -253,10 +254,7 @@ public interface SWModelPackageApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("versionUrl")
             String versionUrl,
-        @Parameter(in = ParameterIn.QUERY, schema = @Schema())
-        @Valid
-        @RequestParam(value = "tag", required = false)
-            String tag);
+        @Valid @RequestBody SWMPTagRequest swmpTagRequest);
 
     @Operation(summary = "Manage tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -274,17 +272,7 @@ public interface SWModelPackageApi {
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
         @PathVariable("versionUrl")
         String versionUrl,
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "add | remove | set",
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "action")
-        String action,
-        @Parameter(in = ParameterIn.QUERY, schema = @Schema())
-        @Valid
-        @RequestParam(value = "tags")
-        String tags);
+        @Valid @RequestBody SWMPTagRequest swmpTagRequest);
 
 //    @Operation(summary = "Create a new model",
 //        description = "Create a new model and create an initial version. "
