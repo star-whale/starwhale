@@ -31,9 +31,7 @@ def runtime_cmd() -> None:
 )
 @click.option("--python", default=DEFAULT_PYTHON_VERSION, help="Python Version")
 @click.option("-f", "--force", is_flag=True, help="force create runtime")
-def _create(
-    workdir: str, name: str, mode: str, python: str, base_image: str, force: bool
-) -> None:
+def _create(workdir: str, name: str, mode: str, python: str, force: bool) -> None:
     # TODO: add runtime argument
     RuntimeTermView.create(
         workdir=workdir,

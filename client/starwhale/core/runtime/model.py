@@ -16,6 +16,7 @@ from starwhale.consts import (
     SW_IMAGE_FMT,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
+    SW_PYPI_PKG_NAME,
     DEFAULT_PAGE_SIZE,
     ENV_SW_IMAGE_REPO,
     DEFAULT_IMAGE_REPO,
@@ -30,6 +31,8 @@ from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
     detect_pip_req,
+    venv_install_req,
+    conda_install_req,
     create_python_env,
     restore_python_env,
     activate_python_env,
@@ -325,8 +328,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         force: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
+        config = RuntimeConfig(name=name, mode=mode, python_version=python_version)
+
         ensure_dir(workdir)
-        # TODO: auto install requirements.txt
         _id = create_python_env(
             mode=mode,
             name=name,
@@ -335,7 +339,16 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             force=force,
         )
 
-        config = RuntimeConfig(name=name, mode=mode, python_version=python_version)
+        _pkg_name = SW_PYPI_PKG_NAME
+        if config.starwhale_version:
+            _pkg_name = f"{_pkg_name}=={config.starwhale_version}"
+
+        console.print(f":dog: install {_pkg_name} {mode}@{_id}...")
+        if mode == PythonRunEnv.VENV:
+            venv_install_req(_id, req=_pkg_name, enable_pre=True)
+        elif mode == PythonRunEnv.CONDA:
+            conda_install_req(_id, req=_pkg_name, enable_pre=True)
+
         cls.render_runtime_yaml(config, workdir, force)
         activate_python_env(mode=mode, identity=_id)
 

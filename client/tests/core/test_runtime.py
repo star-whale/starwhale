@@ -28,9 +28,11 @@ class StandaloneRuntimeTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
+    @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
-    def test_create_venv(self, m_venv: MagicMock) -> None:
+    def test_create_venv(self, m_venv: MagicMock, m_call: MagicMock) -> None:
         workdir = "/home/starwhale/myproject"
+        venv_dir = os.path.join(workdir, "venv")
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         name = "test-venv"
 
@@ -44,11 +46,16 @@ class StandaloneRuntimeTestCase(TestCase):
         assert os.path.exists(os.path.join(workdir, runtime_path))
         assert m_venv.call_count == 1
         assert m_venv.call_args[0][0] == [
-            os.path.join(workdir, "venv"),
+            venv_dir,
             "--prompt",
             name,
             "--python",
             "3.9",
+        ]
+
+        assert m_call.call_args[0][0][:2] == [
+            os.path.join(venv_dir, "bin", "pip"),
+            "install",
         ]
 
         _rt_config = yaml.safe_load(open(runtime_path, "r"))
@@ -66,7 +73,7 @@ class StandaloneRuntimeTestCase(TestCase):
             name=name,
         )
         assert m_venv.call_args[0][0] == [
-            os.path.join(workdir, "venv"),
+            venv_dir,
             "--prompt",
             name,
             "--python",
@@ -90,13 +97,23 @@ class StandaloneRuntimeTestCase(TestCase):
         assert os.path.exists(os.path.join(workdir, runtime_path))
         _rt_config = yaml.safe_load(open(runtime_path, "r"))
         assert _rt_config["mode"] == "conda"
-        assert m_call.call_args[0][0] == [
+        assert m_call.call_args_list[0][0][0] == [
             "conda",
             "create",
             "--name",
             name,
             "--yes",
             "python=3.7",
+        ]
+        assert m_call.call_args_list[1][0][0][:8] == [
+            "conda",
+            "run",
+            "--name",
+            name,
+            "python3",
+            "-m",
+            "pip",
+            "install",
         ]
 
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")

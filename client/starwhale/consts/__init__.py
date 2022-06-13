@@ -106,4 +106,5 @@ SW_IGNORE_FILE_NAME = ".swignore"
 
 CNTR_DEFAULT_PIP_CACHE_DIR = "/root/.cache/pip"
 
-SW_DEV_DUMMY_VERSION = "0.0.0.dev"
+SW_DEV_DUMMY_VERSION = "0.0.0.dev0"
+SW_PYPI_PKG_NAME = "starwhale"

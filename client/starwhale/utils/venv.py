@@ -56,11 +56,17 @@ class PythonVersionField(t.NamedTuple):
     micro: int = _DUMMY_FIELD
 
 
-def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
-    venvdir = str(venvdir)
-    req = str(req)
-    cmd = [
-        os.path.join(venvdir, "bin", "pip"),
+def conda_install_req(
+    env: str, req: t.Union[str, Path], enable_pre: bool = False
+) -> None:
+    prefix_cmd = [get_conda_bin(), "run", "--name", env, "python3", "-m", "pip"]
+    _do_pip_install_req(prefix_cmd, req, enable_pre)
+
+
+def _do_pip_install_req(
+    prefix_cmd: t.List[t.Any], req: t.Union[str, Path], enable_pre: bool = False
+) -> None:
+    cmd = prefix_cmd + [
         "install",
         "--exists-action",
         "w",
@@ -72,8 +78,20 @@ def install_req(venvdir: t.Union[str, Path], req: t.Union[str, Path]) -> None:
         SW_PYPI_TRUSTED_HOST,
     ]
 
+    if enable_pre:
+        cmd += ["--pre"]
+
     cmd += ["-r", req] if os.path.isfile(req) else [req]
     check_call(cmd)
+
+
+def venv_install_req(
+    venvdir: t.Union[str, Path], req: t.Union[str, Path], enable_pre: bool = False
+) -> None:
+    venvdir = str(venvdir)
+    req = str(req)
+    prefix_cmd = [os.path.join(venvdir, "bin", "pip")]
+    _do_pip_install_req(prefix_cmd, req, enable_pre)
 
 
 def venv_activate(venvdir: t.Union[str, Path]) -> None:
@@ -137,6 +155,17 @@ def pip_freeze(
     cmd += [">", str(path)]
 
     check_call(" ".join(cmd), shell=True)
+
+
+def user_pip_install_pkg(py_env: str, pkg_name: str, enable_pre: bool = False) -> None:
+    _py_bin = get_user_runtime_python_bin(py_env)
+    cmd = [_py_bin, "-m", "pip", "install"]
+
+    if enable_pre:
+        cmd += ["--pre"]
+
+    cmd += [pkg_name]
+    check_call(cmd)
 
 
 def check_python_interpreter_consistency(mode: str) -> t.Tuple[bool, str, str]:
@@ -369,13 +398,13 @@ def dump_python_dep_env(
             logger.info(
                 f"[info:dep]install pip freeze({_pip_lock_req}) to venv: {_venv_dir}"
             )
-            install_req(_venv_dir, _pip_lock_req)
+            venv_install_req(_venv_dir, _pip_lock_req)
             if os.path.exists(pip_req_fpath):
                 logger.info(
                     f"[info:dep]install custom pip({pip_req_fpath}) to venv: {_venv_dir}"
                 )
                 # TODO: support ignore editable package
-                install_req(_venv_dir, pip_req_fpath)
+                venv_install_req(_venv_dir, pip_req_fpath)
             console.print(f":beer_mug: venv @ [underline]{_venv_dir}[/]")
 
     else:
@@ -585,7 +614,7 @@ def _do_restore_venv(
                 continue
 
             logger.info(f"pip install {_path} ...")
-            install_req(_venv_dir, _path)
+            venv_install_req(_venv_dir, _path)
 
     logger.info(f"render activate script: {_ascript}")
     venv_activate_render(_venv_dir, _ascript, relocate=_relocate)
