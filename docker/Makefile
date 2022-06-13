@@ -23,6 +23,9 @@ ifndef RELEASE_VERSION
 	RELEASE_VERSION = ${LATEST_R_VERSION}-nightly-${DATE}-${GIT_REVISION}
 endif
 
+FMT_VERSION_CODE := "import pkg_resources; _v=pkg_resources.parse_version('${RELEASE_VERSION}'); print(_v.public)"
+PYPI_FMT_RELEASE_VERSION := $(shell python -c ${ONE_LINE_CODE})
+
 ifndef PYPI_RELEASE_VERSION
 	PYPI_RELEASE_VERSION = 0.1.0.dev15
 endif
@@ -33,6 +36,8 @@ define build-image
 	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${DOCKER_HUB_REPO}/$(1):latest
 	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${GHCR_IO_REPO}/$(1):$(2)
 	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${GHCR_IO_REPO}/$(1):latest
+	$(if $(3), $(docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${DOCKER_HUB_REPO}/$(1):$(3)),)
+	$(if $(3), $(docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${GHCR_IO_REPO}/$(1):$(3)),)
 endef
 
 define push-image
@@ -40,6 +45,8 @@ define push-image
 	docker push ${DOCKER_HUB_REPO}/$(1):latest
 	docker push ${GHCR_IO_REPO}/$(1):latest
 	docker push ${GHCR_IO_REPO}/$(1):$(2)
+	$(if $(3), $(docker push ${DOCKER_HUB_REPO}/$(1):$(3)),)
+	$(if $(3), $(docker push ${GHCR_IO_REPO}/$(1):$(3)),)
 endef
 
 build-base:
@@ -55,7 +62,7 @@ release-base-server:
 	$(call push-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
 
 build-starwhale:
-	$(call build-image,starwhale,${RELEASE_VERSION})
+	$(call build-image,starwhale,${RELEASE_VERSION},${PYPI_FMT_RELEASE_VERSION})
 
 release-starwhale:
 	$(call push-image,starwhale,${RELEASE_VERSION})
