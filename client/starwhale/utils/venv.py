@@ -17,6 +17,7 @@ from starwhale.consts import (
     ENV_CONDA,
     PythonRunEnv,
     ENV_CONDA_PREFIX,
+    SW_PYPI_PKG_NAME,
     DEFAULT_PYTHON_VERSION,
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
@@ -324,6 +325,7 @@ def dump_python_dep_env(
     py_ver = get_user_python_version(pr_env)
 
     validate_python_environment(mode, expected_runtime, identity)
+    validate_runtime_package_dep(mode)
 
     _manifest = dict(
         expected_mode=mode,
@@ -618,6 +620,17 @@ def _do_restore_venv(
 
     logger.info(f"render activate script: {_ascript}")
     venv_activate_render(_venv_dir, _ascript, relocate=_relocate)
+
+
+def validate_runtime_package_dep(py_env: str) -> None:
+    _py_bin = get_user_runtime_python_bin(py_env)
+    console.print(f":snake: [blink red bold]{_py_bin} dep [/] :snake:")
+    cmd = [
+        _py_bin,
+        "-c",
+        f"import pkg_resources; pkg_resources.get_distribution('{SW_PYPI_PKG_NAME}t')",
+    ]
+    check_call(cmd)
 
 
 def validate_python_environment(mode: str, py_version: str, identity: str = "") -> None:
