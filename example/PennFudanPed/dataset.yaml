@@ -7,7 +7,6 @@ data_filter: "PNGImages/*6.png"
 label_filter: "PedMasks/*6_mask.png"
 
 process: code.data_slicer:PennFudanPedSlicer
-pip_req: requirements.txt
 
 desc: PennFudanPed data and label test dataset
 tag:

@@ -1,6 +1,6 @@
 base_image: ghcr.io/star-whale/starwhale:0.2.0-alpha.12
 kw: {}
 mode: conda
-name: mnist2
+name: mask_rcnn
 pip_req: requirements.txt
-python_version: '3.8'
+python_version: '3.7'

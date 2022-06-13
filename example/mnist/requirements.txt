@@ -3,4 +3,4 @@ torch
 torchvision
 Pillow
 scikit-learn
-starwhale==0.2.0a5
+starwhale==0.2.0a10
