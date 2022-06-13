@@ -3,4 +3,4 @@ kw: {}
 mode: conda
 name: mnist2
 pip_req: requirements.txt
-python_version: '3.8'
+python_version: '3.7'
