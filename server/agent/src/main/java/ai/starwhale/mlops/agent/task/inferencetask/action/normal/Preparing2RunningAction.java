@@ -32,6 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -137,6 +139,13 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
         imageConfig.setImage(image);
 
         taskPersistence.preloadingSWMP(originTask);
+
+        // check pip cache dir
+        String pipCacheDirStr = String.format(pipCachePathFormat, agentProperties.getBasePath());
+        if(Files.notExists(Path.of(pipCacheDirStr))) {
+            Files.createDirectories(Path.of(pipCacheDirStr));
+        }
+
         imageConfig.setMounts(List.of(
                 Mount.builder()
                         .readOnly(false)
@@ -158,7 +167,7 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                         .build(),
                 Mount.builder()
                         .readOnly(false)
-                        .source(String.format(pipCachePathFormat, agentProperties.getBasePath()))
+                        .source(pipCacheDirStr)
                         .target(String.format(pipCachePathFormat, "/root"))
                         .type("BIND")
                         .build()
