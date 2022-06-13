@@ -24,7 +24,7 @@ install_requires = [
 
 
 def _format_version() -> str:
-    _v = os.environ.get("PYPI_RELEASE_VERSION", "0.1.0.alpha1")
+    _v = os.environ.get("PYPI_RELEASE_VERSION", "0.0.0.dev")
     _v = _v.lstrip("v").replace("-", ".")
     _vs = _v.split(".", 3)
     if len(_vs) == 4:
