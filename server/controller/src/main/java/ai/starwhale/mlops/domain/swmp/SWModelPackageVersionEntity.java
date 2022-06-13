@@ -35,6 +35,8 @@ public class SWModelPackageVersionEntity extends BaseEntity {
 
     private Long swmpId;
 
+    private String swmpName;
+
     private Long ownerId;
 
     private UserEntity owner;

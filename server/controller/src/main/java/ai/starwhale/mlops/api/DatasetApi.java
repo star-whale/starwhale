@@ -264,6 +264,34 @@ public interface DatasetApi {
         @RequestParam(value = "tag")
             String tag);
 
+    @Operation(summary = "Manage tag of the dataset version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag")
+    ResponseEntity<ResponseMessage<String>> manageDatasetTag(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project url",
+            schema = @Schema())
+        @PathVariable("projectUrl")
+        String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("datasetUrl")
+        String datasetUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionUrl")
+        String versionUrl,
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "add | remove | set",
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "action")
+        String action,
+        @Parameter(in = ParameterIn.QUERY, schema = @Schema())
+        @Valid
+        @RequestParam(value = "tags")
+        String tags);
+
     @Operation(summary = "Get the list of the datasets")
     @ApiResponses(
         value = {

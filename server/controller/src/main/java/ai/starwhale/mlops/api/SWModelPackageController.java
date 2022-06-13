@@ -25,6 +25,7 @@ import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.swmp.SWMPQuery;
 import ai.starwhale.mlops.domain.swmp.SWMPVersion;
 import ai.starwhale.mlops.domain.swmp.SWMPVersionQuery;
@@ -32,6 +33,8 @@ import ai.starwhale.mlops.domain.swmp.SWModelPackageService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
@@ -131,12 +134,12 @@ public class SWModelPackageController implements SWModelPackageApi{
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(String projectUrl,
-        String modelUrl, String vName, String tag, Integer pageNum, Integer pageSize) {
+        String modelUrl, String name, String tag, Integer pageNum, Integer pageSize) {
         PageInfo<SWModelPackageVersionVO> pageInfo = swmpService.listSWMPVersionHistory(
             SWMPVersionQuery.builder()
                 .projectUrl(projectUrl)
                 .swmpUrl(modelUrl)
-                .versionName(vName)
+                .versionName(name)
                 .versionTag(tag)
                 .build(),
             PageParams.builder()
@@ -163,6 +166,24 @@ public class SWModelPackageController implements SWModelPackageApi{
             SWMPVersion.builder().tag(tag).build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update swmp failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> manageModelTag(String projectUrl,
+        String modelUrl, String versionUrl, String action, String tags) {
+        TagAction ta;
+        try {
+            ta = TagAction.of(action, tags);
+        } catch (IllegalArgumentException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip(String.format("Unknown tag action %s ", action)),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        Boolean res = swmpService.manageVersionTag(projectUrl, modelUrl, versionUrl, ta);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update model tag failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

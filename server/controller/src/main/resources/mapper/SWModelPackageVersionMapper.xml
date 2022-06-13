@@ -18,6 +18,7 @@
                mv.manifest as mv_manifest,
                mv.created_time as mv_created_time,
                mv.modified_time as mv_modified_time,
+               m.swmp_name as swmp_name,
                u.id as user_id,
                u.user_name,
                u.created_time as user_created_time,
@@ -26,10 +27,12 @@
                r.role_name,
                r.role_name_en
         from swmp_version as mv,
+             swmp_info as m,
              user_info as u,
              user_role as r
-        where owner_id = u.id
+        where mv.owner_id = u.id
           and r.id = u.role_id
+          and mv.swmp_id = m.id
     </sql>
     <select id="listVersions" resultMap="swmpVersionResultMap" >
         <include refid="select_swmp_version" />
@@ -38,7 +41,7 @@
             and version_name like concat(#{namePrefix}, '%')
         </if>
         <if test="tag != null and tag != ''">
-            and version_tag like concat(#{tag}, '%')
+            and FIND_IN_SET(#{tag}, version_tag)
         </if>
         order by mv.id desc
     </select>
@@ -96,6 +99,7 @@
     <resultMap id="swmpVersionResultMap" type="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity" >
         <id property="id" column="mv_id" />
         <result property="swmpId" column="swmp_id" />
+        <result property="swmpName" column="swmp_name" />
         <result property="versionName" column="mv_version_name" />
         <result property="versionTag" column="mv_version_tag" />
         <result property="versionMeta" column="mv_version_meta" />

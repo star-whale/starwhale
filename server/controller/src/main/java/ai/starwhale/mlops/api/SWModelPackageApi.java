@@ -196,14 +196,14 @@ public interface SWModelPackageApi {
             String modelUrl,
         @Parameter(in = ParameterIn.QUERY, description = "Model version name prefix to search for", schema = @Schema())
         @Valid
-        @RequestParam(value = "vName", required = false)
-            String vName,
+        @RequestParam(value = "name", required = false)
+            String name,
         @Parameter(
             in = ParameterIn.QUERY,
             description = "Model version tag",
             schema = @Schema())
-        @RequestParam(value = "vTag", required = false)
-        String vTag,
+        @RequestParam(value = "tag", required = false)
+        String tag,
         @Parameter(in = ParameterIn.QUERY, description = "Page number", schema = @Schema())
         @Valid
         @RequestParam(value = "pageNum", required = false, defaultValue = "1")
@@ -257,6 +257,34 @@ public interface SWModelPackageApi {
         @Valid
         @RequestParam(value = "tag", required = false)
             String tag);
+
+    @Operation(summary = "Manage tag of the model version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag")
+    ResponseEntity<ResponseMessage<String>> manageModelTag(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project url",
+            schema = @Schema())
+        @PathVariable("projectUrl")
+        String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("modelUrl")
+        String modelUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionUrl")
+        String versionUrl,
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "add | remove | set",
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "action")
+        String action,
+        @Parameter(in = ParameterIn.QUERY, schema = @Schema())
+        @Valid
+        @RequestParam(value = "tags")
+        String tags);
 
 //    @Operation(summary = "Create a new model",
 //        description = "Create a new model and create an initial version. "
