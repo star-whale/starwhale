@@ -624,13 +624,24 @@ def _do_restore_venv(
 
 def validate_runtime_package_dep(py_env: str) -> None:
     _py_bin = get_user_runtime_python_bin(py_env)
-    console.print(f":snake: [blink red bold]{_py_bin} dep [/] :snake:")
+    console.print(
+        f":snake: use [blink red bold]{_py_bin} to check {SW_PYPI_PKG_NAME} install [/] :snake:"
+    )
     cmd = [
         _py_bin,
         "-c",
-        f"import pkg_resources; pkg_resources.get_distribution('{SW_PYPI_PKG_NAME}t')",
+        f"import pkg_resources; pkg_resources.get_distribution('{SW_PYPI_PKG_NAME}')",
     ]
-    check_call(cmd)
+    try:
+        check_call(cmd)
+    except subprocess.CalledProcessError:
+        console.print(
+            f":confused_face: Please install {SW_PYPI_PKG_NAME} in {py_env}, cmd:"
+        )
+        console.print(
+            f"\t :cookie: python3 -m pip install --pre {SW_PYPI_PKG_NAME} :cookie:"
+        )
+        raise
 
 
 def validate_python_environment(mode: str, py_version: str, identity: str = "") -> None:
