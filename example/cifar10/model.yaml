@@ -9,12 +9,6 @@ config:
 
 run:
   ppl: code.ppl:CIFAR10Inference
-  pip_req: requirements.txt
-  exclude_pkg_data:
-    - venv
-    - .git
-    - .history
-    - .vscode
 
 desc: cifar10 by pytorch
 
