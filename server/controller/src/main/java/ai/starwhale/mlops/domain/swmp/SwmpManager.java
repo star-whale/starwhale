@@ -17,8 +17,12 @@
 package ai.starwhale.mlops.domain.swmp;
 
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.swmp.bo.SWMPObject;
+import ai.starwhale.mlops.domain.swmp.bo.SWMPVersion;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
+import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
+import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;

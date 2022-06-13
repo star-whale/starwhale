@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.swds.index;
 
-import ai.starwhale.mlops.domain.swds.SWDataSet;
+import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.exception.StarWhaleException;
 import lombok.Data;
 

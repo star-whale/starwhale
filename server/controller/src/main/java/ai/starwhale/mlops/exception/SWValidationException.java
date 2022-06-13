@@ -18,7 +18,7 @@ package ai.starwhale.mlops.exception;
 
 public class SWValidationException extends StarWhaleException {
 
-    static final String PREFIX_CODE="400";
+    static final String PREFIX_CODE="INVALID REQUEST: ";
 
     static final String PREFIX_TIP="invalid request on subject ";
 
@@ -27,7 +27,7 @@ public class SWValidationException extends StarWhaleException {
 
     public SWValidationException(ValidSubject validSubject){
         super(PREFIX_TIP + validSubject.tipSubject);
-        this.code = PREFIX_CODE + validSubject.code;
+        this.code = PREFIX_CODE + validSubject.tipSubject;
         this.tip = PREFIX_TIP + validSubject.tipSubject;
     }
 

@@ -18,16 +18,14 @@ package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.common.TimeConcern;
-import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.step.Step;
-import ai.starwhale.mlops.domain.system.agent.Agent;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.TaskWrapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.TaskType;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

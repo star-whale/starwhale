@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.task.status.watchers;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
+import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.schedule.CommandingTasksAssurance;

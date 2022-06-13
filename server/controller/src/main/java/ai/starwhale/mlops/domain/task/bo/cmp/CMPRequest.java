@@ -40,10 +40,4 @@ public class CMPRequest extends TaskRequest {
         return String.join(LINE, pplResultPaths);
     }
 
-    @Override
-    public TaskRequest deepCopy() {
-        return new CMPRequest(List.copyOf(pplResultPaths));
-    }
-
-
 }

@@ -17,8 +17,10 @@
 package ai.starwhale.mlops.domain.job;
 
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.project.Project;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;

@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.runtime;
 
 import ai.starwhale.mlops.api.protocol.StorageFileVO;
-import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVO;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
@@ -29,10 +28,16 @@ import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.project.ProjectEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.runtime.bo.Runtime;
+import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
+import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
+import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.user.UserService;

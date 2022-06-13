@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.step.status;
 
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 
 public interface StepStatusWatcher {
 

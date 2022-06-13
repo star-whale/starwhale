@@ -122,7 +122,7 @@
         order by modified_time desc
     </select>
 
-    <resultMap id="runtimeResultMap" type="ai.starwhale.mlops.domain.runtime.RuntimeEntity" >
+    <resultMap id="runtimeResultMap" type="ai.starwhale.mlops.domain.runtime.po.RuntimeEntity" >
         <id property="id" column="runtime_id" />
         <result property="runtimeName" column="runtime_name" />
         <result property="projectId" column="project_id" />

@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.cache;
 
-import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.Collection;

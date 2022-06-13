@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.user.mapper;
 
-import ai.starwhale.mlops.domain.user.UserEntity;
+import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

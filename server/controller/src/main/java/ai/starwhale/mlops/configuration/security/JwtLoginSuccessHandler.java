@@ -19,7 +19,7 @@ package ai.starwhale.mlops.configuration.security;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
-import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import cn.hutool.json.JSONUtil;
 import java.io.IOException;

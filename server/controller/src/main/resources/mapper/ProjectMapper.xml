@@ -8,7 +8,7 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.project.mapper.ProjectMapper">
-    <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity" useGeneratedKeys="true" keyProperty="id">
+    <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.po.ProjectEntity" useGeneratedKeys="true" keyProperty="id">
         insert into project_info(project_name, owner_id)
         values (#{project.projectName}, #{project.ownerId})
     </insert>
@@ -31,7 +31,7 @@
         where project_name = #{projectName}
     </update>
 
-    <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity">
+    <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.po.ProjectEntity">
         update project_info
         set project_name = #{project.projectName}
         where id = #{project.id}
@@ -115,7 +115,7 @@
     </select>
 
 
-    <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.ProjectEntity">
+    <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.po.ProjectEntity">
         <id property="id" column="project_id" />
         <result property="projectName" column="project_name"/>
         <result property="isDeleted" column="project_is_deleted"/>

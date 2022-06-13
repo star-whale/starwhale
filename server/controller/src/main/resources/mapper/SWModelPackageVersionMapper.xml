@@ -78,7 +78,7 @@
         where id = #{swmpVersionId}
     </insert>
 
-    <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity" useGeneratedKeys="true" keyProperty="id">
+    <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity" useGeneratedKeys="true" keyProperty="id">
         insert into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
         values(#{version.swmpId},
                #{version.ownerId},
@@ -89,11 +89,11 @@
                #{version.manifest})
     </insert>
 
-    <update id="update" parameterType="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity">
+    <update id="update" parameterType="ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity">
         update swmp_version set version_tag = #{version.versionTag} where id = #{version.id}
     </update>
 
-    <resultMap id="swmpVersionResultMap" type="ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity" >
+    <resultMap id="swmpVersionResultMap" type="ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity" >
         <id property="id" column="mv_id" />
         <result property="swmpId" column="swmp_id" />
         <result property="versionName" column="mv_version_name" />

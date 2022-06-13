@@ -30,7 +30,7 @@
         order by connect_time desc
     </select>
 
-    <insert id="addAgent" parameterType="ai.starwhale.mlops.domain.system.AgentEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+    <insert id="addAgent" parameterType="ai.starwhale.mlops.domain.system.po.AgentEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into agent_info(agent_ip, connect_time, agent_version, agent_status, serial_number, device_info)
         values (inet_aton(#{agent.agentIp}), #{agent.connectTime}, #{agent.agentVersion}, #{agent.status}, #{agent.serialNumber}, #{agent.deviceInfo})
     </insert>
@@ -46,7 +46,7 @@
         </foreach>
     </update>
 
-    <resultMap id="agentResultMap" type="ai.starwhale.mlops.domain.system.AgentEntity" >
+    <resultMap id="agentResultMap" type="ai.starwhale.mlops.domain.system.po.AgentEntity" >
         <id property="id" column="agent_id" />
         <result property="agentIp" column="agent_ip" />
         <result property="connectTime" column="connect_time" />

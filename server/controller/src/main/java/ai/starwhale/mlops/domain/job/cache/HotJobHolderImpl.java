@@ -16,12 +16,11 @@
 
 package ai.starwhale.mlops.domain.job.cache;
 
-import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;

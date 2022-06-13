@@ -33,9 +33,4 @@ public class PPLRequest extends TaskRequest {
      */
     private List<SWDSBlockVO> swdsBlocks;
 
-    @Override
-    public TaskRequest deepCopy() {
-        return new PPLRequest(List.copyOf(swdsBlocks));
-    }
-
 }

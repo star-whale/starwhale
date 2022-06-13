@@ -16,22 +16,22 @@
 
 package ai.starwhale.mlops.domain.job.cache;
 
-import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
+import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
-import ai.starwhale.mlops.domain.job.step.StepEntity;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.trigger.StepTriggerContext;
-import ai.starwhale.mlops.domain.task.StepHelper;
-import ai.starwhale.mlops.domain.task.TaskEntity;
+import ai.starwhale.mlops.domain.job.step.StepHelper;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
+import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;

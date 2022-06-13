@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.swds.upload;
 
-import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;

@@ -18,8 +18,9 @@ package ai.starwhale.mlops.domain.system.agent;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.system.AgentEntity;
-import ai.starwhale.mlops.domain.system.agent.Agent.AgentUnModifiable;
+import ai.starwhale.mlops.domain.system.agent.bo.Agent;
+import ai.starwhale.mlops.domain.system.po.AgentEntity;
+import ai.starwhale.mlops.domain.system.agent.bo.Agent.AgentUnModifiable;
 import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -41,7 +42,7 @@ public class AgentCache implements CommandLineRunner {
 
     final AgentMapper agentMapper;
 
-    final Map<String,Agent> agents;
+    final Map<String, Agent> agents;
 
     final AgentConverter agentConverter;
 

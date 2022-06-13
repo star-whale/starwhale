@@ -18,7 +18,7 @@ package ai.starwhale.mlops.exception;
 
 public class SWProcessException extends StarWhaleException {
 
-    static final String PREFIX_CODE="500";
+    static final String PREFIX_CODE="SYSTEM ERROR: ";
 
     static final String PREFIX_TIP="ERROR occurs while dealing with ";
 
@@ -27,7 +27,7 @@ public class SWProcessException extends StarWhaleException {
 
     public SWProcessException(ErrorType errorType){
         super(PREFIX_TIP + errorType.tipSubject);
-        this.code = PREFIX_CODE + errorType.code;
+        this.code = PREFIX_CODE + errorType.tipSubject;
         this.tip = PREFIX_TIP + errorType.tipSubject;
     }
 

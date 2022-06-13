@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;

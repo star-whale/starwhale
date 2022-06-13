@@ -16,10 +16,9 @@
 
 package ai.starwhale.mlops.domain.job.step.trigger;
 
-import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.split.JobSpliteratorEvaluation;
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
