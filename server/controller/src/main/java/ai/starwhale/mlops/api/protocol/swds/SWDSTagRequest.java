@@ -14,29 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.common;
+package ai.starwhale.mlops.api.protocol.swds;
 
-import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
+import org.springframework.validation.annotation.Validated;
 
 @Data
-public class TagAction {
+@Validated
+public class SWDSTagRequest {
 
-    private ACTION action;
+    @NotNull
+    @JsonProperty("tag")
+    private String tag;
 
-    private String tags;
-
-    public enum ACTION {
-        ADD, REMOVE, SET
-    }
-
-    public static TagAction of(String action, String tags) throws IllegalArgumentException {
-        if(StrUtil.isEmpty(action)) {
-            throw new IllegalArgumentException("action is empty");
-        }
-        TagAction obj = new TagAction();
-        obj.setAction(ACTION.valueOf(action.toUpperCase()));
-        obj.setTags(tags);
-        return obj;
-    }
+    @JsonProperty("action")
+    private String action;
 }

@@ -45,4 +45,7 @@ public class JobRequest implements Serializable {
     @NotNull
     @JsonProperty("deviceAmount")
     private Integer deviceAmount;
+
+    @JsonProperty("comment")
+    private String comment;
 }

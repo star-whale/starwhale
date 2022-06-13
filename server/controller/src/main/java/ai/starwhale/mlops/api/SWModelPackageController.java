@@ -20,17 +20,17 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
+import ai.starwhale.mlops.api.protocol.swmp.SWMPTagRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
+import ai.starwhale.mlops.domain.swmp.SWModelPackageService;
 import ai.starwhale.mlops.domain.swmp.bo.SWMPQuery;
 import ai.starwhale.mlops.domain.swmp.bo.SWMPVersion;
 import ai.starwhale.mlops.domain.swmp.bo.SWMPVersionQuery;
-import ai.starwhale.mlops.domain.swmp.SWModelPackageService;
-import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -57,9 +57,6 @@ public class SWModelPackageController implements SWModelPackageApi{
 
     @Resource
     private SWModelPackageService swmpService;
-
-    @Resource
-    private UserService userService;
 
     @Resource
     private IDConvertor idConvertor;
@@ -161,9 +158,9 @@ public class SWModelPackageController implements SWModelPackageApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyModel(String projectUrl, String modelUrl, String versionUrl,
-        String tag) {
+        SWMPTagRequest swmpTagRequest) {
         Boolean res = swmpService.modifySWMPVersion(modelUrl, versionUrl,
-            SWMPVersion.builder().tag(tag).build());
+            SWMPVersion.builder().tag(swmpTagRequest.getTag()).build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update swmp failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -173,12 +170,12 @@ public class SWModelPackageController implements SWModelPackageApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> manageModelTag(String projectUrl,
-        String modelUrl, String versionUrl, String action, String tags) {
+        String modelUrl, String versionUrl, SWMPTagRequest swmpTagRequest) {
         TagAction ta;
         try {
-            ta = TagAction.of(action, tags);
+            ta = TagAction.of(swmpTagRequest.getAction(), swmpTagRequest.getTag());
         } catch (IllegalArgumentException e) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip(String.format("Unknown tag action %s ", action)),
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip(String.format("Unknown tag action %s ", swmpTagRequest.getAction())),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
         Boolean res = swmpService.manageVersionTag(projectUrl, modelUrl, versionUrl, ta);

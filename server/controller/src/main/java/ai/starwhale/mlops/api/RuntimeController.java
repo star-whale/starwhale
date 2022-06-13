@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.runtime.ClientRuntimeRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeInfoVO;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
 import ai.starwhale.mlops.common.PageParams;
@@ -122,10 +123,10 @@ public class RuntimeController implements RuntimeApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyRuntime(String projectUrl,
-        String runtimeUrl, String runtimeVersionUrl, String tag) {
+        String runtimeUrl, String runtimeVersionUrl, RuntimeTagRequest tagRequest) {
         Boolean res = runtimeService.modifyRuntimeVersion(runtimeUrl, runtimeVersionUrl,
             RuntimeVersion.builder()
-                .versionTag(tag).build());
+                .versionTag(tagRequest.getTag()).build());
 
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Modify runtime failed."),
@@ -136,12 +137,12 @@ public class RuntimeController implements RuntimeApi {
 
     @Override
     public ResponseEntity<ResponseMessage<String>> manageRuntimeTag(String projectUrl,
-        String runtimeUrl, String versionUrl, String action, String tags) {
+        String runtimeUrl, String versionUrl, RuntimeTagRequest tagRequest) {
         TagAction ta;
         try {
-            ta = TagAction.of(action, tags);
+            ta = TagAction.of(tagRequest.getAction(), tagRequest.getTag());
         } catch (IllegalArgumentException e) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(String.format("Unknown tag action %s ", action)),
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(String.format("Unknown tag action %s ", tagRequest.getAction())),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
         Boolean res = runtimeService.manageVersionTag(projectUrl, runtimeUrl, versionUrl, ta);

@@ -101,7 +101,7 @@ public interface ProjectApi {
     @PutMapping(value = "/project/{projectId}")
     ResponseEntity<ResponseMessage<String>> updateProject(
         @PathVariable("projectId") String projectId,
-        @Valid @RequestParam(value = "projectName", required = false) String projectName);
+        @Valid @RequestBody ProjectRequest projectRequest);
 
 
 }

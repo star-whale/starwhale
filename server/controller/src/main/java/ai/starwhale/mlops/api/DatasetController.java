@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.RevertSWDSRequest;
+import ai.starwhale.mlops.api.protocol.swds.SWDSTagRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
@@ -67,9 +68,6 @@ public class DatasetController implements DatasetApi{
 
     @Resource
     private SWDatasetService swDatasetService;
-
-    @Resource
-    private UserService userService;
 
     @Resource
     private IDConvertor idConvertor;
@@ -201,21 +199,21 @@ public class DatasetController implements DatasetApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(String projectUrl, String datasetUrl,
-        String versionUrl, String tag) {
+        String versionUrl, SWDSTagRequest swdsTagRequest) {
         Boolean res = swDatasetService.modifySWDSVersion(datasetUrl, versionUrl,
-            SWDSVersion.builder().tag(tag).build());
+            SWDSVersion.builder().tag(swdsTagRequest.getTag()).build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> manageDatasetTag(String projectUrl,
-        String datasetUrl, String versionUrl, String action, String tags) {
+        String datasetUrl, String versionUrl, SWDSTagRequest swdsTagRequest) {
         TagAction ta;
         try {
-            ta = TagAction.of(action, tags);
+            ta = TagAction.of(swdsTagRequest.getAction(), swdsTagRequest.getTag());
         } catch (IllegalArgumentException e) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip(String.format("Unknown tag action %s ", action)),
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip(String.format("Unknown tag action %s ", swdsTagRequest.getAction())),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
         Boolean res = swDatasetService.manageVersionTag(projectUrl, datasetUrl, versionUrl, ta);
