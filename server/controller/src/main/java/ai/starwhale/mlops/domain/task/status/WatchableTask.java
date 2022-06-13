@@ -17,15 +17,14 @@
 package ai.starwhale.mlops.domain.task.status;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
-import ai.starwhale.mlops.domain.job.step.Step;
-import ai.starwhale.mlops.domain.system.agent.Agent;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.TaskWrapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.annotation.Order;
 
 /**
  * make task status change watchalbe

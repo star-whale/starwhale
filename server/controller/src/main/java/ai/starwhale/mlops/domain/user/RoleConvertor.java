@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.user;
 import ai.starwhale.mlops.api.protocol.user.RoleVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.user.po.RoleEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
 import javax.annotation.Resource;

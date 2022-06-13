@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.user.mapper;
 
-import ai.starwhale.mlops.domain.user.RoleEntity;
+import ai.starwhale.mlops.domain.user.po.RoleEntity;
 import java.util.List;
 
 public interface RoleMapper {

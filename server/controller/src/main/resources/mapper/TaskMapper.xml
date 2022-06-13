@@ -59,7 +59,7 @@
         update task_info set started_time = #{startedTime} WHERE id = #{taskId}
     </update>
 
-    <insert id="addTask" parameterType="ai.starwhale.mlops.domain.task.TaskEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+    <insert id="addTask" parameterType="ai.starwhale.mlops.domain.task.po.TaskEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into task_info(task_uuid, step_id, agent_id, task_status, task_type,result_path, task_request)
         values(#{task.taskUuid}, #{task.stepId}, #{task.agentId}, #{task.taskStatus}, #{task.taskType}, #{task.resultPath}, #{task.taskRequest})
     </insert>
@@ -121,7 +121,7 @@
         </where>
     </select>
 
-    <resultMap id="taskResultMap" type="ai.starwhale.mlops.domain.task.TaskEntity" >
+    <resultMap id="taskResultMap" type="ai.starwhale.mlops.domain.task.po.TaskEntity" >
         <id property="id" column="task_id" />
         <result property="taskUuid" column="task_uuid" />
         <result property="stepId" column="step_id" />

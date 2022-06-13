@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * a simple implementation of JobScheduler
+ * a simple implementation of {@link SWTaskScheduler}
  */
 @Slf4j
 @Service

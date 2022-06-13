@@ -17,6 +17,8 @@
 package ai.starwhale.mlops.domain.job.step;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import org.springframework.stereotype.Component;
 
 @Component

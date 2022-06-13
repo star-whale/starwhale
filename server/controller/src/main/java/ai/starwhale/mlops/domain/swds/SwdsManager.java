@@ -17,8 +17,12 @@
 package ai.starwhale.mlops.domain.swds;
 
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.swds.bo.SWDSObject;
+import ai.starwhale.mlops.domain.swds.bo.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;

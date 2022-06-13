@@ -102,16 +102,16 @@
         where id = #{dsVersionId}
     </insert>
 
-    <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity" useGeneratedKeys="true" keyProperty="id">
+    <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity" useGeneratedKeys="true" keyProperty="id">
         insert into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, storage_path, files_uploaded)
         values(#{version.datasetId}, #{version.ownerId}, #{version.versionName}, #{version.versionTag}, #{version.versionMeta}, #{version.storagePath}, #{version.filesUploaded})
     </insert>
 
-    <update id="update" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity">
+    <update id="update" parameterType="ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity">
         update dataset_version set version_tag = #{version.versionTag} where id = #{version.id}
     </update>
 
-    <update id="updateFilesUploaded" parameterType="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity">
+    <update id="updateFilesUploaded" parameterType="ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity">
         update dataset_version set files_uploaded = #{version.filesUploaded} where id = #{version.id}
     </update>
 
@@ -125,7 +125,7 @@
 
 
 
-    <resultMap id="dsVersionResultMap" type="ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity" >
+    <resultMap id="dsVersionResultMap" type="ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity" >
         <id property="id" column="dsv_id" />
         <result property="datasetId" column="dataset_id" />
         <result property="versionName" column="dsv_version_name" />

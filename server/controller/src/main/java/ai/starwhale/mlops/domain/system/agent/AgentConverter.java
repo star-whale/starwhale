@@ -17,7 +17,9 @@
 package ai.starwhale.mlops.domain.system.agent;
 
 import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.system.AgentEntity;
+import ai.starwhale.mlops.domain.system.agent.bo.Agent;
+import ai.starwhale.mlops.domain.system.agent.bo.NodeInfo;
+import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;

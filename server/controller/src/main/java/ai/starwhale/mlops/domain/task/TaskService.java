@@ -21,14 +21,12 @@ import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.job.JobManager;
-import ai.starwhale.mlops.domain.task.bo.ResultPathConverter;
-import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
-import cn.hutool.core.util.IdUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
@@ -38,7 +36,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -49,9 +46,6 @@ public class TaskService {
 
     @Resource
     private TaskMapper taskMapper;
-
-    @Resource
-    private ResultPathConverter resultPathConverter;
 
     @Resource
     private StorageAccessService storageAccessService;

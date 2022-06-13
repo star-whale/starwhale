@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.runtime.mapper;
 
-import ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

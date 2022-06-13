@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.configuration.security;
 
-import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AccountExpiredException;

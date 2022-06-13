@@ -16,30 +16,27 @@
 
 package ai.starwhale.mlops.domain.job.split;
 
-import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
-import ai.starwhale.mlops.domain.job.Job;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
-import ai.starwhale.mlops.domain.job.step.StepEntity;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.SWDataSet;
+import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
-import ai.starwhale.mlops.domain.task.TaskEntity;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskType;
-import ai.starwhale.mlops.domain.task.bo.ResultPathConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskBoConverter;
+import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -77,8 +74,6 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
 
     private final TaskBoConverter taskBoConverter;
 
-    private final ResultPathConverter resultPathConverter;
-
     private final StepMapper stepMapper;
 
     private final StepConverter stepConverter;
@@ -88,7 +83,6 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     public JobSpliteratorEvaluation(StoragePathCoordinator storagePathCoordinator,
         SWDSIndexLoader swdsIndexLoader, SWDSBlockSerializer swdsBlockSerializer,
         TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter,
-        ResultPathConverter resultPathConverter,
         StepMapper stepMapper, StepConverter stepConverter,
         WatchableTaskFactory watchableTaskFactory) {
         this.storagePathCoordinator = storagePathCoordinator;
@@ -97,7 +91,6 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
         this.taskBoConverter = taskBoConverter;
-        this.resultPathConverter = resultPathConverter;
         this.stepMapper = stepMapper;
         this.stepConverter = stepConverter;
         this.watchableTaskFactory = watchableTaskFactory;

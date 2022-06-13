@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.system.agent;
 
+import ai.starwhale.mlops.domain.system.agent.bo.Agent;
+
 public interface AgentStatusWatcher {
     void onAgentStatusChange(Agent agent,AgentStatus newStatus);
 }

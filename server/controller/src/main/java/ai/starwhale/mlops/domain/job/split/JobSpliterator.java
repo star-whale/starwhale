@@ -16,10 +16,8 @@
 
 package ai.starwhale.mlops.domain.job.split;
 
-import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
-import ai.starwhale.mlops.domain.job.step.Step;
-import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import java.util.List;
 
 /**

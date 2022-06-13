@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.agent.AgentVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
 import javax.annotation.Resource;

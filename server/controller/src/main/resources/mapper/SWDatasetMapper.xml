@@ -109,7 +109,7 @@
         order by modified_time desc
     </select>
 
-    <resultMap id="swdsResultMap" type="ai.starwhale.mlops.domain.swds.SWDatasetEntity" >
+    <resultMap id="swdsResultMap" type="ai.starwhale.mlops.domain.swds.po.SWDatasetEntity" >
         <id property="id" column="swds_id" />
         <result property="datasetName" column="dataset_name" />
         <result property="projectId" column="project_id" />

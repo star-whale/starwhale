@@ -17,7 +17,7 @@
 package ai.starwhale.test.domain.task;
 
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.task.StepHelper;
+import ai.starwhale.mlops.domain.job.step.StepHelper;
 
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.*;
 
