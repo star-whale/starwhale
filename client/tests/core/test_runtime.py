@@ -55,7 +55,8 @@ class StandaloneRuntimeTestCase(TestCase):
         assert _rt_config["name"] == name
         assert _rt_config["mode"] == "venv"
         assert _rt_config["python_version"] == "3.9"
-        assert "base_image" in _rt_config
+        assert "starwhale_version" in _rt_config
+        assert "base_image" not in _rt_config
 
         empty_dir(workdir)
         assert not os.path.exists(os.path.join(workdir, runtime_path))

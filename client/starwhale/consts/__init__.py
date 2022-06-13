@@ -7,6 +7,7 @@ SW_CLI_CONFIG = CONFIG_DIR / "config.yaml"
 
 ENV_SW_CLI_CONFIG = "SW_CLI_CONFIG"
 ENV_LOG_LEVEL = "SW_LOG_LEVEL"
+ENV_SW_IMAGE_REPO = "SW_IMAGE_REPO"
 
 DEFAULT_STARWHALE_API_VERSION = "1.0"
 DEFAULT_MANIFEST_NAME = "_manifest.yaml"
@@ -98,7 +99,11 @@ DEFAULT_PYTHON_VERSION = "3.8"
 
 YAML_TYPES = (".yaml", ".yml")
 
-DEFAULT_SW_TASK_RUN_IMAGE = "ghcr.io/star-whale/starwhale:latest"
+DEFAULT_IMAGE_REPO = "ghcr.io/star-whale"
+SW_IMAGE_FMT = "{repo}/starwhale:{tag}"
+DEFAULT_SW_TASK_RUN_IMAGE = SW_IMAGE_FMT.format(repo=DEFAULT_IMAGE_REPO, tag="latest")
 SW_IGNORE_FILE_NAME = ".swignore"
 
 CNTR_DEFAULT_PIP_CACHE_DIR = "/root/.cache/pip"
+
+SW_DEV_DUMMY_VERSION = "0.0.0.dev"

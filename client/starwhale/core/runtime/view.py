@@ -9,7 +9,6 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     DEFAULT_PYTHON_VERSION,
-    DEFAULT_SW_TASK_RUN_IMAGE,
 )
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
@@ -111,7 +110,6 @@ class RuntimeTermView(BaseTermView):
         name: str,
         python_version: str = DEFAULT_PYTHON_VERSION,
         mode: str = PythonRunEnv.VENV,
-        base_image: str = DEFAULT_SW_TASK_RUN_IMAGE,
         force: bool = False,
     ) -> None:
         console.print(f":construction: start to create runtime[{name}] environment...")
@@ -121,7 +119,6 @@ class RuntimeTermView(BaseTermView):
             python_version=python_version,
             mode=mode,
             force=force,
-            base_image=base_image,
         )
         console.print(":clap: python runtime environment is ready to use :tada:")
 
