@@ -16,7 +16,10 @@
 
 package ai.starwhale.mlops.domain.swds.upload;
 
-import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.upload.bo.Manifest;
+import ai.starwhale.mlops.domain.swds.upload.bo.SWDSVersionWithMeta;
+import ai.starwhale.mlops.domain.swds.upload.bo.VersionMeta;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;

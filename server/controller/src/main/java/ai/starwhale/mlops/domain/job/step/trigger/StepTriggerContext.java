@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.step.trigger;
 
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import java.util.List;

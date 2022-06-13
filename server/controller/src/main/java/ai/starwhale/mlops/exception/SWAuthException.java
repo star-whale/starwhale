@@ -18,7 +18,7 @@ package ai.starwhale.mlops.exception;
 
 public class SWAuthException extends StarWhaleException {
 
-    static final String PREFIX_CODE="401";
+    static final String PREFIX_CODE="NO PERMISSION: ";
 
     static final String PREFIX_TIP="you have no permission to do ";
 
@@ -27,7 +27,7 @@ public class SWAuthException extends StarWhaleException {
 
     public SWAuthException(AuthType authType){
         super(PREFIX_TIP + authType.tipSubject);
-        this.code = PREFIX_CODE + authType.code;
+        this.code = PREFIX_CODE + authType.tipSubject;
         this.tip = PREFIX_TIP + authType.tipSubject;
     }
 

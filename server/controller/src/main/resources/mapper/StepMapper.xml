@@ -29,7 +29,7 @@
         order by t.id
     </select>
 
-    <insert id="save" parameterType="ai.starwhale.mlops.domain.job.step.StepEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+    <insert id="save" parameterType="ai.starwhale.mlops.domain.job.step.po.StepEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into step(step_name, job_id, last_step_id, step_status, step_uuid)
         values(#{step.name}, #{step.jobId}, #{step.lastStepId}, #{step.status}, #{step.uuid})
     </insert>
@@ -51,7 +51,7 @@
     </update>
 
 
-    <resultMap id="stepResultMap" type="ai.starwhale.mlops.domain.job.step.StepEntity" >
+    <resultMap id="stepResultMap" type="ai.starwhale.mlops.domain.job.step.po.StepEntity" >
         <id property="id" column="step_id" />
         <result property="lastStepId" column="last_step_id" />
         <result property="name" column="step_name" />

@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;

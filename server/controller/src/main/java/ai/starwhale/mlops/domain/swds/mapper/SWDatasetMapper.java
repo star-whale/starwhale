@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.swds.mapper;
 
-import ai.starwhale.mlops.domain.swds.SWDatasetEntity;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

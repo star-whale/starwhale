@@ -34,7 +34,7 @@
         and p.id = s.project_id
     </sql>
 
-<!--    <select id="listSWModelPackagesByQuery" parameterType="ai.starwhale.mlops.domain.swmp.SWMPQuery" resultMap="swmpResultMap">-->
+<!--    <select id="listSWModelPackagesByQuery" parameterType="ai.starwhale.mlops.domain.swmp.bo.SWMPQuery" resultMap="swmpResultMap">-->
 <!--        <include refid="select_swmp"/>-->
 <!--        <if test="query.projectId != null and query.projectId != ''">-->
 <!--            and s.project_id = #{query.projectId}-->
@@ -136,7 +136,7 @@
         order by modified_time desc
     </select>
 
-    <resultMap id="swmpResultMap" type="ai.starwhale.mlops.domain.swmp.SWModelPackageEntity" >
+    <resultMap id="swmpResultMap" type="ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity" >
         <id property="id" column="swmp_id" />
         <result property="swmpName" column="swmp_name" />
         <result property="projectId" column="project_id" />

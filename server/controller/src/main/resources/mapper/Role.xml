@@ -15,7 +15,7 @@
         from user_role
         order by role_name
     </select>
-    <resultMap id="roleResultMap" type="ai.starwhale.mlops.domain.user.RoleEntity" >
+    <resultMap id="roleResultMap" type="ai.starwhale.mlops.domain.user.po.RoleEntity" >
         <id property="id" column="role_id" />
         <result property="roleName" column="role_name"/>
         <result property="roleNameEn" column="role_name_en"/>

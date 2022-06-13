@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.project.mapper;
 
-import ai.starwhale.mlops.domain.project.ProjectEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

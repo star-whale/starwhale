@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.step.mapper;
 
-import ai.starwhale.mlops.domain.job.step.StepEntity;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import java.time.LocalDateTime;
 import java.util.List;

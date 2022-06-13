@@ -16,8 +16,7 @@
 
 package ai.starwhale.mlops.domain.system.mapper;
 
-import ai.starwhale.mlops.domain.system.AgentEntity;
-import java.util.Collection;
+import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

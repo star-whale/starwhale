@@ -18,12 +18,12 @@ package ai.starwhale.mlops.domain.task.status.watchers;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.status.StepStatusMachine;
 import ai.starwhale.mlops.domain.job.step.trigger.StepTriggerContext;
-import ai.starwhale.mlops.domain.task.StepHelper;
+import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;

@@ -20,7 +20,7 @@ import static ai.starwhale.mlops.common.util.HttpUtil.error;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
-import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;

@@ -18,8 +18,10 @@ package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
-import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;

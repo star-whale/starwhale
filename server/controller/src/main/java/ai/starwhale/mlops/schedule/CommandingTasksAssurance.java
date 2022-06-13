@@ -17,13 +17,12 @@
 package ai.starwhale.mlops.schedule;
 
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.system.agent.Agent;
+import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import ai.starwhale.mlops.domain.system.agent.AgentStatusWatcher;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.reporting.ReportedTask;
 import java.util.Collections;
 import java.util.HashSet;
@@ -49,14 +48,11 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class CommandingTasksAssurance implements AgentStatusWatcher {
 
-    final TaskStatusMachine taskStatusMachine;
     final Map<Agent, Set<TaskCommand>> commandingTaskAgentMap;
     final SWTaskScheduler swTaskScheduler;
 
     public CommandingTasksAssurance(
-        TaskStatusMachine taskStatusMachine,
         SWTaskScheduler swTaskScheduler){
-        this.taskStatusMachine = taskStatusMachine;
         this.swTaskScheduler = swTaskScheduler;
         commandingTaskAgentMap = new ConcurrentHashMap<>();
     }

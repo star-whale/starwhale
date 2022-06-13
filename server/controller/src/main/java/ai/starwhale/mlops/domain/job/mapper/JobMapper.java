@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.mapper;
 
-import ai.starwhale.mlops.domain.job.JobEntity;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import java.time.LocalDateTime;
 import java.util.List;

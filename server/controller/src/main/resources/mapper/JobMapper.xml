@@ -144,7 +144,7 @@
         where job_uuid = #{uuid}
     </update>
 
-    <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.JobEntity" useGeneratedKeys="true" keyProperty="id">
+    <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.po.JobEntity" useGeneratedKeys="true" keyProperty="id">
         insert into job_info(job_uuid,
                              project_id,
                              swmp_version_id,
@@ -174,7 +174,7 @@
                 )
     </insert>
 
-    <resultMap id="jobResultMap" type="ai.starwhale.mlops.domain.job.JobEntity" >
+    <resultMap id="jobResultMap" type="ai.starwhale.mlops.domain.job.po.JobEntity" >
         <id property="id" column="job_id" />
         <result property="jobUuid" column="job_uuid"/>
         <result property="projectId" column="project_id"/>

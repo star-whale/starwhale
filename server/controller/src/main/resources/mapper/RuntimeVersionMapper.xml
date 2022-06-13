@@ -89,7 +89,7 @@
         where id = #{rtVersionId}
     </insert>
 
-    <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity" useGeneratedKeys="true" keyProperty="id">
+    <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity" useGeneratedKeys="true" keyProperty="id">
         insert into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
         values(#{version.runtimeId},
                #{version.ownerId},
@@ -100,11 +100,11 @@
                #{version.manifest})
     </insert>
 
-    <update id="update" parameterType="ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity">
+    <update id="update" parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity">
         update runtime_version set version_tag = #{version.versionTag} where id = #{version.id}
     </update>
 
-    <resultMap id="runtimeVersionResultMap" type="ai.starwhale.mlops.domain.runtime.RuntimeVersionEntity" >
+    <resultMap id="runtimeVersionResultMap" type="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity" >
         <id property="id" column="rv_id" />
         <result property="runtimeId" column="runtime_id" />
         <result property="versionName" column="rv_version_name" />

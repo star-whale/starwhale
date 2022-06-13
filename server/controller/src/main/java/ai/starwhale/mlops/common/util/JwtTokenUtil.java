@@ -19,7 +19,7 @@ package ai.starwhale.mlops.common.util;
 import static java.lang.String.format;
 
 import ai.starwhale.mlops.configuration.security.JwtProperties;
-import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.bo.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;

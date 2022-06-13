@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.swmp.mapper;
 
-import ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity;
+import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.resulting;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
-import ai.starwhale.mlops.domain.job.JobEntity;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.exception.SWProcessException;

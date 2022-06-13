@@ -16,7 +16,8 @@
 
 package ai.starwhale.mlops.domain.swds.upload;
 
-import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.upload.bo.SWDSVersionWithMeta;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;

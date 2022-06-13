@@ -20,20 +20,20 @@ import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.dag.bo.GraphEdge;
 import ai.starwhale.mlops.domain.dag.bo.GraphNode;
-import ai.starwhale.mlops.domain.job.Job;
-import ai.starwhale.mlops.domain.job.JobEntity;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.Step;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
-import ai.starwhale.mlops.domain.job.step.StepEntity;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.task.StepHelper;
-import ai.starwhale.mlops.domain.task.TaskEntity;
+import ai.starwhale.mlops.domain.job.step.StepHelper;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -86,7 +86,7 @@ public class DAGQuerier {
     public Graph dagOfJob(String jobUrl, Boolean withTask){
         return dagOfJob(jobManager.getJobId(jobUrl), withTask);
     }
-    public Graph dagOfJob(Long jobId, Boolean withTask){
+    private Graph dagOfJob(Long jobId, Boolean withTask){
 
         Collection<Job> jobs = jobHolder.ofIds(List.of(jobId));
         if(null == jobs || jobs.isEmpty()){
