@@ -42,7 +42,6 @@ example/mnist/data
 example/mnist/sw_output
 example/mnist/test/task_volume
 example/cifar10/data/
-example/cifar10/models/
 example/PennFudanPed/data/
 example/PennFudanPed/models/
 
