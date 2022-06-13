@@ -2,4 +2,4 @@ pycocotools
 numpy==1.21.0
 torch
 torchvision
-starwhale==0.2.0a10
+starwhale
