@@ -25,6 +25,7 @@ from starwhale.utils.error import (
     ExistedError,
     NotFoundError,
     NoSupportError,
+    PythonEnvironmentError,
 )
 from starwhale.utils.process import check_call
 
@@ -138,6 +139,58 @@ def pip_freeze(
     check_call(" ".join(cmd), shell=True)
 
 
+def check_python_interpreter_consistency(mode: str) -> t.Tuple[bool, str, str]:
+    if mode == PythonRunEnv.CONDA:
+        ep_base_prefix = os.environ.get(ENV_CONDA_PREFIX, "")
+    elif mode == PythonRunEnv.VENV:
+        ep_base_prefix = os.environ.get(ENV_VENV, "")
+    else:
+        ep_base_prefix = (
+            os.environ.get(ENV_VENV)
+            or os.environ.get(ENV_CONDA_PREFIX)
+            or sys.base_prefix
+        )
+    logger.debug(
+        f"current python interpreter base_prefix:{sys.base_prefix}, expected env base_prefix:{ep_base_prefix}"
+    )
+    _ok = ep_base_prefix == sys.base_prefix
+    if not _ok:
+        cur_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        user_version = get_user_python_version(mode)
+        if not user_version.startswith(cur_version):
+            logger.error(
+                f"swcli use python:{cur_version}, but runtime venv/conda python:{user_version}"
+            )
+            raise PythonEnvironmentError(
+                f"swcli({cur_version}), runtime({user_version})"
+            )
+
+    return _ok, sys.base_prefix, ep_base_prefix
+
+
+def guess_current_py_env() -> str:
+    if is_venv():
+        return PythonRunEnv.VENV
+    elif is_conda():
+        return PythonRunEnv.CONDA
+    else:
+        return PythonRunEnv.SYSTEM
+
+
+def get_user_python_sys_paths(py_env: str) -> t.List[str]:
+    logger.debug(f"get env({py_env}) sys path")
+    _py_bin = get_user_runtime_python_bin(py_env)
+    console.print(f":snake: [blink red bold]{_py_bin} sys.path [/] :snake:")
+    output = subprocess.check_output(
+        [
+            _py_bin,
+            "-c",
+            "import sys; print(','.join(sys.path))",
+        ]
+    )
+    return output.decode().strip().split(",")
+
+
 def conda_create(
     env: str,
     python_version: str = DEFAULT_PYTHON_VERSION,
@@ -239,7 +292,7 @@ def dump_python_dep_env(
 
     pr_env = get_python_run_env(mode)
     sys_name = platform.system()
-    py_ver = get_python_version(pr_env)
+    py_ver = get_user_python_version(pr_env)
 
     validate_python_environment(mode, expected_runtime, identity)
 
@@ -386,7 +439,7 @@ def create_python_env(
         raise NoSupportError(mode)
 
 
-def get_python_version(py_env: str) -> str:
+def get_user_python_version(py_env: str) -> str:
     _py_bin = get_user_runtime_python_bin(py_env)
     console.print(f":snake: [blink red bold]{_py_bin} version [/] :snake:")
     output = subprocess.check_output(
@@ -541,7 +594,7 @@ def _do_restore_venv(
 def validate_python_environment(mode: str, py_version: str, identity: str = "") -> None:
     # TODO: add os platform check
     current_py_env = get_python_run_env(mode)
-    current_py_version = get_python_version(current_py_env)
+    current_py_version = get_user_python_version(current_py_env)
 
     if py_version and not current_py_version.startswith(py_version):
         raise EnvironmentError(

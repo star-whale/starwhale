@@ -44,3 +44,7 @@ class FormatError(Exception):
 
 class EnvironmentError(Exception):
     pass
+
+
+class PythonEnvironmentError(Exception):
+    pass
