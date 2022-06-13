@@ -22,6 +22,7 @@ import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.job.bo.JobBoConverter;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.job.split.JobSpliterator;
@@ -93,6 +94,9 @@ public class JobService {
 
     @Resource
     private HotJobHolder hotJobHolder;
+
+    @Resource
+    private JobLoader jobLoader;
 
     @Resource
     private TaskMapper taskMapper;
@@ -311,7 +315,7 @@ public class JobService {
         Long jobId = jobManager.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
         if(null == jobs || jobs.isEmpty()){
-            throw new SWValidationException(ValidSubject.JOB).tip("freezing job can't be paused ");
+            throw new SWValidationException(ValidSubject.JOB).tip("frozen job can't be paused ");
         }
         Job job = jobs.stream().findAny().get();
         List<Task> readyToScheduleTasks = tasksOfJob(job)
@@ -323,6 +327,8 @@ public class JobService {
         updateJobStatus(job, JobStatus.PAUSED);
         batchPersistTaskStatus(readyToScheduleTasks,TaskStatus.PAUSED);
         updateWithoutPersistWatcher(readyToScheduleTasks, TaskStatus.PAUSED);
+        hotJobHolder.remove(jobId);
+        log.info("job removed from hotJobHolder because of paused");
 
     }
 
@@ -352,33 +358,20 @@ public class JobService {
     }
 
     /**
-     * transactional
+     *
      * jobStatus PAUSED->RUNNING; taskStatus PAUSED->CREATED
+     * jobStatus FAILED->RUNNING; taskStatus PAUSED->CREATED
      */
-    @Transactional
     public void resumeJob(String jobUrl){
         Long jobId = jobManager.getJobId(jobUrl);
-        Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
-        if(null == jobs || jobs.isEmpty()){
-            log.warn("no tasks found for job {} in task machine",jobId);
-            return;
+        JobEntity  jobEntity= jobMapper.findJobById(jobId);
+        if(null == jobEntity ){
+            throw new SWValidationException(ValidSubject.JOB).tip("job not exists");
         }
-        Job job = jobs.stream().findAny().get();
-        if(job.getStatus() != JobStatus.PAUSED){
-            throw new SWValidationException(ValidSubject.JOB).tip("unpaused job can't be resumed ");
+        if(jobEntity.getJobStatus() != JobStatus.PAUSED || jobEntity.getJobStatus() != JobStatus.FAIL){
+            throw new SWValidationException(ValidSubject.JOB).tip("only failed and paused job can be resumed ");
         }
-
-        List<Task> pausedTasks = tasksOfJob(job)
-            .filter(task -> task.getStatus().equals(TaskStatus.PAUSED))
-            .collect(
-                Collectors.toList());
-        if(null == pausedTasks || pausedTasks.isEmpty()){
-            return;
-        }
-        updateJobStatus(job, JobStatus.RUNNING);
-        batchPersistTaskStatus(pausedTasks,TaskStatus.READY);
-        updateWithoutPersistWatcher(pausedTasks, TaskStatus.READY);
-
+        jobLoader.loadEntities(List.of(jobEntity));
     }
 
 }
