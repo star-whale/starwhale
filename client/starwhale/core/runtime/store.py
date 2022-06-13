@@ -47,4 +47,4 @@ class RuntimeStorage(BaseStorage):
         return self.snapshot_workdir / DEFAULT_MANIFEST_NAME
 
     def get_docker_base_image(self) -> str:
-        return self.mainfest.get("base_image", DEFAULT_SW_TASK_RUN_IMAGE)
+        return self.manifest.get("base_image", DEFAULT_SW_TASK_RUN_IMAGE)

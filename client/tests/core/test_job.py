@@ -60,8 +60,8 @@ class StandaloneJobTestCase(TestCase):
             ).absolute()
         )
 
-        assert store.mainfest["version"] == self.job_name
-        assert "model" in store.mainfest
+        assert store.manifest["version"] == self.job_name
+        assert "model" in store.manifest
         assert (
             store.eval_report_path
             == (Path(self.job_dir) / "cmp" / "result" / "current").absolute()
