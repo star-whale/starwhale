@@ -24,7 +24,9 @@ import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.common.util.TagUtil;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
@@ -252,6 +254,23 @@ public class SWModelPackageService {
             .build();
         int update = swmpVersionMapper.update(entity);
         log.info("SWMPVersion has been modified. ID={}", version.getId());
+        return update > 0;
+    }
+
+
+    public Boolean manageVersionTag(String projectUrl, String modelUrl, String versionUrl,
+        TagAction tagAction) {
+        Long id = swmpManager.getSWMPId(modelUrl);
+        Long versionId = swmpManager.getSWMPVersionId(versionUrl, id);
+
+        SWModelPackageVersionEntity entity = swmpVersionMapper.findVersionById(versionId);
+        if(entity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
+                .tip("Unable to find the version of swmp " + versionUrl), HttpStatus.BAD_REQUEST);
+        }
+        entity.setVersionTag(TagUtil.getTags(tagAction, entity.getVersionTag()));
+        int update = swmpVersionMapper.update(entity);
+        log.info("SWMPVersion has been modified. ID={}", entity.getId());
         return update > 0;
     }
 

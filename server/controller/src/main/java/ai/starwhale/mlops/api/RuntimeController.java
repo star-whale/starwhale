@@ -26,6 +26,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.runtime.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.runtime.RuntimeVersion;
@@ -33,6 +34,8 @@ import ai.starwhale.mlops.domain.runtime.RuntimeVersionQuery;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
@@ -129,6 +132,24 @@ public class RuntimeController implements RuntimeApi {
 
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Modify runtime failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> manageRuntimeTag(String projectUrl,
+        String runtimeUrl, String versionUrl, String action, String tags) {
+        TagAction ta;
+        try {
+            ta = TagAction.of(action, tags);
+        } catch (IllegalArgumentException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(String.format("Unknown tag action %s ", action)),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        Boolean res = runtimeService.manageVersionTag(projectUrl, runtimeUrl, versionUrl, ta);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update runtime tag failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));

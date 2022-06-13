@@ -26,6 +26,7 @@ import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.swds.SWDSQuery;
 import ai.starwhale.mlops.domain.swds.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.SWDSVersionQuery;
@@ -204,6 +205,24 @@ public class DatasetController implements DatasetApi{
         Boolean res = swDatasetService.modifySWDSVersion(datasetUrl, versionUrl,
             SWDSVersion.builder().tag(tag).build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> manageDatasetTag(String projectUrl,
+        String datasetUrl, String versionUrl, String action, String tags) {
+        TagAction ta;
+        try {
+            ta = TagAction.of(action, tags);
+        } catch (IllegalArgumentException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip(String.format("Unknown tag action %s ", action)),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        Boolean res = swDatasetService.manageVersionTag(projectUrl, datasetUrl, versionUrl, ta);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update dataset tag failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 

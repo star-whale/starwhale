@@ -25,7 +25,9 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.common.util.TagUtil;
 import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -35,6 +37,7 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
+import ai.starwhale.mlops.domain.swmp.SWModelPackageVersionEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
@@ -183,6 +186,22 @@ public class RuntimeService {
             .versionTag(tag)
             .build();
 
+        int update = runtimeVersionMapper.update(entity);
+        log.info("Runtime Version has been modified. ID={}", entity.getId());
+        return update > 0;
+    }
+
+    public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
+        TagAction tagAction) {
+        Long id = runtimeManager.getRuntimeId(runtimeUrl);
+        Long versionId = runtimeManager.getRuntimeVersionId(versionUrl, id);
+
+        RuntimeVersionEntity entity = runtimeVersionMapper.findVersionById(versionId);
+        if(entity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
+                .tip("Unable to find the version of runtime " + versionUrl), HttpStatus.BAD_REQUEST);
+        }
+        entity.setVersionTag(TagUtil.getTags(tagAction, entity.getVersionTag()));
         int update = runtimeVersionMapper.update(entity);
         log.info("Runtime Version has been modified. ID={}", entity.getId());
         return update > 0;

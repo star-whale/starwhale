@@ -180,6 +180,34 @@ public interface RuntimeApi {
         @RequestParam(value = "tag", required = false)
         String tag);
 
+    @Operation(summary = "Manage tag of the runtime version")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag")
+    ResponseEntity<ResponseMessage<String>> manageRuntimeTag(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project url",
+            schema = @Schema())
+        @PathVariable("projectUrl")
+        String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("runtimeUrl")
+        String runtimeUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionUrl")
+        String versionUrl,
+        @Parameter(
+            in = ParameterIn.QUERY,
+            description = "add | remove | set",
+            schema = @Schema())
+        @Valid
+        @RequestParam(value = "action")
+        String action,
+        @Parameter(in = ParameterIn.QUERY, schema = @Schema())
+        @Valid
+        @RequestParam(value = "tags")
+        String tags);
+
     @Operation(summary = "List Runtime versions info",
         description = "List Runtime versions info. ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})

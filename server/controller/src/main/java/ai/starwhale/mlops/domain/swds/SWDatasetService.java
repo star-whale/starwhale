@@ -24,7 +24,9 @@ import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.common.util.TagUtil;
 import ai.starwhale.mlops.domain.project.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StorageService;
@@ -192,6 +194,22 @@ public class SWDatasetService {
             .id(versionId)
             .versionTag(version.getTag())
             .build();
+        int update = swdsVersionMapper.update(entity);
+        log.info("SWDS Version has been modified. ID={}", entity.getId());
+        return update > 0;
+    }
+
+    public Boolean manageVersionTag(String projectUrl, String datasetUrl, String versionUrl,
+        TagAction tagAction) {
+        Long id = swdsManager.getSWDSId(datasetUrl);
+        Long versionId = swdsManager.getSWDSVersionId(versionUrl, id);
+
+        SWDatasetVersionEntity entity = swdsVersionMapper.getVersionById(versionId);
+        if(entity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                .tip("Unable to find the version of swds " + versionUrl), HttpStatus.BAD_REQUEST);
+        }
+        entity.setVersionTag(TagUtil.getTags(tagAction, entity.getVersionTag()));
         int update = swdsVersionMapper.update(entity);
         log.info("SWDS Version has been modified. ID={}", entity.getId());
         return update > 0;
