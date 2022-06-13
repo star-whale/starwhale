@@ -42,13 +42,14 @@ public class JobStatusMachine {
         , new SimpleEntry<>(PAUSED, Set.of(READY,RUNNING,CANCELED,FAIL))
         , new SimpleEntry<>(RUNNING, Set.of(PAUSED,SUCCESS,FAIL))
         , new SimpleEntry<>(SUCCESS, Set.of())
-        , new SimpleEntry<>(FAIL, Set.of())
+        , new SimpleEntry<>(FAIL, Set.of(READY,RUNNING,SUCCESS))
         , new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING,CANCELED,FAIL))
         , new SimpleEntry<>(CANCELLING, Set.of(CANCELED,FAIL))
         , new SimpleEntry<>(CANCELED, Set.of())
         , new SimpleEntry<>(UNKNOWN, Set.of(JobStatus.values())));
 
-    final static Set<JobStatus> HOT_JOB_STATUS=Set.of(READY, RUNNING, TO_CANCEL, CANCELLING, PAUSED);
+    final static Set<JobStatus> HOT_JOB_STATUS=Set.of(READY, RUNNING, TO_CANCEL, CANCELLING);
+    final static Set<JobStatus> FINAL_STATUS=Set.of(FAIL, SUCCESS, CANCELED);
     public boolean couldTransfer(JobStatus statusNow,JobStatus statusNew) {
         return transferMap.get(statusNow).contains(statusNew);
     }
@@ -58,7 +59,7 @@ public class JobStatusMachine {
     }
 
     public boolean isFinal(JobStatus status) {
-        return transferMap.get(status).isEmpty();
+        return FINAL_STATUS.contains(status);
     }
 
 }

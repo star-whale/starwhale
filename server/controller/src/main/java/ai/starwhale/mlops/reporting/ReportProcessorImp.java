@@ -144,7 +144,7 @@ public class ReportProcessorImp implements ReportProcessor {
         reportedTasks.forEach(reportedTask -> {
             Collection<Task> optionalTasks = jobHolder.tasksOfIds(List.of(reportedTask.getId()));
             if(null == optionalTasks || optionalTasks.isEmpty()){
-                log.warn("unknown tasks reported {}, status directly update to DB",reportedTask.getId());
+                log.warn("un-cached tasks reported {}, status directly update to DB",reportedTask.getId());
                 taskMapper.updateTaskStatus(List.of(reportedTask.getId()),reportedTask.getStatus());
                 return;
             }
