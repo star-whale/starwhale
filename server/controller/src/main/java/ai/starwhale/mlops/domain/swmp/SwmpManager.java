@@ -17,8 +17,7 @@
 package ai.starwhale.mlops.domain.swmp;
 
 import ai.starwhale.mlops.common.IDConvertor;
-import ai.starwhale.mlops.domain.swmp.bo.SWMPObject;
-import ai.starwhale.mlops.domain.swmp.bo.SWMPVersion;
+import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
@@ -26,7 +25,6 @@ import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
-import cn.hutool.core.util.StrUtil;
 import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -41,41 +39,15 @@ public class SwmpManager {
     @Resource
     private IDConvertor idConvertor;
 
-    public SWMPObject fromUrl(String runtimeUrl) {
-        if(idConvertor.isID(runtimeUrl)) {
-            return SWMPObject.builder().id(idConvertor.revert(runtimeUrl)).build();
-        } else {
-            return SWMPObject.builder().name(runtimeUrl).build();
-        }
-    }
+    @Resource
+    private ProjectManager projectManager;
 
-    public SWMPVersion fromVersionUrl(String versionUrl) {
-        if(idConvertor.isID(versionUrl)) {
-            return SWMPVersion.builder().id(idConvertor.revert(versionUrl)).build();
-        } else {
-            return SWMPVersion.builder().name(versionUrl).build();
+    public Long getSWMPId(String swmpUrl, String projectUrl) {
+        if(idConvertor.isID(swmpUrl)) {
+            return idConvertor.revert(swmpUrl);
         }
-    }
-
-    public SWModelPackageEntity findSWMP(String swmpUrl) {
-        return findSWMP(fromUrl(swmpUrl));
-    }
-
-    public SWModelPackageEntity findSWMP(SWMPObject swmpObject) {
-        if(swmpObject.getId() != null) {
-            return swmpMapper.findSWModelPackageById(swmpObject.getId());
-        } else if (!StrUtil.isEmpty(swmpObject.getName())) {
-            return swmpMapper.findByName(swmpObject.getName());
-        }
-        return null;
-    }
-
-    public Long getSWMPId(String swmpUrl) {
-        SWMPObject swmpObject = fromUrl(swmpUrl);
-        if(swmpObject.getId() != null) {
-            return swmpObject.getId();
-        }
-        SWModelPackageEntity entity = swmpMapper.findByName(swmpObject.getName());
+        Long projectId = projectManager.getProjectId(projectUrl);
+        SWModelPackageEntity entity = swmpMapper.findByName(swmpUrl, projectId);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                 .tip(String.format("Unable to find swmp %s", swmpUrl)), HttpStatus.BAD_REQUEST);
@@ -84,11 +56,10 @@ public class SwmpManager {
     }
 
     public Long getSWMPVersionId(String versionUrl, Long swmpId) {
-        SWMPVersion version = fromVersionUrl(versionUrl);
-        if(version.getId() != null) {
-            return version.getId();
+        if(idConvertor.isID(versionUrl)) {
+            return idConvertor.revert(versionUrl);
         }
-        SWModelPackageVersionEntity entity = versionMapper.findByNameAndSwmpId(version.getName(), swmpId);
+        SWModelPackageVersionEntity entity = versionMapper.findByNameAndSwmpId(versionUrl, swmpId);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                 .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);

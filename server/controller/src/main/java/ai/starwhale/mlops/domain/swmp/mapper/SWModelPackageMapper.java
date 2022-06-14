@@ -35,12 +35,12 @@ public interface SWModelPackageMapper {
 
     List<SWModelPackageEntity> findSWModelPackagesByIds(@Param("ids")List<Long> ids);
 
-    SWModelPackageEntity findByNameForUpdate(@Param("name")String name);
+    SWModelPackageEntity findByNameForUpdate(@Param("name")String name, @Param("projectId") Long projectId);
 
-    SWModelPackageEntity findByName(@Param("name")String name);
+    SWModelPackageEntity findByName(@Param("name")String name, @Param("projectId") Long projectId);
 
     SWModelPackageEntity findDeletedSWModelPackageById(@Param("id")Long id);
 
-    List<SWModelPackageEntity> listDeletedSWModelPackages(@Param("name")String name);
+    List<SWModelPackageEntity> listDeletedSWModelPackages(@Param("name")String name, @Param("projectId")Long projectId);
 
 }

@@ -80,12 +80,19 @@
 
     <select id="findByNameForUpdate" resultMap="swmpResultMap" >
         <include refid="select_swmp"/>
-        and s.swmp_name = #{name} for update
+        and s.swmp_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
+        for update
     </select>
 
     <select id="findByName" resultMap="swmpResultMap" >
         <include refid="select_swmp"/>
         and s.swmp_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
     </select>
 
 
@@ -132,6 +139,9 @@
         where is_deleted = 1
         <if test="name != null and name != ''">
             and swmp_name = #{name}
+        </if>
+        <if test="projectId != null">
+            and project_id = #{projectId}
         </if>
         order by modified_time desc
     </select>
