@@ -347,7 +347,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         if mode == PythonRunEnv.VENV:
             venv_install_req(_id, req=_pkg_name, enable_pre=True)
         elif mode == PythonRunEnv.CONDA:
-            conda_install_req(_id, req=_pkg_name, enable_pre=True)
+            conda_install_req(env_name=_id, req=_pkg_name, enable_pre=True)
 
         cls.render_runtime_yaml(config, workdir, force)
         activate_python_env(mode=mode, identity=_id)
@@ -392,6 +392,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             mode=_manifest["dep"]["env"],
             python_version=_manifest["dep"]["python"],
             local_gen_env=_manifest["dep"]["local_gen_env"],
+            pip_req=_manifest.get("user_raw_config", {}).get("pip_req", ""),
         )
 
 

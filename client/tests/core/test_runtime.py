@@ -294,12 +294,15 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.create_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
             contents=yaml.safe_dump(
-                {"dep": {"env": "venv", "local_gen_env": False, "python": "3.7"}}
+                {
+                    "dep": {"env": "venv", "local_gen_env": False, "python": "3.7"},
+                    "user_raw_config": {"pip_req": "requirements-test.txt"},
+                }
             ),
         )
         ensure_dir(python_dir)
         self.fs.create_file(
-            os.path.join(python_dir, "requirements.txt"), contents="test1==0.0.1"
+            os.path.join(python_dir, "requirements-test.txt"), contents="test1==0.0.1"
         )
         self.fs.create_file(
             os.path.join(python_dir, "requirements-lock.txt"), contents="test2==0.0.1"
@@ -309,14 +312,13 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_call.call_count == 2
         pip_lock_cmd = m_call.call_args_list[0][0][0]
         pip_cmd = m_call.call_args_list[1][0][0]
-
         assert m_venv.call_args[0][0] == [
             os.path.join(python_dir, "venv"),
             "--python",
             "3.7",
         ]
         assert pip_lock_cmd[-1] == os.path.join(python_dir, "requirements-lock.txt")
-        assert pip_cmd[-1] == os.path.join(python_dir, "requirements.txt")
+        assert pip_cmd[-1] == os.path.join(python_dir, "requirements-test.txt")
 
         RuntimeTermView.restore(workdir)
 
