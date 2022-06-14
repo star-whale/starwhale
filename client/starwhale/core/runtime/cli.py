@@ -6,7 +6,6 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     DEFAULT_PYTHON_VERSION,
-    DEFAULT_SW_TASK_RUN_IMAGE,
 )
 
 from .view import RuntimeTermView
@@ -31,11 +30,8 @@ def runtime_cmd() -> None:
     help="runtime mode",
 )
 @click.option("--python", default=DEFAULT_PYTHON_VERSION, help="Python Version")
-@click.option("--base-image", default=DEFAULT_SW_TASK_RUN_IMAGE, help="docker image")
 @click.option("-f", "--force", is_flag=True, help="force create runtime")
-def _create(
-    workdir: str, name: str, mode: str, python: str, base_image: str, force: bool
-) -> None:
+def _create(workdir: str, name: str, mode: str, python: str, force: bool) -> None:
     # TODO: add runtime argument
     RuntimeTermView.create(
         workdir=workdir,
@@ -43,7 +39,6 @@ def _create(
         mode=mode,
         python_version=python,
         force=force,
-        base_image=base_image,
     )
 
 

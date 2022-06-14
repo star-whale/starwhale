@@ -10,15 +10,18 @@ from collections import defaultdict
 import yaml
 from loguru import logger
 
-from starwhale.utils import console, validate_obj_name
+from starwhale.utils import console, validate_obj_name, get_downloadable_sw_version
 from starwhale.consts import (
     PythonRunEnv,
+    SW_IMAGE_FMT,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
+    SW_PYPI_PKG_NAME,
     DEFAULT_PAGE_SIZE,
+    ENV_SW_IMAGE_REPO,
+    DEFAULT_IMAGE_REPO,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_PYTHON_VERSION,
-    DEFAULT_SW_TASK_RUN_IMAGE,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
@@ -28,6 +31,8 @@ from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
     detect_pip_req,
+    venv_install_req,
+    conda_install_req,
     create_python_env,
     restore_python_env,
     activate_python_env,
@@ -54,15 +59,14 @@ class RuntimeConfig(object):
         mode: str,
         python_version: str,
         pip_req: str = DUMP_USER_PIP_REQ_FNAME,
-        base_image: str = DEFAULT_SW_TASK_RUN_IMAGE,
         **kw: t.Any,
     ) -> None:
         self.name = name.strip().lower()
         self.mode = mode
         self.python_version = python_version.strip()
         self.pip_req = pip_req
-        self.base_image = base_image
         self.kw = kw
+        self.starwhale_version = get_downloadable_sw_version()
 
         self._do_validate()
 
@@ -85,7 +89,9 @@ class RuntimeConfig(object):
         return cls(**c)
 
     def as_dict(self) -> t.Dict[str, t.Any]:
-        return deepcopy(self.__dict__)
+        _d = deepcopy(self.__dict__)
+        _d.pop("kw", None)
+        return _d
 
 
 class Runtime(BaseBundle):
@@ -102,7 +108,6 @@ class Runtime(BaseBundle):
         name: str,
         python_version: str = DEFAULT_PYTHON_VERSION,
         mode: str = PythonRunEnv.VENV,
-        base_image: str = DEFAULT_SW_TASK_RUN_IMAGE,
         force: bool = False,
     ) -> None:
         StandaloneRuntime.create(
@@ -110,7 +115,6 @@ class Runtime(BaseBundle):
             name=name,
             python_version=python_version,
             mode=mode,
-            base_image=base_image,
             force=force,
         )
 
@@ -237,7 +241,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         run_with_progress_bar("runtime bundle building...", operations)
 
     def _dump_base_image(self, config: RuntimeConfig) -> None:
-        base_image = config.base_image or DEFAULT_SW_TASK_RUN_IMAGE
+        _repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
+        _tag = config.starwhale_version or "latest"
+        base_image = SW_IMAGE_FMT.format(repo=_repo, tag=_tag)
+
         console.print(
             f":rainbow: runtime docker image: [red]{base_image}[/]  :rainbow:"
         )
@@ -318,12 +325,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         name: str,
         python_version: str = DEFAULT_PYTHON_VERSION,
         mode: str = PythonRunEnv.VENV,
-        base_image: str = DEFAULT_SW_TASK_RUN_IMAGE,
         force: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
+        config = RuntimeConfig(name=name, mode=mode, python_version=python_version)
+
         ensure_dir(workdir)
-        # TODO: auto install requirements.txt
         _id = create_python_env(
             mode=mode,
             name=name,
@@ -332,9 +339,16 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             force=force,
         )
 
-        config = RuntimeConfig(
-            name=name, mode=mode, python_version=python_version, base_image=base_image
-        )
+        _pkg_name = SW_PYPI_PKG_NAME
+        if config.starwhale_version:
+            _pkg_name = f"{_pkg_name}=={config.starwhale_version}"
+
+        console.print(f":dog: install {_pkg_name} {mode}@{_id}...")
+        if mode == PythonRunEnv.VENV:
+            venv_install_req(_id, req=_pkg_name, enable_pre=True)
+        elif mode == PythonRunEnv.CONDA:
+            conda_install_req(_id, req=_pkg_name, enable_pre=True)
+
         cls.render_runtime_yaml(config, workdir, force)
         activate_python_env(mode=mode, identity=_id)
 

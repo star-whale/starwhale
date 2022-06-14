@@ -12,7 +12,8 @@ from datetime import datetime
 
 from rich.console import Console
 
-from starwhale.consts import FMT_DATETIME
+from starwhale import __version__
+from starwhale.consts import FMT_DATETIME, SW_DEV_DUMMY_VERSION
 
 console = Console(soft_wrap=True)
 now_str = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
@@ -129,3 +130,8 @@ def validate_obj_name(name: str) -> t.Tuple[bool, str]:
         )
 
     return True, ""
+
+
+def get_downloadable_sw_version() -> str:
+    _v = __version__
+    return "" if _v == SW_DEV_DUMMY_VERSION else _v
