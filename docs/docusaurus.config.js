@@ -61,52 +61,17 @@ module.exports = {
           "aria-label": "Slack Channel",
           label: "Slack",
         },
-        // {
-        //   type: "localeDropdown",
-        //   position: "right",
-        // },
+        {
+          type: "localeDropdown",
+          position: "right",
+        },
       ],
     },
     footer: {
       style: "light",
       copyright: `Copyright © ${new Date().getFullYear()} Starwhale,Inc. All rights reserved. `,
 
-      links: [
-        // {
-        //   title: "Quickstart",
-        //   items: [
-        //     {
-        //       label: "Documentation",
-        //       to: "/docs",
-        //     },
-        //     {
-        //       label: "Examples",
-        //       to: "/docs/examples",
-        //     },
-        //     {
-        //       label: "Star us on Github",
-        //       to: "https://github.com/star-whale/starwhale",
-        //     },
-        //   ],
-        // },
-        // {
-        //   title: "Company",
-        //   items: [
-        //     {
-        //       label: "About Us",
-        //       to: "/docs/company/about",
-        //     },
-        //     {
-        //       label: "Contact Us",
-        //       to: "/docs/company/contact",
-        //     },
-        //   ],
-        // },
-      ],
-      // logo: {
-      //   alt: "Starwhale Open Source Logo",
-      //   src: "img/starwhale-white.png",
-      // },
+      links: [],
     },
     custom: {
       footerSocials: [
@@ -123,11 +88,7 @@ module.exports = {
           to: "#",
         },
         {
-          icon: "icon-Instagram",
-          to: "#",
-        },
-        {
-          icon: "icon-Youtub",
+          icon: "icon-Youtube",
           to: "#",
         },
       ],
