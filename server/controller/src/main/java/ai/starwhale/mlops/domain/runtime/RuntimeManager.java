@@ -17,8 +17,7 @@
 package ai.starwhale.mlops.domain.runtime;
 
 import ai.starwhale.mlops.common.IDConvertor;
-import ai.starwhale.mlops.domain.runtime.bo.Runtime;
-import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
+import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
@@ -26,7 +25,6 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
-import cn.hutool.core.util.StrUtil;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -43,41 +41,15 @@ public class RuntimeManager {
     @Resource
     private IDConvertor idConvertor;
 
-    public Runtime fromUrl(String runtimeUrl) {
+    @Resource
+    private ProjectManager projectManager;
+
+    public Long getRuntimeId(String runtimeUrl, String projectUrl) {
         if(idConvertor.isID(runtimeUrl)) {
-            return Runtime.builder().id(idConvertor.revert(runtimeUrl)).build();
-        } else {
-            return Runtime.builder().name(runtimeUrl).build();
+            return idConvertor.revert(runtimeUrl);
         }
-    }
-
-    public RuntimeVersion fromVersionUrl(String runtimeVersionUrl) {
-        if(idConvertor.isID(runtimeVersionUrl)) {
-            return RuntimeVersion.builder().id(idConvertor.revert(runtimeVersionUrl)).build();
-        } else {
-            return RuntimeVersion.builder().versionName(runtimeVersionUrl).build();
-        }
-    }
-
-    public RuntimeEntity findRuntime(String runtimeUrl) {
-        return findRuntime(fromUrl(runtimeUrl));
-    }
-
-    public RuntimeEntity findRuntime(Runtime runtime) {
-        if(runtime.getId() != null) {
-            return runtimeMapper.findRuntimeById(runtime.getId());
-        } else if (!StrUtil.isEmpty(runtime.getName())) {
-            return runtimeMapper.findByName(runtime.getName());
-        }
-        return null;
-    }
-
-    public Long getRuntimeId(String runtimeUrl) {
-        Runtime runtime = fromUrl(runtimeUrl);
-        if(runtime.getId() != null) {
-            return runtime.getId();
-        }
-        RuntimeEntity runtimeEntity = runtimeMapper.findByName(runtime.getName());
+        Long projectId = projectManager.getProjectId(projectUrl);
+        RuntimeEntity runtimeEntity = runtimeMapper.findByName(runtimeUrl, projectId);
         if(runtimeEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
                 .tip(String.format("Unable to find Runtime %s", runtimeUrl)), HttpStatus.BAD_REQUEST);
@@ -85,15 +57,14 @@ public class RuntimeManager {
         return runtimeEntity.getId();
     }
 
-    public Long getRuntimeVersionId(String runtimeVersionUrl, Long runtimeId) {
-        RuntimeVersion version = fromVersionUrl(runtimeVersionUrl);
-        if(version.getId() != null) {
-            return version.getId();
+    public Long getRuntimeVersionId(String versionUrl, Long runtimeId) {
+        if(idConvertor.isID(versionUrl)) {
+            return idConvertor.revert(versionUrl);
         }
-        RuntimeVersionEntity entity = runtimeVersionMapper.findByNameAndRuntimeId(version.getVersionName(), runtimeId);
+        RuntimeVersionEntity entity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, runtimeId);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                .tip(String.format("Unable to find Runtime %s", runtimeVersionUrl)), HttpStatus.BAD_REQUEST);
+                .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
     }

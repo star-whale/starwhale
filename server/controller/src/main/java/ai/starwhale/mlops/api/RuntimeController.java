@@ -72,7 +72,7 @@ public class RuntimeController implements RuntimeApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(String projectUrl,
         String runtimeUrl, RuntimeRevertRequest revertRequest) {
-        Boolean res = runtimeService.revertVersionTo(runtimeUrl, revertRequest.getVersion());
+        Boolean res = runtimeService.revertVersionTo(projectUrl, runtimeUrl, revertRequest.getVersion());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert runtime version failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -124,7 +124,7 @@ public class RuntimeController implements RuntimeApi {
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyRuntime(String projectUrl,
         String runtimeUrl, String runtimeVersionUrl, RuntimeTagRequest tagRequest) {
-        Boolean res = runtimeService.modifyRuntimeVersion(runtimeUrl, runtimeVersionUrl,
+        Boolean res = runtimeService.modifyRuntimeVersion(projectUrl, runtimeUrl, runtimeVersionUrl,
             RuntimeVersion.builder()
                 .versionTag(tagRequest.getTag()).build());
 

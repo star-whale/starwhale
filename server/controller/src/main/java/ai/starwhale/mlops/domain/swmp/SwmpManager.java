@@ -62,7 +62,7 @@ public class SwmpManager {
         SWModelPackageVersionEntity entity = versionMapper.findByNameAndSwmpId(versionUrl, swmpId);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);
+                .tip(String.format("Unable to find swmp %s", versionUrl)), HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
     }

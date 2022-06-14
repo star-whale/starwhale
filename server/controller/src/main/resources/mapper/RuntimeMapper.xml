@@ -68,12 +68,19 @@
 
     <select id="findByNameForUpdate" resultMap="runtimeResultMap" >
         <include refid="select_runtime"/>
-        and s.runtime_name = #{name} for update
+        and s.runtime_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
+        for update
     </select>
 
     <select id="findByName" resultMap="runtimeResultMap" >
         <include refid="select_runtime"/>
         and s.runtime_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
     </select>
 
     <insert id="addRuntime" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
@@ -118,6 +125,9 @@
         where is_deleted = 1
         <if test="runtimeName != null and runtimeName != ''">
             and runtime_name = #{runtimeName}
+        </if>
+        <if test="projectId != null">
+            and project_id = #{projectId}
         </if>
         order by modified_time desc
     </select>

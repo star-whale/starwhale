@@ -130,18 +130,18 @@ public class RuntimeService {
     }
 
     public Boolean deleteRuntime(RuntimeQuery runtimeQuery) {
-        Long id = runtimeManager.getRuntimeId(runtimeQuery.getRuntimeUrl());
+        Long id = runtimeManager.getRuntimeId(runtimeQuery.getRuntimeUrl(), runtimeQuery.getProjectUrl());
         int res = runtimeMapper.deleteRuntime(id);
         log.info("Runtime has been deleted. ID={}", id);
         return res > 0;
     }
 
     public RuntimeInfoVO getRuntimeInfo(RuntimeQuery runtimeQuery) {
-        String rtUrl = runtimeQuery.getRuntimeUrl();
-        RuntimeEntity rt = runtimeManager.findRuntime(runtimeQuery.getRuntimeUrl());
+        Long runtimeId = runtimeManager.getRuntimeId(runtimeQuery.getRuntimeUrl(), runtimeQuery.getProjectUrl());
+        RuntimeEntity rt = runtimeMapper.findRuntimeById(runtimeId);
         if(rt == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                .tip("Unable to find runtime " + rtUrl), HttpStatus.BAD_REQUEST);
+                .tip("Unable to find runtime " + runtimeQuery.getRuntimeUrl()), HttpStatus.BAD_REQUEST);
         }
 
         RuntimeVersionEntity versionEntity = null;
@@ -154,7 +154,7 @@ public class RuntimeService {
         }
         if(versionEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                .tip("Unable to find the latest version of runtime " + rtUrl), HttpStatus.BAD_REQUEST);
+                .tip("Unable to find the latest version of runtime " + runtimeQuery.getRuntimeUrl()), HttpStatus.BAD_REQUEST);
         }
 
         return toRuntimeInfoVO(rt, versionEntity);
@@ -182,8 +182,8 @@ public class RuntimeService {
         }
     }
 
-    public Boolean modifyRuntimeVersion(String runtimeUrl, String runtimeVersionUrl, RuntimeVersion version) {
-        Long runtimeId = runtimeManager.getRuntimeId(runtimeUrl);
+    public Boolean modifyRuntimeVersion(String projectUrl, String runtimeUrl, String runtimeVersionUrl, RuntimeVersion version) {
+        Long runtimeId = runtimeManager.getRuntimeId(runtimeUrl, projectUrl);
         Long versionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, runtimeId);
         String tag = version.getVersionTag();
         RuntimeVersionEntity entity = RuntimeVersionEntity.builder()
@@ -198,7 +198,7 @@ public class RuntimeService {
 
     public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
         TagAction tagAction) {
-        Long id = runtimeManager.getRuntimeId(runtimeUrl);
+        Long id = runtimeManager.getRuntimeId(runtimeUrl, projectUrl);
         Long versionId = runtimeManager.getRuntimeVersionId(versionUrl, id);
 
         RuntimeVersionEntity entity = runtimeVersionMapper.findVersionById(versionId);
@@ -212,8 +212,8 @@ public class RuntimeService {
         return update > 0;
     }
 
-    public Boolean revertVersionTo(String runtimeUrl, String runtimeVersionUrl) {
-        Long runtimeId = runtimeManager.getRuntimeId(runtimeUrl);
+    public Boolean revertVersionTo(String projectUrl, String runtimeUrl, String runtimeVersionUrl) {
+        Long runtimeId = runtimeManager.getRuntimeId(runtimeUrl, projectUrl);
         Long versionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, runtimeId);
         int res = runtimeVersionMapper.revertTo(runtimeId, versionId);
         log.info("Runtime Version {} has been revert to {}", runtimeId, versionId);
@@ -221,7 +221,7 @@ public class RuntimeService {
     }
 
     public PageInfo<RuntimeVersionVO> listRuntimeVersionHistory(RuntimeVersionQuery query, PageParams pageParams) {
-        Long runtimeId = runtimeManager.getRuntimeId(query.getRuntimeUrl());
+        Long runtimeId = runtimeManager.getRuntimeId(query.getRuntimeUrl(), query.getProjectUrl());
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<RuntimeVersionEntity> entities = runtimeVersionMapper.listVersions(
             runtimeId, query.getVersionName(), query.getVersionTag());
@@ -259,7 +259,8 @@ public class RuntimeService {
 
     public List<RuntimeInfoVO> listRuntimeInfo(String project, String name) {
         if(StringUtils.hasText(name)){
-            RuntimeEntity rt = runtimeMapper.findByName(name);
+            Long projectId = projectManager.getProjectId(project);
+            RuntimeEntity rt = runtimeMapper.findByName(name, projectId);
             if(rt == null) {
                 throw new SWValidationException(ValidSubject.RUNTIME)
                     .tip("Unable to find the runtime with name " + name);
@@ -298,7 +299,8 @@ public class RuntimeService {
 
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}", startTime);
-        RuntimeEntity entity = runtimeMapper.findByNameForUpdate(uploadRequest.name());
+        Long projectId = projectManager.getProjectId(uploadRequest.getProject());
+        RuntimeEntity entity = runtimeMapper.findByNameForUpdate(uploadRequest.name(), projectId);
         if (null == entity) {
             //create
             ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject());
@@ -356,7 +358,8 @@ public class RuntimeService {
     }
 
     public void pull(ClientRuntimeRequest pullRequest, HttpServletResponse httpResponse) {
-        RuntimeEntity runtimeEntity = runtimeMapper.findByName(pullRequest.name());
+        Long projectId = projectManager.getProjectId(pullRequest.getProject());
+        RuntimeEntity runtimeEntity = runtimeMapper.findByName(pullRequest.name(), projectId);
         if(null == runtimeEntity){
             throw new SWValidationException(ValidSubject.RUNTIME).tip("Runtime not found");
         }
@@ -390,7 +393,8 @@ public class RuntimeService {
     }
 
     public String query(ClientRuntimeRequest queryRequest) {
-        RuntimeEntity entity = runtimeMapper.findByName(queryRequest.name());
+        Long projectId = projectManager.getProjectId(queryRequest.getProject());
+        RuntimeEntity entity = runtimeMapper.findByName(queryRequest.name(), projectId);
         if(null == entity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME),HttpStatus.NOT_FOUND);
         }
@@ -402,39 +406,40 @@ public class RuntimeService {
     }
 
     public Boolean recoverRuntime(String projectUrl, String runtimeUrl) {
-        Runtime runtime = runtimeManager.fromUrl(runtimeUrl);
-        String runtimeName = runtime.getName();
-        Long id = runtime.getId();
-        if(id != null) {
+        Long projectId = projectManager.getProjectId(projectUrl);
+        String name = runtimeUrl;
+        Long id;
+        if(idConvertor.isID(runtimeUrl)) {
+            id = idConvertor.revert(runtimeUrl);
             RuntimeEntity entity = runtimeMapper.findDeletedRuntimeById(id);
             if(entity == null) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
                     .tip("Recover runtime error. Runtime can not be found. "), HttpStatus.BAD_REQUEST);
             }
-            runtimeName = entity.getRuntimeName();
-        } else if (!StrUtil.isEmpty(runtimeName)) {
+            name = entity.getRuntimeName();
+        } else {
             // To restore projects by name, need to check whether there are duplicate names
-            List<RuntimeEntity> deletedRuntimes = runtimeMapper.listDeletedRuntimes(runtimeName);
+            List<RuntimeEntity> deletedRuntimes = runtimeMapper.listDeletedRuntimes(name, projectId);
             if(deletedRuntimes.size() > 1) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                    .tip(String.format("Recover runtime error. Duplicate names [%s] of deleted runtime. ", runtimeName)),
+                    .tip(String.format("Recover runtime error. Duplicate names [%s] of deleted runtime. ", name)),
                     HttpStatus.BAD_REQUEST);
             } else if (deletedRuntimes.size() == 0) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
-                    .tip(String.format("Recover runtime error. Can not find deleted runtime [%s].", runtimeName)),
+                    .tip(String.format("Recover runtime error. Can not find deleted runtime [%s].", name)),
                     HttpStatus.BAD_REQUEST);
             }
             id = deletedRuntimes.get(0).getId();
         }
 
         // Check for duplicate names
-        if(runtimeMapper.findByName(runtimeName) != null) {
+        if(runtimeMapper.findByName(name, projectId) != null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                .tip(String.format("Recover runtime error. Runtime %s already exists", runtimeName)), HttpStatus.BAD_REQUEST);
+                .tip(String.format("Recover runtime error. Runtime %s already exists", name)), HttpStatus.BAD_REQUEST);
         }
 
         int res = runtimeMapper.recoverRuntime(id);
-        log.info("Runtime has been recovered. Name={}", runtimeName);
+        log.info("Runtime has been recovered. Name={}", name);
         return res > 0;
     }
 }
