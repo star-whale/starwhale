@@ -155,3 +155,6 @@ class URITestCase(TestCase):
         assert uri.object.name == "mnist"
         assert uri.object.typ == URIType.RUNTIME
         assert uri.object.version == "g4zwkyjumm2d"
+
+        uri = URI("", expected_type=URIType.PROJECT)
+        assert uri.project == "self"
