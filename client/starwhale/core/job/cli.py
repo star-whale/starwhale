@@ -35,7 +35,7 @@ def _list(
 
 
 @job_cmd.command("create", help="Create job")
-@click.argument("project")
+@click.argument("project", default="")
 @click.option("--model", required=True, help="model uri")
 @click.option(
     "--dataset",
@@ -43,7 +43,7 @@ def _list(
     multiple=True,
     help="dataset uri, one or more",
 )
-@click.option("--runtime", default="", help="runtime uri")
+@click.option("--runtime", required=True, default="", help="runtime uri")
 @click.option("--name", help="job name")
 @click.option("--desc", help="job description")
 @click.option(
@@ -60,7 +60,7 @@ def _list(
     "--phase",
     type=click.Choice([EvalTaskType.ALL, EvalTaskType.CMP, EvalTaskType.PPL]),
     default=EvalTaskType.ALL,
-    help="[ONLY Standalone]evalution run phase",
+    help="[ONLY Standalone]evaluation run phase",
 )
 def _create(
     project: str,
