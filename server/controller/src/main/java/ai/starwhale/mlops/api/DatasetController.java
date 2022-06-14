@@ -78,7 +78,7 @@ public class DatasetController implements DatasetApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> revertDatasetVersion(String projectUrl,
         String swmpUrl, RevertSWDSRequest revertRequest) {
-        Boolean res = swDatasetService.revertVersionTo(swmpUrl, revertRequest.getVersion());
+        Boolean res = swDatasetService.revertVersionTo(projectUrl, swmpUrl, revertRequest.getVersion());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert swds version failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -183,12 +183,12 @@ public class DatasetController implements DatasetApi{
     }
 
     @Override
-    public byte[] pullDS(String name, String version,
+    public byte[] pullDS(String project, String name, String version,
         String partName, HttpServletResponse httpResponse) {
         if(!StringUtils.hasText(name) || !StringUtils.hasText(version) ){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("please provide name and version for the DS "),HttpStatus.BAD_REQUEST);
         }
-        return swdsUploader.pull(name,version,partName, httpResponse);
+        return swdsUploader.pull(project, name,version,partName, httpResponse);
     }
 
     @Override
@@ -200,7 +200,7 @@ public class DatasetController implements DatasetApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(String projectUrl, String datasetUrl,
         String versionUrl, SWDSTagRequest swdsTagRequest) {
-        Boolean res = swDatasetService.modifySWDSVersion(datasetUrl, versionUrl,
+        Boolean res = swDatasetService.modifySWDSVersion(projectUrl, datasetUrl, versionUrl,
             SWDSVersion.builder().tag(swdsTagRequest.getTag()).build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
         return ResponseEntity.ok(Code.success.asResponse("success"));

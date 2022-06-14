@@ -228,6 +228,7 @@ public interface DatasetApi {
         value = "/project/dataset/pull",
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     byte[] pullDS(
+        @Parameter(name = "project", description = "the name of the project attempt to pull", required = true) String project,
         @Parameter(name = "name", description = "the name of the SWDS attempt to pull", required = true) String name,
         @Parameter(name = "version", description = "the version of the SWDS attempt to pull", required = true) String version,
         @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified") @RequestParam(name = "part_name",required = false) String partName,
