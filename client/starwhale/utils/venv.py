@@ -34,7 +34,6 @@ CONDA_ENV_TAR = "env.tar.gz"
 DUMP_CONDA_ENV_FNAME = "env-lock.yaml"
 DUMP_PIP_REQ_FNAME = "requirements-lock.txt"
 DUMP_USER_PIP_REQ_FNAME = "requirements.txt"
-SW_ACTIVATE_SCRIPT = "activate.sw"
 
 SUPPORTED_PIP_REQ = [DUMP_USER_PIP_REQ_FNAME, "pip-req.txt", "pip3-req.txt"]
 SW_PYPI_INDEX_URL = os.environ.get(
@@ -254,24 +253,32 @@ def conda_activate(env: t.Union[str, Path]) -> None:
     check_call(cmd, shell=True)
 
 
-def conda_activate_render(env: t.Union[str, Path], path: Path) -> None:
-    content = """
+def conda_activate_render(env_dir: Path, workdir: Path) -> None:
+    sw_cntr_content = """
 _conda_hook="$(/opt/miniconda3/bin/conda shell.bash hook)"
 cat >> /dev/stdout << EOF
 $_conda_hook
 conda activate /opt/starwhale/swmp/dep/conda/env
 EOF
 """
-    _render_sw_activate(content, path)
+
+    host_content = f"""
+echo 'conda activate {env_dir.absolute()}'
+"""
+    _render_sw_activate(sw_cntr_content, host_content, workdir)
 
 
 def venv_activate_render(
-    venvdir: t.Union[str, Path], path: Path, relocate: bool = False
+    venvdir: t.Union[str, Path], workdir: Path, relocate: bool = False
 ) -> None:
     bin = f"{venvdir}/bin"
+    host_content = f"""
+echo 'source {venvdir}/bin/activate'
+"""
+
     if relocate:
         # TODO: support relocatable editable python package
-        content = f"""
+        sw_cntr_content = f"""
 sed -i '1d' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
 sed -i '1i\#!{bin}/python3' {bin}/starwhale {bin}/sw {bin}/swcli {bin}/pip* {bin}/virtualenv
 
@@ -281,17 +288,24 @@ ln -s /usr/bin/python3 {bin}/python3
 echo 'source {bin}/activate'
 """
     else:
-        content = f"""
-echo 'source {venvdir}/bin/activate'
-"""
-    _render_sw_activate(content, path)
+        sw_cntr_content = host_content
+
+    _render_sw_activate(sw_cntr_content, host_content, workdir)
 
 
-def _render_sw_activate(content: str, path: Path) -> None:
-    ensure_file(path, content, mode=0o755)
-    console.print(f" :clap: {path.name} is generated at {path}")
+def _render_sw_activate(sw_cntr_content: str, host_content: str, workdir: Path) -> None:
+    _sw_path = workdir / "activate.sw"
+    _host_path = workdir / "activate.host"
+
+    ensure_file(_sw_path, sw_cntr_content, mode=0o755)
+    ensure_file(_host_path, host_content, mode=0o755)
+
+    console.print(
+        f" :clap: {_sw_path.name} and {_host_path.name} is generated at {workdir}"
+    )
     console.print(" :compass: run cmd:  ")
-    console.print(f" \t [bold red] $(sh {path}) [/]")
+    console.print(f" \t Docker Container: [bold red] $(sh {_sw_path}) [/]")
+    console.print(f" \t Host: [bold red] $(sh {_host_path}) [/]")
 
 
 def get_conda_bin() -> str:
@@ -574,7 +588,6 @@ def restore_python_env(
 def _do_restore_conda(
     _workdir: Path, _local_gen_env: bool, _python_version: str
 ) -> None:
-    _ascript = _workdir / SW_ACTIVATE_SCRIPT
     _conda_dir = _workdir / "dep" / "conda"
     _tar_fpath = _conda_dir / CONDA_ENV_TAR
     _env_dir = _conda_dir / "env"
@@ -585,23 +598,18 @@ def _do_restore_conda(
         logger.info(f"extract {_tar_fpath} ...")
         with tarfile.open(str(_tar_fpath)) as f:
             f.extractall(str(_env_dir))
-
-        logger.info(f"render activate script: {_ascript}")
-        venv_activate_render(_env_dir, _ascript)
+        venv_activate_render(_env_dir, _workdir)
     else:
         logger.info("restore conda env ...")
         _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
         # TODO: controller will proceed in advance
         conda_restore(_env_yaml, _env_dir)
-
-        logger.info(f"render activate script: {_ascript}")
-        conda_activate_render(_env_dir, _ascript)
+        conda_activate_render(_env_dir, _workdir)
 
 
 def _do_restore_venv(
     _workdir: Path, _local_gen_env: bool, _python_version: str, _rebuild: bool = False
 ) -> None:
-    _ascript = _workdir / SW_ACTIVATE_SCRIPT
     _python_dir = _workdir / "dep" / "python"
     _venv_dir = _python_dir / "venv"
 
@@ -618,8 +626,7 @@ def _do_restore_venv(
             logger.info(f"pip install {_path} ...")
             venv_install_req(_venv_dir, _path)
 
-    logger.info(f"render activate script: {_ascript}")
-    venv_activate_render(_venv_dir, _ascript, relocate=_relocate)
+    venv_activate_render(_venv_dir, _workdir, relocate=_relocate)
 
 
 def validate_runtime_package_dep(py_env: str) -> None:

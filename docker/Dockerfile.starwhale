@@ -21,4 +21,6 @@ ENV SW_TASK_STATUS_DIR=/opt/starwhale/status
 ENV SW_TASK_LOG_DIR=/opt/starwhale/log
 ENV SW_TASK_RESULT_DIR=/opt/starwhale/result
 
+ENV SW_CONTAINER=1
+
 ENTRYPOINT ["/usr/local/bin/sw-docker-entrypoint"]
