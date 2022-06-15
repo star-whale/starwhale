@@ -222,6 +222,16 @@ class StandaloneRuntimeTestCase(TestCase):
             build_version[:VERSION_PREFIX_CNT],
             f"{build_version}{BundleType.RUNTIME}",
         )
+        recover_snapshot_path = os.path.join(
+            sw.rootdir,
+            "self",
+            "workdir",
+            "runtime",
+            ".recover",
+            name,
+            build_version[:VERSION_PREFIX_CNT],
+            build_version,
+        )
         swrt_path = os.path.join(
             sw.rootdir,
             "self",
@@ -230,8 +240,19 @@ class StandaloneRuntimeTestCase(TestCase):
             build_version[:VERSION_PREFIX_CNT],
             f"{build_version}{BundleType.RUNTIME}",
         )
+        swrt_snapshot_path = os.path.join(
+            sw.rootdir,
+            "self",
+            "workdir",
+            "runtime",
+            name,
+            build_version[:VERSION_PREFIX_CNT],
+            build_version,
+        )
         assert os.path.exists(recover_path)
         assert not os.path.exists(swrt_path)
+        assert os.path.exists(recover_snapshot_path)
+        assert not os.path.exists(swrt_snapshot_path)
 
         uri = URI(f"{name}/version/{build_version}", expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
@@ -239,6 +260,8 @@ class StandaloneRuntimeTestCase(TestCase):
         assert ok
         assert not os.path.exists(recover_path)
         assert os.path.exists(swrt_path)
+        assert not os.path.exists(recover_snapshot_path)
+        assert os.path.exists(swrt_snapshot_path)
 
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.is_venv")

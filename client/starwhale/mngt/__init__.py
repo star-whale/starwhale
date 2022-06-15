@@ -79,7 +79,11 @@ def _get_workdir_path(project_dir: Path, typ: str, bundle_path: Path) -> Path:
     if typ != URIType.JOB:
         object_name = bundle_path.parent.parent.name
         object_prefix = f"{object_name}/{object_prefix}"
-    return project_dir / "workdir" / typ / object_prefix
+    _rpath = project_dir / "workdir" / typ / RECOVER_DIRNAME / object_prefix
+    if _rpath.exists():
+        return _rpath
+    else:
+        return project_dir / "workdir" / typ / object_prefix
 
 
 def open_web(instance_uri: str = "") -> None:

@@ -37,6 +37,7 @@ class GCTestCase(TestCase):
             project_dir
             / "workdir"
             / URIType.MODEL
+            / RECOVER_DIRNAME
             / "mnist"
             / "gq"
             / "gq4wmmrrgazwknrtmftdgyjzmfwxczi"
@@ -71,6 +72,7 @@ class GCTestCase(TestCase):
             project_dir
             / "workdir"
             / URIType.RUNTIME
+            / RECOVER_DIRNAME
             / "mnist"
             / "g4"
             / "g43tsodfg5sdqnrtmftdgyjzo5zdgoi"

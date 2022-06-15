@@ -82,6 +82,18 @@ class BaseStorage(object):
         else:
             return yaml.safe_load(self.manifest_path.open())
 
+    def _get_recover_snapshot_workdir_for_bundle(self) -> Path:
+        version = self.uri.object.version
+        return (
+            self.project_dir
+            / "workdir"
+            / self.uri_type
+            / RECOVER_DIRNAME
+            / self.uri.object.name
+            / version[:VERSION_PREFIX_CNT]
+            / version
+        )
+
     def _get_snapshot_workdir_for_bundle(self) -> Path:
         version = self.uri.object.version
         return (
