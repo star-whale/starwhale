@@ -57,9 +57,19 @@ class PythonVersionField(t.NamedTuple):
 
 
 def conda_install_req(
-    env: str, req: t.Union[str, Path], enable_pre: bool = False
+    req: t.Union[str, Path],
+    env_name: str = "",
+    prefix_path: t.Optional[Path] = None,
+    enable_pre: bool = False,
 ) -> None:
-    prefix_cmd = [get_conda_bin(), "run", "--name", env, "python3", "-m", "pip"]
+    prefix_cmd = [get_conda_bin(), "run"]
+
+    if env_name:
+        prefix_cmd += ["--name", env_name]
+    elif prefix_path is not None:
+        prefix_cmd += ["--prefix", str(prefix_path.absolute())]
+
+    prefix_cmd += ["python3", "-m", "pip"]
     _do_pip_install_req(prefix_cmd, req, enable_pre)
 
 
@@ -81,7 +91,13 @@ def _do_pip_install_req(
     if enable_pre:
         cmd += ["--pre"]
 
-    cmd += ["-r", req] if os.path.isfile(req) else [req]
+    if isinstance(req, Path):
+        cmd += ["-r", str(req.absolute())]
+    elif os.path.isfile(req):
+        cmd += ["-r", req]
+    else:
+        cmd += [req]
+
     check_call(cmd)
 
 
@@ -576,21 +592,29 @@ def get_conda_env_prefix() -> str:
 
 
 def restore_python_env(
-    workdir: Path, mode: str, python_version: str, local_gen_env: bool = False
+    workdir: Path,
+    mode: str,
+    python_version: str,
+    local_gen_env: bool = False,
+    pip_req: str = "",
 ) -> None:
     console.print(
         f":bread: restore python:{python_version} {mode}@{workdir}, use local env data: {local_gen_env}"
     )
     _f = _do_restore_conda if mode == PythonRunEnv.CONDA else _do_restore_venv
-    _f(workdir, local_gen_env, python_version)
+    _f(workdir, local_gen_env, python_version, pip_req)
 
 
 def _do_restore_conda(
-    _workdir: Path, _local_gen_env: bool, _python_version: str
+    _workdir: Path,
+    _local_gen_env: bool,
+    _python_version: str,
+    _pip_req: str,
 ) -> None:
     _conda_dir = _workdir / "dep" / "conda"
     _tar_fpath = _conda_dir / CONDA_ENV_TAR
     _env_dir = _conda_dir / "env"
+    _python_dir = _workdir / "dep" / "python"
 
     if _local_gen_env and _tar_fpath.exists():
         empty_dir(_env_dir)
@@ -602,13 +626,19 @@ def _do_restore_conda(
     else:
         logger.info("restore conda env ...")
         _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
-        # TODO: controller will proceed in advance
         conda_restore(_env_yaml, _env_dir)
+        _pip_req_path = _python_dir / _pip_req
+        if _pip_req_path.exists():
+            conda_install_req(req=_pip_req_path, prefix_path=_env_dir)
         conda_activate_render(_env_dir, _workdir)
 
 
 def _do_restore_venv(
-    _workdir: Path, _local_gen_env: bool, _python_version: str, _rebuild: bool = False
+    _workdir: Path,
+    _local_gen_env: bool,
+    _python_version: str,
+    pip_req: str,
+    _rebuild: bool = False,
 ) -> None:
     _python_dir = _workdir / "dep" / "python"
     _venv_dir = _python_dir / "venv"
@@ -618,9 +648,9 @@ def _do_restore_venv(
         logger.info(f"setup venv and pip install {_venv_dir}")
         _relocate = False
         venv_setup(_venv_dir, python_version=_python_version)
-        for _name in (DUMP_PIP_REQ_FNAME, DUMP_USER_PIP_REQ_FNAME):
+        for _name in (DUMP_PIP_REQ_FNAME, pip_req):
             _path = _python_dir / _name
-            if not _path.exists():
+            if not _name or not _path.exists():
                 continue
 
             logger.info(f"pip install {_path} ...")
