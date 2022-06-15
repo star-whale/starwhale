@@ -35,7 +35,7 @@ module.exports = {
             },
             items: [
                 {
-                    to: "/docs/quickstart/main",
+                    to: "/docs/quickstart/standalone",
                     label: "Documentation",
                     position: "left",
                 },

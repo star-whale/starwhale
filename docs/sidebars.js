@@ -1,13 +1,16 @@
 module.exports = {
     mainSidebar: [
         {
-            "Quickstart": ["quickstart/main"],
+            "Quickstart": ["quickstart/what", "quickstart/standalone", "quickstart/on-premises"],
             "Tutorials": ["tutorials/main"],
             "Fundamentals": ["fundamentals/concepts", "fundamentals/arch"],
-            "Standalone Guides": ["standalone/main"],
-            "Cloud Guides": ["cloud/main", "cloud/installation"],
+            "Standalone Guides": [
+                "standalone/main",
+                "standalone/client_user_guide",
+                "standalone/installation",
+            ],
+            "Cloud Guides": ["cloud/main", "cloud/helm-charts", "cloud/ansible"],
             "Python SDK Guides": ["sdk/main"],
-            "Contributing": ["contribute/main"],
             "Reference": [
                 "reference/main",
                 {
@@ -17,6 +20,7 @@ module.exports = {
                         "reference/cli/other"]
                 }
             ],
+            "Contributing": ["contribute/main"],
             "Releases": ["release/main", "release/changelog"],
         },
     ],

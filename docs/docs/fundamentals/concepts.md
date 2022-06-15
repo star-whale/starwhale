@@ -1,5 +1,5 @@
 ---
-title: Concepts
+title: Core Concepts
 ---
 
 This document explains the main concepts in Starwhale.
@@ -24,7 +24,7 @@ Each installation of Starwhale is called an instance. Generally, Starwhale has t
 
 - Standalone instance
 - On-Premises instance
-- Hosted instance
+- Cloud Hosted instance
 
 The standalone instance is the simplest form that requires only the Starwhale client (swcli). All data and metadata are stored locally on the client machine. All jobs and tasks are executed on the client machine as well. It is similar to git, which requires only a set of executable binaries.
 
