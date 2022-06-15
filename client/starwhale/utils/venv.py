@@ -150,7 +150,8 @@ def venv_setup(
         args += ["--prompt", prompt]
 
     if python_version:
-        args += ["--python", python_version]
+        _v = parse_python_version(python_version)
+        args += ["--python", f"{_v.major}.{_v.minor}"]
 
     if clear:
         args += ["--clear"]
