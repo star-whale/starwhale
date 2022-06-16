@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyIterable;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -111,7 +112,7 @@ public class SwdsUploaderTest {
         verify(swdsVersionMapper).updateStatus(null, STATUS_AVAILABLE);
         verify(swdsVersionMapper).addNewVersion(any(SWDatasetVersionEntity.class));
         String dsName = "testds3";
-        verify(swdsMapper).findByName(dsName);
+        verify(swdsMapper).findByName(eq(dsName),anyLong());
         verify(swdsMapper).addDataset(any(SWDatasetEntity.class));
 
 
@@ -125,7 +126,7 @@ public class SwdsUploaderTest {
         verify(storageAccessService,times(0)).delete("c");
 
 
-        when(swdsMapper.findByName(dsName)).thenReturn(SWDatasetEntity.builder().id(1L).build());
+        when(swdsMapper.findByName(eq(dsName),anyLong())).thenReturn(SWDatasetEntity.builder().id(1L).build());
         SWDatasetVersionEntity mockedEntity = SWDatasetVersionEntity.builder()
             .id(1L)
             .versionName("testversion")
@@ -134,7 +135,7 @@ public class SwdsUploaderTest {
         when(swdsVersionMapper.findByDSIdAndVersionNameForUpdate(1L,dsVersionId)).thenReturn(mockedEntity);
         when(swdsVersionMapper.findByDSIdAndVersionName(1L,dsVersionId)).thenReturn(mockedEntity);
         when(storageAccessService.get(anyString())).thenReturn(new ByteArrayInputStream(index_file_content.getBytes()));
-        byte[] indexbytes = swdsUploader.pull(dsName, dsVersionId, "index.jsonl",
+        byte[] indexbytes = swdsUploader.pull("project",dsName, dsVersionId, "index.jsonl",
             mock(HttpServletResponse.class));
 
         Assertions.assertEquals(index_file_content,new String(indexbytes));;
