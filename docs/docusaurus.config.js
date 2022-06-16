@@ -3,12 +3,12 @@ const path = require("path");
 module.exports = {
     title: "Starwhale",
     tagline: "A MLOps Platform for Model Evaluation",
-    url: "https://starwhale.ai",
+    url: "https://doc.starwhale.ai",
     baseUrl: "/",
     onBrokenLinks: "warn",
     onBrokenMarkdownLinks: "warn",
     favicon: "img/favicon.ico",
-    organizationName: "star-whale.github.io",
+    organizationName: "doc.starwhale.ai",
     projectName: "starwhale",
 
     themeConfig: {
