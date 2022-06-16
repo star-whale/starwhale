@@ -4,7 +4,7 @@ module.exports = {
     title: "Starwhale",
     tagline: "A MLOps Platform for Model Evaluation",
     url: "https://starwhale.ai",
-    baseUrl: "/starwhale/",
+    baseUrl: "/",
     onBrokenLinks: "warn",
     onBrokenMarkdownLinks: "warn",
     favicon: "img/favicon.ico",
