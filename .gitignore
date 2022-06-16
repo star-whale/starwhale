@@ -39,6 +39,7 @@ build/
 # User Test Data
 example/.idea/
 example/mnist/data
+example/mnist/runtime.yaml
 example/mnist/sw_output
 example/mnist/test/task_volume
 example/cifar10/data/

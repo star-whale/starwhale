@@ -1,0 +1,3 @@
+---
+title: Starwhale standalone installing
+---

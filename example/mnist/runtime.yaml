@@ -1,6 +1,0 @@
-base_image: ghcr.io/star-whale/starwhale:0.2.0-alpha.12
-kw: {}
-mode: conda
-name: mnist2
-pip_req: requirements.txt
-python_version: '3.7'
