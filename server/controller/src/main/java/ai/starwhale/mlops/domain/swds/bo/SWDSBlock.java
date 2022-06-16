@@ -14,45 +14,45 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.domain.swds.bo;
 
-import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- *
+ * the storage unit of one data set
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class JobRuntime {
+public class SWDSBlock {
 
     /**
-     * specify the job to run on whether CPU or GPU
+     * the offset to the original SWDS
      */
-    Device.Clazz deviceClass;
+    Long id;
 
     /**
-     * how many devices does this job need to run on
+     * how many batches does this block contains
      */
-    Integer deviceAmount;
+    @JsonProperty("batch")
+    int batchAmount;
 
     /**
-     * the name for the runtime
+     * location of labels in this block
      */
-    String name;
+    @JsonProperty("label")
+    SWDSDataLocation locationLabel;
 
     /**
-     * the version for the runtime
+     * location of inputs in this block
      */
-    String version;
+    @JsonProperty("data")
+    SWDSDataLocation locationInput;
 
-    /**
-     * the storagePath for the runtime
-     */
-    String storagePath;
 }

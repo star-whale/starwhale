@@ -67,7 +67,7 @@ public class HotJobsLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        jobLoader.loadEntities(hotJobsFromDB());
+        jobLoader.loadEntities(hotJobsFromDB(),false,true);
         log.info("hot jobs loaded");
     }
 }

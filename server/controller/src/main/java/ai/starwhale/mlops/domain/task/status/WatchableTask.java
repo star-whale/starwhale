@@ -42,10 +42,12 @@ public class WatchableTask extends Task implements TaskWrapper {
     TaskStatusMachine taskStatusMachine;
 
     public WatchableTask(Task oTask,List<TaskStatusChangeWatcher> watchers,TaskStatusMachine taskStatusMachine){
-        if(oTask instanceof WatchableTask){
-            throw new UnsupportedOperationException();//prevent watchers watched
+        if(oTask instanceof TaskWrapper){
+            this.oTask = ((TaskWrapper)oTask).unwrap();
+        }else {
+            this.oTask = oTask;
         }
-        this.oTask = oTask;
+
         this.watchers = watchers;
         this.taskStatusMachine = taskStatusMachine;
     }
@@ -88,6 +90,16 @@ public class WatchableTask extends Task implements TaskWrapper {
     @Override
     public TaskType getTaskType() {
         return oTask.getTaskType();
+    }
+
+    @Override
+    public Long getStartTime(){
+        return oTask.getStartTime();
+    }
+
+    @Override
+    public Long getFinishTime(){
+        return oTask.getFinishTime();
     }
 
     @Override

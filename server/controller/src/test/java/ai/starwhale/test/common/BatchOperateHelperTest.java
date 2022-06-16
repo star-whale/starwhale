@@ -28,7 +28,7 @@ public class BatchOperateHelperTest {
 
     static final Integer MAX_BATCH=3;
     @Test
-    public void test(){
+    public void testDoBatch(){
         List<Integer> batchData=List.of(1,2,3,4,5,6,7,8,9,10,11);
         BatchOperateHelper.doBatch(batchData,datas->{
             Assertions.assertTrue(datas.size()<=MAX_BATCH);

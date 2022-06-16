@@ -113,7 +113,7 @@ public class ReportProcessorImp implements ReportProcessor {
         return buidResponse(toAssignTasks, toCancelTasks);
     }
 
-    public ReportResponse buidResponse(List<Task> toAssignTasks,
+    private ReportResponse buidResponse(List<Task> toAssignTasks,
         Collection<Task> toCancelTasks) {
         final List<Long> taskIdsToCancel = toCancelTasks.stream().map(Task::getId)
             .collect(

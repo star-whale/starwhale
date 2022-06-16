@@ -14,20 +14,45 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.domain.job.bo;
 
+import ai.starwhale.mlops.domain.node.Device;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ *
+ */
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class BaseImage {
+@AllArgsConstructor
+public class JobRuntime {
 
-    private Long id;
+    /**
+     * specify the job to run on whether CPU or GPU
+     */
+    Device.Clazz deviceClass;
 
-    private String name;
+    /**
+     * how many devices does this job need to run on
+     */
+    Integer deviceAmount;
+
+    /**
+     * the name for the runtime
+     */
+    String name;
+
+    /**
+     * the version for the runtime
+     */
+    String version;
+
+    /**
+     * the storagePath for the runtime
+     */
+    String storagePath;
 }

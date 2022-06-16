@@ -24,7 +24,7 @@ import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.job.BaseImage;
+import ai.starwhale.mlops.domain.job.bo.BaseImage;
 import ai.starwhale.mlops.domain.job.EnvService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;

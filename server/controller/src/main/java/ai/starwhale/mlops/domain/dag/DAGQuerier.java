@@ -21,6 +21,7 @@ import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.dag.bo.GraphEdge;
 import ai.starwhale.mlops.domain.dag.bo.GraphNode;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.cache.JobLoader;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.job.JobType;
@@ -28,7 +29,6 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.job.step.StepConverter;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
@@ -63,25 +63,18 @@ public class DAGQuerier {
 
     final JobMapper jobMapper;
 
-    final StepMapper stepMapper;
-
-    final TaskMapper taskMapper;
-
-    final StepConverter stepConverter;
-
     final StepHelper stepHelper;
+
+    final JobLoader jobLoader;
 
     public DAGQuerier(JobManager jobManager,
         HotJobHolder jobHolder, JobMapper jobMapper,
-        StepMapper stepMapper, TaskMapper taskMapper,
-        StepConverter stepConverter, StepHelper stepHelper) {
+        StepHelper stepHelper, JobLoader jobLoader) {
         this.jobManager = jobManager;
         this.jobHolder = jobHolder;
         this.jobMapper = jobMapper;
-        this.stepMapper = stepMapper;
-        this.taskMapper = taskMapper;
-        this.stepConverter = stepConverter;
         this.stepHelper = stepHelper;
+        this.jobLoader = jobLoader;
     }
     public Graph dagOfJob(String jobUrl, Boolean withTask){
         return dagOfJob(jobManager.getJobId(jobUrl), withTask);
@@ -133,52 +126,12 @@ public class DAGQuerier {
     }
 
     private Graph buildGraphFromDB(Long jobId) {
-        Graph graph = new Graph();
-        AtomicLong idx = new AtomicLong(0);
         JobEntity jobEntity = jobMapper.findJobById(jobId);
         if(null == jobEntity){
             throw new SWValidationException(ValidSubject.JOB).tip("Job doesn't exists ");
         }
-        JobNodeContent initialJobNodeContent = new JobNodeContent(jobEntity);
-        initialJobNodeContent.setStatus(JobStatus.CREATED);
-        graph.add(jobNode(initialJobNodeContent, idx));
-        List<StepEntity> stepEntities = stepMapper.findByJobId(jobId);
-        Map<Long, Long> linkMap = stepEntities.parallelStream()
-            .collect(Collectors.toMap(StepEntity::getLastStepId, StepEntity::getId));
-        stepEntities = stepEntities.stream().sorted((e1,e2)->{
-            List<Long> e1NexIds = nextIds(linkMap,e1.getId());
-            if(e1NexIds.contains(e2.getId())){
-                return -1;
-            }
-            return 1;
-        }).collect(Collectors.toList());
-        long lastStepNodeId = idx.get();
-        List<Long> lastTaskNodeIds = new LinkedList<>();
-        for(int i=0;i<stepEntities.size();i++){
-            StepEntity stepEntity=stepEntities.get(i);
-            graph.add(stepNode(new StepNodeContent(stepEntity), idx));
-            if(lastTaskNodeIds.isEmpty()){
-                graph.add(new GraphEdge(lastStepNodeId, idx.get(),null));
-            }else {
-                for(Long taskNodeId:lastTaskNodeIds){
-                    graph.add(new GraphEdge(taskNodeId, idx.get(),null));
-                }
-            }
-            lastTaskNodeIds.clear();
-            lastStepNodeId = idx.get();
-            List<TaskEntity> taskEntities = taskMapper.findByStepId(stepEntity.getId());
-            for(int j=0;j<taskEntities.size();j++){
-                TaskEntity taskEntity = taskEntities.get(j);
-                graph.add(taskNode(new TaskNodeContent(taskEntity), idx));
-                graph.add(new GraphEdge(lastStepNodeId, idx.get(),null));
-                lastTaskNodeIds.add(idx.get());
-            }
-        }
-        graph.add(jobNode(new JobNodeContent(jobEntity), idx));
-        for(Long taskNodeId:lastTaskNodeIds){
-            graph.add(new GraphEdge(taskNodeId, idx.get(),null));
-        }
-        return graph;
+        List<Job> jobs = jobLoader.loadEntities(List.of(jobEntity), false, false);
+        return buildGraphFromCache(jobs.get(0));
     }
 
     GraphNode taskNode(TaskNodeContent task, AtomicLong idx){
@@ -194,17 +147,6 @@ public class DAGQuerier {
     GraphNode jobNode(JobNodeContent jobNodeContent, AtomicLong idx){
         return GraphNode.builder().id(idx.incrementAndGet()).type(Job.class.getSimpleName()).content(
             jobNodeContent).entityId(jobNodeContent.getId()).group(Job.class.getSimpleName()).build();
-    }
-
-    private List<Long> nextIds(Map<Long, Long> linkMap,Long id){
-        Long nextId = linkMap.get(id);
-        List<Long> result = new LinkedList<>();
-        if(null == nextId){
-            return result;
-        }
-        result.add(nextId);
-        result.addAll(nextIds(linkMap,nextId));
-        return result;
     }
 
     @Data
@@ -223,14 +165,6 @@ public class DAGQuerier {
             this.status = t.getStatus();
             this.setStartTime(t.getStartTime());
             this.setFinishTime(t.getFinishTime());
-        }
-        public TaskNodeContent(TaskEntity t){
-            this.id = t.getId();
-            this.type = t.getTaskType();
-            this.agentIp = t.getAgent() == null ? "Controller":t.getAgent().getAgentIp();
-            this.status = t.getTaskStatus();
-            this.setStartTime(toEpochMilli(t.getStartedTime()));
-            this.setFinishTime(toEpochMilli(t.getFinishedTime()));
         }
 
 
@@ -257,13 +191,6 @@ public class DAGQuerier {
             this.setStartTime(job.getStartTime());
             this.setFinishTime(job.getFinishTime());
         }
-        public JobNodeContent(JobEntity job){
-            this.id = job.getId();
-            this.jobType = job.getType();
-            this.status = job.getJobStatus();
-            this.setStartTime(toEpochMilli(job.getCreatedTime()));
-            this.setFinishTime(toEpochMilli(job.getFinishedTime()));
-        }
     }
 
     @Data
@@ -280,13 +207,6 @@ public class DAGQuerier {
             this.status = step.getStatus();
             this.setStartTime(step.getStartTime());
             this.setFinishTime(step.getFinishTime());
-        }
-        public StepNodeContent(StepEntity step){
-            this.id = step.getId();
-            this.name = step.getName();
-            this.status = step.getStatus();
-            this.setStartTime(toEpochMilli(step.getStartedTime()));
-            this.setFinishTime(toEpochMilli(step.getFinishedTime()));
         }
     }
 

@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 public class Blake2bUtilTest {
 
     @Test
-    public void test(){
+    public void testDigest(){
         Assertions.assertEquals("0b8ced80a1e4eeb92b343778504cb749d934a0dfe86f5cd53f7c456c6c9b9cab1b1e83f570556eb087da34f6d64d996a55ebf52e7707dc23d2832b9b8e7067b3",Blake2bUtil.digest(mockString().getBytes()));
     }
 

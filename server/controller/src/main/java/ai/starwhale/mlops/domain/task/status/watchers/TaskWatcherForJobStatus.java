@@ -45,8 +45,6 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
 
     final StepHelper stepHelper;
 
-    final SWTaskScheduler swTaskScheduler;
-
     final StepStatusMachine stepStatusMachine;
 
     final StepMapper stepMapper;
@@ -59,14 +57,12 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
 
     public TaskWatcherForJobStatus(
         StepHelper stepHelper,
-        SWTaskScheduler swTaskScheduler,
         StepStatusMachine stepStatusMachine,
         StepMapper stepMapper,
         StepTriggerContext stepTriggerContext,
         JobUpdateHelper jobUpdateHelper,
         LocalDateTimeConvertor localDateTimeConvertor) {
         this.stepHelper = stepHelper;
-        this.swTaskScheduler = swTaskScheduler;
         this.stepStatusMachine = stepStatusMachine;
         this.stepMapper = stepMapper;
         this.stepTriggerContext = stepTriggerContext;

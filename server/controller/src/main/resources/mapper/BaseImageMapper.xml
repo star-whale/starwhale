@@ -20,7 +20,7 @@
         order by id desc
     </select>
 
-    <insert id="createBaseImage" parameterType="ai.starwhale.mlops.domain.job.BaseImageEntity" useGeneratedKeys="true" keyProperty="id">
+    <insert id="createBaseImage" parameterType="ai.starwhale.mlops.domain.job.po.BaseImageEntity" useGeneratedKeys="true" keyProperty="id">
         insert into base_image(image_name) values(#{image.imageName})
     </insert>
 
@@ -32,7 +32,7 @@
         delete from base_image where image_name = #{name}
     </delete>
 
-    <resultMap id="baseImageResultMap" type="ai.starwhale.mlops.domain.job.BaseImageEntity" >
+    <resultMap id="baseImageResultMap" type="ai.starwhale.mlops.domain.job.po.BaseImageEntity" >
         <id property="id" column="image_id" />
         <result property="imageName" column="image_name" />
         <result property="createdTime" column="image_created_time" />

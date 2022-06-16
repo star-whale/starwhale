@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.swds.index;
 
+import ai.starwhale.mlops.domain.swds.bo.SWDSBlock;
+import ai.starwhale.mlops.domain.swds.bo.SWDSIndex;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;

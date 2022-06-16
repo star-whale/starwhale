@@ -17,17 +17,84 @@
 package ai.starwhale.test.resulting;
 
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
 
+
+/**
+ * test for {@link  ai.starwhale.mlops.resulting.ResultQuerier}
+ */
 public class ResultQuerierTest {
 
+    final String resultOutputPath = "OUTPUT_PATH/PATH";
+
+    final String resultOutputPathResult = "OUTPUT_PATH/PATH/result";
+
+    final String resultFileOutputPath = "OUTPUT_PATH/PATH/RESULT";
+
+    final String exceptionPath = "exceptionPath";
+    final String exceptionPathResult = "exceptionPath/result";
+
+    ObjectMapper objectMapper = new ObjectMapper();
+
+    final String OBJECT="{\"name\":\"zhangsan\"}";
+
     @Test
-    public void test(){
-        JobMapper jobMapper = null;
-        StorageAccessService storageAccessService = null;
+    public void testResultOfJob() throws IOException {
+        JobMapper jobMapper = mockJobMapper();
+        StorageAccessService storageAccessService = mockStorageAccessService();
         ResultQuerier resultQuerier = new ResultQuerier(jobMapper,storageAccessService,new ObjectMapper());
+        Object o = resultQuerier.resultOfJob(1L);
+        Assertions.assertEquals(OBJECT,objectMapper.writeValueAsString(o));
+    }
+
+    @Test
+    public void testResultOfJobException() throws IOException {
+        JobMapper jobMapper = mockJobMapper();
+        StorageAccessService storageAccessService = mockStorageAccessService();
+        ResultQuerier resultQuerier = new ResultQuerier(jobMapper,storageAccessService,new ObjectMapper());
+        Assertions.assertThrowsExactly(SWValidationException.class,()->resultQuerier.resultOfJob(2L));
+        Assertions.assertThrowsExactly(SWValidationException.class,()->resultQuerier.resultOfJob(3L));
+        Assertions.assertThrowsExactly(SWValidationException.class,()->resultQuerier.resultOfJob(4L));
+        Assertions.assertThrowsExactly(SWProcessException.class,()->resultQuerier.resultOfJob(5L));
+    }
+
+    private StorageAccessService mockStorageAccessService() throws IOException {
+        StorageAccessService storageAccessService = mock(StorageAccessService.class);
+        when(storageAccessService.list(resultOutputPathResult)).thenReturn(Stream.of(resultFileOutputPath));
+        when(storageAccessService.get(resultFileOutputPath)).thenReturn(mockInputStream());
+        when(storageAccessService.list(exceptionPathResult)).thenThrow(IOException.class);
+        return storageAccessService;
+    }
+
+    private InputStream mockInputStream() {
+        return new ByteArrayInputStream(OBJECT.getBytes());
+    }
+
+    JobMapper mockJobMapper(){
+        JobMapper jobMapper = mock(JobMapper.class);
+        when(jobMapper.findJobById(1L)).thenReturn(mockJobEntity(1l,JobStatus.SUCCESS,resultOutputPath));
+        when(jobMapper.findJobById(3L)).thenReturn(mockJobEntity(3l,JobStatus.RUNNING,resultOutputPath));
+        when(jobMapper.findJobById(4L)).thenReturn(mockJobEntity(4l,JobStatus.SUCCESS,"resultOutputPath"));
+        when(jobMapper.findJobById(5L)).thenReturn(mockJobEntity(5l,JobStatus.SUCCESS,
+            exceptionPath));
+        return jobMapper;
+    }
+
+    private JobEntity mockJobEntity(Long jobId,JobStatus jobStatus,String resultPath) {
+        return JobEntity.builder().id(jobId).jobStatus(jobStatus).resultOutputPath(
+            resultPath).build();
     }
 }

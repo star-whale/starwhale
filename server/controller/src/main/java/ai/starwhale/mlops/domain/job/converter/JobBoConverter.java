@@ -18,7 +18,7 @@ package ai.starwhale.mlops.domain.job.converter;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.job.JobRuntime;
+import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;

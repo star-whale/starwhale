@@ -16,6 +16,59 @@
 
 package ai.starwhale.test.domain.dag;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import ai.starwhale.mlops.domain.dag.DAGQuerier;
+import ai.starwhale.mlops.domain.dag.bo.Graph;
+import ai.starwhale.mlops.domain.job.JobManager;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.cache.JobLoader;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.step.StepHelper;
+import ai.starwhale.test.JobMockHolder;
+import java.util.Collections;
+import java.util.List;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+/**
+ * test for {@link ai.starwhale.mlops.domain.dag.DAGQuerier}
+ */
 public class DAGQuerierTest {
+
+
+    @Test
+    public void testDAGQuerier() {
+        JobManager jobManager = mock(JobManager.class);
+        when(jobManager.getJobId("1")).thenReturn(1L);
+        when(jobManager.getJobId("2")).thenReturn(2L);
+        HotJobHolder hotJobHolder = mock(HotJobHolder.class);
+        when(hotJobHolder.ofIds(List.of(1L))).thenReturn(Collections.emptySet());
+        JobMockHolder jobMockHolder = new JobMockHolder();
+        Job mockedJob = jobMockHolder.mockJob();
+        when(hotJobHolder.ofIds(List.of(2L))).thenReturn(List.of(mockedJob));
+
+        JobMapper jobMapper = mock(JobMapper.class);
+        JobEntity jobEntity = JobEntity.builder().id(1L).jobStatus(JobStatus.RUNNING).build();
+        when(jobMapper.findJobById(1L)).thenReturn(jobEntity);
+
+        JobLoader jobLoader = mock(JobLoader.class);
+        when(jobLoader.loadEntities(List.of(jobEntity),false,false)).thenReturn(List.of(mockedJob));
+
+        DAGQuerier dagQuerier = new DAGQuerier(jobManager,hotJobHolder,jobMapper,new StepHelper(), jobLoader);
+        Graph graph = dagQuerier.dagOfJob("1",true);
+        Assertions.assertEquals(3,graph.getGroupingNodes().keySet().size());
+
+
+        Graph graph2 = dagQuerier.dagOfJob("2",true);
+        Assertions.assertEquals(3,graph2.getGroupingNodes().keySet().size());
+
+
+    }
+
 
 }

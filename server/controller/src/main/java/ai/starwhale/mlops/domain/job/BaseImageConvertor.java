@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.job;
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.job.po.BaseImageEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
 import javax.annotation.Resource;

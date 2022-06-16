@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job;
+package ai.starwhale.mlops.domain.job.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
 import lombok.AllArgsConstructor;
