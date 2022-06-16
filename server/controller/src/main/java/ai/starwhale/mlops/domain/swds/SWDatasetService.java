@@ -102,26 +102,27 @@ public class SWDatasetService {
     }
 
     public Boolean deleteSWDS(SWDSQuery query) {
-        Long id = swdsManager.getSWDSId(query.getSwdsUrl());
+        Long id = swdsManager.getSWDSId(query.getSwdsUrl(), query.getProjectUrl());
         int res = swdsMapper.deleteDataset(id);
         log.info("SWDS has been deleted. ID={}", id);
         return res > 0;
     }
 
     public Boolean recoverSWDS(String projectUrl, String datasetUrl) {
-        SWDSObject swds = swdsManager.fromUrl(datasetUrl);
-        String name = swds.getName();
-        Long id = swds.getId();
-        if(id != null) {
+        Long projectId = projectManager.getProjectId(projectUrl);
+        String name = datasetUrl;
+        Long id;
+        if(idConvertor.isID(datasetUrl)) {
+            id = idConvertor.revert(datasetUrl);
             SWDatasetEntity entity = swdsMapper.findDeletedDatasetById(id);
             if(entity == null) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
                     .tip("Recover dataset error. Dataset can not be found. "), HttpStatus.BAD_REQUEST);
             }
             name = entity.getDatasetName();
-        } else if (!StrUtil.isEmpty(name)) {
+        } else {
             // To restore datasets by name, need to check whether there are duplicate names
-            List<SWDatasetEntity> deletedDatasets = swdsMapper.listDeletedDatasets(name);
+            List<SWDatasetEntity> deletedDatasets = swdsMapper.listDeletedDatasets(name, projectId);
             if(deletedDatasets.size() > 1) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
                     .tip(String.format("Recover dataset error. Duplicate names [%s] of deleted dataset. ", name)),
@@ -135,7 +136,7 @@ public class SWDatasetService {
         }
 
         // Check for duplicate names
-        if(swdsMapper.findByName(name) != null) {
+        if(swdsMapper.findByName(name, projectId) != null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
                 .tip(String.format("Recover dataset error. Model %s already exists", name)), HttpStatus.BAD_REQUEST);
         }
@@ -146,7 +147,8 @@ public class SWDatasetService {
     }
 
     public SWDatasetInfoVO getSWDSInfo(SWDSQuery query) {
-        SWDatasetEntity ds = swdsManager.findSWDS(query.getSwdsUrl());
+        Long projectId = projectManager.getProjectId(query.getProjectUrl());
+        SWDatasetEntity ds = swdsMapper.findByName(query.getSwdsUrl(), projectId);
         if(ds == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
                 .tip("Unable to find swds " + query.getSwdsUrl()), HttpStatus.BAD_REQUEST);
@@ -193,8 +195,8 @@ public class SWDatasetService {
     }
 
 
-    public Boolean modifySWDSVersion(String swdsUrl, String versionUrl, SWDSVersion version) {
-        Long swdsId = swdsManager.getSWDSId(swdsUrl);
+    public Boolean modifySWDSVersion(String projectUrl, String swdsUrl, String versionUrl, SWDSVersion version) {
+        Long swdsId = swdsManager.getSWDSId(swdsUrl, projectUrl);
         Long versionId = swdsManager.getSWDSVersionId(versionUrl, swdsId);
         SWDatasetVersionEntity entity = SWDatasetVersionEntity.builder()
             .id(versionId)
@@ -207,7 +209,7 @@ public class SWDatasetService {
 
     public Boolean manageVersionTag(String projectUrl, String datasetUrl, String versionUrl,
         TagAction tagAction) {
-        Long id = swdsManager.getSWDSId(datasetUrl);
+        Long id = swdsManager.getSWDSId(datasetUrl, projectUrl);
         Long versionId = swdsManager.getSWDSVersionId(versionUrl, id);
 
         SWDatasetVersionEntity entity = swdsVersionMapper.getVersionById(versionId);
@@ -221,8 +223,8 @@ public class SWDatasetService {
         return update > 0;
     }
 
-    public Boolean revertVersionTo(String swdsUrl, String versionUrl) {
-        Long id = swdsManager.getSWDSId(swdsUrl);
+    public Boolean revertVersionTo(String projectUrl, String swdsUrl, String versionUrl) {
+        Long id = swdsManager.getSWDSId(swdsUrl, projectUrl);
         Long vid = swdsManager.getSWDSVersionId(versionUrl, id);
         int res = swdsVersionMapper.revertTo(id, vid);
         log.info("SWDS Version has been revert to {}" , vid);
@@ -230,7 +232,7 @@ public class SWDatasetService {
     }
 
     public PageInfo<DatasetVersionVO> listDatasetVersionHistory(SWDSVersionQuery query, PageParams pageParams) {
-        Long swdsId = swdsManager.getSWDSId(query.getSwdsUrl());
+        Long swdsId = swdsManager.getSWDSId(query.getSwdsUrl(), query.getProjectUrl());
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWDatasetVersionEntity> entities = swdsVersionMapper.listVersions(
             swdsId, query.getVersionName(), query.getVersionTag());
@@ -283,7 +285,8 @@ public class SWDatasetService {
 
     public List<SWDatasetInfoVO> listDS(String project, String name) {
         if(StringUtils.hasText(name)){
-            SWDatasetEntity ds = swdsMapper.findByName(name);
+            Long projectId = projectManager.getProjectId(project);
+            SWDatasetEntity ds = swdsMapper.findByName(name, projectId);
             if(null == ds){
                 throw new SWValidationException(ValidSubject.SWDS)
                     .tip("Unable to find the swds with name " + name);
@@ -313,7 +316,8 @@ public class SWDatasetService {
     }
 
     public String query(UploadRequest uploadRequest) {
-        SWDatasetEntity entity = swdsMapper.findByName(uploadRequest.name());
+        Long projectId = projectManager.getProjectId(uploadRequest.getProject());
+        SWDatasetEntity entity = swdsMapper.findByName(uploadRequest.name(), projectId);
         if(null == entity) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS), HttpStatus.NOT_FOUND);
         }

@@ -55,12 +55,19 @@
 
     <select id="findByNameForUpdate" resultMap="swdsResultMap" >
         <include refid="select_swds"/>
-        and s.dataset_name = #{name} for update
+        and s.dataset_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
+        for update
     </select>
 
     <select id="findByName" resultMap="swdsResultMap" >
         <include refid="select_swds"/>
         and s.dataset_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
     </select>
 
     <insert id="addDataset" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
@@ -105,6 +112,9 @@
         where is_deleted = 1
         <if test="name != null and name != ''">
             and dataset_name = #{name}
+        </if>
+        <if test="projectId != null">
+            and project_id = #{projectId}
         </if>
         order by modified_time desc
     </select>

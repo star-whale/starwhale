@@ -33,11 +33,11 @@ public interface SWDatasetMapper {
 
     List<SWDatasetEntity> findDatasetsByIds(@Param("ids")List<Long> ids);
 
-    SWDatasetEntity findByNameForUpdate(@Param("name")String name);
+    SWDatasetEntity findByNameForUpdate(@Param("name")String name, @Param("projectId") Long projectId);
 
-    SWDatasetEntity findByName(@Param("name")String name);
+    SWDatasetEntity findByName(@Param("name")String name, @Param("projectId") Long projectId);
 
     SWDatasetEntity findDeletedDatasetById(@Param("id")Long id);
 
-    List<SWDatasetEntity> listDeletedDatasets(@Param("name")String name);
+    List<SWDatasetEntity> listDeletedDatasets(@Param("name")String name, @Param("projectId") Long projectId);
 }

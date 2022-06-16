@@ -34,9 +34,9 @@ public interface RuntimeMapper {
 
     List<RuntimeEntity> findRuntimesByIds(@Param("ids")List<Long> ids);
 
-    RuntimeEntity findByNameForUpdate(@Param("name")String name);
-    RuntimeEntity findByName(@Param("name")String name);
+    RuntimeEntity findByNameForUpdate(@Param("name")String name, @Param("projectId") Long projectId);
+    RuntimeEntity findByName(@Param("name")String name, @Param("projectId") Long projectId);
 
     RuntimeEntity findDeletedRuntimeById(@Param("id")Long id);
-    List<RuntimeEntity> listDeletedRuntimes(@Param("runtimeName")String runtimeName);
+    List<RuntimeEntity> listDeletedRuntimes(@Param("runtimeName")String runtimeName, @Param("projectId") Long projectId);
 }

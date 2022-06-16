@@ -255,7 +255,8 @@ public class SwdsUploader {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("name or version is required in manifest "),
                 HttpStatus.BAD_REQUEST);
         }
-        SWDatasetEntity swDatasetEntity = swdsMapper.findByName(manifest.getName());
+        Long projectId = projectManager.getProjectId(uploadRequest.getProject());
+        SWDatasetEntity swDatasetEntity = swdsMapper.findByName(manifest.getName(), projectId);
         if(null == swDatasetEntity){
             //create
             swDatasetEntity = from(manifest,uploadRequest.getProject());
@@ -337,8 +338,9 @@ public class SwdsUploader {
     }
 
     final static String SWDS_MANIFEST="_manifest.yaml";
-    public byte[] pull(String name, String version, String partName, HttpServletResponse httpResponse) {
-        SWDatasetEntity datasetEntity = swdsMapper.findByName(name);
+    public byte[] pull(String project, String name, String version, String partName, HttpServletResponse httpResponse) {
+        Long projectId = projectManager.getProjectId(project);
+        SWDatasetEntity datasetEntity = swdsMapper.findByName(name, projectId);
         if(null == datasetEntity){
             throw new SWValidationException(ValidSubject.SWDS).tip("dataset name doesn't exists");
         }

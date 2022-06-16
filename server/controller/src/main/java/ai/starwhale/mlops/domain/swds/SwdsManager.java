@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.swds;
 
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.swds.bo.SWDSObject;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
@@ -43,41 +44,15 @@ public class SwdsManager {
     @Resource
     private IDConvertor idConvertor;
 
-    public SWDSObject fromUrl(String runtimeUrl) {
-        if(idConvertor.isID(runtimeUrl)) {
-            return SWDSObject.builder().id(idConvertor.revert(runtimeUrl)).build();
-        } else {
-            return SWDSObject.builder().name(runtimeUrl).build();
-        }
-    }
+    @Resource
+    private ProjectManager projectManager;
 
-    public SWDSVersion fromVersionUrl(String versionUrl) {
-        if(idConvertor.isID(versionUrl)) {
-            return SWDSVersion.builder().id(idConvertor.revert(versionUrl)).build();
-        } else {
-            return SWDSVersion.builder().name(versionUrl).build();
+    public Long getSWDSId(String swdsUrl, String projectUrl) {
+        if(idConvertor.isID(swdsUrl)) {
+            return idConvertor.revert(swdsUrl);
         }
-    }
-
-    public SWDatasetEntity findSWDS(String swdsUrl) {
-        return findSWDS(fromUrl(swdsUrl));
-    }
-
-    public SWDatasetEntity findSWDS(SWDSObject swdsObject) {
-        if(swdsObject.getId() != null) {
-            return datasetMapper.findDatasetById(swdsObject.getId());
-        } else if (!StrUtil.isEmpty(swdsObject.getName())) {
-            return datasetMapper.findByName(swdsObject.getName());
-        }
-        return null;
-    }
-
-    public Long getSWDSId(String swdsUrl) {
-        SWDSObject obj = fromUrl(swdsUrl);
-        if(obj.getId() != null) {
-            return obj.getId();
-        }
-        SWDatasetEntity entity = datasetMapper.findByName(obj.getName());
+        Long projectId = projectManager.getProjectId(projectUrl);
+        SWDatasetEntity entity = datasetMapper.findByName(swdsUrl, projectId);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
                 .tip(String.format("Unable to find swds %s", swdsUrl)), HttpStatus.BAD_REQUEST);
@@ -86,11 +61,10 @@ public class SwdsManager {
     }
 
     public Long getSWDSVersionId(String versionUrl, Long swdsId) {
-        SWDSVersion version = fromVersionUrl(versionUrl);
-        if(version.getId() != null) {
-            return version.getId();
+        if(idConvertor.isID(versionUrl)) {
+            return idConvertor.revert(versionUrl);
         }
-        SWDatasetVersionEntity entity = datasetVersionMapper.findByDSIdAndVersionName(swdsId, version.getName());
+        SWDatasetVersionEntity entity = datasetVersionMapper.findByDSIdAndVersionName(swdsId, versionUrl);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                 .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);

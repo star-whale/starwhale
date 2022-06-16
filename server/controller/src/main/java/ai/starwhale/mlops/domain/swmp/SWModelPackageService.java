@@ -123,26 +123,27 @@ public class SWModelPackageService {
     }
 
     public Boolean deleteSWMP(SWMPQuery query) {
-        Long id = swmpManager.getSWMPId(query.getSwmpUrl());
+        Long id = swmpManager.getSWMPId(query.getSwmpUrl(), query.getProjectUrl());
         int res = swmpMapper.deleteSWModelPackage(id);
         log.info("SWMP has been deleted. ID={}", id);
         return res > 0;
     }
 
     public Boolean recoverSWMP(String projectUrl, String modelUrl) {
-        SWMPObject swmp = swmpManager.fromUrl(modelUrl);
-        String name = swmp.getName();
-        Long id = swmp.getId();
-        if(id != null) {
+        Long projectId = projectManager.getProjectId(projectUrl);
+        String name = modelUrl;
+        Long id;
+        if(idConvertor.isID(modelUrl)) {
+            id = idConvertor.revert(modelUrl);
             SWModelPackageEntity entity = swmpMapper.findDeletedSWModelPackageById(id);
             if(entity == null) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                     .tip("Recover model error. Model can not be found. "), HttpStatus.BAD_REQUEST);
             }
             name = entity.getSwmpName();
-        } else if (!StrUtil.isEmpty(name)) {
+        } else {
             // To restore models by name, need to check whether there are duplicate names
-            List<SWModelPackageEntity> deletedSWModelPackages = swmpMapper.listDeletedSWModelPackages(name);
+            List<SWModelPackageEntity> deletedSWModelPackages = swmpMapper.listDeletedSWModelPackages(name, projectId);
             if(deletedSWModelPackages.size() > 1) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                     .tip(String.format("Recover model error. Duplicate names [%s] of deleted model. ", name)),
@@ -154,9 +155,9 @@ public class SWModelPackageService {
             }
             id = deletedSWModelPackages.get(0).getId();
         }
-
         // Check for duplicate names
-        if(swmpMapper.findByName(name) != null) {
+
+        if(swmpMapper.findByName(name, projectId) != null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                 .tip(String.format("Recover model error. Model %s already exists", name)), HttpStatus.BAD_REQUEST);
         }
@@ -169,7 +170,8 @@ public class SWModelPackageService {
     public List<SWModelPackageInfoVO> listSWMPInfo(String project, String name) {
 
         if(StringUtils.hasText(name)){
-            SWModelPackageEntity swmp = swmpMapper.findByName(name);
+            Long projectId = projectManager.getProjectId(project);
+            SWModelPackageEntity swmp = swmpMapper.findByName(name, projectId);
             if(swmp == null) {
                 throw new SWValidationException(ValidSubject.SWMP)
                     .tip("Unable to find the swmp with name " + name);
@@ -201,7 +203,8 @@ public class SWModelPackageService {
     }
 
     public SWModelPackageInfoVO getSWMPInfo(SWMPQuery query) {
-        SWModelPackageEntity model = swmpManager.findSWMP(query.getSwmpUrl());
+        Long swmpId = swmpManager.getSWMPId(query.getSwmpUrl(), query.getProjectUrl());
+        SWModelPackageEntity model = swmpMapper.findSWModelPackageById(swmpId);
         if (model == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
                 .tip("Unable to find swmp " + query.getSwmpUrl()), HttpStatus.BAD_REQUEST);
@@ -251,8 +254,8 @@ public class SWModelPackageService {
         }
     }
 
-    public Boolean modifySWMPVersion(String swmpUrl, String versionUrl, SWMPVersion version) {
-        Long swmpId = swmpManager.getSWMPId(swmpUrl);
+    public Boolean modifySWMPVersion(String projectUrl, String swmpUrl, String versionUrl, SWMPVersion version) {
+        Long swmpId = swmpManager.getSWMPId(swmpUrl, projectUrl);
         Long versionId = swmpManager.getSWMPVersionId(versionUrl, swmpId);
         SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
             .id(versionId)
@@ -266,7 +269,7 @@ public class SWModelPackageService {
 
     public Boolean manageVersionTag(String projectUrl, String modelUrl, String versionUrl,
         TagAction tagAction) {
-        Long id = swmpManager.getSWMPId(modelUrl);
+        Long id = swmpManager.getSWMPId(modelUrl, projectUrl);
         Long versionId = swmpManager.getSWMPVersionId(versionUrl, id);
 
         SWModelPackageVersionEntity entity = swmpVersionMapper.findVersionById(versionId);
@@ -280,8 +283,8 @@ public class SWModelPackageService {
         return update > 0;
     }
 
-    public Boolean revertVersionTo(String swmpUrl, String versionUrl) {
-        Long id = swmpManager.getSWMPId(swmpUrl);
+    public Boolean revertVersionTo(String projectUrl, String swmpUrl, String versionUrl) {
+        Long id = swmpManager.getSWMPId(swmpUrl, projectUrl);
         Long vid = swmpManager.getSWMPVersionId(versionUrl, id);
         int res = swmpVersionMapper.revertTo(id, vid);
         log.info("SWMP Version has been revert to {}", vid);
@@ -289,7 +292,7 @@ public class SWModelPackageService {
     }
 
     public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPVersionQuery query, PageParams pageParams) {
-        Long swmpId = swmpManager.getSWMPId(query.getSwmpUrl());
+        Long swmpId = swmpManager.getSWMPId(query.getSwmpUrl(), query.getProjectUrl());
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWModelPackageVersionEntity> entities = swmpVersionMapper.listVersions(
             swmpId, query.getVersionName(), query.getVersionTag());
@@ -357,13 +360,20 @@ public class SWModelPackageService {
 
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}",startTime);
-        SWModelPackageEntity entity = swmpMapper.findByNameForUpdate(uploadRequest.name());
+        Long projectId = null;
+        if(!StrUtil.isEmpty(uploadRequest.getProject())) {
+            projectId = projectManager.getProjectId(uploadRequest.getProject());
+        }
+        SWModelPackageEntity entity = swmpMapper.findByNameForUpdate(uploadRequest.name(), projectId);
         if (null == entity) {
             //create
-            ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject());
+            if(projectId == null) {
+                ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject());
+                projectId = projectEntity.getId();
+            }
             entity = SWModelPackageEntity.builder().isDeleted(0)
                 .ownerId(getOwner())
-                .projectId(null == projectEntity ? null : projectEntity.getId())
+                .projectId(projectId)
                 .swmpName(uploadRequest.name())
                 .build();
             swmpMapper.addSWModelPackage(entity);
@@ -425,7 +435,8 @@ public class SWModelPackageService {
     }
 
     public void pull(ClientSWMPRequest pullRequest, HttpServletResponse httpResponse) {
-        SWModelPackageEntity swModelPackageEntity = swmpMapper.findByName(pullRequest.name());
+        Long projectId = projectManager.getProjectId(pullRequest.getProject());
+        SWModelPackageEntity swModelPackageEntity = swmpMapper.findByName(pullRequest.name(), projectId);
         if(null == swModelPackageEntity){
             throw new SWValidationException(ValidSubject.SWMP).tip("swmp not found");
         }
@@ -461,7 +472,8 @@ public class SWModelPackageService {
     }
 
     public String query(ClientSWMPRequest queryRequest) {
-        SWModelPackageEntity entity = swmpMapper.findByName(queryRequest.name());
+        Long projectId = projectManager.getProjectId(queryRequest.getProject());
+        SWModelPackageEntity entity = swmpMapper.findByName(queryRequest.name(), projectId);
         if(null == entity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP),HttpStatus.NOT_FOUND);
         }
