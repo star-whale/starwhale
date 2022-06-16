@@ -71,7 +71,6 @@ public class EvalPPLStepTrigger implements StepTrigger{
         taskMapper.updateTaskRequest(cmpTask.getId(),cmpRequest.toString());
         cmpTask.setTaskRequest(cmpRequest);
         cmpTask.updateStatus(TaskStatus.READY);
-        cmpStep.getJob().setCurrentStep(cmpStep);
     }
     public boolean applyTo(JobType jobType,String stepName){
         return jobType == JobType.EVALUATION && JobSpliteratorEvaluation.STEP_NAMES[0].equals(stepName);

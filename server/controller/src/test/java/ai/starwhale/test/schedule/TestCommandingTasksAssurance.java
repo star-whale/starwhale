@@ -19,7 +19,7 @@ package ai.starwhale.test.schedule;
 import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.JobRuntime;
+import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
@@ -30,17 +30,20 @@ import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
 import ai.starwhale.mlops.reporting.ReportedTask;
 import ai.starwhale.mlops.schedule.CommandingTasksAssurance;
-import ai.starwhale.mlops.schedule.SimpleSWTaskScheduler;
+import ai.starwhale.test.ObjectMockHolder;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+/**
+ * test for {@link ai.starwhale.mlops.schedule.CommandingTasksAssurance}
+ */
 public class TestCommandingTasksAssurance {
 
 
     @Test
     public void testOnNodeReporting(){
-        final CommandingTasksAssurance commandingTasksAssurance = new CommandingTasksAssurance(new SimpleSWTaskScheduler());
+        final CommandingTasksAssurance commandingTasksAssurance = ObjectMockHolder.commandingTasksAssurance();
         Agent agent = new Agent(1L,"1","10.199.2.2","10.199.2.2",null,null, AgentStatus.ONLINE);
         List<TaskCommand> taskCommands = List.of(
             new TaskCommand(CommandType.TRIGGER,Task.builder().id(1L).uuid("uu1").build()),
@@ -63,9 +66,7 @@ public class TestCommandingTasksAssurance {
 
     @Test
     public void testAgentStatusChange(){
-        SimpleSWTaskScheduler swTaskScheduler = new SimpleSWTaskScheduler();
-        final CommandingTasksAssurance commandingTasksAssurance = new CommandingTasksAssurance(
-            swTaskScheduler);
+        final CommandingTasksAssurance commandingTasksAssurance = ObjectMockHolder.commandingTasksAssurance();;
         Agent agent = new Agent(1L,"1","10.199.2.2","10.199.2.2",null,null, AgentStatus.ONLINE);
         Job job = Job.builder().jobRuntime(JobRuntime.builder().deviceClass(Clazz.CPU).build()).build();
         Step step = Step.builder().job(job).build();

@@ -16,11 +16,13 @@
 
 package ai.starwhale.test.domain.task;
 
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 
 import static ai.starwhale.mlops.domain.task.status.TaskStatus.*;
 
+import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
@@ -111,6 +113,23 @@ public class TestStepHelper {
     public void  testEmpty(){
         Assertions.assertEquals(StepStatus.UNKNOWN, stepHelper.desiredStepStatus(
             Set.of()));
+    }
+
+    @Test
+    public void testFirstStep(){
+        Step step1 = Step.builder().id(1L).build();
+        Step step2 = Step.builder().id(2L).build();
+        Step step3 = Step.builder().id(3L).build();
+        Step step4 = Step.builder().id(4L).build();
+        Step step5 = Step.builder().id(5L).build();
+        Step step6 = Step.builder().id(6L).build();
+        step3.setNextStep(step2);
+        step2.setNextStep(step1);
+        step1.setNextStep(step6);
+        step6.setNextStep(step4);
+        step4.setNextStep(step5);
+        Step firsStep = stepHelper.firsStep(List.of(step1, step2, step3, step4, step5, step6));
+        Assertions.assertEquals(step3.getId(),firsStep.getId());
     }
 
 

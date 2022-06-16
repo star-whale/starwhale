@@ -80,8 +80,4 @@ public class JobStatusCalculator {
 
     }
 
-    public void updateJobStatus(Job job){
-
-    }
-
 }

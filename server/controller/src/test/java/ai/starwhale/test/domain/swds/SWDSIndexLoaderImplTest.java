@@ -16,6 +16,43 @@
 
 package ai.starwhale.test.domain.swds;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import ai.starwhale.mlops.domain.swds.bo.SWDSIndex;
+import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoaderImpl;
+import ai.starwhale.mlops.storage.StorageAccessService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+/**
+ * test for {@link SWDSIndexLoaderImpl}
+ */
 public class SWDSIndexLoaderImplTest {
 
+    @Test
+    public void testSWDSIndexLoaderImpl() throws IOException {
+        SWDSIndexLoaderImpl swdsIndexLoader = mockIndexLoader();
+        String storagePath = "anyStr";
+        SWDSIndex swdsIndex = swdsIndexLoader.load(storagePath);
+        Assertions.assertEquals(storagePath,swdsIndex.getStoragePath());
+        Assertions.assertEquals(3,swdsIndex.getSwdsBlockList().size());
+    }
+
+    public static SWDSIndexLoaderImpl mockIndexLoader() throws IOException {
+        StorageAccessService storageAccessService = mock(StorageAccessService.class);
+        when(storageAccessService.get(anyString())).thenReturn(new ByteArrayInputStream(INDEX_CONTENT.getBytes()));
+        ObjectMapper objectMapper = new ObjectMapper();
+        SWDSIndexLoaderImpl swdsIndexLoader = new SWDSIndexLoaderImpl(storageAccessService,
+            objectMapper);
+        return swdsIndexLoader;
+    }
+
+    public static final String INDEX_CONTENT="{\"id\": 0, \"batch\": 50, \"data\": {\"file\": \"data_ubyte_0.swds_bin\", \"offset\": 0, \"size\": 39200}, \"label\": {\"file\": \"label_ubyte_0.swds_bin\", \"offset\": 0, \"size\": 50}}1\n"
+        + "{\"id\": 1, \"batch\": 50, \"data\": {\"file\": \"data_ubyte_0.swds_bin\", \"offset\": 40932, \"size\": 39200}, \"label\": {\"file\": \"label_ubyte_0.swds_bin\", \"offset\": 4068, \"size\": 50}}\n"
+        + "{\"id\": 2, \"batch\": 50, \"data\": {\"file\": \"data_ubyte_0.swds_bin\", \"offset\": 81864, \"size\": 39200}, \"label\": {\"file\": \"label_ubyte_0.swds_bin\", \"offset\": 8136, \"size\": 50}}\n";
 }

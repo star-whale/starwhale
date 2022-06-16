@@ -20,9 +20,7 @@ import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.JobRuntime;
-import ai.starwhale.mlops.domain.job.mapper.JobMapper;
-import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
+import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
@@ -33,7 +31,6 @@ import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
 import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.domain.task.bo.ppl.PPLRequest;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -54,24 +51,14 @@ public class TaskBoConverter {
 
     final SWDSBlockSerializer swdsBlockSerializer;
 
-    final TaskMapper taskMapper;
-
-    final JobMapper jobMapper;
-
-    final JobBoConverter jobBoConverter;
-
     final AgentConverter agentConverter;
 
     final LocalDateTimeConvertor localDateTimeConvertor;
 
-    public TaskBoConverter(SWDSBlockSerializer swdsBlockSerializer, TaskMapper taskMapper,
-        JobMapper jobMapper, JobBoConverter jobBoConverter,
+    public TaskBoConverter(SWDSBlockSerializer swdsBlockSerializer,
         AgentConverter agentConverter,
         ai.starwhale.mlops.common.LocalDateTimeConvertor localDateTimeConvertor) {
         this.swdsBlockSerializer = swdsBlockSerializer;
-        this.taskMapper = taskMapper;
-        this.jobMapper = jobMapper;
-        this.jobBoConverter = jobBoConverter;
         this.agentConverter = agentConverter;
         this.localDateTimeConvertor = localDateTimeConvertor;
     }

@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.mapper;
 
-import ai.starwhale.mlops.domain.job.BaseImageEntity;
+import ai.starwhale.mlops.domain.job.po.BaseImageEntity;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 

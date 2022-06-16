@@ -39,6 +39,7 @@ public class StepTriggerContext {
         for(StepTrigger stepTrigger:stepTriggers){
             if(stepTrigger.applyTo(step.getJob().getType(),step.getName())){
                 stepTrigger.triggerNextStep(step);
+                step.getJob().setCurrentStep(nextStep);
                 return nextStep;
             }
         }

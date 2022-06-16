@@ -33,6 +33,9 @@ import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
+import ai.starwhale.mlops.exception.SWProcessException;
+import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.schedule.CommandingTasksAssurance;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import java.util.ArrayList;
@@ -98,38 +101,50 @@ public class JobLoader {
         this.jobUpdateHelper = jobUpdateHelper;
     }
 
-    public List<Job> loadEntities(List<JobEntity> jobEntityList){
+    public List<Job> loadEntities(List<JobEntity> jobEntityList,Boolean resumePausedOrFailTasks,Boolean doCache){
         if(CollectionUtils.isEmpty(jobEntityList)){
             return new ArrayList<>(0);
+        }
+        if(resumePausedOrFailTasks && !doCache){
+            throw new SWProcessException(ErrorType.SYSTEM).tip("unsupported params combination: resumePausedOrFailTasks:true & doCache:false");
         }
         return jobEntityList.parallelStream()
             .map(jobBoConverter::fromEntity)
             .peek(job -> {
-                fillStepsAndTasks(job);
-                jobHolder.adopt(job);
+                fillStepsAndTasks(job,resumePausedOrFailTasks,doCache);
+                if(doCache){
+                    jobHolder.adopt(job);
+                }
             })
             .collect(Collectors.toList());
 
     }
 
-    private void fillStepsAndTasks(Job job) {
+    private void fillStepsAndTasks(Job job,Boolean resumePausedOrFailTasks,Boolean doCache) {
         List<StepEntity> stepEntities = stepMapper.findByJobId(job.getId());
         List<Step> steps = stepEntities.parallelStream().map(stepConverter::fromEntity)
             .peek(step -> {
                 step.setJob(job);
                 List<TaskEntity> taskEntities = taskMapper.findByStepId(step.getId());
                 List<Task> tasks = taskBoConverter.fromTaskEntity(taskEntities, step);//PAUSED, FAIL
-                resumeFrozenTasks(tasks);
-                List<Task> watchableTasks = watchableTaskFactory.wrapTasks(tasks);
-                scheduleReadyTasks(watchableTasks.parallelStream()
-                    .filter(t -> t.getStatus() == TaskStatus.READY)
-                    .collect(
+                if(resumePausedOrFailTasks){
+                    resumeFrozenTasks(tasks);
+                }
+                if(doCache){
+                    List<Task> watchableTasks = watchableTaskFactory.wrapTasks(tasks);
+                    scheduleReadyTasks(watchableTasks.parallelStream()
+                        .filter(t -> t.getStatus() == TaskStatus.READY)
+                        .collect(
+                            Collectors.toSet()));
+                    assureCommandingTasks(watchableTasks.parallelStream().filter(
+                        t -> t.getStatus() == TaskStatus.ASSIGNING
+                            || t.getStatus() == TaskStatus.CANCELLING).collect(
                         Collectors.toSet()));
-                assureCommandingTasks(watchableTasks.parallelStream().filter(
-                    t -> t.getStatus() == TaskStatus.ASSIGNING
-                        || t.getStatus() == TaskStatus.CANCELLING).collect(
-                    Collectors.toSet()));
-                step.setTasks(watchableTasks);
+                    step.setTasks(watchableTasks);
+                }else {
+                    step.setTasks(tasks);
+                }
+
                 step.setStatus(stepHelper.desiredStepStatus(tasks.parallelStream().map(Task::getStatus).collect(
                     Collectors.toSet())));
                 if(step.getStatus() == StepStatus.RUNNING){
@@ -141,7 +156,7 @@ public class JobLoader {
             }).collect(Collectors.toList());
         linkSteps(steps,stepEntities);
         job.setSteps(steps);
-        if(null == job.getCurrentStep()){
+        if(null == job.getCurrentStep() && doCache){
             triggerPossibleNextStep(job);
         }
         jobUpdateHelper.updateJob(job);
@@ -187,7 +202,13 @@ public class JobLoader {
             return;
         }
         tasks.parallelStream()
-            .filter(task -> null != task.getAgent())
+            .filter(task -> {
+                boolean b = null != task.getAgent();
+                if(!b){
+                    log.warn("task status is ASSIGNING but has no Agent!! {}",task.getId());
+                }
+                return b;
+            })
             .collect(Collectors.groupingBy(Task::getAgent))
             .forEach((agent, taskList) -> commandingTasksAssurance
                 .onTaskCommanding(taskBoConverter.toTaskCommand(taskList),agent));
@@ -205,6 +226,7 @@ public class JobLoader {
                 }
                 if(nextStep.getStatus() == StepStatus.CREATED){
                     stepTriggerContext.triggerNextStep(stepPointer);
+                    break;
                 }
             }else{
                 log.warn("step is not success and is not job current status {} id:{}",stepPointer.getStatus(),stepPointer.getId());

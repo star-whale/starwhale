@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.job.bo;
 
 import ai.starwhale.mlops.common.TimeConcern;
-import ai.starwhale.mlops.domain.job.JobRuntime;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;

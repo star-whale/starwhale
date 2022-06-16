@@ -48,11 +48,14 @@ public class AgentCache implements CommandLineRunner {
 
     final List<AgentStatusWatcher> agentStatusWatchers;
 
+    Long bareTimeMilli;
+
     public AgentCache(AgentMapper agentMapper, AgentConverter agentConverter,
         List<AgentStatusWatcher> agentStatusWatchers) {
         this.agentMapper = agentMapper;
         this.agentConverter = agentConverter;
         this.agentStatusWatchers = agentStatusWatchers;
+        this.bareTimeMilli = 30000L;
         agents = new ConcurrentHashMap<>();
     }
 
@@ -93,7 +96,6 @@ public class AgentCache implements CommandLineRunner {
     @Scheduled(initialDelay = 10000,fixedDelay = 30000)
     public void flushDb(){
         long now = System.currentTimeMillis();
-        int bareTimeMilli = 30000;
         List<AgentEntity> agentEntities = agents.values().stream()
             .peek(agent -> {
                 if( (now - agent.getConnectTime())> bareTimeMilli && AgentStatus.ONLINE == agent.getStatus()){

@@ -375,7 +375,7 @@ public class JobService {
         if(jobEntity.getJobStatus() != JobStatus.PAUSED || jobEntity.getJobStatus() != JobStatus.FAIL){
             throw new SWValidationException(ValidSubject.JOB).tip("only failed and paused job can be resumed ");
         }
-        jobLoader.loadEntities(List.of(jobEntity));
+        jobLoader.loadEntities(List.of(jobEntity),true,true);
     }
 
 }

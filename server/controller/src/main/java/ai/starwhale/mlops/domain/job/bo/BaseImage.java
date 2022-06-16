@@ -14,44 +14,20 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.swds.index;
+package ai.starwhale.mlops.domain.job.bo;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * the storage unit of one data set
- */
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class SWDSBlock {
+@NoArgsConstructor
+public class BaseImage {
 
-    /**
-     * the offset to the original SWDS
-     */
-    Long id;
+    private Long id;
 
-    /**
-     * how many batches does this block contains
-     */
-    @JsonProperty("batch")
-    int batchAmount;
-
-    /**
-     * location of labels in this block
-     */
-    @JsonProperty("label")
-    SWDSDataLocation locationLabel;
-
-    /**
-     * location of inputs in this block
-     */
-    @JsonProperty("data")
-    SWDSDataLocation locationInput;
-
+    private String name;
 }

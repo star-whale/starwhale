@@ -29,7 +29,7 @@ import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
-import ai.starwhale.mlops.domain.swds.index.SWDSIndex;
+import ai.starwhale.mlops.domain.swds.bo.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.TaskType;
@@ -159,6 +159,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         stepPPL.setNextStep(stepCMP);
         job.setSteps(List.of(stepPPL,stepCMP));
         job.setCurrentStep(stepPPL);
+        job.setStatus(JobStatus.READY);
         return job.getSteps();
     }
 
