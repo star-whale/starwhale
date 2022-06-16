@@ -56,7 +56,9 @@ html {
   --ifm-font-family-base: Cousine;
   --ifm-font-size-base: 14px;
 
-  --max-page-width: 1600px;
+  --max-page-width: 100%;
+  --ifm-container-width-xl: "100%";
+  --ifm-container-width: "100%";
 
   --ifm-footer-background-color: #050d46;
 }
