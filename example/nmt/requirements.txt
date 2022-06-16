@@ -1,0 +1,7 @@
+numpy
+torch
+torchvision
+#Pillow
+scikit-learn
+nltk
+starwhale

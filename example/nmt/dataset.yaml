@@ -1,0 +1,16 @@
+name: nmt
+
+mode: generate
+
+data_dir: data
+
+process: code.dataset:DataSetProcessExecutor
+
+desc: nmt data and label test dataset
+tag:
+ - bin
+
+attr:
+  batch_size: 1
+  alignment_size: 4k
+  volume_size: 2M
