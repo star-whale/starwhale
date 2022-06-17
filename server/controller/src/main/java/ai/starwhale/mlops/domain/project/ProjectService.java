@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -48,14 +49,17 @@ public class ProjectService {
     @Resource
     private ProjectConvertor projectConvertor;
 
+    @Resource
+    private IDConvertor idConvertor;
+
     /**
      * Find a project by parameters.
      * @param projectUrl Project URL must be set.
      * @return Optional of a ProjectVO object.
      */
     public ProjectVO findProject(String projectUrl) {
-        Project project = projectManager.fromUrl(projectUrl);
-        ProjectEntity projectEntity = projectManager.findProject(project);
+        Long projectId = projectManager.getProjectId(projectUrl);
+        ProjectEntity projectEntity = projectMapper.findProject(projectId);
         if(projectEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                 .tip("Unable to find project"), HttpStatus.BAD_REQUEST);
@@ -104,8 +108,8 @@ public class ProjectService {
      * @return Is the operation successful.
      */
     public Boolean deleteProject(String projectUrl) {
-        Project project = projectManager.fromUrl(projectUrl);
-        ProjectEntity entity = projectManager.findProject(project);
+        Long projectId = projectManager.getProjectId(projectUrl);
+        ProjectEntity entity = projectMapper.findProject(projectId);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                 .tip("Unable to find project"), HttpStatus.BAD_REQUEST);
@@ -121,17 +125,17 @@ public class ProjectService {
     }
 
     public Boolean recoverProject(String projectUrl) {
-        Project project = projectManager.fromUrl(projectUrl);
-        String projectName = project.getName();
-        Long id = project.getId();
-        if(id != null) {
-            ProjectEntity entity = projectMapper.findProject(project.getId());
+        String projectName = projectUrl;
+        Long id;
+        if(idConvertor.isID(projectUrl)) {
+            id = idConvertor.revert(projectUrl);
+            ProjectEntity entity = projectMapper.findProject(id);
             if(entity == null) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                     .tip("Recover project error. Project can not be found. "), HttpStatus.BAD_REQUEST);
             }
             projectName = entity.getProjectName();
-        } else if (!StrUtil.isEmpty(projectName)) {
+        } else {
             // To restore projects by name, need to check whether there are duplicate names
             List<ProjectEntity> deletedProjects = projectMapper.listDeletedProjects(projectName);
             if(deletedProjects.size() > 1) {
@@ -157,15 +161,11 @@ public class ProjectService {
         return res > 0;
     }
 
-    /**
-     * Modify a project. Now only project name can be modified
-     * @param project Project object.
-     * @return Is the operation successful.
-     */
-    public Boolean modifyProject(Project project) {
+    public Boolean modifyProject(String projectUrl, String projectName) {
+        Long projectId = projectManager.getProjectId(projectUrl);
         ProjectEntity entity = ProjectEntity.builder()
-            .id(project.getId())
-            .projectName(project.getName())
+            .id(projectId)
+            .projectName(projectName)
             .build();
         int res = projectMapper.modifyProject(entity);
         log.info("Project has been modified ID={}", entity.getId());
