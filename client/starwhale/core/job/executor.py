@@ -126,7 +126,7 @@ class EvalExecutor(object):
 
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
-        # TODO: fix _workdir sequence-depent issue
+        # TODO: fix _workdir sequence-dependency issue
         self._workdir = (
             self.project_dir
             / URIType.JOB
@@ -165,7 +165,7 @@ class EvalExecutor(object):
             logger.debug(f"[gen fuse input.json]{fname}")
 
         _base = json.load(open(_fuse_jsons[0], "r"))
-        for _f in _fuse_jsons[0:]:
+        for _f in _fuse_jsons[1:]:
             _config = json.load(open(_f, "r"))
             _base["swds"].extend(_config["swds"])
 
