@@ -69,11 +69,11 @@ def get_bleu(references, hypotheses):
 def evaluate_batch(device, input_lang, output_lang, sentences, encoder, decoder):
     pred_sent = []
     for sentence in sentences:
-        print('>', sentence)
+        #print('>', sentence)
 
         output_words, attentions = evaluate(device, input_lang, output_lang, encoder, decoder, sentence)
         output_sentence = ' '.join(output_words)
-        print('<', output_sentence)
+        #print('<', output_sentence)
 
         pred_sent.append(output_sentence)
     return pred_sent
