@@ -57,7 +57,7 @@ class NMTPipeline(PipelineHandler):
 
         bleu = BLEU(_result, [_label])
 
-        return {'bleu_score': bleu}
+        return {'summary': {'bleu_score': bleu}}
 
 
     def _load_vocab(self):
