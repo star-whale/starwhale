@@ -21,6 +21,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
+from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
@@ -44,28 +45,43 @@ class EvalExecutor(object):
         name: str = "",
         desc: str = "",
         gencmd: bool = False,
-        docker_verbose: bool = False,
+        use_docker: bool = False,
     ) -> None:
         self.name = name
         self.desc = desc
-
-        self.model_uri = URI(model_uri, expected_type=URIType.MODEL)
+        self.model_uri = model_uri
         self.project_uri = project_uri
         self.dataset_uris = [
             URI(u, expected_type=URIType.DATASET) for u in dataset_uris
         ]
-        self.runtime_uri = URI(runtime_uri, expected_type=URIType.RUNTIME)
-        self.runtime = StandaloneRuntime(self.runtime_uri)
-        self.baseimage = self.runtime.store.get_docker_base_image()
+
+        self.runtime_uri = runtime_uri
+
+        if runtime_uri:
+            self.runtime = StandaloneRuntime(
+                URI(runtime_uri, expected_type=URIType.RUNTIME)
+            )
+            self.baseimage = self.runtime.store.get_docker_base_image()
+        else:
+            self.runtime = None
+            self.baseimage = ""
+
         self.project_dir = Path(self.project_uri.real_request_uri)
 
         self.gencmd = gencmd
-        self.docker_verbose = docker_verbose
+        self.use_docker = use_docker
+
         self._version = ""
         self._manifest: t.Dict[str, t.Any] = {"status": _STATUS.START}
         self._workdir = Path()
         self._model_dir = Path()
         self._runtime_dir = Path()
+
+        self._do_validate()
+
+    def _do_validate(self) -> None:
+        if self.use_docker and not self.runtime_uri:
+            raise FieldTypeOrValueError("runtime_uri is none")
 
     def __str__(self) -> str:
         return f"Evaluation Executor: {self.name}"
@@ -73,7 +89,7 @@ class EvalExecutor(object):
     def __repr__(self) -> str:
         return f"Evaluation Executor: name -> {self.name}, version -> {self._version}"
 
-    def run(self, phase: str = EvalTaskType.ALL) -> None:
+    def run(self, phase: str = EvalTaskType.ALL) -> str:
         try:
             self._do_run(phase)
         except Exception as e:
@@ -82,6 +98,8 @@ class EvalExecutor(object):
             raise
         finally:
             self._render_manifest()
+
+        return self._version
 
     def _do_run(self, phase: str = EvalTaskType.ALL) -> None:
         self._manifest["phase"] = phase
@@ -150,11 +168,21 @@ class EvalExecutor(object):
         logger.info(f"[step:prepare]eval workdir: {self._workdir}")
 
     def _extract_swmp(self) -> None:
-        _m = StandaloneModel(self.model_uri)
-        self._model_dir = _m.extract()
+        _workdir = Path(self.model_uri)
+        _model_yaml_path = _workdir / DefaultYAMLName.MODEL
+
+        if _workdir.exists() and _model_yaml_path.exists() and not self.use_docker:
+            self._model_dir = _workdir
+        else:
+            model_uri = URI(self.model_uri, expected_type=URIType.MODEL)
+            _m = StandaloneModel(model_uri)
+            self._model_dir = _m.extract() / "src"
 
     def _extract_swrt(self) -> None:
-        self._runtime_dir = self.runtime.extract()
+        if self.runtime and self.use_docker:
+            self._runtime_dir = self.runtime.extract()
+        else:
+            self._runtime_dir = Path()
 
     def _gen_swds_fuse_json(self) -> Path:
         _fuse_jsons = []
@@ -169,9 +197,10 @@ class EvalExecutor(object):
             _config = json.load(open(_f, "r"))
             _base["swds"].extend(_config["swds"])
 
-        _bucket = f"{_CNTR_WORKDIR}/{RunSubDirType.DATASET}"
-        for i in range(len(_base["swds"])):
-            _base["swds"][i]["bucket"] = _bucket
+        if self.use_docker:
+            _bucket = f"{_CNTR_WORKDIR}/{RunSubDirType.DATASET}"
+            for i in range(len(_base["swds"])):
+                _base["swds"][i]["bucket"] = _bucket
 
         _json_f: Path = (
             self._workdir
@@ -183,12 +212,17 @@ class EvalExecutor(object):
         return _json_f
 
     def _gen_jsonl_fuse_json(self) -> Path:
+        if self.use_docker:
+            _base_dir = f"{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}"
+        else:
+            _base_dir = str(self._ppl_workdir / RunSubDirType.RESULT)
+
         _fuse = dict(
             backend=SWDSBackendType.FUSE,
             kind=DataLoaderKind.JSONL,
             swds=[
                 dict(
-                    bucket=f"{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
+                    bucket=_base_dir,
                     key=dict(
                         data=CURRENT_FNAME,
                     ),
@@ -212,8 +246,36 @@ class EvalExecutor(object):
         self._do_run_cmd(EvalTaskType.PPL)
 
     def _do_run_cmd(self, typ: str) -> None:
+        if self.use_docker:
+            self._do_run_cmd_in_container(typ)
+        else:
+            self._do_run_cmd_in_host(typ)
+
+    def _do_run_cmd_in_host(self, typ: str) -> None:
+        from starwhale.core.model.model import StandaloneModel
+
+        if typ == EvalTaskType.PPL:
+            _base_dir = self._ppl_workdir
+        elif typ == EvalTaskType.CMP:
+            _base_dir = self._cmp_workdir
+        else:
+            raise NoSupportError(typ)
+
+        StandaloneModel.eval_user_handler(
+            typ=typ,
+            workdir=self._model_dir,
+            kw={
+                "status_dir": _base_dir / RunSubDirType.STATUS,
+                "log_dir": _base_dir / RunSubDirType.LOG,
+                "result_dir": _base_dir / RunSubDirType.RESULT,
+                "input_config": _base_dir
+                / RunSubDirType.CONFIG
+                / DEFAULT_INPUT_JSON_FNAME,
+            },
+        )
+
+    def _do_run_cmd_in_container(self, typ: str) -> None:
         cmd = self._gen_run_container_cmd(typ)
-        logger.info(f"[run {typ}] docker run command output...")
         console.rule(f":elephant: {typ} docker cmd", align="left")
         console.print(f"{cmd}\n")
         console.print(
@@ -236,12 +298,14 @@ class EvalExecutor(object):
             "--rm",
             "--name",
             f"{self._version}-{typ}",
+            "-e",
+            "DEBUG=1",
         ]
         cmd += [
             "-v",
             f"{rundir}:{_CNTR_WORKDIR}",
             "-v",
-            f"{self._model_dir}/src:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/src",
+            f"{self._model_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/src",
             "-v",
             f"{self._model_dir}/{DefaultYAMLName.MODEL}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DefaultYAMLName.MODEL}",
             "-v",
@@ -263,11 +327,7 @@ class EvalExecutor(object):
 
         cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
         host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
-
         cmd += ["-v", f"{host_cache_dir}:{cntr_cache_dir}"]
-
-        if self.docker_verbose:
-            cmd += ["-e", "DEBUG=1"]
 
         _env = os.environ
         for _ee in (
@@ -295,9 +355,10 @@ class EvalExecutor(object):
             dict(
                 name=self.name,
                 desc=self.desc,
-                model=self.model_uri.full_uri,
+                model=self.model_uri,
+                model_dir=str(self._model_dir),
                 datasets=[u.full_uri for u in self.dataset_uris],
-                runtime=self.runtime_uri.full_uri,
+                runtime=self.runtime_uri,
                 status=_STATUS.SUCCESS if _status else _STATUS.FAILED,
                 finished_at=now_str(),  # type: ignore
             )

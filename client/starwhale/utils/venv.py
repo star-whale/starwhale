@@ -165,7 +165,7 @@ def pip_freeze(
 ) -> None:
     # TODO: add cmd timeout and error log
     _py_bin = get_user_runtime_python_bin(py_env)
-    console.print(f":snake: [blink red bold]{_py_bin} pip [/] :snake:")
+    logger.info(f"{_py_bin}: pip freeze")
     cmd = [_py_bin, "-m", "pip", "freeze", "--require-virtualenv"]
     if not include_editable:
         cmd += ["--exclude-editable"]
@@ -226,7 +226,7 @@ def guess_current_py_env() -> str:
 def get_user_python_sys_paths(py_env: str) -> t.List[str]:
     logger.debug(f"get env({py_env}) sys path")
     _py_bin = get_user_runtime_python_bin(py_env)
-    console.print(f":snake: [blink red bold]{_py_bin} sys.path [/] :snake:")
+    logger.info(f"{_py_bin}: sys.path")
     output = subprocess.check_output(
         [
             _py_bin,
@@ -503,7 +503,7 @@ def create_python_env(
 
 def get_user_python_version(py_env: str) -> str:
     _py_bin = get_user_runtime_python_bin(py_env)
-    console.print(f":snake: [blink red bold]{_py_bin} version [/] :snake:")
+    logger.info(f"{_py_bin}: python version")
     output = subprocess.check_output(
         [
             _py_bin,
@@ -662,9 +662,7 @@ def _do_restore_venv(
 
 def validate_runtime_package_dep(py_env: str) -> None:
     _py_bin = get_user_runtime_python_bin(py_env)
-    console.print(
-        f":snake: use [blink red bold]{_py_bin} to check {SW_PYPI_PKG_NAME} install [/] :snake:"
-    )
+    logger.info(f"{_py_bin}: check {SW_PYPI_PKG_NAME} install")
     cmd = [
         _py_bin,
         "-c",
