@@ -98,34 +98,15 @@ public class ProjectManager {
     }
 
     public Long getProjectId(String projectUrl) {
-        Project project = fromUrl(projectUrl);
-        if(project.getId() != null) {
-            return project.getId();
+        if(idConvertor.isID(projectUrl)) {
+            return idConvertor.revert(projectUrl);
         }
-        ProjectEntity projectEntity = projectMapper.findProjectByName(project.getName());
+        ProjectEntity projectEntity = projectMapper.findProjectByName(projectUrl);
         if(projectEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
                 .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
         }
         return projectEntity.getId();
     }
-    public ProjectEntity findProject(Project project) {
-        ProjectEntity projectEntity = null;
-        if (project.getId() != null) {
-            projectEntity = projectMapper.findProject(project.getId());
-        } else if (!StrUtil.isEmpty(project.getName())){
-            projectEntity = projectMapper.findProjectByName(project.getName());
-        }
-        return projectEntity;
-    }
-
-    public Project fromUrl(String projectUrl) {
-        if(idConvertor.isID(projectUrl)) {
-            return Project.builder().id(idConvertor.revert(projectUrl)).build();
-        } else {
-            return Project.builder().name(projectUrl).build();
-        }
-    }
-
 
 }

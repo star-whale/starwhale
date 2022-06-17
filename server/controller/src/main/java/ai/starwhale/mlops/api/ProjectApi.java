@@ -98,9 +98,9 @@ public interface ProjectApi {
     @Operation(summary = "Modify project information")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectId}")
+    @PutMapping(value = "/project/{projectUrl}")
     ResponseEntity<ResponseMessage<String>> updateProject(
-        @PathVariable("projectId") String projectId,
+        @PathVariable("projectUrl") String projectId,
         @Valid @RequestBody ProjectRequest projectRequest);
 
 
