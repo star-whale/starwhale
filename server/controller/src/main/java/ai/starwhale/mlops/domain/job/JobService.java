@@ -133,8 +133,7 @@ public class JobService {
 
     public JobVO findJob(String projectUrl, String jobUrl) {
         Job job = jobManager.fromUrl(jobUrl);
-        Project project = projectManager.fromUrl(projectUrl);
-        JobEntity entity = jobManager.findJob(project, job);
+        JobEntity entity = jobManager.findJob(job);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
                 .tip(String.format("Unable to find job %s", jobUrl)), HttpStatus.BAD_REQUEST);

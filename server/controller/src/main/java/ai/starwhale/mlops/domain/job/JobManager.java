@@ -54,7 +54,7 @@ public class JobManager {
         return jobEntity.getId();
     }
 
-    public JobEntity findJob(Project project, Job job) {
+    public JobEntity findJob(Job job) {
         JobEntity jobEntity = null;
         if(job.getId() != null) {
             jobEntity = jobMapper.findJobById(job.getId());
