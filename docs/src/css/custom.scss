@@ -98,8 +98,7 @@ body {
 
 /* sidebar & content in the center of the page */
 
-.navbar__inner,
-.main-wrapper > div {
+.navbar__inner {
   margin: 0 auto;
   max-width: var(--max-page-width);
 }
@@ -179,7 +178,7 @@ html[data-theme="dark"] .navbar--dark {
 
 /* header content */
 .hero--primary {
-  background: #050d46;
+  background-color: transparent;
 }
 
 @media only screen and (min-width: 767px) {

@@ -14,6 +14,7 @@ import Link from "@docusaurus/Link";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import useBaseUrl from "@docusaurus/useBaseUrl";
 import styles from "./styles.module.css";
+import "./index.scss";
 
 const features = [
   {
@@ -89,60 +90,37 @@ function Home() {
       title={`Hello from ${siteConfig.title}`}
       description="Description will go into a meta tag in <head />"
     >
-      <header className={clsx("hero hero--primary", styles.heroBanner)}>
-        <div className="container">
-          <h1 className={styles.heroProjectTagline}>
-            <span
-              className={styles.heroTitleTextHtml}
-              dangerouslySetInnerHTML={{
-                __html: siteConfig.tagline,
-              }}
-            />
-          </h1>
-          <div className={styles.indexCtas}>
-            <Link
-              className="button button--outline button--secondary button--lg button--rounded"
-              to="/docs"
-            >
-              Get Started
-            </Link>
-            <Link
-              className="button button--primary button--lg button--rounded shadow--md"
-              to="https://app.starwhale.ai"
-            >
-              Free Sign Up
-            </Link>
-            <span className={styles.indexCtasGitHubButtonWrapper}>
-              <iframe
-                className={styles.indexCtasGitHubButton}
-                src="https://ghbtns.com/github-btn.html?user=star-whale&amp;repo=starwhale&amp;type=star&amp;count=true&amp;size=large"
-                width={160}
-                height={30}
-                title="GitHub Stars"
+      <div className="swMain-wrapper">
+        <header className={clsx("hero hero--primary", styles.heroBanner)}>
+          <div className="container">
+            <h1 className={styles.heroProjectTagline}>
+              <span
+                className={styles.heroTitleTextHtml}
+                dangerouslySetInnerHTML={{
+                  __html: siteConfig.tagline,
+                }}
               />
-            </span>
-          </div>
-        </div>
-      </header>
-      <main>
-        {features && features.length > 0 && (
-          <section className={styles.features}>
-            <div className="container">
-              <div className="row">
-                {features.map(({ title, imageUrl, description, newline }) => (
-                  <Feature
-                    key={title}
-                    title={title}
-                    imageUrl={imageUrl}
-                    description={description}
-                    newline={newline}
-                  />
-                ))}
-              </div>
+            </h1>
+            <div className={styles.indexCtas}>
+              <Link
+                className="button button--outline button--secondary button--lg button--rounded"
+                to="/docs/quickstart/standalone"
+              >
+                Get Started
+              </Link>
+              <span className={styles.indexCtasGitHubButtonWrapper}>
+                <iframe
+                  className={styles.indexCtasGitHubButton}
+                  src="https://ghbtns.com/github-btn.html?user=star-whale&amp;repo=starwhale&amp;type=star&amp;count=true&amp;size=large"
+                  width={160}
+                  height={30}
+                  title="GitHub Stars"
+                />
+              </span>
             </div>
-          </section>
-        )}
-      </main>
+          </div>
+        </header>
+      </div>
     </Layout>
   );
 }
