@@ -86,4 +86,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/build
           user_name: github-actions[bot]
+          cname: doc.starwhale.ai
           user_email: "github-actions[bot]@users.noreply.github.com"
