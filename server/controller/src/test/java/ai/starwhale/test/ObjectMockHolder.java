@@ -78,7 +78,7 @@ public class ObjectMockHolder {
     }
 
     public static AgentConverter agentConverter(){
-        return new AgentConverter(jsonMapper());
+        return new AgentConverter(jsonMapper(), localDateTimeConvertor());
     }
 
     public static LocalDateTimeConvertor localDateTimeConvertor(){

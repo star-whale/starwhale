@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
@@ -66,7 +67,8 @@ public class AgentCacheTest {
                 .status(AgentStatus.ONLINE)
                 .build()
         ));
-        AgentConverter agentConverter = new AgentConverter(new ObjectMapper());
+        AgentConverter agentConverter = new AgentConverter(new ObjectMapper(),
+            new LocalDateTimeConvertor());
         AgentStatusWatcher agentStatusWatcher1 = mock(AgentStatusWatcher.class);
         AgentStatusWatcher agentStatusWatcher2 = mock(AgentStatusWatcher.class);
         List<AgentStatusWatcher> agentStatusWatchers = List.of(agentStatusWatcher1,agentStatusWatcher2);
@@ -136,7 +138,8 @@ public class AgentCacheTest {
                 .status(AgentStatus.ONLINE)
                 .build()
         ));
-        AgentConverter agentConverter = new AgentConverter(new ObjectMapper());
+        AgentConverter agentConverter = new AgentConverter(new ObjectMapper(),
+            new LocalDateTimeConvertor());
         AgentStatusWatcher agentStatusWatcher1 = mock(AgentStatusWatcher.class);
         AgentStatusWatcher agentStatusWatcher2 = mock(AgentStatusWatcher.class);
         List<AgentStatusWatcher> agentStatusWatchers = List.of(agentStatusWatcher1,agentStatusWatcher2);
