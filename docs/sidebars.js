@@ -1,7 +1,7 @@
 module.exports = {
     mainSidebar: [
         {
-            "Quickstart": ["quickstart/what", "quickstart/standalone", "quickstart/on-premises"],
+            "Quickstart": ["quickstart/standalone", "quickstart/on-premises"],
             "Tutorials": ["tutorials/main"],
             "Fundamentals": ["fundamentals/concepts", "fundamentals/arch"],
             "Standalone Guides": [
