@@ -182,7 +182,7 @@ class JobTermView(BaseTermView):
         desc: str = "",
         resource: str = "",
         gencmd: bool = False,
-        docker_verbose: bool = False,
+        use_docker: bool = False,
         phase: str = EvalTaskType.ALL,
     ) -> None:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
@@ -196,17 +196,23 @@ class JobTermView(BaseTermView):
             phase=phase,
             resource=resource,
             gencmd=gencmd,
-            docker_verbose=docker_verbose,
+            use_docker=use_docker,
         )
 
         # TODO: show report in standalone mode directly
 
         if ok:
-            console.print(f":clap: success to create job(project id: {project_uri})")
+            console.print(
+                f":clap: success to create job(project id: [red]{_project_uri.full_uri}[/])"
+            )
             if _project_uri.instance_type == InstanceType.CLOUD:
-                console.print(
-                    f":writing_hand: run cmd [green]swcli job info {_project_uri.full_uri}/job/{reason} [/] to fetch job details"
-                )
+                _job_uri = f"{_project_uri.full_uri}/job/{reason}"
+            else:
+                _job_uri = f"{reason[:SHORT_VERSION_CNT]}"
+
+            console.print(
+                f":bird: run cmd to fetch job info: [bold green]swcli job info {_job_uri}[/]"
+            )
         else:
             console.print(f":collision: failed to create job, notice: [red]{reason}[/]")
 

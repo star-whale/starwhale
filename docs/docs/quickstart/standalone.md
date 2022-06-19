@@ -20,7 +20,6 @@ Starwhale standalone requires Python 3.7 or above. Today starwhale only supports
 
 At the installation point, we recommended you follow the [doc](../standalone/installation.md).
 
-
 ## Downloading the Example
 
 Download the starwhale example code by cloning Starwhale via:
@@ -107,12 +106,12 @@ We will use ML/DL HelloWorld code `MNIST` to start your starwhale journey. The f
 
 ## Running Evaluation Job
 
-Run evaluation job need docker in standalone mode today.
+Run evaluation job in current activated python runtime.
 
 - Create Evaluation Job
 
  ```bash
- swcli -vvv job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest --docker-verbose
+ swcli -vvv job create --model mnist/version/latest --dataset mnist/version/latest
  ```
 
 - Info Evaluation Result
@@ -120,6 +119,12 @@ Run evaluation job need docker in standalone mode today.
  ```bash
  swcli job list
  swcli job info ${version}
+ ```
+
+- [Optional Step]Additional, you can also create a job in docker environment.
+
+ ```bash
+ swcli -vvv job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest --use-docker
  ```
 
   :::tip Create job too slow

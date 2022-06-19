@@ -1,4 +1,5 @@
 import os
+import typing as t
 
 import click
 
@@ -11,6 +12,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, EvalTaskType
 from starwhale.consts.env import SWEnv
+from starwhale.core.job.view import JobTermView
 from starwhale.core.dataset.store import DatasetStorage
 
 from .view import ModelTermView
@@ -225,4 +227,34 @@ def _cmp(
             "result_dir": result_dir,
             "input_config": input_config,
         },
+    )
+
+
+@model_cmd.command("eval")
+@click.argument("model")
+@click.option(
+    "--dataset",
+    required=True,
+    multiple=True,
+    help="dataset uri, one or more",
+)
+@click.option("--name", help="job name")
+@click.option("--desc", help="job description")
+@click.option("--project", default="", help="project URI")
+def _eval(model: str, dataset: t.List[str], name: str, desc: str, project: str) -> None:
+    """
+    [ONLY Standalone]Create as new job for model evaluation
+
+    MODEL: model uri or model workdir path
+    """
+    JobTermView.create(
+        project_uri=project,
+        model_uri=model,
+        dataset_uris=dataset,
+        runtime_uri="",
+        name=name,
+        desc=desc,
+        use_docker=False,
+        gencmd=False,
+        phase=EvalTaskType.ALL,
     )

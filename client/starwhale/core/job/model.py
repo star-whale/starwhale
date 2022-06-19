@@ -124,7 +124,7 @@ class StandaloneJob(Job):
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         # TODO: support another job type
-        EvalExecutor(
+        _version = EvalExecutor(
             model_uri=model_uri,
             dataset_uris=dataset_uris,
             project_uri=project_uri,
@@ -132,9 +132,9 @@ class StandaloneJob(Job):
             name=name,
             desc=desc,
             gencmd=kw.get("gencmd", False),
-            docker_verbose=kw.get("docker_verbose", False),
+            use_docker=kw.get("use_docker", False),
         ).run(kw.get("phase", EvalTaskType.ALL))
-        return True, "run standalone eval job successfully"
+        return True, _version
 
     def info(
         self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE

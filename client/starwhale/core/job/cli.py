@@ -36,7 +36,7 @@ def _list(
 
 @job_cmd.command("create", help="Create job")
 @click.argument("project", default="")
-@click.option("--model", required=True, help="model uri")
+@click.option("--model", required=True, help="model uri or model.yaml dir path")
 @click.option(
     "--dataset",
     required=True,
@@ -52,10 +52,12 @@ def _list(
     type=str,
     help="[ONLY Cloud]resource, fmt is resource [name]:[cnt], such as cpu:1, gpu:2",
 )
-@click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
 @click.option(
-    "--docker-verbose", is_flag=True, help="[ONLY Standalone]docker run verbose output"
+    "--use-docker",
+    is_flag=True,
+    help="[ONLY Standalone]use docker to run evaluation job",
 )
+@click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
 @click.option(
     "--phase",
     type=click.Choice([EvalTaskType.ALL, EvalTaskType.CMP, EvalTaskType.PPL]),
@@ -70,8 +72,8 @@ def _create(
     name: str,
     desc: str,
     resource: str,
+    use_docker: bool,
     gencmd: bool,
-    docker_verbose: bool,
     phase: str,
 ) -> None:
     JobTermView.create(
@@ -83,8 +85,8 @@ def _create(
         desc=desc,
         resource=resource,
         gencmd=gencmd,
-        docker_verbose=docker_verbose,
         phase=phase,
+        use_docker=use_docker,
     )
 
 

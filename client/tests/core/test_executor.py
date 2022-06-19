@@ -86,6 +86,7 @@ class StandaloneEvalExecutor(TestCase):
             dataset_uris=["mnist/version/me4dczleg"],
             project_uri=URI(""),
             runtime_uri="mnist/version/ga4doztfg4yw",
+            use_docker=True,
         )
 
         ee.run()
@@ -130,10 +131,10 @@ class StandaloneEvalExecutor(TestCase):
         assert pull_cmd == "docker pull ghcr.io/star-whale/starwhale:latest"
         assert ppl_cmd == " ".join(
             [
-                f"docker run --net=host --rm --name {build_version}-ppl",
+                f"docker run --net=host --rm --name {build_version}-ppl -e DEBUG=1",
                 f"-v {project_dir}/job/{build_version[:VERSION_PREFIX_CNT]}/{build_version}/ppl:/opt/starwhale",
                 f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src:/opt/starwhale/swmp/src",
-                f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/model.yaml:/opt/starwhale/swmp/model.yaml",
+                f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src/model.yaml:/opt/starwhale/swmp/model.yaml",
                 f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/dep:/opt/starwhale/swmp/dep",
                 f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/_manifest.yaml:/opt/starwhale/swmp/_manifest.yaml",
                 f"-v {project_dir}/dataset:/opt/starwhale/dataset",
@@ -143,10 +144,10 @@ class StandaloneEvalExecutor(TestCase):
         )
         assert cmp_cmd == " ".join(
             [
-                f"docker run --net=host --rm --name {build_version}-cmp",
+                f"docker run --net=host --rm --name {build_version}-cmp -e DEBUG=1",
                 f"-v {project_dir}/job/{build_version[:VERSION_PREFIX_CNT]}/{build_version}/cmp:/opt/starwhale",
                 f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src:/opt/starwhale/swmp/src",
-                f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/model.yaml:/opt/starwhale/swmp/model.yaml",
+                f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src/model.yaml:/opt/starwhale/swmp/model.yaml",
                 f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/dep:/opt/starwhale/swmp/dep",
                 f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/_manifest.yaml:/opt/starwhale/swmp/_manifest.yaml",
                 f"-v {project_dir}/job/{build_version[:VERSION_PREFIX_CNT]}/{build_version}/ppl/result:/opt/starwhale/ppl_result",
@@ -160,6 +161,4 @@ class StandaloneEvalExecutor(TestCase):
         assert _manifest_path.exists()
         assert _manifest["phase"] == "all"
         assert _manifest["version"] == build_version
-        assert (
-            _manifest["model"] == "local/project/self/model/mnist/version/gnstmntggi4t"
-        )
+        assert _manifest["model"] == "mnist/version/gnstmntggi4t"

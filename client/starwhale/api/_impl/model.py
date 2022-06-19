@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import os
 import sys
 import json
@@ -82,7 +83,7 @@ class _RunConfig(object):
         def _set(_k: str, _e: str) -> None:
             _v = _config.get(_k)
             if _v:
-                os.environ[_e] = _v
+                os.environ[_e] = str(_v)
 
         _set("status_dir", SWEnv.status_dir)
         _set("log_dir", SWEnv.log_dir)
@@ -116,6 +117,8 @@ class PipelineHandler(object):
         self.config = _RunConfig.create_by_env()
 
         self.logger, self._sw_logger = self._init_logger()
+        self._stdout_changed = False
+        self._stderr_changed = False
         self._orig_stdout = sys.stdout
         self._orig_stderr = sys.stderr
 
@@ -124,7 +127,6 @@ class PipelineHandler(object):
         self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)  # type: ignore
         self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
 
-        # TODO: find some elegant call method
         self._monkey_patch()
         self._update_status(self.STATUS.START)
 
@@ -150,11 +152,17 @@ class PipelineHandler(object):
         return _logger, _sw_logger
 
     def _monkey_patch(self) -> None:
-        if not isinstance(sys.stdout, StreamWrapper):
+        if not isinstance(sys.stdout, StreamWrapper) and isinstance(
+            sys.stdout, io.TextIOWrapper
+        ):
             sys.stdout = StreamWrapper(sys.stdout, self.logger, logging.INFO)  # type: ignore
+            self._stdout_changed = True
 
-        if not isinstance(sys.stderr, StreamWrapper):
+        if not isinstance(sys.stderr, StreamWrapper) and isinstance(
+            sys.stderr, io.TextIOWrapper
+        ):
             sys.stderr = StreamWrapper(sys.stderr, self.logger, logging.WARN)  # type: ignore
+            self._stderr_changed = True
 
     def __str__(self) -> str:
         return (
@@ -163,9 +171,10 @@ class PipelineHandler(object):
         )
 
     def __exit__(self) -> None:
-        # TODO: reset sys for stdout/stderr?
-        sys.stdout = self._orig_stdout
-        sys.stderr = self._orig_stderr
+        if self._stdout_changed:
+            sys.stdout = self._orig_stdout
+        if self._stderr_changed:
+            sys.stderr = self._orig_stderr
 
         try:
             self._result_writer.close()
