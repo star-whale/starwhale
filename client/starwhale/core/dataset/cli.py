@@ -76,9 +76,7 @@ def _history(dataset: str, fullname: bool = False) -> None:
     DatasetTermView(dataset).history(fullname)
 
 
-@dataset_cmd.command(
-    "render-fuse", help="[Only Standalone]Render fuse input.json for local swds"
-)
+@dataset_cmd.command("render-fuse")
 @click.argument("target")
 @click.option(
     "-f",

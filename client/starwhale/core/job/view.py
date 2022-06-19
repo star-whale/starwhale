@@ -206,13 +206,13 @@ class JobTermView(BaseTermView):
                 f":clap: success to create job(project id: [red]{_project_uri.full_uri}[/])"
             )
             if _project_uri.instance_type == InstanceType.CLOUD:
-                console.print(
-                    f":bird: run cmd [green]swcli job info {_project_uri.full_uri}/job/{reason} [/] to fetch job details"
-                )
+                _job_uri = f"{_project_uri.full_uri}/job/{reason}"
             else:
-                console.print(
-                    f":bird: run cmd [green]swcli job info {reason[:SHORT_VERSION_CNT]} [/] to fetch job details"
-                )
+                _job_uri = f"{reason[:SHORT_VERSION_CNT]}"
+
+            console.print(
+                f":bird: run cmd to fetch job info: [bold green]swcli job info {_job_uri}[/]"
+            )
         else:
             console.print(f":collision: failed to create job, notice: [red]{reason}[/]")
 
