@@ -215,7 +215,7 @@ Starwhale is a mlops platform. It provides **Instance**, **Project**, **Runtime*
 - 🍖 **STEP6**: running evaluation job
 
    ```bash
-    swcli -vvv job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest --docker-verbose
+    swcli -vvv job create --model mnist/version/latest --dataset mnist/version/latest
     swcli job list
     swcli job info ${version}
    ```
