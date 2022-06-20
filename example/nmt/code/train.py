@@ -21,9 +21,11 @@ except ImportError:
 
 teacher_forcing_ratio = 0.5
 
-_ROOT_DIR = os.path.dirname(__file__)
+_ROOT_DIR = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
 _ENCODER_MODEL_PATH = os.path.join(_ROOT_DIR, "models/encoder.pth")
 _DECODER_MODEL_PATH = os.path.join(_ROOT_DIR, "models/decoder.pth")
+_VOCAB_PATH = os.path.join(_ROOT_DIR, "models/vocab_eng-fra.bin")
+_DATA_PATH = os.path.join(_ROOT_DIR, "data/train_eng-fra.txt")
 
 def train(device, input_tensor, target_tensor, encoder, decoder, encoder_optimizer, decoder_optimizer, criterion, max_length=MAX_LENGTH):
     encoder_hidden = encoder.initHidden()
@@ -120,9 +122,11 @@ def trainIters(input_lang, output_lang, pairs, device, encoder, decoder, n_iters
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    vocab = torch.load('data/vocab_eng-fra.bin')
+    print('root path:%s' % _ROOT_DIR)
 
-    pairs = prepareData('data/train_eng-fra.txt')
+    vocab = torch.load(_VOCAB_PATH)
+
+    pairs = prepareData(_DATA_PATH)
 
     hidden_size = 256
 

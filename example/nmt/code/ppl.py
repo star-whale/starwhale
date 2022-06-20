@@ -61,7 +61,6 @@ class NMTPipeline(PipelineHandler):
 
 
     def _load_vocab(self):
-        #from .vocab import Vocab, Lang
         return torch.load(_ROOT_DIR + '/models/vocab_eng-fra.bin')
 
     def _load_encoder_model(self, device):

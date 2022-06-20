@@ -1,0 +1,14 @@
+- preapring data
+- `cd example/nmt`
+  - first, generate vocabulary
+    - exec `python3 main.py --mode vocab` and the dir of models/ would generate a file named 'vocab_eng-fra.bin'
+  - then, start to train the nmt model
+    - exec `python3 main.py --mode train` and finally the dir of models would generate two file which the suffix is .pth
+- use starwhale cli to evaluate the models
+  - install swcli: `pip install starwhale`
+  - build swmp(sw model package)\swrt(sw runtime)\swds(sw dataset) 
+    - `swcli model build .`
+    - `swcli runtime build .`
+    - `swcli dataset build .`
+  - create evaluate job for the models
+    - exec `swcli -vvv job create --model nmt/version/latest --dataset nmt/version/latest --runtime nmt/version/latest`.
