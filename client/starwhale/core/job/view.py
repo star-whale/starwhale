@@ -1,3 +1,4 @@
+import sys
 import typing as t
 
 from rich import box
@@ -51,6 +52,60 @@ class JobTermView(BaseTermView):
     @BaseTermView._simple_action_print
     def _do_action(self, action: str, force: bool = False) -> t.Tuple[bool, str]:
         return self._action_run_map[action](force)
+
+    @BaseTermView._header
+    def compare(self, job_uris: t.List[str]) -> None:
+        if self.uri.instance_type != InstanceType.STANDALONE:
+            console.print(
+                ":dragon_face: Today job compare only works for standalone instance"
+            )
+            sys.exit(1)
+
+        jobs = []
+        for _u in job_uris:
+            _uri = URI(_u, expected_type=URIType.JOB)
+            jobs.append(Job.get_job(_uri))
+
+        rt = self.job.compare(jobs)
+        table = Table(
+            box=box.ASCII,
+            title=f":leafy_green: {rt['kind'].upper()} Job Compare Summary",
+            caption=f":cactus: base job:{rt['base']['uri']}",
+            expand=True,
+        )
+        table.add_column("", justify="left", no_wrap=True, style="cyan")
+        for _v in rt["versions"]:
+            table.add_column(_v[:SHORT_VERSION_CNT])
+
+        for _k, _vs in rt["summary"].items():
+            _ts = [_k]
+
+            _is_empty = all([_v["value"] is None for _v in _vs])
+            if _is_empty:
+                continue
+
+            for _v in _vs:
+                if _v["base"]:
+                    _ts.append(f":triangular_flag: {_v['value']}")
+                else:
+                    if _v["delta"] is None:
+                        _ts.append(_v["value"])
+                    else:
+                        if _v["delta"] > 0:
+                            _text = (
+                                f":chart_with_upwards_trend: [green]{_v['value']}[/]"
+                            )
+                        elif _v["delta"] < 0:
+                            _text = (
+                                f":chart_with_downwards_trend: [red]{_v['value']}[/]"
+                            )
+                        else:
+                            _text = f":white_circle: {_v['value']}"
+                        _ts.append(_text)
+
+            table.add_row(*([str(_t) for _t in _ts]))
+
+        console.print(table)
 
     @BaseTermView._header
     def info(self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE) -> None:
