@@ -4,6 +4,7 @@ import json
 import typing as t
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
+from collections import defaultdict
 
 import yaml
 import jsonlines
@@ -81,6 +82,14 @@ class Job(object):
     def pause(self, force: bool = False) -> t.Tuple[bool, str]:
         raise NotImplementedError
 
+    @abstractmethod
+    def compare(self, jobs: t.List[Job]) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _get_report(self) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
+
     @classmethod
     def _get_job_cls(cls, uri: URI) -> t.Union[t.Type[StandaloneJob], t.Type[CloudJob]]:
         if uri.instance_type == InstanceType.STANDALONE:
@@ -136,10 +145,7 @@ class StandaloneJob(Job):
         ).run(kw.get("phase", EvalTaskType.ALL))
         return True, _version
 
-    def info(
-        self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
-    ) -> t.Dict[str, t.Any]:
-
+    def _get_report(self) -> t.Dict[str, t.Any]:
         report = {}
         with jsonlines.open(str(self.store.eval_report_path.resolve()), "r") as _reader:
             for _report in _reader:
@@ -148,10 +154,76 @@ class StandaloneJob(Job):
 
                 report = _report
                 break
+        return report
+
+    @staticmethod
+    def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+        rt = {}
+
+        def _f(_s: t.Dict[str, t.Any], _prefix: str = "") -> None:
+            for _k, _v in _s.items():
+                _k = f"{_prefix}{_k}"
+                if isinstance(_v, dict):
+                    _f(_v, _prefix=f"{_k}.")
+                else:
+                    rt[_k] = _v
+
+        _f(summary)
+        return rt
+
+    def compare(self, jobs: t.List[Job]) -> t.Dict[str, t.Any]:
+        rt = {}
+        base_report = self._get_report()
+        compare_reports = [j._get_report() for j in jobs]
+
+        rt = {
+            "kind": base_report["kind"],
+            "base": {
+                "uri": self.uri.full_uri,
+                "version": self.uri.object.name,
+            },
+            "versions": [self.uri.object.name] + [j.uri.object.name for j in jobs],
+            "summary": defaultdict(list),
+            "charts": defaultdict(list),
+        }
+
+        _base_summary = {}
+        _number_types = (int, float, complex)
+
+        for _idx, _report in enumerate([base_report] + compare_reports):
+            _summary = _report.get("summary", {})
+            if "labels" in _report:
+                _summary["labels"] = _report["labels"]
+
+            _flat_summary = self._do_flatten_summary(_summary)
+            if _idx == 0:
+                _base_summary = _flat_summary
+
+            for _bk, _bv in _base_summary.items():
+                _cv = _flat_summary.get(_bk)
+
+                if isinstance(_cv, _number_types) and isinstance(_bv, _number_types):
+                    _delta = _cv - _bv
+                else:
+                    _delta = None
+                rt["summary"][_bk].append(
+                    {"value": _cv, "delta": _delta, "base": _idx == 0}
+                )
+
+            for _k, _v in _report.items():
+                if _k in ("kind", "labels", "summary"):
+                    continue
+                rt["charts"][_k].append(_v)
+
+        return rt
+
+    def info(
+        self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
+    ) -> t.Dict[str, t.Any]:
 
         return {
             "manifest": self.store.manifest,
-            "report": report,
+            "report": self._get_report(),
             "location": {
                 "ppl": str(self.store.ppl_dir.absolute()),
                 "cmp": str(self.store.cmp_dir.absolute()),

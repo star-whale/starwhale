@@ -138,3 +138,16 @@ def _cancel(job: str, force: bool) -> None:
 )
 def _info(job: str, page: int, size: int) -> None:
     JobTermView(job).info(page, size)
+
+
+@job_cmd.command("compare")
+@click.argument("base_job", nargs=1)
+@click.argument("job", nargs=-1)
+def _compare(base_job: str, job: t.List[str]) -> None:
+    """
+    [ONLY Standalone]Compare the result of evaluation job
+
+    BASE_JOB: job uri
+    JOB: job uri
+    """
+    JobTermView(base_job).compare(job)
