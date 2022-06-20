@@ -46,6 +46,7 @@ example/cifar10/data/
 example/PennFudanPed/data/
 example/PennFudanPed/models/
 example/nmt/models/
+example/nmt/data/
 
 
 
