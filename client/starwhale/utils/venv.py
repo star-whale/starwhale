@@ -34,19 +34,8 @@ CONDA_ENV_TAR = "env.tar.gz"
 DUMP_CONDA_ENV_FNAME = "env-lock.yaml"
 DUMP_PIP_REQ_FNAME = "requirements-lock.txt"
 DUMP_USER_PIP_REQ_FNAME = "requirements.txt"
-
 SUPPORTED_PIP_REQ = [DUMP_USER_PIP_REQ_FNAME, "pip-req.txt", "pip3-req.txt"]
-SW_PYPI_INDEX_URL = os.environ.get(
-    "SW_PYPI_INDEX_URL", "https://pypi.doubanio.com/simple/"
-)
-SW_PYPI_EXTRA_INDEX_URL = os.environ.get(
-    "SW_PYPI_EXTRA_INDEX_URL",
-    "https://pypi.tuna.tsinghua.edu.cn/simple/ https://pypi.org/simple https://mirrors.bfsu.edu.cn/pypi/web/simple/",
-)
-SW_PYPI_TRUSTED_HOST = os.environ.get(
-    "SW_PYPI_TRUSTED_HOST",
-    "pypi.tuna.tsinghua.edu.cn pypi.doubanio.com pypi.org mirrors.bfsu.edu.cn",
-)
+
 _DUMMY_FIELD = -1
 
 
@@ -80,13 +69,21 @@ def _do_pip_install_req(
         "install",
         "--exists-action",
         "w",
-        "--index-url",
-        SW_PYPI_INDEX_URL,
-        "--extra-index-url",
-        SW_PYPI_EXTRA_INDEX_URL,
-        "--trusted-host",
-        SW_PYPI_TRUSTED_HOST,
     ]
+
+    _env = os.environ
+    if _env.get("SW_PYPI_INDEX_URL"):
+        cmd += [
+            "--index-url",
+            _env["SW_PYPI_INDEX_URL"],
+        ]
+    if _env.get("SW_PYPI_EXTRA_INDEX_URL"):
+        cmd += [
+            "--extra-index-url",
+            _env["SW_PYPI_EXTRA_INDEX_URL"],
+        ]
+    if _env.get("SW_PYPI_TRUSTED_HOST"):
+        cmd += ["--trusted-host", _env["SW_PYPI_TRUSTED_HOST"]]
 
     if enable_pre:
         cmd += ["--pre"]
