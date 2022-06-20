@@ -15,7 +15,7 @@ python3 -m pip install --pre starwhale
 The Starwhale version is currently under alpha preview, thus `--pre` is required.
 :::
 :::note
-Starwhale standalone requires Python 3.7 or above. Today starwhale only supports Linux platform. Windows and MacOS is coming soon.
+Starwhale standalone requires Python 3.7 or above. Today starwhale only supports Linux and MacOSX platform. Windows is coming soon.
 :::
 
 At the installation point, we recommended you follow the [doc](../standalone/installation.md).
@@ -25,7 +25,7 @@ At the installation point, we recommended you follow the [doc](../standalone/ins
 Download the starwhale example code by cloning Starwhale via:
 
 ```bash
-git clone git@github.com:star-whale/starwhale.git
+git clone https://github.com/star-whale/starwhale.git
 cd starwhale/example/mnist
 ```
 
