@@ -13,6 +13,7 @@ exclude_lines =
   raise NotImplementedError
   raise
   if __name__ == .__main__.:
+  __all__
 
 [run]
 relative_files = True
