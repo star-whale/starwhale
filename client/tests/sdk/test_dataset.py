@@ -20,7 +20,7 @@ _mnist_data = open(f"{_mnist_dir}/data", "rb").read()
 _mnist_label = open(f"{_mnist_dir}/label", "rb").read()
 
 
-class DatasetBuildExecutor(TestCase):
+class TestDatasetBuildExecutor(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
         self.root = "/home/starwhale/dataset_test"
