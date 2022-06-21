@@ -6,7 +6,7 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
-from starwhale.utils import console, now_str, gen_uniq_version
+from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import (
     JSON_INDENT,
     CURRENT_FNAME,
@@ -80,8 +80,14 @@ class EvalExecutor(object):
         self._do_validate()
 
     def _do_validate(self) -> None:
-        if self.use_docker and not self.runtime_uri:
-            raise FieldTypeOrValueError("runtime_uri is none")
+        if self.use_docker:
+            if not self.runtime_uri:
+                raise FieldTypeOrValueError("runtime_uri is none")
+
+            if is_darwin():
+                raise NoSupportError(
+                    "use docker as the evaluation job environment in MacOSX system"
+                )
 
     def __str__(self) -> str:
         return f"Evaluation Executor: {self.name}"

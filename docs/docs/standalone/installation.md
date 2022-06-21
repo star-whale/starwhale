@@ -28,6 +28,12 @@ sudo apt-get update
 sudo apt-get install -y python3.7 python3.8 python3.9 python3-pip python3-venv python3.8-venv python3.7-venv python3.9-venv
 ```
 
+Starwhale works on MacOSX. If you run into issues with the default system Python3 on MacOS, try installing Python3 through the homebrew:
+
+```bash
+brew install python3
+```
+
 ## Install Starwhale with venv
 
 ```bash

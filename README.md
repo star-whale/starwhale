@@ -83,7 +83,7 @@ Starwhale is a mlops platform. It provides **Instance**, **Project**, **Runtime*
 - 🍵 **STEP2**: downloading mnist example
 
     ```bash
-    git clone git@github.com:star-whale/starwhale.git
+    git clone https://github.com/star-whale/starwhale.git
     cd starwhale/example/mnist
     ```
 
