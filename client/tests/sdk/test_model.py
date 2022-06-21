@@ -1,6 +1,7 @@
 import os
 import json
 import typing as t
+from unittest.mock import patch, MagicMock
 
 import jsonlines
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -8,6 +9,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.consts.env import SWEnv
 from starwhale.api._impl.model import _RunConfig, PipelineHandler
+from starwhale.api._impl.loader import get_data_loader
 
 from .. import ROOT_DIR
 
@@ -36,6 +38,33 @@ class TestModelPipelineHandler(TestCase):
 
         ensure_dir(self.config_dir)
         self.fs.add_real_directory(self.swds_dir)
+
+    @patch("starwhale.api._impl.loader.boto3.resource")
+    def test_s3_loader(self, m_resource: MagicMock) -> None:
+        swds_config = {
+            "backend": "s3",
+            "kind": "swds",
+            "secret": {
+                "access_key": "username",
+                "secret_key": "password",
+            },
+            "service": {
+                "endpoint": "127.1.1.1:1123",
+                "region": "local",
+            },
+            "swds": [
+                {
+                    "bucket": "starwhale",
+                    "key": {
+                        "data": "data1",
+                        "label": "label1",
+                    },
+                }
+            ],
+        }
+        _loader = get_data_loader(swds_config)
+        for _data, _label in _loader:
+            pass
 
     def test_set_run_env(self) -> None:
         _RunConfig.set_env(
