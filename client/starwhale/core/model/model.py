@@ -193,12 +193,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _RunConfig.set_env(kw)
         console.print(f"try to import {_handler}@{workdir}...")
         _cls = import_cls(workdir, _handler)
-        _obj = _cls()
 
-        if typ == EvalTaskType.CMP:
-            _obj._starwhale_internal_run_cmp()
-        else:
-            _obj._starwhale_internal_run_ppl()
+        with _cls() as _obj:
+            if typ == EvalTaskType.CMP:
+                _obj._starwhale_internal_run_cmp()
+            else:
+                _obj._starwhale_internal_run_ppl()
 
         console.print(f":clap: finish run {typ}: {_obj}")
 

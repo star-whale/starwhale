@@ -7,6 +7,7 @@ import json
 import typing as t
 import logging
 from abc import ABCMeta, abstractmethod
+from types import TracebackType
 from pathlib import Path
 from functools import wraps
 
@@ -170,7 +171,18 @@ class PipelineHandler(object):
             f"log@{self.config.log_dir}, result@{self.config.result_dir}"
         )
 
-    def __exit__(self) -> None:
+    def __enter__(self):
+        return self
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
+        if value:
+            print(f"type:{type}, exception:{value}, traceback:{trace}")
+
         if self._stdout_changed:
             sys.stdout = self._orig_stdout
         if self._stderr_changed:
