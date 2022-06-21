@@ -24,11 +24,6 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 public class ConfigRequest {
-
-    @NotNull
-    @JsonProperty("projectUrl")
-    private String projectUrl;
-
     @NotNull
     @JsonProperty("name")
     private String name;

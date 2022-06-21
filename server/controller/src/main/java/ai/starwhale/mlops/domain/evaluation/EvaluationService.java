@@ -17,18 +17,34 @@
 package ai.starwhale.mlops.domain.evaluation;
 
 import ai.starwhale.mlops.api.protocol.evaluation.AttributeVO;
+import ai.starwhale.mlops.api.protocol.evaluation.AttributeValueVO;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVO;
 import ai.starwhale.mlops.api.protocol.evaluation.SummaryVO;
+import ai.starwhale.mlops.api.protocol.job.JobVO;
+import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
 import ai.starwhale.mlops.domain.evaluation.mapper.ViewConfigMapper;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
+import ai.starwhale.mlops.domain.job.converter.JobConvertor;
+import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.resulting.ResultQuerier;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.StrUtil;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.google.common.collect.Lists;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -49,8 +65,19 @@ public class EvaluationService {
     @Resource
     private ViewConfigConvertor viewConfigConvertor;
 
+    @Resource
+    private JobMapper jobMapper;
+
+    @Resource
+    private JobConvertor jobConvertor;
+
+    @Resource
+    private IDConvertor idConvertor;
+
+    @Resource
+    private ResultQuerier resultQuerier;
+
     public List<AttributeVO> listAttributeVO() {
-        //TODO by liuyunxi
         List<String> attributes = FileUtil.readLines(
             Objects.requireNonNull(this.getClass().getResource("/config/evaluation_attributes")),
             Charset.defaultCharset());
@@ -73,9 +100,9 @@ public class EvaluationService {
         return viewConfigConvertor.convert(viewConfig);
     }
 
-    public Boolean createViewConfig(ConfigRequest configRequest) {
+    public Boolean createViewConfig(String projectUrl, ConfigRequest configRequest) {
         Long userId = userService.currentUserDetail().getId();
-        Long projectId = projectManager.getProjectId(configRequest.getProjectUrl());
+        Long projectId = projectManager.getProjectId(projectUrl);
         ViewConfigEntity entity = ViewConfigEntity.builder()
             .ownerId(userId)
             .projectId(projectId)
@@ -86,9 +113,46 @@ public class EvaluationService {
         return res > 0;
     }
 
-    public List<SummaryVO> listEvaluationSummary(SummaryFilter summaryFilter) {
-        //TODO by liuyunxi
-        return List.of();
+    public PageInfo<SummaryVO> listEvaluationSummary(String projectUrl,
+        SummaryFilter summaryFilter, PageParams pageParams) {
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        Long projectId = projectManager.getProjectId(projectUrl);
+        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, null);
+        return PageUtil.toPageInfo(jobEntities, this::toSummary);
     }
 
+    private SummaryVO toSummary(JobEntity entity) {
+        JobVO jobVO = jobConvertor.convert(entity);
+        SummaryVO summaryVO = SummaryVO.builder()
+            .jobUuid(jobVO.getUuid())
+            .projectName(entity.getProject().getProjectName())
+            .projectId(idConvertor.convert(entity.getProject().getId()))
+            .model(jobVO.getModelName())
+            .datasets(StrUtil.join(",", jobVO.getDatasets()))
+            .runtime(jobVO.getRuntime().getName())
+            .device(jobVO.getDevice())
+            .deviceAmount(jobVO.getDeviceAmount())
+            .attributes(Lists.newArrayList())
+            .build();
+        Map<String, Object> result = resultQuerier.flattenResultOfJob(entity.getId());
+        for (Entry<String, Object> entry : result.entrySet()) {
+            String value = String.valueOf(entry.getValue());
+            summaryVO.getAttributes().add(AttributeValueVO.builder()
+                .name(entry.getKey())
+                .type(getAttributeType(value))
+                .value(value)
+                .build());
+        }
+        return summaryVO;
+    }
+
+    private String getAttributeType(String value) {
+        if(NumberUtil.isInteger(value)) {
+            return "int";
+        }
+        if(NumberUtil.isDouble(value)) {
+            return "float";
+        }
+        return "string";
+    }
 }

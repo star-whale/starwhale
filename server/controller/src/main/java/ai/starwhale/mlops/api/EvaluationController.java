@@ -22,12 +22,14 @@ import ai.starwhale.mlops.api.protocol.evaluation.AttributeVO;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVO;
 import ai.starwhale.mlops.api.protocol.evaluation.SummaryVO;
+import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.evaluation.EvaluationService;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import com.github.pagehelper.PageInfo;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +47,7 @@ public class EvaluationController implements EvaluationApi{
     private EvaluationService evaluationService;
 
     @Override
-    public ResponseEntity<ResponseMessage<List<AttributeVO>>>   listAttributes() {
+    public ResponseEntity<ResponseMessage<List<AttributeVO>>>   listAttributes(String projectUrl) {
         List<AttributeVO> vos = evaluationService.listAttributeVO();
         return ResponseEntity.ok(Code.success.asResponse(vos));
     }
@@ -60,8 +62,8 @@ public class EvaluationController implements EvaluationApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> createViewConfig(ConfigRequest configRequest) {
-        Boolean res = evaluationService.createViewConfig(configRequest);
+    public ResponseEntity<ResponseMessage<String>> createViewConfig(String projectUrl, ConfigRequest configRequest) {
+        Boolean res = evaluationService.createViewConfig(projectUrl, configRequest);
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Create view config failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -70,9 +72,15 @@ public class EvaluationController implements EvaluationApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<SummaryVO>>> listEvaluationSummary(String filter) {
-        List<SummaryVO> vos = evaluationService.listEvaluationSummary(
-            SummaryFilter.parse(filter));
+    public ResponseEntity<ResponseMessage<PageInfo<SummaryVO>>> listEvaluationSummary(String projectUrl,
+        String filter, Integer pageNum, Integer pageSize) {
+        PageInfo<SummaryVO> vos = evaluationService.listEvaluationSummary(
+            projectUrl,
+            SummaryFilter.parse(filter),
+            PageParams.builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .build());
         return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 

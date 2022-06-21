@@ -27,6 +27,7 @@
         <mybatis.starter.version>2.2.2</mybatis.starter.version>
         <pagehelper.starter.version>1.4.1</pagehelper.starter.version>
         <guava.version>31.1-jre</guava.version>
+        <json-flattener.version>0.13.0</json-flattener.version>
         <starwhale.version>0.1.0-SNAPSHOT</starwhale.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -119,6 +120,12 @@
                 <groupId>com.rfksystems</groupId>
                 <artifactId>blake2b</artifactId>
                 <version>1.0.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.wnameless.json</groupId>
+                <artifactId>json-flattener</artifactId>
+                <version>${json-flattener.version}</version>
             </dependency>
 
         </dependencies>
