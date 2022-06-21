@@ -1,0 +1,18 @@
+name: SpeechCommands
+
+mode: generate
+
+data_dir: data/SpeechCommands/speech_commands_v0.02
+data_filter: "testing_list.txt"
+label_filter: "testing_list.txt"
+
+process: code.data_slicer:SpeechCommandsSlicer
+
+desc: SpeechCommands data and label test dataset
+tag:
+ - bin
+
+attr:
+  batch_size:  256
+  alignment_size: 4k
+  volume_size: 64M
