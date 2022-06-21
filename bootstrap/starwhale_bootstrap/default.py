@@ -25,6 +25,11 @@ MINIO_SECRET_KEY = "minioadmin"
 MINIO_SERVER_PORT = 9000
 MINIO_CONSOLE_PORT = 9001
 
+# nexus
+NEXUS_IMAGE = "sonatype/nexus3"
+NEXUS_DATA_DIR = "local-storage-nexus"
+NEXUS_PORT = 8081
+
 # controller variables
 CONTROLLER_IMAGE = "server:" + SW_VERSION
 CONTROLLER_TASK_SPLIT_NUM = "2"
@@ -52,6 +57,7 @@ TASKSET_DIND_DIR = "agent/dind"
 # hosts
 HOST_OF_CONTROLLER = "controller.starwhale.com"
 HOST_OF_STORAGE = "storage.starwhale.com"
+HOST_OF_NEXUS = "nexus.starwhale.com"
 HOST_OF_AGENT = "agent01.starwhale.com"
 CLUSTER_MODE = "docker"
 DEPLOY_USER = "root"

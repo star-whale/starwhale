@@ -16,3 +16,8 @@
   become: true
   roles:
     - agent
+
+- hosts: nexus
+  become: true
+  roles:
+    - nexus

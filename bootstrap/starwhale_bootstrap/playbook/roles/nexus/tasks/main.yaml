@@ -1,0 +1,22 @@
+---
+# nexus container
+- name: set up a nexus-data directory to make volume for docker container
+  file: path={{ nexus_data_dir }}/nexus-data state=directory mode=700 group=root owner=200
+  tags:
+  - setup
+  - nexus-data
+
+- name: Start nexus
+  community.docker.docker_container:
+    name: nexus_by_bootstrap
+    image: "{{ nexus_image }}"
+    state: started
+    pull: true
+    restart_policy: always
+    ports:
+      - "{{ nexus_port }}:8081"
+    env:
+      NEXUS_SECURITY_RANDOMPASSWORD: 'false'
+    volumes:
+      - "{{ nexus_data_dir }}/nexus-data:/nexus-data"
+  when: need_nexus | bool
