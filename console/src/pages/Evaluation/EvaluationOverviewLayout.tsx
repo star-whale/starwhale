@@ -1,12 +1,11 @@
 import { useJob, useJobLoading } from '@job/hooks/useJob'
 import useTranslation from '@/hooks/useTranslation'
-import React, { useContext, useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { SidebarContext } from '@/contexts/SidebarContext'
 import Card from '@/components/Card'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import IconFont from '../../components/IconFont/index'
@@ -20,7 +19,6 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
     const jobInfo = useQuery(`fetchJob:${projectId}:${jobId}`, () => fetchJob(projectId, jobId))
     const { job, setJob } = useJob()
     const { setJobLoading } = useJobLoading()
-    const { setExpanded } = useContext(SidebarContext)
 
     // useEffect(() => {
     //     setExpanded(false)

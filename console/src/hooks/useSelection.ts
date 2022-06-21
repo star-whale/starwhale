@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useLayoutEffect } from 'react'
+import React, { useCallback, useEffect } from 'react'
 
-type T = number | string
-export interface UseSelectionPropsT<T = any> {
+// type T = number | string
+export interface IUseSelectionPropsT<T = any> {
     initialSelectedIds: T[]
     initialPinedIds: T[]
     initialSortedIds: T[]
@@ -12,7 +12,7 @@ let count = 0
 let count1 = 0
 let count2 = 0
 
-export default function useSelection<T>(props: UseSelectionPropsT<T>) {
+export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
     const { initialSelectedIds = [], initialPinedIds = [], initialSortedIds = [] } = props
     const [selectedIds, setSelectedIds] = React.useState(new Set(initialSelectedIds))
     const [sortedIds, setSortedIds] = React.useState(new Set(initialSortedIds))
@@ -95,7 +95,7 @@ export default function useSelection<T>(props: UseSelectionPropsT<T>) {
             setSortedIds(new Set(sortedMergeSelectedIds))
 
             let noPindedFlag = 0
-            Array.from(sortedMergeSelectedIds).map((v: T, index) => {
+            Array.from(sortedMergeSelectedIds).forEach((v: T, index) => {
                 if (!pinedIds.has(v)) {
                     noPindedFlag = index
                 }

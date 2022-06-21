@@ -5,7 +5,7 @@ This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 */
 
-import * as React from 'react'
+import React from 'react'
 import ResizeObserver from 'resize-observer-polyfill'
 
 import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
@@ -17,26 +17,23 @@ import { Tag } from 'baseui/tag'
 import FilterMenu from './filter-menu'
 import { DataTable } from './data-custom-table'
 import { StatefulContainer } from './stateful-container'
-import type { StatefulDataTablePropsT } from './types'
 import { LocaleContext } from './locales'
-import type { ColumnT, RowT, StatefulContainerPropsT } from './types'
+import type { ColumnT, RowT, StatefulContainerPropsT, StatefulDataTablePropsT } from './types'
 import ConfigManageColumns from './config-manage-columns'
 
-let __BROWSER__ = true
-
+// @ts-ignore
 function useResizeObserver(
     ref: { current: HTMLElement | null },
     callback: (entires: ResizeObserverEntry[], obs: ResizeObserver) => any
 ) {
     React.useLayoutEffect(() => {
-        if (__BROWSER__) {
-            if (ref.current) {
-                //$FlowFixMe
-                const observer = new ResizeObserver(callback)
-                observer.observe(ref.current)
-                return () => observer.disconnect()
-            }
+        // if (IS_BROWSER) {
+        if (ref.current) {
+            const observer = new ResizeObserver(callback)
+            observer.observe(ref.current)
+            return () => observer.disconnect()
         }
+        // }
     }, [ref])
 }
 
@@ -164,8 +161,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const filterable = props.filterable === undefined ? true : props.filterable
     const searchable = props.searchable === undefined ? true : props.searchable
 
-    const [fields, setFields] = React.useState(props.columns)
-
     return (
         <StatefulContainer
             batchActions={props.batchActions}
@@ -207,7 +202,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                 onColumnSave,
                 config,
             }: StatefulContainerPropsT['children']) => (
-                <React.Fragment>
+                <>
                     <div className={css({ height: `${headlineHeight}px` })}>
                         <div
                             ref={headlineRef}
@@ -228,7 +223,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                     {searchable && <QueryInput onChange={onTextQueryChange} />}
 
                                     {filterable && (
-                                        <React.Fragment>
+                                        <>
                                             <FilterMenu
                                                 columns={props.columns}
                                                 filters={filters}
@@ -247,7 +242,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                                     title={title}
                                                 />
                                             ))}
-                                        </React.Fragment>
+                                        </>
                                     )}
                                 </div>
                             )}
@@ -262,7 +257,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                     }}
                                 >
                                     {props.batchActions.map((action) => {
-                                        function onClick(event: React.SyntheticEvent<HTMLButtonElement>) {
+                                        const onClick = (event: React.SyntheticEvent<HTMLButtonElement>) => {
                                             action.onClick({
                                                 clearSelection: onSelectNone,
                                                 event,
@@ -312,7 +307,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                             >
                                 <ConfigManageColumns
                                     filters={filters}
-                                    columns={fields}
+                                    columns={props.columns}
                                     onColumnSave={onColumnSave}
                                     config={config}
                                     // onSaveAs={onColumnSaveAs}
@@ -349,7 +344,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                             controlRef={props.controlRef}
                         />
                     </div>
-                </React.Fragment>
+                </>
             )}
         </StatefulContainer>
     )

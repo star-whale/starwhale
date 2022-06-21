@@ -105,6 +105,8 @@ module.exports = {
         'baseui/deprecated-theme-api': 'warn',
         'baseui/deprecated-component-api': 'warn',
         'baseui/no-deep-imports': 'warn',
+        '@typescript-eslint/ban-ts-comment': 'off',
+        'react/destructuring-assignment': 'off',
     },
     settings: {
         'react': {

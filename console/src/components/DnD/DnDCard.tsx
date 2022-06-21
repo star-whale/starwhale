@@ -1,7 +1,6 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import type { Identifier, XYCoord } from 'dnd-core'
 import type { FC } from 'react'
-import { useRef } from 'react'
 import { useDrag, useDrop } from 'react-dnd'
 import { useStyletron } from 'baseui'
 
@@ -9,30 +8,30 @@ export const ItemTypes = {
     CARD: 'card',
 }
 
-export interface CardProps {
+export interface ICardProps {
     id: any
     text: React.ReactElement
     index: number
     moveCard: (dragIndex: number, hoverIndex: number) => void
 }
 
-interface DragItem {
+interface IDragItem {
     index: number
     id: string
     type: string
 }
 
-export const Card: FC<CardProps> = ({ id, text, index, moveCard }) => {
+export const Card: FC<ICardProps> = ({ id, text, index, moveCard }) => {
     const [css] = useStyletron()
     const ref = useRef<HTMLDivElement>(null)
-    const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: Identifier | null }>({
+    const [{ handlerId }, drop] = useDrop<IDragItem, void, { handlerId: Identifier | null }>({
         accept: ItemTypes.CARD,
         collect(monitor) {
             return {
                 handlerId: monitor.getHandlerId(),
             }
         },
-        hover(item: DragItem, monitor) {
+        hover(item: IDragItem, monitor) {
             if (!ref.current) {
                 return
             }
@@ -77,6 +76,8 @@ export const Card: FC<CardProps> = ({ id, text, index, moveCard }) => {
             // Generally it's better to avoid mutations,
             // but it's good here for the sake of performance
             // to avoid expensive index searches.
+
+            // @ts-ignore
             item.index = hoverIndex
         },
     })

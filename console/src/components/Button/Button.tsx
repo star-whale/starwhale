@@ -42,7 +42,7 @@ export default function Button({
         props.overrides
     )
 
-    if (as == 'link') {
+    if (as === 'link') {
         overrides = mergeOverrides(
             {
                 BaseButton: {
@@ -62,7 +62,7 @@ export default function Button({
             },
             props.overrides
         )
-    } else if (as == 'transparent') {
+    } else if (as === 'transparent') {
         overrides = mergeOverrides(
             {
                 BaseButton: {

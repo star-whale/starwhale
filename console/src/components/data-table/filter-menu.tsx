@@ -13,14 +13,13 @@ import { Input, SIZE as INPUT_SIZE } from 'baseui/input'
 import { Popover, PLACEMENT } from 'baseui/popover'
 import { useStyletron } from 'baseui'
 import { useUIDSeed } from 'react-uid'
+// @ts-ignore
+import { isFocusVisible } from 'baseui/utils/focusVisible'
 
 import { COLUMNS } from './constants'
 import { matchesQuery } from './text-search'
 import type { ColumnT } from './types'
 import { LocaleContext } from './locales'
-
-// @ts-ignore
-import { isFocusVisible } from 'baseui/utils/focusVisible'
 
 function ColumnIcon(props: { column: ColumnT }) {
     if (props.column.kind === COLUMNS.BOOLEAN) {
@@ -74,7 +73,7 @@ function Options(props: OptionsPropsT) {
         }
     }
 
-    const handleBlur = (event: React.SyntheticEvent) => {
+    const handleBlur = () => {
         if (focusVisible !== false) {
             setFocusVisible(false)
         }

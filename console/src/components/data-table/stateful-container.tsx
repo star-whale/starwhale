@@ -13,11 +13,11 @@ import * as React from 'react'
 import { SORT_DIRECTIONS } from './constants'
 import type { ColumnT, StatefulContainerPropsT } from './types'
 
-let __DEV__ = false
+const IS_DEV = true
 
 function useDuplicateColumnTitleWarning(columns: ColumnT[]) {
     React.useEffect(() => {
-        if (__DEV__) {
+        if (IS_DEV) {
             const titles = columns.reduce((set, column) => set.add(column.title), new Set())
             if (titles.size < columns.length) {
                 console.warn(

@@ -10,11 +10,10 @@ import * as React from 'react'
 import { Checkbox } from 'baseui/checkbox'
 import { useStyletron } from 'baseui'
 import { ChevronDown, ChevronUp } from 'baseui/icon'
+import { isFocusVisible } from 'baseui/utils/focusVisible'
 
 import { SORT_DIRECTIONS } from './constants'
 import type { SortDirectionsT } from './types'
-// @ts-ignore
-import { isFocusVisible } from 'baseui/utils/focusVisible'
 
 type HeaderCellPropsT = {
     index: number
@@ -44,13 +43,13 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
         }
     }
 
-    const handleBlur = (event: React.SyntheticEvent) => {
+    const handleBlur = () => {
         if (focusVisible !== false) {
             setFocusVisible(false)
         }
     }
 
-    const backgroundColor = props?.isHovered ? theme.colors.backgroundSecondary : theme.colors.backgroundPrimary
+    // const backgroundColor = props?.isHovered ? theme.colors.backgroundSecondary : theme.colors.backgroundPrimary
 
     return (
         <div
@@ -105,7 +104,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
             {props.isSelectable && (
                 <span className={css({ paddingRight: theme.sizing.scale300 })} ref={checkboxRef}>
                     <Checkbox
-                        onChange={(e) => {
+                        onChange={() => {
                             if (props.isSelectedAll || props.isSelectedIndeterminate) {
                                 props.onSelectNone()
                             } else {

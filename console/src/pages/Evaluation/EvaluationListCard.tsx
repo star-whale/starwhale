@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createJob, doJobAction } from '@job/services/job'
 import { usePage } from '@/hooks/usePage'
@@ -16,7 +16,6 @@ import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
 import IconFont from '@/components/IconFont'
 import { CustomColumn, CategoricalColumn, StringColumn } from '@/components/data-table'
-import _ from 'lodash'
 
 export default function EvaluationListCard() {
     const [t] = useTranslation()
@@ -47,7 +46,6 @@ export default function EvaluationListCard() {
         StringColumn({
             key: 'evaluationId',
             title: t('Evaluation ID'),
-            // @ts-ignore
             // renderCell: (props: any) => {
             //     const row = props.value ?? {}
             //     return (

@@ -12757,6 +12757,11 @@ just-extend@^4.0.2:
   resolved "https://registry.npmmirror.com/just-extend/-/just-extend-4.2.1.tgz#ef5e589afb61e5d66b24eca749409a8939a8c744"
   integrity sha512-g3UB796vUFIY90VIv/WX3L2c8CS2MdWUww3CNrYmqza1Fg0DURc2K/O4YrnklBdQarSJ/y8JnJYDGc+1iumQjg==
 
+just-extend@^6.0.1:
+  version "6.0.1"
+  resolved "https://registry.npmmirror.com/just-extend/-/just-extend-6.0.1.tgz#e56276a36cbc360713612b9445f8753a7c73dd50"
+  integrity sha512-CrwyGHRQ22XObWsZPQdnKlLLuCPj95OQ9HrLYdfjymCsYoYj7HPMFNrgqPW/LJjhK+CnVZAtftVSfo8Wr33RTA==
+
 kdbush@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmmirror.com/kdbush/-/kdbush-3.0.0.tgz#f8484794d47004cc2d85ed3a79353dbe0abc2bf0"
@@ -16961,7 +16966,7 @@ react-syntax-highlighter@^15.4.5:
     prismjs "^1.27.0"
     refractor "^3.6.0"
 
-react-uid@^2.3.0:
+react-uid@^2.3.0, react-uid@^2.3.2:
   version "2.3.2"
   resolved "https://registry.npmmirror.com/react-uid/-/react-uid-2.3.2.tgz#09107543bb3184b53ca70275adb919217b94974d"
   integrity sha512-oeaoT4YOjsqHdrEJoO8SONNNBsoGh7AJPbsNqRK6Dv8UMdctWxA4ncj9gAA/Odki5g0GZaDSR7HydBJ8HxwgNg==

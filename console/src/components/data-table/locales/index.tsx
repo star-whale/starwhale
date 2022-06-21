@@ -9,8 +9,8 @@ LICENSE file in the root directory of this source tree.
 import * as React from 'react'
 import extend from 'just-extend'
 
-import type { LocaleT } from './types.js'
-import en_US from './en_US.js'
+import type { LocaleT } from './types'
+import en_US from './en_US'
 
 export const LocaleContext: React.Context<LocaleT> = React.createContext(en_US)
 

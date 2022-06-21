@@ -27,7 +27,7 @@ import { normalizeColumns } from '../BaseTable/BaseTable.d'
 // consider pulling this out to a prop if useful.
 const HEADER_ROW_HEIGHT = 48
 
-const __BROWSER__ = true
+const IS_BROWSER = true
 
 type HeaderContextT = {
     columns: ColumnT[]
@@ -325,7 +325,7 @@ function Header(props: HeaderProps) {
 
     // @ts-ignore
     function getPositionX(el) {
-        if (__BROWSER__) {
+        if (IS_BROWSER) {
             const rect = el.getBoundingClientRect()
             return rect.left + window.scrollX
         }
@@ -367,14 +367,14 @@ function Header(props: HeaderProps) {
             setEndResizePos(0)
         }
 
-        if (__BROWSER__) {
+        if (IS_BROWSER) {
             if (isResizingThisColumn) {
                 document.addEventListener('mousemove', handleMouseMove)
                 document.addEventListener('mouseup', handleMouseUp)
             }
         }
         return () => {
-            if (__BROWSER__) {
+            if (IS_BROWSER) {
                 document.removeEventListener('mousemove', handleMouseMove)
                 document.removeEventListener('mouseup', handleMouseUp)
             }

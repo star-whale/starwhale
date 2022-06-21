@@ -1,10 +1,11 @@
+// @ts-nocheck
+
 /*
 Copyright (c) Uber Technologies, Inc.
 
 This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 */
-// @flow
 
 import React from 'react'
 
@@ -29,7 +30,7 @@ export function splitByQuery(text: string, query: string): string[] {
     const substrings = []
     let substring = ''
     for (let i = 0; i < text.length; i++) {
-        substring = substring + text[i]
+        substring += text[i]
         if (
             // prefix
             i === start - 1 ||

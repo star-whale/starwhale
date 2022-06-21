@@ -8,15 +8,14 @@ LICENSE file in the root directory of this source tree.
 */
 // @flow
 
-import * as React from 'react'
+import React, { useRef } from 'react'
 
 import { useStyletron } from 'baseui'
 
 import HeaderCell from './header-cell'
 import type { ColumnT, RowT } from './types'
-import { useRef } from 'react'
 
-const __BROWSER__ = true
+const IS_BROWSER = true
 
 // Measures the column header + sampled data
 function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable, onLayout }) {
@@ -25,7 +24,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
     const ref = useRef()
 
     React.useEffect(() => {
-        if (__BROWSER__) {
+        if (IS_BROWSER) {
             if (ref.current) {
                 onLayout(columnIndex, ref.current.getBoundingClientRect())
             }
@@ -54,7 +53,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 onMouseLeave={() => {}}
                 onSelectAll={() => {}}
                 onSelectNone={() => {}}
-                onSort={(i) => {}}
+                onSort={() => {}}
                 sortable={column.sortable}
                 sortDirection={null}
                 title={column.title}

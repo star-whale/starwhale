@@ -13,6 +13,7 @@ import { Checkbox, STYLE_TYPE } from 'baseui/checkbox'
 import { useStyletron } from 'baseui'
 import { LocaleContext } from './locales'
 import { FILTER_SHELL_WIDTH } from './constants'
+
 export type ExcludeKind = 'value' | 'range'
 
 type PropsT = {

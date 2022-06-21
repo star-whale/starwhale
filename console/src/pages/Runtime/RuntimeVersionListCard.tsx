@@ -8,8 +8,6 @@ import User from '@/domain/user/components/User'
 import Table from '@/components/Table/TableTyped'
 import { useParams } from 'react-router-dom'
 import { useFetchRuntimeVersions } from '@/domain/runtime/hooks/useFetchRuntimeVersions'
-import { Tag } from 'baseui/tag'
-import MultiTags from '@/components/Tag/MultiTags'
 import { updateRuntimeVersion } from '@/domain/runtime/services/runtimeVersion'
 
 export default function RuntimeVersionListCard() {
@@ -17,25 +15,6 @@ export default function RuntimeVersionListCard() {
     const { runtimeId, projectId } = useParams<{ runtimeId: string; projectId: string }>()
     const runtimesInfo = useFetchRuntimeVersions(projectId, runtimeId, page)
     const [t] = useTranslation()
-
-    // @ts-ignore
-    // const runtimesInfo = {
-    //     isLoading: false,
-    //     data: {
-    //         list: new Array(100).fill({
-    //             // @ts-ignore
-    //             meta: '2',
-    //             id: '2',
-    //             tag: '2',
-    //             createdTime: 1000,
-    //             // @ts-ignore
-    //             owner: null,
-    //         }),
-    //         pageNum: 1,
-    //         pageSize: 1,
-    //         total: 1,
-    //     },
-    // }
 
     return (
         <Card title={t('runtime versions')}>
