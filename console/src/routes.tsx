@@ -34,6 +34,8 @@ import RuntimeLayout from './pages/Runtime/RuntimeLayout'
 import RuntimeOverview from './pages/Runtime/Overview'
 import ProjectRuntimes from './pages/Project/Runtimes'
 import JobDAG from './pages/Job/JobDAG'
+import ProjectEvaluations from './pages/Project/Evaluations'
+import EvaluationOverviewLayout from './pages/Evaluation/EvaluationOverviewLayout'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -82,11 +84,28 @@ const Routes = () => {
                                 <Route exact path='/projects/:projectId/models' component={ProjectModels} />
                                 <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
                                 <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
+                                <Route exact path='/projects/:projectId/evaluations' component={ProjectEvaluations} />
                                 <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
                                 <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
                                 <Redirect from='/projects/:projectId' to='/projects/:projectId/models' />
                             </Switch>
                         </ProjectLayout>
+                    </Route>
+                    {/* evaluation */}
+                    <Route exact path='/projects/:projectId/evaluations/:jobId/:path?'>
+                        <EvaluationOverviewLayout>
+                            <Switch>
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/evaluations/:jobId/results'
+                                    component={JobResults}
+                                />
+                                <Redirect
+                                    from='/projects/:projectId/evaluations/:jobId'
+                                    to='/projects/:projectId/evaluations/:jobId/results'
+                                />
+                            </Switch>
+                        </EvaluationOverviewLayout>
                     </Route>
                     {/* job & task */}
                     <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>

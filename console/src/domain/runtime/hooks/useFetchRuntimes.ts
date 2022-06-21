@@ -4,6 +4,8 @@ import qs from 'qs'
 import { listRuntimes } from '../services/runtime'
 
 export function useFetchRuntimes(projectId: string, query: IListQuerySchema) {
-    const info = useQuery(`fetchRuntimes:${projectId}:${qs.stringify(query)}`, () => listRuntimes(projectId, query))
+    const info = useQuery(`fetchRuntimes:${projectId}:${qs.stringify(query)}`, () => listRuntimes(projectId, query), {
+        refetchOnWindowFocus: false,
+    })
     return info
 }

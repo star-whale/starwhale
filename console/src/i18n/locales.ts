@@ -360,6 +360,15 @@ const locales0 = {
     'DAG': {
         en: 'Actions',
     },
+    'Evaluation': {
+        en: 'Evaluation',
+    },
+    'Evaluation ID': {
+        en: 'Evaluation ID',
+    },
+    'Evaluations': {
+        en: 'Evaluations',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

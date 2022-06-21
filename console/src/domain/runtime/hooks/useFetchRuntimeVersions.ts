@@ -4,8 +4,12 @@ import qs from 'qs'
 import { listRuntimeVersions } from '../services/runtimeVersion'
 
 export function useFetchRuntimeVersions(projectId: string, modelId: string, query: IListQuerySchema) {
-    const modelVersionsInfo = useQuery(`fetchRuntimeVersions:${projectId}:${modelId}:${qs.stringify(query)}`, () =>
-        listRuntimeVersions(projectId, modelId, query)
+    const modelVersionsInfo = useQuery(
+        `fetchRuntimeVersions:${projectId}:${modelId}:${qs.stringify(query)}`,
+        () => listRuntimeVersions(projectId, modelId, query),
+        {
+            refetchOnWindowFocus: false,
+        }
     )
     return modelVersionsInfo
 }

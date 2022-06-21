@@ -42,6 +42,13 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 activePathPattern: /\/(jobs|new_job)\/?/,
                 icon: <IconFont type='job' kind='white' size={20} />,
             },
+
+            {
+                title: t('Evaluation'),
+                path: `/projects/${projectId}/evaluations`,
+                activePathPattern: /\/(evaluations)\/?/,
+                icon: <IconFont type='job' kind='white' size={20} />,
+            },
         ]
     }, [project, projectId, t])
     return (

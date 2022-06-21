@@ -124,3 +124,10 @@ border-radius: 8px;
 }
 
 table { border-collapse: separate; }
+
+
+.line-clamp {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
