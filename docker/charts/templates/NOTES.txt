@@ -17,6 +17,9 @@ Web Visit:
   {{- if .Values.minio.enabled}}
   - minio admin: http://{{.Values.minio.ingress.hostname}}
   {{- end}}
+  {{- if .Values.nexus3.enabled}}
+  - nexus3 admin: http://localhost:{{ .Values.nexus3.nexusPort }}
+  {{- end}}
 {{- end }}
 
 Port Forward Visist:
@@ -32,6 +35,11 @@ Port Forward Visist:
   - mysql:
     - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }}-mysql {{ .Values.mysql.primary.service.port }}:{{ .Values.mysql.primary.service.port }}
     - visit: mysql -h 127.0.0.1 -P {{ .Values.mysql.primary.service.port }} -u{{ .Values.mysql.auth.username }} -p{{ .Values.mysql.auth.password }}
+  {{- end}}
+  {{- if and .Values.nexus3.enabled .Values.minikube.enabled }}
+  - nexus3:
+    - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }}-nexus-repository-manager {{ .Values.nexus3.nexusPort }}:{{ .Values.nexus3.nexusPort }}
+    - visit: http://localhost:{{ .Values.nexus3.nexusPort }} user:admin,password:admin123
   {{- end}}
 
 ******************************************

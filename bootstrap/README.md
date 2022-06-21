@@ -5,7 +5,7 @@
       ``` text
        10.131.0.1 agent01.starwhale.com
        10.131.0.2 agent02.starwhale.com storage.starwhale.com controller.starwhale.com
-       10.131.0.3 agent03.starwhale.com
+       10.131.0.3 agent03.starwhale.com nexus.starwhale.com
        10.131.0.4 agent04.starwhale.com
       ```
   - finally, exec: `starwhale-bootstrap deploy run --user ${sudoer} --hosts-of-agent "agent01.starwhale.com,agent02.starwhale.com,agent03.starwhale.com,..."`

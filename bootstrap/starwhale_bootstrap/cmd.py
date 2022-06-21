@@ -1,5 +1,5 @@
 import click
-import default
+from . import default
 
 from .deploy import deploy
 
@@ -25,6 +25,28 @@ def bootstrap_cmd() -> None:
     "--image-repository",
     default=default.SW_REPOSITORY,
     help="Docker image repository, 'starwhaleai' or 'ghcr.io/star-whale'",
+)
+# nexus
+@click.option(
+    "--need-nexus",
+    default="false",
+    help="whether deploy nexus",
+)
+@click.option(
+    "--nexus-image",
+    default=default.NEXUS_IMAGE,
+    help="",
+)
+@click.option(
+    "--nexus-port",
+    default=default.NEXUS_PORT,
+    help="",
+)
+@click.option(
+    "--nexus-data-dir",
+    default=default.NEXUS_DATA_DIR,
+    help="A path relative to root-path "
+    "that will as the storage directory for the nexus",
 )
 # mysql
 @click.option(
@@ -179,6 +201,11 @@ def bootstrap_cmd() -> None:
     help="Only one,the storage host",
 )
 @click.option(
+    "--host-of-nexus",
+    default=default.HOST_OF_NEXUS,
+    help="Only one,the nexus host",
+)
+@click.option(
     "--hosts-of-agent",
     default=default.HOST_OF_AGENT,
     # multiple=True,
@@ -197,6 +224,10 @@ def _deploy(
     image_repository: str,
     token_expire_minutes: str,
     file_upload_size: str,
+    need_nexus: bool,
+    nexus_image: str,
+    nexus_port: str,
+    nexus_data_dir: str,
     mysql_image: str,
     mysql_port: str,
     mysql_root_password: str,
@@ -225,6 +256,7 @@ def _deploy(
     inventory: str,
     host_of_controller: str,
     host_of_storage: str,
+    host_of_nexus: str,
     hosts_of_agent: str,
     cluster_mode: str,
 ) -> None:
@@ -237,6 +269,9 @@ def _deploy(
         "storage": {"hosts": {host_of_storage: {}}},
         "agent": {"hosts": agent_hosts},
     }
+    if need_nexus:
+        inventory["nexus"] = {"hosts": {host_of_nexus: {}}}
+
     deploy(
         log_record_dir,
         {
@@ -244,6 +279,11 @@ def _deploy(
             "base_root_path": root_path,
             "sw_version": version,
             "sw_repository": image_repository,  # or else ghcr.io/star-whale
+            # nexus
+            "need_nexus": need_nexus,
+            "nexus_image": nexus_image,
+            "nexus_port": nexus_port,
+            "nexus_data_dir": "{{ base_root_path }}/" + nexus_data_dir,
             # mysql
             "mysql_image": mysql_image,
             "mysql_port": mysql_port,

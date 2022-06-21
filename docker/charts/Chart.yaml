@@ -23,6 +23,10 @@ dependencies:
     condition: minio.enabled
     repository: https://charts.bitnami.com/bitnami
     version: 11.x.x
+  - name: nexus-repository-manager
+    condition: nexus3.enabled
+    repository: https://sonatype.github.io/helm3-charts/
+    version: 39.x.x
 
 version: "0.1.0"
-appVersion: "0.1.0"
+appVersion: "latest"
