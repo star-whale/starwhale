@@ -14,45 +14,29 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.swds.bo;
+package ai.starwhale.mlops.domain.evaluation.po;
 
-import ai.starwhale.mlops.domain.swds.index.SWDSDataLocation;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import ai.starwhale.mlops.common.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-/**
- * the storage unit of one data set
- */
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SWDSBlock {
+public class ViewConfigEntity extends BaseEntity {
 
-    /**
-     * the offset to the original SWDS
-     */
-    Long id;
+    private Long id;
 
-    /**
-     * how many batches does this block contains
-     */
-    @JsonProperty("batch")
-    int batchAmount;
+    private String configName;
 
-    /**
-     * location of labels in this block
-     */
-    @JsonProperty("label")
-    SWDSDataLocation locationLabel;
+    private Long ownerId;
 
-    /**
-     * location of inputs in this block
-     */
-    @JsonProperty("config")
-    SWDSDataLocation locationInput;
+    private Long projectId;
 
+    private String content;
 }
