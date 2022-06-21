@@ -49,6 +49,38 @@ externalMySQL:
   password: ""
   database: starwhale
 
+nexus3:
+  enabled: false
+  nexusPort: 8081
+  # ingress:
+  #   hostname: nexus.pre.intra.starwhale.ai
+
+# todo self define hostname
+nexus-repository-manager:
+  nexus: 
+    nexusPort: 8081
+    # hostAliases: 
+    #   - nexus.pre.intra.starwhale.ai
+    env: 
+      - name: NEXUS_SECURITY_RANDOMPASSWORD
+        value: "false"
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 500m
+        memory: 250Mi
+  ingress:
+    enabled: true
+    # annotations:
+    #   kubernetes.io/ingress.class: nginx
+    #   hostname: nexus.pre.intra.starwhale.ai
+    path: /
+  persistence:
+    enabled: true
+    storageSize: 50Gi
+
 minio:
   enabled: true
   containerPorts:
