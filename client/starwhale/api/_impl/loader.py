@@ -326,9 +326,6 @@ class S3BufferedFileLike(object):
             return b"", 0
 
         resp = self.obj.get(Range=f"bytes={_start}-{_end}")
-        import pdb
-
-        pdb.set_trace()
         body = resp["Body"]
         length = resp["ContentLength"]
         out = resp["Body"].read()
