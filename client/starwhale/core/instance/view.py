@@ -84,7 +84,6 @@ class InstanceTermView(BaseTermView):
             # TODO: support use uri directly
             # TODO: user async to get
             ci = CloudInstance(instance)
-            _baseimages = ci._fetch_baseimage()
             _version = ci._fetch_version()
             _agents = ci._fetch_agents()
 
@@ -92,14 +91,12 @@ class InstanceTermView(BaseTermView):
                 table = Table(
                     show_edge=False,
                     show_header=True,
-                    row_styles=["none", "dim"],
                     box=box.SIMPLE,
                 )
                 table.add_column("id")
                 table.add_column("ip", style="green")
                 table.add_column("status", style="blue")
                 table.add_column("version")
-                table.add_column("connected time")
 
                 for i, _agent in enumerate(_agents):
                     table.add_row(
@@ -107,7 +104,6 @@ class InstanceTermView(BaseTermView):
                         _agent["ip"],
                         str(_agent["status"]),
                         _agent["version"],
-                        str(_agent["connectedTime"]),
                     )
                 return table
 
@@ -118,7 +114,6 @@ class InstanceTermView(BaseTermView):
                 )
                 grid.add_column("Information")
                 grid.add_row("Version", _version)
-                grid.add_row("BaseImage", "\n".join([f"- {i}" for i in _baseimages]))
                 grid.add_row(
                     "Agents",
                     _agents_table(),

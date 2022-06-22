@@ -3,12 +3,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from starwhale.utils import validate_obj_name
-from starwhale.consts import (
-    UserRoleType,
-    SW_API_VERSION,
-    VERSION_PREFIX_CNT,
-    STANDALONE_INSTANCE,
-)
+from starwhale.consts import UserRoleType, SW_API_VERSION, VERSION_PREFIX_CNT
 from starwhale.base.type import URIType
 from starwhale.utils.error import URIFormatError
 from starwhale.utils.config import SWCliConfigMixed
@@ -61,19 +56,6 @@ class URI(object):
                 "",
             )
 
-        if self.expected_type == URIType.INSTANCE:
-            ok, reason = validate_obj_name(raw)
-            if not ok:
-                raise Exception(reason)
-
-            return (
-                raw,
-                InstanceType.STANDALONE
-                if raw == STANDALONE_INSTANCE
-                else InstanceType.CLOUD,
-                "",
-            )
-
         if raw.startswith(("http://", "https://", "cloud://")):
             _up = urlparse(raw)
             if raw.startswith("cloud://"):
@@ -91,10 +73,16 @@ class URI(object):
             _sp = raw.split("local/", 1)
             _remain = "" if len(_sp) == 1 else _sp[1]
             _inst_type = InstanceType.STANDALONE
+        else:
+            _inst = self._sw_config._config["instances"].get(raw, {}).get("uri", "")
+            _inst_type = InstanceType.CLOUD
 
         if not _inst:
             _inst = self._sw_config._current_instance_obj["uri"]
             _inst_type = self._sw_config._current_instance_obj["type"]
+
+        if self.expected_type == URIType.INSTANCE:
+            _remain = ""
 
         return _inst, _inst_type, _remain
 
