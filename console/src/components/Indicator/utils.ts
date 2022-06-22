@@ -158,7 +158,7 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
                 showarrow: false,
             }
 
-            if (i == j) annotations.push(result)
+            if (i === j) annotations.push(result)
         }
     }
 

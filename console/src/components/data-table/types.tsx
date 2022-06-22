@@ -88,7 +88,7 @@ export type RowActionT = {
     label: string
     onClick: (args: { event: React.SyntheticEvent<HTMLButtonElement>; row: RowT }) => any
     renderIcon: React.Component<{ size: number }>
-    renderButton?: React.Component<{}>
+    renderButton?: React.Component<any>
 }
 
 type ImperativeMethodsT = {
@@ -107,14 +107,14 @@ export type ConfigT = {
 export type StatefulDataTablePropsT = {
     batchActions?: BatchActionT[]
     columns: ColumnT[]
-    emptyMessage?: string | React.Component<{}>
+    emptyMessage?: string | React.Component<any>
     filterable?: boolean
     initialFilters?: Map<string, { description: string }>
     initialSelectedRowIds?: Set<number | string>
     initialSortIndex?: number
     initialSortDirection?: SortDirectionsT
     loading?: boolean
-    loadingMessage?: string | React.Component<{}>
+    loadingMessage?: string | React.Component<any>
     onFilterAdd?: (v: string, { description: string }: any) => any
     onFilterRemove?: (v: string) => any
     onIncludedRowsChange?: (rows: RowT[]) => void
@@ -132,10 +132,10 @@ export type StatefulDataTablePropsT = {
 }
 
 export type DataTablePropsT = {
-    emptyMessage?: string | React.Component<{}>
+    emptyMessage?: string | React.Component<any>
     filters?: Map<string, { description: string }>
     loading?: boolean
-    loadingMessage?: string | React.Component<{}>
+    loadingMessage?: string | React.Component<any>
     onIncludedRowsChange?: (rows: RowT[]) => void
     onRowHighlightChange?: (rowIndex: number, row: RowT) => void
     onSelectMany?: (rows: RowT[]) => void
