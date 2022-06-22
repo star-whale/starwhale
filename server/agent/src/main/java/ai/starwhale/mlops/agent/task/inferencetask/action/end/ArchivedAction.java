@@ -22,7 +22,6 @@ import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBaseTaskAction;
-import cn.hutool.core.bean.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,7 +55,8 @@ public class ArchivedAction extends AbsBaseTaskAction {
             }
 
         }
-
+        // upload agent log to the storage
+        taskPersistence.uploadLog(originTask);
         // remove from origin list
         taskPool.failedTasks.remove(originTask);
         taskPool.succeedTasks.remove(originTask);
