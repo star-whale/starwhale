@@ -94,7 +94,7 @@ export default function SummaryIndicator({ data, isTreeView = false }: ISummaryI
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 6 }}>
                     {_(data)
                         .map((subV, subK) => (
-                            <>
+                            <div key={subK}>
                                 <div key={subK} className={styles.summaryRoot}>
                                     {_.isObject(subV) ? (
                                         <IconFont type='arrow2_down' kind='gray' />
@@ -111,7 +111,7 @@ export default function SummaryIndicator({ data, isTreeView = false }: ISummaryI
                                     <p> {!_.isObject(subV) && subV}</p>
                                 </div>
                                 {_.isObject(subV) && (
-                                    <ul>
+                                    <ul key={`ul-${subK}`}>
                                         {_.map(subV, (subSubV, subSubK) => (
                                             <li className={styles.summaryLi} key={subSubK} style={{}}>
                                                 <span
@@ -126,7 +126,7 @@ export default function SummaryIndicator({ data, isTreeView = false }: ISummaryI
                                         ))}
                                     </ul>
                                 )}
-                            </>
+                            </div>
                         ))
                         .value()}
                 </div>
