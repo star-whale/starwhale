@@ -166,19 +166,6 @@ export default function TableTyped({
         [onColumnSave]
     )
 
-    const $columnsSorted = useMemo(() => {
-        return columnVisibleIds.map((id) => {
-            const column = $columns.find((column) => column.key === id)
-
-            return {
-                ...column,
-                pin: pinnedIds.includes(column?.key as string) ? 'LEFT' : null,
-            }
-        })
-    }, [$columns, columnVisibleIds, columnSortedIds, pinnedIds])
-
-    console.log('TableTyped', $columnsSorted, $rows)
-
     return (
         <>
             <div
@@ -195,7 +182,7 @@ export default function TableTyped({
                     batchActions={$batchActions}
                     rowActions={rowActions}
                     // @ts-ignore
-                    columns={$columnsSorted}
+                    columns={$columns}
                     rows={$rows}
                     config={{
                         selectIds: columnVisibleIds,

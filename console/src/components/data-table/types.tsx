@@ -34,7 +34,7 @@ export type SharedColumnOptionsT<ValueT> = {
     sortable?: boolean
     title: string
     key?: string
-    pin?: 'LEFT' | null
+    pin?: 'LEFT'
     onAsyncChange?: (value: ValueT, columnIndex: number, rowIndex: number) => Promise<void>
 }
 
@@ -57,8 +57,6 @@ export type RenderFilterT<ValueT, FilterParamsT> = React.Component<{
 
 // flowlint-next-line unclear-type:off
 export type ColumnT<ValueT = any, FilterParamsT = any> = {
-    pin?: 'LEFT' | null
-    key?: string
     kind: ColumnsT
     sortable: boolean
     renderCell: RenderCellT<ValueT>
@@ -99,9 +97,9 @@ export type ControlRefT = {
 }
 
 export type ConfigT = {
-    selectIds: Array<any>
-    sortedIds: Array<any>
-    pinnedIds: Array<any>
+    selectIds?: Array<any>
+    sortedIds?: Array<any>
+    pinnedIds?: Array<any>
 }
 
 export type StatefulDataTablePropsT = {

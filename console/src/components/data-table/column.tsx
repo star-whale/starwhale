@@ -92,7 +92,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         title: options.title,
         onAsyncChange: options?.onAsyncChange,
         key: options.key ?? options.title.toLocaleLowerCase().replace(' ', ''),
-        pin: options.pin ?? null,
+        pin: options.pin,
     }
 }
 
