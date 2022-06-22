@@ -52,7 +52,7 @@ public class SWDSBlock {
     /**
      * location of inputs in this block
      */
-    @JsonProperty("config")
+    @JsonProperty("data")
     SWDSDataLocation locationInput;
 
 }
