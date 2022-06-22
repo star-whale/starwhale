@@ -36,6 +36,7 @@ import ProjectRuntimes from './pages/Project/Runtimes'
 import JobDAG from './pages/Job/JobDAG'
 import ProjectEvaluations from './pages/Project/Evaluations'
 import EvaluationOverviewLayout from './pages/Evaluation/EvaluationOverviewLayout'
+import EvaluationResults from './pages/Evaluation/EvaluationResults'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -98,7 +99,7 @@ const Routes = () => {
                                 <Route
                                     exact
                                     path='/projects/:projectId/evaluations/:jobId/results'
-                                    component={JobResults}
+                                    component={EvaluationResults}
                                 />
                                 <Redirect
                                     from='/projects/:projectId/evaluations/:jobId'

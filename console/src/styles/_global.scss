@@ -131,3 +131,17 @@ table { border-collapse: separate; }
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
 }
+
+.flex-column-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+
+}
+
+.flex-row-center{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

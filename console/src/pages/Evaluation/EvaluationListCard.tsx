@@ -150,17 +150,6 @@ export default function EvaluationListCard() {
         }),
     ]
 
-    // const [$columns, setColumns] = useState([] as any)
-
-    // useEffect(() => {
-    //     const id = setInterval(() => {
-    //         setColumns(_.shuffle(columns))
-    //     }, 2000)
-    //     return () => {
-    //         clearInterval(id)
-    //     }
-    // }, [])
-
     return (
         <>
             <Card

@@ -41,7 +41,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('Jobs'),
+                title: t('Evaluations'),
                 path: `/projects/${projectId}/evaluations`,
             },
             {
@@ -65,7 +65,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
 
     const items = [
         {
-            label: t('Job ID'),
+            label: t('Evaluation ID'),
             value: job?.id ?? '-',
         },
         {

@@ -30,11 +30,9 @@ function EvaluationResults() {
             let outTitle = ''
 
             switch (k) {
-                default:
-                    return <></>
-                    break
                 case INDICATORTYPE.KIND:
                     break
+                default:
                 case INDICATORTYPE.SUMMARY: {
                     const data = v
                     outTitle = t('Summary')

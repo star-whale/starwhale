@@ -353,7 +353,32 @@ function ConfigManageColumns(props: PropsT) {
                                         empty
                                     </Button>
                                 </div>
-                                <DnDContainer onOrderChange={handleOrderChange} data={dndData} />
+                                {dndData.length === 0 && (
+                                    <div className='flex-column-center'>
+                                        <div
+                                            style={{
+                                                background: '#EEF1F6',
+                                                borderRadius: '1px',
+                                                width: '64px',
+                                                height: '64px',
+                                                marginBottom: '20px',
+                                                marginTop: '68px',
+                                            }}
+                                        />
+                                        <p
+                                            style={{
+                                                color: 'rgba(2,16,43,0.40)',
+                                                maxWidth: '189px',
+                                                textAlign: 'center',
+                                            }}
+                                        >
+                                            Please select a column in the left side
+                                        </p>
+                                    </div>
+                                )}
+                                {dndData.length > 0 && (
+                                    <DnDContainer onOrderChange={handleOrderChange} data={dndData} />
+                                )}
                             </div>
                         </div>
                         <div
