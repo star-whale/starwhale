@@ -267,7 +267,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         logger.info(f"[info:swds]try to import {swds_config.process} @ {workdir}")
         _cls = import_cls(workdir, swds_config.process, BuildExecutor)
 
-        _obj = _cls(
+        with _cls(
             data_dir=workdir / swds_config.data_dir,
             output_dir=self.store.data_dir,
             data_filter=swds_config.data_filter,
@@ -275,18 +275,15 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             batch=swds_config.attr.batch_size,
             alignment_bytes_size=swds_config.attr.alignment_size,
             volume_bytes_size=swds_config.attr.volume_size,
-        )
-        console.print(
-            f":ghost: import [red]{swds_config.process}@{workdir.resolve()}[/] to make swds..."
-        )
-        if swds_config.mode == DSProcessMode.GENERATE:
-            logger.info("[info:swds]do make swds_bin job...")
-            _obj.make_swds()
-            _obj.__exit__()
-            # TODO: need remove workdir in sys.path?
-        else:
-            # TODO: add some dry-run output
-            logger.info("[info:swds]skip make swds_bin")
+        ) as _obj:
+            console.print(
+                f":ghost: import [red]{swds_config.process}@{workdir.resolve()}[/] to make swds..."
+            )
+            if swds_config.mode == DSProcessMode.GENERATE:
+                logger.info("[info:swds]do make swds_bin job...")
+                _obj.make_swds()
+            else:
+                logger.info("[info:swds]skip make swds_bin")
 
         console.print(f"[step:swds]finish gen swds @ {self.store.data_dir}")
 

@@ -7,6 +7,7 @@ import json
 import typing as t
 import logging
 from abc import ABCMeta, abstractmethod
+from types import TracebackType
 from pathlib import Path
 from functools import wraps
 
@@ -14,7 +15,7 @@ import loguru
 import jsonlines
 
 from starwhale.utils import now_str, pretty_bytes, in_production
-from starwhale.consts import CURRENT_FNAME
+from starwhale.consts import CURRENT_FNAME, DEFAULT_INPUT_JSON_FNAME
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
@@ -54,7 +55,7 @@ class _RunConfig(object):
 
     def load_swds_config(self, path: _ptype) -> t.Any:
         if not path:
-            path = Path(_TASK_ROOT_DIR) / "config" / "swds.json"
+            path = Path(_TASK_ROOT_DIR) / "config" / DEFAULT_INPUT_JSON_FNAME
 
         path = Path(path) if isinstance(path, str) else path
         if path.exists():
@@ -170,7 +171,18 @@ class PipelineHandler(object):
             f"log@{self.config.log_dir}, result@{self.config.result_dir}"
         )
 
-    def __exit__(self) -> None:
+    def __enter__(self):
+        return self
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
+        if value:
+            print(f"type:{type}, exception:{value}, traceback:{trace}")
+
         if self._stdout_changed:
             sys.stdout = self._orig_stdout
         if self._stderr_changed:

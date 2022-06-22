@@ -2,6 +2,7 @@ import math
 import struct
 import typing as t
 from abc import ABCMeta, abstractmethod
+from types import TracebackType
 from pathlib import Path
 from binascii import crc32
 
@@ -76,7 +77,18 @@ class BuildExecutor(object):
             str((self.output_dir / self.INDEX_NAME).resolve()), mode="w"
         )
 
-    def __exit__(self) -> None:
+    def __enter__(self):
+        return self
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
+        if value:
+            print(f"type:{type}, exception:{value}, traceback:{trace}")
+
         try:
             self._index_writer.close()  # type: ignore
         except Exception as e:
@@ -210,11 +222,11 @@ class MNISTBuildExecutor(BuildExecutor):
         fpath = Path(path)
 
         with fpath.open("rb") as f:
-            _, number, hight, width = struct.unpack(">IIII", f.read(16))
+            _, number, height, width = struct.unpack(">IIII", f.read(16))
             print(f">data({fpath.name}) split {math.ceil(number / self._batch)} group")
 
             while True:
-                content = f.read(self._batch * hight * width)
+                content = f.read(self._batch * height * width)
                 if not content:
                     break
                 yield content
