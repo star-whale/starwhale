@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { mergeOverrides } from '@/utils/baseui'
 
 export interface IButtonProps extends ButtonProps {
+    as?: 'link' | 'button' | 'transparent'
     kind?: KIND[keyof KIND]
     isFull?: boolean
     className?: string
@@ -21,12 +22,13 @@ export default function Button({
     isFull = false,
     size = 'compact',
     kind = 'primary',
+    as = 'button',
     children,
     ...props
 }: IButtonProps) {
     const styles = useStyles()
 
-    const overrides = mergeOverrides(
+    let overrides = mergeOverrides(
         {
             BaseButton: {
                 style: {
@@ -39,6 +41,46 @@ export default function Button({
         },
         props.overrides
     )
+
+    if (as === 'link') {
+        overrides = mergeOverrides(
+            {
+                BaseButton: {
+                    style: {
+                        'borderRadius': '4px',
+                        'lineHeight': '14px',
+                        'width': isFull ? '100%' : 'auto',
+                        'padding': '0',
+                        'margin': '0',
+                        'background': 'transparent',
+                        'color': '#2B65D9',
+                        ':hover': {
+                            background: 'transparent',
+                        },
+                    },
+                },
+            },
+            props.overrides
+        )
+    } else if (as === 'transparent') {
+        overrides = mergeOverrides(
+            {
+                BaseButton: {
+                    style: {
+                        'borderRadius': '4px',
+                        'width': isFull ? '100%' : 'auto',
+                        'background': 'transparent',
+                        'color': 'rgba(2,16,43,0.20)',
+                        ':hover': {
+                            background: 'transparent',
+                            color: 'var(--color-brandPrimaryHover)',
+                        },
+                    },
+                },
+            },
+            props.overrides
+        )
+    }
 
     return (
         <BaseButton size={size} kind={kind} className={classNames(styles.baseButton)} {...props} overrides={overrides}>

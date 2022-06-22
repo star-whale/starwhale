@@ -42,8 +42,8 @@ export async function updateRuntimeVersion(
     runtimeVersionId: string,
     data: IUpdateRuntimeVersionSchema
 ): Promise<IRuntimeVersionSchema> {
-    const resp = await axios.patch<IRuntimeVersionSchema>(
-        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}`,
+    const resp = await axios.put<IRuntimeVersionSchema>(
+        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}?tag=${data?.tag}`,
         data
     )
     return resp.data

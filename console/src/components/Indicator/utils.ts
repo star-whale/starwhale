@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import _ from 'lodash'
 
 interface IRocAuc {
@@ -22,6 +24,15 @@ const Ticks = {
     },
     auto: {
         autotick: true,
+        ticks: 'outside',
+        tickcolor: 'rgb(204,204,204)',
+        tickwidth: 2,
+        ticklen: 5,
+        tickfont: {
+            family: 'Arial',
+            size: 12,
+            color: 'rgb(82, 82, 82)',
+        },
     },
     init: {},
 }
@@ -29,14 +40,28 @@ const Ticks = {
 const Layout = {
     init: {
         autosize: true,
-        // width: 500,
-        // height: 500,
+        // width: 1000,
+        // height: 1000,
         annotations: [] as any[],
         xaxis: {
             ...Ticks.full,
         },
         yaxis: {
             ...Ticks.full,
+        },
+        font: {
+            family: 'Consolas',
+            size: 16,
+        },
+    },
+    auto: {
+        autosize: true,
+        annotations: [] as any[],
+        xaxis: {
+            ...Ticks.auto,
+        },
+        yaxis: {
+            ...Ticks.auto,
         },
         font: {
             family: 'Consolas',
@@ -91,10 +116,21 @@ export function getRocAucConfig(title = '', labels: string[], data: Record<strin
 }
 
 export function getHeatmapConfig(title = '', labels: string[], heatmap: number[][]) {
-    const layout = {
+    const nums = labels.length
+    let layout = {
         ...Layout.init,
         title,
     }
+
+    if (nums > 10) {
+        layout = {
+            ...Layout.auto,
+            title,
+            width: nums * 30,
+            height: nums * 30,
+        }
+    }
+
     const xValues = labels
     const yValues = labels
     const zValues = heatmap
@@ -114,15 +150,15 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
                 yref: 'y1',
                 x: xValues[j],
                 y: yValues[i],
-                // .toFixed(2) === '0.00' ? zValues[i][j].toFixed(2) : zValues[i][j].toFixed(3),
-                text: zValues[i][j],
+                text: zValues[i][j].toFixed(4),
                 font: {
                     size: 14,
                     color: textColor,
                 },
                 showarrow: false,
             }
-            annotations.push(result)
+
+            if (i === j) annotations.push(result)
         }
     }
 

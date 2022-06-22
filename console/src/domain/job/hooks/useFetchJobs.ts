@@ -4,6 +4,8 @@ import qs from 'qs'
 import { listJobs } from '../services/job'
 
 export function useFetchJobs(projectId: string, query: IListQuerySchema) {
-    const jobsInfo = useQuery(`fetchJobs:${projectId}:${qs.stringify(query)}`, () => listJobs(projectId, query))
+    const jobsInfo = useQuery(`fetchJobs:${projectId}:${qs.stringify(query)}`, () => listJobs(projectId, query), {
+        refetchOnWindowFocus: false,
+    })
     return jobsInfo
 }

@@ -14,11 +14,15 @@ export interface IJobLayoutProps {
     children: React.ReactNode
 }
 
-function JobOverviewLayout({ children }: IJobLayoutProps) {
+function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
     const { projectId, jobId } = useParams<{ jobId: string; projectId: string }>()
     const jobInfo = useQuery(`fetchJob:${projectId}:${jobId}`, () => fetchJob(projectId, jobId))
     const { job, setJob } = useJob()
     const { setJobLoading } = useJobLoading()
+
+    // useEffect(() => {
+    //     setExpanded(false)
+    // }, [setExpanded])
 
     useEffect(() => {
         setJobLoading(jobInfo.isLoading)
@@ -37,12 +41,12 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('Jobs'),
-                path: `/projects/${projectId}/jobs`,
+                title: t('Evaluations'),
+                path: `/projects/${projectId}/evaluations`,
             },
             {
                 title: uuid,
-                path: `/projects/${projectId}/jobs/${jobId}`,
+                path: `/projects/${projectId}/evaluations/${jobId}`,
             },
         ]
         return items
@@ -51,19 +55,8 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
     const navItems: INavItem[] = useMemo(() => {
         const items = [
             {
-                title: t('DAG'),
-                path: `/projects/${projectId}/jobs/${jobId}/actions`,
-                icon: <IconFont type='results' />,
-            },
-            {
-                title: t('Tasks'),
-                path: `/projects/${projectId}/jobs/${jobId}/tasks`,
-                pattern: '/\\/tasks\\/?',
-                icon: <IconFont type='tasks' />,
-            },
-            {
                 title: t('Results'),
-                path: `/projects/${projectId}/jobs/${jobId}/results`,
+                path: `/projects/${projectId}/evaluations/${jobId}/results`,
                 icon: <IconFont type='results' />,
             },
         ]
@@ -72,7 +65,7 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
 
     const items = [
         {
-            label: t('Job ID'),
+            label: t('Evaluation ID'),
             value: job?.id ?? '-',
         },
         {
@@ -161,4 +154,4 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
     )
 }
 
-export default React.memo(JobOverviewLayout)
+export default React.memo(EvaluationOverviewLayout)

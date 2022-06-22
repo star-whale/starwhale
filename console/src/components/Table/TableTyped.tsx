@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useMemo } from 'react'
 import { Table as TableSemantic, TableProps as BaseTableProps } from 'baseui/table-semantic'
 import { Pagination, SIZE as PaginationSize } from 'baseui/pagination'
 import { Skeleton } from 'baseui/skeleton'
@@ -11,19 +11,23 @@ import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { StatefulTooltip } from 'baseui/tooltip'
 import {
     StatefulDataTable,
+    CategoricalColumn,
     NumericalColumn,
     StringColumn,
-    BatchActionT,
-    RowActionT,
     CustomColumn,
-} from 'baseui/data-table'
+    Types,
+} from '@/components/data-table'
 import _ from 'lodash'
 import useResizeObserver from '@/hooks/window/useResizeObserver'
+import CategoricalTagsColumn from '../data-table/column-categorical-tags'
+import { useCallback } from 'react'
+import { useTableConfig } from '@/hooks/useTableConfig'
 
 export interface ITableProps extends BaseTableProps {
-    batchActions?: BatchActionT[]
-    rowActions?: RowActionT[]
+    batchActions?: Types.BatchActionT[]
+    rowActions?: Types.RowActionT[]
     paginationProps?: IPaginationProps
+    onColumnSave?: (props: any) => void
 }
 
 export default function TableTyped({
@@ -34,6 +38,7 @@ export default function TableTyped({
     paginationProps,
     batchActions = [],
     rowActions = [],
+    onColumnSave,
 }: ITableProps) {
     const [t] = useTranslation()
     const [page, setPage] = usePage()
@@ -56,32 +61,30 @@ export default function TableTyped({
         )
     }
 
-    const $columns = columns.map((raw: any, index) => {
+    let $columns = columns.map((raw: any, index) => {
         let column = raw
-        let rowItem = data?.[0]?.[index]
+        // @ts-ignore
+        let item = data?.[0]?.[index]
+        if (typeof raw === 'string') {
+            column = { type: 'string', title: raw, index, sortable: true }
+        }
+        if (React.isValidElement(item)) {
+            column = { type: 'custom', title: raw, index, renderCell: (props: any) => <>{props.value}</> }
+        }
 
         const initColumns = {
-            title: raw,
+            pin: null,
+            title: column.title,
+            resizable: true,
+            cellBlockAlign: 'center',
+            index: column.index,
+            // @ts-ignore
             sortable: !React.isValidElement(data?.[0]?.[index]),
             sortFn: function (a: any, b: any) {
                 return a.localeCompare(b)
             },
             mapDataToValue: (item: any) => item[index],
-        }
-
-        // fit for sample column
-        if (typeof raw == 'string') {
-            if (_.isString(rowItem)) {
-                return StringColumn({
-                    ...initColumns,
-                    ...column,
-                })
-            } else if (React.isValidElement(rowItem)) {
-                return CustomColumn({
-                    ...initColumns,
-                    renderCell: (props: any) => props.value,
-                })
-            }
+            minWidth: 100,
         }
 
         switch (column.type) {
@@ -108,6 +111,16 @@ export default function TableTyped({
                     renderCell: (props: any) => props.value,
                     ...column,
                 })
+            case 'categorical':
+                return CategoricalColumn({
+                    ...initColumns,
+                    ...column,
+                })
+            case 'tags':
+                return CategoricalTagsColumn({
+                    ...initColumns,
+                    ...column,
+                })
         }
     })
 
@@ -118,20 +131,77 @@ export default function TableTyped({
         }
     })
 
+    const ROW_HEIGHT = 44
+
+    // @ts-ignore
+    const $batchActions: BatchActionT[] = [
+        // {
+        //     label: 'Check',
+        //     onClick: () => {},
+        // },
+    ]
+
+    const { config, setConfig } = useTableConfig(['evaluation'], {
+        selectIds: $columns.map((v) => v.key),
+        sortedIds: [],
+        pinnedIds: [],
+    })
+    const [columnVisibleIds, setColumnVisibleIds] = useState<string[]>(config.selectIds)
+    const [columnSortedIds, setColumnSortedIds] = useState<string[]>(config.sortedIds)
+    const [pinnedIds, setPinnedIds] = useState<string[]>(config.pinnedIds)
+    const $onColumnSave = useCallback(
+        (columnSortedIds, columnVisibleIds, pinnedIds) => {
+            setColumnSortedIds(columnSortedIds)
+            setColumnVisibleIds(columnVisibleIds)
+            setPinnedIds(pinnedIds)
+
+            setConfig({
+                selectIds: columnVisibleIds,
+                sortedIds: columnSortedIds,
+                pinnedIds,
+            })
+            // @ts-ignore
+            onColumnSave?.(columnSortedIds, columnVisibleIds, pinnedIds)
+        },
+        [onColumnSave]
+    )
+
+    const $columnsSorted = useMemo(() => {
+        return columnVisibleIds.map((id) => {
+            const column = $columns.find((column) => column.key === id)
+
+            return {
+                ...column,
+                pin: pinnedIds.includes(column?.key as string) ? 'LEFT' : null,
+            }
+        })
+    }, [$columns, columnVisibleIds, columnSortedIds, pinnedIds])
+
+    console.log('TableTyped', $columnsSorted, $rows)
+
     return (
         <>
             <div
-                style={{ width: '100%', minHeight: 200, height: `${120 + $rows.length * 36}px` }}
+                style={{ width: '100%', minHeight: 200, height: `${120 + Math.min($rows.length, 10) * ROW_HEIGHT}px` }}
                 ref={wrapperRef}
                 key={key}
             >
                 <StatefulDataTable
+                    resizableColumnWidths
+                    searchable
+                    // @ts-ignore
+                    onColumnSave={$onColumnSave}
                     isLoading={!!isLoading}
-                    batchActions={batchActions}
+                    batchActions={$batchActions}
                     rowActions={rowActions}
-                    columns={$columns}
+                    // @ts-ignore
+                    columns={$columnsSorted}
                     rows={$rows}
-                    resizableColumnWidths={true}
+                    config={{
+                        selectIds: columnVisibleIds,
+                        sortedIds: columnSortedIds,
+                        pinnedIds,
+                    }}
                     overrides={{
                         TableBodyRow: {
                             style: {
@@ -168,7 +238,9 @@ export default function TableTyped({
                         },
                         ...overrides,
                     }}
+                    // @ts-ignore
                     loadingMessage={() => <Skeleton rows={3} height='100px' width='100%' animation />}
+                    // @ts-ignore
                     emptyMessage={() => (
                         <div
                             style={{
@@ -177,6 +249,9 @@ export default function TableTyped({
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 8,
+                                height: '100%',
+                                paddingTop: '20px',
+                                // height: 100,
                             }}
                         >
                             <FiInbox size={30} />
