@@ -1,14 +1,12 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import type { FC } from 'react'
-import { useRef } from 'react'
 import { useStyletron } from 'baseui'
 
-export interface CardProps {
+export interface ICardProps {
     text: React.ReactElement
-    preview?: boolean
 }
 
-export const DnDCardDragPreview: FC<CardProps> = ({ text, preview }) => {
+export const DnDCardDragPreview: FC<ICardProps> = ({ text }) => {
     const [css] = useStyletron()
     const ref = useRef<HTMLDivElement>(null)
     const backgroundColor = '#F0F4FF'
@@ -16,7 +14,6 @@ export const DnDCardDragPreview: FC<CardProps> = ({ text, preview }) => {
     return (
         <div
             ref={ref}
-            role=''
             className={css({
                 height: '32px',
                 lineheight: '16px',

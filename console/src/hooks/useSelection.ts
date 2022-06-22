@@ -8,9 +8,9 @@ export interface IUseSelectionPropsT<T = any> {
     onSelectionChange?: (values: T[]) => void
 }
 
-let count = 0
-let count1 = 0
-let count2 = 0
+// let count = 0
+// let count1 = 0
+// let count2 = 0
 
 export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
     const { initialSelectedIds = [], initialPinedIds = [], initialSortedIds = [] } = props
@@ -18,7 +18,7 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
     const [sortedIds, setSortedIds] = React.useState(new Set(initialSortedIds))
     const [pinedIds, setPinedIds] = React.useState(new Set(initialPinedIds))
 
-    console.log('【render】', count++, selectedIds, sortedIds, pinedIds)
+    // console.log('【render】', count++, selectedIds, sortedIds, pinedIds)
 
     useEffect(() => {
         setSelectedIds((prevIds) => {
@@ -29,7 +29,7 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
                 ...newSelectedIds,
             ])
 
-            console.log('【render effect 1】 ', count1++, sortedSelectedIds)
+            // console.log('【render effect 1】 ', count1++, sortedSelectedIds)
 
             return sortedSelectedIds
         })
@@ -44,7 +44,7 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
                 return index2 - index1
             })
 
-            console.log('【render effect 2】 ', count2++, sortedMergePinedIds)
+            // console.log('【render effect 2】 ', count2++, sortedMergePinedIds)
 
             return new Set(sortedMergePinedIds)
         })
@@ -61,7 +61,7 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
 
             setSelectedIds(new Set(sortedSelectedIds))
         },
-        [props]
+        [sortedIds]
     )
 
     const handleSelectMany = useCallback(
@@ -90,7 +90,7 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
 
     const handleOrderChange = useCallback(
         (ids: T[]) => {
-            console.log('handleOrderChange', ids)
+            // console.log('handleOrderChange', ids)
             const sortedMergeSelectedIds = Array.from(ids).filter((v: T) => selectedIds.has(v))
             setSortedIds(new Set(sortedMergeSelectedIds))
 
@@ -115,7 +115,6 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
             } else {
                 pinedIds.add(id)
             }
-            console.log('handelPinOne', pinedIds, id)
             setPinedIds(new Set(pinedIds))
         },
         [setPinedIds, pinedIds]

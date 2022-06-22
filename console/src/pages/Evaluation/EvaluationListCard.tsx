@@ -180,9 +180,9 @@ export default function EvaluationListCard() {
             >
                 <Table
                     // @ts-ignore
-                    onColumnSave={(columnSortedIds, columnVisibleIds) => {
-                        console.log(columnSortedIds, columnVisibleIds)
-                    }}
+                    // onColumnSave={(columnSortedIds, columnVisibleIds, sortedIds) => {
+                    //     console.log(columnSortedIds, columnVisibleIds)
+                    // }}
                     isLoading={evaluationsInfo.isLoading}
                     columns={columns}
                     // @ts-ignore

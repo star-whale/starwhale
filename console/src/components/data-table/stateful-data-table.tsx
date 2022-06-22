@@ -27,25 +27,26 @@ function useResizeObserver(
     callback: (entires: ResizeObserverEntry[], obs: ResizeObserver) => any
 ) {
     React.useLayoutEffect(() => {
-        // if (IS_BROWSER) {
         if (ref.current) {
             const observer = new ResizeObserver(callback)
             observer.observe(ref.current)
             return () => observer.disconnect()
         }
-        // }
-    }, [ref])
+        // @eslint-disable-next-line consistent-return
+        return () => {}
+    }, [ref, callback])
 }
 
 function QueryInput(props: any) {
     const [css, theme] = useStyletron()
     const locale = React.useContext(LocaleContext)
     const [value, setValue] = React.useState('')
+    const { onChange } = props
 
     React.useEffect(() => {
-        const timeout = setTimeout(() => props.onChange(value), 250)
+        const timeout = setTimeout(() => onChange(value), 250)
         return () => clearTimeout(timeout)
-    }, [value])
+    }, [onChange, value])
 
     return (
         <div className={css({ width: '375px', marginBottom: theme.sizing.scale500 })}>
@@ -306,7 +307,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 })}
                             >
                                 <ConfigManageColumns
-                                    filters={filters}
                                     columns={props.columns}
                                     onColumnSave={onColumnSave}
                                     config={config}

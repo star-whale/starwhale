@@ -1067,14 +1067,12 @@ export function DataTable({
         normalizedWidths,
     ])
 
-    console.log(itemData)
-
     return (
         <React.Fragment>
             <MeasureColumnWidths
                 columns={columns}
                 rows={rows}
-                widths={measuredWidths}
+                // widths={measuredWidths}
                 isSelectable={isSelectable}
                 onWidthsChange={handleWidthsChange}
             />

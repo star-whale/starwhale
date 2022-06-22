@@ -77,7 +77,7 @@ export const Card: FC<ICardProps> = ({ id, text, index, moveCard }) => {
             // but it's good here for the sake of performance
             // to avoid expensive index searches.
 
-            // @ts-ignore
+            /* eslint-disable no-param-reassign */
             item.index = hoverIndex
         },
     })

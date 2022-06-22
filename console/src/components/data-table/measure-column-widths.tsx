@@ -6,7 +6,6 @@ Copyright (c) Uber Technologies, Inc.
 This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 */
-// @flow
 
 import React, { useRef } from 'react'
 
@@ -29,7 +28,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 onLayout(columnIndex, ref.current.getBoundingClientRect())
             }
         }
-    }, [])
+    }, [onLayout, columnIndex])
 
     return (
         <div
@@ -82,7 +81,7 @@ type MeasureColumnWidthsPropsT = {
     isSelectable: boolean
     onWidthsChange: (nums: number[]) => void
     rows: RowT[]
-    widths: number[]
+    // widths: number[]
 }
 
 const MAX_SAMPLE_SIZE = 50
@@ -113,7 +112,6 @@ function generateSampleIndices(inputMin, inputMax, maxSamples) {
 export default function MeasureColumnWidths({
     columns,
     rows,
-    widths,
     isSelectable,
     onWidthsChange,
 }: MeasureColumnWidthsPropsT) {
@@ -124,11 +122,11 @@ export default function MeasureColumnWidths({
     }, [])
 
     const sampleSize = rows.length < MAX_SAMPLE_SIZE ? rows.length : MAX_SAMPLE_SIZE
-    const finishedMeasurementCount = (sampleSize + 1) * columns.length
+    // const finishedMeasurementCount = (sampleSize + 1) * columns.length
 
     const sampleIndexes = React.useMemo<number[]>(() => {
         return generateSampleIndices(0, rows.length - 1, sampleSize)
-    }, [columns, rows, widths, sampleSize])
+    }, [rows, sampleSize])
 
     const handleDimensionsChange = React.useCallback(
         (columnIndex, dimensions) => {
@@ -151,7 +149,7 @@ export default function MeasureColumnWidths({
                 onWidthsChange(Array.from(widthMap.values()))
             }
         },
-        [columns, finishedMeasurementCount, onWidthsChange]
+        [columns, onWidthsChange, widthMap]
     )
 
     const hiddenStyle = css({

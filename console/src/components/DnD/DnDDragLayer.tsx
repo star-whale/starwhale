@@ -46,11 +46,11 @@ function getItemStyles(initialOffset: XYCoord | null, currentOffset: XYCoord | n
     }
 }
 
-export interface CustomDragLayerProps {
+export interface ICustomDragLayerProps {
     snapToGrid: boolean
 }
 
-export const DnDDragLayer: FC<CustomDragLayerProps> = (props) => {
+export const DnDDragLayer: FC<ICustomDragLayerProps> = (props) => {
     const { itemType, isDragging, item, initialOffset, currentOffset } = useDragLayer((monitor) => ({
         item: monitor.getItem(),
         itemType: monitor.getItemType(),
@@ -62,7 +62,7 @@ export const DnDDragLayer: FC<CustomDragLayerProps> = (props) => {
     function renderItem() {
         switch (itemType) {
             case ItemTypes.CARD:
-                return <DnDCardDragPreview text={item.text} preview />
+                return <DnDCardDragPreview text={item.text} />
             default:
                 return null
         }

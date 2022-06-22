@@ -32,7 +32,7 @@ export default function RuntimeVersionListCard() {
                                 await updateRuntimeVersion(projectId, runtimeId, data?.id as string, { tag: value })
                                 await runtimesInfo.refetch()
                             } catch (e) {
-                                console.error(e)
+                                // console.error(e)
                             }
                         },
                         mapDataToValue: (item: any) => {

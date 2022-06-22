@@ -10,7 +10,7 @@ import * as React from 'react'
 import { Checkbox } from 'baseui/checkbox'
 import { useStyletron } from 'baseui'
 import { ChevronDown, ChevronUp } from 'baseui/icon'
-import { isFocusVisible } from 'baseui/utils/focusVisible'
+import { isFocusVisible } from '@/utils/focusVisible'
 
 import { SORT_DIRECTIONS } from './constants'
 import type { SortDirectionsT } from './types'
@@ -18,6 +18,7 @@ import type { SortDirectionsT } from './types'
 type HeaderCellPropsT = {
     index: number
     isHovered: boolean
+    // @eslint-disable-next-line  react/require-default-props
     isMeasured?: boolean
     isSelectable: boolean
     isSelectedAll: boolean
@@ -38,7 +39,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
     const checkboxRef = React.useRef(null)
 
     const handleFocus = (event: React.SyntheticEvent) => {
-        if (isFocusVisible(event)) {
+        if (isFocusVisible(event as any)) {
             setFocusVisible(true)
         }
     }
@@ -156,5 +157,8 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
     )
 })
 HeaderCell.displayName = 'HeaderCell'
+HeaderCell.defaultProps = {
+    isMeasured: false,
+}
 
 export default HeaderCell

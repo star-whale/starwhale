@@ -7,22 +7,17 @@ LICENSE file in the root directory of this source tree.
 // @flow
 
 import React, { useCallback, useState } from 'react'
-import { areEqual, VariableSizeGrid, VariableSizeList } from 'react-window'
+import { VariableSizeGrid, VariableSizeList } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
 import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
 import { useStyletron } from 'baseui'
 import { Tooltip, PLACEMENT } from 'baseui/tooltip'
-
 import { SORT_DIRECTIONS } from './constants'
 import HeaderCell from './header-cell'
 import MeasureColumnWidths from './measure-column-widths'
 import type { ColumnT, DataTablePropsT, RowT, SortDirectionsT, RowActionT } from './types'
 import { LocaleContext } from './locales'
-import usePrevious from '../../hooks/usePrevious'
-import { rest } from 'lodash'
-import { useMemo } from 'react'
-import { normalizeColumns } from '../BaseTable/BaseTable'
 
 // consider pulling this out to a prop if useful.
 const HEADER_ROW_HEIGHT = 48
@@ -32,10 +27,10 @@ const IS_BROWSER = true
 type HeaderContextT = {
     columns: ColumnT[]
     columnHighlightIndex: number
-    emptyMessage: string | React.ComponentType<{}>
+    emptyMessage: string | React.ComponentType<any>
     filters: DataTablePropsT['filters']
     loading: boolean
-    loadingMessage: string | React.ComponentType<{}>
+    loadingMessage: string | React.ComponentType<any>
     isScrollingX: boolean
     isSelectable: boolean
     isSelectedAll: boolean
@@ -79,6 +74,7 @@ type CellPlacementPropsT = {
         rowHighlightIndex: number
         rows: RowT[]
         textQuery: string
+        normalizedWidths: number[]
     }
 }
 // @ts-ignore
@@ -87,35 +83,22 @@ const sum = (ns) => ns.reduce((s, n) => s + n, 0)
 function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     const [css, theme] = useStyletron()
 
+    const [isHoverd, setIsHovered] = useState(false)
+
+    const Cell = React.useMemo(() => {
+        return data.columns[columnIndex].renderCell
+    }, [columnIndex, data.columns])
+    const value = data.columns[columnIndex].mapDataToValue(data.rows[rowIndex - 1].data)
+
     // ignores the table header row
     if (rowIndex === 0) {
         return null
     }
 
-    const [isHoverd, setIsHovered] = useState(false)
-
-    // let backgroundColor = theme.colors.backgroundPrimary
-    // if ((Boolean(rowIndex % 2) && columnIndex === data.columnHighlightIndex) || rowIndex === data.rowHighlightIndex) {
-    //     backgroundColor = theme.colors.backgroundTertiary
-    // } else if (rowIndex % 2 || columnIndex === data.columnHighlightIndex) {
-    //     backgroundColor = theme.colors.backgroundSecondary
-    // }
-    // if (columnIndex === data.columnHighlightIndex || rowIndex === data.rowHighlightIndex) {
-    //     backgroundColor = theme.colors.backgroundSecondary
-    // }
-    // console.log(data.columns, columnIndex, rowIndex)
-
-    const Cell = React.useMemo(() => {
-        // console.log('Cell rerender', rowIndex, columnIndex)
-        return data.columns[columnIndex].renderCell
-    }, [data.textQuery, columnIndex, rowIndex, data.columns])
-    const value = data.columns[columnIndex].mapDataToValue(data.rows[rowIndex - 1].data)
-
-    // console.log('CellPlacement', value)
-
     return (
         <div
             className={
+                // eslint-disable-next-line prefer-template
                 css({
                     ...theme.borders.border200,
                     // backgroundColor,
@@ -146,9 +129,9 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 onSelect={
                     data.isSelectable && columnIndex === 0 ? () => data.onSelectOne(data.rows[rowIndex - 1]) : undefined
                 }
-                onAsyncChange={async (value: any) => {
+                onAsyncChange={async (v: any) => {
                     const cellData = data?.columns[columnIndex]
-                    await cellData?.onAsyncChange?.(value, columnIndex, rowIndex - 1)
+                    await cellData?.onAsyncChange?.(v, columnIndex, rowIndex - 1)
                 }}
                 isSelected={data.isRowSelected(data.rows[rowIndex - 1].id)}
                 textQuery={data.textQuery}
@@ -215,39 +198,41 @@ function compareCellPlacement(prevProps: any, nextProps: any) {
 
 // @ts-ignore
 const CellPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, style = {}, data }) => {
-    const columns = data.columns.map((v, index) => ({
+    const columns = data.columns.map((v, columnIndex) => ({
         ...v,
-        index,
+        index: columnIndex,
     }))
-    // @ts-ignore
-    const normalizedWidths = data.normalizedWidths
+    const { normalizedWidths } = data
 
-    const renderer = (column: ColumnT & { index: number }) => {
-        const columnIndex = column.index
+    const renderer = useCallback(
+        (column: ColumnT & { index: number }) => {
+            const columnIndex = column.index
 
-        return (
-            <CellPlacement
-                key={`${columnIndex}:${index}`}
-                columnIndex={columnIndex}
-                rowIndex={index}
-                data={data}
-                // @ts-ignore
-                style={{
-                    width: normalizedWidths[columnIndex],
-                    background: '#FFF',
-                    borderBottom: '1px solid #EEF1F6',
-                }}
-            />
-        )
-    }
+            return (
+                <CellPlacement
+                    key={`${columnIndex}:${index}`}
+                    columnIndex={columnIndex}
+                    rowIndex={index}
+                    data={data}
+                    // @ts-ignore
+                    style={{
+                        width: normalizedWidths[columnIndex],
+                        background: '#FFF',
+                        borderBottom: '1px solid #EEF1F6',
+                    }}
+                />
+            )
+        },
+        [data, normalizedWidths, index]
+    )
 
     const cellsLeft = React.useMemo(() => {
-        return columns.filter((v) => v.pin == 'LEFT').map(renderer)
-    }, [data, columns, index])
+        return columns.filter((v) => v.pin === 'LEFT').map(renderer)
+    }, [columns, renderer])
 
     const cells = React.useMemo(() => {
         return columns.filter((v) => !v.pin).map(renderer)
-    }, [data, columns, index])
+    }, [columns, renderer])
 
     return (
         <div
@@ -393,7 +378,7 @@ function Header(props: HeaderProps) {
             }
         }
 
-        function handleMouseUp(event: MouseEvent) {
+        function handleMouseUp() {
             props.onResize(props.index, endResizePos - startResizePos)
             props.onResizeIndexChange(-1)
             setStartResizePos(0)
@@ -413,20 +398,19 @@ function Header(props: HeaderProps) {
             }
         }
     }, [
+        props,
         isResizingThisColumn,
         setEndResizePos,
         setStartResizePos,
-        setEndResizePos,
         props.onResize,
         props.onResizeIndexChange,
         props.index,
         endResizePos,
         startResizePos,
-        headerCellRef.current,
     ])
 
     return (
-        <React.Fragment>
+        <>
             <HeaderCell
                 ref={headerCellRef}
                 // @ts-ignore
@@ -497,7 +481,7 @@ function Header(props: HeaderProps) {
                     </div>
                 </div>
             )}
-        </React.Fragment>
+        </>
     )
 }
 
@@ -517,7 +501,7 @@ function Headers() {
             const activeFilter = ctx.filters ? ctx.filters.get(column.title) : null
             const columnIndex = column.index
             return (
-                <React.Fragment key={columnIndex}>
+                <>
                     <Tooltip
                         key={columnIndex}
                         placement={PLACEMENT.bottomLeft}
@@ -586,19 +570,19 @@ function Headers() {
                             />
                         </div>
                     </Tooltip>
-                </React.Fragment>
+                </>
             )
         },
-        [ctx, setResizeIndex, resizeIndex]
+        [ctx, setResizeIndex, resizeIndex, css, locale, theme]
     )
 
     const headersLeft = React.useMemo(() => {
-        return $columns.filter((v) => v.pin == 'LEFT').map(headerRender)
-    }, [$columns])
+        return $columns.filter((v) => v.pin === 'LEFT').map(headerRender)
+    }, [$columns, headerRender])
 
     const headers = React.useMemo(() => {
         return $columns.filter((v) => !v.pin).map(headerRender)
-    }, [$columns])
+    }, [$columns, headerRender])
 
     return (
         <div
@@ -774,7 +758,7 @@ function MeasureScrollbarWidth(props) {
             const width = outerRef.current.offsetWidth - innerRef.current.offsetWidth
             props.onWidthChange(width)
         }
-    }, [outerRef.current, innerRef.current])
+    }, [props])
     return (
         <div
             className={css({
@@ -863,6 +847,7 @@ export function DataTable({
     const handleColumnResize = React.useCallback(
         (columnIndex, delta) => {
             setResizeDeltas((prev) => {
+                // eslint-disable-next-line no-param-reassign
                 prev[columnIndex] = Math.max(prev[columnIndex] + delta, 0)
                 return [...prev]
             })
@@ -885,7 +870,8 @@ export function DataTable({
             }, 200)
             return () => clearTimeout(timeout)
         }
-    }, [recentlyScrolledX])
+        return () => {}
+    }, [recentlyScrolledX, isScrollingX])
     const handleScroll = React.useCallback(
         (params) => {
             setScrollLeft(params.scrollLeft)
@@ -897,11 +883,11 @@ export function DataTable({
     )
 
     const sortedIndices = React.useMemo(() => {
-        let toSort = allRows.map((r, i) => [r, i])
+        const toSort = allRows.map((r, i) => [r, i])
         const index = sortIndex
 
         if (index !== null && index !== undefined && index !== -1 && columns[index]) {
-            const sortFn = columns[index].sortFn
+            const { sortFn } = columns[index]
             // @ts-ignore
             const getValue = (row) => columns[index].mapDataToValue(row.data)
             if (sortDirection === SORT_DIRECTIONS.ASC) {
@@ -944,7 +930,7 @@ export function DataTable({
                 // @ts-ignore
                 const matches = stringishColumnIndices.some((cdx) => {
                     const column = columns[cdx]
-                    const textQueryFilter = column.textQueryFilter
+                    const { textQueryFilter } = column
                     if (textQueryFilter) {
                         return textQueryFilter(textQuery, column.mapDataToValue(allRows[idx].data))
                     }
@@ -1008,7 +994,16 @@ export function DataTable({
             }
         }
         return resizedWidths
-    }, [gridRef, measuredWidths, resizeDeltas, browserScrollbarWidth, rows.length, columns])
+    }, [
+        gridRef,
+        measuredWidths,
+        resizeDeltas,
+        browserScrollbarWidth,
+        rows.length,
+        columns,
+        resetAfterColumnIndex,
+        rowHeightAtIndex,
+    ])
 
     const isSelectable = batchActions ? !!batchActions.length : false
     const isSelectedAll = React.useMemo(() => {
@@ -1064,18 +1059,19 @@ export function DataTable({
     const [rowHighlightIndex, setRowHighlightIndex] = React.useState(-1)
 
     // @ts-ignore
-    function handleRowHighlightIndexChange(nextIndex) {
-        setRowHighlightIndex(nextIndex)
-        if (gridRef) {
-            if (nextIndex >= 0) {
-                // $FlowFixMe - unable to get react-window types
-                // gridRef.scrollToItem({ rowIndex: nextIndex })
+    const handleRowHighlightIndexChange = useCallback(
+        (nextIndex) => {
+            setRowHighlightIndex(nextIndex)
+            if (gridRef) {
+                if (nextIndex >= 0) {
+                    // $FlowFixMe - unable to get react-window types
+                    // gridRef.scrollToItem({ rowIndex: nextIndex })
+                }
+                onRowHighlightChange?.(nextIndex, rows[nextIndex - 1])
             }
-            if (onRowHighlightChange) {
-                onRowHighlightChange(nextIndex, rows[nextIndex - 1])
-            }
-        }
-    }
+        },
+        [setRowHighlightIndex, onRowHighlightChange, gridRef, rows]
+    )
 
     const handleRowMouseEnter = React.useCallback(
         (nextIndex) => {
@@ -1099,7 +1095,7 @@ export function DataTable({
         if (typeof rowHighlightIndexControlled === 'number') {
             handleRowHighlightIndexChange(rowHighlightIndexControlled)
         }
-    }, [rowHighlightIndexControlled])
+    }, [rowHighlightIndexControlled, handleRowHighlightIndexChange])
 
     const itemData = React.useMemo(() => {
         return {
@@ -1110,7 +1106,7 @@ export function DataTable({
             isSelectable,
             onRowMouseEnter: handleRowMouseEnter,
             onSelectOne: handleSelectOne,
-            columns: columns,
+            columns,
             rows,
             textQuery,
             normalizedWidths,
@@ -1129,11 +1125,11 @@ export function DataTable({
     ])
 
     return (
-        <React.Fragment>
+        <>
             <MeasureColumnWidths
                 columns={columns}
                 rows={rows}
-                widths={measuredWidths}
+                // widths={measuredWidths}
                 isSelectable={isSelectable}
                 onWidthsChange={handleWidthsChange}
             />
@@ -1143,11 +1139,11 @@ export function DataTable({
                 {({ height, width }) => (
                     <HeaderContext.Provider
                         value={{
-                            columns: columns,
+                            columns,
                             columnHighlightIndex,
                             // @ts-ignore
                             emptyMessage: emptyMessage || locale.datatable.emptyState,
-                            filters: filters,
+                            filters,
                             loading: Boolean(loading),
                             // @ts-ignore
                             loadingMessage: loadingMessage || locale.datatable.loadingState,
@@ -1194,6 +1190,6 @@ export function DataTable({
                     </HeaderContext.Provider>
                 )}
             </AutoSizer>
-        </React.Fragment>
+        </>
     )
 }

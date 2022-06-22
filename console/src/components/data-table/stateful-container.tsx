@@ -20,6 +20,7 @@ function useDuplicateColumnTitleWarning(columns: ColumnT[]) {
         if (IS_DEV) {
             const titles = columns.reduce((set, column) => set.add(column.title), new Set())
             if (titles.size < columns.length) {
+                // eslint-disable-next-line
                 console.warn(
                     'BaseWeb DataTable: Column titles must be unique else will result in non-deterministic filtering.'
                 )
@@ -95,22 +96,19 @@ export function StatefulContainer(props: StatefulContainerPropsT) {
         handleSelectChange(new Set(selectedRowIds))
     }
 
+    const { onIncludedRowsChange, onRowHighlightChange } = props
     const handleIncludedRowsChange = React.useCallback(
         (rows) => {
-            if (props.onIncludedRowsChange) {
-                props.onIncludedRowsChange(rows)
-            }
+            onIncludedRowsChange?.(rows)
         },
-        [props.onIncludedRowsChange]
+        [onIncludedRowsChange]
     )
 
     const handleRowHighlightChange = React.useCallback(
         (rowIndex, row) => {
-            if (props.onRowHighlightChange) {
-                props.onRowHighlightChange(rowIndex, row)
-            }
+            onRowHighlightChange?.(rowIndex, row)
         },
-        [props.rowHighlightIndex]
+        [onRowHighlightChange]
     )
 
     return props.children({

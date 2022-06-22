@@ -5,239 +5,42 @@ This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 */
 
-import React, { SyntheticEvent, useMemo, useState } from 'react'
+import React, { useMemo, useCallback, useRef } from 'react'
 import { SHAPE, SIZE, KIND } from 'baseui/button'
-import { Filter as FilterIcon, Search } from 'baseui/icon'
-import { Popover, PLACEMENT } from 'baseui/popover'
+import { Search, Icon } from 'baseui/icon'
 import { useStyletron } from 'baseui'
-import { useUIDSeed } from 'react-uid'
-
-import { COLUMNS } from './constants'
-import { matchesQuery } from './text-search'
-import type { ColumnT, ConfigT } from './types'
-import { LocaleContext } from './locales'
 import { useHover } from 'react-use'
-
-// @ts-ignore
-import { isFocusVisible } from 'baseui/utils/focusVisible'
-import { useRef } from 'react'
 import { Drawer } from 'baseui/drawer'
-import { DnDContainer } from '../DnD/DnDContainer'
 import { Checkbox } from 'baseui/checkbox'
 import { LabelSmall } from 'baseui/typography'
 import Button from '@/components/Button'
 import Input from '@/components/Input'
-import { Link } from 'react-router-dom'
-import { useCallback } from 'react'
-import useSelection, { UseSelectionPropsT } from '@/hooks/useSelection'
-import { Icon } from 'baseui/icon'
+import useSelection from '@/hooks/useSelection'
 import { AiOutlinePushpin } from 'react-icons/ai'
 import { RiDeleteBin6Line } from 'react-icons/ri'
-import { Tab } from 'baseui/tabs-motion'
-
-function ColumnIcon(props: { column: ColumnT }) {
-    if (props.column.kind === COLUMNS.BOOLEAN) {
-        return '01'
-    }
-
-    if (props.column.kind === COLUMNS.CATEGORICAL) {
-        return 'abc'
-    }
-
-    if (props.column.kind === COLUMNS.DATETIME) {
-        return 'dt'
-    }
-
-    if (props.column.kind === COLUMNS.NUMERICAL) {
-        return '#'
-    }
-
-    return <FilterIcon />
-}
-
-type OptionsPropsT = {
-    columns: ColumnT[]
-    highlightIndex: number
-    onClick: (column: ColumnT) => void
-    onKeyDown: (e: KeyboardEvent) => void
-    onMouseEnter: (num: number) => void
-    onQueryChange: (str: string) => void
-    query: string
-    searchable: boolean
-}
-
-function Options(props: OptionsPropsT) {
-    const [css, theme] = useStyletron()
-    const locale = React.useContext(LocaleContext)
-    const inputRef = React.useRef(null)
-    React.useEffect(() => {
-        if (inputRef.current) {
-            // @ts-ignore
-            inputRef.current?.focus()
-        }
-    }, [inputRef.current])
-
-    const [focusVisible, setFocusVisible] = React.useState(false)
-    const seed = useUIDSeed()
-    const buiRef = React.useRef(props.columns.map((col) => seed(col)))
-
-    const handleFocus = (event: React.SyntheticEvent) => {
-        if (isFocusVisible(event)) {
-            setFocusVisible(true)
-        }
-    }
-
-    const handleBlur = (event: React.SyntheticEvent) => {
-        if (focusVisible !== false) {
-            setFocusVisible(false)
-        }
-    }
-
-    return (
-        <div
-            className={css({
-                backgroundColor: theme.colors.menuFill,
-                minWidth: '320px',
-                outline: focusVisible ? `3px solid ${theme.colors.accent}` : 'none',
-                paddingTop: theme.sizing.scale600,
-                paddingBottom: theme.sizing.scale600,
-            })}
-        >
-            <p
-                className={css({
-                    ...theme.typography.font100,
-                    marginTop: 'unset',
-                    paddingRight: theme.sizing.scale600,
-                    paddingLeft: theme.sizing.scale600,
-                })}
-            >
-                {locale.datatable.optionsLabel}
-            </p>
-
-            {props.searchable && (
-                <div
-                    className={css({
-                        marginBottom: theme.sizing.scale500,
-                        marginRight: theme.sizing.scale600,
-                        marginLeft: theme.sizing.scale600,
-                    })}
-                >
-                    <Input
-                        inputRef={inputRef}
-                        value={props.query}
-                        // @ts-ignore
-                        onChange={(event) => props.onQueryChange(event.target.value)}
-                        placeholder={locale.datatable.optionsSearch}
-                        // size={INPUT_SIZE.compact}
-                        clearable
-                    />
-                </div>
-            )}
-
-            {!props.columns.length && (
-                <div
-                    className={css({
-                        ...theme.typography.font100,
-                        paddingRight: theme.sizing.scale600,
-                        paddingLeft: theme.sizing.scale600,
-                    })}
-                >
-                    {locale.datatable.optionsEmpty}
-                </div>
-            )}
-
-            <ul
-                // @ts-ignore
-                onKeyDown={props.onKeyDown}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                // @ts-ignore
-                tabIndex='0'
-                role='listbox'
-                aria-activedescendant={`bui-${buiRef.current[props.highlightIndex]}`}
-                className={css({
-                    listStyleType: 'none',
-                    marginBlockStart: 'unset',
-                    marginBlockEnd: 'unset',
-                    maxHeight: '256px',
-                    paddingInlineStart: 'unset',
-                    outline: 'none',
-                    overflowY: 'auto',
-                })}
-            >
-                {props.columns.map((column, index) => {
-                    const isHighlighted = index === props.highlightIndex
-
-                    return (
-                        // handled on the wrapper element
-                        // eslint-disable-next-line jsx-a11y/click-events-have-key-events
-                        <li
-                            id={`bui-${buiRef.current[index]}`}
-                            role='option'
-                            aria-selected={isHighlighted}
-                            onMouseEnter={() => props.onMouseEnter(index)}
-                            onClick={() => props.onClick(column)}
-                            key={column.title}
-                            className={css({
-                                ...theme.typography.font100,
-                                alignItems: 'center',
-                                // @ts-ignore
-                                backgroundColor: isHighlighted ? theme.colors.menuFillHover : null,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                paddingTop: theme.sizing.scale100,
-                                paddingRight: theme.sizing.scale600,
-                                paddingBottom: theme.sizing.scale100,
-                                paddingLeft: theme.sizing.scale600,
-                            })}
-                        >
-                            <div
-                                className={css({
-                                    ...theme.typography.font150,
-                                    fontSize: '8px',
-                                    alignItems: 'center',
-                                    backgroundColor: theme.colors.backgroundTertiary,
-                                    borderRadius: theme.borders.radius200,
-                                    display: 'flex',
-                                    height: theme.sizing.scale800,
-                                    justifyContent: 'center',
-                                    marginRight: theme.sizing.scale300,
-                                    width: theme.sizing.scale800,
-                                })}
-                            >
-                                {/* @ts-ignore */}
-                                <ColumnIcon column={column} />
-                            </div>
-                            {column.title}
-                        </li>
-                    )
-                })}
-            </ul>
-        </div>
-    )
-}
+import { DnDContainer } from '../DnD/DnDContainer'
+import { matchesQuery } from './text-search'
+import type { ColumnT, ConfigT } from './types'
 
 type PropsT = {
     config: ConfigT
     columns: ColumnT[]
-    filters: Map<string, any>
     onColumnSave?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
-    onColumnSaveAs?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
+    // onColumnSaveAs?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
 }
 type T = string
 
 function ConfigManageColumns(props: PropsT) {
     const [css, theme] = useStyletron()
-    const locale = React.useContext(LocaleContext)
+    // const locale = React.useContext(LocaleContext)
     const [isOpen, setIsOpen] = React.useState(true)
-    const [highlightIndex, setHighlightIndex] = React.useState(-1)
     const [query, setQuery] = React.useState('')
 
-    const handleClose = React.useCallback(() => {
-        setIsOpen(false)
-        setHighlightIndex(-1)
-        setQuery('')
-    }, [])
+    // const handleClose = React.useCallback(() => {
+    //     setIsOpen(false)
+    //     setHighlightIndex(-1)
+    //     setQuery('')
+    // }, [])
 
     // const filterableColumns = React.useMemo(() => {
     //     return props.columns.filter((column) => {
@@ -246,15 +49,15 @@ function ConfigManageColumns(props: PropsT) {
     // }, [props.columns, props.filters])
 
     const ref = useRef(null)
-    const columns = props.columns
+    const { columns } = props
     const columnAllIds = useMemo(() => {
-        return columns.map((v, key) => v.key as string)
+        return columns.map((v) => v.key as string)
     }, [columns])
     const matchedColumns = React.useMemo(() => {
         return columns.filter((column) => matchesQuery(column.title, query)) ?? []
     }, [columns, query])
     const columnMatchedIds = useMemo(() => {
-        return matchedColumns.map((v, key) => v.key) ?? []
+        return matchedColumns.map((v) => v.key) ?? []
     }, [matchedColumns])
 
     const {
@@ -266,7 +69,6 @@ function ConfigManageColumns(props: PropsT) {
         handleSelectOne,
         handleOrderChange,
         handlePinOne,
-        handleReset,
         handleEmpty,
     } = useSelection<T>({
         initialSelectedIds: props.config?.selectIds ?? [],
@@ -274,87 +76,87 @@ function ConfigManageColumns(props: PropsT) {
         initialSortedIds: props.config?.sortedIds ?? [],
     })
 
-    const DnDCell = ({ column, pined }: { column: ColumnT; pined: boolean }) => {
-        const [hoverable, hovered] = useHover((hoverd) => {
-            if (!column) return <></>
+    const dndData = useMemo(() => {
+        const DnDCell = ({ column, pined }: { column: ColumnT; pined: boolean }) => {
+            const [hoverable] = useHover((hoverd) => {
+                if (!column) return <></>
 
-            return (
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        paddingLeft: '10px',
-                        paddingRight: '9px',
-                        height: '32px',
-                        cursor: 'pointer',
-                        willChange: 'transform',
-                        flexWrap: 'nowrap',
-                        justifyContent: 'space-between',
-                        background: hoverd ? '#F0F4FF' : '#FFFFFF',
-                    }}
-                >
-                    <LabelSmall>{column.title}</LabelSmall>
-                    <div>
-                        {(pined || hoverd) && (
+                return (
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            paddingLeft: '10px',
+                            paddingRight: '9px',
+                            height: '32px',
+                            cursor: 'pointer',
+                            willChange: 'transform',
+                            flexWrap: 'nowrap',
+                            justifyContent: 'space-between',
+                            background: hoverd ? '#F0F4FF' : '#FFFFFF',
+                        }}
+                    >
+                        <LabelSmall>{column.title}</LabelSmall>
+                        <div>
+                            {(pined || hoverd) && (
+                                <Button
+                                    overrides={{
+                                        BaseButton: {
+                                            style: {
+                                                'paddingLeft': '7px',
+                                                'paddingRight': '7px',
+                                                'color': pined ? 'rgba(2,16,43,0.80)' : 'rgba(2,16,43,0.20)',
+                                                ':hover': {
+                                                    background: 'transparent',
+                                                    color: pined ? '#02102B' : 'rgba(2,16,43,0.50)',
+                                                },
+                                            },
+                                        },
+                                    }}
+                                    as='transparent'
+                                    onClick={() => handlePinOne(column.key as string)}
+                                >
+                                    <AiOutlinePushpin size={16} />
+                                </Button>
+                            )}
                             <Button
                                 overrides={{
                                     BaseButton: {
                                         style: {
-                                            'paddingLeft': '7px',
-                                            'paddingRight': '7px',
-                                            'color': pined ? 'rgba(2,16,43,0.80)' : 'rgba(2,16,43,0.20)',
-                                            ':hover': {
-                                                background: 'transparent',
-                                                color: pined ? '#02102B' : 'rgba(2,16,43,0.50)',
-                                            },
+                                            paddingLeft: '7px',
+                                            paddingRight: '7px',
+                                            color: 'rgba(2,16,43,0.40)',
                                         },
                                     },
                                 }}
                                 as='transparent'
-                                onClick={() => handlePinOne(column.key as string)}
+                                onClick={() => handleSelectOne(column.key as string)}
                             >
-                                <AiOutlinePushpin size={16} />
+                                <RiDeleteBin6Line size={16} />
                             </Button>
-                        )}
-                        <Button
-                            overrides={{
-                                BaseButton: {
-                                    style: {
-                                        paddingLeft: '7px',
-                                        paddingRight: '7px',
-                                        color: 'rgba(2,16,43,0.40)',
-                                    },
-                                },
-                            }}
-                            as='transparent'
-                            onClick={() => handleSelectOne(column.key as string)}
-                        >
-                            <RiDeleteBin6Line size={16} />
-                        </Button>
+                        </div>
                     </div>
-                </div>
-            )
-        })
+                )
+            })
 
-        return hoverable
-    }
+            return hoverable
+        }
 
-    const dndData = useMemo(() => {
         return selectedIds.map((id) => {
-            const column = columns.find((v) => v.key == id)
+            const column = columns.find((v) => v.key === id)
 
-            if (!column) return { id: id, text: <></> }
+            if (!column) return { id, text: <></> }
             return {
                 id: column?.key as string,
                 // @ts-ignore
                 text: <DnDCell column={column} pined={pinedIds.includes(id)} />,
             }
         })
-    }, [selectedIds, pinedIds, columns])
+    }, [selectedIds, pinedIds, columns, handlePinOne, handleSelectOne])
 
     const handleSave = useCallback(() => {
         props.onColumnSave?.(sortedIds, selectedIds, pinedIds)
-    }, [selectedIds, sortedIds, pinedIds])
+    }, [props, selectedIds, sortedIds, pinedIds])
 
     return (
         <div ref={ref}>
@@ -499,11 +301,12 @@ function ConfigManageColumns(props: PropsT) {
                                         if (!columnMatchedIds.includes(id)) {
                                             return null
                                         }
-                                        const column = columns.find((v) => v.key == id)
+                                        const column = columns.find((v) => v.key === id)
                                         if (!column) return null
 
                                         return (
                                             <div
+                                                key={id}
                                                 style={{
                                                     paddingLeft: '10px',
                                                     paddingRight: '9px',
@@ -515,7 +318,7 @@ function ConfigManageColumns(props: PropsT) {
                                             >
                                                 <Checkbox
                                                     checked={selectedIds?.includes(id)}
-                                                    onChange={(e) => handleSelectOne(id)}
+                                                    onChange={() => handleSelectOne(id)}
                                                 />
                                                 <LabelSmall>{column.title}</LabelSmall>
                                             </div>

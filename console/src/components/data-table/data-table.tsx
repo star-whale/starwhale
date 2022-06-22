@@ -1,3 +1,4 @@
+/* eslint-disable */
 /*
 Copyright (c) Uber Technologies, Inc.
 
@@ -998,7 +999,7 @@ export function DataTable({
             <MeasureColumnWidths
                 columns={columns}
                 rows={rows}
-                widths={measuredWidths}
+                // widths={measuredWidths}
                 isSelectable={isSelectable}
                 onWidthsChange={handleWidthsChange}
             />

@@ -13,8 +13,7 @@ import { Input, SIZE as INPUT_SIZE } from 'baseui/input'
 import { Popover, PLACEMENT } from 'baseui/popover'
 import { useStyletron } from 'baseui'
 import { useUIDSeed } from 'react-uid'
-// @ts-ignore
-import { isFocusVisible } from 'baseui/utils/focusVisible'
+import { isFocusVisible } from '@/utils/focusVisible'
 
 import { COLUMNS } from './constants'
 import { matchesQuery } from './text-search'
@@ -61,7 +60,7 @@ function Options(props: OptionsPropsT) {
             // @ts-ignore
             inputRef.current?.focus()
         }
-    }, [inputRef.current])
+    }, [])
 
     const [focusVisible, setFocusVisible] = React.useState(false)
     const seed = useUIDSeed()
@@ -220,7 +219,7 @@ function FilterMenu(props: PropsT) {
     const [query, setQuery] = React.useState('')
 
     const [activeColumn, setActiveColumn] = React.useState(null)
-    const handleOptionClick = React.useCallback(setActiveColumn, [])
+    const handleOptionClick = React.useCallback(setActiveColumn, [setActiveColumn])
     const handleClose = React.useCallback(() => {
         setIsOpen(false)
         setActiveColumn(null)
@@ -251,7 +250,7 @@ function FilterMenu(props: PropsT) {
     }, [props.columns, props.rows, activeColumn])
 
     // @ts-ignore
-    function handleKeyDown(event) {
+    const handleKeyDown = (event) => {
         if (event.keyCode === 13) {
             event.preventDefault()
             // @ts-ignore
@@ -274,7 +273,7 @@ function FilterMenu(props: PropsT) {
     return (
         <Popover
             focusLock
-            returnFocus={true}
+            returnFocus
             placement={PLACEMENT.bottomLeft}
             content={() => {
                 if (Filter && activeColumn) {

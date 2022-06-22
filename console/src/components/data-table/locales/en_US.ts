@@ -9,6 +9,7 @@ LICENSE file in the root directory of this source tree.
 
 import datatable from '../locale'
 
+// eslint-disable-next-line  @typescript-eslint/naming-convention
 const en_US = {
     datatable,
 }
