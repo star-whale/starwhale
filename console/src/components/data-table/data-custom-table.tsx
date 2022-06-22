@@ -1175,7 +1175,7 @@ export function DataTable({
                             overscanRowCount={10}
                             innerElementType={InnerTableElement}
                             height={height}
-                            width={width - 2}
+                            width={width - 3}
                             itemData={itemData}
                             onScroll={handleScroll}
                             itemSize={rowHeightAtIndex}

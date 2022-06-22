@@ -5,7 +5,7 @@ This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 */
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import ResizeObserver from 'resize-observer-polyfill'
 
 import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
@@ -18,7 +18,7 @@ import FilterMenu from './filter-menu'
 import { DataTable } from './data-custom-table'
 import { StatefulContainer } from './stateful-container'
 import { LocaleContext } from './locales'
-import type { ColumnT, RowT, StatefulContainerPropsT, StatefulDataTablePropsT } from './types'
+import type { ColumnT, ConfigT, RowT, StatefulContainerPropsT, StatefulDataTablePropsT } from './types'
 import ConfigManageColumns from './config-manage-columns'
 
 // @ts-ignore
@@ -161,11 +161,25 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     const filterable = props.filterable === undefined ? true : props.filterable
     const searchable = props.searchable === undefined ? true : props.searchable
+    const { columns } = props
+    const { pinnedIds = [], selectIds = [] }: ConfigT = props.config || {}
+
+    const $columns = useMemo(() => {
+        return selectIds.map((id: any) => {
+            const _column = columns.find((column) => column.key === id)
+
+            return {
+                ..._column,
+                pin: pinnedIds.includes(_column?.key as string) ? 'LEFT' : undefined,
+            }
+        }) as ColumnT[]
+    }, [columns, selectIds, pinnedIds])
 
     return (
         <StatefulContainer
             batchActions={props.batchActions}
-            columns={props.columns}
+            // @ts-ignore
+            columns={$columns}
             initialFilters={props.initialFilters}
             initialSelectedRowIds={props.initialSelectedRowIds}
             initialSortIndex={props.initialSortIndex}
@@ -226,7 +240,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                     {filterable && (
                                         <>
                                             <FilterMenu
-                                                columns={props.columns}
+                                                columns={$columns}
                                                 filters={filters}
                                                 rows={props.rows}
                                                 onSetFilter={onFilterAdd}
@@ -235,7 +249,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                             {Array.from(filters).map(([title, filter]) => (
                                                 <FilterTag
                                                     key={title}
-                                                    columns={props.columns}
+                                                    columns={$columns}
                                                     filter={filter}
                                                     onFilterAdd={onFilterAdd}
                                                     onFilterRemove={onFilterRemove}
@@ -320,7 +334,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                         {/* @ts-ignore */}
                         <DataTable
                             batchActions={props.batchActions}
-                            columns={props.columns}
+                            columns={$columns}
                             emptyMessage={props.emptyMessage}
                             filters={filters}
                             loading={props.loading}
