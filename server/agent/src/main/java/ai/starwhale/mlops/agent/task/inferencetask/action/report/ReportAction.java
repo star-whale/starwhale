@@ -77,7 +77,7 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
         // finished/canceled tasks should be snapshot(it means must link current finished that, ensure ...), not only reference!!
         List<InferenceTask> finishedTasks = List.copyOf(taskPool.succeedTasks);
         List<InferenceTask> canceledTasks = List.copyOf(taskPool.canceledTasks);
-        List<InferenceTask> errorTasks = List.copyOf(taskPool.failedTasks);
+        List<InferenceTask> failedTasks = List.copyOf(taskPool.failedTasks);
 
         List<TaskReport> all = new ArrayList<>();
         // without stop the world
@@ -122,7 +122,7 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
             {
                 addAll(finishedTasks);
                 addAll(canceledTasks);
-                addAll(errorTasks);
+                addAll(failedTasks);
             }
         });
 

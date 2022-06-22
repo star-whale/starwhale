@@ -29,8 +29,7 @@ public class Uploading2FinishedAction extends AbsBaseTaskAction {
     public InferenceTask processing(InferenceTask originTask, Context context) throws Exception {
         // upload result file to the storage
         taskPersistence.uploadResult(originTask);
-        // upload container log to the storage
-        taskPersistence.uploadLog(originTask);
+        
         originTask.setStatus(InferenceTaskStatus.SUCCESS);
         return originTask;
 
