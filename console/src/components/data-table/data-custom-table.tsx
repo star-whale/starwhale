@@ -82,18 +82,20 @@ const sum = (ns) => ns.reduce((s, n) => s + n, 0)
 
 function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     const [css, theme] = useStyletron()
+    const column = data.columns[columnIndex]
+    const row = data.rows[rowIndex - 1]
 
     const [isHoverd, setIsHovered] = useState(false)
-
-    const Cell = React.useMemo(() => {
-        return data.columns[columnIndex].renderCell
-    }, [columnIndex, data.columns])
-    const value = data.columns[columnIndex].mapDataToValue(data.rows[rowIndex - 1].data)
 
     // ignores the table header row
     if (rowIndex === 0) {
         return null
     }
+
+    // eslint-disable-next-line
+    const Cell = React.useMemo(() => column.renderCell, [column])
+    // eslint-disable-next-line
+    const value = React.useMemo(() => column.mapDataToValue(row?.data), [column, row])
 
     return (
         <div
@@ -501,76 +503,74 @@ function Headers() {
             const activeFilter = ctx.filters ? ctx.filters.get(column.title) : null
             const columnIndex = column.index
             return (
-                <>
-                    <Tooltip
-                        key={columnIndex}
-                        placement={PLACEMENT.bottomLeft}
-                        isOpen={ctx.columnHighlightIndex === columnIndex && Boolean(activeFilter)}
-                        content={() => {
-                            return (
-                                <div>
+                <Tooltip
+                    key={columnIndex}
+                    placement={PLACEMENT.bottomLeft}
+                    isOpen={ctx.columnHighlightIndex === columnIndex && Boolean(activeFilter)}
+                    content={() => {
+                        return (
+                            <div>
+                                <p
+                                    className={css({
+                                        ...theme.typography.font100,
+                                        color: theme.colors.contentInversePrimary,
+                                    })}
+                                >
+                                    {locale.datatable.filterAppliedTo} {column.title}
+                                </p>
+                                {activeFilter && (
                                     <p
                                         className={css({
-                                            ...theme.typography.font100,
+                                            ...theme.typography.font150,
                                             color: theme.colors.contentInversePrimary,
                                         })}
                                     >
-                                        {locale.datatable.filterAppliedTo} {column.title}
+                                        {activeFilter.description}
                                     </p>
-                                    {activeFilter && (
-                                        <p
-                                            className={css({
-                                                ...theme.typography.font150,
-                                                color: theme.colors.contentInversePrimary,
-                                            })}
-                                        >
-                                            {activeFilter.description}
-                                        </p>
-                                    )}
-                                </div>
-                            )
-                        }}
+                                )}
+                            </div>
+                        )
+                    }}
+                >
+                    <div
+                        className={css({
+                            ...theme.borders.border200,
+                            backgroundColor: theme.colors.backgroundPrimary,
+                            borderTop: 'none',
+                            borderLeft: 'none',
+                            border: 'none',
+                            // @ts-ignore
+                            // borderRight: columnIndex === ctx.columns.length - 1 ? 'none' : '1px solid #e6e6e6',
+                            boxSizing: 'border-box',
+                            display: 'flex',
+                        })}
+                        style={{ width: ctx.widths[columnIndex] }}
                     >
-                        <div
-                            className={css({
-                                ...theme.borders.border200,
-                                backgroundColor: theme.colors.backgroundPrimary,
-                                borderTop: 'none',
-                                borderLeft: 'none',
-                                border: 'none',
-                                // @ts-ignore
-                                // borderRight: columnIndex === ctx.columns.length - 1 ? 'none' : '1px solid #e6e6e6',
-                                boxSizing: 'border-box',
-                                display: 'flex',
-                            })}
-                            style={{ width: ctx.widths[columnIndex] }}
-                        >
-                            <Header
-                                columnTitle={column.title}
-                                hoverIndex={ctx.columnHighlightIndex}
-                                index={columnIndex}
-                                isSortable={column.sortable}
-                                isSelectable={ctx.isSelectable}
-                                isSelectedAll={ctx.isSelectedAll}
-                                isSelectedIndeterminate={ctx.isSelectedIndeterminate}
-                                onMouseEnter={ctx.onMouseEnter}
-                                onMouseLeave={ctx.onMouseLeave}
-                                onResize={ctx.onResize}
-                                onResizeIndexChange={setResizeIndex}
-                                onSelectMany={ctx.onSelectMany}
-                                onSelectNone={ctx.onSelectNone}
-                                onSort={() => ctx.onSort(columnIndex)}
-                                resizableColumnWidths={ctx.resizableColumnWidths}
-                                resizeIndex={resizeIndex}
-                                resizeMinWidth={ctx.measuredWidths[columnIndex]}
-                                resizeMaxWidth={column.maxWidth || Infinity}
-                                sortIndex={ctx.sortIndex}
-                                sortDirection={ctx.sortDirection}
-                                tableHeight={ctx.tableHeight}
-                            />
-                        </div>
-                    </Tooltip>
-                </>
+                        <Header
+                            columnTitle={column.title}
+                            hoverIndex={ctx.columnHighlightIndex}
+                            index={columnIndex}
+                            isSortable={column.sortable}
+                            isSelectable={ctx.isSelectable}
+                            isSelectedAll={ctx.isSelectedAll}
+                            isSelectedIndeterminate={ctx.isSelectedIndeterminate}
+                            onMouseEnter={ctx.onMouseEnter}
+                            onMouseLeave={ctx.onMouseLeave}
+                            onResize={ctx.onResize}
+                            onResizeIndexChange={setResizeIndex}
+                            onSelectMany={ctx.onSelectMany}
+                            onSelectNone={ctx.onSelectNone}
+                            onSort={() => ctx.onSort(columnIndex)}
+                            resizableColumnWidths={ctx.resizableColumnWidths}
+                            resizeIndex={resizeIndex}
+                            resizeMinWidth={ctx.measuredWidths[columnIndex]}
+                            resizeMaxWidth={column.maxWidth || Infinity}
+                            sortIndex={ctx.sortIndex}
+                            sortDirection={ctx.sortDirection}
+                            tableHeight={ctx.tableHeight}
+                        />
+                    </div>
+                </Tooltip>
             )
         },
         [ctx, setResizeIndex, resizeIndex, css, locale, theme]
@@ -630,7 +630,7 @@ function Headers() {
 function LoadingOrEmptyMessage(props) {
     const [css, theme] = useStyletron()
     return (
-        <p
+        <div
             className={css({
                 ...theme.typography.ParagraphSmall,
                 color: theme.colors.contentPrimary,
@@ -638,7 +638,7 @@ function LoadingOrEmptyMessage(props) {
             })}
         >
             {typeof props.children === 'function' ? props.children() : String(props.children)}
-        </p>
+        </div>
     )
 }
 

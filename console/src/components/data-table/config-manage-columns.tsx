@@ -184,7 +184,7 @@ function ConfigManageColumns(props: PropsT) {
                     autoFocus
                     showBackdrop={false}
                     onClose={() => setIsOpen(false)}
-                    mountNode={document.documentElement || ref.current}
+                    mountNode={document.body || ref.current}
                     overrides={{
                         Root: {
                             style: {

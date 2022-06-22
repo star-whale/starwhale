@@ -13,7 +13,6 @@ import { Checkbox } from 'baseui/checkbox'
 import { useStyletron } from 'baseui'
 
 import type { ColumnT } from './types.js'
-import { uniqueId } from 'lodash'
 import _ from 'lodash'
 
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
@@ -92,7 +91,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         sortFn: options.sortFn || (() => 0),
         title: options.title,
         onAsyncChange: options?.onAsyncChange,
-        key: options.key ?? _.uniqueId(),
+        key: options.key ?? options.title.toLocaleLowerCase().replace(' ', ''),
         pin: options.pin ?? null,
     }
 }
