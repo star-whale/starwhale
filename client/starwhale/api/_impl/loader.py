@@ -40,11 +40,13 @@ class DataLoader(object):
         swds: t.List[t.Dict[str, t.Any]] = [],
         logger: t.Union[loguru.Logger, None] = None,
         kind: str = DataLoaderKind.SWDS,
+        deserializer: t.Callable = None,
     ):
         self.storage = storage
         self.swds = swds
         self.logger = logger or _logger
         self.kind = kind
+        self.deserializer = deserializer
 
         self._do_validate()
 
@@ -72,8 +74,9 @@ class JSONLineDataLoader(DataLoader):
         storage: StorageBackend,
         swds: t.List[t.Dict[str, t.Any]] = [],
         logger: t.Union[loguru.Logger, None] = None,
+        **kwargs,
     ) -> None:
-        super().__init__(storage, swds, logger, DataLoaderKind.JSONL)
+        super().__init__(storage, swds, logger, DataLoaderKind.JSONL, **kwargs)
 
     def __iter__(self) -> t.Any:
         for _swds in self.swds:
@@ -91,7 +94,10 @@ class JSONLineDataLoader(DataLoader):
             line = line.strip()
             if not line:
                 continue
-            # TODO: add json exception ingore?
+            if self.deserializer:
+                yield self.deserializer(line)
+                continue
+            # TODO: add json exception ignore?
             yield json.loads(line)
 
 
@@ -336,7 +342,9 @@ class S3BufferedFileLike(object):
 
 
 def get_data_loader(
-    swds_config: t.Dict[str, t.Any], logger: t.Union[loguru.Logger, None] = None
+    swds_config: t.Dict[str, t.Any],
+    logger: t.Union[loguru.Logger, None] = None,
+    **kwargs,
 ) -> DataLoader:
     """s3 or fuse data loader
 
@@ -398,7 +406,7 @@ def get_data_loader(
 
     _kind = swds_config.get("kind", DataLoaderKind.SWDS)
     if _kind == DataLoaderKind.JSONL:
-        return JSONLineDataLoader(_storage, swds_config["swds"], logger)
+        return JSONLineDataLoader(_storage, swds_config["swds"], logger, **kwargs)
     elif _kind == DataLoaderKind.SWDS:
         return SWDSDataLoader(_storage, swds_config["swds"], logger)
     else:

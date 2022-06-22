@@ -4,6 +4,7 @@ import io
 import os
 import sys
 import json
+import base64
 import typing as t
 import logging
 from abc import ABCMeta, abstractmethod
@@ -11,6 +12,7 @@ from types import TracebackType
 from pathlib import Path
 from functools import wraps
 
+import dill
 import loguru
 import jsonlines
 
@@ -123,10 +125,15 @@ class PipelineHandler(object):
         self._orig_stdout = sys.stdout
         self._orig_stderr = sys.stderr
 
-        self._data_loader = get_data_loader(self.config.swds_config, self._sw_logger)
+        self._data_loader = get_data_loader(
+            self.config.swds_config, self._sw_logger, deserializer=self.deserialize
+        )
         # TODO: split status/result files
         self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)  # type: ignore
         self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
+
+        self._ppl_data_field = "ppl"
+        self._label_field = "label"
 
         self._monkey_patch()
         self._update_status(self.STATUS.START)
@@ -210,6 +217,27 @@ class PipelineHandler(object):
     def cmp(self, _data_loader: DataLoader) -> t.Any:
         raise NotImplementedError
 
+    def _builtin_serialize(self, *data: t.Any) -> bytes:
+        return dill.dumps(data)
+
+    def ppl_data_serialize(self, *data: t.Any) -> bytes:
+        return self._builtin_serialize(*data)
+
+    def ppl_data_deserialize(self, data: bytes) -> t.Any:
+        return dill.loads(base64.b64decode(data))
+
+    def label_data_serialize(self, data: t.Any) -> bytes:
+        return self._builtin_serialize(data)
+
+    def label_data_deserialize(self, data: bytes) -> bytes:
+        return dill.loads(base64.b64decode(data))[0]
+
+    def deserialize(self, data: bytes) -> t.Any:
+        ret = json.loads(data.decode("utf-8"))
+        ret[self._ppl_data_field] = self.ppl_data_deserialize(ret[self._ppl_data_field])
+        ret[self._label_field] = self.label_data_deserialize(ret[self._label_field])
+        return ret
+
     def handle_label(self, label: bytes, batch_size: int, **kw: t.Any) -> t.Any:
         return label.decode()
 
@@ -262,11 +290,10 @@ class PipelineHandler(object):
                     raise Exception(msg)
 
             pred: t.Any = b""
-            pr: t.Any = b""
             exception = None
             try:
                 # TODO: inspect profiling
-                pred, pr = self.ppl(
+                pred = self.ppl(
                     data.data,
                     data.batch_size,
                     data_index=data.idx,
@@ -288,15 +315,14 @@ class PipelineHandler(object):
                 exception = None
                 self._sw_logger.info(f"[{data.idx}] data handle -> success")
 
-            self._do_record(pred, pr, data, label, exception)
+            self._do_record(data, label, exception, *pred)
 
     def _do_record(
         self,
-        pred: t.Any,
-        pr: t.Any,
         data: DataField,
         label: DataField,
         exception: t.Union[None, Exception],
+        *args,
     ) -> None:
         self._status_writer.write(
             {
@@ -304,25 +330,29 @@ class PipelineHandler(object):
                 "status": exception is None,
                 "exception": str(exception),
                 "index": data.idx,
-                "output_size": len(pred),
+                "output_tuple_len": len(args),
             }
         )
 
         # TODO: output maybe cannot be jsonized
         result = {
             "index": data.idx,
-            "result": pred,
-            "pr": pr,
+            self._ppl_data_field: base64.b64encode(
+                self.ppl_data_serialize(*args)
+            ).decode("ascii"),
             "batch": data.batch_size,
         }
         if self.merge_label:
             try:
-                result["label"] = self.handle_label(
+                label = self.handle_label(
                     label.data,
                     label.batch_size,
                     index=label.idx,
                     size=label.data_size,
                 )
+                result[self._label_field] = base64.b64encode(
+                    self.label_data_serialize(label)
+                ).decode("ascii")
             except Exception as e:
                 self._sw_logger.exception(f"{label.data!r} label handle exception:{e}")
                 if not self.ignore_error:

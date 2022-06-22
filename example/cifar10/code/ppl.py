@@ -43,9 +43,10 @@ class CIFAR10Inference(PipelineHandler):
     def cmp(self, _data_loader):
         _result, _label, _pr = [], [], []
         for _data in _data_loader:
-            _label.extend([int(l) for l in _data["label"]])
-            _result.extend([int(l) for l in _data["result"]])
-            _pr.extend([l for l in _data["pr"]])
+            _label.extend([int(l) for l in _data[self._label_field]])
+            (pred, pr) = _data[self._ppl_data_field]
+            _result.extend([int(l) for l in pred])
+            _pr.extend([l for l in pr])
         return _label, _result, _pr
 
     def _pre(self, input: bytes, batch_size: int):

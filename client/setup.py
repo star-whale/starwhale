@@ -20,6 +20,7 @@ install_requires = [
     "jsonlines==3.0.0",
     "boto3==1.21.0",
     "scikit-learn>=0.20.0",
+    "dill==0.3.5.1",
 ]
 
 
