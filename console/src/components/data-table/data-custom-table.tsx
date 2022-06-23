@@ -6,7 +6,7 @@ LICENSE file in the root directory of this source tree.
 */
 // @flow
 
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import { VariableSizeGrid, VariableSizeList } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
@@ -85,7 +85,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     const column = data.columns[columnIndex]
     const row = data.rows[rowIndex - 1]
 
-    const [isHoverd, setIsHovered] = useState(false)
+    // const [isHoverd, setIsHovered] = useState(false)
 
     // ignores the table header row
     if (rowIndex === 0) {
@@ -93,44 +93,40 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     }
 
     // eslint-disable-next-line
-    const Cell = React.useMemo(() => column.renderCell, [column])
+    const Cell = React.useMemo(() => column.renderCell ?? null, [column])
     // eslint-disable-next-line
     const value = React.useMemo(() => column.mapDataToValue(row?.data), [column, row])
 
     return (
         <div
-            className={
-                // eslint-disable-next-line prefer-template
-                css({
-                    ...theme.borders.border200,
-                    // backgroundColor,
-                    borderTop: 'none',
-                    borderBottom: 'none',
-                    borderLeft: 'none',
-                    // do not render a border on cells in the right-most column
-                    // borderRight: columnIndex === data.columns.length - 1 ? 'none' : undefined,
-                    border: 'none',
-                    boxSizing: 'border-box',
-                    paddingLeft: '20px',
-                    paddingRight: '20px',
-                    paddingTop: '0',
-                    paddingBottom: '0',
-                    display: 'flex',
-                    alignItems: 'center',
-                }) + ` ${isHoverd ? 'cell--hovered' : ''}`
-            }
+            data-type='CellPlacement'
+            className={css({
+                ...theme.borders.border200,
+                // backgroundColor,
+                borderTop: 'none',
+                borderBottom: 'none',
+                borderLeft: 'none',
+                // do not render a border on cells in the right-most column
+                // borderRight: columnIndex === data.columns.length - 1 ? 'none' : undefined,
+                border: 'none',
+                boxSizing: 'border-box',
+                paddingLeft: '20px',
+                paddingRight: '20px',
+                paddingTop: '0',
+                paddingBottom: '0',
+                display: 'flex',
+                alignItems: 'center',
+            })}
             style={style}
             onMouseEnter={() => {
-                setIsHovered(true)
+                // setIsHovered(true)
                 data.onRowMouseEnter(rowIndex, data.rows[rowIndex - 1])
             }}
-            onMouseLeave={() => setIsHovered(false)}
+            // onMouseLeave={() => setIsHovered(false)}
         >
             <Cell
                 value={value}
-                onSelect={
-                    data.isSelectable && columnIndex === 0 ? () => data.onSelectOne(data.rows[rowIndex - 1]) : undefined
-                }
+                onSelect={data.isSelectable && columnIndex === 0 ? () => data.onSelectOne(row) : undefined}
                 onAsyncChange={async (v: any) => {
                     const cellData = data?.columns[columnIndex]
                     await cellData?.onAsyncChange?.(v, columnIndex, rowIndex - 1)
@@ -243,8 +239,9 @@ const CellPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, sty
             style={{
                 ...style,
                 display: 'flex',
-                width: 'fix-content',
+                // width: 'fix-content',
                 breakInside: 'avoid',
+                width: '100%',
             }}
         >
             {cellsLeft.length > 0 && (
@@ -272,6 +269,7 @@ const CellPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, sty
             >
                 {cells}
             </div>
+            <div style={{ flex: 1, borderBottom: '1px solid #EEF1F6' }} />
         </div>
     )
 }, compareCellPlacement)
@@ -590,12 +588,14 @@ function Headers() {
                 position: 'sticky',
                 top: 0,
                 left: 0,
-                width: `${sum(ctx.widths)}px`,
+                // width: `${sum(ctx.widths)}px`,
                 height: `${HEADER_ROW_HEIGHT}px`,
                 display: 'flex',
                 // this feels bad.. the absolutely positioned children elements
                 // stack on top of this element with the layer component.
                 zIndex: 2,
+                backgroundColor: '#F3F5F9',
+                width: '100%',
             })}
         >
             {headersLeft.length > 0 && (
@@ -605,6 +605,7 @@ function Headers() {
                         float: 'left',
                         left: 0,
                         borderLeft: '0',
+                        marginRight: '-2px',
                         borderRight: '1px solid #CFD7E6',
                         display: 'flex',
                         width: 'fix-content',
@@ -623,6 +624,11 @@ function Headers() {
             >
                 {headers}
             </div>
+            <div
+                style={{
+                    flex: '1',
+                }}
+            />
         </div>
     )
 }
@@ -977,7 +983,10 @@ export function DataTable({
             const scrollbarWidth = isContentTallerThanContainer ? browserScrollbarWidth : 0
 
             const remainder = gridProps.width - sum(resizedWidths) - scrollbarWidth
-            const padding = Math.floor(remainder / columns.filter((c) => (c ? c.fillWidth : true)).length)
+            const filledColumnsLen = columns.filter((c) => (c ? c.fillWidth : true)).length
+            const padding = filledColumnsLen === 0 ? 0 : Math.floor(remainder / filledColumnsLen)
+
+            // console.log(resizedWidths, remainder, padding)
             if (padding > 0) {
                 const result = []
                 // -1 so that we loop over all but the last item
@@ -1175,7 +1184,7 @@ export function DataTable({
                             overscanRowCount={10}
                             innerElementType={InnerTableElement}
                             height={height}
-                            width={width - 3}
+                            width={width}
                             itemData={itemData}
                             onScroll={handleScroll}
                             itemSize={rowHeightAtIndex}

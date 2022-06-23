@@ -124,6 +124,7 @@ export type StatefulDataTablePropsT = {
     rowHeight?: number
     rowHighlightIndex?: number
     searchable?: boolean
+    columnable?: boolean
     controlRef?: ControlRefT
     onColumnSave?: (props: any) => void
     config?: ConfigT

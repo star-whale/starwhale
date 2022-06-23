@@ -40,6 +40,8 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 // padding show be equal normal cell，measure witdh
                 paddingLeft: '20px',
                 paddingRight: '20px',
+                // minWidth: '100px',
+                // maxWidth: '200px',
             })}
         >
             <HeaderCell
@@ -130,6 +132,7 @@ export default function MeasureColumnWidths({
 
     const handleDimensionsChange = React.useCallback(
         (columnIndex, dimensions) => {
+            // console.log(columnIndex, dimensions)
             const nextWidth = Math.min(
                 Math.max(columns[columnIndex].minWidth || 0, widthMap.get(columnIndex) || 0, dimensions.width + 1),
                 columns[columnIndex].maxWidth || Infinity
@@ -146,6 +149,8 @@ export default function MeasureColumnWidths({
                 // ...25%
                 widthMap.size === Math.floor(columns.length / 4)
             ) {
+                // console.log(widthMap)
+
                 onWidthsChange(Array.from(widthMap.values()))
             }
         },
@@ -165,11 +170,11 @@ export default function MeasureColumnWidths({
 
     return (
         // eslint-disable-next-line jsx-a11y/role-supports-aria-props
-        <div className={hiddenStyle} aria-hidden role='none'>
+        <div data-type='MeasureColumn' className={hiddenStyle} aria-hidden role='none'>
             {columns.map((column, i) => {
                 return (
                     <MeasureColumn
-                        key={column.title + i}
+                        key={column.title + String(i)}
                         column={column}
                         rows={rows}
                         isSelectable={isSelectable}

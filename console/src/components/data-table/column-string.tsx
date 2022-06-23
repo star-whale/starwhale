@@ -34,6 +34,7 @@ function StringCell(props: any) {
     const [css] = useStyletron()
     return (
         <div
+            data-type='StringCell'
             className={css({
                 display: '-webkit-box',
                 WebkitLineClamp: props.lineClamp || 1,

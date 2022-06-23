@@ -369,6 +369,9 @@ const locales0 = {
     'Evaluations': {
         en: 'Evaluations',
     },
+    'Compare Evaluations': {
+        en: 'Compare Evaluations',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

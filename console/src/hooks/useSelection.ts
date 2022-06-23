@@ -35,20 +35,7 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
         })
     }, [sortedIds])
 
-    useEffect(() => {
-        setSortedIds((prevIds) => {
-            const sortedMergePinedIds = [...Array.from(pinedIds), ...Array.from(prevIds)]
-            sortedMergePinedIds.sort((v1, v2) => {
-                const index1 = pinedIds.has(v1) ? 1 : -1
-                const index2 = pinedIds.has(v2) ? 1 : -1
-                return index2 - index1
-            })
-
-            // console.log('【render effect 2】 ', count2++, sortedMergePinedIds)
-
-            return new Set(sortedMergePinedIds)
-        })
-    }, [pinedIds])
+    // useEffect(() => {
 
     const handleSelectChange = useCallback(
         (next: Set<T>) => {
@@ -89,21 +76,29 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
     )
 
     const handleOrderChange = useCallback(
-        (ids: T[]) => {
-            // console.log('handleOrderChange', ids)
+        (ids: T[], dragId: T) => {
             const sortedMergeSelectedIds = Array.from(ids).filter((v: T) => selectedIds.has(v))
             setSortedIds(new Set(sortedMergeSelectedIds))
+            const $pinedIds = new Set(pinedIds)
+            const dragIndex = sortedMergeSelectedIds.findIndex((v: T) => v === dragId)
+            $pinedIds.delete(dragId)
 
-            let noPindedFlag = 0
+            // move pined column to no pined column will auto remove pined status
+            const pindedFlag: number[] = []
             Array.from(sortedMergeSelectedIds).forEach((v: T, index) => {
-                if (!pinedIds.has(v)) {
-                    noPindedFlag = index
-                }
-                if (noPindedFlag && pinedIds.has(v)) {
-                    pinedIds.delete(v)
+                if ($pinedIds.has(v)) {
+                    pindedFlag.push(index)
                 }
             })
-            setPinedIds(pinedIds)
+
+            const maxPinedFlag = Math.max(...pindedFlag)
+            if (dragIndex > maxPinedFlag) {
+                $pinedIds.delete(dragId)
+            } else if (dragIndex < maxPinedFlag) {
+                $pinedIds.add(dragId)
+            }
+
+            setPinedIds($pinedIds)
         },
         [setSortedIds, selectedIds, pinedIds]
     )
