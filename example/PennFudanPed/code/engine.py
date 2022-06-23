@@ -5,13 +5,21 @@ import torch
 
 import torchvision.models.detection.mask_rcnn
 
-from . import coco_utils
-from . import coco_eval
-from . import utils as myutils
+try:
+    from . import coco_utils
+except ImportError:
+    import coco_utils
 
-#import coco_utils
-#import coco_eval
-#import utils as myutils
+try:
+    from . import coco_eval
+except ImportError:
+    import coco_eval
+
+try:
+    from . import utils as myutils
+except ImportError:
+    import utils as myutils
+
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
     model.train()

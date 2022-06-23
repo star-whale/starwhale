@@ -1,4 +1,4 @@
-Example of audio classification model trained on AG_NEWS dataset
+Example of audio classification model trained on SpeechCommands dataset
 -----------------
 This example will illustrate how to evaluate a pre-trained audio classification model on StarWhale(`version:0.2.0b8`) under 7 steps
 * Install StarWhale globally
@@ -323,6 +323,7 @@ Most of the fields are self-explained. The `process` descriptor is used to tell 
 
 After create the yaml file under `${code_base}/example/speech_command/`, we are ready to do it.
 ```shell
+(audio_pytorch) $ swcli dataset build . 
 🚧 start to build dataset bundle...
 👷 uri:local/project/self/dataset/speechcommands
 🆕 version gmzgczrqmezd
@@ -379,8 +380,7 @@ After create the yaml file under `${code_base}/example/speech_command/`, we are 
   m5                   mfstoolehayd              latest         89.63MB                             2022-06-21 18:48:27 CST
 ```
 ```shell
-(audio_pytorch) $ swcli model info text_cls
-(audio_pytorch) anda@LAPTOP-9H8FMT16:~/starwhale_code/example/speech_command$ swcli model info m5/version/mfstoolehayd
+(audio_pytorch) $ swcli model info m5/version/mfstoolehayd
 ╭─ Starwhale Instance ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮                                                     ⭐ local (local) 🐳                                                     🤡anda@normal │╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯────────────────────────────────────────────────────────────── Inspect Details ──────────────────────────────────────────────────────────────
                                                     ⭐ local (local) 🐳                                                     🤡anda@normal    
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
@@ -581,14 +581,14 @@ Congratulations, we have nearly finished the whole example! From now on, we can 
 ‍🍳 login http://console.pre.intra.starwhale.ai successfully!
 ```
 
-**Copy the model to cloud instance**
+**Copy the model we build before to cloud instance**
 ```shell
 (audio_pytorch) $ swcli model copy m5/version/mfstoolehayd cloud://pre-k8s/project/1
 🚧 start to copy local/project/self/model/m5/version/mfstoolehayd -> http://console.pre.intra.starwhale.ai/project/1...
   🎳 upload mfstoolehaydeyrvmyzdamzrmzshuma.swmp ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:07 94.0 MB 10.0 MB/s
 👏 copy done.
 ```
-**Copy the dataset to cloud instance**
+**Copy the dataset we build before to cloud instance**
 ```shell
 (audio_pytorch) $ swcli dataset copy speechcommands/version/gmzgczrqmezd cloud://pre-k8s/project/1
 🚧 start to copy local/project/self/dataset/speechcommands/version/gmzgczrqmezd -> http://console.pre.intra.starwhale.ai/project/1...
@@ -617,7 +617,7 @@ Congratulations, we have nearly finished the whole example! From now on, we can 
   ⬆ archive.swds_meta      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:01:23 93.9 MB 10.0 MB/s
 👏 copy done
 ```
-**Copy the runtime to cloud instance**
+**Copy the runtime we build before to cloud instance**
 ```shell
 (audio_pytorch) $ swcli runtime copy audio_pytorch/version/ga2wkmbwmizw cloud://pre-k8s/project/1
 🚧 start to copy local/project/self/runtime/audio_pytorch/version/ga2wkmbwmizw -> http://console.pre.intra.starwhale.ai/project/1...

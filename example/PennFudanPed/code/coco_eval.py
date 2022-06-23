@@ -11,8 +11,10 @@ import pycocotools.mask as mask_util
 
 from collections import defaultdict
 
-#import utils
-from . import utils
+try:
+    from . import utils
+except ImportError:
+    import utils
 
 class CocoEvaluator(object):
     def __init__(self, coco_gt, iou_types):
