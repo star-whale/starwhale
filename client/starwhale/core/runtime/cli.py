@@ -104,16 +104,16 @@ def _recover(runtime: str, force: bool) -> None:
     RuntimeTermView(runtime).recover(force)
 
 
-@runtime_cmd.command("info", help="Inspect runtime")
+@runtime_cmd.command("info", help="Show runtime details")
 @click.argument("runtime")
-@click.option("--fullname", is_flag=True, help="show version fullname")
+@click.option("--fullname", is_flag=True, help="Show version fullname")
 def _info(runtime: str, fullname: bool) -> None:
     RuntimeTermView(runtime).info(fullname)
 
 
 @runtime_cmd.command("history", help="Show runtime history")
 @click.argument("runtime", required=True)
-@click.option("--fullname", is_flag=True, help="show version fullname")
+@click.option("--fullname", is_flag=True, help="Show version fullname")
 def _history(runtime: str, fullname: bool) -> None:
     RuntimeTermView(runtime).history(fullname)
 
@@ -122,7 +122,7 @@ def _history(runtime: str, fullname: bool) -> None:
 @click.argument("target")
 def _restore(target: str) -> None:
     """
-    [ONLY Standalone]Prepare to restore and activate runtime environment
+    [ONLY Standalone]Prepare dirs, restore python environment with virtualenv or conda and show activate command.
 
     TARGET: runtime uri or runtime workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
@@ -134,10 +134,10 @@ def _restore(target: str) -> None:
 @click.option("--fullname", is_flag=True, help="Show fullname of runtime version")
 @click.option("--show-removed", is_flag=True, help="Show removed runtime")
 @click.option(
-    "--page", type=int, default=DEFAULT_PAGE_IDX, help="page number for tasks list"
+    "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for tasks list"
 )
 @click.option(
-    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for tasks list"
+    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
 )
 def _list(
     project: str, fullname: bool, show_removed: bool, page: int, size: int
@@ -149,11 +149,11 @@ def _list(
     "extract", help="[ONLY Standalone]Extract local runtime tar file into workdir"
 )
 @click.argument("runtime")
-@click.option("-f", "--force", is_flag=True, help="force extract runtime")
+@click.option("-f", "--force", is_flag=True, help="Force to extract runtime")
 @click.option(
     "--target-dir",
     default="",
-    help="extract target dir.if omitted, sw will use starwhale default workdir",
+    help="Extract target dir.if omitted, sw will use starwhale default workdir",
 )
 def _extract(runtime: str, force: bool, target_dir: str) -> None:
     RuntimeTermView(runtime).extract(force, target_dir)
@@ -162,7 +162,7 @@ def _extract(runtime: str, force: bool, target_dir: str) -> None:
 @runtime_cmd.command("copy", help="Copy runtime, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
-@click.option("-f", "--force", is_flag=True, help="force copy")
+@click.option("-f", "--force", is_flag=True, help="Force to copy")
 def _copy(src: str, dest: str, force: bool) -> None:
     RuntimeTermView.copy(src, dest, force)
 
@@ -170,12 +170,12 @@ def _copy(src: str, dest: str, force: bool) -> None:
 @runtime_cmd.command("tag", help="Runtime Tag Management, add or remove")
 @click.argument("runtime")
 @click.argument("tags", nargs=-1)
-@click.option("-r", "--remove", is_flag=True, help="remove tags")
+@click.option("-r", "--remove", is_flag=True, help="Remove tags")
 @click.option(
     "-q",
     "--quiet",
     is_flag=True,
-    help="ignore tag name errors like name duplication, name absence",
+    help="Ignore tag name errors like name duplication, name absence",
 )
 def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
     RuntimeTermView(runtime).tag(tags, remove, quiet)
@@ -189,7 +189,7 @@ def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
     "-f",
     "--runtime-yaml",
     default=DefaultYAMLName.RUNTIME,
-    help="runtime yaml filename, default use ${workdir}/runtime.yaml file",
+    help="Runtime yaml filename, default use ${WORKDIR}/runtime.yaml file",
 )
 @click.argument("workdir")
 def _activate(workdir: str, runtime_yaml: str) -> None:

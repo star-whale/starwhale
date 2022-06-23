@@ -74,7 +74,7 @@ swcli dataset list [OPTIONS]
     |------|--------|-------|-----------|-----|-----------|
     |`--project`|`-p`|❌|String|Selected project|Project URI|
     |`--fullname`||❌|Boolean|False|Show fullname of dataset version|
-    |`--show-remove`||❌|Boolean|False|Show removed datasets|
+    |`--show-removed`||❌|Boolean|False|Show removed datasets|
     |`--page`||❌|Integer|1|Page number for dataset list|
     |`--size`||❌|Integer|20|Page size for dataset list|
 
@@ -97,6 +97,7 @@ swcli dataset remove [OPTIONS] DATASET
 
     ```bash
     ❯ swcli dataset remove mnist/version/latest
+    continue to remove? [y/N]: y
     👏 do successfully
     ```
 
@@ -190,7 +191,7 @@ swcli dataset render-fuse [OPTIONS] TARGET
 
     |Option|Alias Option|Required|Type|Default|Description|
     |------|--------|-------|-----------|-----|-----------|
-    |`--force`|`-f`|❌|Boolean|False|Force to recover dataset|
+    |`--force`|`-f`|❌|Boolean|False|Force to render input.json|
 
 - Example:
 
@@ -215,9 +216,9 @@ swcli dataset copy [OPTIONS] SRC DEST
 
     |Option|Alias Option|Required|Type|Default|Description|
     |------|--------|-------|-----------|-----|-----------|
-    |`--force`|`-f`|❌|Boolean|False|Force to recover dataset|
+    |`--force`|`-f`|❌|Boolean|False|Force to copy dataset|
 
-- Example: copy a dataset from local standalone to remote cloud
+- Example: copy a dataset from local standalone to remote cloud(upload)
 
     ```bash
     ❯ swcli dataset copy mnist/version/latest cloud://pre-k8s/project/1
@@ -236,7 +237,7 @@ swcli dataset copy [OPTIONS] SRC DEST
     👏 copy done
     ```
 
-- Example: copy a dataset from remote cloud to local standalone
+- Example: copy a dataset from remote cloud to local standalone(download)
 
     ```bash
     ❯ swcli dataset copy cloud://pre-k8s/project/1/dataset/mnist/version/gvsgemdbhazwknrtmftdgyjzoaygynq self --force

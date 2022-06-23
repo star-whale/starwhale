@@ -196,66 +196,6 @@ This command reverts a model to an old version.
 swcli model revert <model uri>
 ```
 
-## Runtime management
-
-### Build a runtime
-
-This command builds a runtime with the specified working directory.
-
-```console
-swcli runtime build <runtime uri> [working dir]
-```
-
-### List runtimes
-
-This command lists all runtimes in the project.
-
-```console
-swcli runtime list [project uri]
-```
-
-### Remove a runtime
-
-This command removes a runtime.
-
-```console
-swcli runtime remove <runtime uri>
-```
-
-### Recover a runtime
-
-This command recovers a removed runtime.
-
-```console
-swcli runtime recover <runtime uri>
-```
-
-### Copy a runtime
-
-This command copies a runtime to another place, either locally or remotely.
-
-```console
-swcli runtime copy <source runtime uri> <destination runtime uri>
-```
-
-The destination runtime URI should not exist and observes the name uniqueness rule.
-
-### Show runtime history
-
-This command shows the history of a runtime.
-
-```console
-swcli runtime history <runtime uri>
-```
-
-### Revert a runtime to an old version
-
-This command reverts a runtime to an old version.
-
-```console
-swcli runtime revert <runtime uri>
-```
-
 ## Job Management
 
 ### List jobs
