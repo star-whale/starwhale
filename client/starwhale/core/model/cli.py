@@ -18,7 +18,7 @@ from starwhale.core.dataset.store import DatasetStorage
 from .view import ModelTermView
 
 
-@click.group("model", help="StarWhale Model Management")
+@click.group("model", help="Model management, build/copy/ppl/cmp/eval/extract...")
 def model_cmd() -> None:
     pass
 

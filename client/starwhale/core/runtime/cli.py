@@ -11,7 +11,9 @@ from starwhale.consts import (
 from .view import RuntimeTermView
 
 
-@click.group("runtime", help="Starwhale Runtime management")
+@click.group(
+    "runtime", help="Runtime management, create/build/copy/activate/restore..."
+)
 def runtime_cmd() -> None:
     pass
 

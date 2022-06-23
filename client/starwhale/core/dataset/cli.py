@@ -10,7 +10,7 @@ from starwhale.consts import (
 from .view import DatasetTermView
 
 
-@click.group("dataset", help="StarWhale Dataset Management")
+@click.group("dataset", help="Dataset management, build/info/list/copy/tag...")
 def dataset_cmd() -> None:
     pass
 

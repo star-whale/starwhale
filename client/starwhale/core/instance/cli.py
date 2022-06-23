@@ -3,7 +3,10 @@ import click
 from .view import InstanceTermView
 
 
-@click.group("instance", help="Starwhale Instance management")
+@click.group(
+    "instance",
+    help="Starwhale Instance management, login and select standalone or cloud instance",
+)
 def instance_cmd() -> None:
     pass
 

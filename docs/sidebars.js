@@ -12,7 +12,6 @@ module.exports = {
             "Cloud Guides": ["cloud/main", "cloud/helm-charts", "cloud/ansible"],
             "Python SDK Guides": ["sdk/main"],
             "Reference": [
-                "reference/main",
                 {
                     "Command Line Interface": [
                         "reference/cli/main", "reference/cli/dataset", "reference/cli/model",

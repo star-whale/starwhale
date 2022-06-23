@@ -7,7 +7,7 @@ from starwhale.base.type import EvalTaskType
 from .view import JobTermView, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
-@click.group("job", help="Starwhale job management")
+@click.group("job", help="Job management, create/list/info/compare evaluation job")
 def job_cmd() -> None:
     pass
 
