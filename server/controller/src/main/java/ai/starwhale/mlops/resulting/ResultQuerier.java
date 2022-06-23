@@ -17,8 +17,8 @@
 package ai.starwhale.mlops.resulting;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
@@ -26,9 +26,13 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.wnameless.json.flattener.JsonFlattener;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -56,6 +60,26 @@ public class ResultQuerier {
     }
 
     public Object resultOfJob(Long jobId){
+        try(InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId))){
+            return objectMapper.readValue(inputStream,Object.class);
+        } catch (IOException e) {
+            throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+        }
+    }
+
+    public Map<String, Object> flattenResultOfJob(Long jobId) {
+        try(InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId));
+            Reader reader = new InputStreamReader(inputStream)){
+            JsonFlattener jf = new JsonFlattener(reader);
+            return jf.withSeparator('_')
+                .ignoreReservedCharacters()
+                .flattenAsMap();
+        } catch (IOException e) {
+            throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+        }
+    }
+
+    public String resultPathOfJob(Long jobId) {
         JobEntity jobEntity = jobMapper.findJobById(jobId);
         if(null == jobEntity){
             throw new SWValidationException(ValidSubject.JOB).tip("unknown jobid");
@@ -69,14 +93,11 @@ public class ResultQuerier {
             if(null == results || results.isEmpty()){
                 throw new SWValidationException(ValidSubject.JOB).tip("no result found of job");
             }
-            try(InputStream inputStream = storageAccessService.get(results.get(0))){
-                return objectMapper.readValue(inputStream,Object.class);
-            }
+            return results.get(0);
 
         } catch (IOException e) {
             throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
         }
-
     }
 
 }

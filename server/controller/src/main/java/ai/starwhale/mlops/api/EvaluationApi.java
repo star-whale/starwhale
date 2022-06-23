@@ -21,6 +21,7 @@ import ai.starwhale.mlops.api.protocol.evaluation.AttributeVO;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigVO;
 import ai.starwhale.mlops.api.protocol.evaluation.SummaryVO;
+import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -30,6 +31,7 @@ import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,32 +43,38 @@ public interface EvaluationApi {
     @Operation(summary = "List Evaluation Summary Attributes")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(value = "/evaluation/view/attribute")
-    ResponseEntity<ResponseMessage<List<AttributeVO>>> listAttributes();
+    @GetMapping(value = "/project/{projectUrl}/evaluation/view/attribute")
+    ResponseEntity<ResponseMessage<List<AttributeVO>>> listAttributes(
+        @Valid @PathVariable("projectUrl") String projectUrl
+    );
 
 
     @Operation(summary = "Get View Config")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(value = "/evaluation/view/config")
+    @GetMapping(value = "/project/{projectUrl}/evaluation/view/config")
     ResponseEntity<ResponseMessage<ConfigVO>> getViewConfig(
-        @Valid @RequestParam(value = "projectUrl") String projectUrl,
+        @Valid @PathVariable(value = "projectUrl") String projectUrl,
         @Valid @RequestParam(value = "name") String name
     );
 
     @Operation(summary = "Create or Update View Config")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(value = "/evaluation/view/config")
+    @PostMapping(value = "/project/{projectUrl}/evaluation/view/config")
     ResponseEntity<ResponseMessage<String>> createViewConfig(
+        @Valid @PathVariable("projectUrl") String projectUrl,
         @Valid @RequestBody ConfigRequest configRequest
     );
 
     @Operation(summary = "List Evaluation Summary")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(value = "/evaluation")
-    ResponseEntity<ResponseMessage<List<SummaryVO>>> listEvaluationSummary(
-        @Valid @RequestParam(value = "filter") String filter
+    @GetMapping(value = "/project/{projectUrl}/evaluation")
+    ResponseEntity<ResponseMessage<PageInfo<SummaryVO>>> listEvaluationSummary(
+        @Valid @PathVariable("projectUrl") String projectUrl,
+        @Valid @RequestParam(value = "filter") String filter,
+        @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+        @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize
     );
 }
