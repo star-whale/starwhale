@@ -42,7 +42,7 @@
             and version_name like concat(#{namePrefix}, '%')
         </if>
         <if test="tag != null and tag != ''">
-            and version_tag like concat(#{tag}, '%')
+            and FIND_IN_SET(#{tag}, version_tag)
         </if>
         order by dsv.id desc
     </select>

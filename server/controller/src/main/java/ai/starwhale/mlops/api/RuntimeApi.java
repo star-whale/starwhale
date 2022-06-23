@@ -227,14 +227,14 @@ public interface RuntimeApi {
             in = ParameterIn.QUERY,
             description = "Runtime version name prefix",
             schema = @Schema())
-        @RequestParam(value = "vName", required = false)
-        String vName,
+        @RequestParam(value = "name", required = false)
+        String name,
         @Parameter(
             in = ParameterIn.QUERY,
             description = "Runtime version tag",
             schema = @Schema())
-        @RequestParam(value = "vTag", required = false)
-        String vTag,
+        @RequestParam(value = "tag", required = false)
+        String tag,
         @Parameter(in = ParameterIn.QUERY, description = "The page number", schema = @Schema())
         @Valid
         @RequestParam(value = "pageNum", required = false, defaultValue = "1")

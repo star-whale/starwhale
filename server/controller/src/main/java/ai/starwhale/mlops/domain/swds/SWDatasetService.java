@@ -147,8 +147,8 @@ public class SWDatasetService {
     }
 
     public SWDatasetInfoVO getSWDSInfo(SWDSQuery query) {
-        Long projectId = projectManager.getProjectId(query.getProjectUrl());
-        SWDatasetEntity ds = swdsMapper.findByName(query.getSwdsUrl(), projectId);
+        Long datasetId = swdsManager.getSWDSId(query.getSwdsUrl(), query.getProjectUrl());
+        SWDatasetEntity ds = swdsMapper.findDatasetById(datasetId);
         if(ds == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
                 .tip("Unable to find swds " + query.getSwdsUrl()), HttpStatus.BAD_REQUEST);
