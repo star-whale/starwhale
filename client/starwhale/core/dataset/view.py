@@ -89,11 +89,10 @@ class DatasetTermView(BaseTermView):
         Dataset.render_fuse_json(workdir, force)
 
     @BaseTermView._header
-    def tag(self, tags: str, remove: bool = False, quiet: bool = False) -> None:
-        _tags = tags.split(",")
+    def tag(self, tags: t.List[str], remove: bool = False, quiet: bool = False) -> None:
         if remove:
             console.print(f":golfer: remove tags {tags} @ {self.uri}...")
-            self.dataset.remove_tags(_tags, quiet)
+            self.dataset.remove_tags(tags, quiet)
         else:
             console.print(f":surfer: add tags {tags} @ {self.uri}...")
-            self.dataset.add_tags(_tags, quiet)
+            self.dataset.add_tags(tags, quiet)
