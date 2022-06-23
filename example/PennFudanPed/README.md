@@ -9,6 +9,8 @@ This example will illustrate how to evaluate a pre-trained image object detectio
 * Build SWDS & SWMP & SWRT
 * Run the evaluation job and see the metrics
 
+> :bulb: This example requires CUDA device
+
 ## Prerequisites
 Assume that you have Python3.7 or above installed.
 
@@ -61,7 +63,11 @@ $ source ./venv/bin/activate
 > The training code in this repo is sourced from https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html However, some code is modified so that we could better understand how StarWhale works. 
 ```shell
 (visual_pytorch) $ mkdir models
-(visual_pytorch) $ cd code
+(visual_pytorch) $ mkdir data
+(visual_pytorch) $ cd data
+(visual_pytorch) $ wget https://www.cis.upenn.edu/~jshi/ped_html/PennFudanPed.zip
+(visual_pytorch) $ unzip PennFudanPed.zip
+(visual_pytorch) $ cd ../code
 (visual_pytorch) $ python train.py
 ```
 You will get the logs below:
