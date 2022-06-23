@@ -4,9 +4,6 @@ name: mask_rcnn
 model:
   - models/maskrcnn.pth
 
-config:
-  - config/hyperparam.json
-
 run:
   ppl: code.ppl:MARSKRCNN
 

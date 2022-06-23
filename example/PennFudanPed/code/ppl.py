@@ -1,22 +1,18 @@
 from pathlib import Path
 import os
 import io
+import pickle
 
 import torch
 from torchvision.transforms import functional as F
 from PIL import Image
 from starwhale.api.model import PipelineHandler
-import numpy as nn
 
 from . import model as mask_rcnn_model
 from . import ds as penn_fudan_ped_ds
 from . import coco_utils
 from . import coco_eval
 
-#import model as mask_rcnn_model
-#import ds as penn_fudan_ped_ds
-#import coco_utils
-#import coco_eval
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 _DTYPE_DICT_OUTPUT = {'boxes': torch.float32, 'labels': torch.int64, 'scores': torch.float32, 'masks': torch.uint8}
@@ -32,24 +28,32 @@ class MARSKRCNN(PipelineHandler):
     @torch.no_grad()
     def ppl(self, data, batch_size, **kw):
         model = self._load_model(self.device)
-        image = Image.open(io.BytesIO(data))
-        _image = F.to_tensor(image)
-        outputs = model([_image.to(self.device)])
-        cpu_device = torch.device("cpu")
-        # [{'boxes':tensor[[],[]]},'labels':tensor[[],[]],'masks':tensor[[[]]]}]
-        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-        for t in outputs:
-            self.tensor_dict_to_list_dict(t)
-            t['height'] = _image.shape[-2]
-            t['width'] = _image.shape[-1]
-        return outputs, None
+        files_bytes = pickle.loads(data)
+        _result = []
+        for file_bytes in files_bytes:
+            image = Image.open(io.BytesIO(file_bytes.content_bytes))
+            _image = F.to_tensor(image)
+            outputs = model([_image.to(self.device)])
+            cpu_device = torch.device("cpu")
+            # [{'boxes':tensor[[],[]]},'labels':tensor[[],[]],'masks':tensor[[[]]]}]
+            outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+            for t in outputs:
+                self.tensor_dict_to_list_dict(t)
+                t['height'] = _image.shape[-2]
+                t['width'] = _image.shape[-1]
+            _result.extend(outputs)
+        return _result, None
 
     def handle_label(self, label, batch_size, **kw):
-        image = Image.open(io.BytesIO(label))
-        target = penn_fudan_ped_ds.mask_to_coco_target(image, kw['index'])
-        return [self.tensor_dict_to_list_dict(target)]
+        files_bytes = pickle.loads(label)
+        _result = []
+        for file_bytes in files_bytes:
+            image = Image.open(io.BytesIO(file_bytes.content_bytes))
+            target = penn_fudan_ped_ds.mask_to_coco_target(image, kw['index'])
+            _result.append(self.tensor_dict_to_list_dict(target))
+        return _result
 
-    def list_dict_to_tensor_list(self, list_dict, label):
+    def list_dict_to_tensor_dict(self, list_dict, label):
         for k in list_dict.keys():
             _value = list_dict.get(k)
             if isinstance(_value, list):
@@ -67,8 +71,8 @@ class MARSKRCNN(PipelineHandler):
     def cmp(self, _data_loader):
         _result, _label = [], []
         for _data in _data_loader:
-            _label.extend([self.list_dict_to_tensor_list(l, True) for l in _data["label"]])
-            _result.extend([self.list_dict_to_tensor_list(r, False) for r in _data["result"]])
+            _label.extend([self.list_dict_to_tensor_dict(l, True) for l in _data["label"]])
+            _result.extend([self.list_dict_to_tensor_dict(r, False) for r in _data["result"]])
         ds = zip(_result, _label)
         coco_ds = coco_utils.convert_to_coco_api(ds)
         coco_evaluator = coco_eval.CocoEvaluator(coco_ds,  ["bbox", "segm"])
@@ -118,9 +122,3 @@ def load_test_env_ppl(fuse=True):
 
     # fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
     os.environ["SW_TASK_INPUT_CONFIG"] = "/home/renyanda/.cache/starwhale/dataset/penn_fudan_ped/me2danlehfswknrrgfstcnlgmz4gs4q/local_fuse.json"
-
-
-if __name__ == "__main__":
-    load_test_env(fuse=True)
-    mask_rcnn = MARSKRCNN()
-    mask_rcnn._starwhale_internal_run_cmp()
