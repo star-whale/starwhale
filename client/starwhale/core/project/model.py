@@ -222,7 +222,7 @@ class CloudProject(Project, CloudRequestMixed):
         return {
             "name": self.name,
             "created_at": self.fmt_timestamp(r.json()["data"]["createdTime"]),
-            "localtion": r.url,
+            "location": r.url,
             "models": self._fetch_project_objects(ProjectObjType.MODEL),
             "datasets": self._fetch_project_objects(ProjectObjType.DATASET),
         }

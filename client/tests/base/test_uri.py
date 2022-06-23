@@ -136,8 +136,8 @@ class URITestCase(TestCase):
         assert uri.project == "self"
         assert uri.object.name == ""
 
-        uri = URI("pre-k8s", expected_type=URIType.INSTANCE)
-        assert uri.instance == "pre-k8s"
+        uri = URI("pre-bare", expected_type=URIType.INSTANCE)
+        assert uri.instance == "http://1.1.1.1:8182"
         assert uri.project == "self"
         assert uri.object.name == ""
 

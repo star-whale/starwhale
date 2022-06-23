@@ -216,7 +216,7 @@ class BundleCopy(CloudRequestMixed):
         upload_id = r.json().get("data", {}).get("upload_id")
         if not upload_id:
             raise Exception("get invalid upload_id")
-        _headers = {"X-SW-UPLOAD-ID": upload_id}
+        _headers = {"X-SW-UPLOAD-ID": str(upload_id)}
         _manifest = yaml.safe_load(_manifest_path.open())
 
         # TODO: add retry deco
