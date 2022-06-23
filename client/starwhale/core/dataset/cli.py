@@ -68,6 +68,7 @@ def _remove(dataset: str, force: bool) -> None:
 
     DATASET: argument use the `Dataset URI` format, so you can remove the whole dataset or a specified-version dataset.
     """
+    click.confirm("continue to remove?", abort=True)
     DatasetTermView(dataset).remove(force)
 
 
