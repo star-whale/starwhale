@@ -161,19 +161,27 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     const filterable = props.filterable === undefined ? true : props.filterable
     const searchable = props.searchable === undefined ? true : props.searchable
+    const columnable = props.columnable === undefined ? true : props.columnable
+
     const { columns } = props
     const { pinnedIds = [], selectIds = [] }: ConfigT = props.config || {}
 
     const $columns = useMemo(() => {
+        if (!columnable) return columns
+
         return selectIds.map((id: any) => {
             const _column = columns.find((column) => column.key === id)
+
+            if (!_column) {
+                return undefined
+            }
 
             return {
                 ..._column,
                 pin: pinnedIds.includes(_column?.key as string) ? 'LEFT' : undefined,
             }
         }) as ColumnT[]
-    }, [columns, selectIds, pinnedIds])
+    }, [columns, selectIds, pinnedIds, columnable])
 
     return (
         <StatefulContainer
@@ -312,21 +320,23 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 </div>
                             )}
 
-                            <div
-                                className={css({
-                                    alignItems: 'center',
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    paddingTop: theme.sizing.scale500,
-                                })}
-                            >
-                                <ConfigManageColumns
-                                    columns={props.columns}
-                                    onColumnSave={onColumnSave}
-                                    config={config}
-                                    // onSaveAs={onColumnSaveAs}
-                                />
-                            </div>
+                            {columnable && (
+                                <div
+                                    className={css({
+                                        alignItems: 'center',
+                                        display: 'flex',
+                                        flexWrap: 'wrap',
+                                        paddingTop: theme.sizing.scale500,
+                                    })}
+                                >
+                                    <ConfigManageColumns
+                                        columns={props.columns}
+                                        onColumnSave={onColumnSave}
+                                        config={config}
+                                        // onSaveAs={onColumnSaveAs}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 

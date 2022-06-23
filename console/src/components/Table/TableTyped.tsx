@@ -18,19 +18,24 @@ import {
     Types,
 } from '@/components/data-table'
 import _ from 'lodash'
-import useResizeObserver from '@/hooks/window/useResizeObserver'
+// import useResizeObserver from '@/hooks/window/useResizeObserver'
 import CategoricalTagsColumn from '../data-table/column-categorical-tags'
 import { useCallback } from 'react'
 import { useTableConfig } from '@/hooks/useTableConfig'
+import { areEqual } from 'react-window'
 
 export interface ITableProps extends BaseTableProps {
     batchActions?: Types.BatchActionT[]
     rowActions?: Types.RowActionT[]
     paginationProps?: IPaginationProps
     onColumnSave?: (props: any) => void
+    filterable?: boolean
+    searchable?: boolean
+    columnable?: boolean
+    id?: string
 }
 
-export default function TableTyped({
+export function TableTyped({
     isLoading,
     columns = [],
     data = [],
@@ -39,30 +44,37 @@ export default function TableTyped({
     batchActions = [],
     rowActions = [],
     onColumnSave,
+    searchable = false,
+    filterable = false,
+    columnable = false,
+    id,
 }: ITableProps) {
     const [t] = useTranslation()
     const [page, setPage] = usePage()
     const [key, setKey] = useState(0)
     const wrapperRef = useRef<HTMLDivElement>(null)
-    const [width, setWidth] = useState(wrapperRef?.current?.offsetWidth)
+    // const [width, setWidth] = useState(wrapperRef?.current?.offsetWidth)
 
-    useResizeObserver((entries) => {
-        if (entries[0].contentRect?.width !== width) {
-            setWidth(entries[0].contentRect?.width)
-            setKey(key + 1)
-        }
-    }, wrapperRef)
+    console.log('【TableTyped】')
 
-    const renderCell = (props: any) => {
-        return (
-            <StatefulTooltip accessibilityType='tooltip' content={props?.value}>
-                <span>{props?.value}</span>
-            </StatefulTooltip>
-        )
-    }
+    // useResizeObserver((entries) => {
+    //     if (entries[0].contentRect?.width !== width) {
+    //         setWidth(entries[0].contentRect?.width)
+    //         setKey(key + 1)
+    //     }
+    // }, wrapperRef)
 
     let $columns = columns.map((raw: any, index) => {
         let column = raw
+
+        if (typeof raw !== 'string') {
+            return {
+                ...column,
+                fillWidth: false,
+                // maxWidth: 100,
+            }
+        }
+
         // @ts-ignore
         let item = data?.[0]?.[index]
         if (typeof raw === 'string') {
@@ -134,14 +146,14 @@ export default function TableTyped({
     const ROW_HEIGHT = 44
 
     // @ts-ignore
-    const $batchActions: BatchActionT[] = [
-        // {
-        //     label: 'Check',
-        //     onClick: () => {},
-        // },
-    ]
+    // const $batchActions: BatchActionT[] = [
+    //     {
+    //         label: 'Compare',
+    //         onClick: () => {},
+    //     },
+    // ]
 
-    const { config, setConfig } = useTableConfig(['evaluation'], {
+    const { config, setConfig } = useTableConfig([id], {
         selectIds: $columns.map((v) => v.key),
         sortedIds: [],
         pinnedIds: [],
@@ -166,20 +178,24 @@ export default function TableTyped({
         [onColumnSave]
     )
 
+    console.log(id, $columns, $rows, config)
+
     return (
         <>
             <div
-                style={{ width: '100%', minHeight: 200, height: `${120 + Math.min($rows.length, 10) * ROW_HEIGHT}px` }}
+                style={{ width: '100%', minHeight: 500, height: `${120 + Math.min($rows.length, 10) * ROW_HEIGHT}px` }}
                 ref={wrapperRef}
                 key={key}
             >
                 <StatefulDataTable
                     resizableColumnWidths
-                    searchable
+                    searchable={searchable}
+                    filterable={filterable}
+                    columnable={columnable}
                     // @ts-ignore
                     onColumnSave={$onColumnSave}
                     isLoading={!!isLoading}
-                    batchActions={$batchActions}
+                    batchActions={batchActions}
                     rowActions={rowActions}
                     // @ts-ignore
                     columns={$columns}
@@ -231,14 +247,15 @@ export default function TableTyped({
                     emptyMessage={() => (
                         <div
                             style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: 0,
+                                right: 0,
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 8,
-                                height: '100%',
-                                paddingTop: '20px',
-                                // height: 100,
                             }}
                         >
                             <FiInbox size={30} />
@@ -286,3 +303,5 @@ export default function TableTyped({
         </>
     )
 }
+
+export default React.memo(TableTyped, areEqual)

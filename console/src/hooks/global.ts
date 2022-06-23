@@ -35,6 +35,7 @@ const initialState = {
     jobLoading: false,
     task: undefined as ITaskDetailSchema | undefined,
     taskLoading: false,
+    drawerExpanded: false,
 }
 
 const { useGlobalState } = createGlobalState(initialState)

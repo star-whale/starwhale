@@ -5,7 +5,7 @@ This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 */
 
-import React, { useMemo, useCallback, useRef } from 'react'
+import React, { useMemo, useCallback, useRef, useEffect } from 'react'
 import { SHAPE, SIZE, KIND } from 'baseui/button'
 import { Search, Icon } from 'baseui/icon'
 import { useStyletron } from 'baseui'
@@ -18,6 +18,8 @@ import Input from '@/components/Input'
 import useSelection from '@/hooks/useSelection'
 import { AiOutlinePushpin } from 'react-icons/ai'
 import { RiDeleteBin6Line } from 'react-icons/ri'
+import { useDrawer } from '@/hooks/useDrawer'
+
 import { DnDContainer } from '../DnD/DnDContainer'
 import { matchesQuery } from './text-search'
 import type { ColumnT, ConfigT } from './types'
@@ -33,14 +35,23 @@ type T = string
 function ConfigManageColumns(props: PropsT) {
     const [css, theme] = useStyletron()
     // const locale = React.useContext(LocaleContext)
-    const [isOpen, setIsOpen] = React.useState(true)
+    const [isOpen, setIsOpen] = React.useState(false)
     const [query, setQuery] = React.useState('')
+    const { expandedWidth, expanded, setExpanded } = useDrawer()
 
     // const handleClose = React.useCallback(() => {
     //     setIsOpen(false)
     //     setHighlightIndex(-1)
     //     setQuery('')
     // }, [])
+
+    useEffect(() => {
+        if (isOpen && !expanded) {
+            setExpanded(true)
+        } else if (!isOpen && expanded) {
+            setExpanded(false)
+        }
+    }, [isOpen, expanded, setExpanded, expandedWidth])
 
     // const filterableColumns = React.useMemo(() => {
     //     return props.columns.filter((column) => {
@@ -182,7 +193,7 @@ function ConfigManageColumns(props: PropsT) {
                     size='520px'
                     isOpen={isOpen}
                     autoFocus
-                    showBackdrop={false}
+                    // showBackdrop={false}
                     onClose={() => setIsOpen(false)}
                     mountNode={document.body || ref.current}
                     overrides={{
