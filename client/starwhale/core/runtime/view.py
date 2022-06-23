@@ -140,12 +140,11 @@ class RuntimeTermView(BaseTermView):
         console.print(":clap: copy done.")
 
     @BaseTermView._header
-    def tag(self, tags: str, remove: bool = False, quiet: bool = False) -> None:
+    def tag(self, tags: t.List[str], remove: bool = False, quiet: bool = False) -> None:
         # TODO: refactor model/runtime/dataset tag view-model
-        _tags = tags.split(",")
         if remove:
             console.print(f":golfer: remove tags [red]{tags}[/] @ {self.uri}...")
-            self.runtime.remove_tags(_tags, quiet)
+            self.runtime.remove_tags(tags, quiet)
         else:
             console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
-            self.runtime.add_tags(_tags, quiet)
+            self.runtime.add_tags(tags, quiet)

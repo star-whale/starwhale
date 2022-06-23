@@ -1,3 +1,5 @@
+import typing as t
+
 import click
 
 from starwhale.consts import (
@@ -23,18 +25,17 @@ def runtime_cmd() -> None:
     help="[ONLY Standalone]Create a python runtime, which help user create a easy-to-use and unambiguous environment with venv or conda",
 )
 @click.argument("workdir")
-@click.option("-n", "--name", required=True, help="runtime name")
+@click.option("-n", "--name", required=True, help="Runtime name")
 @click.option(
     "-m",
     "--mode",
     type=click.Choice([PythonRunEnv.CONDA, PythonRunEnv.VENV]),
     default=PythonRunEnv.VENV,
-    help="runtime mode",
+    help="Runtime mode",
 )
 @click.option("--python", default=DEFAULT_PYTHON_VERSION, help="Python Version")
-@click.option("-f", "--force", is_flag=True, help="force create runtime")
+@click.option("-f", "--force", is_flag=True, help="Force to create runtime")
 def _create(workdir: str, name: str, mode: str, python: str, force: bool) -> None:
-    # TODO: add runtime argument
     RuntimeTermView.create(
         workdir=workdir,
         name=name,
@@ -54,12 +55,12 @@ def _create(workdir: str, name: str, mode: str, python: str, force: bool) -> Non
     "-f",
     "--runtime-yaml",
     default=DefaultYAMLName.RUNTIME,
-    help="runtime yaml filename, default use ${workdir}/runtime.yaml file",
+    help="Runtime yaml filename, default use ${workdir}/runtime.yaml file",
 )
 @click.option(
-    "--gen-all-bundles", is_flag=True, help="gen conda or venv files into runtime"
+    "--gen-all-bundles", is_flag=True, help="Generate conda or venv files into runtime"
 )
-@click.option("--include-editable", is_flag=True, help="include editable package")
+@click.option("--include-editable", is_flag=True, help="Include editable packages")
 def _build(
     workdir: str,
     project: str,
@@ -76,18 +77,30 @@ def _build(
     )
 
 
-@runtime_cmd.command("remove", help="Remove runtime")
+@runtime_cmd.command("remove")
 @click.argument("runtime")
-@click.option("-f", "--force", is_flag=True, help="force remove runtime")
+@click.option("-f", "--force", is_flag=True, help="Force to remove runtime")
 def _remove(runtime: str, force: bool) -> None:
+    """
+    Remove runtime
+
+    You can run `swcli runtime recover` to recover the removed runtimes.
+
+    RUNTIME: argument use the `Runtime URI` format, so you can remove the whole runtime or a specified-version runtime.
+    """
     click.confirm("continue to remove?", abort=True)
     RuntimeTermView(runtime).remove(force)
 
 
-@runtime_cmd.command("recover", help="Recover runtime")
+@runtime_cmd.command("recover")
 @click.argument("runtime")
-@click.option("-f", "--force", is_flag=True, help="force recover runtime")
+@click.option("-f", "--force", is_flag=True, help="Force to recover runtime")
 def _recover(runtime: str, force: bool) -> None:
+    """
+    Recover runtime
+
+    RUNTIME: argument use the `Runtime URI` format, so you can recover the whole runtime or a specified-version runtime.
+    """
     RuntimeTermView(runtime).recover(force)
 
 
@@ -156,7 +169,7 @@ def _copy(src: str, dest: str, force: bool) -> None:
 
 @runtime_cmd.command("tag", help="Runtime Tag Management, add or remove")
 @click.argument("runtime")
-@click.argument("tags")
+@click.argument("tags", nargs=-1)
 @click.option("-r", "--remove", is_flag=True, help="remove tags")
 @click.option(
     "-q",
@@ -164,7 +177,7 @@ def _copy(src: str, dest: str, force: bool) -> None:
     is_flag=True,
     help="ignore tag name errors like name duplication, name absence",
 )
-def _tag(runtime: str, tags: str, remove: bool, quiet: bool) -> None:
+def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
     RuntimeTermView(runtime).tag(tags, remove, quiet)
 
 
