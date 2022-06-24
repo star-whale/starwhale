@@ -47,10 +47,20 @@ export default function EvaluationListCard() {
 
     const columns = useMemo(
         () => [
-            StringColumn({
+            CustomColumn({
                 key: 'evaluationId',
                 title: t('Evaluation ID'),
-                mapDataToValue: (item: any) => item.uuid,
+                mapDataToValue: (item: any) => item,
+                // @ts-ignore
+                renderCell: (props: any) => {
+                    const item = props.value
+
+                    return (
+                        <Link key={item.id} to={`/projects/${projectId}/evaluations/${item.id}/results`}>
+                            {`${item.modelName}-${item.id}`}
+                        </Link>
+                    )
+                },
             }),
             StringColumn({
                 key: 'model',
@@ -61,6 +71,11 @@ export default function EvaluationListCard() {
                 key: 'version',
                 title: t('Version'),
                 mapDataToValue: (data: any) => data.modelVersion,
+            }),
+            CategoricalColumn({
+                key: 'status',
+                title: t('Status'),
+                mapDataToValue: (data: any) => data.jobStatus,
             }),
             CustomColumn({
                 key: 'owner',
@@ -73,75 +88,70 @@ export default function EvaluationListCard() {
                 mapDataToValue: (item: any) => item,
             }),
             StringColumn({
-                key: 'createtime',
-                title: t('Created time'),
-                mapDataToValue: (data: any) => data.createdTime && formatTimestampDateTime(data.createdTime),
-            }),
-            StringColumn({
                 key: 'runtime',
                 title: t('Run time'),
                 mapDataToValue: (data: any) => (typeof data.duration === 'string' ? '-' : durationToStr(data.duration)),
+            }),
+            StringColumn({
+                key: 'createtime',
+                title: t('Created time'),
+                mapDataToValue: (data: any) => data.createdTime && formatTimestampDateTime(data.createdTime),
             }),
             StringColumn({
                 key: 'endtime',
                 title: t('End time'),
                 mapDataToValue: (data: any) => (data.stopTime > 0 ? formatTimestampDateTime(data.stopTime) : '-'),
             }),
-            CategoricalColumn({
-                key: 'status',
-                title: t('Status'),
-                mapDataToValue: (data: any) => data.jobStatus,
-            }),
-            CustomColumn({
-                key: 'action',
-                title: t('Action'),
-                // @ts-ignore
-                renderCell: (props: any) => {
-                    const data = props.value ?? {}
-                    const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
-                        [JobStatusType.CREATED]: (
-                            <>
-                                <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
-                                    {t('Cancel')}
-                                </StyledLink>
-                                &nbsp;&nbsp;
-                                <StyledLink onClick={() => handleAction(data.id, JobActionType.PAUSE)}>
-                                    {t('Pause')}
-                                </StyledLink>
-                            </>
-                        ),
-                        [JobStatusType.RUNNING]: (
-                            <>
-                                <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
-                                    {t('Cancel')}
-                                </StyledLink>
-                                &nbsp;&nbsp;
-                                <StyledLink onClick={() => handleAction(data.id, JobActionType.PAUSE)}>
-                                    {t('Pause')}
-                                </StyledLink>
-                            </>
-                        ),
-                        [JobStatusType.PAUSED]: (
-                            <>
-                                <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
-                                    {t('Cancel')}
-                                </StyledLink>
-                                &nbsp;&nbsp;
-                                <StyledLink onClick={() => handleAction(data.id, JobActionType.RESUME)}>
-                                    {t('Resume')}
-                                </StyledLink>
-                            </>
-                        ),
-                        [JobStatusType.SUCCESS]: (
-                            <Link to={`/projects/${projectId}/evaluations/${data.id}/results`}>
-                                {t('View Results')}
-                            </Link>
-                        ),
-                    }
-                    return actions[data.jobStatus as JobStatusType] ?? ''
-                },
-                mapDataToValue: (item: any) => item,
-            }),
+            // CustomColumn({
+            //     key: 'action',
+            //     title: t('Action'),
+            //     // @ts-ignore
+            //     renderCell: (props: any) => {
+            //         const data = props.value ?? {}
+            //         const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
+            //             [JobStatusType.CREATED]: (
+            //                 <>
+            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
+            //                         {t('Cancel')}
+            //                     </StyledLink>
+            //                     &nbsp;&nbsp;
+            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.PAUSE)}>
+            //                         {t('Pause')}
+            //                     </StyledLink>
+            //                 </>
+            //             ),
+            //             [JobStatusType.RUNNING]: (
+            //                 <>
+            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
+            //                         {t('Cancel')}
+            //                     </StyledLink>
+            //                     &nbsp;&nbsp;
+            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.PAUSE)}>
+            //                         {t('Pause')}
+            //                     </StyledLink>
+            //                 </>
+            //             ),
+            //             [JobStatusType.PAUSED]: (
+            //                 <>
+            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
+            //                         {t('Cancel')}
+            //                     </StyledLink>
+            //                     &nbsp;&nbsp;
+            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.RESUME)}>
+            //                         {t('Resume')}
+            //                     </StyledLink>
+            //                 </>
+            //             ),
+            //             [JobStatusType.SUCCESS]: (
+            //                 <Link to={`/projects/${projectId}/evaluations/${data.id}/results`}>
+            //                     {t('View Results')}
+            //                 </Link>
+            //             ),
+            //         }
+            //         return actions[data.jobStatus as JobStatusType] ?? ''
+            //     },
+            //     mapDataToValue: (item: any) => item,
+            // }),
         ],
         [handleAction, projectId, t]
     )
