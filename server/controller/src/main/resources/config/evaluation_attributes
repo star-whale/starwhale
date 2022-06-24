@@ -1,21 +1,27 @@
-job_uuid,string
-status,string
-duration,int
-create_time,string
-end_time,string
-device,string
-device_amount,int
-model,string
+id,string
+uuid,string
+projectId,string
+projectName,string
+modelName,string
+modelVersion,string
 datasets,string
 runtime,string
-accuracy,float
-macro_avg_precision,float
-macro_avg_recall,float
-macro_avg_f1score,float
-macro_avg_support,int
-weighted_avg_precision,float
-weighted_avg_recall,float
-weighted_avg_f1score,float
-weighted_avg_support,int
-hamming_loss,float
-cohen_kappa_score,float
+status,string
+device,string
+deviceAmount,int
+createTime,string
+stopTime,string
+owner,string
+duration,int
+kind,string
+summary/accuracy,float
+summary/macro avg/precision,float
+summary/macro avg/recall,float
+summary/macro avg/f1-score,float
+summary/macro avg/support,int
+summary/weighted avg/precision,float
+summary/weighted avg/recall,float
+summary/weighted avg/f1-score,float
+summary/weighted avg/support,int
+summary/hamming_loss,float
+summary/cohen_kappa_score,float

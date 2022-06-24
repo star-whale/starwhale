@@ -30,47 +30,33 @@ class MARSKRCNN(PipelineHandler):
         model = self._load_model(self.device)
         files_bytes = pickle.loads(data)
         _result = []
+        cpu_device = torch.device("cpu")
         for file_bytes in files_bytes:
             image = Image.open(io.BytesIO(file_bytes.content_bytes))
             _image = F.to_tensor(image)
             outputs = model([_image.to(self.device)])
-            cpu_device = torch.device("cpu")
+            output = outputs[0]
             # [{'boxes':tensor[[],[]]},'labels':tensor[[],[]],'masks':tensor[[[]]]}]
-            outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-            for t in outputs:
-                t['height'] = _image.shape[-2]
-                t['width'] = _image.shape[-1]
-            _result.extend(outputs)
+            output = {k: v.to(cpu_device) for k, v in output.items()}
+            output['height'] = _image.shape[-2]
+            output['width'] = _image.shape[-1]
+            _result.append(output)
         return _result
 
     def handle_label(self, label, batch_size, **kw):
         files_bytes = pickle.loads(label)
         _result = []
-        for file_bytes in files_bytes:
+        for idx, file_bytes in enumerate(files_bytes):
             image = Image.open(io.BytesIO(file_bytes.content_bytes))
-            target = penn_fudan_ped_ds.mask_to_coco_target(image, kw['index'])
-            _result.append(self.tensor_dict_to_list_dict(target))
+            target = penn_fudan_ped_ds.mask_to_coco_target(image, kw['index'] * batch_size + idx)
+            _result.append(target)
         return _result
-
-    def list_dict_to_tensor_dict(self, list_dict, label):
-        for k in list_dict.keys():
-            _value = list_dict.get(k)
-            if isinstance(_value, list):
-                list_dict[k] = torch.tensor(_value, dtype=_DTYPE_DICT_LABEL[k] if label else _DTYPE_DICT_OUTPUT[k])
-        return list_dict
-
-
-    def tensor_dict_to_list_dict(self,tensor_dict):
-        for k in tensor_dict.keys():
-            _value = tensor_dict.get(k)
-            if isinstance(_value, torch.Tensor):
-                tensor_dict[k] = _value.tolist()
-        return tensor_dict
 
     def cmp(self, _data_loader):
         _result, _label = [], []
         for _data in _data_loader:
-            _label.extend([self.list_dict_to_tensor_dict(l, True) for l in _data[self._label_field]])
+            # _label.extend([self.list_dict_to_tensor_dict(l, True) for l in _data[self._label_field]])
+            _label.extend([l for l in _data[self._label_field]])
             (result) = _data[self._ppl_data_field]
             _result.extend(result)
         ds = zip(_result, _label)
@@ -102,23 +88,3 @@ class MARSKRCNN(PipelineHandler):
         net.eval()
         print("mask rcnn model loaded, start to inference...")
         return net
-
-
-def load_test_env(fuse=True):
-    _p = lambda p: str((_ROOT_DIR / "../test" / p).resolve())
-
-    os.environ["SW_TASK_STATUS_DIR"] = "status/cmp"
-    os.environ["SW_TASK_LOG_DIR"] = "log/cmp"
-    os.environ["SW_TASK_RESULT_DIR"] = "result/cmp"
-
-    # fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
-    os.environ["SW_TASK_INPUT_CONFIG"] = "../ppl_output.json"
-
-def load_test_env_ppl(fuse=True):
-
-    os.environ["SW_TASK_STATUS_DIR"] = "status"
-    os.environ["SW_TASK_LOG_DIR"] = "log"
-    os.environ["SW_TASK_RESULT_DIR"] = "result"
-
-    # fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
-    os.environ["SW_TASK_INPUT_CONFIG"] = "/home/renyanda/.cache/starwhale/dataset/penn_fudan_ped/me2danlehfswknrrgfstcnlgmz4gs4q/local_fuse.json"

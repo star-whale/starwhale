@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.api.protocol.evaluation;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.Builder;
@@ -28,23 +29,48 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class SummaryVO {
 
-    private String jobUuid;
+    @JsonProperty("id")
+    private String id;
 
+    @JsonProperty("uuid")
+    private String uuid;
+
+    @JsonProperty("projectId")
     private String projectId;
 
+    @JsonProperty("projectName")
     private String projectName;
 
-    private String model;
+    @JsonProperty("modelName")
+    private String modelName;
 
+    @JsonProperty("modelVersion")
+    private String modelVersion;
+
+    @JsonProperty("datasets")
     private String datasets;
 
+    @JsonProperty("runtime")
     private String runtime;
 
-    private Long duration;
-
+    @JsonProperty("device")
     private String device;
 
+    @JsonProperty("deviceAmount")
     private Integer deviceAmount;
 
+    @JsonProperty("createdTime")
+    private Long createdTime;
+
+    @JsonProperty("stopTime")
+    private Long stopTime;
+
+    @JsonProperty("owner")
+    private String owner;
+
+    @JsonProperty("duration")
+    public Long duration;
+
+    @JsonProperty("attributes")
     private List<AttributeValueVO> attributes;
 }

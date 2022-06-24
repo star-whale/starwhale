@@ -59,6 +59,7 @@ $ source ~/code/starwhale/example/speech_command/venv/bin/activate
 > The training code in this repo is sourced from https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html. However, some code is modified so that we could better understand how StarWhale works. 
 ```shell
 (audio_pytorch) $ mkdir models
+(audio_pytorch) $ mkdir data
 (audio_pytorch) $ cd code
 (audio_pytorch) $ python train.py
 ```

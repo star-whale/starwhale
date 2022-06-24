@@ -82,6 +82,9 @@ public class DAGQuerier {
     }
 
     private Graph buildGraphFromCache(Job job) {
+        if(job.getStatus() == JobStatus.CREATED){
+            throw new SWValidationException(ValidSubject.JOB).tip("Job is still creating");
+        }
         Graph graph = new Graph();
         AtomicLong idx = new AtomicLong(0);
         JobNodeContent initialJobNodeContent = new JobNodeContent(job);
