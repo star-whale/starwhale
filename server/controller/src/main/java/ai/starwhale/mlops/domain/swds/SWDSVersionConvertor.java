@@ -42,6 +42,9 @@ public class SWDSVersionConvertor implements Convertor<SWDatasetVersionEntity, D
     @Override
     public DatasetVersionVO convert(SWDatasetVersionEntity entity)
         throws ConvertException {
+        if(entity == null) {
+            return null;
+        }
         return DatasetVersionVO.builder()
             .id(idConvertor.convert(entity.getId()))
             .name(entity.getVersionName())
