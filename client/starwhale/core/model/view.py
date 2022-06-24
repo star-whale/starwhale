@@ -106,11 +106,10 @@ class ModelTermView(BaseTermView):
         console.print(":clap: copy done.")
 
     @BaseTermView._header
-    def tag(self, tags: str, remove: bool = False, quiet: bool = False) -> None:
-        _tags = tags.split(",")
+    def tag(self, tags: t.List[str], remove: bool = False, quiet: bool = False) -> None:
         if remove:
             console.print(f":golfer: remove tags [red]{tags}[/] @ {self.uri}...")
-            self.model.remove_tags(_tags, quiet)
+            self.model.remove_tags(tags, quiet)
         else:
             console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
-            self.model.add_tags(_tags, quiet)
+            self.model.add_tags(tags, quiet)
