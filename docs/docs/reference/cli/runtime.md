@@ -10,12 +10,14 @@ swcli runtime [OPTIONS] COMMAND [ARGS]...
 
 ## Summary
 
-- Commands for runtime lifecycle management
+- Commands for runtime lifecycle management.
 - For standalone instance, `runtime` command use local disk to create, build and store Starwhale Runtime.
 - For cloud instance, `runtime` command manage the remote cloud datasets with HTTP API.
 - `Starwhale Runtime` uses conda or virutalenv as the python environment fundamental. If you use conda, please install conda at first.
 - **Runtime URI** in format: `[<Project URI>/runtime]<runtime name>[/version/<version id>]`.
-- All sub-commands:
+
+## All Sub-Commands
+
   |Command|Standalone|Cloud|
   |-------|----------|-----|
   |create|✅|❌|
@@ -121,13 +123,13 @@ swcli runtime activate [OPTIONS] WORKDIR
 swcli runtime extract [OPTIONS] RUNTIME
 ```
 
-- This command extracts the bundle runtime to target dir. When you copy a runtime from remote cloud instance to local standalone, you can extract it and then do some operations, such as activate, restore.
-- `RUNTIME` argument uses the `RUNTIME URI` format which must include `/version/{version id}` part.
+- This command extracts the bundled runtime to target dir. When you copy a runtime from remote cloud instance to local standalone, you can extract it and then do some operations, such as activate, restore.
+- `RUNTIME` argument uses the `Runtime URI` format which must include `/version/{version id}` part.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
     |------|--------|-------|-----------|-----|-----------|
-    |`--force`|`-f`|❌|Boolean|False|Force to remove runtime|
+    |`--force`|`-f`|❌|Boolean|False|Force to extract runtime|
     |`--target-dir`||❌|String|Starwhale default runtime workdir|Extract target dir|
 
 - Example:
@@ -221,7 +223,7 @@ swcli runtime tag [OPTIONS] RUNTIME TAGS
 ```
 
 - This command adds or removes tags on the specified version of a runtime.
-- `RUNTIME` argument uses the `RUNTIME URI` format which must include `/version/{version id}` part.
+- `RUNTIME` argument uses the `Runtime URI` format which must include `/version/{version id}` part.
 - You can write one or more `TAG` arguments.
 - Options:
 
