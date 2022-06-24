@@ -59,16 +59,6 @@ Resources with different owners can have the same name. For example, a model in 
 
 Garbage collected resources' names can be reused. For example, after the model with the name "Alice" in project "Apple" is removed and garbage collected, the project can have a new model with the same name "Alice".
 
-## Instance management
-
-### Select the default instance
-
-This command sets the default Starwhale instance used by other commands.
-
-```console
-swcli instance select <instance uri>
-```
-
 ## Project management
 
 ### Select the default project
@@ -77,14 +67,6 @@ This command sets both the default instance and project used by other commands. 
 
 ```console
 swcli project select <project uri>
-```
-
-### Create a project
-
-This command creates a new project.
-
-```console
-swcli project create <project uri>
 ```
 
 ### List projects

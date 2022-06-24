@@ -13,6 +13,7 @@ swcli [GLOBAL OPTIONS] dataset [OPTIONS] COMMAND [ARGS]...
 - Commands for dataset lifecycle management.
 - For standalone instance, `dataset` command use local disk to build and store the Starwhale Dataset.
 - For cloud instance, `dataset` command manage the remote cloud datasets with HTTP API.
+- Dataset is in one project.
 - **Dataset URI** in format: `[<Project URI>/dataset]<dataset name>[/version/<version id>]`.
 
 ## All Sub-Commands

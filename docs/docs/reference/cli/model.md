@@ -13,6 +13,7 @@ swcli model [OPTIONS] COMMAND [ARGS]...
 - Commands for model lifecycle management.
 - For standalone instance, `model` command use local disk to create, build and store **Starwhale Model**.
 - For cloud instance, `model` command manage the remote cloud models with HTTP API.
+- Model is in one project.
 - **Model URI** in format: `[<Project URI>/model]<model name>[/version/<version id>]`.
 
 ## All Sub-Commands
