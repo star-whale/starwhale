@@ -62,7 +62,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
-//@Ignore
+@Ignore
 @RunWith(SpringRunner.class)
 @SpringBootTest(
         classes = StarWhaleAgentTestApplication.class)
@@ -73,7 +73,7 @@ import static org.mockito.ArgumentMatchers.any;
                 "sw.agent.node.sourcePool.init.enabled=false",
                 // when test,please set these properties with debug configuration
                 //"sw.storage.s3-config.endpoint=http://${ip}:9000",
-                "sw.agent.basePath=/home/starwhale"
+                "sw.agent.basePath=/var/starwhale"
         },
         locations = "classpath:application-integrationtest.yaml"
 )
