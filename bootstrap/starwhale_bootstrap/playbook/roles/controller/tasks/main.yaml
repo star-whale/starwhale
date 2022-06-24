@@ -8,6 +8,8 @@
     restart_policy: always
     ports:
       - "{{ controller_port }}:8082"
+    volumes:
+      - "{{ controller_data_dir }}:/opt/starwhale.java"
     env:
       SW_TASK_SPLIT_SIZE: "{{ controller_task_split_num }}"
       JAR: "controller"
