@@ -19,7 +19,12 @@ from .mngt import add_mngt_command
 def create_sw_cli() -> click.core.Group:
     @click.group()
     @click.version_option(version=__version__)
-    @click.option("-v", "--verbose", count=True, help="verbose for log")
+    @click.option(
+        "-v",
+        "--verbose",
+        count=True,
+        help="Show verbose log, support multi counts for v args. More v args, more logs.",
+    )
     def cli(verbose: bool) -> None:
         load_swcli_config()
         init_logger(verbose)

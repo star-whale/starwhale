@@ -3,7 +3,7 @@ import click
 from .view import ProjectTermView, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
-@click.group("project", help="Starwhale project management")
+@click.group("project", help="Project management, for standalone and cloud instances")
 def project_cmd() -> None:
     pass
 

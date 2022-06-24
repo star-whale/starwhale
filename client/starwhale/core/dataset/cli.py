@@ -1,3 +1,5 @@
+import typing as t
+
 import click
 
 from starwhale.consts import (
@@ -10,7 +12,7 @@ from starwhale.consts import (
 from .view import DatasetTermView
 
 
-@click.group("dataset", help="StarWhale Dataset Management")
+@click.group("dataset", help="Dataset management, build/info/list/copy/tag...")
 def dataset_cmd() -> None:
     pass
 
@@ -22,7 +24,7 @@ def dataset_cmd() -> None:
     "-f",
     "--dataset-yaml",
     default=DefaultYAMLName.DATASET,
-    help="dataset yaml filename, default use ${workdir}/dataset.yaml file",
+    help="Dataset yaml filename, default use ${WORKDIR}/dataset.yaml file",
 )
 def _build(workdir: str, project: str, dataset_yaml: str) -> None:
     # TODO: add cmd options for dataset build, another choice for dataset.yaml
@@ -34,13 +36,13 @@ def _build(workdir: str, project: str, dataset_yaml: str) -> None:
 @dataset_cmd.command("list", help="List dataset")
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("--fullname", is_flag=True, help="Show fullname of dataset version")
-@click.option("--show-removed", is_flag=True, help="Show removed dataset")
+@click.option("--show-removed", is_flag=True, help="Show removed datasets")
 @click.option("--fullname", is_flag=True, help="show version fullname")
 @click.option(
-    "--page", type=int, default=DEFAULT_PAGE_IDX, help="page number for dataset list"
+    "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for dataset list"
 )
 @click.option(
-    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for dataset list"
+    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for dataset list"
 )
 def _list(
     project: str, fullname: bool, show_removed: bool, page: int, size: int
@@ -50,28 +52,41 @@ def _list(
 
 @dataset_cmd.command("info", help="Show dataset details")
 @click.argument("dataset")
-@click.option("--fullname", is_flag=True, help="show version fullname")
+@click.option("--fullname", is_flag=True, help="Show version fullname")
 def _info(dataset: str, fullname: bool) -> None:
     DatasetTermView(dataset).info(fullname)
 
 
-@dataset_cmd.command("remove", help="Remove dataset")
+@dataset_cmd.command("remove")
 @click.argument("dataset")
-@click.option("-f", "--force", is_flag=True, help="force to recover dataset")
+@click.option("-f", "--force", is_flag=True, help="Force to remove dataset")
 def _remove(dataset: str, force: bool) -> None:
+    """
+    Remove dataset
+
+    You can run `swcli dataset recover` to recover the removed datasets.
+
+    DATASET: argument use the `Dataset URI` format, so you can remove the whole dataset or a specified-version dataset.
+    """
+    click.confirm("continue to remove?", abort=True)
     DatasetTermView(dataset).remove(force)
 
 
-@dataset_cmd.command("recover", help="Recover dataset")
+@dataset_cmd.command("recover")
 @click.argument("dataset")
-@click.option("-f", "--force", is_flag=True, help="force to recover dataset")
+@click.option("-f", "--force", is_flag=True, help="Force to recover dataset")
 def _recover(dataset: str, force: bool) -> None:
+    """
+    Recover dataset
+
+    DATASET: argument use the `Dataset URI` format, so you can recover the whole dataset or a specified-version dataset.
+    """
     DatasetTermView(dataset).recover(force)
 
 
 @dataset_cmd.command("history", help="Show dataset history")
 @click.argument("dataset")
-@click.option("--fullname", is_flag=True, help="show version fullname")
+@click.option("--fullname", is_flag=True, help="Show version fullname")
 def _history(dataset: str, fullname: bool = False) -> None:
     DatasetTermView(dataset).history(fullname)
 
@@ -97,20 +112,20 @@ def _render_fuse(target: str, force: bool) -> None:
 @dataset_cmd.command("copy", help="Copy dataset, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
-@click.option("-f", "--force", is_flag=True, help="force copy dataset")
+@click.option("-f", "--force", is_flag=True, help="Force copy dataset")
 def _copy(src: str, dest: str, force: bool) -> None:
     DatasetTermView.copy(src, dest, force)
 
 
-@dataset_cmd.command("tag", help="Dataset Tag Management, add or remove")
+@dataset_cmd.command("tag", help="Dataset tag management, add or remove")
 @click.argument("dataset")
-@click.argument("tags")
-@click.option("-r", "--remove", is_flag=True, help="remove tags")
+@click.argument("tags", nargs=-1)
+@click.option("-r", "--remove", is_flag=True, help="Remove tags")
 @click.option(
     "-q",
     "--quiet",
     is_flag=True,
-    help="ignore tag name errors like name duplication, name absence",
+    help="Ignore tag name errors like name duplication, name absence",
 )
-def _tag(dataset: str, tags: str, remove: bool, quiet: bool) -> None:
+def _tag(dataset: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
     DatasetTermView(dataset).tag(tags, remove, quiet)

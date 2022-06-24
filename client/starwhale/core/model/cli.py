@@ -18,7 +18,7 @@ from starwhale.core.dataset.store import DatasetStorage
 from .view import ModelTermView
 
 
-@click.group("model", help="StarWhale Model Management")
+@click.group("model", help="Model management, build/copy/ppl/cmp/eval/extract...")
 def model_cmd() -> None:
     pass
 
@@ -38,29 +38,29 @@ def _build(workdir: str, project: str, model_yaml: str) -> None:
 
 @model_cmd.command("tag", help="Model Tag Management, add or remove")
 @click.argument("model")
-@click.argument("tags")
-@click.option("-r", "--remove", is_flag=True, help="remove tags")
+@click.argument("tags", nargs=-1)
+@click.option("-r", "--remove", is_flag=True, help="Remove tags")
 @click.option(
     "-q",
     "--quiet",
     is_flag=True,
-    help="ignore tag name errors like name duplication, name absence",
+    help="Ignore tag name errors like name duplication, name absence",
 )
-def _tag(model: str, tags: str, remove: bool, quiet: bool) -> None:
+def _tag(model: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
     ModelTermView(model).tag(tags, remove, quiet)
 
 
-@model_cmd.command("copy", help="Copy model, stanalone <--> cloud")
+@model_cmd.command("copy", help="Copy model, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
-@click.option("-f", "--force", is_flag=True, help="force copy model")
+@click.option("-f", "--force", is_flag=True, help="Force to copy model")
 def _copy(src: str, dest: str, force: bool) -> None:
     ModelTermView.copy(src, dest, force)
 
 
-@model_cmd.command("info", help="Inspect model")
+@model_cmd.command("info", help="Show model details")
 @click.argument("model")
-@click.option("--fullname", is_flag=True, help="show version fullname")
+@click.option("--fullname", is_flag=True, help="Show version fullname")
 def _info(model: str, fullname: bool) -> None:
     ModelTermView(model).info(fullname)
 
@@ -70,10 +70,10 @@ def _info(model: str, fullname: bool) -> None:
 @click.option("--fullname", is_flag=True, help="Show fullname of model version")
 @click.option("--show-removed", is_flag=True, help="Show removed model")
 @click.option(
-    "--page", type=int, default=DEFAULT_PAGE_IDX, help="page number for model list"
+    "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for model list"
 )
 @click.option(
-    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for model list"
+    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for model list"
 )
 def _list(
     project: str, fullname: bool, show_removed: bool, page: int, size: int
@@ -83,14 +83,14 @@ def _list(
 
 @model_cmd.command("history", help="Show model history")
 @click.argument("model")
-@click.option("--fullname", is_flag=True, help="show version fullname")
+@click.option("--fullname", is_flag=True, help="Show version fullname")
 def _history(model: str, fullname: bool) -> None:
     ModelTermView(model).history(fullname)
 
 
 @model_cmd.command("remove", help="Remove model")
 @click.argument("model")
-@click.option("-f", "--force", is_flag=True, help="force to remove model")
+@click.option("-f", "--force", is_flag=True, help="Force to remove model")
 def _remove(model: str, force: bool) -> None:
     click.confirm("continue to delete?", abort=True)
     ModelTermView(model).remove(force)
@@ -98,7 +98,7 @@ def _remove(model: str, force: bool) -> None:
 
 @model_cmd.command("recover", help="Recover model")
 @click.argument("model")
-@click.option("-f", "--force", is_flag=True, help="force to recover model")
+@click.option("-f", "--force", is_flag=True, help="Force to recover model")
 def _recover(model: str, force: bool) -> None:
     ModelTermView(model).recover(force)
 
@@ -107,42 +107,47 @@ def _recover(model: str, force: bool) -> None:
     "extract", help="[ONLY Standalone]Extract local model bundle tar file into workdir"
 )
 @click.argument("model")
-@click.option("-f", "--force", is_flag=True, help="force extract model bundle")
+@click.option("-f", "--force", is_flag=True, help="Force to extract model bundle")
 @click.option(
     "--target-dir",
     default="",
-    help="extract target dir.if omitted, sw will use starwhale default workdir",
+    help="Extract target dir.if omitted, swcli will use starwhale default workdir",
 )
 def _extract(model: str, force: bool, target_dir: str) -> None:
     ModelTermView(model).extract(force, target_dir)
 
 
-# TODO: combine click option to one func for _ppl and _cmp
 @model_cmd.command("ppl")
 @click.argument("target")
 @click.option(
     "-f",
     "--model-yaml",
     default=DefaultYAMLName.MODEL,
-    help="mode yaml filename, default use ${workdir}/model.yaml file",
+    help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
 @click.option(
     "--status-dir",
     envvar=SWEnv.status_dir,
-    help=f"ppl status dir, env is {SWEnv.status_dir}",
+    default="/tmp/starwhale/ppl/status",
+    help=f"PPL status dir, env is {SWEnv.status_dir}",
 )
 @click.option(
-    "--log-dir", envvar=SWEnv.log_dir, help=f"ppl log dir, env is {SWEnv.log_dir}"
+    "--log-dir",
+    envvar=SWEnv.log_dir,
+    default="/tmp/starwhale/ppl/log",
+    help=f"PPL log dir, env is {SWEnv.log_dir}",
 )
 @click.option(
     "--result-dir",
     envvar=SWEnv.result_dir,
-    help=f"ppl result dir, env is {SWEnv.result_dir}",
+    default="/tmp/starwhale/ppl/result",
+    help=f"PPL result dir, env is {SWEnv.result_dir}",
 )
 @click.option(
     "--input-config",
     envvar=SWEnv.input_config,
-    help=f"ppl swds config.json path, env is {SWEnv.input_config}",
+    default="/tmp/starwhale/ppl/config/input.json",
+    help=f"Dataset input.json path or Dataset URI, which was generated by `swcli dataset render-fuse` command, env is {SWEnv.input_config}",
 )
 def _ppl(
     target: str,
@@ -155,8 +160,8 @@ def _ppl(
     """
     [ONLY Standalone]Run PPL
 
-    TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
-    INPUT_JSON: dataset uri or dataset/input.json uri
+    TARGET: model uri or model workdir path, in Starwhale agent docker environment, only support workdir path.
+    INPUT_JSON: Dataset uri or dataset/input.json path
     """
     if not os.path.exists(input_config):
         uri = URI(input_config, expected_type=URIType.DATASET)
@@ -184,25 +189,31 @@ def _ppl(
     "-f",
     "--model-yaml",
     default=DefaultYAMLName.MODEL,
-    help="mode yaml filename, default use ${workdir}/model.yaml file",
+    help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
 @click.option(
     "--status-dir",
     envvar=SWEnv.status_dir,
-    help=f"ppl status dir, env is {SWEnv.status_dir}",
+    default="/tmp/starwhale/cmp/status",
+    help=f"CMP status dir, env is {SWEnv.status_dir}",
 )
 @click.option(
-    "--log-dir", envvar=SWEnv.log_dir, help=f"ppl log dir, env is {SWEnv.log_dir}"
+    "--log-dir",
+    envvar=SWEnv.log_dir,
+    default="/tmp/starwhale/cmp/log",
+    help=f"CMP log dir, env is {SWEnv.log_dir}",
 )
 @click.option(
     "--result-dir",
     envvar=SWEnv.result_dir,
-    help=f"ppl result dir, env is {SWEnv.result_dir}",
+    default="/tmp/starwhale/cmp/result",
+    help=f"CMP result dir, env is {SWEnv.result_dir}",
 )
 @click.option(
     "--input-config",
     envvar=SWEnv.input_config,
-    help=f"ppl swds config.json path, env is {SWEnv.input_config}",
+    default="/tmp/starwhale/cmp/config/input.json",
+    help=f"CMP input.json path, env is {SWEnv.input_config}",
 )
 def _cmp(
     target: str,
@@ -213,7 +224,7 @@ def _cmp(
     input_config: str,
 ) -> None:
     """
-    [ONLY Standalone]Run CMP, compare inference output with label, then generate result json
+    [ONLY Standalone]Run CMP, compare inference output with label, then generate result jsonline file.
 
     TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
@@ -236,11 +247,11 @@ def _cmp(
     "--dataset",
     required=True,
     multiple=True,
-    help="dataset uri, one or more",
+    help="Dataset URI, one or more",
 )
-@click.option("--name", help="job name")
-@click.option("--desc", help="job description")
-@click.option("--project", default="", help="project URI")
+@click.option("--name", help="Job name")
+@click.option("--desc", help="Job description")
+@click.option("-p", "--project", default="", help="Project URI")
 def _eval(model: str, dataset: t.List[str], name: str, desc: str, project: str) -> None:
     """
     [ONLY Standalone]Create as new job for model evaluation

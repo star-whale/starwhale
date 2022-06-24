@@ -36,6 +36,7 @@ class InstanceTermView(BaseTermView):
             console.print(f":pinching_hand: skip {instance} instance login")
             return
 
+        instance = instance or self.sw_remote_addr
         server = fmt_http_server(instance)
         url = f"{server}/api/{SW_API_VERSION}/login"
         r = requests.post(
@@ -128,6 +129,7 @@ class InstanceTermView(BaseTermView):
             title="List Starwhale Instances",
             caption=f"Current Instance: [blink]{self.current_instance}",
             box=box.SIMPLE,
+            expand=True,
         )
         table.add_column("")
         table.add_column("Name")

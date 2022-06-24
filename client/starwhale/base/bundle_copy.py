@@ -87,7 +87,8 @@ class BundleCopy(CloudRequestMixed):
             method=HTTPMethod.HEAD,
             instance_uri=uri,
             params={
-                _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}"
+                _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}",
+                "project": uri.project,
             },
             ignore_status_codes=[HTTPStatus.NOT_FOUND],
         )
@@ -294,7 +295,7 @@ class BundleCopy(CloudRequestMixed):
         def _download(_target: Path, _part: str, _tid: TaskID) -> None:
             self.do_download_file(
                 # TODO: use /project/{self.typ}/pull api
-                url_path=f"/project/{self.typ}",
+                url_path=f"/project/{self.typ}/pull",
                 dest_path=_target,
                 instance_uri=self.src_uri,
                 params={

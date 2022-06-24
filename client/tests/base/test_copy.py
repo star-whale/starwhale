@@ -127,7 +127,7 @@ class TestBundleCopy(TestCase):
         )
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/dataset",
+            "http://1.1.1.1:8182/api/v1/project/dataset/pull",
             json={"signature": ["1", "2"]},
         )
         bc = BundleCopy(
