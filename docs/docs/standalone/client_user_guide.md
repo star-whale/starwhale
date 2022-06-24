@@ -59,19 +59,6 @@ Resources with different owners can have the same name. For example, a model in 
 
 Garbage collected resources' names can be reused. For example, after the model with the name "Alice" in project "Apple" is removed and garbage collected, the project can have a new model with the same name "Alice".
 
-
-## Utilities
-
-### Garbage collection
-
-This command purges removed entities in the instance. Purged entities are not recoverable.
-
-```console
-swcli gc [instance uri]
-```
-
-The garbage collection aims to hold the storage size within an acceptable range. It keeps removing the oldest removed entity until the total storage size is not greater than a predefined threshold.
-
 ## Others
 
 ### Special rules for versioned resources
