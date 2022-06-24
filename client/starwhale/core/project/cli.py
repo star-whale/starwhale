@@ -11,14 +11,12 @@ def project_cmd() -> None:
 @project_cmd.command("list", help="List projects in current Starwhale Instance")
 @click.option("-i", "--instance", default="", help="instance uri")
 @click.option(
-    "-p",
     "--page",
     type=int,
     default=DEFAULT_PAGE_IDX,
     help="page number for projects list",
 )
 @click.option(
-    "-s",
     "--size",
     type=int,
     default=DEFAULT_PAGE_SIZE,
