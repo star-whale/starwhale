@@ -43,7 +43,7 @@ class ImportClsTestCase(TestCase):
         m_import.return_value = MockPPL
         m_output.side_effect = [
             (",".join(self.inject_paths) + "\n").encode(),
-            b"3.7",
+            f"{sys.version_info.major}.{sys.version_info.minor}".encode(),
             (",".join(self.inject_paths) + "\n").encode(),
         ]
 
