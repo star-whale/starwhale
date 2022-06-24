@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import smallLogoImg from '@/assets/logo_small_en_white.svg'
@@ -24,24 +24,12 @@ export interface ILogoProps extends IComposedComponentProps {
     expanded?: boolean
 }
 
-function preloadImage(src: string) {
-    return new Promise((resolve, reject) => {
-        const img = new Image()
-        img.onload = function () {
-            resolve(img)
-        }
-        img.onerror = img.onabort = function () {
-            reject(src)
-        }
-        img.src = src
-    })
-}
-
 export default function Logo({ expanded = true, className }: ILogoProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
     const styles = useLogoStyles()
 
+    // eslint-disable-next-line no-multi-assign
     const Wrapper = currentUser ? Link : () => React.createElement('div')
 
     return (

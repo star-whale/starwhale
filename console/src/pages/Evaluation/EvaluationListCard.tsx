@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import Card from '@/components/Card'
 import { createJob, doJobAction } from '@job/services/job'
-import { usePage } from '@/hooks/usePage'
-import { ICreateJobSchema, JobActionType, JobStatusType } from '@job/schemas/job'
+import { ICreateJobSchema, JobActionType } from '@job/schemas/job'
 import JobForm from '@job/components/JobForm'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
@@ -12,7 +11,6 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table/TableTyped'
 import { Link, useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
-import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
 import IconFont from '@/components/IconFont'
 import { CustomColumn, CategoricalColumn, StringColumn } from '@/components/data-table'
@@ -23,7 +21,7 @@ export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
-    const [page] = usePage()
+    // const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
     const evaluationsInfo = useFetchJobs(projectId, { pageNum: 1, pageSize: 1000 })
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
