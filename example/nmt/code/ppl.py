@@ -33,7 +33,7 @@ class NMTPipeline(PipelineHandler):
         print(f"-----> ppl: {len(data)}, {batch_size}")
         src_sentences = data.decode().split('\n')
         print("ppl-src sentexces: %s" % len(src_sentences))
-        return evaluate_batch(self.device, self.vocab.input_lang, self.vocab.output_lang, src_sentences, self.encoder, self.decoder), None
+        return evaluate_batch(self.device, self.vocab.input_lang, self.vocab.output_lang, src_sentences, self.encoder, self.decoder)
 
     def handle_label(self, label, batch_size, **kw):
         labels = label.decode().split('\n')
@@ -44,8 +44,9 @@ class NMTPipeline(PipelineHandler):
     def cmp(self, _data_loader):
         _result, _label = [], []
         for _data in _data_loader:
-            _label.extend(_data["label"])
-            _result.extend(_data["result"])
+            _label.extend(_data[self._label_field])
+            (result) = _data[self._ppl_data_field]
+            _result.extend(result)
         
         print("cmp-result:%s" % len(_result))
         for r in _result:

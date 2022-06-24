@@ -38,11 +38,10 @@ class MARSKRCNN(PipelineHandler):
             # [{'boxes':tensor[[],[]]},'labels':tensor[[],[]],'masks':tensor[[[]]]}]
             outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
             for t in outputs:
-                self.tensor_dict_to_list_dict(t)
                 t['height'] = _image.shape[-2]
                 t['width'] = _image.shape[-1]
             _result.extend(outputs)
-        return _result, None
+        return _result
 
     def handle_label(self, label, batch_size, **kw):
         files_bytes = pickle.loads(label)
@@ -71,8 +70,9 @@ class MARSKRCNN(PipelineHandler):
     def cmp(self, _data_loader):
         _result, _label = [], []
         for _data in _data_loader:
-            _label.extend([self.list_dict_to_tensor_dict(l, True) for l in _data["label"]])
-            _result.extend([self.list_dict_to_tensor_dict(r, False) for r in _data["result"]])
+            _label.extend([self.list_dict_to_tensor_dict(l, True) for l in _data[self._label_field]])
+            (result) = _data[self._ppl_data_field]
+            _result.extend(result)
         ds = zip(_result, _label)
         coco_ds = coco_utils.convert_to_coco_api(ds)
         coco_evaluator = coco_eval.CocoEvaluator(coco_ds,  ["bbox", "segm"])

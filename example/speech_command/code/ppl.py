@@ -39,7 +39,7 @@ class M5Inference(PipelineHandler):
                 result.append(labels[label_idx])
             except Exception:
                 result.append('ERROR')
-        return result, None
+        return result
 
     def handle_label(self, label, batch_size, **kw):
         return pickle.loads(label)
@@ -54,8 +54,9 @@ class M5Inference(PipelineHandler):
     def cmp(self, _data_loader):
         _result, _label, _pr = [], [], []
         for _data in _data_loader:
-            _label.extend(_data["label"])
-            _result.extend(_data["result"])
+            _label.extend(_data[self._label_field])
+            (result) = _data[self._ppl_data_field]
+            _result.extend(result)
             # _pr.extend(_data["pr"])
         return _result, _label
 

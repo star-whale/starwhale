@@ -29,7 +29,7 @@ class TextClassificationHandler(PipelineHandler):
     def ppl(self, data, batch_size, **kw):
         _model, vocab, tokenizer = self._load_model(self.device)
         texts = data.decode().split('#@#@#@#')
-        return list(map(lambda text: predict.predict(text, _model, vocab, tokenizer, 2), texts)), None
+        return list(map(lambda text: predict.predict(text, _model, vocab, tokenizer, 2), texts))
 
     def handle_label(self, label, batch_size, **kw):
         labels = label.decode().split('#@#@#@#')
@@ -46,8 +46,9 @@ class TextClassificationHandler(PipelineHandler):
         _result, _label = [], []
         for _data in _data_loader:
             print(_data)
-            _label.extend([int(l) for l in _data["label"]])
-            _result.extend([int(r) for r in _data["result"]])
+            _label.extend([int(l) for l in _data[self._label_field]])
+            (result) = _data[self._ppl_data_field]
+            _result.extend([int(r) for r in result])
         return _label, _result
 
     def _load_model(self, device):
