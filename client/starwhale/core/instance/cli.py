@@ -25,13 +25,13 @@ def _select(instance: str) -> None:
 
 @instance_cmd.command("login")
 @click.argument("instance", default="")
-@click.option("--username", prompt="username")
+@click.option("--username", prompt="username", required=True)
 @click.password_option(confirmation_prompt=False)
-@click.option("--alias", type=str, help="starwhale instance alias name")
+@click.option("--alias", type=str, help="Starwhale instance alias name", required=True)
 def _login(instance: str, username: str, password: str, alias: str) -> None:
     """Login Starwhale Instance
 
-    * INSTANCE: instance uri, if ignore it, swcli will login current selected instance
+    * INSTANCE: Instance URI, if ignore it, swcli will login current selected instance.
     """
     InstanceTermView().login(instance, username, password, alias)
 
@@ -42,18 +42,18 @@ def _logout(instance: str) -> None:
     """
     Logout Starwhale instance
 
-    * INSTANCE: instance alias name or uri, if ignore it, swcli will logout current selected instance
+    * INSTANCE: instance alias name or uri, if ignore it, swcli will logout current selected instance.
     """
     click.confirm("Do you want to continue?", abort=True)
     InstanceTermView().logout(instance)
 
 
-@instance_cmd.command("list", help="List logined Starwhale instances")
+@instance_cmd.command("list", help="List login Starwhale instances")
 def _list() -> None:
     InstanceTermView().list()
 
 
-@instance_cmd.command("info", help="Inspect instance details")
+@instance_cmd.command("info", help="Show instance details")
 @click.argument("instance", default="")
 def _info(instance: str) -> None:
     InstanceTermView().info(instance)
