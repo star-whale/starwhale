@@ -71,7 +71,7 @@ public class ResultQuerier {
         try(InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId));
             Reader reader = new InputStreamReader(inputStream)){
             JsonFlattener jf = new JsonFlattener(reader);
-            return jf.withSeparator('_')
+            return jf.withSeparator('/')
                 .ignoreReservedCharacters()
                 .flattenAsMap();
         } catch (IOException e) {

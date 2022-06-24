@@ -26,11 +26,13 @@ import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.resulting.ResultQuerier;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import cn.hutool.core.util.NumberUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -72,7 +74,7 @@ public class ResultQuerierTest {
         Map<String, Object> result = resultQuerier.flattenResultOfJob(6L);
         Assertions.assertEquals(52, result.size());
         Assertions.assertEquals("multi_classification", result.get("kind"));
-        Assertions.assertEquals(1009, result.get("labels_9_support"));
+        Assertions.assertEquals(1009, result.get("labels/9/support"));
     }
 
     @Test
