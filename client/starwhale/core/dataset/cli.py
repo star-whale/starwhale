@@ -28,7 +28,7 @@ def dataset_cmd() -> None:
 )
 def _build(workdir: str, project: str, dataset_yaml: str) -> None:
     # TODO: add cmd options for dataset build, another choice for dataset.yaml
-    # TODO: add dryrun
+    # TODO: add dry-run
     # TODO: add compress args
     DatasetTermView.build(workdir, project, dataset_yaml)
 

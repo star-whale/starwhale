@@ -43,7 +43,7 @@ def _list(
     multiple=True,
     help="dataset uri, one or more",
 )
-@click.option("--runtime", required=True, default="", help="runtime uri")
+@click.option("--runtime", default="", help="runtime uri")
 @click.option("--name", help="job name")
 @click.option("--desc", help="job description")
 @click.option(
@@ -60,7 +60,7 @@ def _list(
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
 @click.option(
     "--phase",
-    type=click.Choice([EvalTaskType.ALL, EvalTaskType.CMP, EvalTaskType.PPL]),
+    type=click.Choice([EvalTaskType.ALL, EvalTaskType.PPL]),
     default=EvalTaskType.ALL,
     help="[ONLY Standalone]evaluation run phase",
 )
@@ -148,6 +148,7 @@ def _compare(base_job: str, job: t.List[str]) -> None:
     [ONLY Standalone]Compare the result of evaluation job
 
     BASE_JOB: job uri
+
     JOB: job uri
     """
     JobTermView(base_job).compare(job)
