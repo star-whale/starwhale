@@ -21,7 +21,7 @@ Starwhale provides two ways to install in your private cluster:
 - Minikube 1.25+
 - Helm 3.2.0+
 
-There are standard installation tutorials for [minikube]([https://](https://minikube.sigs.k8s.io/docs/start/)) and [helm](https://helm.sh/docs/intro/install/) here.
+There are standard installation tutorials for [minikube](https://minikube.sigs.k8s.io/docs/start/) and [helm](https://helm.sh/docs/intro/install/) here.
 
 ### start minikube
 ```bash
