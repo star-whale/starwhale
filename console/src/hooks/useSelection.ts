@@ -111,6 +111,16 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
                 pinedIds.add(id)
             }
             setPinedIds(new Set(pinedIds))
+            setSortedIds((prevIds) => {
+                const sortedMergePinedIds = [...Array.from(pinedIds), ...Array.from(prevIds)]
+                sortedMergePinedIds.sort((v1, v2) => {
+                    const index1 = pinedIds.has(v1) ? 1 : -1
+                    const index2 = pinedIds.has(v2) ? 1 : -1
+                    return index2 - index1
+                })
+
+                return new Set(sortedMergePinedIds)
+            })
         },
         [setPinedIds, pinedIds]
     )
