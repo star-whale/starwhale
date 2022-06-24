@@ -15,7 +15,7 @@ module.exports = {
                 {
                     "Command Line Interface": [
                         "reference/cli/main", "reference/cli/dataset", "reference/cli/model",
-                        "reference/cli/runtime", "reference/cli/project", "reference/cli/instance",
+                        "reference/cli/runtime", "reference/cli/project", "reference/cli/instance", "reference/cli/job",
                         "reference/cli/other"]
                 }
             ],
