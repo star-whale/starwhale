@@ -30,8 +30,8 @@ spec:
             - containerPort: {{ .Values.controller.containerPort }}
           volumeMounts:
             - name: controller-storage
-              mountPath: "/opt/starwhale.java"
-              subPath: run
+              mountPath: "/opt/starwhale.java/static"
+              subPath: static
           {{- if not .Values.minikube.enabled }}
           resources:
             {{- toYaml .Values.resources.controller | nindent 12}}
