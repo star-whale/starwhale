@@ -12,15 +12,15 @@ def job_cmd() -> None:
     pass
 
 
-@job_cmd.command("list", help="List all jobs in current project")
+@job_cmd.command("list", help="List all jobs in the current project")
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
 @click.option("--show-removed", is_flag=True, help="Show removed dataset")
 @click.option(
-    "--page", type=int, default=DEFAULT_PAGE_IDX, help="page number for projects list"
+    "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for job list"
 )
 @click.option(
-    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for projects list"
+    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for job list"
 )
 def _list(
     project: str,
@@ -92,7 +92,7 @@ def _create(
 
 @job_cmd.command("remove", help="Remove job")
 @click.argument("job")
-@click.option("-f", "--force", is_flag=True, help="force to remove")
+@click.option("-f", "--force", is_flag=True, help="Force to remove")
 def _remove(job: str, force: bool) -> None:
     click.confirm("continue to remove?", abort=True)
     JobTermView(job).remove(force)
@@ -100,14 +100,14 @@ def _remove(job: str, force: bool) -> None:
 
 @job_cmd.command("recover", help="Recover removed job")
 @click.argument("job")
-@click.option("-f", "--force", is_flag=True, help="force to recover")
+@click.option("-f", "--force", is_flag=True, help="Force to recover")
 def _recover(job: str, force: bool) -> None:
     JobTermView(job).recover(force)
 
 
 @job_cmd.command("pause", help="Pause job")
 @click.argument("job")
-@click.option("-f", "--force", is_flag=True, help="force to pause")
+@click.option("-f", "--force", is_flag=True, help="Force to pause")
 def _pause(job: str, force: bool) -> None:
     click.confirm("continue to pause?", abort=True)
     JobTermView(job).pause(force)
@@ -115,14 +115,14 @@ def _pause(job: str, force: bool) -> None:
 
 @job_cmd.command("resume", help="Resume job")
 @click.argument("job")
-@click.option("-f", "--force", is_flag=True, help="force to resume")
+@click.option("-f", "--force", is_flag=True, help="Force to resume")
 def _resume(job: str, force: bool) -> None:
     JobTermView(job).resume(force)
 
 
 @job_cmd.command("cancel", help="Cancel job")
 @click.argument("job")
-@click.option("-f", "--force", is_flag=True, help="force to cancel")
+@click.option("-f", "--force", is_flag=True, help="Force to cancel")
 def _cancel(job: str, force: bool) -> None:
     click.confirm("continue to cancel?", abort=True)
     JobTermView(job).cancel(force)
@@ -131,10 +131,10 @@ def _cancel(job: str, force: bool) -> None:
 @job_cmd.command("info", help="Inspect job details")
 @click.argument("job")
 @click.option(
-    "--page", type=int, default=DEFAULT_PAGE_IDX, help="page number for tasks list"
+    "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for tasks list"
 )
 @click.option(
-    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="page size for tasks list"
+    "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
 )
 def _info(job: str, page: int, size: int) -> None:
     JobTermView(job).info(page, size)
