@@ -29,6 +29,7 @@ import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
+import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.test.JobMockHolder;
 import java.util.Collections;
 import java.util.List;
@@ -46,11 +47,15 @@ public class DAGQuerierTest {
         JobManager jobManager = mock(JobManager.class);
         when(jobManager.getJobId("1")).thenReturn(1L);
         when(jobManager.getJobId("2")).thenReturn(2L);
+        when(jobManager.getJobId("3")).thenReturn(3L);
         HotJobHolder hotJobHolder = mock(HotJobHolder.class);
         when(hotJobHolder.ofIds(List.of(1L))).thenReturn(Collections.emptySet());
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job mockedJob = jobMockHolder.mockJob();
+        Job createdJob = jobMockHolder.mockJob();
+        createdJob.setStatus(JobStatus.CREATED);
         when(hotJobHolder.ofIds(List.of(2L))).thenReturn(List.of(mockedJob));
+        when(hotJobHolder.ofIds(List.of(3L))).thenReturn(List.of(createdJob));
 
         JobMapper jobMapper = mock(JobMapper.class);
         JobEntity jobEntity = JobEntity.builder().id(1L).jobStatus(JobStatus.RUNNING).build();
@@ -66,6 +71,8 @@ public class DAGQuerierTest {
 
         Graph graph2 = dagQuerier.dagOfJob("2",true);
         Assertions.assertEquals(3,graph2.getGroupingNodes().keySet().size());
+
+        Assertions.assertThrowsExactly(SWValidationException.class,()->dagQuerier.dagOfJob("3",true));
 
 
     }
