@@ -217,7 +217,7 @@ const locales0 = {
         en: 'submit',
     },
     'create': {
-        en: 'create',
+        en: 'Create',
     },
     'login': {
         en: 'login',

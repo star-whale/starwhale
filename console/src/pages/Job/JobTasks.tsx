@@ -60,7 +60,13 @@ export default function JobTasks() {
     }
 
     const formatContent = useCallback((part) => {
-        const obj = JSON.parse(part)
+        let obj
+        try {
+            obj = JSON.parse(part)
+        } catch (e) {
+            return part
+        }
+
         const columns = [
             {
                 key: 'time',

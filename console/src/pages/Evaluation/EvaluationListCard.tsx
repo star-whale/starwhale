@@ -25,7 +25,7 @@ export default function EvaluationListCard() {
     const history = useHistory()
     const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
-    const evaluationsInfo = useFetchJobs(projectId, page)
+    const evaluationsInfo = useFetchJobs(projectId, { pageNum: 1, pageSize: 1000 })
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
         async (data: ICreateJobSchema) => {
@@ -190,14 +190,14 @@ export default function EvaluationListCard() {
                     columns={columns}
                     // @ts-ignore
                     data={evaluationsInfo.data?.list ?? []}
-                    paginationProps={{
-                        start: evaluationsInfo.data?.pageNum,
-                        count: evaluationsInfo.data?.pageSize,
-                        total: evaluationsInfo.data?.total,
-                        afterPageChange: () => {
-                            evaluationsInfo.refetch()
-                        },
-                    }}
+                    // paginationProps={{
+                    //     start: evaluationsInfo.data?.pageNum,
+                    //     count: evaluationsInfo.data?.pageSize,
+                    //     total: evaluationsInfo.data?.total,
+                    //     afterPageChange: () => {
+                    //         evaluationsInfo.refetch()
+                    //     },
+                    // }}
                 />
                 <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                     <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
