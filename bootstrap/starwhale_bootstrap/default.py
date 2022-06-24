@@ -37,7 +37,7 @@ CONTROLLER_PORT = "8082"
 FILE_UPLOAD_MAX_SIZE = "20480MB"
 TOKEN_EXPIRE_MINUTES = "43200"
 # controler storage dir
-CONTROLLER_DATA_DIR = "controller/run"
+CONTROLLER_DATA_DIR = "controller"
 
 # agent variables
 # agent
