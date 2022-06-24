@@ -7,6 +7,9 @@ spring:
     multipart:
       max-file-size: ${SW_UPLOAD_MAX_FILE_SIZE:20480MB}
       max-request-size: ${SW_UPLOAD_MAX_FILE_SIZE:20480MB}
+  web:
+    resources:
+      static-locations: file:/opt/starwhale.java/static/, classpath:/static/
 sw:
   version: ${SW_VERSION_CONTROLLER:0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52}
   jwt:

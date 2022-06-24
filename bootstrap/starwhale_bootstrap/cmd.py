@@ -138,6 +138,11 @@ def bootstrap_cmd() -> None:
     default=default.FILE_UPLOAD_MAX_SIZE,
     help="The max size of file for upload",
 )
+@click.option(
+    "--controller-runtime-dir",
+    default=default.CONTROLLER_DATA_DIR,
+    help="A path relative to root-path that will as the runtime directory for the controller",
+)
 # agent
 @click.option(
     "--agent-runtime-dir",
@@ -243,6 +248,7 @@ def _deploy(
     oss_secret_key: str,
     job_split_task_num: int,
     controller_port: int,
+    controller_runtime_dir: str,
     agent_runtime_dir: str,
     pypi_index_url: str,
     pypi_extra_index_url: str,
@@ -306,6 +312,7 @@ def _deploy(
             "controller_port": controller_port,
             "token_expire_minutes": token_expire_minutes,
             "file_upload_size": file_upload_size,
+            "controller_data_dir": "{{ base_root_path }}/" + controller_runtime_dir,
             # agent variables
             # agent
             "agent_image": "{{ sw_repository }}/server:{{ sw_version }}",

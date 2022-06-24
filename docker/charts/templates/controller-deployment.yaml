@@ -18,11 +18,20 @@ spec:
       labels:
         {{ include "chart.controller.labels" . | nindent 8}}
     spec:
+      volumes:
+        - name: controller-storage
+          hostPath:
+            path: {{ .Values.storage.agentHostPathRoot }}/controller
+            type: DirectoryOrCreate
       containers:
         - name: controller
           image: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Chart.AppVersion }}"
           ports:
             - containerPort: {{ .Values.controller.containerPort }}
+          volumeMounts:
+            - name: controller-storage
+              mountPath: "/opt/starwhale.java"
+              subPath: run
           {{- if not .Values.minikube.enabled }}
           resources:
             {{- toYaml .Values.resources.controller | nindent 12}}
