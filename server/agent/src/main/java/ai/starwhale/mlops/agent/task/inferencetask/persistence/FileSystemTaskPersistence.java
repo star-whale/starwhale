@@ -341,7 +341,7 @@ public class FileSystemTaskPersistence implements TaskPersistence {
             }
             Path logFilePath = Path.of(fileSystemPath.oneActiveTaskAgentLogFile(task.getId()));
 
-            Files.writeString(logFilePath, toAppend, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            Files.writeString(logFilePath, toAppend + System.lineSeparator(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (Exception e) {
             log.error("record log for task:{} error, info:{}", task.getId(), e.getMessage());
         }
