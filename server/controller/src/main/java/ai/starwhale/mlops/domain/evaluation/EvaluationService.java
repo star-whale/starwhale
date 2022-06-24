@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
 import ai.starwhale.mlops.domain.job.converter.JobConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.resulting.ResultQuerier;
@@ -117,21 +118,27 @@ public class EvaluationService {
         SummaryFilter summaryFilter, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
-        List<JobEntity> jobEntities = jobMapper.listJobs(projectId, null);
+        List<JobEntity> jobEntities = jobMapper.listJobsByStatus(projectId, null, JobStatus.SUCCESS);
         return PageUtil.toPageInfo(jobEntities, this::toSummary);
     }
 
     private SummaryVO toSummary(JobEntity entity) {
         JobVO jobVO = jobConvertor.convert(entity);
         SummaryVO summaryVO = SummaryVO.builder()
-            .jobUuid(jobVO.getUuid())
-            .projectName(entity.getProject().getProjectName())
+            .id(jobVO.getId())
+            .uuid(jobVO.getUuid())
             .projectId(idConvertor.convert(entity.getProject().getId()))
-            .model(jobVO.getModelName())
+            .projectName(entity.getProject().getProjectName())
+            .modelName(jobVO.getModelName())
+            .modelVersion(jobVO.getModelVersion())
             .datasets(StrUtil.join(",", jobVO.getDatasets()))
             .runtime(jobVO.getRuntime().getName())
             .device(jobVO.getDevice())
             .deviceAmount(jobVO.getDeviceAmount())
+            .createdTime(jobVO.getCreatedTime())
+            .stopTime(jobVO.getStopTime())
+            .owner(jobVO.getOwner().getName())
+            .duration(jobVO.getDuration())
             .attributes(Lists.newArrayList())
             .build();
         Map<String, Object> result = resultQuerier.flattenResultOfJob(entity.getId());

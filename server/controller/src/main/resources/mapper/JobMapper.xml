@@ -69,6 +69,19 @@
         order by job_id desc
     </select>
 
+    <select id="listJobsByStatus" resultMap="jobResultMap" >
+        <include refid="select_jobs"/>
+        <where>
+            and job_is_deleted = 0
+            and job_status = #{jobStatus}
+            and project_id = #{projectId}
+        </where>
+        <if test="swmpId != null and swmpId != ''">
+            and swmp_id = #{swmpId}
+        </if>
+        order by job_id desc
+    </select>
+
     <select id="findJobById" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
         <where>
