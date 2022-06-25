@@ -152,14 +152,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
-          {{ - if not .Values.minikube.enabled }}
+            {{- if not .Values.minikube.enabled }}
             - name: JVM_XMX
-            {{- if eq .role "gpu"}}
+              {{- if eq .role "gpu"}}
               value: {{ .Values.resources.agentGPU.requests.memory }}
-            {{else}}
+              {{else}}
               value: {{ .Values.resources.agentCPU.requests.memory }}
-            {{- end}}
-          {{ - end }}
+              {{- end}}
+            {{- end }}
             - name: SW_AGENT_PORT
               value: "{{ .Values.agent.containerPort }}"
             - name: SW_TASK_DEFAULT_IMAGE
