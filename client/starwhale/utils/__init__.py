@@ -107,7 +107,7 @@ def pretty_bytes(b: t.Union[int, float]) -> str:
     return _c(b, 0)
 
 
-_valid_name_re = re.compile("^([a-zA-Z0-9_-])+$")
+_valid_name_re = re.compile("^[a-zA-Z_][a-zA-Z0-9_.-]*$")
 
 
 def validate_obj_name(name: str) -> t.Tuple[bool, str]:
@@ -117,16 +117,10 @@ def validate_obj_name(name: str) -> t.Tuple[bool, str]:
             f"length should be between 1 and 80, but {name} has {len(name)} characters",
         )
 
-    if not (name[0] == "_" or name[0].isalnum()):
-        return (
-            False,
-            f"A name should always start with a letter or the _ character, current name:{name}",
-        )
-
     if not _valid_name_re.match(name):
         return (
             False,
-            f"A name MUST only consist of letters A-Z a-z, digits 0-9, the hyphen character -, and the underscore character _, current name:{name}",
+            f"A name MUST only consist of letters A-Z a-z, digits 0-9, the hyphen character -, the underscore character _ and the dot character ., current name:{name}",
         )
 
     return True, ""
