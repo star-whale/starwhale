@@ -75,7 +75,7 @@ services:
       - SW_STORAGE_SECRETKEY=minioadmin
       - SW_STORAGE_ENDPOINT=http://oss:9000
       - SW_TASK_USE_HOST_NETWORK=1
-      - SW_TASK_ENABLE_DEBUG=1
+      - SW_TASK_DISABLE_DEBUG=0
 
 volumes:
   db_data: {}
