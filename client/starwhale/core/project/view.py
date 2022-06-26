@@ -74,7 +74,8 @@ class ProjectTermView(BaseTermView):
     def select(self) -> None:
         try:
             self.select_current_default(
-                instance=self.uri.instance, project=self.uri.project
+                instance=self.uri.instance_alias or self.uri.instance,
+                project=self.uri.project,
             )
         except Exception as e:
             console.print(
