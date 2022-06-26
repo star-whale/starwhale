@@ -54,7 +54,7 @@ EOF
 
 set_pip_cache() {
     echo "\t ** set pip cache dir:"
-    python3 -m pip cache set global.cache-dir ${PIP_CACHE_DIR} || true
+    python3 -m pip config set global.cache-dir ${PIP_CACHE_DIR} || true
     python3 -m pip cache dir || true
 }
 
