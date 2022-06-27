@@ -23,6 +23,12 @@ class ObjField(object):
         return f"{self.typ}-{self.name}-{self.version}"
 
 
+class InstanceField(t.NamedTuple):
+    uri: str
+    typ: str
+    alias: str
+
+
 class URI(object):
     def __init__(self, raw: str, expected_type: str = URIType.UNKNOWN) -> None:
         self.raw = raw.strip().strip("/").lower()
@@ -33,6 +39,7 @@ class URI(object):
 
         self.instance = ""
         self.instance_type = ""
+        self.instance_alias = ""
         self.project = ""
         self.object = ObjField()
 
@@ -44,17 +51,22 @@ class URI(object):
     def __repr__(self) -> str:
         return f"instance:{self.instance}, instance_type:{self.instance_type}, projec:{self.project}, object:{self.object}"
 
-    def _do_parse_instance_uri(self, raw: str) -> t.Tuple[str, str, str]:
+    def _do_parse_instance_uri(self, raw: str) -> t.Tuple[InstanceField, str]:
         _remain: str = raw
-        _inst: str = ""
-        _inst_type: str = ""
 
         if not raw:
             return (
-                self._sw_config._current_instance_obj["uri"],
-                self._sw_config._current_instance_obj["type"],
+                InstanceField(
+                    uri=self._sw_config._current_instance_obj["uri"],
+                    typ=self._sw_config._current_instance_obj["type"],
+                    alias=self._sw_config.current_instance,
+                ),
                 "",
             )
+
+        _inst: str = ""
+        _inst_type: str = ""
+        _inst_alias: str = ""
 
         if raw.startswith(("http://", "https://", "cloud://")):
             _up = urlparse(raw)
@@ -68,23 +80,26 @@ class URI(object):
                 _inst = f"{_up.scheme}://{_up.netloc}"
             _remain = _up.path
             _inst_type = InstanceType.CLOUD
+            _inst_alias = self._sw_config._get_instance_alias(_inst)
         elif raw.startswith("local/") or raw == "local":
-            _inst = "local"
+            _inst = _inst_alias = "local"
             _sp = raw.split("local/", 1)
             _remain = "" if len(_sp) == 1 else _sp[1]
             _inst_type = InstanceType.STANDALONE
         else:
             _inst = self._sw_config._config["instances"].get(raw, {}).get("uri", "")
             _inst_type = InstanceType.CLOUD
+            _inst_alias = raw
 
         if not _inst:
             _inst = self._sw_config._current_instance_obj["uri"]
             _inst_type = self._sw_config._current_instance_obj["type"]
+            _inst_alias = self._sw_config.current_instance
 
         if self.expected_type == URIType.INSTANCE:
             _remain = ""
 
-        return _inst, _inst_type, _remain
+        return InstanceField(_inst, _inst_type, _inst_alias), _remain
 
     def _do_parse_project_uri(self, raw: str) -> t.Tuple[str, str]:
         raw = raw.strip().strip("/")
@@ -154,16 +169,17 @@ class URI(object):
         return ObjField(typ=_sp[0], name=_sp[1], version=_version), _remain
 
     def _do_parse(self) -> None:
-        _inst, _inst_type, _remain = self._do_parse_instance_uri(self.raw)
+        _inst, _remain = self._do_parse_instance_uri(self.raw)
         _proj, _remain = self._do_parse_project_uri(_remain)
         _obj, _remain = self._do_parse_obj_uri(_remain)
 
-        self.instance = _inst
-        self.instance_type = _inst_type
+        self.instance = _inst.uri
+        self.instance_type = _inst.typ
+        self.instance_alias = _inst.alias
         self.project = _proj
         self.object = _obj
 
-        self.full_uri = _inst
+        self.full_uri = _inst.uri
         if _proj:
             self.full_uri = f"{self.full_uri}/project/{_proj}"
 

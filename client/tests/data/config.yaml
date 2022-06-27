@@ -14,6 +14,14 @@ instances:
     uri: http://1.1.1.1:8182
     user_name: starwhale
     user_role: admin
+  pre-bare2:
+    current_project: self
+    sw_token: Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIxLHN0YXJ3aGFsZSIsImlzcyI6InN0YXJXaGFsZSIsImlhdCI6MTY1MzIyNjQ2MSwiZXhwIjoxNjUzMzEyODYxfQ.CKtNePJJekDKBYN5HaLvUaZqiFOR4ghhWIyuqtCYmj02r6Ymm4t6N21xkNdd7sljoT-ffr_QIxkkAeyxOHcieA
+    type: cloud
+    updated_at: 2022-05-22 21:34:24 CST
+    uri: http://1.1.1.1:8182
+    user_name: starwhale
+    user_role: admin
 storage:
-  root: /home/liutianwei/.cache/starwhale
+  root: /home/starwhale/.cache/starwhale
 version: "2.0"
