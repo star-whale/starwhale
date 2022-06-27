@@ -80,6 +80,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 lineHeight: '16px',
                 padding: '15px 20px',
             })}
+            title={props.title}
             // @ts-ignore
             onMouseEnter={props.onMouseEnter}
             // @ts-ignore

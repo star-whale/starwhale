@@ -71,7 +71,7 @@ export function TableTyped({
             return {
                 ...column,
                 fillWidth: false,
-                // maxWidth: 100,
+                // maxWidth: 200,
             }
         }
 

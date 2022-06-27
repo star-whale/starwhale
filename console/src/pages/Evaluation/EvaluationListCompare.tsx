@@ -9,8 +9,15 @@ import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { CustomColumn, StringColumn } from '@/components/data-table'
 import { fetchJobResult } from '@/domain/job/services/job'
 import { useQueries } from 'react-query'
+import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
 
-export default function EvaluationListCompare({ rows = [] }) {
+export default function EvaluationListCompare({
+    rows = [],
+    attrs = [],
+}: {
+    attrs: IEvaluationAttributeValue[]
+    rows: any[]
+}) {
     const [t] = useTranslation()
     const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
@@ -80,7 +87,7 @@ export default function EvaluationListCompare({ rows = [] }) {
             {
                 key: 'owner',
                 title: t('Owner'),
-                values: rows.map((data: any, index) => <User key={index} user={data.owner} />),
+                values: rows.map((data: any) => data.owner),
             },
             {
                 key: 'createtime',
@@ -99,16 +106,34 @@ export default function EvaluationListCompare({ rows = [] }) {
                 title: t('End time'),
                 values: rows.map((data: any) => (data.stopTime > 0 ? formatTimestampDateTime(data.stopTime) : '-')),
             },
-            {
-                key: 'status',
-                title: t('Status'),
-                values: rows.map((data: any) => data.jobStatus),
-            },
+            // {
+            //     key: 'status',
+            //     title: t('Status'),
+            //     values: rows.map((data: any) => data.jobStatus),
+            // },
         ],
         [t, rows]
     )
 
-    // const $rowWithSummary = useMemo(() => {}, [results])
+    const $rowWithAttrs = useMemo(() => {
+        const rowWithAttrs = [...$rows]
+
+        attrs.map((attr, index) => {
+            if (!attr.name.startsWith('summary/')) {
+                return
+            }
+
+            const name = attr.name.split('/').slice(1).join('/')
+
+            rowWithAttrs.push({
+                key: attr.name,
+                title: name,
+                values: rows.map((data: any) => data?.attributes[index]?.value),
+            })
+        })
+
+        return rowWithAttrs
+    }, [$rows, attrs])
 
     return (
         <>
@@ -117,7 +142,7 @@ export default function EvaluationListCompare({ rows = [] }) {
                 isLoading={evaluationsInfo.isLoading}
                 columns={$columns}
                 // @ts-ignore
-                data={$rows}
+                data={$rowWithAttrs}
             />
         </>
     )

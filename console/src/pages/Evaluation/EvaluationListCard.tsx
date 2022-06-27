@@ -179,29 +179,17 @@ export default function EvaluationListCard() {
                         CustomColumn({
                             key: attr.name,
                             title: name,
-                            // maxWidth: 200,
                             sortable: true,
-                            sortFn: function (a: any, b: any) {
+                            sortFn: (a: any, b: any) => {
                                 return a - b
                             },
                             // @ts-ignore
                             renderCell: (props: any) => {
-                                return (
-                                    <div
-                                        style={{
-                                            direction: 'rtl',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                        }}
-                                    >
-                                        {props.value}
-                                    </div>
-                                )
+                                return <p title={props?.value}>{props?.value.slice(0, 6)}</p>
                             },
-                            mapDataToValue: (data: any) =>
+                            mapDataToValue: (data: any): string =>
                                 data.attributes?.find((v: IEvaluationAttributeValue) => v.name == attr.name)?.value ??
-                                '',
+                                '-',
                         })
                     )
                     break
@@ -224,8 +212,6 @@ export default function EvaluationListCard() {
         ],
         []
     )
-
-    console.log(evaluationAttrsInfo, $columnsWithAttrs)
 
     return (
         <>
@@ -258,7 +244,6 @@ export default function EvaluationListCard() {
                     isLoading={evaluationsInfo.isLoading}
                     columns={$columnsWithAttrs}
                     // @ts-ignore
-                    //
                     data={evaluationsInfo.data?.list ?? []}
                 />
                 <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
@@ -270,7 +255,7 @@ export default function EvaluationListCard() {
             </Card>
             {compareRows.length > 0 && (
                 <Card title={t('Compare Evaluations')} style={{ marginRight: expanded ? expandedWidth : '0' }}>
-                    <EvaluationListCompare rows={compareRows} />
+                    <EvaluationListCompare rows={compareRows} attrs={evaluationAttrsInfo?.data ?? []} />
                 </Card>
             )}
         </>

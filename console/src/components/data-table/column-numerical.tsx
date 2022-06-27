@@ -447,6 +447,7 @@ function NumericalCell(props) {
                 color: props.highlight(props.value) ? theme.colors.contentNegative : null,
                 width: '100%',
             })}
+            title={props.value}
         >
             {format(props.value, {
                 format: props.format,
