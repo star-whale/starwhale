@@ -8,7 +8,7 @@ WORKDIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
 _MANIFEST_RUNTIME=$(cat ${WORKDIR}/_manifest.yaml| grep "python:" | awk '{print $2}' | awk -F '.' '{print $1"."$2}') || true
 _MODEL_RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}') || true
-VERBOSE="-v"
+VERBOSE="-vvvv"
 
 _update_python_alter() {
     echo "--> set python/python3 to $1 ..."
@@ -19,8 +19,8 @@ _update_python_alter() {
 
 pre_config() {
     echo "--> debug config ..."
-    if [ "${DEBUG}" = "1" ]; then
-        VERBOSE="-vvvv"
+    if [ "${DISABLE_DEBUG}" = "1" ]; then
+        VERBOSE="-v"
     fi
 
     echo "--> config pypi and conda config ..."
