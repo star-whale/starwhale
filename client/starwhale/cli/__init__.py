@@ -25,9 +25,13 @@ def create_sw_cli() -> click.core.Group:
         count=True,
         help="Show verbose log, support multi counts for v args. More v args, more logs.",
     )
-    def cli(verbose: bool) -> None:
+    @click.option("-o", "--output", help="Output format", type=click.Choice(["json"]))
+    @click.pass_context
+    def cli(ctx: click.Context, verbose: bool, output: str) -> None:
         load_swcli_config()
         init_logger(verbose)
+        ctx.ensure_object(dict)
+        ctx.obj["output"] = output
 
     random.seed(time.time_ns)
 

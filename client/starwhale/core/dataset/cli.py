@@ -9,12 +9,13 @@ from starwhale.consts import (
     LOCAL_FUSE_JSON_NAME,
 )
 
-from .view import DatasetTermView
+from .view import get_term_view, DatasetTermView
 
 
 @click.group("dataset", help="Dataset management, build/info/list/copy/tag...")
-def dataset_cmd() -> None:
-    pass
+@click.pass_context
+def dataset_cmd(ctx: click.Context) -> None:
+    ctx.obj = get_term_view(ctx.obj)
 
 
 @dataset_cmd.command("build", help="[Only Standalone]Build swds with dataset.yaml")
@@ -26,11 +27,14 @@ def dataset_cmd() -> None:
     default=DefaultYAMLName.DATASET,
     help="Dataset yaml filename, default use ${WORKDIR}/dataset.yaml file",
 )
-def _build(workdir: str, project: str, dataset_yaml: str) -> None:
+@click.pass_obj
+def _build(
+    view: DatasetTermView, workdir: str, project: str, dataset_yaml: str
+) -> None:
     # TODO: add cmd options for dataset build, another choice for dataset.yaml
     # TODO: add dry-run
     # TODO: add compress args
-    DatasetTermView.build(workdir, project, dataset_yaml)
+    view.build(workdir, project, dataset_yaml)
 
 
 @dataset_cmd.command("list", help="List dataset")
@@ -44,23 +48,31 @@ def _build(workdir: str, project: str, dataset_yaml: str) -> None:
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for dataset list"
 )
+@click.pass_obj
 def _list(
-    project: str, fullname: bool, show_removed: bool, page: int, size: int
+    view: DatasetTermView,
+    project: str,
+    fullname: bool,
+    show_removed: bool,
+    page: int,
+    size: int,
 ) -> None:
-    DatasetTermView.list(project, fullname, show_removed, page, size)
+    view.list(project, fullname, show_removed, page, size)
 
 
 @dataset_cmd.command("info", help="Show dataset details")
 @click.argument("dataset")
 @click.option("--fullname", is_flag=True, help="Show version fullname")
-def _info(dataset: str, fullname: bool) -> None:
-    DatasetTermView(dataset).info(fullname)
+@click.pass_obj
+def _info(view: t.Type[DatasetTermView], dataset: str, fullname: bool) -> None:
+    view(dataset).info(fullname)
 
 
 @dataset_cmd.command("remove")
 @click.argument("dataset")
 @click.option("-f", "--force", is_flag=True, help="Force to remove dataset")
-def _remove(dataset: str, force: bool) -> None:
+@click.pass_obj
+def _remove(view: t.Type[DatasetTermView], dataset: str, force: bool) -> None:
     """
     Remove dataset
 
@@ -69,26 +81,30 @@ def _remove(dataset: str, force: bool) -> None:
     DATASET: argument use the `Dataset URI` format, so you can remove the whole dataset or a specified-version dataset.
     """
     click.confirm("continue to remove?", abort=True)
-    DatasetTermView(dataset).remove(force)
+    view(dataset).remove(force)
 
 
 @dataset_cmd.command("recover")
 @click.argument("dataset")
 @click.option("-f", "--force", is_flag=True, help="Force to recover dataset")
-def _recover(dataset: str, force: bool) -> None:
+@click.pass_obj
+def _recover(view: t.Type[DatasetTermView], dataset: str, force: bool) -> None:
     """
     Recover dataset
 
     DATASET: argument use the `Dataset URI` format, so you can recover the whole dataset or a specified-version dataset.
     """
-    DatasetTermView(dataset).recover(force)
+    view(dataset).recover(force)
 
 
 @dataset_cmd.command("history", help="Show dataset history")
 @click.argument("dataset")
 @click.option("--fullname", is_flag=True, help="Show version fullname")
-def _history(dataset: str, fullname: bool = False) -> None:
-    DatasetTermView(dataset).history(fullname)
+@click.pass_obj
+def _history(
+    view: t.Type[DatasetTermView], dataset: str, fullname: bool = False
+) -> None:
+    view(dataset).history(fullname)
 
 
 @dataset_cmd.command("render-fuse")
@@ -99,22 +115,24 @@ def _history(dataset: str, fullname: bool = False) -> None:
     is_flag=True,
     help=f"Force to render, if {LOCAL_FUSE_JSON_NAME} was already existed",
 )
-def _render_fuse(target: str, force: bool) -> None:
+@click.pass_obj
+def _render_fuse(view: t.Type[DatasetTermView], target: str, force: bool) -> None:
     """
     [ONLY Standalone]Render Dataset fuse input.json for standalone ppl
 
     TARGET: dataset uri or dataset workdir path
     """
 
-    DatasetTermView.render_fuse_json(target, force)
+    view.render_fuse_json(target, force)
 
 
 @dataset_cmd.command("copy", help="Copy dataset, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force copy dataset")
-def _copy(src: str, dest: str, force: bool) -> None:
-    DatasetTermView.copy(src, dest, force)
+@click.pass_obj
+def _copy(view: t.Type[DatasetTermView], src: str, dest: str, force: bool) -> None:
+    view.copy(src, dest, force)
 
 
 @dataset_cmd.command("tag", help="Dataset tag management, add or remove")
@@ -127,5 +145,12 @@ def _copy(src: str, dest: str, force: bool) -> None:
     is_flag=True,
     help="Ignore tag name errors like name duplication, name absence",
 )
-def _tag(dataset: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
-    DatasetTermView(dataset).tag(tags, remove, quiet)
+@click.pass_obj
+def _tag(
+    view: t.Type[DatasetTermView],
+    dataset: str,
+    tags: t.List[str],
+    remove: bool,
+    quiet: bool,
+) -> None:
+    view(dataset).tag(tags, remove, quiet)

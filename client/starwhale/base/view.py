@@ -126,26 +126,16 @@ class BaseTermView(SWCliConfigMixed):
         history: t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]],
         fullname: bool = False,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        table = Table(title=title, box=box.SIMPLE, expand=True)
-        table.add_column("Version", justify="left", style="cyan", no_wrap=True)
-        table.add_column("Tags")
-        table.add_column("Size")
-        table.add_column("Runtime")
-        table.add_column("Created")
-
-        for _h in history[0]:
-            _version = _h["version"] if fullname else _h["version"][:SHORT_VERSION_CNT]
-            if _h.get("id"):
-                _version = f"[{_h['id']:2}] {_version}"
-
-            table.add_row(
-                _version,
-                ",".join(_h.get("tags", [])),
-                pretty_bytes(_h["size"]),
-                _h.get("runtime", "--"),
-                _h["created_at"],
-            )
-        console.print(table)
+        custom_header = {0: {"justify": "left", "style": "cyan", "no_wrap": True}}
+        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
+            "tags": lambda x: ",".join(x),
+            "size": lambda x: pretty_bytes(x),
+            "runtime": BaseTermView.place_holder_for_empty(),
+        }
+        data = BaseTermView.get_history_data(history, fullname)
+        BaseTermView.print_table(
+            title, data, custom_header, custom_column=custom_column
+        )
         return history
 
     @staticmethod
@@ -154,7 +144,7 @@ class BaseTermView(SWCliConfigMixed):
             console.print(":tea: not found info")
             return
 
-        _history = _info.pop("history", [])
+        _history = _info.pop("history", (list(), dict()))
 
         console.rule("[green bold]Inspect Details")
         console.print(Pretty(_info, expand_all=True))
@@ -201,3 +191,124 @@ class BaseTermView(SWCliConfigMixed):
                 )
 
         console.print(table)
+
+    @staticmethod
+    def pretty_json(data: t.Any) -> None:
+        console.print(Pretty(data, expand_all=True))
+
+    @staticmethod
+    def list_data(
+        _bundles: t.Dict[str, t.Any], show_removed: bool = False, fullname: bool = False
+    ) -> t.List[t.Dict[str, t.Any]]:
+        result = []
+        for _name, _versions in _bundles.items():
+            for _v in _versions:
+                if show_removed ^ _v["is_removed"]:
+                    continue
+
+                _version = (
+                    _v["version"]
+                    if fullname or show_removed
+                    else _v["version"][:SHORT_VERSION_CNT]
+                )
+                if _v.get("id"):
+                    _version = f"[{_v['id']:2}] {_version}"
+
+                result.append(
+                    {
+                        "name": _name,
+                        "version": _version,
+                        "tags": _v.get("tags", []),
+                        "size": _v.get("size", 0),
+                        "runtime": _v.get("runtime", ""),
+                        "created_at": _v.get("created_at"),
+                    }
+                )
+
+        return result
+
+    @staticmethod
+    def place_holder_for_empty(place_holder: str = "--") -> t.Callable:
+        return lambda x: x or place_holder
+
+    @staticmethod
+    def print_table(
+        title: str,
+        data: t.List[t.Dict[str, t.Any]],
+        custom_header: t.Dict[int, t.Dict] = None,
+        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = None,
+        custom_row: t.Callable = None,
+        custom_table: t.Dict = None,
+    ):
+        default_attr = {
+            "title": title,
+            "box": box.SIMPLE,
+            "expand": True,
+        }
+        if custom_table:
+            default_attr = {**default_attr, **custom_table}
+        table = Table(**default_attr)  # type: ignore
+
+        def init_header(row: t.List[str]) -> None:
+            for idx, field in enumerate(row):
+                extra = dict()
+                if custom_header and idx in custom_header:
+                    extra = custom_header[idx]
+                table.add_column(field.capitalize(), **extra)
+
+        header_inited = False
+        for row in data:
+            if not header_inited:
+                init_header(list(row.keys()))
+                header_inited = True
+            rendered_row = list()
+            for field, col in row.items():
+                if custom_column and field in custom_column:
+                    col = custom_column[field](col)
+                rendered_row.append(col)
+
+            row_ext: t.Dict[str, t.Any] = {}
+            if custom_row:
+                row_ext = custom_row(row) or {}
+            table.add_row(*rendered_row, **row_ext)
+
+        if table.row_count == 0:
+            console.print("empty")
+        console.print(table)
+
+    @staticmethod
+    def get_info_data(
+        _info: t.Dict[str, t.Any], fullname: bool = False
+    ) -> t.Dict[str, t.Any]:
+        if not _info:
+            return dict()
+
+        result = _info
+        _history = _info.pop("history", (list(), dict()))
+
+        if _history:
+            result["history"] = BaseTermView.get_history_data(_history, fullname)
+
+        return result
+
+    @staticmethod
+    def get_history_data(
+        history: t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]],
+        fullname: bool = False,
+    ) -> t.List[t.Dict]:
+        result = list()
+        for _h in history[0]:
+            _version = _h["version"] if fullname else _h["version"][:SHORT_VERSION_CNT]
+            if _h.get("id"):
+                _version = f"[{_h['id']:2}] {_version}"
+
+            result.append(
+                {
+                    "version": _version,
+                    "tags": _h.get("tags", []),
+                    "size": _h.get("size", 0),
+                    "runtime": _h.get("runtime", ""),
+                    "created_at": _h.get("created_at"),
+                }
+            )
+        return result
