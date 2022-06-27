@@ -95,7 +95,7 @@ public class EvaluationService {
 
         ViewConfigEntity viewConfig = viewConfigMapper.findViewConfig(userId, projectId,
             configQuery.getName());
-        if(viewConfig == null) {
+        if (viewConfig == null) {
             return null;
         }
         return viewConfigConvertor.convert(viewConfig);
@@ -118,11 +118,13 @@ public class EvaluationService {
         SummaryFilter summaryFilter, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
-        List<JobEntity> jobEntities = jobMapper.listJobsByStatus(projectId, null, JobStatus.SUCCESS);
+        List<JobEntity> jobEntities = jobMapper.listJobsByStatus(projectId, null,
+            JobStatus.SUCCESS);
         return PageUtil.toPageInfo(jobEntities, this::toSummary);
     }
 
     private SummaryVO toSummary(JobEntity entity) {
+
         JobVO jobVO = jobConvertor.convert(entity);
         SummaryVO summaryVO = SummaryVO.builder()
             .id(jobVO.getId())
@@ -141,7 +143,7 @@ public class EvaluationService {
             .duration(jobVO.getDuration())
             .attributes(Lists.newArrayList())
             .build();
-        Map<String, Object> result = resultQuerier.flattenResultOfJob(entity.getId());
+        Map<String, Object> result = resultQuerier.flattenSummaryOfJob(entity.getId());
         for (Entry<String, Object> entry : result.entrySet()) {
             String value = String.valueOf(entry.getValue());
             summaryVO.getAttributes().add(AttributeValueVO.builder()
@@ -154,10 +156,10 @@ public class EvaluationService {
     }
 
     private String getAttributeType(String value) {
-        if(NumberUtil.isInteger(value)) {
+        if (NumberUtil.isInteger(value)) {
             return "int";
         }
-        if(NumberUtil.isDouble(value)) {
+        if (NumberUtil.isDouble(value)) {
             return "float";
         }
         return "string";

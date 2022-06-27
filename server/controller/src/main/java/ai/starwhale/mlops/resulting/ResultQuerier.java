@@ -79,6 +79,22 @@ public class ResultQuerier {
         }
     }
 
+    public Map<String, Object> flattenSummaryOfJob(Long jobId) {
+        try(InputStream inputStream = storageAccessService.get(resultPathOfJob(jobId))){
+            Map result = objectMapper.readValue(inputStream, Map.class);
+            Map<String, Object> summary = Map.of(
+                "kind", result.get("kind"),
+                "summary", result.get("summary"));
+            //objectMapper.writeValueAsString(summary)
+            JsonFlattener jf = new JsonFlattener(objectMapper.writeValueAsString(summary));
+            return jf.withSeparator('/')
+                .ignoreReservedCharacters()
+                .flattenAsMap();
+        } catch (IOException e) {
+            throw new SWProcessException(ErrorType.STORAGE).tip("load job ui result failed");
+        }
+    }
+
     public String resultPathOfJob(Long jobId) {
         JobEntity jobEntity = jobMapper.findJobById(jobId);
         if(null == jobEntity){
