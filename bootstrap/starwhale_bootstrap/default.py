@@ -47,11 +47,11 @@ AGENT_IMAGE = "server:" + SW_VERSION
 AGENT_DATA_DIR = "agent/run"
 IMAGE_PULL_TIMEOUT_MILLIS = 3600000
 # pypi url
-PYPI_INDEX_URL = "http://10.131.0.1:3141/root/pypi-douban/+simple/"
+PYPI_INDEX_URL = ""
 # pypi extra url
-PYPI_EXTRA_INDEX_URL = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+PYPI_EXTRA_INDEX_URL = ""
 # pypi trusted host
-PYPI_TRUSTED_HOST = "10.131.0.1 pypi.tuna.tsinghua.edu.cn"
+PYPI_TRUSTED_HOST = ""
 
 # taskset
 TASKSET_IMAGE = "taskset:" + SW_VERSION

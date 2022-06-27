@@ -180,17 +180,24 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
         ));
         // generate the file used by container(default dir)
         taskPersistence.generateConfigFile(originTask);
-
-        // task container env
-        imageConfig.setEnv(List.of(
+        var env = new java.util.ArrayList<>(List.of(
                 env("SW_PIP_CACHE_DIR", String.format(pipCachePathFormat, "root")), // todo specified by user
-                env("SW_PYPI_INDEX_URL", agentProperties.getTask().getPypiIndexUrl()),
-                env("SW_PYPI_EXTRA_INDEX_URL", agentProperties.getTask().getPypiExtraIndexUrl()),
-                env("SW_PYPI_TRUSTED_HOST", agentProperties.getTask().getPypiTrustedHost()),
                 env("SW_SWMP_NAME", originTask.getSwModelPackage().getName()),
                 env("SW_SWMP_VERSION", originTask.getSwModelPackage().getVersion()),
                 env("SW_TASK_DISABLE_DEBUG", String.valueOf(agentProperties.getTask().getDisableDebug()))
         ));
+        if (StringUtils.hasText(agentProperties.getTask().getPypiIndexUrl())) {
+            env.add(env("SW_PYPI_INDEX_URL", agentProperties.getTask().getPypiIndexUrl()));
+        }
+        if (StringUtils.hasText(agentProperties.getTask().getPypiExtraIndexUrl())) {
+            env.add(env("SW_PYPI_EXTRA_INDEX_URL", agentProperties.getTask().getPypiExtraIndexUrl()));
+        }
+        if (StringUtils.hasText(agentProperties.getTask().getPypiTrustedHost())) {
+            env.add(env("SW_PYPI_TRUSTED_HOST", agentProperties.getTask().getPypiTrustedHost()));
+        }
+
+        // task container env
+        imageConfig.setEnv(env);
 
         // fill with task info
         Optional<String> containerId = containerClient.createAndStartContainer(imageConfig);
