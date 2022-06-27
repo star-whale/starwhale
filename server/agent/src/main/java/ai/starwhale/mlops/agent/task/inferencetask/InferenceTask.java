@@ -150,6 +150,8 @@ public class InferenceTask {
         TaskStatusInterface reportStatus = null;
         switch (this.status) {
             case PREPARING:
+                reportStatus = TaskStatusInterface.PREPARING;
+                break;
             case RUNNING:
             case UPLOADING:
                 reportStatus = TaskStatusInterface.RUNNING;

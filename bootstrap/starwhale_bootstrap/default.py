@@ -44,6 +44,7 @@ CONTROLLER_DATA_DIR = "controller"
 AGENT_IMAGE = "server:" + SW_VERSION
 # task storage dir
 AGENT_DATA_DIR = "agent/run"
+IMAGE_PULL_TIMEOUT_MILLIS = 3600000
 # pypi url
 PYPI_INDEX_URL = "http://10.131.0.1:3141/root/pypi-douban/+simple/"
 # pypi extra url

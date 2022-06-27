@@ -129,6 +129,8 @@ controller:
 
 agent:
   containerPort: 8088
+  task:
+    pullImageTimeoutMillis: 3600000
 
 storage:
   agentHostPathRoot: "/mnt/data/starwhale"
