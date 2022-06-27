@@ -19,7 +19,7 @@ _update_python_alter() {
 
 pre_config() {
     echo "--> debug config ..."
-    if [ "${DISABLE_DEBUG}" = "1" ]; then
+    if [ "${SW_TASK_DISABLE_DEBUG}" = "1" ]; then
         VERBOSE="-v"
     fi
 
