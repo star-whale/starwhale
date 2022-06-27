@@ -19,8 +19,8 @@ export enum EvaluationStatusType {
 }
 
 export interface IEvaluationAttributeValue {
-    name?: string
-    type?: string
+    name: string
+    type: string
     value?: string
 }
 

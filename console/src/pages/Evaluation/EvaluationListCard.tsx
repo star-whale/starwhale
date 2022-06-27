@@ -10,22 +10,24 @@ import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table/TableTyped'
 import { Link, useHistory, useParams } from 'react-router-dom'
-import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { toaster } from 'baseui/toast'
 import IconFont from '@/components/IconFont'
-import { CustomColumn, CategoricalColumn, StringColumn } from '@/components/data-table'
+import { CustomColumn, CategoricalColumn, StringColumn, NumericalColumn } from '@/components/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import EvaluationListCompare from './EvaluationListCompare'
 import { useFetchEvaluations } from '@/domain/evaluation/hooks/useFetchEvaluations'
 import { useFetchEvaluationAttrs } from '@/domain/evaluation/hooks/useFetchEvaluationAttrs'
+import { usePage } from '@/hooks/usePage'
+import { ColumnT } from '@/components/data-table/types'
+import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
-    // const [page] = usePage()
+    const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
-    const evaluationsInfo = useFetchEvaluations(projectId, page)
+    const evaluationsInfo = useFetchEvaluations(projectId, { pageNum: 1, pageSize: 1000 })
     const evaluationAttrsInfo = useFetchEvaluationAttrs(projectId, page)
 
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
@@ -47,10 +49,13 @@ export default function EvaluationListCard() {
         [evaluationsInfo, projectId, t]
     )
 
-    const columns = useMemo(
+    // TODO
+    // 1. column key should be equal with eva attr field
+    // 2. prefix of summary/ can be manageable for now
+    const columns: ColumnT[] = useMemo(
         () => [
             CustomColumn({
-                key: 'evaluationId',
+                key: 'uuid',
                 title: t('Evaluation ID'),
                 mapDataToValue: (item: any) => item,
                 // @ts-ignore
@@ -65,42 +70,32 @@ export default function EvaluationListCard() {
                 },
             }),
             StringColumn({
-                key: 'model',
+                key: 'modelName',
                 title: t('sth name', [t('Model')]),
                 mapDataToValue: (data: any) => data.modelName,
             }),
             StringColumn({
-                key: 'version',
+                key: 'modelVersion',
                 title: t('Version'),
                 mapDataToValue: (data: any) => data.modelVersion,
             }),
-            CategoricalColumn({
-                key: 'status',
-                title: t('Status'),
-                mapDataToValue: (data: any) => data.jobStatus,
-            }),
-            CustomColumn({
+            StringColumn({
                 key: 'owner',
                 title: t('Owner'),
-                // @ts-ignore
-                renderCell: (props: any) => {
-                    const row = props.value ?? {}
-                    return <User user={row.owner} />
-                },
-                mapDataToValue: (item: any) => item,
+                mapDataToValue: (item: any) => item.owner,
             }),
             StringColumn({
-                key: 'runtime',
+                key: 'duration',
                 title: t('Run time'),
                 mapDataToValue: (data: any) => (typeof data.duration === 'string' ? '-' : durationToStr(data.duration)),
             }),
             StringColumn({
-                key: 'createtime',
+                key: 'createTime',
                 title: t('Created time'),
                 mapDataToValue: (data: any) => data.createdTime && formatTimestampDateTime(data.createdTime),
             }),
             StringColumn({
-                key: 'endtime',
+                key: 'stopTime',
                 title: t('End time'),
                 mapDataToValue: (data: any) => (data.stopTime > 0 ? formatTimestampDateTime(data.stopTime) : '-'),
             }),
@@ -157,6 +152,65 @@ export default function EvaluationListCard() {
         ],
         [handleAction, projectId, t]
     )
+    const $columnsWithAttrs = useMemo(() => {
+        const columnsWithAttrs = [...columns]
+
+        evaluationAttrsInfo?.data?.map((attr) => {
+            if (!attr.name.startsWith('summary/')) {
+                return
+            }
+
+            const name = attr.name.split('/').slice(1).join('/')
+
+            switch (attr.type) {
+                default:
+                case 'string':
+                    columnsWithAttrs.push(
+                        StringColumn({
+                            key: attr.name,
+                            title: name,
+                            mapDataToValue: (data: any) => data.attributes?.[attr.name],
+                        })
+                    )
+                    break
+                case 'float':
+                case 'int':
+                    columnsWithAttrs.push(
+                        CustomColumn({
+                            key: attr.name,
+                            title: name,
+                            // maxWidth: 200,
+                            sortable: true,
+                            sortFn: function (a: any, b: any) {
+                                return a - b
+                            },
+                            // @ts-ignore
+                            renderCell: (props: any) => {
+                                return (
+                                    <div
+                                        style={{
+                                            direction: 'rtl',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        {props.value}
+                                    </div>
+                                )
+                            },
+                            mapDataToValue: (data: any) =>
+                                data.attributes?.find((v: IEvaluationAttributeValue) => v.name == attr.name)?.value ??
+                                '',
+                        })
+                    )
+                    break
+            }
+        })
+
+        return columnsWithAttrs
+    }, [evaluationAttrsInfo, evaluationAttrsInfo.isSuccess, columns])
+
     const [compareRows, setCompareRows] = useState([])
     const batchAction = useMemo(
         () => [
@@ -170,6 +224,9 @@ export default function EvaluationListCard() {
         ],
         []
     )
+
+    console.log(evaluationAttrsInfo, $columnsWithAttrs)
+
     return (
         <>
             <Card
@@ -199,17 +256,10 @@ export default function EvaluationListCard() {
                     id='evaluations'
                     batchActions={batchAction}
                     isLoading={evaluationsInfo.isLoading}
-                    columns={columns}
+                    columns={$columnsWithAttrs}
                     // @ts-ignore
+                    //
                     data={evaluationsInfo.data?.list ?? []}
-                    // paginationProps={{
-                    //     start: evaluationsInfo.data?.pageNum,
-                    //     count: evaluationsInfo.data?.pageSize,
-                    //     total: evaluationsInfo.data?.total,
-                    //     afterPageChange: () => {
-                    //         evaluationsInfo.refetch()
-                    //     },
-                    // }}
                 />
                 <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                     <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
