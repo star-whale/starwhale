@@ -21,4 +21,4 @@ class TestCheckCall(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             log_check_call(["err"])
 
-        assert len(save_logs) == 2
+        assert len(save_logs) >= 2
