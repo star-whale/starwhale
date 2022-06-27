@@ -325,7 +325,7 @@ class JobTermView(BaseTermView):
             if "id" in _m:
                 _name = _m["id"]
             else:
-                _name = _s(_m["version"])
+                _name = _m["version"] if show_removed else _s(_m["version"])
 
             _runtime = "--"
             if "runtime" in _m:

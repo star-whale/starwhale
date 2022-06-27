@@ -70,7 +70,7 @@ swcli instance logout [OPTIONS] [INSTANCE]
 ## Select the default instance
 
 ```bash
-swcli instance select [OPTIONS] INSTANCE
+swcli instance select INSTANCE
 ```
 
 - `INSTANCE` argument is required, it uses `Instance URI` format.

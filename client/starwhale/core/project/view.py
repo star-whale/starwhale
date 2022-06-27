@@ -41,6 +41,7 @@ class ProjectTermView(BaseTermView):
         table = Table(
             title="List Projects",
             box=box.SIMPLE,
+            expand=True,
         )
         table.add_column("")
         table.add_column("Name")
@@ -48,9 +49,9 @@ class ProjectTermView(BaseTermView):
         table.add_column("Owner")
         table.add_column("Created")
 
-        _current_project = URI(instance_uri).sw_instance_config.get(
-            "current_project", DEFAULT_PROJECT
-        )
+        _current_project = URI(
+            instance_uri, expected_type=URIType.INSTANCE
+        ).sw_instance_config.get("current_project", DEFAULT_PROJECT)
 
         for _p in projects:
             _name = _p["name"]

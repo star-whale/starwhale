@@ -5,8 +5,8 @@ from starwhale.mngt import gc, open_web
 
 def add_mngt_command(cli: click.core.Group) -> None:
     @cli.command("gc", help="Standalone garbage collection")
-    @click.option("--dry-run", is_flag=True, help="dry-run cleanup garbage collection")
-    @click.option("--yes", is_flag=True, help="all confirm yes")
+    @click.option("--dry-run", is_flag=True, help="Dry-run cleanup garbage collection")
+    @click.option("--yes", is_flag=True, help="All confirm yes")
     def _gc(dry_run: bool, yes: bool) -> None:
         gc(dry_run, yes)
 

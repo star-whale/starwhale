@@ -14,6 +14,7 @@ swcli runtime [OPTIONS] COMMAND [ARGS]...
 - For standalone instance, `runtime` command use local disk to create, build and store Starwhale Runtime.
 - For cloud instance, `runtime` command manage the remote cloud datasets with HTTP API.
 - `Starwhale Runtime` uses conda or virutalenv as the python environment fundamental. If you use conda, please install conda at first.
+- Runtime is in one project.
 - **Runtime URI** in format: `[<Project URI>/runtime]<runtime name>[/version/<version id>]`.
 
 ## All Sub-Commands

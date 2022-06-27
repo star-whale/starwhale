@@ -127,8 +127,8 @@ Run evaluation job in current activated python runtime.
  swcli -vvv job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest --use-docker
  ```
 
-  :::tip Create job too slow
-  Job create command will pull runtime base image from ghcr.io by default, it maybe costs a lot of time, meanwhile, the process of `pip install` is also not fast.
-  :::
+:::tip
+Job create command will pull runtime base image from ghcr.io by default, it maybe costs a lot of time, meanwhile, the process of `pip install` is also not fast.
+:::
 
   👏 Now you have completed the basic step for starwhale standalone.

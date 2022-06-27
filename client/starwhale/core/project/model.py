@@ -18,7 +18,7 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir, get_path_created_time
-from starwhale.base.type import InstanceType
+from starwhale.base.type import URIType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NoSupportError
@@ -65,7 +65,7 @@ class Project(object):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
-        _uri = URI(instance_uri)
+        _uri = URI(instance_uri, expected_type=URIType.INSTANCE)
         if _uri.instance_type == InstanceType.STANDALONE:
             return StandaloneProject.list()
         elif _uri.instance_type == InstanceType.CLOUD:
@@ -190,7 +190,7 @@ class CloudProject(Project, CloudRequestMixed):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
-        uri = URI(instance_uri)
+        uri = URI(instance_uri, expected_type=URIType.INSTANCE)
         r = crm.do_http_request(
             "/project",
             params={"pageNum": page, "pageSize": size, "ownerName": uri.user_name},
