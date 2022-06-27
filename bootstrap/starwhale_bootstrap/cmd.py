@@ -396,16 +396,16 @@ def _deploy(
     help="The mode of the cluster, which can be docker or k8s",
 )
 def _deploy(
-        need_nexus: bool,
-        user: str,
-        ssh_key: str,
-        log_record_dir: str,
-        inventory: str,
-        host_of_controller: str,
-        host_of_storage: str,
-        host_of_nexus: str,
-        hosts_of_agent: str,
-        cluster_mode: str,
+    need_nexus: bool,
+    user: str,
+    ssh_key: str,
+    log_record_dir: str,
+    inventory: str,
+    host_of_controller: str,
+    host_of_storage: str,
+    host_of_nexus: str,
+    hosts_of_agent: str,
+    cluster_mode: str,
 ) -> None:
     agent_hosts = {}
     for agent in hosts_of_agent.strip().split(","):
@@ -430,4 +430,4 @@ def _deploy(
         },
         "--user " + user,
         inventory,
-        )
+    )
