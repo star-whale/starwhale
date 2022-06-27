@@ -12,6 +12,7 @@
     env:
       JAR: "agent"
       SW_HOST_IP: "{{ ansible_eth0.ipv4.address }}"
+      SW_TASK_IMAGE_PULL_TIMEOUT_MILLIS: "{{ pull_image_timeout_millis }}"
       SW_TASK_DEFAULT_IMAGE: "{{ task_default_image }}"
       SW_PYPI_INDEX_URL: "{{ pypi_index_url }}"
       SW_PYPI_EXTRA_INDEX_URL: "{{ pypi_extra_index_url }}"

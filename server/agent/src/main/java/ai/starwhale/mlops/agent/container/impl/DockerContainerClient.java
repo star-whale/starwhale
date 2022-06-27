@@ -117,8 +117,8 @@ public class DockerContainerClient implements ContainerClient {
                 pullImage(imageConfig.getImage(), imageConfig.getImagePullTimeout());
                 // one more again
                 this.createAndStartContainer(imageConfig);
-            } catch (InterruptedException ex) {
-                log.error("unknown error:{}", ex.getMessage(), ex);
+            } catch (Exception ex) {
+                log.error("pull image error:{}", ex.getMessage(), ex);
             }
         }
         return Optional.empty();
