@@ -154,6 +154,11 @@ def bootstrap_cmd() -> None:
     default=default.AGENT_DATA_DIR,
     help="A path relative to root-path that will as the runtime directory for the agent",
 )
+@click.option(
+    "--pull-image-timeout-millis",
+    default=default.IMAGE_PULL_TIMEOUT_MILLIS,
+    help="pull image timeout, unit:millis",
+)
 # artifacts cache
 @click.option(
     "--pypi-index-url",
@@ -256,6 +261,7 @@ def _start(
     controller_port: int,
     controller_runtime_dir: str,
     agent_runtime_dir: str,
+    pull_image_timeout_millis: int,
     pypi_index_url: str,
     pypi_extra_index_url: str,
     image_registry_mirror: str,
@@ -324,6 +330,7 @@ def _start(
             "controller_data_dir": "{{ base_root_path }}/" + controller_runtime_dir,
             # agent variables
             # agent
+            "pull_image_timeout_millis": pull_image_timeout_millis,
             "agent_image": "{{ sw_repository }}/server:{{ sw_version }}",
             "task_default_image": "{{ sw_repository }}/starwhale:latest",
             # task storage dir

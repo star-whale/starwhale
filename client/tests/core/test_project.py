@@ -6,9 +6,18 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.utils import config as sw_config
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
-from starwhale.utils.config import load_swcli_config
+from starwhale.utils.config import (
+    SWCliConfigMixed,
+    load_swcli_config,
+    get_swcli_config_path,
+)
 from starwhale.core.project.view import ProjectTermView
+from starwhale.core.instance.view import InstanceTermView
 from starwhale.core.project.model import StandaloneProject
+
+from .. import get_predefined_config_yaml
+
+_existed_config_contents = get_predefined_config_yaml()
 
 
 class ProjectTestCase(TestCase):
@@ -68,3 +77,17 @@ class ProjectTestCase(TestCase):
             ptv.remove()
             ptv.recover()
             ProjectTermView.list()
+
+    def test_project_select(self):
+        path = get_swcli_config_path()
+        self.fs.create_file(path, contents=_existed_config_contents)
+
+        sw = SWCliConfigMixed()
+        assert sw.current_instance == "pre-bare"
+
+        InstanceTermView().select("pre-bare2")
+        assert sw.current_instance == "pre-bare2"
+
+        ProjectTermView("new_project").select()
+        assert sw.current_instance == "pre-bare2"
+        assert sw.current_project == "new_project"

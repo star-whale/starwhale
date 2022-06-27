@@ -80,7 +80,7 @@ class BaseTermView(SWCliConfigMixed):
         return _wrapper
 
     @staticmethod
-    def comparsion(r1: RenderableType, r2: RenderableType) -> Table:
+    def comparison(r1: RenderableType, r2: RenderableType) -> Table:
         table = Table(show_header=False, pad_edge=False, box=None, expand=True)
         table.add_column("1")
         table.add_column("2")

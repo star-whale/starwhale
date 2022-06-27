@@ -45,7 +45,7 @@ class SWCliConfigTestCase(TestCase):
         self.fs.create_file(path, contents=_existed_config_contents)
         _config = load_swcli_config()
 
-        assert len(_config["instances"]) == 2
+        assert len(_config["instances"]) == 3
         assert "pre-bare" == _config["current_instance"]
         assert "cloud" == _config["instances"]["pre-bare"]["type"]
         assert "starwhale" == _config["instances"]["pre-bare"]["user_name"]
@@ -64,6 +64,7 @@ class SWCliConfigTestCase(TestCase):
         sw.delete_instance("local")
         sw.delete_instance("xxx")
         sw.delete_instance("pre-bare")
+        sw.delete_instance("pre-bare2")
 
         _config = load_swcli_config()
         assert "local" == sw.current_instance
@@ -94,6 +95,14 @@ class SWCliConfigTestCase(TestCase):
         sw.select_current_default(instance="pre-bare", project="first")
         assert sw.current_project == "first"
         sw.select_current_default(instance="local", project="self")
+        assert sw.current_instance == "local"
+        assert sw.current_project == "self"
+
+        sw.select_current_default(instance="pre-bare2")
+        assert sw.current_instance == "pre-bare2"
+        sw.select_current_default(instance="pre-bare2", project="new")
+        assert sw.current_instance == "pre-bare2"
+        assert sw.current_project == "new"
 
         self.assertRaises(NotFoundError, sw.select_current_default, instance="notfound")
         self.assertRaises(

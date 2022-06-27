@@ -152,10 +152,20 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
+            {{- if not .Values.minikube.enabled }}
+            - name: JVM_XMX
+              {{- if eq .role "gpu"}}
+              value: {{ .Values.resources.agentGPU.requests.memory }}
+              {{else}}
+              value: {{ .Values.resources.agentCPU.requests.memory }}
+              {{- end}}
+            {{- end }}
             - name: SW_AGENT_PORT
               value: "{{ .Values.agent.containerPort }}"
             - name: SW_TASK_DEFAULT_IMAGE
               value: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.base.repo }}:latest"
+            - name: SW_TASK_IMAGE_PULL_TIMEOUT_MILLIS
+              value: {{ .Values.agent.task.pullImageTimeoutMillis }}
             - name: SW_CONTROLLER_URL
               value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}/"
             - name: SW_BASE_PATH

@@ -74,7 +74,8 @@ class ProjectTermView(BaseTermView):
     def select(self) -> None:
         try:
             self.select_current_default(
-                instance=self.uri.instance, project=self.uri.project
+                instance=self.uri.instance_alias or self.uri.instance,
+                project=self.uri.project,
             )
         except Exception as e:
             console.print(
@@ -133,7 +134,7 @@ class ProjectTermView(BaseTermView):
 
         console.print(Panel(Pretty(_r), title="Project Details", title_align="left"))
         if _models or _datasets:
-            _block = self.comparsion(
+            _block = self.comparison(
                 _show_objects(_models, ProjectObjType.MODEL),
                 _show_objects(_datasets, ProjectObjType.DATASET),
             )

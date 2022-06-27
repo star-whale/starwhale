@@ -13,7 +13,7 @@ install_requires = ["click", "ansible-runner", "ansible"]
 
 
 def _format_version() -> str:
-    _v = os.environ.get("PYPI_RELEASE_VERSION", "0.2.2.beta2")
+    _v = os.environ.get("PYPI_RELEASE_VERSION", "0.2.2.beta6")
     _v = _v.lstrip("v").replace("-", ".")
     _vs = _v.split(".", 3)
     if len(_vs) == 4:
