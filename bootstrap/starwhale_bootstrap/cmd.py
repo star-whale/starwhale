@@ -149,7 +149,6 @@ def bootstrap_cmd() -> None:
     default=default.AGENT_DATA_DIR,
     help="A path relative to root-path that will as the runtime directory for the agent",
 )
-
 @click.option(
     "--pull-image-timeout-millis",
     default=default.IMAGE_PULL_TIMEOUT_MILLIS,
