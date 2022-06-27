@@ -3,8 +3,8 @@ FROM ${BASE_SERVER_IMAGE}
 
 # java opts
 ENV JDWP_PORT=5005
-ENV JVM_XMX=6144M
-ENV JVM_XMS=6144M
+ENV JVM_XMX=2048M
+ENV JVM_XMS=512M
 ENV JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:$JDWP_PORT
 ENV JAR=agent
 
