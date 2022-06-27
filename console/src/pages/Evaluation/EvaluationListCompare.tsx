@@ -113,7 +113,7 @@ export default function EvaluationListCompare({
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs = [...$rows]
 
-        attrs.forEach((attr, index) => {
+        attrs.forEach((attr) => {
             if (!attr.name.startsWith('summary/')) {
                 return
             }
@@ -123,12 +123,22 @@ export default function EvaluationListCompare({
             rowWithAttrs.push({
                 key: attr.name,
                 title: name,
-                values: $rows.map((data: any) => data?.attributes[index]?.value),
+                values: rows.map((data: any) => {
+                    const attrIndex = data.attributes?.findIndex(
+                        (row: IEvaluationAttributeValue) => row.name === attr.name
+                    )
+
+                    if (attrIndex >= 0) {
+                        return data.attributes?.[attrIndex]?.value ?? '-'
+                    }
+
+                    return '-'
+                }),
             })
         })
 
         return rowWithAttrs
-    }, [$rows, attrs])
+    }, [$rows, attrs, rows])
 
     return (
         <>

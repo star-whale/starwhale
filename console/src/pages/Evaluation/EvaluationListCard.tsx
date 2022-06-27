@@ -179,7 +179,13 @@ export default function EvaluationListCard() {
                             title: name,
                             sortable: true,
                             sortFn: (a: any, b: any) => {
-                                return a - b
+                                // eslint-disable-next-line
+                                const aNum = Number(a)
+                                const bNum = Number(b)
+                                if (Number.isNaN(aNum)) {
+                                    return -1
+                                }
+                                return aNum - bNum
                             },
                             // @ts-ignore
                             renderCell: (props: any) => {
