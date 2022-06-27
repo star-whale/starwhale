@@ -34,10 +34,7 @@ import org.springframework.util.StringUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -180,7 +177,7 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
         ));
         // generate the file used by container(default dir)
         taskPersistence.generateConfigFile(originTask);
-        var env = new java.util.ArrayList<>(List.of(
+        var env = new ArrayList<>(List.of(
                 env("SW_PIP_CACHE_DIR", String.format(pipCachePathFormat, "root")), // todo specified by user
                 env("SW_SWMP_NAME", originTask.getSwModelPackage().getName()),
                 env("SW_SWMP_VERSION", originTask.getSwModelPackage().getVersion()),
