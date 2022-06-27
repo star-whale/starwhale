@@ -84,6 +84,11 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                 ))
                 .build();
 
+        // net work mode
+        if(agentProperties.getTask().getUseHostNetWork() == 1) {
+            imageConfig.setNetworkMode("host");
+        }
+
         // preAllocate fail, try again
         Set<Device> allocated = originTask.getDevices();
         if (CollectionUtil.isEmpty(allocated)) {
@@ -183,7 +188,8 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                 env("SW_PYPI_EXTRA_INDEX_URL", agentProperties.getTask().getPypiExtraIndexUrl()),
                 env("SW_PYPI_TRUSTED_HOST", agentProperties.getTask().getPypiTrustedHost()),
                 env("SW_SWMP_NAME", originTask.getSwModelPackage().getName()),
-                env("SW_SWMP_VERSION", originTask.getSwModelPackage().getVersion())
+                env("SW_SWMP_VERSION", originTask.getSwModelPackage().getVersion()),
+                env("SW_TASK_DISABLE_DEBUG", String.valueOf(agentProperties.getTask().getDisableDebug()))
         ));
 
         // fill with task info
