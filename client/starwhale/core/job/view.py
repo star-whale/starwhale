@@ -199,7 +199,7 @@ class JobTermView(BaseTermView):
                 table.add_row(_k, *(f"{_v[_k2]:.4f}" for _k2 in keys))
 
             console.rule(f"[bold green]{report['kind'].upper()} Report")
-            console.print(self.comparsion(tree, table))
+            console.print(self.comparison(tree, table))
 
         def _print_confusion_matrix() -> None:
             cm = report.get("confusion_matrix", {})
@@ -221,7 +221,7 @@ class JobTermView(BaseTermView):
                 mtable.add_row(sort_label_names[idx], *[str(_) for _ in ml[0] + ml[1]])
 
             console.rule(f"[bold green]{report['kind'].upper()} Confusion Matrix")
-            console.print(self.comparsion(mtable, btable))
+            console.print(self.comparison(mtable, btable))
 
         _print_report()
         _print_confusion_matrix()
