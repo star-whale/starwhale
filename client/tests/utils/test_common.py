@@ -7,11 +7,15 @@ from starwhale.utils.debug import init_logger
 
 def test_valid_object_name() -> None:
     assert validate_obj_name("a")[0]
-    assert validate_obj_name("1")[0]
+    assert validate_obj_name("_")[0]
+    assert not validate_obj_name("1")[0]
     assert validate_obj_name("abc")[0]
     assert not validate_obj_name("a" * 81)[0]
     assert validate_obj_name("_adtest")[0]
-    assert not validate_obj_name("_.adtest")[0]
+    assert validate_obj_name("_.adtest")[0]
+    assert not validate_obj_name(".adtest")[0]
+    assert validate_obj_name("v1.0")[0]
+    assert validate_obj_name("v1-alpha1")[0]
 
 
 def test_logger() -> None:
