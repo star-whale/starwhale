@@ -14,5 +14,13 @@
       MYSQL_ROOT_PASSWORD: "{{ mysql_root_pwd }}"
       MYSQL_USER: "{{ mysql_user }}"
       MYSQL_PASSWORD: "{{ mysql_pwd }}"
+      MYSQL_DATABASE: "{{ mysql_database }}"
     volumes:
       - "{{ mysql_data_dir }}:/var/lib/mysql"
+  when: is_start | bool
+
+- name: Stop mysql
+  community.docker.docker_container:
+    name: mysql_by_bootstrap
+    state: stopped
+  when: is_stop | bool

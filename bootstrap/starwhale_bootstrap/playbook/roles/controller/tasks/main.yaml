@@ -5,6 +5,7 @@
     name: controller_by_bootstrap
     image: "{{ controller_image }}"
     pull: true
+    state: started
     restart_policy: always
     ports:
       - "{{ controller_port }}:8082"
@@ -26,3 +27,11 @@
       SW_STORAGE_SECRETKEY: "{{ minio_secret_key }}"
       #
       SW_STORAGE_ENDPOINT: "http://{{ hostvars['storage.starwhale.com']['ansible_eth0']['ipv4']['address'] }}:{{ minio_server_port }}"
+  when: is_start | bool
+
+
+- name: Stop controller container
+  community.docker.docker_container:
+    name: controller_by_bootstrap
+    state: stopped
+  when: is_stop | bool

@@ -3,7 +3,7 @@ import os
 import ansible_runner
 
 
-def deploy(
+def play(
     logdir: str = "", extravars: dict = {}, cmdline: str = "", inventory: dict = {}
 ):
     cur_path = os.path.abspath(os.path.dirname(__file__))

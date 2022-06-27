@@ -5,6 +5,7 @@
     name: agent_by_bootstrap
     image: "{{ agent_image }}"
     pull: true
+    state: started
     restart_policy: always
     volumes:
       - "{{ agent_data_dir }}:/opt/starwhale"
@@ -22,12 +23,22 @@
       SW_STORAGE_ACCESSKEY: "{{ minio_access_key }}"
       SW_STORAGE_SECRETKEY: "{{ minio_secret_key }}"
       SW_STORAGE_ENDPOINT: "http://{{ hostvars['storage.starwhale.com']['ansible_eth0']['ipv4']['address'] }}:{{ minio_server_port }}"
+  when: is_start | bool
+
+
+- name: Stop agent container
+  community.docker.docker_container:
+    name: agent_by_bootstrap
+    state: stopped
+  when: is_stop | bool
+
 
 - name: Start taskset
   community.docker.docker_container:
     name: taskset_by_bootstrap
     image: "{{ taskset_image }}"
     pull: true
+    state: started
     restart_policy: always
     ports:
       - "{{ taskset_docker_port }}:2376"
@@ -35,3 +46,11 @@
       - "{{ agent_data_dir }}:/opt/starwhale"
       - "{{ taskset_dind_dir }}:/var/lib/docker"
     privileged: true
+  when: is_start | bool
+
+
+- name: Stop taskset
+  community.docker.docker_container:
+    name: taskset_by_bootstrap
+    state: stopped
+  when: is_stop | bool

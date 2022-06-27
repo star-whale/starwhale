@@ -9,15 +9,16 @@ SW_VERSION = "latest"
 SW_REPOSITORY = "starwhaleai"  # or else ghcr.io/star-whale
 
 # mysql
-MYSQL_IMAGE = "mysql:8.0-debian"
-MYSQL_PORT = "3406"
+MYSQL_IMAGE = "bitnami/mysql:8.0.29-debian-10-r2"
+MYSQL_PORT = "3306"
 MYSQL_ROOT_PWD = "starwhale"
 MYSQL_USER = "starwhale"
 MYSQL_PWD = "starwhale"
+MYSQL_DATABASE = "starwhale"
 MYSQL_DATA_DIR = "local-storage-mysql"
 
 # minio
-MINIO_IMAGE = "quay.io/minio/minio"
+MINIO_IMAGE = "bitnami/minio:2022.6.20-debian-11-r0"
 MINIO_DATA_DIR = "local-storage-oss"
 MINIO_DEFAULT_BUCKET = "starwhale"
 MINIO_ACCESS_KEY = "minioadmin"

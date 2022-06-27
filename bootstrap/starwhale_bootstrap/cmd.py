@@ -1,7 +1,7 @@
 import click
 from . import default
 
-from .deploy import deploy
+from .deploy import play
 
 
 @click.group("deploy", help="StarWhale Bootstrap deploy")
@@ -9,7 +9,7 @@ def bootstrap_cmd() -> None:
     pass
 
 
-@bootstrap_cmd.command("run", help="run deploy script starwhale to cluster")
+@bootstrap_cmd.command("start", help="start deploy starwhale to cluster")
 # common
 @click.option(
     "--root-path",
@@ -72,6 +72,11 @@ def bootstrap_cmd() -> None:
 @click.option(
     "--mysql-password",
     default=default.MYSQL_PWD,
+    help="",
+)
+@click.option(
+    "--mysql-database",
+    default=default.MYSQL_DATABASE,
     help="",
 )
 @click.option(
@@ -238,6 +243,7 @@ def _deploy(
     mysql_root_password: str,
     mysql_user: str,
     mysql_password: str,
+    mysql_database: str,
     mysql_data_dir: str,
     use_default_oss: bool,
     oss_image: str,
@@ -278,10 +284,12 @@ def _deploy(
     if need_nexus:
         inventory["nexus"] = {"hosts": {host_of_nexus: {}}}
 
-    deploy(
+    play(
         log_record_dir,
         {
             # base
+            "is_start": True,
+            "is_stop": False,
             "base_root_path": root_path,
             "sw_version": version,
             "sw_repository": image_repository,  # or else ghcr.io/star-whale
@@ -296,6 +304,7 @@ def _deploy(
             "mysql_root_pwd": mysql_root_password,
             "mysql_user": mysql_user,
             "mysql_pwd": mysql_password,
+            "mysql_database": mysql_database,
             "mysql_data_dir": "{{ base_root_path }}/" + mysql_data_dir,
             # minio
             "minio_image": oss_image,
@@ -333,3 +342,92 @@ def _deploy(
         "--user " + user,
         inventory,
     )
+
+
+@bootstrap_cmd.command("stop", help="stop starwhale for cluster")
+# common
+
+# nexus
+@click.option(
+    "--need-nexus",
+    default="false",
+    help="whether deploy nexus",
+)
+
+# deploy environment
+@click.option(
+    "--user",
+    default=default.DEPLOY_USER,
+    help="The user who deployed the product on the host",
+)
+@click.option(
+    "--ssh-key",
+    default="",
+    help="The ssh private key passed to ssh-agent " "as part of the deployment run",
+)
+@click.option("--log-record-dir", default=default.RECORD_LOG_DIR, help="")
+@click.option("--inventory", default="", help="")
+@click.option(
+    "--host-of-controller",
+    default=default.HOST_OF_CONTROLLER,
+    help="Only one,the controller host",
+)
+@click.option(
+    "--host-of-storage",
+    default=default.HOST_OF_STORAGE,
+    help="Only one,the storage host",
+)
+@click.option(
+    "--host-of-nexus",
+    default=default.HOST_OF_NEXUS,
+    help="Only one,the nexus host",
+)
+@click.option(
+    "--hosts-of-agent",
+    default=default.HOST_OF_AGENT,
+    # multiple=True,
+    # cls=PythonLiteralOption,
+    help="At least one exists, in the format is 'agent[**].starwhale.com'",
+)
+# common
+@click.option(
+    "--cluster-mode",
+    default=default.CLUSTER_MODE,
+    help="The mode of the cluster, which can be docker or k8s",
+)
+def _deploy(
+        need_nexus: bool,
+        user: str,
+        ssh_key: str,
+        log_record_dir: str,
+        inventory: str,
+        host_of_controller: str,
+        host_of_storage: str,
+        host_of_nexus: str,
+        hosts_of_agent: str,
+        cluster_mode: str,
+) -> None:
+    agent_hosts = {}
+    for agent in hosts_of_agent.strip().split(","):
+        agent_hosts[agent] = {}
+
+    inventory = {
+        "controller": {"hosts": {host_of_controller: {}}},
+        "storage": {"hosts": {host_of_storage: {}}},
+        "agent": {"hosts": agent_hosts},
+    }
+    if need_nexus:
+        inventory["nexus"] = {"hosts": {host_of_nexus: {}}}
+
+    play(
+        log_record_dir,
+        {
+            # base
+            "is_start": False,
+            "is_stop": True,
+            # nexus
+            "need_nexus": need_nexus,
+        },
+        "--user " + user,
+        inventory,
+        )
