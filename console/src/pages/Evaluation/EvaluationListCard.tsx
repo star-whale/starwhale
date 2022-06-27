@@ -16,6 +16,8 @@ import IconFont from '@/components/IconFont'
 import { CustomColumn, CategoricalColumn, StringColumn } from '@/components/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import EvaluationListCompare from './EvaluationListCompare'
+import { useFetchEvaluations } from '@/domain/evaluation/hooks/useFetchEvaluations'
+import { useFetchEvaluationAttrs } from '@/domain/evaluation/hooks/useFetchEvaluationAttrs'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
@@ -23,7 +25,9 @@ export default function EvaluationListCard() {
     const history = useHistory()
     // const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
-    const evaluationsInfo = useFetchJobs(projectId, { pageNum: 1, pageSize: 1000 })
+    const evaluationsInfo = useFetchEvaluations(projectId, page)
+    const evaluationAttrsInfo = useFetchEvaluationAttrs(projectId, page)
+
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
         async (data: ICreateJobSchema) => {

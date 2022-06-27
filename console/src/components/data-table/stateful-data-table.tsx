@@ -20,6 +20,7 @@ import { StatefulContainer } from './stateful-container'
 import { LocaleContext } from './locales'
 import type { ColumnT, ConfigT, RowT, StatefulContainerPropsT, StatefulDataTablePropsT } from './types'
 import ConfigManageColumns from './config-manage-columns'
+import _ from 'lodash'
 
 // @ts-ignore
 function useResizeObserver(
@@ -169,18 +170,16 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const $columns = useMemo(() => {
         if (!columnable) return columns
 
-        return selectIds.map((id: any) => {
-            const _column = columns.find((column) => column.key === id)
+        const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
 
-            if (!_column) {
-                return undefined
-            }
-
-            return {
-                ..._column,
-                pin: pinnedIds.includes(_column?.key as string) ? 'LEFT' : undefined,
-            }
-        }) as ColumnT[]
+        return selectIds
+            .filter((id: any) => id in columnsMap)
+            .map((id: any) => {
+                return {
+                    ...columnsMap[id],
+                    pin: pinnedIds.includes(id) ? 'LEFT' : undefined,
+                }
+            }) as ColumnT[]
     }, [columns, selectIds, pinnedIds, columnable])
 
     return (
@@ -342,31 +341,33 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
                     <div style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}>
                         {/* @ts-ignore */}
-                        <DataTable
-                            batchActions={props.batchActions}
-                            columns={$columns}
-                            emptyMessage={props.emptyMessage}
-                            filters={filters}
-                            loading={props.loading}
-                            loadingMessage={props.loadingMessage}
-                            onIncludedRowsChange={onIncludedRowsChange}
-                            onRowHighlightChange={onRowHighlightChange}
-                            onSelectionChange={props.onSelectionChange}
-                            onSelectMany={onSelectMany}
-                            onSelectNone={onSelectNone}
-                            onSelectOne={onSelectOne}
-                            onSort={onSort}
-                            resizableColumnWidths={resizableColumnWidths}
-                            rowHighlightIndex={rowHighlightIndex}
-                            rows={props.rows}
-                            rowActions={props.rowActions}
-                            rowHeight={props.rowHeight}
-                            selectedRowIds={selectedRowIds}
-                            sortDirection={sortDirection}
-                            sortIndex={sortIndex}
-                            textQuery={textQuery}
-                            controlRef={props.controlRef}
-                        />
+                        {$columns.length > 0 && (
+                            <DataTable
+                                batchActions={props.batchActions}
+                                columns={$columns}
+                                emptyMessage={props.emptyMessage}
+                                filters={filters}
+                                loading={props.loading}
+                                loadingMessage={props.loadingMessage}
+                                onIncludedRowsChange={onIncludedRowsChange}
+                                onRowHighlightChange={onRowHighlightChange}
+                                onSelectionChange={props.onSelectionChange}
+                                onSelectMany={onSelectMany}
+                                onSelectNone={onSelectNone}
+                                onSelectOne={onSelectOne}
+                                onSort={onSort}
+                                resizableColumnWidths={resizableColumnWidths}
+                                rowHighlightIndex={rowHighlightIndex}
+                                rows={props.rows}
+                                rowActions={props.rowActions}
+                                rowHeight={props.rowHeight}
+                                selectedRowIds={selectedRowIds}
+                                sortDirection={sortDirection}
+                                sortIndex={sortIndex}
+                                textQuery={textQuery}
+                                controlRef={props.controlRef}
+                            />
+                        )}
                     </div>
                 </>
             )}

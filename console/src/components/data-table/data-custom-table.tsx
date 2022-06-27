@@ -986,7 +986,7 @@ export function DataTable({
             const filledColumnsLen = columns.filter((c) => (c ? c.fillWidth : true)).length
             const padding = filledColumnsLen === 0 ? 0 : Math.floor(remainder / filledColumnsLen)
 
-            // console.log(resizedWidths, remainder, padding)
+            console.log(resizedWidths, remainder, padding)
             if (padding > 0) {
                 const result = []
                 // -1 so that we loop over all but the last item

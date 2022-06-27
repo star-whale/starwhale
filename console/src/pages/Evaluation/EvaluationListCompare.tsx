@@ -7,12 +7,24 @@ import Table from '@/components/Table/TableTyped'
 import { useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { CustomColumn, StringColumn } from '@/components/data-table'
+import { fetchJobResult } from '@/domain/job/services/job'
+import { useQueries } from 'react-query'
 
 export default function EvaluationListCompare({ rows = [] }) {
     const [t] = useTranslation()
     const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
     const evaluationsInfo = useFetchJobs(projectId, page)
+
+    const results = useQueries(
+        rows.map((row: any) => ({
+            queryKey: `fetchJobResult:${projectId}:${row.id}`,
+            queryFn: () => fetchJobResult(projectId, row.id),
+            refetchOnWindowFocus: false,
+        }))
+    )
+
+    console.log(results)
 
     const $columns = useMemo(
         () => [
@@ -95,6 +107,8 @@ export default function EvaluationListCompare({ rows = [] }) {
         ],
         [t, rows]
     )
+
+    // const $rowWithSummary = useMemo(() => {}, [results])
 
     return (
         <>
