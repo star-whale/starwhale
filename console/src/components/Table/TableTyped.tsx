@@ -271,8 +271,7 @@ export function TableTyped({
                                 gap: 8,
                             }}
                         >
-                            <FiInbox size={30} />
-                            <Text>{t('no data')}</Text>
+                            <FiInbox size={50} />
                         </div>
                     )}
                 />

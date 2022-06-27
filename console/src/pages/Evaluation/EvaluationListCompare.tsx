@@ -2,13 +2,10 @@ import React, { useMemo } from 'react'
 import { usePage } from '@/hooks/usePage'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import User from '@/domain/user/components/User'
 import Table from '@/components/Table/TableTyped'
 import { useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { CustomColumn, StringColumn } from '@/components/data-table'
-import { fetchJobResult } from '@/domain/job/services/job'
-import { useQueries } from 'react-query'
 import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
 
 export default function EvaluationListCompare({
@@ -23,15 +20,13 @@ export default function EvaluationListCompare({
     const { projectId } = useParams<{ projectId: string }>()
     const evaluationsInfo = useFetchJobs(projectId, page)
 
-    const results = useQueries(
-        rows.map((row: any) => ({
-            queryKey: `fetchJobResult:${projectId}:${row.id}`,
-            queryFn: () => fetchJobResult(projectId, row.id),
-            refetchOnWindowFocus: false,
-        }))
-    )
-
-    console.log(results)
+    // const results = useQueries(
+    //     rows.map((row: any) => ({
+    //         queryKey: `fetchJobResult:${projectId}:${row.id}`,
+    //         queryFn: () => fetchJobResult(projectId, row.id),
+    //         refetchOnWindowFocus: false,
+    //     }))
+    // )
 
     const $columns = useMemo(
         () => [
@@ -118,7 +113,7 @@ export default function EvaluationListCompare({
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs = [...$rows]
 
-        attrs.map((attr, index) => {
+        attrs.forEach((attr, index) => {
             if (!attr.name.startsWith('summary/')) {
                 return
             }
@@ -128,7 +123,7 @@ export default function EvaluationListCompare({
             rowWithAttrs.push({
                 key: attr.name,
                 title: name,
-                values: rows.map((data: any) => data?.attributes[index]?.value),
+                values: $rows.map((data: any) => data?.attributes[index]?.value),
             })
         })
 

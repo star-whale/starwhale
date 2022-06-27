@@ -108,7 +108,7 @@ function ConfigManageColumns(props: PropsT) {
                         }}
                         title={column.title}
                     >
-                        <LabelSmall $style={{ flex: 1, overflow: 'hidden' }} className={'line-clamp'}>
+                        <LabelSmall $style={{ flex: 1, overflow: 'hidden' }} className='line-clamp'>
                             {column.title}
                         </LabelSmall>
                         <div>

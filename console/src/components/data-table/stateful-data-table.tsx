@@ -14,13 +14,13 @@ import { Input, SIZE as INPUT_SIZES } from 'baseui/input'
 import { Popover } from 'baseui/popover'
 import { useStyletron } from 'baseui'
 import { Tag } from 'baseui/tag'
+import _ from 'lodash'
 import FilterMenu from './filter-menu'
 import { DataTable } from './data-custom-table'
 import { StatefulContainer } from './stateful-container'
 import { LocaleContext } from './locales'
 import type { ColumnT, ConfigT, RowT, StatefulContainerPropsT, StatefulDataTablePropsT } from './types'
 import ConfigManageColumns from './config-manage-columns'
-import _ from 'lodash'
 
 // @ts-ignore
 function useResizeObserver(

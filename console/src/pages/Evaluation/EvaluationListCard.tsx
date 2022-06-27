@@ -1,25 +1,23 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import Card from '@/components/Card'
-import { createJob, doJobAction } from '@job/services/job'
-import { ICreateJobSchema, JobActionType } from '@job/schemas/job'
+import { createJob } from '@job/services/job'
+import { ICreateJobSchema } from '@job/schemas/job'
 import JobForm from '@job/components/JobForm'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import { Button, SIZE as ButtonSize } from 'baseui/button'
-import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table/TableTyped'
 import { Link, useHistory, useParams } from 'react-router-dom'
-import { toaster } from 'baseui/toast'
 import IconFont from '@/components/IconFont'
-import { CustomColumn, CategoricalColumn, StringColumn, NumericalColumn } from '@/components/data-table'
+import { CustomColumn, StringColumn } from '@/components/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
-import EvaluationListCompare from './EvaluationListCompare'
 import { useFetchEvaluations } from '@/domain/evaluation/hooks/useFetchEvaluations'
 import { useFetchEvaluationAttrs } from '@/domain/evaluation/hooks/useFetchEvaluationAttrs'
 import { usePage } from '@/hooks/usePage'
 import { ColumnT } from '@/components/data-table/types'
 import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
+import EvaluationListCompare from './EvaluationListCompare'
 
 export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
@@ -39,15 +37,15 @@ export default function EvaluationListCard() {
         },
         [evaluationsInfo, projectId]
     )
-    const handleAction = useCallback(
-        async (jobId, type: JobActionType) => {
-            await doJobAction(projectId, jobId, type)
-            toaster.positive(t('job action done'), { autoHideDuration: 2000 })
-            await evaluationsInfo.refetch()
-            setIsCreateJobOpen(false)
-        },
-        [evaluationsInfo, projectId, t]
-    )
+    // const handleAction = useCallback(
+    //     async (jobId, type: JobActionType) => {
+    //         await doJobAction(projectId, jobId, type)
+    //         toaster.positive(t('job action done'), { autoHideDuration: 2000 })
+    //         await evaluationsInfo.refetch()
+    //         setIsCreateJobOpen(false)
+    //     },
+    //     [evaluationsInfo, projectId, t]
+    // )
 
     // TODO
     // 1. column key should be equal with eva attr field
@@ -150,12 +148,12 @@ export default function EvaluationListCard() {
             //     mapDataToValue: (item: any) => item,
             // }),
         ],
-        [handleAction, projectId, t]
+        [projectId, t]
     )
     const $columnsWithAttrs = useMemo(() => {
         const columnsWithAttrs = [...columns]
 
-        evaluationAttrsInfo?.data?.map((attr) => {
+        evaluationAttrsInfo?.data?.forEach((attr) => {
             if (!attr.name.startsWith('summary/')) {
                 return
             }
@@ -188,7 +186,7 @@ export default function EvaluationListCard() {
                                 return <p title={props?.value}>{props?.value.slice(0, 6)}</p>
                             },
                             mapDataToValue: (data: any): string =>
-                                data.attributes?.find((v: IEvaluationAttributeValue) => v.name == attr.name)?.value ??
+                                data.attributes?.find((v: IEvaluationAttributeValue) => v.name === attr.name)?.value ??
                                 '-',
                         })
                     )
@@ -197,7 +195,7 @@ export default function EvaluationListCard() {
         })
 
         return columnsWithAttrs
-    }, [evaluationAttrsInfo, evaluationAttrsInfo.isSuccess, columns])
+    }, [evaluationAttrsInfo, columns])
 
     const [compareRows, setCompareRows] = useState([])
     const batchAction = useMemo(
