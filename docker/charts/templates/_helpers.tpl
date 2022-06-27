@@ -165,7 +165,7 @@ spec:
             - name: SW_TASK_DEFAULT_IMAGE
               value: "{{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.base.repo }}:latest"
             - name: SW_TASK_IMAGE_PULL_TIMEOUT_MILLIS
-              value: {{ .Values.agent.task.pullImageTimeoutMillis }}
+              value: "{{ .Values.agent.task.pullImageTimeoutMillis }}"
             - name: SW_CONTROLLER_URL
               value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}/"
             - name: SW_BASE_PATH
