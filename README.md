@@ -108,40 +108,41 @@ Starwhale is a mlops platform. It provides **Instance**, **Project**, **Runtime*
    class MNISTInference(PipelineHandler):
 
        def __init__(self):
-        super().__init__(merge_label=True, ignore_error=False)
-        self.model = self._load_model()
+           super().__init__(merge_label=True, ignore_error=False)
+           self.model = self._load_model()
 
        def ppl(self, data:bytes, batch_size:int, **kw):
            data = self._pre(data, batch_size)
            output = self.model(data)
            return self._post(output)
 
-        def handle_label(self, label:bytes, batch_size:int, **kw):
-            return [int(l) for l in label]
+       def handle_label(self, label:bytes, batch_size:int, **kw):
+           return [int(l) for l in label]
 
-        @multi_classification(
-            confusion_matrix_normalize="all",
-            show_hamming_loss=True,
-            show_cohen_kappa_score=True,
-            show_roc_auc=True,
-            all_labels=[i for i in range(0, 10)],
-        )
-        def cmp(self, _data_loader:"DataLoader"):
-            _result, _label, _pr = [], [], []
-            for _data in _data_loader:
-                _label.extend([int(l) for l in _data["label"]])
-                _result.extend([int(l) for l in _data["result"]])
-                _pr.extend([l for l in _data["pr"]])
-                return _label, _result, _pr
+       @multi_classification(
+           confusion_matrix_normalize="all",
+           show_hamming_loss=True,
+           show_cohen_kappa_score=True,
+           show_roc_auc=True,
+           all_labels=[i for i in range(0, 10)],
+       )
+       def cmp(self, _data_loader:"DataLoader"):
+           _result, _label, _pr = [], [], []
+           for _data in _data_loader:
+               _label.extend([int(l) for l in _data[self._label_field]])
+               # unpack data according to the return value of function ppl
+               (pred, pr) = _data[self._ppl_data_field]
+               _result.extend([int(l) for l in pred])
+               _pr.extend([l for l in pr])
 
-        def _pre(self, input:bytes, batch_size:int):
-            """write some mnist preprocessing code"""
+       def _pre(self, input:bytes, batch_size:int):
+           """write some mnist preprocessing code"""
 
-        def _post(self, input:bytes):
-            """write some mnist post-processing code"""
+       def _post(self, input:bytes):
+           """write some mnist post-processing code"""
 
-        def _load_model():
-            """load your pre trained model"""
+       def _load_model():
+           """load your pre trained model"""
    ```
 
   - Define `model.yaml`.
