@@ -8,5 +8,7 @@
        10.131.0.3 agent03.starwhale.com nexus.starwhale.com
        10.131.0.4 agent04.starwhale.com
       ```
-  - finally, exec: `starwhale-bootstrap deploy run --user ${sudoer} --hosts-of-agent "agent01.starwhale.com,agent02.starwhale.com,agent03.starwhale.com,..."`
+  - finally, exec: `starwhale-bootstrap deploy start --user ${sudoer} --hosts-of-agent "agent01.starwhale.com,agent02.starwhale.com,agent03.starwhale.com,..."`
     - the default host of controller and storage is 'controller.starwhale.com' and 'storage.starwhale.com', So you don't have to pass in
+- how to stop all the containers?
+  - exec: `starwhale-bootstrap deploy stop --user ${sudoer} --hosts-of-agent "agent01.starwhale.com,agent02.starwhale.com,agent03.starwhale.com,..."`
