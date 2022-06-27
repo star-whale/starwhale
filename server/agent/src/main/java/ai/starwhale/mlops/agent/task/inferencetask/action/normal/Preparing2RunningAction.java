@@ -49,7 +49,7 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
     private static final String resultDirEnv = "SW_TASK_RESULT_DIR";
     private static final String swdsFileEnv = "SW_TASK_INPUT_CONFIG";
 
-    private static final String pipCachePathFormat = "%s/.cache/pip";
+    private static final String pipCachePathFormat = "/%s/.cache/pip";
 
     /*@Override
     public boolean valid(InferenceTask task, Context context) {
