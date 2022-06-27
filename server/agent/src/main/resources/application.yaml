@@ -13,9 +13,9 @@ sw:
       retryRunMaxNum: ${SW_TASK_RETRY_RUN_MAX_NUM:10}
       retryRestartMaxNum: ${SW_TASK_RESTART_MAX_NUM:10}
       imagePullTimeout: ${SW_TASK_IMAGE_PULL_TIMEOUT_MILLIS:600000}
-      pypiIndexUrl: ${SW_PYPI_INDEX_URL:http://10.131.0.1:3141/root/pypi-douban/+simple/}
-      pypiExtraIndexUrl: ${SW_PYPI_EXTRA_INDEX_URL:https://pypi.tuna.tsinghua.edu.cn/simple/}
-      pypiTrustedHost: ${SW_PYPI_TRUSTED_HOST:10.131.0.1 pypi.tuna.tsinghua.edu.cn}
+      pypiIndexUrl: ${SW_PYPI_INDEX_URL:}
+      pypiExtraIndexUrl: ${SW_PYPI_EXTRA_INDEX_URL:}
+      pypiTrustedHost: ${SW_PYPI_TRUSTED_HOST:}
     container:
       host: ${DOCKER_HOST:tcp://127.0.0.1:2376}
   controller:

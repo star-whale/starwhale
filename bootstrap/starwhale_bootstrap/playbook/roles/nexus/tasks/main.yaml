@@ -19,4 +19,11 @@
       NEXUS_SECURITY_RANDOMPASSWORD: 'false'
     volumes:
       - "{{ nexus_data_dir }}/nexus-data:/nexus-data"
-  when: need_nexus | bool
+  when: need_nexus | bool and is_start
+
+
+- name: Stop nexus
+  community.docker.docker_container:
+    name: nexus_by_bootstrap
+    state: stopped
+  when: need_nexus | bool and is_stop | bool

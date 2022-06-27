@@ -34,10 +34,7 @@ import org.springframework.util.StringUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -52,7 +49,7 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
     private static final String resultDirEnv = "SW_TASK_RESULT_DIR";
     private static final String swdsFileEnv = "SW_TASK_INPUT_CONFIG";
 
-    private static final String pipCachePathFormat = "%s/.cache/pip";
+    private static final String pipCachePathFormat = "/%s/.cache/pip";
 
     /*@Override
     public boolean valid(InferenceTask task, Context context) {
@@ -180,17 +177,24 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
         ));
         // generate the file used by container(default dir)
         taskPersistence.generateConfigFile(originTask);
-
-        // task container env
-        imageConfig.setEnv(List.of(
+        var env = new ArrayList<>(List.of(
                 env("SW_PIP_CACHE_DIR", String.format(pipCachePathFormat, "root")), // todo specified by user
-                env("SW_PYPI_INDEX_URL", agentProperties.getTask().getPypiIndexUrl()),
-                env("SW_PYPI_EXTRA_INDEX_URL", agentProperties.getTask().getPypiExtraIndexUrl()),
-                env("SW_PYPI_TRUSTED_HOST", agentProperties.getTask().getPypiTrustedHost()),
                 env("SW_SWMP_NAME", originTask.getSwModelPackage().getName()),
                 env("SW_SWMP_VERSION", originTask.getSwModelPackage().getVersion()),
                 env("SW_TASK_DISABLE_DEBUG", String.valueOf(agentProperties.getTask().getDisableDebug()))
         ));
+        if (StringUtils.hasText(agentProperties.getTask().getPypiIndexUrl())) {
+            env.add(env("SW_PYPI_INDEX_URL", agentProperties.getTask().getPypiIndexUrl()));
+        }
+        if (StringUtils.hasText(agentProperties.getTask().getPypiExtraIndexUrl())) {
+            env.add(env("SW_PYPI_EXTRA_INDEX_URL", agentProperties.getTask().getPypiExtraIndexUrl()));
+        }
+        if (StringUtils.hasText(agentProperties.getTask().getPypiTrustedHost())) {
+            env.add(env("SW_PYPI_TRUSTED_HOST", agentProperties.getTask().getPypiTrustedHost()));
+        }
+
+        // task container env
+        imageConfig.setEnv(env);
 
         // fill with task info
         Optional<String> containerId = containerClient.createAndStartContainer(imageConfig);
