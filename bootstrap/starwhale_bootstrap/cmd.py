@@ -228,7 +228,7 @@ def bootstrap_cmd() -> None:
     default=default.CLUSTER_MODE,
     help="The mode of the cluster, which can be docker or k8s",
 )
-def _deploy(
+def _start(
     root_path: str,
     version: str,
     image_repository: str,
@@ -345,15 +345,12 @@ def _deploy(
 
 
 @bootstrap_cmd.command("stop", help="stop starwhale for cluster")
-# common
-
 # nexus
 @click.option(
     "--need-nexus",
     default="false",
     help="whether deploy nexus",
 )
-
 # deploy environment
 @click.option(
     "--user",
@@ -395,7 +392,7 @@ def _deploy(
     default=default.CLUSTER_MODE,
     help="The mode of the cluster, which can be docker or k8s",
 )
-def _deploy(
+def _stop(
     need_nexus: bool,
     user: str,
     ssh_key: str,
