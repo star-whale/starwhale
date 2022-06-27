@@ -84,7 +84,7 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
                 ))
                 .build();
 
-        // net work mode
+        // network mode
         if(agentProperties.getTask().getUseHostNetWork() == 1) {
             imageConfig.setNetworkMode("host");
         }
