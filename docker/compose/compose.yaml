@@ -67,8 +67,8 @@ services:
       - DOCKER_HOST=tcp://taskset:2376
       - SW_HOST_IP=127.0.0.1
       - SW_PYPI_INDEX_URL=https://pypi.doubanio.com/simple/
-      - SW_PYPI_EXTRA_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple/ https://pypi.org/simple
-      - SW_PYPI_TRUSTED_HOST=pypi.doubanio.com pypi.tuna.tsinghua.edu.cn
+      - SW_PYPI_EXTRA_INDEX_URL=https://mirrors.bfsu.edu.cn/pypi/web/simple/
+      - SW_PYPI_TRUSTED_HOST=pypi.doubanio.com mirrors.bfsu.edu.cn
       - SW_CONTROLLER_URL=http://controller:8082
       - SW_STORAGE_BUCKET=starwhale
       - SW_STORAGE_ACCESSKEY=minioadmin
