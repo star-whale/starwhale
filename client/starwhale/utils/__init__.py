@@ -129,3 +129,8 @@ def validate_obj_name(name: str) -> t.Tuple[bool, str]:
 def get_downloadable_sw_version() -> str:
     _v = __version__
     return "" if _v == SW_DEV_DUMMY_VERSION else _v
+
+
+def snake_to_camel(snake: str) -> str:
+    parts = snake.split("_")
+    return "".join(i.title() for i in parts)

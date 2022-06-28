@@ -1,4 +1,5 @@
 import sys
+import typing as t
 from http import HTTPStatus
 
 import requests
@@ -75,18 +76,80 @@ class InstanceTermView(BaseTermView):
         self.delete_instance(instance)
         console.print(":wink: bye.")
 
-    @BaseTermView._header  # type: ignore
-    def info(self, instance: str = "") -> None:
+    def info(self, instance: str = "") -> t.Dict:
         instance = instance or self.current_instance
 
         if instance == STANDALONE_INSTANCE:
-            console.print(f":balloon: standalone instance, root dir @ {self.rootdir}")
+            return {
+                "instance": instance,
+                "root_dir": str(self.rootdir),
+            }
         else:
             # TODO: support use uri directly
             # TODO: user async to get
             ci = CloudInstance(instance)
             _version = ci._fetch_version()
             _agents = ci._fetch_agents()
+
+            result = {
+                "instance": instance,
+                "version": _version,
+                "agents": [
+                    {"ip": i["ip"], "status": str(i["status"]), "version": i["version"]}
+                    for i in _agents
+                ],
+            }
+            return result
+
+    def list(self) -> t.List[t.Dict[str, t.Any]]:
+        result = list()
+
+        for k, v in self._config["instances"].items():
+            _is_current = (
+                k == self.current_instance or v["uri"] == self.current_instance
+            )
+            result.append(
+                {
+                    "in_use": _is_current,
+                    "name": k,
+                    "uri": v.get("uri", ""),
+                    "user_name": v.get("user_name", ""),
+                    "user_role": v.get("user_role", ""),
+                    "current_project": str(v.get("current_project", "")),
+                    "updated_at": v.get("updated_at", ""),
+                }
+            )
+        return result
+
+
+class InstanceTermViewRich(InstanceTermView):
+    def list(self) -> None:
+        title = "List Starwhale Instances"
+        custom_table = {"caption": f"Current Instance: [blink]{self.current_instance}"}
+        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
+            "in_use": lambda x: ":backhand_index_pointing_right:" if x else "",
+            "user_role": self.place_holder_for_empty(),
+            "current_project": self.place_holder_for_empty(),
+            "updated_at": self.place_holder_for_empty(),
+        }
+        custom_row = lambda row: {"style": "magenta"} if row["in_use"] else None
+        data = super().list()
+        self.print_table(
+            title,
+            data,
+            custom_table=custom_table,
+            custom_column=custom_column,
+            custom_row=custom_row,
+        )
+
+    @BaseTermView._header  # type: ignore
+    def info(self, instance: str = "") -> None:
+        _info = super().info(instance)
+        instance = _info["instance"]
+
+        if instance == STANDALONE_INSTANCE:
+            console.print(f":balloon: standalone instance, root dir @ {self.rootdir}")
+        else:
 
             def _agents_table() -> Table:
                 table = Table(
@@ -99,11 +162,11 @@ class InstanceTermView(BaseTermView):
                 table.add_column("status", style="blue")
                 table.add_column("version")
 
-                for i, _agent in enumerate(_agents):
+                for i, _agent in enumerate(_info["agents"]):
                     table.add_row(
                         str(i),
                         _agent["ip"],
-                        str(_agent["status"]),
+                        _agent["status"],
                         _agent["version"],
                     )
                 return table
@@ -114,7 +177,7 @@ class InstanceTermView(BaseTermView):
                     "Category", no_wrap=True, justify="left", style="bold green"
                 )
                 grid.add_column("Information")
-                grid.add_row("Version", _version)
+                grid.add_row("Version", _info["version"])
                 grid.add_row(
                     "Agents",
                     _agents_table(),
@@ -124,33 +187,18 @@ class InstanceTermView(BaseTermView):
 
             console.print(_details())
 
-    def list(self) -> None:
-        table = Table(
-            title="List Starwhale Instances",
-            caption=f"Current Instance: [blink]{self.current_instance}",
-            box=box.SIMPLE,
-            expand=True,
-        )
-        table.add_column("")
-        table.add_column("Name")
-        table.add_column("URI")
-        table.add_column("UserName")
-        table.add_column("UserRole")
-        table.add_column("CurrentProject")
-        table.add_column("Updated")
 
-        for k, v in self._config["instances"].items():
-            _is_current = (
-                k == self.current_instance or v["uri"] == self.current_instance
-            )
-            table.add_row(
-                ":backhand_index_pointing_right:" if _is_current else "",
-                k,
-                v["uri"],
-                v["user_name"],
-                v.get("user_role", "--"),
-                str(v.get("current_project", "--")),
-                v.get("updated_at", "--"),
-                style="magenta" if _is_current else "",
-            )
-        console.print(table)
+class InstanceTermViewJson(InstanceTermView):
+    def list(self) -> None:
+        self.pretty_json(super().list())
+
+    def info(self, instance: str = "") -> None:
+        self.pretty_json(super().info(instance))
+
+
+def get_term_view(ctx_obj: t.Dict) -> t.Type[InstanceTermView]:
+    return (
+        InstanceTermViewJson
+        if ctx_obj.get("output") == "json"
+        else InstanceTermViewRich
+    )
