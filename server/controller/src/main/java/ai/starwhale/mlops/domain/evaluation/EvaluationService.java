@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import org.springframework.stereotype.Service;
@@ -77,6 +78,8 @@ public class EvaluationService {
 
     @Resource
     private ResultQuerier resultQuerier;
+
+    private static final Map<Long, SummaryVO> summaryCache = new ConcurrentHashMap<>();
 
     public List<AttributeVO> listAttributeVO() {
         List<String> attributes = FileUtil.readLines(
@@ -124,6 +127,9 @@ public class EvaluationService {
     }
 
     private SummaryVO toSummary(JobEntity entity) {
+        if(summaryCache.containsKey(entity.getId())) {
+            return summaryCache.get(entity.getId());
+        }
 
         JobVO jobVO = jobConvertor.convert(entity);
         SummaryVO summaryVO = SummaryVO.builder()
@@ -143,7 +149,7 @@ public class EvaluationService {
             .duration(jobVO.getDuration())
             .attributes(Lists.newArrayList())
             .build();
-        Map<String, Object> result = resultQuerier.flattenSummaryOfJob(entity.getId());
+        Map<String, Object> result = resultQuerier.flattenResultOfJob(entity.getId());
         for (Entry<String, Object> entry : result.entrySet()) {
             String value = String.valueOf(entry.getValue());
             summaryVO.getAttributes().add(AttributeValueVO.builder()
@@ -152,6 +158,7 @@ public class EvaluationService {
                 .value(value)
                 .build());
         }
+        summaryCache.put(entity.getId(), summaryVO);
         return summaryVO;
     }
 
