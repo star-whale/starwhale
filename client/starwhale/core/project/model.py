@@ -246,7 +246,7 @@ class CloudProject(Project, CloudRequestMixed):
 
         ret = []
         for _m in r.json()["data"]["list"]:
-            _m["created_at"] = (self.fmt_timestamp(_m.pop("createdTime")),)
+            _m["created_at"] = self.fmt_timestamp(_m.pop("createdTime"))
             _m.pop("owner", None)
 
             mvr = self.do_http_request(
