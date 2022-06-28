@@ -2,7 +2,13 @@ module.exports = {
     mainSidebar: [
         {
             "Quickstart": ["quickstart/standalone", "quickstart/on-premises"],
-            "Tutorials": ["tutorials/main"],
+            "Tutorials": [
+                "tutorials/mnist",
+                "tutorials/ag_news",
+                "tutorials/cifar10",
+                "tutorials/pfp",
+                "tutorials/speech",
+            ],
             "Fundamentals": ["fundamentals/concepts", "fundamentals/arch"],
             "Standalone Guides": [
                 "standalone/overview",
