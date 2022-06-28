@@ -2,7 +2,7 @@ import os
 import typing as t
 from pathlib import Path
 
-from starwhale.utils import console
+from starwhale.utils import console, pretty_bytes
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
@@ -45,8 +45,6 @@ class DatasetTermView(BaseTermView):
         self._print_info(self.dataset.info(), fullname=fullname)
 
     @classmethod
-    @BaseTermView._pager
-    @BaseTermView._header
     def list(
         cls,
         project_uri: str = "",
@@ -54,12 +52,12 @@ class DatasetTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _datasets, _pager = Dataset.list(_uri, page, size)
-        BaseTermView._print_list(_datasets, show_removed, fullname)
-        return _datasets, _pager
+        _data = BaseTermView.list_data(_datasets, show_removed, fullname)
+        return _data, _pager
 
     @classmethod
     def build(
@@ -96,3 +94,53 @@ class DatasetTermView(BaseTermView):
         else:
             console.print(f":surfer: add tags {tags} @ {self.uri}...")
             self.dataset.add_tags(tags, quiet)
+
+
+class DatasetTermViewRich(DatasetTermView):
+    @classmethod
+    @BaseTermView._pager
+    @BaseTermView._header
+    def list(
+        cls,
+        project_uri: str = "",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        _datasets, _pager = super().list(
+            project_uri, fullname, show_removed, page, size
+        )
+        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
+            "tags": lambda x: ",".join(x),
+            "size": lambda x: pretty_bytes(x),
+            "runtime": cls.place_holder_for_empty(),
+        }
+
+        cls.print_table("Dataset List", _datasets, custom_column=custom_column)
+        return _datasets, _pager
+
+
+class DatasetTermViewJson(DatasetTermView):
+    @classmethod
+    def list(
+        cls,
+        project_uri: str = "",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> None:
+        _datasets, _pager = super().list(
+            project_uri, fullname, show_removed, page, size
+        )
+        cls.pretty_json(_datasets)
+
+    def info(self, fullname: bool = False) -> None:
+        self.pretty_json(self.get_info_data(self.dataset.info(), fullname))
+
+
+def get_term_view(ctx_obj: t.Dict) -> t.Type[DatasetTermView]:
+    return (
+        DatasetTermViewJson if ctx_obj.get("output") == "json" else DatasetTermViewRich
+    )
