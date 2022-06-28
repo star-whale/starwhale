@@ -2,7 +2,7 @@ import os
 import typing as t
 from pathlib import Path
 
-from starwhale.utils import console, in_production
+from starwhale.utils import console, pretty_bytes, in_production
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, EvalTaskType, InstanceType
@@ -74,8 +74,6 @@ class ModelTermView(BaseTermView):
             pass
 
     @classmethod
-    @BaseTermView._pager
-    @BaseTermView._header
     def list(
         cls,
         project_uri: str = "",
@@ -83,12 +81,12 @@ class ModelTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _models, _pager = Model.list(_uri, page, size)
-        BaseTermView._print_list(_models, show_removed, fullname)
-        return _models, _pager
+        _data = BaseTermView.list_data(_models, show_removed, fullname)
+        return _data, _pager
 
     @classmethod
     def build(
@@ -113,3 +111,47 @@ class ModelTermView(BaseTermView):
         else:
             console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
             self.model.add_tags(tags, quiet)
+
+
+class ModelTermViewRich(ModelTermView):
+    @classmethod
+    @BaseTermView._pager
+    @BaseTermView._header
+    def list(
+        cls,
+        project_uri: str = "",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        _models, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
+            "tags": lambda x: ",".join(x),
+            "size": lambda x: pretty_bytes(x),
+            "runtime": cls.place_holder_for_empty(""),
+        }
+
+        cls.print_table("Model List", _models, custom_column=custom_column)
+        return _models, _pager
+
+
+class ModelTermViewJson(ModelTermView):
+    @classmethod
+    def list(
+        cls,
+        project_uri: str = "",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> None:
+        _models, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        cls.pretty_json(_models)
+
+    def info(self, fullname: bool = False) -> None:
+        self.pretty_json(self.get_info_data(self.model.info(), fullname))
+
+
+def get_term_view(ctx_obj: t.Dict) -> t.Type[ModelTermView]:
+    return ModelTermViewJson if ctx_obj.get("output") == "json" else ModelTermViewRich

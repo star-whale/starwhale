@@ -15,12 +15,13 @@ from starwhale.consts.env import SWEnv
 from starwhale.core.job.view import JobTermView
 from starwhale.core.dataset.store import DatasetStorage
 
-from .view import ModelTermView
+from .view import get_term_view, ModelTermView
 
 
 @click.group("model", help="Model management, build/copy/ppl/cmp/eval/extract...")
-def model_cmd() -> None:
-    pass
+@click.pass_context
+def model_cmd(ctx: click.Context) -> None:
+    ctx.obj = get_term_view(ctx.obj)
 
 
 @model_cmd.command("build", help="[ONLY Standalone]Build starwhale model")
@@ -61,8 +62,9 @@ def _copy(src: str, dest: str, force: bool) -> None:
 @model_cmd.command("info", help="Show model details")
 @click.argument("model")
 @click.option("--fullname", is_flag=True, help="Show version fullname")
-def _info(model: str, fullname: bool) -> None:
-    ModelTermView(model).info(fullname)
+@click.pass_obj
+def _info(view: t.Type[ModelTermView], model: str, fullname: bool) -> None:
+    view(model).info(fullname)
 
 
 @model_cmd.command("list", help="List Model")
@@ -75,10 +77,16 @@ def _info(model: str, fullname: bool) -> None:
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for model list"
 )
+@click.pass_obj
 def _list(
-    project: str, fullname: bool, show_removed: bool, page: int, size: int
+    view: t.Type[ModelTermView],
+    project: str,
+    fullname: bool,
+    show_removed: bool,
+    page: int,
+    size: int,
 ) -> None:
-    ModelTermView.list(project, fullname, show_removed, page, size)
+    view.list(project, fullname, show_removed, page, size)
 
 
 @model_cmd.command("history", help="Show model history")
