@@ -4,12 +4,13 @@ import click
 
 from starwhale.base.type import EvalTaskType
 
-from .view import JobTermView, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from .view import JobTermView, get_term_view, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
 @click.group("job", help="Job management, create/list/info/compare evaluation job")
-def job_cmd() -> None:
-    pass
+@click.pass_context
+def job_cmd(ctx: click.Context) -> None:
+    ctx.obj = get_term_view(ctx.obj)
 
 
 @job_cmd.command("list", help="List all jobs in the current project")
@@ -22,14 +23,16 @@ def job_cmd() -> None:
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for job list"
 )
+@click.pass_obj
 def _list(
+    view: t.Type[JobTermView],
     project: str,
     fullname: bool,
     show_removed: bool,
     page: int,
     size: int,
 ) -> None:
-    JobTermView.list(
+    view.list(
         project, fullname=fullname, show_removed=show_removed, page=page, size=size
     )
 
@@ -136,8 +139,9 @@ def _cancel(job: str, force: bool) -> None:
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
 )
-def _info(job: str, page: int, size: int) -> None:
-    JobTermView(job).info(page, size)
+@click.pass_obj
+def _info(view: t.Type[JobTermView], job: str, page: int, size: int) -> None:
+    view(job).info(page, size)
 
 
 @job_cmd.command("compare")

@@ -11,7 +11,7 @@ from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.config import load_swcli_config
-from starwhale.core.job.view import JobTermView
+from starwhale.core.job.view import JobTermView, JobTermViewRich
 from starwhale.core.job.model import CloudJob, StandaloneJob
 from starwhale.core.job.store import JobStorage
 
@@ -199,7 +199,7 @@ class CloudJobTestCase(unittest.TestCase):
         assert "created_at" in _manifest
         assert "finished_at" in _manifest
 
-        JobTermView.list(
+        JobTermViewRich.list(
             self.project_uri,
             fullname=True,
         )
