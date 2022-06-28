@@ -2,7 +2,7 @@ import os
 import typing as t
 from pathlib import Path
 
-from starwhale.utils import console, in_production
+from starwhale.utils import console, pretty_bytes, in_production
 from starwhale.consts import (
     PythonRunEnv,
     DefaultYAMLName,
@@ -87,8 +87,6 @@ class RuntimeTermView(BaseTermView):
         console.print(f":clap: extracted @ {path.resolve()} :tada:")
 
     @classmethod
-    @BaseTermView._pager
-    @BaseTermView._header
     def list(
         cls,
         project_uri: str = "",
@@ -96,12 +94,12 @@ class RuntimeTermView(BaseTermView):
         show_removed: bool = False,
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
-    ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _uri = URI(project_uri, expected_type=URIType.PROJECT)
         fullname = fullname or (_uri.instance_type == InstanceType.CLOUD)
         _runtimes, _pager = Runtime.list(_uri, page, size)
-        BaseTermView._print_list(_runtimes, show_removed, fullname)
-        return _runtimes, _pager
+        _data = BaseTermView.list_data(_runtimes, show_removed, fullname)
+        return _data, _pager
 
     @classmethod
     def create(
@@ -148,3 +146,51 @@ class RuntimeTermView(BaseTermView):
         else:
             console.print(f":surfer: add tags [red]{tags}[/] @ {self.uri}...")
             self.runtime.add_tags(tags, quiet)
+
+
+class RuntimeTermViewRich(RuntimeTermView):
+    @classmethod
+    @BaseTermView._pager
+    @BaseTermView._header
+    def list(
+        cls,
+        project_uri: str = "",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        _data, _pager = super().list(project_uri, fullname, show_removed, page, size)
+
+        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
+            "tags": lambda x: ",".join(x),
+            "size": lambda x: pretty_bytes(x),
+            "runtime": cls.place_holder_for_empty(),
+        }
+
+        cls.print_table("Runtime List", _data, custom_column=custom_column)
+        return _data, _pager
+
+
+class RuntimeTermViewJson(RuntimeTermView):
+    @classmethod
+    def list(
+        cls,
+        project_uri: str = "",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> None:
+        _data, _pager = super().list(project_uri, fullname, show_removed, page, size)
+        cls.pretty_json(_data)
+
+    def info(self, fullname: bool = False) -> None:
+        _data = self.get_info_data(self.runtime.info(), fullname=fullname)
+        self.pretty_json(_data)
+
+
+def get_term_view(ctx_obj: t.Dict) -> t.Type[RuntimeTermView]:
+    return (
+        RuntimeTermViewJson if ctx_obj.get("output") == "json" else RuntimeTermViewRich
+    )
