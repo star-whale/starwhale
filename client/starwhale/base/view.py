@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import typing as t
 from functools import wraps
 
@@ -11,7 +12,7 @@ from rich.table import Table
 from rich.pretty import Pretty
 from rich.console import RenderableType
 
-from starwhale.utils import console, pretty_bytes
+from starwhale.utils import console, pretty_bytes, snake_to_camel
 from starwhale.consts import UserRoleType, SHORT_VERSION_CNT
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
@@ -194,7 +195,7 @@ class BaseTermView(SWCliConfigMixed):
 
     @staticmethod
     def pretty_json(data: t.Any) -> None:
-        console.print(Pretty(data, expand_all=True))
+        print(json.dumps(data, indent=4, sort_keys=True))
 
     @staticmethod
     def list_data(
@@ -254,7 +255,7 @@ class BaseTermView(SWCliConfigMixed):
                 extra = dict()
                 if custom_header and idx in custom_header:
                     extra = custom_header[idx]
-                table.add_column(field.capitalize(), **extra)
+                table.add_column(snake_to_camel(field), **extra)
 
         header_inited = False
         for row in data:

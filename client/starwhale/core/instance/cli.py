@@ -1,14 +1,17 @@
+import typing as t
+
 import click
 
-from .view import InstanceTermView
+from .view import get_term_view, InstanceTermView
 
 
 @click.group(
     "instance",
     help="Starwhale Instance management, login and select standalone or cloud instance",
 )
-def instance_cmd() -> None:
-    pass
+@click.pass_context
+def instance_cmd(ctx: click.Context) -> None:
+    ctx.obj = get_term_view(ctx.obj)
 
 
 @instance_cmd.command("select")
@@ -49,11 +52,13 @@ def _logout(instance: str) -> None:
 
 
 @instance_cmd.command("list", help="List login Starwhale instances")
-def _list() -> None:
-    InstanceTermView().list()
+@click.pass_obj
+def _list(view: t.Type[InstanceTermView]) -> None:
+    view().list()
 
 
 @instance_cmd.command("info", help="Show instance details")
 @click.argument("instance", default="")
-def _info(instance: str) -> None:
-    InstanceTermView().info(instance)
+@click.pass_obj
+def _info(view: t.Type[InstanceTermView], instance: str) -> None:
+    view().info(instance)
