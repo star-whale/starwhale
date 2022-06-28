@@ -1,10 +1,8 @@
 import sys
 import typing as t
 
-from rich import box
 from rich.tree import Tree
 from rich.panel import Panel
-from rich.table import Table
 from rich.pretty import Pretty
 
 from starwhale.utils import console, pretty_bytes
@@ -28,8 +26,6 @@ class ProjectTermView(BaseTermView):
         return self.project.create()
 
     @classmethod
-    @BaseTermView._pager  # type: ignore
-    @BaseTermView._header  # type: ignore
     def list(
         cls,
         instance_uri: str = "",
@@ -38,38 +34,26 @@ class ProjectTermView(BaseTermView):
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         projects, pager = Project.list(instance_uri, page, size)
 
-        table = Table(
-            title="List Projects",
-            box=box.SIMPLE,
-            expand=True,
-        )
-        table.add_column("")
-        table.add_column("Name")
-        table.add_column("Location")
-        table.add_column("Owner")
-        table.add_column("Created")
-
         _current_project = URI(
             instance_uri, expected_type=URIType.INSTANCE
         ).sw_instance_config.get("current_project", DEFAULT_PROJECT)
 
+        result = list()
         for _p in projects:
             _name = _p["name"]
             _is_current = _name == _current_project
-            if _p.get("id"):
-                _name = f"[{_p['id']}]{_name}"
 
-            table.add_row(
-                ":backhand_index_pointing_right:" if _is_current else "",
-                _name,
-                _p.get("location", "--"),
-                _p.get("owner", "--"),
-                _p["created_at"],
-                style="magenta" if _is_current else "",
+            result.append(
+                {
+                    "in_use": _is_current,
+                    "name": _name,
+                    "location": _p.get("location", ""),
+                    "owner": _p.get("owner", ""),
+                    "created_at": _p["created_at"],
+                }
             )
 
-        console.print(table)
-        return projects, pager
+        return result, pager
 
     def select(self) -> None:
         try:
@@ -109,7 +93,6 @@ class ProjectTermView(BaseTermView):
             )
             sys.exit(1)
 
-    @BaseTermView._header  # type: ignore
     def info(self, fullname: bool = False) -> None:
         _r = self.project.info()
         _models = _r.pop("models", [])
@@ -142,3 +125,81 @@ class ProjectTermView(BaseTermView):
 
 
 # TODO: add ProjectHTTPView for http request
+
+
+class ProjectTermViewRich(ProjectTermView):
+    @classmethod
+    @BaseTermView._pager  # type: ignore
+    @BaseTermView._header  # type: ignore
+    def list(
+        cls,
+        instance_uri: str = "",
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
+        projects, pager = super().list(instance_uri, page, size)
+
+        title = "Project List"
+        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
+            "in_use": lambda x: ":backhand_index_pointing_right:" if x else "",
+            "location": cls.place_holder_for_empty(),
+            "owner": cls.place_holder_for_empty(),
+        }
+        custom_row = lambda row: {"style": "magenta"} if row["in_use"] else None
+        cls.print_table(
+            title, projects, custom_column=custom_column, custom_row=custom_row
+        )
+        return projects, pager
+
+    @BaseTermView._header  # type: ignore
+    def info(self, fullname: bool = False) -> None:
+        _r = self.project.info()
+        _models = _r.pop("models", [])
+        _datasets = _r.pop("datasets", [])
+
+        def _show_objects(objects: t.List[t.Dict[str, t.Any]], typ: str) -> Tree:
+            tree = Tree(f"[red]{typ}[/]")
+            for _o in objects:
+                otree = tree.add(f"{_o['name']}")
+                for _v in _o["latest_versions"]:
+                    _k = "name" if fullname else "short_name"
+                    if typ == ProjectObjType.MODEL:
+                        # TODO: add model version for every version
+                        _size = _o["files"][0]["size"]
+                    else:
+                        _size = pretty_bytes(_v["meta"]["dataset_byte_size"])
+
+                    otree.add(
+                        f"[{_v['id']}][green]{_v[_k]}[/] :timer_clock: {_v['created_at']} :dizzy:{_size}"
+                    )
+            return tree
+
+        console.print(Panel(Pretty(_r), title="Project Details", title_align="left"))
+        if _models or _datasets:
+            _block = self.comparison(
+                _show_objects(_models, ProjectObjType.MODEL),
+                _show_objects(_datasets, ProjectObjType.DATASET),
+            )
+            console.print(_block)
+
+
+class ProjectTermViewJson(ProjectTermView):
+    @classmethod
+    def list(
+        cls,
+        instance_uri: str = "",
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> None:
+        projects, pager = super().list(instance_uri, page, size)
+        cls.pretty_json(projects)
+
+    def info(self, fullname: bool = False) -> None:
+        _r = self.project.info()
+        self.pretty_json(_r)
+
+
+def get_term_view(ctx_obj: t.Dict) -> t.Type[ProjectTermView]:
+    return (
+        ProjectTermViewJson if ctx_obj.get("output") == "json" else ProjectTermViewRich
+    )
