@@ -272,6 +272,19 @@ class JobTermView(BaseTermView):
             console.print(f":collision: failed to create job, notice: [red]{reason}[/]")
 
     @classmethod
+    def list(
+        cls,
+        project_uri: str = "",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
+        return Job.list(URI(project_uri, expected_type=URIType.PROJECT), page, size)
+
+
+class JobTermViewRich(JobTermView):
+    @classmethod
     @BaseTermView._pager
     @BaseTermView._header
     def list(
@@ -282,9 +295,7 @@ class JobTermView(BaseTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        _jobs, _pager = Job.list(
-            URI(project_uri, expected_type=URIType.PROJECT), page, size
-        )
+        _jobs, _pager = super().list(project_uri, fullname, show_removed, page, size)
         table = Table(title="Job List", box=box.SIMPLE)
         table.add_column("Name", justify="left", style="cyan", no_wrap=True)
         table.add_column("Model", no_wrap=True)
@@ -348,3 +359,28 @@ class JobTermView(BaseTermView):
             # TODO: add duration
         console.print(table)
         return _jobs, _pager
+
+
+class JobTermViewJson(JobTermView):
+    @classmethod
+    def list(
+        cls,
+        project_uri: str = "",
+        fullname: bool = False,
+        show_removed: bool = False,
+        page: int = DEFAULT_PAGE_IDX,
+        size: int = DEFAULT_PAGE_SIZE,
+    ) -> None:
+        _data, _ = super().list(project_uri, fullname, show_removed, page, size)
+        cls.pretty_json(_data)
+
+    def info(self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE) -> None:
+        _rt = self.job.info(page, size)
+        if not _rt:
+            console.print(":tea: not found info")
+            return
+        self.pretty_json(_rt)
+
+
+def get_term_view(ctx_obj: t.Dict) -> t.Type[JobTermView]:
+    return JobTermViewJson if ctx_obj.get("output") == "json" else JobTermViewRich
