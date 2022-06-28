@@ -40,7 +40,7 @@ class DataLoader(object):
         swds: t.List[t.Dict[str, t.Any]] = [],
         logger: t.Union[loguru.Logger, None] = None,
         kind: str = DataLoaderKind.SWDS,
-        deserializer: t.Callable = None,
+        deserializer: t.Optional[t.Callable] = None,
     ):
         self.storage = storage
         self.swds = swds
@@ -94,6 +94,7 @@ class JSONLineDataLoader(DataLoader):
             line = line.strip()
             if not line:
                 continue
+
             if self.deserializer:
                 yield self.deserializer(line)
                 continue

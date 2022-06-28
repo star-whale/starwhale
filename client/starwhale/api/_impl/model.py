@@ -232,8 +232,8 @@ class PipelineHandler(object):
     def label_data_deserialize(self, data: bytes) -> bytes:
         return dill.loads(base64.b64decode(data))[0]
 
-    def deserialize(self, data: bytes) -> t.Any:
-        ret = json.loads(data.decode("utf-8"))
+    def deserialize(self, data: t.Union[str, bytes]) -> t.Any:
+        ret = json.loads(data)
         ret[self._ppl_data_field] = self.ppl_data_deserialize(ret[self._ppl_data_field])
         ret[self._label_field] = self.label_data_deserialize(ret[self._label_field])
         return ret
