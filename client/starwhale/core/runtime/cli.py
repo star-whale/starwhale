@@ -10,14 +10,15 @@ from starwhale.consts import (
     DEFAULT_PYTHON_VERSION,
 )
 
-from .view import RuntimeTermView
+from .view import get_term_view, RuntimeTermView
 
 
 @click.group(
     "runtime", help="Runtime management, create/build/copy/activate/restore..."
 )
-def runtime_cmd() -> None:
-    pass
+@click.pass_context
+def runtime_cmd(ctx: click.Context) -> None:
+    ctx.obj = get_term_view(ctx.obj)
 
 
 @runtime_cmd.command(
@@ -107,8 +108,9 @@ def _recover(runtime: str, force: bool) -> None:
 @runtime_cmd.command("info", help="Show runtime details")
 @click.argument("runtime")
 @click.option("--fullname", is_flag=True, help="Show version fullname")
-def _info(runtime: str, fullname: bool) -> None:
-    RuntimeTermView(runtime).info(fullname)
+@click.pass_obj
+def _info(view: t.Type[RuntimeTermView], runtime: str, fullname: bool) -> None:
+    view(runtime).info(fullname)
 
 
 @runtime_cmd.command("history", help="Show runtime history")
@@ -139,10 +141,16 @@ def _restore(target: str) -> None:
 @click.option(
     "--size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for tasks list"
 )
+@click.pass_obj
 def _list(
-    project: str, fullname: bool, show_removed: bool, page: int, size: int
+    view: t.Type[RuntimeTermView],
+    project: str,
+    fullname: bool,
+    show_removed: bool,
+    page: int,
+    size: int,
 ) -> None:
-    RuntimeTermView.list(project, fullname, show_removed, page, size)
+    view.list(project, fullname, show_removed, page, size)
 
 
 @runtime_cmd.command(
