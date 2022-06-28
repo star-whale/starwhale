@@ -7,7 +7,8 @@ module.exports = {
             "Standalone Guides": [
                 "standalone/overview",
                 "standalone/runtime", "standalone/model", "standalone/dataset",
-                "standalone/evaluation", "standalone/installation",
+                "standalone/evaluation",
+                "standalone/installation", "standalone/configuration",
             ],
             "Cloud Guides": ["cloud/main", "cloud/helm-charts", "cloud/ansible"],
             "Python SDK Guides": ["sdk/main"],
