@@ -130,7 +130,7 @@ controller:
 agent:
   containerPort: 8088
   task:
-    pullImageTimeoutMillis: 3600000
+    pullImageTimeoutMillis: "3600000"
 
 storage:
   agentHostPathRoot: "/mnt/data/starwhale"
@@ -155,21 +155,21 @@ minikube:
 resources:
   agentCPU:
     limits:
-      memory: 20Gi
+      memory: 20G
     requests:
-      memory: 6Gi
+      memory: 6G
   agentGPU:
     limits:
-      memory: 40Gi
+      memory: 40G
       nvidia.com/gpu: 2
     requests:
-      memory: 6Gi
+      memory: 6G
       nvidia.com/gpu: 2
   controller:
     limits:
-      memory: 8Gi
+      memory: 8G
     requests:
-      memory: 6Gi
+      memory: 6G
 
 serviceAccount:
   create: true
