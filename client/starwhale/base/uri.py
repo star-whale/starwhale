@@ -149,10 +149,6 @@ class URI(object):
             else:
                 _name, _version = raw, ""
 
-            ok, reason = validate_obj_name(_name)
-            if not ok:
-                raise Exception(reason)
-
             return ObjField(typ=self.expected_type, name=_name, version=_version), ""
 
         _sp = raw.split("/")
