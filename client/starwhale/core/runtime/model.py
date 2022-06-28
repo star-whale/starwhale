@@ -56,8 +56,8 @@ class RuntimeConfig(object):
     def __init__(
         self,
         name: str,
-        mode: str,
-        python_version: str,
+        mode: str = PythonRunEnv.VENV,
+        python_version: str = DEFAULT_PYTHON_VERSION,
         pip_req: str = DUMP_USER_PIP_REQ_FNAME,
         **kw: t.Any,
     ) -> None:

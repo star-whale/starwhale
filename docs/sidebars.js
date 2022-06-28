@@ -5,9 +5,10 @@ module.exports = {
             "Tutorials": ["tutorials/main"],
             "Fundamentals": ["fundamentals/concepts", "fundamentals/arch"],
             "Standalone Guides": [
-                "standalone/main",
-                "standalone/client_user_guide",
-                "standalone/installation",
+                "standalone/overview",
+                "standalone/runtime", "standalone/model", "standalone/dataset",
+                "standalone/evaluation",
+                "standalone/installation", "standalone/configuration",
             ],
             "Cloud Guides": ["cloud/main", "cloud/helm-charts", "cloud/ansible"],
             "Python SDK Guides": ["sdk/main"],

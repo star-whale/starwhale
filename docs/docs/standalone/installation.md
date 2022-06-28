@@ -1,5 +1,5 @@
 ---
-title: standalone installing
+title: Standalone Installing
 ---
 
 We can use `swcli` to complete all tasks for Starwhale Standalone mode. `swcli` is written by pure python3 which can be easy-to-install by pip command.
@@ -70,4 +70,13 @@ sudo ln -s `which swcli` /usr/local/bin/
 
 #for conda
 conda run -n starwhale python3 -m pip install --pre --upgrade starwhale
+```
+
+## Remove Starwhale
+
+```bash
+python3 -m pip remove starwhale
+
+rm -rf ~/.config/starwhale
+rm -rf ~/.cache/starwhale
 ```
