@@ -71,10 +71,10 @@ public class ResultQuerierTest {
         ResultQuerier resultQuerier = new ResultQuerier(jobMapper,storageAccessService,new ObjectMapper());
         Object o = resultQuerier.resultOfJob(1L);
         Assertions.assertEquals(OBJECT,objectMapper.writeValueAsString(o));
-        Map<String, Object> result = resultQuerier.flattenSummaryOfJob(6L);
-        Assertions.assertEquals(12, result.size());
+        Map<String, Object> result = resultQuerier.flattenResultOfJob(6L);
+        Assertions.assertEquals(52, result.size());
         Assertions.assertEquals("multi_classification", result.get("kind"));
-        Assertions.assertNull(result.get("labels/9/support"));
+        Assertions.assertNotNull(result.get("labels/9/support"));
         Assertions.assertNotNull(result.get("summary/accuracy"));
     }
 
