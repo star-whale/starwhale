@@ -96,6 +96,10 @@
         update swmp_version set version_tag = #{version.versionTag} where id = #{version.id}
     </update>
 
+    <update id="updateTag" parameterType="ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity">
+        update swmp_version set version_tag = #{tag} where id = #{versionId}
+    </update>
+
     <resultMap id="swmpVersionResultMap" type="ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity" >
         <id property="id" column="mv_id" />
         <result property="swmpId" column="swmp_id" />
