@@ -41,7 +41,7 @@ When we use Starwhale Runtime, we can gain some devops abilities:
 
 ## runtime.yaml Definition
 
-|Name|Description|Required|Default Value|Example|
+|Field|Description|Required|Default Value|Example|
 |----|-----------|--------|-------------|-------|
 |mode|environment mode, venv or conda|❌|`venv`|`venv`|
 |name|runtime name|✅|`""`|`pytorch-mnist`|
