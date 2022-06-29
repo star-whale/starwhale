@@ -13,6 +13,8 @@ module.exports = {
             "Standalone Guides": [
                 "standalone/overview",
                 "standalone/runtime",
+                "standalone/model",
+                "standalone/dataset",
                 "standalone/installation"
             ],
             "Cloud Guides": ["cloud/helm-charts"],
