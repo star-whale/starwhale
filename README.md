@@ -240,7 +240,7 @@ Starwhale is a mlops platform. It provides **Instance**, **Project**, **Runtime*
 
 ## Contributing
 
-🌼👏**PRs are always welcomed** 👍🍺. See more details in [How to contribute starwhale](https://doc.starwhale.ai/contribute).
+🌼👏**PRs are always welcomed** 👍🍺.
 
 ## License
 

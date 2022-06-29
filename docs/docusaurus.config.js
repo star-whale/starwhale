@@ -40,11 +40,6 @@ module.exports = {
                     position: "left",
                 },
                 {
-                    to: "/docs/faq",
-                    label: "FAQ",
-                    position: "left",
-                },
-                {
                     to: "https://github.com/star-whale/starwhale",
                     position: "right",
                     className: "header-ico header-ico--github",
