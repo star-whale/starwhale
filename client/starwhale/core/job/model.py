@@ -15,7 +15,7 @@ from starwhale.utils.fs import move_dir
 from starwhale.base.type import EvalTaskType, InstanceType, JobOperationType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import ignore_error
-from starwhale.utils.error import NoSupportError
+from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 
@@ -326,9 +326,12 @@ class CloudJob(Job, CloudRequestMixed):
         else:
             return False, r.json()["message"]
 
+    @ignore_error({})
     def info(
         self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
     ) -> t.Dict[str, t.Any]:
+        if not self.uri.project:
+            raise NotFoundError("no selected project")
         return {
             "tasks": self._fetch_tasks(page, size),
             "report": self._fetch_job_report(),
@@ -371,6 +374,8 @@ class CloudJob(Job, CloudRequestMixed):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
+        if not project_uri.project:
+            raise NotFoundError("no selected project")
         crm = CloudRequestMixed()
 
         r = crm.do_http_request(

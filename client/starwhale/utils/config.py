@@ -166,7 +166,7 @@ class SWCliConfigMixed(object):
 
     @property
     def current_project(self) -> str:
-        return self._current_instance_obj.get("current_project", DEFAULT_PROJECT)
+        return self._current_instance_obj.get("current_project", "")
 
     def select_current_default(self, instance: str, project: str = "") -> None:
         instance = self._get_instance_alias(instance)
