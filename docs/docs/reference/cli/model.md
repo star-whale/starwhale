@@ -11,9 +11,8 @@ swcli model [OPTIONS] COMMAND [ARGS]...
 ## Summary
 
 - Commands for model lifecycle management.
-- For standalone instance, `model` command use local disk to create, build and store **Starwhale Model**.
-- For cloud instance, `model` command manage the remote cloud models with HTTP API.
-- Model is in one project.
+- For standalone instances, the `model` command uses the local disk to create, build, and store **Starwhale Model**.
+- For cloud instances, the `model` command manages remote models through HTTP API.
 - **Model URI** in format: `[<Project URI>/model]<model name>[/version/<version id>]`.
 
 ## All Sub-Commands
@@ -39,7 +38,7 @@ swcli model [OPTIONS] COMMAND [ARGS]...
 swcli model build [OPTIONS] WORKDIR
 ```
 
-- This command builds a model with the specified working directory. The workdir must contains a `model.yaml`.
+- This command builds a model within the specified working directory. The working dir must contain a `model.yaml`.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -66,11 +65,11 @@ swcli model build [OPTIONS] WORKDIR
 swcli model ppl [OPTIONS] TARGET
 ```
 
-- This command will run ppl which is defined in the `run.ppl` field of the model.yaml. When you write a subclass of `starwhale.api.model.PipelineHandler`, the `ppl` class method is necessary and it will be called by `ppl` command.
-- `TARGET` argument is required, `Model URI` or model workdir path is ok for `TARGET` argument. In Starwhale agent docker environment, only support workdir path.
-- The Starwhale dataset is a precondition for the `ppl` command to run. You should run `swcli dataset render-fuse` to render `input.json` for the input of `ppl` command.
-- Another precondition is the Starwhale runtime. The `ppl` command must run at the activated runtime environment.
-- This command helps the developer to debug ppl process. More human friendly command to evaluate mode is `swcli job create` or `swcli model eval`.
+- This command will run ppl defined in the `run.ppl` field of `model.yaml`. When you write a subclass of `starwhale.api.model.PipelineHandler`, the `ppl` class method is required, and it will be invoked by the `ppl` command.
+- The `TARGET` argument is required. `Model URI` or the model working dir path is ok for the `TARGET` argument. In the Starwhale agent docker environment, only the working dir path is supported.
+- The Starwhale dataset is a precondition for running the `ppl` command. It would be best if you ran `swcli dataset render-fuse` to render `input.json` for the input of `ppl` command.
+- Another precondition is the Starwhale runtime. The `ppl` command must run in the activated runtime environment.
+- This command helps the developer debug ppl processes. The more human-friendly command to evaluate a model is `swcli job create` or `swcli model eval`.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -92,18 +91,18 @@ swcli model ppl [OPTIONS] TARGET
     👏 finish run ppl: PipelineHandler status@/tmp/starwhale/status, log@/tmp/starwhale/log, result@/tmp/starwhale/result
     ```
 
-## Run model cmp
+## Run model comparison
 
 ```bash
 swcli model cmp [OPTIONS] TARGET
 ```
 
-- This command will run cmp which is defined in the `run.ppl` field of the model.yaml. When you write a subclass of `starwhale.api.model.PipelineHandler`, the `cmp` class method is necessary and it will be called by `cmp` command.
-- Compare inference output with label, then generate result jsonline file.
-- `TARGET` argument is required, `Model URI` or model workdir path is ok for `TARGET` argument. In Starwhale agent docker environment, only support workdir path.
-- The result of `ppl` command is a precondition for the `cmp` command to run. You should run `swcli model ppl` to generate ppl inference output, then write a input.json to describe the result path.
-- Another precondition is the Starwhale runtime. The `ppl` command must run at the activated runtime environment.
-- This command helps the developer to debug cmp process. More human friendly command to evaluate mode is `swcli job create` or `swcli model eval`.
+- This command will run a model comparison, defined in the `run.ppl` field of `model.yaml`. When you write a subclass of `starwhale.api.model.PipelineHandler`, the `cmp` class method is required and will be invoked by the `cmp` command.
+- Compare inference output with labels, then generate result jsonline file.
+- `TARGET` argument is required. The `Model URI` or model working dir path is ok for the `TARGET` argument. In the Starwhale agent docker environment, only the working dir path is supported.
+- The result of `ppl` command is a precondition for running the `cmp` command. It would be best if you ran `swcli model ppl` to generate ppl inference output, then write an `input.json` to describe the path of results.
+- Another precondition is the Starwhale runtime. The `ppl` command must run in the activated runtime environment.
+- This command helps the developer debug the comparison process. The more human-friendly command to evaluate a model is `swcli job create` or `swcli model eval`.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -131,9 +130,9 @@ swcli model eval [OPTIONS] MODEL
 ```
 
 - This command creates a new job for model evaluation.
-- `MODEL` argument is required,  `Model URI` or model workdir path is ok for `MODEL` argument.
-- This command does not depend on docker, so you should activate python environment at first.
-- `model eval` command is very helpful for you to write debug, debug ppl/cmp and evaluate model in standalone instance.
+- `MODEL` argument is required. The `Model URI` or model working dir path is ok for the `MODEL` argument.
+- This command does not depend on docker, so you should activate the python environment at first.
+- `model eval` command is beneficial for you to debug ppl/cmp and evaluate models in the standalone instance.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -184,7 +183,7 @@ swcli model info [OPTIONS] MODEL
 ```
 
 - This command inspects the model details.
-- `MODEL` argument uses the `Model URI` format, so you can inspect the whole model or a specified-version model.
+- The `MODEL` argument uses the `Model URI` format so that you can inspect the whole model or a specified-version model.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -197,7 +196,7 @@ swcli model info [OPTIONS] MODEL
 swcli model history [OPTIONS] MODEL
 ```
 
-- This command shows the history of a model, list all the versions of this model.
+- This command shows the history of a model and lists all its versions.
 - `MODEL` argument uses the `Model URI` format.
 - Options:
 
@@ -217,7 +216,7 @@ swcli model history [OPTIONS] MODEL
 swcli model tag [OPTIONS] MODEL TAGS
 ```
 
-- This command adds or removes tags on the specified version of a model.
+- This command adds or removes tags on a specified model version.
 - `MODEL` argument uses the `Model URI` format which must include `/version/{version id}` part.
 - You can write one or more `TAG` arguments.
 - Options:
@@ -239,9 +238,9 @@ swcli model tag [OPTIONS] MODEL TAGS
 swcli model remove [OPTIONS] MODEL
 ```
 
-- This command removes a model, you can run `swcli model recover` to recover the removed models.
-- `MODEL` argument uses the `Model URI` format, so you can remove the whole model or a specified-version model.
-- Support short version or tag in `Model URI` format when you remove a model.
+- This command removes a model. You can run `swcli model recover` to recover the removed models.
+- The `MODEL` argument uses the `Model URI` format so that you can remove the whole model or a specified-version model.
+- Support the short version or tag in `Model URI` format when you remove a model.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -262,9 +261,9 @@ swcli model remove [OPTIONS] MODEL
 swcli model recover [OPTIONS] MODEL
 ```
 
-- This command recovers a removed model, you can run `swcli model list --show-removed` to fetch removed models.
-- `MODEL` argument uses the `Model URI` format, so you can recover the whole model or a specified-version model.
-- Only support full version in `Model URI` format when you recover a model.
+- This command recovers a removed model. You can run `swcli model list --show-removed` to fetch removed models.
+- `MODEL` argument uses the `Model URI` format so that you can recover the whole model or a specified-version model.
+- Only the full version in `Model URI` format is supported when you recover a model.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -284,8 +283,8 @@ swcli model recover [OPTIONS] MODEL
 swcli model extract [OPTIONS] MODEL
 ```
 
-- This command extracts the bundled model to target dir. When you copy a model from remote cloud instance to local standalone, you can extract it and then do some operations, such as update code, rebuild model.
-- `MODEL` argument uses the `Model URI` format which must include `/version/{version id}` part.
+- This command extracts the bundled model to target dir. When you copy a model from a remote cloud instance to the local standalone instance, you can extract it and then do some operations, such as updating the code and rebuilding the model.
+- The `MODEL` argument uses the `Model URI` format, which must include the `/version/{version id}` part.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -308,16 +307,16 @@ swcli model copy [OPTIONS] SRC DEST
 ```
 
 - This command copies a model to another place, either locally or remotely.
-- `SRC` uses `Model URI`, which can locate one existed version of a model in standalone or cloud instance.
-- `DEST` uses `Project URI`, which implies the storage project in destination instance. If `DEST` project has already stored the same name and version model, you can set `--force` argument to force update.
-- Today this command supports copy model from standalone to cloud and from cloud to standalone. `standalone -> standalone`, `cloud -> cloud` no support.
+`SRC` uses `Model URI`, which can locate an existing model version in standalone or cloud instances.
+- `DEST` uses `Project URI`, which implies the storage project in the destination instance. If the `DEST` project has already stored a model with the same name and version, you can set the `--force` argument to force update.
+- Today, this command only supports copying a model from the standalone to the cloud or from the cloud to the standalone. `standalone -> standalone` and `cloud -> cloud` are not supported.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
     |------|--------|-------|-----------|-----|-----------|
     |`--force`|`-f`|❌|Boolean|False|Force to copy model|
 
-- Example: copy a model from local standalone to remote cloud(upload)
+- Example: copy a model from the local standalone instance to the remote cloud instance(upload)
 
     ```bash
     ❯ swcli model copy mnist/version/latest cloud://pre-k8s/project/1
@@ -326,7 +325,7 @@ swcli model copy [OPTIONS] SRC DEST
     👏 copy done.
     ```
 
-- Example: copy a model from remote cloud to local standalone(download)
+- Example: copy a model from the remote cloud instance to the local standalone instance(download)
 
     ```bash
     ❯ swcli model copy cloud://pre-k8s/project/1/model/mnist/version/gbstgnlgheydqnrtmftdgyjzpe4tezy self --force

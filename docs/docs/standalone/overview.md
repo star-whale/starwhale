@@ -4,23 +4,23 @@ title: Overview
 
 ## Concepts
 
-Starwhale standalone instance almost represents all **Starwhale Concepts and workflows**. Starwhale keeps concepts consistent across difference types of instances. So, you can easily exchange data and migrate your work between different instances.
+The Starwhale standalone instance includes almost all **Starwhale Concepts and workflows**. Starwhale keeps concepts consistent across different types of instances. So you can easily exchange data and migrate your work between them.
 
 - For **ML Basic Elements**:
 
-  - **Starwhale Runtime**: Starwhale standalone defines a new environment bundle format with `runtime.yaml` which includes python libs, native libs and native binaries. You can use **Starwhale Runtime** to reproduce a shareable, system independent, versioning running environment.
-  - **Starwhale Model**: **Starwhale Model** is not the Machine Learning or Deep Learning trained model files. It is described by `model.yaml`, includes trained model files, pipeline code, configurations, hyperparameter files and other model related arbitrary files. **Starwhale Model** is shown as a bundle file, which is called `*.swmp` file. Starwhale provides model versioning, storing, sharing, running in **Starwhale Runtime** and using **Starwhale DataSet**.
-  - **Starwhale Dataset**: You can use `dataset.yaml` and some simple python code with Starwhale SDK to process and package data files, then produce a **Starwhale Dataset**. **Starwhale Dataset** is a unified description of how the data and labels are stored and organized. **Starwhale Dataset** makes data loading efficiently and easy-to-use.
+  - **Starwhale Runtime**: Starwhale standalone defines a new environment bundle format with `runtime.yaml`, which includes python libs, native libs, and native binaries. You can use **Starwhale Runtime** to create a shareable and system-independent running environment.
+  - **Starwhale Model**: **Starwhale Model** is not only the Machine Learning or Deep Learning trained model files. It is described by `model.yaml`, and includes trained model files, pipeline code, configurations, hyperparameter files, and other related files. **Starwhale Model** is a bundle file with the `.swmp` extension.
+  - **Starwhale Dataset**: You can use `dataset.yaml` and a few lines of python code to create a **Starwhale Dataset** from your data files with the help of Starwhale SDK. **Starwhale Dataset** is a unified description of how the data and labels are stored and organized. **Starwhale Dataset** makes data loading efficient and easy to use.
 
 - For **Instances Operations**:
 
-  - **Exchange Data**: Model, runtime and dataset all support `copy` command to exchange the **ML Basic Elements** in difference instances.
-  - **Unified Terminal View**: `swcli` is a developer-friendly command line tool that provides a unified operation terminal view between standalone instance and cloud instance. You can use `swcli` to manage multi instances.
+  - **Exchange Data**: the **ML Basic Elements** can be exchanged between different Starwhale instances by the `copy` command.
+  - **Unified Terminal View**: `swcli` is a developer-friendly command-line tool that provides a unified operation terminal view between standalone instance and cloud instance. You can use `swcli` to manage multi instances.
 
 - For **ML Workflows**:
 
-  - **Model Evaluation**: Starwhale standalone provides the out-of-the-box model evaluation toolkit, that includes Python SDK, analysis report decorators and some commands. You can finish the full evaluation workflow of MNIST in ten minutes.
-  - Model training and serving components are in development.
+  - **Model Evaluation**: Starwhale standalone provides the out-of-the-box model evaluation toolkit that includes Python SDK, analysis report decorators, and other commands. You can finish the whole evaluation workflow of MNIST in ten minutes.
+  - Model training and serving components are still in development.
 
 ## Starwhale Resource URI
 
@@ -31,8 +31,8 @@ Starwhale standalone instance almost represents all **Starwhale Concepts and wor
 Instance URI can be either:
 
 - `local`: standalone instance.
-- `[http(s)://]<hostname or ip>[:<port>]`: cloud instance with http address.
-- `[cloud://]<cloud alias>`: cloud instance with alias name, which can be configured in instance login phase.
+- `[http(s)://]<hostname or ip>[:<port>]`: cloud instance with HTTP address.
+- `[cloud://]<cloud alias>`: cloud instance with an alias name, which can be configured in the instance login phase.
 
 :::caution
 "local" is different from "localhost". The former means the local standalone instance without a controller, while the latter implies a controller listening at the default port 7827 on localhost.|
@@ -41,9 +41,9 @@ Instance URI can be either:
 Example:
 
 ```bash
-# login http://console.pre.intra.starwhale.ai instance, alias is pre-k8s
+# login http://console.pre.intra.starwhale.ai instance, the alias is pre-k8s
 swcli instance login --username starwhale --password abcd1234 http://console.pre.intra.starwhale.ai --alias pre-k8s
-# copy model from local instance, default project into cloud instance, instance field uses the alias name: pre-k8s.
+# copy model from the local instance, default project into cloud instance, instance field uses the alias name: pre-k8s.
 swcli model copy mnist/version/latest cloud://pre-k8s/project/1
 # copy runtime into cloud instance: localhost:8081
 swcli runtime copy pytorch/version/v1.0 http://localhost:8081/project/myproject
@@ -56,8 +56,8 @@ Project URI is in the format `[<Instance URI>/project/]<project name>`. If the i
 Example:
 
 ```bash
-swcli project select self   # select self project in current instance
-swcli project info local/project/self  # inspect self project info in local instance
+swcli project select self   # select self project in the current instance
+swcli project info local/project/self  # inspect self project info in the local instance
 ```
 
 ### Model/Dataset/Runtime URI
@@ -87,7 +87,7 @@ Example:
 
 ```bash
 swcli job info mezdayjzge3w   # Inspect mezdayjzge3w version in default instance and default project
-swcli job info local/project/self/job/mezday # Inspect local instance, self project, with short job version:mezday
+swcli job info local/project/self/job/mezday # Inspect the local instance, self project, with short job version:mezday
 ```
 
 ## Names Limitation
