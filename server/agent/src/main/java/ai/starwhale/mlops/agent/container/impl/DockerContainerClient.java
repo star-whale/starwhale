@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ai.starwhale.mlops.agent.container.impl;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
@@ -8,6 +24,7 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.*;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +32,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -40,7 +58,7 @@ public class DockerContainerClient implements ContainerClient {
                 DeviceRequest deviceRequest = new DeviceRequest();
                 deviceRequest.withCapabilities(imageConfig.getGpuConfig().getCapabilities());
                 deviceRequest.withDeviceIds(imageConfig.getGpuConfig().getDeviceIds());
-                deviceRequest.withCount(imageConfig.getGpuConfig().getDeviceIds().size());
+                //deviceRequest.withCount(imageConfig.getGpuConfig().getDeviceIds().size());
                 hostConfig.withDeviceRequests(List.of(deviceRequest));
             }
 
@@ -95,16 +113,19 @@ public class DockerContainerClient implements ContainerClient {
 
         } catch (NotFoundException e) {
             log.error("image:{} not found at local, try to pull from remote", imageConfig.getImage());
-            ResultCallback.Adapter<PullResponseItem> resultCallback = client.pullImageCmd(imageConfig.getImage()).start();
             try {
-                resultCallback.awaitCompletion();
+                pullImage(imageConfig.getImage(), imageConfig.getImagePullTimeout());
                 // one more again
                 this.createAndStartContainer(imageConfig);
-            } catch (InterruptedException ex) {
-                log.error("unknown error:{}", ex.getMessage(), ex);
+            } catch (Exception ex) {
+                log.error("pull image error:{}", ex.getMessage(), ex);
             }
         }
         return Optional.empty();
+    }
+
+    private void pullImage(String image, Long timeout) throws InterruptedException {
+        client.pullImageCmd(image).exec(new PullImageResultCallback()).awaitCompletion(timeout, TimeUnit.MILLISECONDS);
     }
 
     @Override

@@ -1,14 +1,15 @@
 import React from 'react'
 import { IUserSchema } from '@user/schemas/user'
-import Text from '@/components/Text'
+import Text, { ITextProps } from '@/components/Text'
 
 export interface IUserProps {
     user: IUserSchema
     style?: React.CSSProperties
+    size?: ITextProps['size']
 }
 
-export default function User({ user, style }: IUserProps) {
-    const name = user.name
+export default function User({ user, style, size = 'medium' }: IUserProps) {
+    const { name } = user
 
     return (
         <div
@@ -19,7 +20,7 @@ export default function User({ user, style }: IUserProps) {
                 ...style,
             }}
         >
-            <Text>{name}</Text>
+            <Text size={size}>{name}</Text>
         </div>
     )
 }

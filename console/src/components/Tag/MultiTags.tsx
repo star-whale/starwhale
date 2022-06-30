@@ -1,10 +1,6 @@
+import { useStyletron } from 'baseui'
 import { Select, SelectProps } from 'baseui/select'
 import React from 'react'
-
-type Item = {
-    id: string
-    label: string
-}
 
 export interface IMultiTagsProps {
     value?: string[]
@@ -14,6 +10,8 @@ export interface IMultiTagsProps {
 }
 
 export default function MultiTags({ value, placeholder, onChange, getValueLabel }: IMultiTagsProps) {
+    const [, theme] = useStyletron()
+
     return (
         <Select
             clearable={false}
@@ -33,11 +31,35 @@ export default function MultiTags({ value, placeholder, onChange, getValueLabel 
                     },
                 },
                 Dropdown: {
-                    style: ({ $theme }) => ({
+                    style: {
                         display: 'none',
-                    }),
+                    },
+                },
+                Tag: {
+                    props: {
+                        overrides: {
+                            Root: {
+                                style: {
+                                    'cursor': 'pointer',
+                                    'backgroundColor': 'var(--color-brandPrimary)',
+                                    'margin': '2px',
+
+                                    ':hover': {
+                                        backgroundColor: 'var(--color-brandPrimaryHover)',
+                                    },
+                                },
+                            },
+                            Text: {
+                                style: {
+                                    font: theme.typography.LabelXSmall,
+                                    lineHeight: '20px',
+                                },
+                            },
+                        },
+                    },
                 },
             }}
+            size='compact'
             getValueLabel={getValueLabel}
             value={value?.map((item) => ({
                 id: item,

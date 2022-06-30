@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unused-prop-types */
+
 import React, { useMemo } from 'react'
 import { Tabs, Tab } from 'baseui/tabs-motion'
 import { useHistory, useLocation } from 'react-router-dom'
@@ -35,6 +37,13 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
             }}
             fill='intrinsic'
             activateOnFocus
+            overrides={{
+                TabHighlight: {
+                    style: {
+                        background: 'var(--color-brandPrimary)',
+                    },
+                },
+            }}
         >
             {navItems.map((item) => {
                 const Icon = item.icon
@@ -48,7 +57,12 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
                             },
                             Tab: {
                                 style: {
-                                    background: 'transparent',
+                                    'background': 'transparent',
+                                    'color': item.path === activeItemId ? 'var(--color-brandPrimary)' : '',
+                                    ':hover': {
+                                        background: 'transparent',
+                                        color: 'var(--color-brandPrimary)',
+                                    },
                                 },
                             },
                         }}
@@ -67,7 +81,7 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
                                     overflow: 'hidden',
                                 }}
                             >
-                                {Icon && <Icon size={12} />}
+                                {Icon}
                                 <div
                                     style={{
                                         display: 'flex',

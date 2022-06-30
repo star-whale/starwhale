@@ -11,26 +11,26 @@
  * @param {number} fontWeight font weight of the measured text,
  * @returns {number} represents the width of a piece of text in the canvas
  */
-const canvas = document.createElement('canvas');
-const context = canvas.getContext('2d');
+const canvas = document.createElement('canvas')
+const context = canvas.getContext('2d')
 
 function measureTextWidth({
-  text,
-  fontSize = '16px',
-  fontFamily = 'Inter, sans-serif',
-  fontWeight = 400,
+    text,
+    fontSize = '16px',
+    fontFamily = 'Inter, sans-serif',
+    fontWeight = 400,
 }: {
-  text: string;
-  fontSize?: string;
-  fontFamily?: string;
-  fontWeight?: number;
+    text: string
+    fontSize?: string
+    fontFamily?: string
+    fontWeight?: number
 }): number {
-  if (canvas && context) {
-    context.font = `${fontWeight} ${fontSize} ${fontFamily}`;
-    const textMetrics = context.measureText(text);
-    return textMetrics?.width || 0;
-  }
-  return 0;
+    if (canvas && context) {
+        context.font = `${fontWeight} ${fontSize} ${fontFamily}`
+        const textMetrics = context.measureText(text)
+        return textMetrics?.width || 0
+    }
+    return 0
 }
 
-export default measureTextWidth;
+export default measureTextWidth

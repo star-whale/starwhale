@@ -1,0 +1,38 @@
+client:
+  - "**/*.py"
+  - "client/**"
+  - ".github/**/*.yaml"
+
+console:
+  - "console/**"
+
+docker:
+  - "docker/**"
+
+server:
+  - "**/*.java"
+  - "server/**"
+
+docs:
+  - "docs/**"
+
+scripts:
+  - "script/**"
+
+js:
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+
+scss:
+  - "**/*.scss"
+
+java:
+  - "**/*.java"
+
+charts:
+  - "docker/charts/**"
+
+bootstrap:
+  - "bootstrap/**/*.yaml"

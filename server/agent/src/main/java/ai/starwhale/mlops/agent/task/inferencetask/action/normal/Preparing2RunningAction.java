@@ -1,8 +1,17 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
@@ -18,26 +27,29 @@ import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask.ActionStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.domain.node.Device;
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class Preparing2RunningAction extends AbsBasePPLTaskAction {
+public class Preparing2RunningAction extends AbsBaseTaskAction {
     private static final String containerBasePath = "/opt/starwhale/";
+    private static final String runtimeDepPath = "/opt/starwhale/swmp/dep";
+    private static final String runtimeManifestFilePath = "/opt/starwhale/swmp/_manifest.yaml";
     private static final String swmpDirEnv = "SW_SWMP_WORKDIR";
     private static final String statusFileEnv = "SW_TASK_STATUS_FILE";
     private static final String logDirEnv = "SW_TASK_LOG_DIR";
     private static final String resultDirEnv = "SW_TASK_RESULT_DIR";
     private static final String swdsFileEnv = "SW_TASK_INPUT_CONFIG";
+
+    private static final String pipCachePathFormat = "/%s/.cache/pip";
 
     /*@Override
     public boolean valid(InferenceTask task, Context context) {
@@ -54,51 +66,63 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
     }
 
     @Override
-    public InferenceTask processing(InferenceTask oldTask, Context context) throws Exception {
+    public InferenceTask processing(InferenceTask originTask, Context context) throws Exception {
 
         ImageConfig imageConfig = ImageConfig.builder()
                 .autoRemove(false) // finally rm
-                .image(oldTask.getImageId())
+                // .image(originTask.getImageId())
                 .labels(Map.of(
-                        "task-id", oldTask.getId().toString(),
-                        "task-type", oldTask.getTaskType().name(),
-                        "swmp-name", oldTask.getSwModelPackage().getName(),
-                        "swmp-version", oldTask.getSwModelPackage().getVersion(),
-                        "device-type", oldTask.getDeviceClass().name(),
-                        "device-num", oldTask.getDeviceAmount().toString()
+                        "task-id", originTask.getId().toString(),
+                        "task-type", originTask.getTaskType().name(),
+                        "swmp-name", originTask.getSwModelPackage().getName(),
+                        "swmp-version", originTask.getSwModelPackage().getVersion(),
+                        "device-type", originTask.getDeviceClass().name(),
+                        "device-num", originTask.getDeviceAmount().toString()
                 ))
                 .build();
 
+        // network mode
+        if(agentProperties.getTask().getUseHostNetWork() == 1) {
+            imageConfig.setNetworkMode("host");
+        }
+
         // preAllocate fail, try again
-        if (CollectionUtil.isEmpty(oldTask.getDevices())) {
-            Set<Device> allocated = null;
+        Set<Device> allocated = originTask.getDevices();
+        if (CollectionUtil.isEmpty(allocated)) {
+            
             // allocate device(GPU or CPU) for task
-            switch (oldTask.getDeviceClass()) {
+            switch (originTask.getDeviceClass()) {
                 case CPU:
-                    allocated = sourcePool.allocate(AllocateRequest.builder().cpuNum(oldTask.getDeviceAmount()).build());
-                    imageConfig.setCpuConfig(
-                            CPUConfig.builder().cpuCount(Long.valueOf(oldTask.getDeviceAmount())).build()
-                    );
+                    allocated = sourcePool.allocate(AllocateRequest.builder().cpuNum(originTask.getDeviceAmount()).build());
                     break;
                 case GPU:
-                    allocated = sourcePool.allocate(AllocateRequest.builder().gpuNum(oldTask.getDeviceAmount()).build());
-                    imageConfig.setGpuConfig(
-                            GPUConfig.builder()
-                                    .count(oldTask.getDeviceAmount())
-                                    .capabilities(List.of(List.of("gpu")))
-                                    .deviceIds(allocated.stream().map(Device::getId).collect(Collectors.toList()))
-                                    .build()
-                    );
+                    allocated = sourcePool.allocate(AllocateRequest.builder().gpuNum(originTask.getDeviceAmount()).build());
                     break;
                 case UNKNOWN:
                     log.error("unknown device class");
                     throw ErrorCode.allocateError.asException("unknown device class");
             }
-            // allocate device to this task,if fail will throw exception, now it is blocked
-            oldTask.setDevices(allocated);
+            
+        }
+        // config for container
+        switch (originTask.getDeviceClass()) {
+            case CPU:
+                imageConfig.setCpuConfig(
+                        CPUConfig.builder().cpuCount(Long.valueOf(originTask.getDeviceAmount())).build()
+                );
+                break;
+            case GPU:
+                imageConfig.setGpuConfig(
+                        GPUConfig.builder()
+                                // .count(originTask.getDeviceAmount())
+                                .capabilities(List.of(List.of("gpu")))
+                                .deviceIds(allocated.stream().map(Device::getId).collect(Collectors.toList()))
+                                .build()
+                );
+                break;
         }
 
-        switch (oldTask.getTaskType()) {
+        switch (originTask.getTaskType()) {
             case PPL:
                 imageConfig.setCmd(List.of("ppl"));
                 break;
@@ -106,45 +130,85 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
                 imageConfig.setCmd(List.of("cmp"));
                 break;
         }
-        taskPersistence.preloadingSWMP(oldTask);
+        taskPersistence.preloadingSWRT(originTask);
+        String image = taskPersistence.runtimeManifest(originTask).getBaseImage();
+        // use default image
+        if (!StringUtils.hasText(image)) {
+            image = agentProperties.getTask().getDefaultImage();
+        }
+        originTask.setImageId(image);
+        // must be swrt file preloaded
+        imageConfig.setImage(image);
+
+        taskPersistence.preloadingSWMP(originTask);
+
+        // check pip cache dir
+        String pipCacheDirStr = String.format(pipCachePathFormat, agentProperties.getBasePath());
+        if(Files.notExists(Path.of(pipCacheDirStr))) {
+            Files.createDirectories(Path.of(pipCacheDirStr));
+        }
+
         imageConfig.setMounts(List.of(
                 Mount.builder()
                         .readOnly(false)
-                        .source(fileSystemPath.oneActiveTaskDir(oldTask.getId()))
+                        .source(fileSystemPath.oneActiveTaskDir(originTask.getId()))
                         .target(containerBasePath)
                         .type("BIND")
-                        .build()
-                /*Mount.builder()
+                        .build(),
+                Mount.builder()
                         .readOnly(false)
-                        .source(taskPersistence.preloadingSWMP(oldTask)) // pull swmp(tar) and uncompress it to the swmp dir
-                        .target(containerBasePath + "swmp")
+                        .source(fileSystemPath.oneActiveTaskRuntimeDir(originTask.getId()) + "/dep")
+                        .target(runtimeDepPath)
                         .type("BIND")
-                        .build()*/
+                        .build(),
+                Mount.builder()
+                        .readOnly(false)
+                        .source(fileSystemPath.oneActiveTaskRuntimeManifestFile(originTask.getId()))
+                        .target(runtimeManifestFilePath)
+                        .type("BIND")
+                        .build(),
+                Mount.builder()
+                        .readOnly(false)
+                        .source(pipCacheDirStr)
+                        .target(String.format(pipCachePathFormat, "/root"))
+                        .type("BIND")
+                        .build()
+
         ));
         // generate the file used by container(default dir)
-        taskPersistence.generateConfigFile(oldTask);
+        taskPersistence.generateConfigFile(originTask);
+        var env = new ArrayList<>(List.of(
+                env("SW_PIP_CACHE_DIR", String.format(pipCachePathFormat, "root")), // todo specified by user
+                env("SW_SWMP_NAME", originTask.getSwModelPackage().getName()),
+                env("SW_SWMP_VERSION", originTask.getSwModelPackage().getVersion()),
+                env("SW_TASK_DISABLE_DEBUG", String.valueOf(agentProperties.getTask().getDisableDebug()))
+        ));
+        if (StringUtils.hasText(agentProperties.getTask().getPypiIndexUrl())) {
+            env.add(env("SW_PYPI_INDEX_URL", agentProperties.getTask().getPypiIndexUrl()));
+        }
+        if (StringUtils.hasText(agentProperties.getTask().getPypiExtraIndexUrl())) {
+            env.add(env("SW_PYPI_EXTRA_INDEX_URL", agentProperties.getTask().getPypiExtraIndexUrl()));
+        }
+        if (StringUtils.hasText(agentProperties.getTask().getPypiTrustedHost())) {
+            env.add(env("SW_PYPI_TRUSTED_HOST", agentProperties.getTask().getPypiTrustedHost()));
+        }
 
         // task container env
-        imageConfig.setEnv(List.of(
-                env("SW_PYPI_INDEX_URL", agentProperties.getTask().getPypiIndexUrl()),
-                env("SW_PYPI_EXTRA_INDEX_URL", agentProperties.getTask().getPypiExtraIndexUrl()),
-                env("SW_PYPI_TRUSTED_HOST", agentProperties.getTask().getPypiTrustedHost()),
-                env("SW_SWMP_NAME", oldTask.getSwModelPackage().getName()),
-                env("SW_SWMP_VERSION", oldTask.getSwModelPackage().getVersion())
-        ));
+        imageConfig.setEnv(env);
 
         // fill with task info
         Optional<String> containerId = containerClient.createAndStartContainer(imageConfig);
         // whether the container create and start success
         if (containerId.isPresent()) {
-            InferenceTask newTask = BeanUtil.toBean(oldTask, InferenceTask.class);
-            newTask.setContainerId(containerId.get());
-            newTask.setStatus(InferenceTaskStatus.RUNNING);
-            return newTask;
+            // allocate device to this task,if fail will throw exception, now it is blocked
+            originTask.setDevices(allocated);
+            originTask.setContainerId(containerId.get());
+            originTask.setStatus(InferenceTaskStatus.RUNNING);
+            return originTask;
         } else {
             // should throw exception and handled by the fail method
             throw ErrorCode.containerError.asException(
-                    String.format("start task container by image:%s fail", oldTask.getImageId()));
+                    String.format("start task container by image:%s fail", originTask.getImageId()));
         }
 
     }
@@ -154,35 +218,38 @@ public class Preparing2RunningAction extends AbsBasePPLTaskAction {
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
         // rm from current
-        taskPool.preparingTasks.remove(oldTask);
+        taskPool.preparingTasks.remove(originTask);
         // tail it to the running list
         taskPool.runningTasks.add(newTask);
     }
 
     @Override
-    public void fail(InferenceTask oldTask, Context context, Exception e) {
-        log.error("execute task:{}, error:{}", oldTask.getId(), e.getMessage());
-        // rollback and wait again until next time
-        /*if (CollectionUtil.isNotEmpty(oldTask.getDevices())) {
-            sourcePool.release(oldTask.getDevices());
-            oldTask.setDevices(null);
-        }*/
-        oldTask.setActionStatus(ActionStatus.completed);
-        if (oldTask.getRetryRunNum() >= agentProperties.getTask().getRetryRunMaxNum()) {
+    public void fail(InferenceTask originTask, Context context, Exception e) {
+        log.error("execute task:{}, error:{}", originTask.getId(), e.getMessage());
+
+        if (originTask.getRetryRunNum() >= agentProperties.getTask().getRetryRunMaxNum()) {
             // release device and move to failed list
             log.error("task:{} maximum number of failed retries:{} has been reached, task failed",
-                    oldTask.getId(), agentProperties.getTask().getRetryRunMaxNum());
-            sourcePool.release(oldTask.getDevices());
-            oldTask.setStatus(InferenceTaskStatus.FAIL);
-            taskPool.preparingTasks.remove(oldTask);
-            taskPool.failedTasks.add(oldTask);
-            taskPersistence.save(oldTask);
+                    originTask.getId(), agentProperties.getTask().getRetryRunMaxNum());
+
+            recordLog(originTask, String.format(
+                    "stage:preparing to running, execute task:%s error, maximum number of rerun retries num has been reached, task failed", originTask.getId()), e);
+
+            sourcePool.release(originTask.getDevices());
+            originTask.setStatus(InferenceTaskStatus.FAIL);
+            taskPool.preparingTasks.remove(originTask);
+            taskPool.failedTasks.add(originTask);
+            taskPersistence.save(originTask);
         } else {
             // todo: retry or take it to the tail of queue
-            oldTask.retryRun();
-            taskPersistence.save(oldTask);
+
+            recordLog(originTask, String.format(
+                    "stage:preparing to running, execute task:%s error, now will rerun it", originTask.getId()), e);
+
+            originTask.retryRun();
+            taskPersistence.save(originTask);
         }
     }
 }

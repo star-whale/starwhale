@@ -8,8 +8,7 @@ import { createUseStyles } from 'react-jss'
 const useStyles = createUseStyles({
     wrapper: (props: IThemedStyleProps) => {
         return {
-            'margin': '10px 0',
-            'fontSize': '18px',
+            'fontSize': '14px',
             'display': 'flex',
             'alignItems': 'center',
             'justifyContent': 'center',
@@ -30,6 +29,8 @@ const useStyles = createUseStyles({
         }
     },
     center: {
+        'margin': '10px 0',
+
         '&:before': {
             width: '50%',
         },
@@ -38,6 +39,8 @@ const useStyles = createUseStyles({
         },
     },
     left: {
+        'margin': '10px 0',
+
         '&:before': {
             width: '0%',
         },
@@ -49,6 +52,8 @@ const useStyles = createUseStyles({
         },
     },
     right: {
+        'margin': '10px 0',
+
         '&:before': {
             width: '100%',
         },
@@ -59,16 +64,35 @@ const useStyles = createUseStyles({
             paddingRight: 0,
         },
     },
+    top: {
+        'position': 'relative',
+        'marginTop': '30px',
+        'marginBottom': '20px',
+        '&:before': {
+            width: '0%',
+        },
+        '&:after': {
+            width: '100%',
+            marginLeft: 0,
+        },
+        '& $innerText': {
+            position: 'absolute',
+            top: '-24px',
+            left: 0,
+            paddingLeft: '0px',
+        },
+    },
     innerText: {
         flexShrink: 0,
         fontWeight: '500',
         padding: '0 1em',
+        color: 'var(--color-brandFontNote) !important',
     },
 })
 
 export interface IDividerProps {
     children: React.ReactNode
-    orientation?: 'left' | 'center' | 'right'
+    orientation?: 'left' | 'center' | 'right' | 'top'
 }
 
 export default function Divider({ children, orientation = 'center' }: IDividerProps) {

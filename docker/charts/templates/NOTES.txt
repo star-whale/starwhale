@@ -1,0 +1,52 @@
+******************************************
+Chart Name: {{ .Chart.Name }}
+Chart Version: {{ .Chart.Version }}
+App Version: {{ .Chart.AppVersion }}
+Starwhale Image:
+  - server: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Chart.AppVersion }}
+  - taskset: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag }}
+
+******************************************
+{{- if .Values.ingress.enabled }}
+Web Visit:
+  {{- if .Values.minikube.enabled }}
+  - starwhale controller: http://{{.Values.minikube.hostname.controller }}
+  {{- else }}
+  - starwhale controller: http://{{.Values.ingress.host}}
+  {{- end}}
+  {{- if .Values.minio.enabled}}
+  - minio admin: http://{{.Values.minio.ingress.hostname}}
+  {{- end}}
+  {{- if .Values.nexus3.enabled}}
+  - nexus3 admin: http://localhost:{{ .Values.nexus3.nexusPort }}
+  {{- end}}
+{{- end }}
+
+Port Forward Visist:
+  - starwhale controller:
+    - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }}-controller {{ .Values.controller.containerPort }}:{{ .Values.controller.containerPort }}
+    - visit: http://localhost:{{.Values.controller.containerPort}}
+  {{- if .Values.minio.enabled}}
+  - minio admin:
+    - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }}-minio {{ .Values.minio.containerPorts.console }}:{{ .Values.minio.containerPorts.console }}
+    - visit: http://localhost:{{.Values.minio.containerPorts.console}}
+  {{- end}}
+  {{- if and .Values.mysql.enabled .Values.minikube.enabled }}
+  - mysql:
+    - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }}-mysql {{ .Values.mysql.primary.service.port }}:{{ .Values.mysql.primary.service.port }}
+    - visit: mysql -h 127.0.0.1 -P {{ .Values.mysql.primary.service.port }} -u{{ .Values.mysql.auth.username }} -p{{ .Values.mysql.auth.password }}
+  {{- end}}
+  {{- if and .Values.nexus3.enabled .Values.minikube.enabled }}
+  - nexus3:
+    - run: kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "common.names.fullname" . }}-nexus-repository-manager {{ .Values.nexus3.nexusPort }}:{{ .Values.nexus3.nexusPort }}
+    - visit: http://localhost:{{ .Values.nexus3.nexusPort }} user:admin,password:admin123
+  {{- end}}
+
+******************************************
+Login Info:
+- starwhale: u:{{ .Values.controller.auth.username }}, p:{{ .Values.controller.auth.password }}
+{{- if .Values.minio.enabled}}
+- minio admin: u:{{ .Values.minio.auth.rootUser }}, p:{{ .Values.minio.auth.rootPassword }}
+{{- end}}
+
+*_* Enjoy to use Starwhale Platform. *_*

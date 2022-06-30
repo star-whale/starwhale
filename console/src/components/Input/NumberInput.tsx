@@ -1,4 +1,4 @@
-import { Input, InputProps } from 'baseui/input'
+import { Input, InputProps, SIZE } from 'baseui/input'
 import React from 'react'
 
 export interface INumberInputProps {
@@ -7,10 +7,10 @@ export interface INumberInputProps {
     min?: number
     max?: number
     step?: number
-    label?: string
     disabled?: boolean
     type?: 'int' | 'float'
     overrides?: InputProps['overrides']
+    size?: SIZE[keyof SIZE]
 }
 
 export default function NumberInput({
@@ -22,6 +22,7 @@ export default function NumberInput({
     disabled,
     type = 'int',
     overrides,
+    size = 'compact',
 }: INumberInputProps) {
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value_ = type === 'float' ? parseFloat(event.target.value) : parseInt(event.target.value, 10)
@@ -33,6 +34,7 @@ export default function NumberInput({
 
     return (
         <Input
+            size={size}
             overrides={overrides}
             type='number'
             value={value}

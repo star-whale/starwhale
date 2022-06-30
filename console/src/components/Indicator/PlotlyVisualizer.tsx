@@ -3,30 +3,27 @@ import Plot from 'react-plotly.js'
 import _ from 'lodash'
 
 import BusyLoaderWrapper from '@/components/BusyLoaderWrapper/BusyLoaderWrapper'
-import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
-// import IllustrationBlock from 'components/IllustrationBlock/IllustrationBlock'
 
 import { IPlotlyVisualizerProps } from './types'
 
 import './PlotlyVisualizer.scss'
 
-function PlotlyVisualizer(props: IPlotlyVisualizerProps) {
+function PlotlyVisualizer({ data, isLoading }: IPlotlyVisualizerProps) {
     return (
-        <BusyLoaderWrapper className='VisualizationLoader' isLoading={!!props.isLoading}>
+        <BusyLoaderWrapper className='VisualizationLoader' isLoading={!!isLoading}>
             <div className='PlotlyVisualizer'>
-                {_.isEmpty(props.data?.data) ? (
-                    // <IllustrationBlock size='xLarge' title='No Tracked Figures' />
+                {_.isEmpty(data?.data) ? (
                     <div>No Tracked Figures</div>
                 ) : (
                     <div className='PlotlyVisualizer__chart'>
                         <Plot
-                            data={props.data?.data}
-                            layout={props.data?.layout}
-                            frames={props.data?.frames}
+                            data={data?.data}
+                            layout={data?.layout}
+                            frames={data?.frames}
                             // config={{ responsive: true }}
                             // onInitialized={(figure) => this.setState(figure)}
                             // onUpdate={(figure) => this.setState(figure)}
-                            useResizeHandler={true}
+                            useResizeHandler
                         />
                     </div>
                 )}

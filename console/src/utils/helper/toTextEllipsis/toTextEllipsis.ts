@@ -1,4 +1,4 @@
-import { measureTextWidth } from '@/utils/helper'
+import measureTextWidth from '../measureTextWidth/measureTextWidth'
 /**
  * [Display the text by specified width]
  * Cut text and display ellipsis if text width is more than specified width
@@ -36,17 +36,19 @@ function toTextEllipsis({
 
     if (recourseIndex === 0 && width > currentTextWidth) {
         return text
-    } else if (currentTextWidth > width) {
+    }
+    if (currentTextWidth > width) {
         return toTextEllipsis({
             text: text.slice(0, -1),
             width,
             fontSize,
             fontFamily,
             fontWeight,
+            // eslint-disable-next-line no-param-reassign
             recourseIndex: ++recourseIndex,
         })
     }
-    return text.slice(0, -3) + '...'
+    return `${text.slice(0, -3)}...`
 }
 
 export default toTextEllipsis

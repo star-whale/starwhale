@@ -1,15 +1,27 @@
+import os
+import re
+import time
 import uuid
-import hashlib
 import base64
 import random
 import string
-import os
-import sys
-import platform
-import subprocess
 import typing as t
+import hashlib
+import platform
+from datetime import datetime
 
-from starwhale.consts import ENV_CONDA, ENV_CONDA_PREFIX, PYTHON_RUN_ENV
+from rich.console import Console
+
+from starwhale import __version__
+from starwhale.consts import FMT_DATETIME, SW_DEV_DUMMY_VERSION
+
+console = Console(soft_wrap=True)
+now_str = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
+
+
+def timestamp_to_datatimestr(timestamp: float) -> str:
+    ts = time.localtime(timestamp)
+    return time.strftime(FMT_DATETIME, ts)
 
 
 def gen_uniq_version(feature: str = "") -> str:
@@ -26,54 +38,21 @@ def random_str(cnt: int = 8) -> str:
     return "".join(random.sample(string.ascii_lowercase + string.digits, cnt))
 
 
-def get_external_python_version():
-    return subprocess.check_output(["python3", "-c",
-        "import sys; _v = sys.version_info; print(f'{_v,major}.{_v.minor}.{_v.micro}')"
-        ], stderr=sys.stderr
-    )
-
 def in_dev() -> bool:
     return not in_production()
+
 
 def in_production() -> bool:
     return os.environ.get("SW_PRODUCTION", "") == "1"
 
-def is_venv() -> bool:
-    #TODO: refactor for get external venv attr
-    output = subprocess.check_output(["python3", "-c",
-         "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))"
-        ],stderr=sys.stdout)
-    return "True" in str(output)
-
-
-def is_conda() -> bool:
-    return get_conda_env() != "" and get_conda_env_prefix() != ""
-
-
-def get_python_run_env() -> str:
-    if is_conda():
-        return PYTHON_RUN_ENV.CONDA
-    elif is_venv():
-        return PYTHON_RUN_ENV.VENV
-    else:
-        return PYTHON_RUN_ENV.SYSTEM
-
-
-def get_conda_env() -> str:
-    return os.environ.get(ENV_CONDA, "")
-
-
-def get_conda_env_prefix() -> str:
-    return os.environ.get(ENV_CONDA_PREFIX, "")
-
 
 def is_windows() -> bool:
-    #TODO: for windows nt?
+    # TODO: for windows nt?
     return platform.system() == "Windows"
 
 
 def is_darwin() -> bool:
-    #TODO: check m1 chip system
+    # TODO: check m1 chip system
     return platform.system() == "Darwin"
 
 
@@ -81,16 +60,10 @@ def is_linux() -> bool:
     return platform.system() in ("Linux", "Unix")
 
 
-def get_python_version():
-    #TODO: check user ppl environment or starwhale-cli env? need test
-    _v = sys.version_info
-    return f"{_v.major}.{_v.minor}.{_v.micro}"
-
-
-def fmt_http_server(server: str, https: bool=False) -> str:
+def fmt_http_server(server: str, https: bool = False) -> str:
     server = server.strip().strip("/")
     if not server:
-        raise Exception(f"no server addr")
+        raise Exception("no server addr")
 
     if server.startswith(("http://", "https://")):
         return server
@@ -108,6 +81,7 @@ _bytes_map = {
     "gb": 1024 * 1024 * 1024,
 }
 
+
 def convert_to_bytes(s: t.Union[str, int]) -> int:
     if isinstance(s, int):
         return s
@@ -122,12 +96,41 @@ def convert_to_bytes(s: t.Union[str, int]) -> int:
 
 _bytes_progress = ("B", "KB", "MB", "GB", "TB", "PB")
 
-def pretty_bytes(b: t.Union[int, float]) -> str:
 
-    def _c(b: t.Union[int, float], idx:int) -> str:
+def pretty_bytes(b: t.Union[int, float]) -> str:
+    def _c(b: t.Union[int, float], idx: int) -> str:
         if b < 1024 or (idx + 1 == len(_bytes_progress)):
             return f"{b:.2f}{_bytes_progress[idx]}"
         else:
-            return _c(b / 1024, idx+1)
+            return _c(b / 1024, idx + 1)
 
     return _c(b, 0)
+
+
+_valid_name_re = re.compile("^[a-zA-Z_][a-zA-Z0-9_.-]*$")
+
+
+def validate_obj_name(name: str) -> t.Tuple[bool, str]:
+    if len(name) < 1 or len(name) > 80:
+        return (
+            False,
+            f"length should be between 1 and 80, but {name} has {len(name)} characters",
+        )
+
+    if not _valid_name_re.match(name):
+        return (
+            False,
+            f"A name MUST only consist of letters A-Z a-z, digits 0-9, the hyphen character -, the underscore character _ and the dot character ., current name:{name}",
+        )
+
+    return True, ""
+
+
+def get_downloadable_sw_version() -> str:
+    _v = __version__
+    return "" if _v == SW_DEV_DUMMY_VERSION else _v
+
+
+def snake_to_camel(snake: str) -> str:
+    parts = snake.split("_")
+    return "".join(i.title() for i in parts)

@@ -1,0 +1,27 @@
+id,string
+uuid,string
+projectId,string
+projectName,string
+modelName,string
+modelVersion,string
+datasets,string
+runtime,string
+status,string
+device,string
+deviceAmount,int
+createTime,string
+stopTime,string
+owner,string
+duration,int
+kind,string
+summary/accuracy,float
+summary/macro avg/precision,float
+summary/macro avg/recall,float
+summary/macro avg/f1-score,float
+summary/macro avg/support,int
+summary/weighted avg/precision,float
+summary/weighted avg/recall,float
+summary/weighted avg/f1-score,float
+summary/weighted avg/support,int
+summary/hamming_loss,float
+summary/cohen_kappa_score,float

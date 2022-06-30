@@ -1,12 +1,23 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.domain.swds.index;
 
+import ai.starwhale.mlops.domain.swds.bo.SWDSBlock;
+import ai.starwhale.mlops.domain.swds.bo.SWDSIndex;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -36,14 +47,13 @@ public class SWDSIndexLoaderImpl implements SWDSIndexLoader {
     }
 
     @Override
-    public SWDSIndex load(String storagePath, String swdsPath) {
+    public SWDSIndex load(String storagePath) {
 
         try(final InputStream inputStream = storageAccessService.get(storagePath)){
             List<SWDSBlock> lines = new LinkedList<>();
             BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
             while (reader.ready()) {
                 SWDSBlock swdsBlock = objectMapper.readValue(reader.readLine(), SWDSBlock.class);
-                swdsBlock.prependDSPath(swdsPath);
                 lines.add(swdsBlock);
             }
             return SWDSIndex.builder().storagePath(storagePath).swdsBlockList(lines).build();

@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef } from 'react'
-import Table, { Column, SortOrder, AutoResizer } from '@/components/BaseTable'
+import React, { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { Column, SortOrder } from '@/components/BaseTable'
 import { Checkbox, LABEL_PLACEMENT } from 'baseui/checkbox'
 import _ from 'lodash'
 
@@ -14,9 +14,10 @@ export interface ITableGridState {
     }
     dataConfigMap: Record<
         string,
-        {
-            selected: boolean
-        }
+        | {
+              selected?: boolean
+          }
+        | any
     >
 }
 
@@ -29,7 +30,7 @@ const initialState: ITableGridState = {
     dataConfigMap: {},
 }
 
-type ReducerAction<TType, TAdditional = {}> = { type: TType } & TAdditional
+type ReducerAction<TType, TAdditional> = { type: TType } & TAdditional
 
 export const createTableGridReducer =
     () =>
@@ -40,9 +41,9 @@ export const createTableGridReducer =
             | ReducerAction<'selectRow', { rowData: any; value: boolean }>
             | ReducerAction<'resetData', { data: any[] }>
     ): ITableGridState => {
-        console.log('reducer', action)
+        // console.log('reducer', action)
         switch (action.type) {
-            case 'sort':
+            case 'sort': {
                 const { sortBy } = action
                 const order = sortBy.order === SortOrder.ASC ? 1 : -1
                 const sortData = [...state.data]
@@ -56,7 +57,8 @@ export const createTableGridReducer =
                     },
                     data: [...sortData],
                 }
-            case 'selectRow':
+            }
+            case 'selectRow': {
                 const { rowData, value } = action
                 const { id } = rowData
                 const dataConfigMap = { ...state.dataConfigMap }
@@ -68,13 +70,14 @@ export const createTableGridReducer =
                     ...state,
                     dataConfigMap,
                 }
-            case 'resetData':
+            }
+            case 'resetData': {
                 const { data } = action
                 return {
                     ...state,
                     data,
                 }
-
+            }
             default:
                 throw new Error('missing support')
         }
@@ -100,7 +103,7 @@ export const useTableGridState = (props: ITableGridState) => {
         dispatch({ type: 'resetData', data: props.data })
     }, [props.data])
 
-    const { data, columns, tableConfigMap, dataConfigMap } = gridState
+    const { data, tableConfigMap, dataConfigMap } = gridState
 
     const handleColumnSort = useCallback(
         (payload: { sortBy: TSortBy }) => {
@@ -123,7 +126,7 @@ export const useTableGridState = (props: ITableGridState) => {
             align: Column.Alignment.CENTER,
             frozen: Column.FrozenDirection.LEFT,
             // headerRenderer: (props: any) => console.log(props),
-            cellRenderer: ({ rowData, column, rowIndex, columnIndex }: any) => {
+            cellRenderer: ({ rowData, column }: any) => {
                 return (
                     <Checkbox
                         checked={_.get(column?.dataConfigMap, [rowData.id, 'selected'])}
@@ -135,20 +138,20 @@ export const useTableGridState = (props: ITableGridState) => {
                 )
             },
         }),
-        [dataConfigMap, handleRowSelect]
+        [handleRowSelect]
     )
 
     const $columns = useMemo(() => {
         let computeColumns = []
-        let { enableMultiSelection } = gridState.tableConfigMap
-        enableMultiSelection && computeColumns.push(multiColumn)
+        const { enableMultiSelection } = gridState.tableConfigMap
+        if (enableMultiSelection) computeColumns.push(multiColumn)
         computeColumns.push(...gridState.columns)
         computeColumns = computeColumns.map((col) => ({
             ...col,
             dataConfigMap: gridState.dataConfigMap,
         }))
         return computeColumns
-    }, [multiColumn, columns, gridState])
+    }, [multiColumn, gridState])
 
     return {
         gridState,

@@ -1,4 +1,4 @@
-import { getPathSegments } from '@/utils/helper'
+import getPathSegments from '../getPathSegments/getPathSegments'
 /**
  * [Get value from nested object by passed path](https://github.com/sindresorhus/dot-prop/blob/master/index.js)
  *
@@ -28,6 +28,7 @@ export function getValue(object: Record<string, any> | null, path: string | stri
             return defaultValue
         }
 
+        // eslint-disable-next-line no-param-reassign
         object = object[pathArray[i]]
 
         if (object === undefined || object === null) {

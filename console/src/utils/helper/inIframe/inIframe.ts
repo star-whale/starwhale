@@ -1,9 +1,9 @@
 function inIframe() {
-  try {
-    return window.self !== window.top;
-  } catch (e) {
-    return true;
-  }
+    try {
+        return window.self !== window.top
+    } catch (e) {
+        return true
+    }
 }
 
-export default inIframe;
+export default inIframe

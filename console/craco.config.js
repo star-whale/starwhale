@@ -1,12 +1,10 @@
 const path = require('path')
 const webpack = require('webpack')
 const SimpleProgressWebpackPlugin = require('simple-progress-webpack-plugin')
-const CracoEsbuildPlugin = require('craco-esbuild');
+const CracoEsbuildPlugin = require('craco-esbuild')
 
 module.exports = {
-    plugins: [
-        { plugin: CracoEsbuildPlugin },
-    ],
+    plugins: [{ plugin: CracoEsbuildPlugin }],
     webpack: {
         alias: {
             '@user': path.resolve(__dirname, 'src/domain/user'),
@@ -21,15 +19,17 @@ module.exports = {
             new SimpleProgressWebpackPlugin(),
             new webpack.DefinePlugin({
                 'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-            })
+                'process.env.DEBUG': JSON.stringify(process.env.DEBUG),
+                'process.env.PROXY': JSON.stringify(process.env.PROXY),
+            }),
         ],
         configure: (webpackConfig, { env, paths }) => {
             // https://github.com/pmndrs/react-spring/issues/1078#issuecomment-752143468
             webpackConfig.module.rules.push({
-                test: /react-spring/, 
+                test: /react-spring/,
                 sideEffects: true,
             })
             return webpackConfig
-        }
-    }
+        },
+    },
 }

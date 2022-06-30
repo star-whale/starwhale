@@ -4,13 +4,13 @@ export interface ITraceVisualizerProps {
     data: any
 }
 
-export interface IImagesVisualizerProps extends ITraceVisualizerProps {}
+export type IImagesVisualizerProps = ITraceVisualizerProps
 
-export interface IDistributionVisualizerProps extends ITraceVisualizerProps {}
+export type IDistributionVisualizerProps = ITraceVisualizerProps
 
-export interface ITextsVisualizerProps extends ITraceVisualizerProps {}
+export type ITextsVisualizerProps = ITraceVisualizerProps
 
-export interface IPlotlyVisualizerProps extends ITraceVisualizerProps {}
+export type IPlotlyVisualizerProps = ITraceVisualizerProps
 
 export interface IMBCConfusionMetric {
     id?: string
@@ -34,7 +34,7 @@ export type IMCConfusionMetric = {
 
 export type IMCConfusionMetrics = Array<IMCConfusionMetric>
 
-export enum INDICATOR_TYPE {
+export enum INDICATORTYPE {
     MCConfusionMetrics = 'MCConfusionMetrics',
     CohenKappa = 'CohenKappa',
     MBCConfusionMetrics = 'MBCConfusionMetrics',
@@ -42,15 +42,8 @@ export enum INDICATOR_TYPE {
     LABELS = 'labels',
     CONFUSION_MATRIX = 'confusion_matrix',
     SUMMARY = 'summary',
+    ROC_AUC = 'roc_auc',
 }
-
-export interface IIndicator {
-    // name: INDICATOR_TYPE
-    // value: IMBCConfusionMetrics | IMCConfusionMetrics | any
-}
-
-export interface ISysIndicator extends IIndicator {}
-export interface ICustomIndicator extends IIndicator {}
 
 export type IKind = string
 export type ISummary = Record<string, any>
@@ -71,4 +64,4 @@ export type IMultiLabel = {
 export type ILabel = IBinaryLabel & IMultiLabel
 export type ILabels = Record<string, ILabel>
 export type IConfusionMatrixBinarylabel = number[]
-export type IConfusionMatrixMutlilabel = number[][] // 2*2
+export type IConfusionMatrixMultilabel = number[][] // 2*2

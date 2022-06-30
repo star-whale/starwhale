@@ -27,6 +27,7 @@
         <mybatis.starter.version>2.2.2</mybatis.starter.version>
         <pagehelper.starter.version>1.4.1</pagehelper.starter.version>
         <guava.version>31.1-jre</guava.version>
+        <json-flattener.version>0.13.0</json-flattener.version>
         <starwhale.version>0.1.0-SNAPSHOT</starwhale.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -121,6 +122,12 @@
                 <version>1.0.0</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.github.wnameless.json</groupId>
+                <artifactId>json-flattener</artifactId>
+                <version>${json-flattener.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -195,6 +202,52 @@
         </resources>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.eluder.coveralls</groupId>
+                    <artifactId>coveralls-maven-plugin</artifactId>
+                    <version>4.3.0</version>
+                    <configuration>
+                        <branch>ttttt</branch>
+                        <serviceName>serviceName</serviceName>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>javax.xml.bind</groupId>
+                            <artifactId>jaxb-api</artifactId>
+                            <version>2.3.1</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <configuration>
+                        <excludes>
+                            <exclude>**/ai/starwhale/mlops/common/BaseEntity*</exclude>
+                            <exclude>**/ai/starwhale/mlops/common/BaseParams*</exclude>
+                            <exclude>**/ai/starwhale/mlops/common/PageParams*</exclude>
+                            <exclude>**/ai/starwhale/mlops/common/TagAction*</exclude>
+                            <exclude>**/ai/starwhale/mlops/common/TimeConcern*</exclude>
+                            <exclude>**/ai/starwhale/mlops/api/**</exclude>
+                            <exclude>**/ai/starwhale/mlops/domain/**/*Service*</exclude>
+                            <exclude>**/ai/starwhale/mlops/domain/**/bo/**</exclude>
+                            <exclude>**/ai/starwhale/mlops/domain/**/po/**</exclude>
+                            <exclude>**/ai/starwhale/mlops/domain/**/mapper/**</exclude>
+                            <exclude>**/ai/starwhale/mlops/configuration/**</exclude>
+                            <exclude>**/ai/starwhale/mlops/exception/**</exclude>
+                            <exclude>**/ai/starwhale/mlops/domain/dag/DAGQuerier*Content*</exclude>
+                        </excludes>
+                    </configuration>
+                    <version>0.8.6</version>
+                    <executions>
+                        <execution>
+                            <id>prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
                 <plugin>
                     <groupId>org.jetbrains.kotlin</groupId>
                     <artifactId>kotlin-maven-plugin</artifactId>
@@ -372,5 +425,23 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.eluder.coveralls</groupId>
+                <artifactId>coveralls-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>

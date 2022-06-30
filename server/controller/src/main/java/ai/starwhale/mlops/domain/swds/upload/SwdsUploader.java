@@ -1,8 +1,17 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.domain.swds.upload;
@@ -11,18 +20,22 @@ import static ai.starwhale.mlops.domain.swds.upload.SWDSVersionWithMetaConverter
 
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.common.util.Blake2bUtil;
-import ai.starwhale.mlops.domain.project.ProjectEntity;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
+import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.SWDataSet;
-import ai.starwhale.mlops.domain.swds.SWDatasetEntity;
+import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
-import ai.starwhale.mlops.domain.swds.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
-import ai.starwhale.mlops.domain.task.LivingTaskCache;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.swds.upload.bo.Manifest;
+import ai.starwhale.mlops.domain.swds.upload.bo.SWDSVersionWithMeta;
+import ai.starwhale.mlops.domain.swds.upload.bo.VersionMeta;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWAuthException;
 import ai.starwhale.mlops.exception.SWProcessException;
@@ -39,17 +52,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -77,8 +91,7 @@ public class SwdsUploader {
 
     final ObjectMapper yamlMapper;
 
-    final LivingTaskCache livingTaskCache;
-
+    final HotJobHolder jobHolder;
     final ProjectManager projectManager;
 
     public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
@@ -86,7 +99,7 @@ public class SwdsUploader {
         StorageAccessService storageAccessService, UserService userService,
         ProjectMapper projectMapper,
         @Qualifier("yamlMapper") ObjectMapper yamlMapper,
-        LivingTaskCache livingTaskCache,
+        HotJobHolder jobHolder,
         ProjectManager projectManager) {
         this.hotSwdsHolder = hotSwdsHolder;
         this.swdsMapper = swdsMapper;
@@ -96,7 +109,7 @@ public class SwdsUploader {
         this.userService = userService;
         this.projectMapper = projectMapper;
         this.yamlMapper = yamlMapper;
-        this.livingTaskCache = livingTaskCache;
+        this.jobHolder = jobHolder;
         this.projectManager = projectManager;
     }
 
@@ -242,7 +255,8 @@ public class SwdsUploader {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("name or version is required in manifest "),
                 HttpStatus.BAD_REQUEST);
         }
-        SWDatasetEntity swDatasetEntity = swdsMapper.findByName(manifest.getName());
+        Long projectId = projectManager.getProjectId(uploadRequest.getProject());
+        SWDatasetEntity swDatasetEntity = swdsMapper.findByName(manifest.getName(), projectId);
         if(null == swDatasetEntity){
             //create
             swDatasetEntity = from(manifest,uploadRequest.getProject());
@@ -257,10 +271,10 @@ public class SwdsUploader {
             uploadManifest(swDatasetVersionEntity,fileName,yamlContent.getBytes(StandardCharsets.UTF_8));
         }else{
             //swds version create dup
-            if(swDatasetVersionEntity.getStatus() == SWDatasetVersionEntity.STATUS_AVAILABLE){
+            if(swDatasetVersionEntity.getStatus().equals(SWDatasetVersionEntity.STATUS_AVAILABLE)){
                 if(uploadRequest.force()){
-                    Set<Long> runningDataSets = livingTaskCache.ofStatus(TaskStatus.RUNNING)
-                        .parallelStream().map(task -> task.getJob().getSwDataSets())
+                    Set<Long> runningDataSets = jobHolder.ofStatus(Set.of(JobStatus.RUNNING))
+                        .parallelStream().map(Job::getSwDataSets)
                         .flatMap(Collection::stream)
                         .map(SWDataSet::getId)
                         .collect(Collectors.toSet());
@@ -299,7 +313,7 @@ public class SwdsUploader {
     }
 
     private SWDatasetEntity from(Manifest manifest,String project) {
-        ProjectEntity projectEntity = projectManager.findByName(project);
+        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project);
         return SWDatasetEntity.builder()
             .datasetName(manifest.getName())
             .isDeleted(0)
@@ -313,7 +327,7 @@ public class SwdsUploader {
         if(null == currentUserDetail){
             throw new StarWhaleApiException(new SWAuthException(SWAuthException.AuthType.SWDS_UPLOAD),HttpStatus.FORBIDDEN);
         }
-        return Long.valueOf(currentUserDetail.getIdTableKey());
+        return currentUserDetail.getIdTableKey();
     }
 
 
@@ -321,5 +335,30 @@ public class SwdsUploader {
         final SWDSVersionWithMeta swdsVersionWithMeta = getSwdsVersion(uploadId);
         swdsVersionMapper.updateStatus(swdsVersionWithMeta.getSwDatasetVersionEntity().getId(),SWDatasetVersionEntity.STATUS_AVAILABLE);
         hotSwdsHolder.end(uploadId);
+    }
+
+    final static String SWDS_MANIFEST="_manifest.yaml";
+    public byte[] pull(String project, String name, String version, String partName, HttpServletResponse httpResponse) {
+        Long projectId = projectManager.getProjectId(project);
+        SWDatasetEntity datasetEntity = swdsMapper.findByName(name, projectId);
+        if(null == datasetEntity){
+            throw new SWValidationException(ValidSubject.SWDS).tip("dataset name doesn't exists");
+        }
+        SWDatasetVersionEntity datasetVersionEntity = swdsVersionMapper.findByDSIdAndVersionName(
+            datasetEntity.getId(), version);
+        if(null == datasetVersionEntity){
+            throw new SWValidationException(ValidSubject.SWDS).tip("dataset version doesn't exists");
+        }
+        if(!StringUtils.hasText(partName)){
+            partName = SWDS_MANIFEST;
+        }
+        try(InputStream inputStream = storageAccessService.get(datasetVersionEntity.getStoragePath() + "/" + partName.trim())){
+            byte[] res = inputStream.readAllBytes();
+            httpResponse.addHeader("Content-Length", String.valueOf(res.length));
+            return res;
+        } catch (IOException e) {
+            log.error("pull file from storage failed",e);
+            throw new SWProcessException(ErrorType.STORAGE).tip("pull file from storage failed: "+ e.getMessage());
+        }
     }
 }

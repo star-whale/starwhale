@@ -1,6 +1,5 @@
 import { useModel, useModelLoading } from '@model/hooks/useModel'
 import useTranslation from '@/hooks/useTranslation'
-import { RiSurveyLine } from 'react-icons/ri'
 import React, { useEffect, useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { useParams } from 'react-router-dom'
@@ -22,18 +21,17 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
     useEffect(() => {
         setModelLoading(modelInfo.isLoading)
         if (modelInfo.isSuccess) {
-            if (modelInfo.data.id !== model?.id) {
+            if (modelInfo.data.versionMeta !== model?.versionMeta) {
                 setModel(modelInfo.data)
             }
         } else if (modelInfo.isLoading) {
             setModel(undefined)
         }
-    }, [model?.id, modelInfo.data, modelInfo.isLoading, modelInfo.isSuccess, setModel, setModelLoading])
+    }, [model?.versionMeta, modelInfo.data, modelInfo.isLoading, modelInfo.isSuccess, setModel, setModelLoading])
 
     const [t] = useTranslation()
-    const modelName = model?.name ?? '-'
+    const modelName = model?.versionMeta ?? '-'
     const project = projectInfo.data ?? {}
-    const projectName = project?.name ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -51,7 +49,7 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
             },
         ]
         return items
-    }, [projectName, modelName, t])
+    }, [modelName, t, project?.id, modelId])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

@@ -1,0 +1,18 @@
+version: 1.0
+name: nmt
+
+model:
+  - models/encoder.pth
+  - models/decoder.pth
+  - models/vocab_eng-fra.bin
+
+config:
+  - config/hyperparam.json
+
+run:
+  ppl: code.ppl:NMTPipeline
+
+desc: nmt by pytorch
+
+tag:
+  - multi_classification

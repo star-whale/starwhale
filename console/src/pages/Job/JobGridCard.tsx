@@ -1,12 +1,9 @@
-import React, { useCallback, useState, useReducer, memo, useRef, useLayoutEffect } from 'react'
-import './Runs.scss'
+import React, { useCallback, useState, memo } from 'react'
 import TableGrid from '@/components/Table/TableGrid'
-import { makeData } from '@/components/Table/TableGridMock'
-import { usePage } from '@/hooks/usePage'
-import Table, { Column, SortOrder, AutoResizer } from '@/components/BaseTable'
+import { Column } from '@/components/BaseTable'
 import Card from '@/components/Card'
-import { createJob, doJobAction } from '@job/services/job'
-import { ICreateJobSchema, JobActionType, JobStatusType } from '@job/schemas/job'
+import { createJob } from '@job/services/job'
+import { ICreateJobSchema } from '@job/schemas/job'
 import JobForm from '@job/components/JobForm'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
@@ -15,15 +12,10 @@ import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { Link, useHistory, useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
-import { StyledLink } from 'baseui/link'
-import { toaster } from 'baseui/toast'
-import './Runs.scss'
-
-// const { columns, data, sortBy } = makeData(10)
+import IconFont from '@/components/IconFont'
 
 function JobGridCard() {
-    const [page] = usePage()
-    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    const { projectId } = useParams<{ jobId: string; projectId: string }>()
     const jobsInfo = useFetchJobs(projectId, { pageNum: 1, pageSize: 99999 })
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
@@ -32,17 +24,17 @@ function JobGridCard() {
             await jobsInfo.refetch()
             setIsCreateJobOpen(false)
         },
-        [jobsInfo]
+        [jobsInfo, projectId]
     )
-    const handleAction = useCallback(
-        async (jobId, type: JobActionType) => {
-            await doJobAction(projectId, jobId, type)
-            toaster.positive(t('job action done'), { autoHideDuration: 2000 })
-            await jobsInfo.refetch()
-            setIsCreateJobOpen(false)
-        },
-        [jobsInfo]
-    )
+    // const handleAction = useCallback(
+    //     async (jobId, type: JobActionType) => {
+    //         await doJobAction(projectId, jobId, type)
+    //         toaster.positive(t('job action done'), { autoHideDuration: 2000 })
+    //         await jobsInfo.refetch()
+    //         setIsCreateJobOpen(false)
+    //     },
+    //     [jobsInfo]
+    // )
     const history = useHistory()
     const [t] = useTranslation()
 
@@ -84,16 +76,16 @@ function JobGridCard() {
             title: 'owner',
             width: 150,
             align: Column.Alignment.CENTER,
-            cellRenderer: ({ rowData, column, rowIndex, columnIndex }: any) => <User user={rowData.owner} />,
+            cellRenderer: ({ rowData }: any) => <User user={rowData.owner} />,
         },
         {
-            key: 'createTime',
-            title: 'createTime',
+            key: 'createdTime',
+            title: 'createdTime',
             resizable: true,
             sortable: true,
             width: 150,
             align: Column.Alignment.CENTER,
-            cellRenderer: ({ rowData }: any) => rowData.createTime && formatTimestampDateTime(rowData.createTime),
+            cellRenderer: ({ rowData }: any) => rowData.createdTime && formatTimestampDateTime(rowData.createdTime),
         },
         {
             key: 'duration',
@@ -101,7 +93,7 @@ function JobGridCard() {
             width: 150,
             align: Column.Alignment.CENTER,
             cellRenderer: ({ rowData }: any) =>
-                typeof rowData.duration == 'string' ? '-' : durationToStr(rowData.duration),
+                typeof rowData.duration === 'string' ? '-' : durationToStr(rowData.duration),
         },
         {
             key: 'stopTime',
@@ -134,14 +126,13 @@ function JobGridCard() {
         // },
     ]
 
-    console.log(jobsInfo.data?.list)
-
     return (
         <Card
             title={t('Jobs')}
             extra={
                 <Button
                     size={ButtonSize.compact}
+                    startEnhancer={<IconFont type='add' kind='white' />}
                     onClick={() => {
                         history.push('new_job')
                     }}

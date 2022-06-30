@@ -1,17 +1,29 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.domain.system.agent;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.node.Node;
-import ai.starwhale.mlops.domain.system.AgentEntity;
-import ai.starwhale.mlops.domain.system.agent.Agent.AgentUnModifiable;
+import ai.starwhale.mlops.domain.system.agent.bo.Agent;
+import ai.starwhale.mlops.domain.system.po.AgentEntity;
+import ai.starwhale.mlops.domain.system.agent.bo.Agent.AgentUnModifiable;
 import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,20 +42,38 @@ public class AgentCache implements CommandLineRunner {
 
     final AgentMapper agentMapper;
 
-    final Map<String,Agent> agents;
+    final Map<String, Agent> agents;
 
     final AgentConverter agentConverter;
 
-    public AgentCache(AgentMapper agentMapper,
-        AgentConverter agentConverter) {
+    final List<AgentStatusWatcher> agentStatusWatchers;
+
+    Long bareTimeMilli;
+
+    public AgentCache(AgentMapper agentMapper, AgentConverter agentConverter,
+        List<AgentStatusWatcher> agentStatusWatchers) {
         this.agentMapper = agentMapper;
         this.agentConverter = agentConverter;
+        this.agentStatusWatchers = agentStatusWatchers;
+        this.bareTimeMilli = 30000L;
         agents = new ConcurrentHashMap<>();
     }
 
     public List<Agent> agents(){
         return agents.values().parallelStream().map(agent -> new AgentUnModifiable(agent)).collect(
             Collectors.toList());
+    }
+
+    public void removeOfflineAgent(String agentSerialNumber){
+        Agent tobeDeleteAgent = agents.get(agentSerialNumber);
+        if(null == tobeDeleteAgent){
+            return;
+        }
+        if(tobeDeleteAgent.getStatus() != AgentStatus.OFFLINE){
+            throw new SWValidationException(ValidSubject.NODE).tip("you can't remove online agent manually!");
+        }
+        agentMapper.deleteById(tobeDeleteAgent.getId());
+        agents.remove(agentSerialNumber);
     }
 
     public Agent nodeReport(Node node){
@@ -56,6 +86,7 @@ public class AgentCache implements CommandLineRunner {
             return new AgentUnModifiable(agentReported);
         }else {
             residentAgent.setAgentVersion(agentReported.getAgentVersion());
+            residentAgent.setStatus(AgentStatus.ONLINE);
             residentAgent.setNodeInfo(agentReported.getNodeInfo());
             residentAgent.setConnectTime(agentReported.getConnectTime());
             return new AgentUnModifiable(residentAgent);
@@ -64,7 +95,14 @@ public class AgentCache implements CommandLineRunner {
 
     @Scheduled(initialDelay = 10000,fixedDelay = 30000)
     public void flushDb(){
+        long now = System.currentTimeMillis();
         List<AgentEntity> agentEntities = agents.values().stream()
+            .peek(agent -> {
+                if( (now - agent.getConnectTime())> bareTimeMilli && AgentStatus.ONLINE == agent.getStatus()){
+                    agent.setStatus(AgentStatus.OFFLINE);
+                    agentStatusWatchers.parallelStream().forEach(watcher->watcher.onAgentStatusChange(agent,AgentStatus.OFFLINE));
+                }
+            })
             .map(agent -> agentConverter.toEntity(agent))
             .collect(Collectors.toList());
         if(null == agentEntities || agentEntities.isEmpty()){
@@ -90,7 +128,9 @@ public class AgentCache implements CommandLineRunner {
     private void initCache() {
         List<AgentEntity> agentEntities = agentMapper.listAgents();
         agentEntities.parallelStream().forEach(entity -> {
-            agents.put(entity.getAgentIp(),agentConverter.fromEntity(entity));
+            Agent agent = agentConverter.fromEntity(entity);
+            agents.put(entity.getSerialNumber(), agent);
+            agentStatusWatchers.forEach(agentStatusWatcher -> agentStatusWatcher.onAgentStatusChange(agent,agent.getStatus()));
         });
     }
 }

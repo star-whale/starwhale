@@ -1,8 +1,17 @@
 /*
- * Copyright 2022.1-2022
- *  starwhale.ai All right reserved. This software is the confidential and proprietary information of
- *  starwhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with  starwhale.ai.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.configuration.security;
@@ -11,7 +20,7 @@ import static ai.starwhale.mlops.common.util.HttpUtil.error;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
-import ai.starwhale.mlops.domain.user.User;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;
@@ -62,11 +71,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         Claims claims = jwtTokenUtil.parseJWT(token);
 
-        User user = User.builder()
-            .id(jwtTokenUtil.getUserId(claims))
-            .name(jwtTokenUtil.getUsername(claims))
-            .build();
-        user = userService.loadUserByUsername(user.getName());
+        User user = userService.loadUserByUsername(jwtTokenUtil.getUsername(claims));
         JwtLoginToken jwtLoginToken = new JwtLoginToken(user, "", user.getAuthorities());
         jwtLoginToken.setDetails(new WebAuthenticationDetails(httpServletRequest));
         SecurityContextHolder.getContext().setAuthentication(jwtLoginToken);

@@ -1,8 +1,8 @@
-import { listDatasets } from '../services/dataset'
-import { Select, SelectProps } from 'baseui/select'
+import { Select, SelectProps, SIZE } from 'baseui/select'
 import _ from 'lodash'
 import React, { useEffect, useState } from 'react'
 import { useQuery } from 'react-query'
+import { listDatasets } from '../services/dataset'
 
 export interface IDatasetSelectorProps {
     projectId: string
@@ -42,6 +42,7 @@ export default function DatasetSelector({ projectId, value, onChange, overrides,
 
     return (
         <Select
+            size={SIZE.compact}
             disabled={disabled}
             overrides={overrides}
             isLoading={datasetsInfo.isFetching}

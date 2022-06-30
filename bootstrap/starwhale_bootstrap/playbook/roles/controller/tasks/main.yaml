@@ -1,0 +1,37 @@
+---
+# controller container
+- name: Start controller container
+  community.docker.docker_container:
+    name: controller_by_bootstrap
+    image: "{{ controller_image }}"
+    pull: true
+    state: started
+    restart_policy: always
+    ports:
+      - "{{ controller_port }}:8082"
+    volumes:
+      - "{{ controller_data_dir }}/static/:/opt/starwhale.java/static/"
+    env:
+      SW_TASK_SPLIT_SIZE: "{{ controller_task_split_num }}"
+      JAR: "controller"
+      SW_HOST_IP: "{{ ansible_eth0.ipv4.address }}"
+      SW_JWT_TOKEN_EXPIRE_MINUTES: "{{ token_expire_minutes }}"
+      SW_UPLOAD_MAX_FILE_SIZE: "{{ file_upload_size }}"
+      #
+      SW_METADATA_STORAGE_IP: "{{ hostvars['storage.starwhale.com']['ansible_eth0']['ipv4']['address'] }}"
+      SW_METADATA_STORAGE_PORT: "{{ mysql_port }}"
+      SW_METADATA_STORAGE_USER: "{{ mysql_user }}"
+      SW_METADATA_STORAGE_PASSWORD: "{{ mysql_pwd }}"
+      SW_STORAGE_BUCKET: "{{ minio_default_bucket }}"
+      SW_STORAGE_ACCESSKEY: "{{ minio_access_key }}"
+      SW_STORAGE_SECRETKEY: "{{ minio_secret_key }}"
+      #
+      SW_STORAGE_ENDPOINT: "http://{{ hostvars['storage.starwhale.com']['ansible_eth0']['ipv4']['address'] }}:{{ minio_server_port }}"
+  when: is_start | bool
+
+
+- name: Stop controller container
+  community.docker.docker_container:
+    name: controller_by_bootstrap
+    state: stopped
+  when: is_stop | bool

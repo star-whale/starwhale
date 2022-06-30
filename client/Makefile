@@ -1,6 +1,10 @@
+PY_CHANGED_FILES = $(shell git diff --name-only --relative -- '*.py')
+
+.POHNY: check
 check:
 	python3 setup.py check
 
+.POHNY: clean
 clean:
 	rm -rf dist/*
 
@@ -8,11 +12,50 @@ build-wheel: check clean
 	python3 setup.py sdist bdist_wheel
 	ls -alh dist
 
+.POHNY: upload-pypi
 upload-pypi:
 	twine upload dist/*
 
-build-dev-wheel:
+.POHNY: install-sw
+install-sw:
 	python3 -m pip install -e .
 
-dev-dep:
+.POHNY: install-dev-req
+install-dev-req:
 	python3 -m pip install -r requirements-dev.txt
+
+.POHNY: black-format
+black-format:
+	black --config pyproject.toml $(PY_CHANGED_FILES)
+
+.POHNY: isort-format
+isort-format:
+	isort $(PY_CHANGED_FILES)
+
+.POHNY: ci-format-checker
+ci-format-checker:
+	echo "run black"
+	black --check --config pyproject.toml .
+
+.POHNY: ci-lint
+ci-lint:
+	echo "run flake8"
+	flake8 .
+
+.POHNY: ci-mypy
+ci-mypy:
+	echo "run mypy"
+	mypy --python-version=3.7 .
+
+.POHNY: ci-isort
+ci-isort:
+	echo "run isort"
+	isort --check .
+
+.POHNY: ut
+ut:
+	echo "ut"
+	pytest tests -vvrfEsx --cov-config=.coveragerc --cov=starwhale --cov-report=xml:coverage.xml --cov-report=term-missing
+
+.POHNY: all-check
+all-check: ci-format-checker ci-lint ci-mypy ci-isort ut

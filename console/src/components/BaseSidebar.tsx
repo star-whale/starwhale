@@ -1,16 +1,58 @@
-import { Item, Navigation } from 'baseui/side-navigation'
+/* eslint-disable react/no-unused-prop-types */
+
+import { Navigation } from 'baseui/side-navigation'
 import _ from 'lodash'
 import React, { useCallback, useContext, useMemo } from 'react'
-import { useLocation, useHistory } from 'react-router-dom'
+import { useLocation, useHistory, Link } from 'react-router-dom'
 import useSidebarWidth from '@/hooks/useSidebarWidth'
 import { useStyletron } from 'baseui'
 import type { IconBaseProps } from 'react-icons/lib'
 import { SidebarContext } from '@/contexts/SidebarContext'
-import { sidebarExpandedWidth, sidebarFoldedWidth } from '@/consts'
 import { AiOutlineDoubleLeft, AiOutlineDoubleRight } from 'react-icons/ai'
-import color from 'color'
 import Text from '@/components/Text'
-import useTranslation from '@/hooks/useTranslation'
+import { createUseStyles } from 'react-jss'
+import Logo from '@/components/Header/Logo'
+import { headerHeight, sidebarExpandedWidth, sidebarFoldedWidth } from '@/consts'
+
+const useBaseSideBarStyles = createUseStyles({
+    sidebarWrapper: {
+        display: 'flex',
+        flexShrink: 0,
+        flexDirection: 'column',
+        overflow: 'hidden',
+        overflowY: 'auto',
+        background: 'var(--color-brandBgNav)',
+        transition: 'all 200ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
+    },
+
+    siderLogo: {
+        height: headerHeight,
+    },
+    siderTitle: {
+        height: '56px',
+        backgroundColor: 'var(--color-brandBgNavTitle)',
+        color: 'var(--color-brandBgNavFont)',
+        display: 'flex',
+        gap: 14,
+        fontSize: '14px',
+        placeItems: 'center',
+        padding: '8px 15px 8px 15px',
+        overflow: 'hidden',
+        textDecoration: 'none',
+        marginBottom: '7px',
+    },
+    siderNavLink: {
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: 14,
+        lineHeight: '40px',
+        height: 40,
+        gap: 12,
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+    },
+})
 
 export interface IComposedSidebarProps {
     style?: React.CSSProperties
@@ -19,7 +61,7 @@ export interface IComposedSidebarProps {
 
 export interface INavItem {
     title: string
-    icon?: React.ComponentType<IconBaseProps>
+    icon?: React.ComponentType<IconBaseProps> | React.ReactNode
     path?: string
     children?: INavItem[]
     disabled?: boolean
@@ -28,48 +70,37 @@ export interface INavItem {
     isActive?: () => boolean
 }
 
-function transformNavItems(navItems: INavItem[], expanded = true): Item[] {
-    return navItems.map((item) => {
-        const { icon: Icon } = item
-        return {
-            title: (
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        fontSize: 14,
-                        lineHeight: '40px',
-                        height: 40,
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        paddingLeft: expanded ? 15 : 12,
-                    }}
-                >
-                    {Icon && <Icon size={26} />}
-                    {expanded && <span>{item.title}</span>}
-                </div>
-            ),
-            itemId: item.path,
-        }
-    })
-}
-
 export interface IBaseSideBarProps extends IComposedSidebarProps {
+    titleLink?: string
     title?: string
-    icon?: React.ComponentType<IconBaseProps>
+    icon?: React.ReactNode
     navItems: INavItem[]
 }
 
-export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideBarProps) {
+export default function BaseSidebar({ navItems, style, title, icon, titleLink }: IBaseSideBarProps) {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const width = useSidebarWidth()
     const ctx = useContext(SidebarContext)
+    const [, theme] = useStyletron()
+    const styles = useBaseSideBarStyles({ theme })
 
     const history = useHistory()
     const location = useLocation()
 
-    const baseuiNavItems = useMemo(() => transformNavItems(navItems, ctx.expanded), [ctx.expanded, navItems])
+    const baseuiNavItems = useMemo(() => {
+        return navItems.map((item) => {
+            const { icon: Icon } = item
+            return {
+                title: (
+                    <div className={styles.siderNavLink} style={{ paddingLeft: ctx.expanded ? 24 : 18 }}>
+                        {Icon}
+                        {ctx.expanded && <span>{item.title}</span>}
+                    </div>
+                ),
+                itemId: item.path,
+            }
+        })
+    }, [ctx.expanded, navItems, styles])
 
     const activeItemId = useMemo(() => {
         const items = baseuiNavItems.slice().reverse()
@@ -92,8 +123,6 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
         return activeItem?.itemId
     }, [baseuiNavItems, location.pathname, navItems])
 
-    const [, theme] = useStyletron()
-
     const handleExpandedClick = useCallback(() => {
         if (ctx.expanded) {
             ctx.setExpanded(false)
@@ -102,48 +131,38 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
         }
     }, [ctx])
 
-    const [t] = useTranslation()
-
     return (
         <div
+            className={styles.sidebarWrapper}
             style={{
-                width,
-                display: 'flex',
-                flexShrink: 0,
-                flexDirection: 'column',
                 flexBasis: width,
-                overflow: 'hidden',
-                overflowY: 'auto',
-                background: theme.colors.backgroundPrimary,
-                borderRight: `1px solid ${theme.borders.border200.borderColor}`,
-                transition: 'all 200ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
+                width,
                 ...style,
             }}
         >
-            {ctx.expanded && title && icon && (
-                <div
+            <Logo className={styles.siderLogo} expanded={ctx.expanded} />
+            {title && icon && (
+                <Link
+                    className={styles.siderTitle}
                     style={{
-                        display: 'flex',
-                        gap: 14,
-                        fontSize: '11px',
-                        alignItems: 'center',
-                        padding: '8px 8px 8px 15px',
-                        borderBottom: `1px solid ${theme.borders.border200.borderColor}`,
-                        overflow: 'hidden',
+                        paddingLeft: !ctx.expanded ? 28 : 15,
                     }}
+                    to={titleLink ?? '/projects'}
                 >
-                    {React.createElement(icon, { size: 10 })}
-                    <Text
-                        style={{
-                            fontSize: '12px',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                        }}
-                    >
-                        {title}
-                    </Text>
-                </div>
+                    {icon}
+                    {ctx.expanded && (
+                        <Text
+                            style={{
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                color: 'var(--color-brandWhite)',
+                            }}
+                        >
+                            {title}
+                        </Text>
+                    )}
+                </Link>
             )}
             <Navigation
                 overrides={{
@@ -154,15 +173,53 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
                             fontWeight: 700,
                         },
                     },
-                    NavItem: {
+                    NavItemContainer: {
                         style: {
-                            padding: '8px 8px 8px 8px',
+                            height: 40,
+                            padding: '5px 10px',
+                            boxSizing: 'border-box',
+                            borderLeft: '0',
+                            backgroundImage: 'none',
+                            backgroundColor: 'none',
+                        },
+                    },
+                    NavItem: {
+                        style: ({ $active }) => {
+                            if ($active)
+                                return {
+                                    'paddingLeft': '0',
+                                    'paddingRight': '0',
+                                    'paddingTop': '0',
+                                    'paddingBottom': '0',
+                                    'backgroundImage': 'none',
+                                    'borderLeft': '0',
+                                    'backgroundColor': 'var(--color-brandPrimary)',
+                                    'borderRadius': '8px',
+                                    'color': 'var(--color-brandBgNavFont)',
+                                    ':hover': {
+                                        color: 'var(--color-brandBgNavFont)',
+                                    },
+                                }
+
+                            return {
+                                'paddingLeft': '0',
+                                'paddingRight': '0',
+                                'paddingTop': '0',
+                                'paddingBottom': '0',
+                                'borderLeft': '0',
+                                'backgroundColor': 'none',
+                                'backgroundImage': 'none',
+                                'borderRadius': '8px',
+                                'color': 'var(--color-brandBgNavFontGray)',
+                                ':hover': {
+                                    color: 'var(--color-brandBgNavFont)',
+                                    backgroundColor: 'var(--color-brandPrimaryHover)',
+                                },
+                            }
                         },
                     },
                     NavLink: {
-                        style: {
-                            color: 'var(--color-brandIndicatorRegular)',
-                        },
+                        style: {},
                     },
                 }}
                 activeItemId={activeItemId ?? (baseuiNavItems[0]?.itemId as string)}
@@ -172,49 +229,48 @@ export default function BaseSidebar({ navItems, style, title, icon }: IBaseSideB
                     history.push(item.itemId)
                 }}
             />
-            <div>
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: ctx.expanded ? 'row' : 'column',
+                    alignItems: 'center',
+                    height: 48,
+                    position: 'relative',
+                    borderTop: '1px solid var(--color-brandBgNavBorder)',
+                }}
+            >
                 <div
                     style={{
+                        flexGrow: 1,
+                        width: ctx.expanded ? sidebarExpandedWidth - sidebarFoldedWidth : sidebarFoldedWidth,
+                    }}
+                />
+                <div
+                    role='button'
+                    tabIndex={0}
+                    onClick={handleExpandedClick}
+                    style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        cursor: 'pointer',
                         display: 'flex',
-                        flexDirection: ctx.expanded ? 'row' : 'column',
+                        flexDirection: 'row',
                         alignItems: 'center',
-                        height: 40,
-                        position: 'relative',
-                        borderTop: `1px solid ${theme.borders.border100.borderColor}`,
+                        color: 'var(--color-brandBgNavFont)',
                     }}
                 >
                     <div
                         style={{
-                            flexGrow: 1,
-                            width: ctx.expanded ? sidebarExpandedWidth - sidebarFoldedWidth : sidebarFoldedWidth,
-                        }}
-                    ></div>
-                    <div
-                        role='button'
-                        tabIndex={0}
-                        onClick={handleExpandedClick}
-                        style={{
-                            position: 'absolute',
-                            right: 0,
-                            top: 0,
-                            bottom: 0,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            flexDirection: 'row',
-                            alignItems: 'center',
+                            display: 'inline-flex',
+                            float: 'right',
+                            alignSelf: 'center',
+                            width: sidebarFoldedWidth,
+                            justifyContent: 'center',
                         }}
                     >
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                float: 'right',
-                                alignSelf: 'center',
-                                width: sidebarFoldedWidth,
-                                justifyContent: 'center',
-                            }}
-                        >
-                            {ctx.expanded ? <AiOutlineDoubleLeft /> : <AiOutlineDoubleRight />}
-                        </div>
+                        {ctx.expanded ? <AiOutlineDoubleLeft /> : <AiOutlineDoubleRight />}
                     </div>
                 </div>
             </div>

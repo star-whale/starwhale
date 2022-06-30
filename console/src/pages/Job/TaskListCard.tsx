@@ -1,12 +1,15 @@
-import React, { useCallback, useState } from 'react'
+import React, { useEffect } from 'react'
 import Card from '@/components/Card'
 import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table/index'
-import { Link, useParams } from 'react-router-dom'
+import { useParams, useLocation } from 'react-router-dom'
 import { useFetchTasks } from '@job/hooks/useFetchTasks'
 import { StyledLink } from 'baseui/link'
+import _ from 'lodash'
+import qs from 'qs'
+
 export interface ITaskListCardProps {
     header: React.ReactNode
     onAction?: (type: string, value: any) => void
@@ -15,8 +18,21 @@ export interface ITaskListCardProps {
 export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
     const [page] = usePage()
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
+    const location = useLocation()
+    const id = qs.parse(location.search, { ignoreQueryPrefix: true })?.id ?? ''
+
     const tasksInfo = useFetchTasks(projectId, jobId, page)
     const [t] = useTranslation()
+
+    useEffect(() => {
+        if (id && tasksInfo.data?.list) {
+            const taskInfo = tasksInfo.data?.list.find((task) => task.id === id)
+            if (taskInfo)
+                onAction?.('viewlog', {
+                    ...taskInfo,
+                })
+        }
+    }, [tasksInfo.isSuccess, tasksInfo.data, id, onAction])
 
     return (
         <Card>
@@ -30,10 +46,19 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             task.uuid,
                             task.agent?.ip,
                             task.agent?.version,
-                            task.startTime && formatTimestampDateTime(task.startTime),
+                            task.createdTime && formatTimestampDateTime(task.createdTime),
                             task.taskStatus,
                             <StyledLink
-                                onClick={() => {
+                                key={task.uuid}
+                                onClick={(e) => {
+                                    // eslint-disalbe-next-line no-unused-expressions
+                                    const trDom = e.currentTarget.closest('tr')
+                                    const trDoms = trDom?.parentElement?.children
+                                    _.forEach(trDoms, (d) => {
+                                        d?.classList.remove('tr--selected')
+                                    })
+                                    trDom?.classList.add('tr--selected')
+
                                     onAction?.('viewlog', {
                                         ...task,
                                     })

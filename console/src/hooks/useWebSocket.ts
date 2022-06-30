@@ -1,36 +1,31 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useEffect, useRef } from 'react'
 import _ from 'lodash'
-import React, { useState, useEffect, useRef } from 'react'
+
+// useWebSocket({
+//     debug: true,
+//     wsUrl: currentOnlineLogUrl,
+//     onMessage: (e) => {
+//         console.log('self', e)
+//     },
+// })
 
 interface IWebSocket {
     wsUrl: string
-    debug?: boolean
     onOpen?: () => void
     onClose?: () => void
     onMessage?: (event: Event) => void
     onError?: (event: Event) => void
 }
 
-export default function useWebSocket({ wsUrl, onOpen, onClose, onMessage, debug = false }: IWebSocket) {
+export default function useWebSocket({ wsUrl, onOpen, onClose, onMessage }: IWebSocket) {
     const heartBeatTimeoutRef = useRef(undefined as undefined | number)
     const wsRef = useRef(undefined as undefined | WebSocket)
-
-    const test = () => {
-        console.log('test')
-    }
-    // const log = debug
-    //     ? _.bind(console.log, console, '[useWebSocket]')
-    //     : () => {
-    //           console.log('null')
-    //       }
-
-    // const log1 = _.bind(console.log, console, '[useWebSocket]')
-
     useEffect(() => {
-        const log = _.bind(console.log, console, '[useWebSocket]')
-        log('use effect', wsUrl, debug)
-        // log1('use 1')
-        // log2('use 2')
-        test()
+        // eslint-disable-next-line
+        const log = process.env.DEBUG ? _.bind(console.log, console, '[useWebSocket]') : (...args: any[]) => {}
+        log('use effect', wsUrl)
+
         if (!wsUrl) {
             return
         }
@@ -66,9 +61,10 @@ export default function useWebSocket({ wsUrl, onOpen, onClose, onMessage, debug 
         ws.onmessage = (event) => {
             onMessage?.(event.data)
         }
+        // eslint-disable-next-line consistent-return
         return () => {
             log('react layout closing')
             close()
         }
-    }, [wsUrl])
+    }, [wsUrl, onClose, onOpen, onMessage])
 }

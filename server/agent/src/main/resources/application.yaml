@@ -1,21 +1,27 @@
 server:
   port: ${SW_AGENT_PORT:8088}
+  shutdown: graceful
 sw:
   agent:
     version: ${SW_AGENT_VERSION:0.1.0}
     basePath: ${SW_BASE_PATH:/opt/starwhale}
     hostIP: ${SW_HOST_IP:127.0.0.1}
     task:
-      retryRunMaxNum: 10
-      retryRestartMaxNum: 10
-      pypiIndexUrl: ${SW_PYPI_INDEX_URL:http://10.131.0.1:3141/root/pypi-douban/+simple/}
-      pypiExtraIndexUrl: ${SW_PYPI_EXTRA_INDEX_URL:https://pypi.tuna.tsinghua.edu.cn/simple/}
-      pypiTrustedHost: ${SW_PYPI_TRUSTED_HOST:10.131.0.1 pypi.tuna.tsinghua.edu.cn}
+      defaultImage: ${SW_TASK_DEFAULT_IMAGE:ghcr.io/star-whale/starwhale:latest}
+      useHostNetWork: ${SW_TASK_USE_HOST_NETWORK:0}
+      disableDebug: ${SW_TASK_DISABLE_DEBUG:0}
+      retryRunMaxNum: ${SW_TASK_RETRY_RUN_MAX_NUM:10}
+      retryRestartMaxNum: ${SW_TASK_RESTART_MAX_NUM:10}
+      imagePullTimeout: ${SW_TASK_IMAGE_PULL_TIMEOUT_MILLIS:600000}
+      pypiIndexUrl: ${SW_PYPI_INDEX_URL:}
+      pypiExtraIndexUrl: ${SW_PYPI_EXTRA_INDEX_URL:}
+      pypiTrustedHost: ${SW_PYPI_TRUSTED_HOST:}
+    container:
+      host: ${DOCKER_HOST:tcp://127.0.0.1:2376}
   controller:
     name: swController
     url: ${SW_CONTROLLER_URL:http://10.131.0.1:8082/}
-  container:
-    host: ${DOCKER_HOST:tcp://127.0.0.1:2376}
+
   storage:
     type: s3
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}

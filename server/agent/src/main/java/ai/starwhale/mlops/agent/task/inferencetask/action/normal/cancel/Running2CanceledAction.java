@@ -1,8 +1,17 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
@@ -16,26 +25,26 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
-public class Running2CanceledAction extends AbsBaseCancelPPLTaskAction {
+public class Running2CanceledAction extends AbsBaseCancelTaskAction {
     @Override
     public Optional<InferenceStage> stage() {
         return Optional.of(InferenceStage.RUNNING);
     }
 
     @Override
-    public InferenceTask processing(InferenceTask oldTask, Context context) {
+    public InferenceTask processing(InferenceTask originTask, Context context) {
         // stop the container
-        if (containerClient.stopContainer(oldTask.getContainerId())) {
-            return super.processing(oldTask, context);
+        if (containerClient.stopContainer(originTask.getContainerId())) {
+            return super.processing(originTask, context);
         }
         return null;
     }
 
     @Override
-    public void success(InferenceTask oldTask, InferenceTask newTask, Context context) {
+    public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
         if (Objects.nonNull(newTask)) {
-            taskPool.runningTasks.remove(oldTask);
-            super.success(oldTask, newTask, context);
+            taskPool.runningTasks.remove(originTask);
+            super.success(originTask, newTask, context);
         }
     }
 }

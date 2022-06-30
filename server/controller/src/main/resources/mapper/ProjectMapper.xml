@@ -8,21 +8,33 @@
 
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.project.mapper.ProjectMapper">
-    <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity" useGeneratedKeys="true" keyProperty="id">
+    <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.po.ProjectEntity" useGeneratedKeys="true" keyProperty="id">
         insert into project_info(project_name, owner_id)
-        values (#{projectName}, #{ownerId})
+        values (#{project.projectName}, #{project.ownerId})
     </insert>
 
-    <delete id="deleteProject" parameterType="java.lang.Long">
+    <update id="deleteProject" parameterType="java.lang.Long">
         update project_info
         set is_deleted = 1
         where id = #{id}
-    </delete>
+    </update>
 
-    <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.ProjectEntity">
+    <update id="recoverProject" parameterType="java.lang.Long">
         update project_info
-        set project_name = #{projectName}
+        set is_deleted = 0
         where id = #{id}
+    </update>
+
+    <update id="recoverProjectByName" parameterType="java.lang.String">
+        update project_info
+        set is_deleted = 0
+        where project_name = #{projectName}
+    </update>
+
+    <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.po.ProjectEntity">
+        update project_info
+        set project_name = #{project.projectName}
+        where id = #{project.id}
     </update>
 
     <sql id="select_project">
@@ -49,22 +61,51 @@
 
     <select id="listProjects" parameterType="java.lang.String" resultMap="projectResultMap" >
         <include refid="select_project"/>
-        and p.is_deleted = 0
+        and p.is_deleted = #{isDeleted}
         <if test="projectName != null and projectName != ''">
             and p.project_name like concat(#{projectName}, '%')
         </if>
-        order by p.id desc
+        <if test="order != null and order != ''">
+            order by ${order}
+        </if>
+    </select>
+
+    <select id="listDeletedProjects" parameterType="java.lang.String" resultMap="projectResultMap">
+        <include refid="select_project"/>
+        and p.is_deleted = 1
+        <if test="projectName != null and projectName != ''">
+            and p.project_name = #{projectName}
+        </if>
+        order by p.modified_time desc
     </select>
 
     <select id="listProjectsByOwner" parameterType="java.lang.Long" resultMap="projectResultMap">
         <include refid="select_project"/>
+        and p.is_deleted = #{isDeleted}
         and p.owner_id = #{userId}
-        order by p.id
+        <if test="order != null and order != ''">
+            order by ${order}
+        </if>
+    </select>
+
+    <select id="listProjectsByOwnerName" parameterType="java.lang.String" resultMap="projectResultMap">
+        <include refid="select_project"/>
+        and p.is_deleted = #{isDeleted}
+        and u.user_name like concat(#{userName}, '%')
+        <if test="order != null and order != ''">
+            order by ${order}
+        </if>
     </select>
 
     <select id="findProject" parameterType="java.lang.Long" resultMap="projectResultMap">
         <include refid="select_project"/>
         and p.id = #{id}
+    </select>
+
+    <select id="findProjectByName" parameterType="java.lang.String" resultMap="projectResultMap">
+        <include refid="select_project"/>
+        and p.project_name = #{projectName}
+        and p.is_deleted = 0
     </select>
 
     <select id="findDefaultProject" parameterType="java.lang.Long" resultMap="projectResultMap">
@@ -74,7 +115,7 @@
     </select>
 
 
-    <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.ProjectEntity">
+    <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.po.ProjectEntity">
         <id property="id" column="project_id" />
         <result property="projectName" column="project_name"/>
         <result property="isDeleted" column="project_is_deleted"/>

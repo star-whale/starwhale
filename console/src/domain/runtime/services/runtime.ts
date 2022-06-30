@@ -1,17 +1,15 @@
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import axios from 'axios'
-import { IBaseImageSchema, IDeviceSchema } from '../schemas/runtime'
+import { IRuntimeSchema, IRuntimeDetailSchema } from '../schemas/runtime'
 
-export async function listBaseImages(query: IListQuerySchema): Promise<Array<IBaseImageSchema>> {
-    const resp = await axios.get('/api/v1/runtime/baseImage', {
+export async function listRuntimes(projectId: string, query: IListQuerySchema): Promise<IListSchema<IRuntimeSchema>> {
+    const resp = await axios.get<IListSchema<IRuntimeSchema>>(`/api/v1/project/${projectId}/runtime`, {
         params: query,
     })
     return resp.data
 }
 
-export async function listDevices(query: IListQuerySchema): Promise<Array<IDeviceSchema>> {
-    const resp = await axios.get('/api/v1/runtime/device', {
-        params: query,
-    })
+export async function fetchRuntime(projectId: string, runtimeId: string): Promise<any> {
+    const resp = await axios.get<IRuntimeDetailSchema>(`/api/v1/project/${projectId}/runtime/${runtimeId}`)
     return resp.data
 }

@@ -1,25 +1,54 @@
-from loguru import logger
-
-
 class FileTypeError(Exception):
-
-    def __str__(self) -> str:
-        return "file type error"
+    pass
 
 
 class FileFormatError(Exception):
-
-    def __str__(self) -> str:
-        return "file format error"
+    pass
 
 
 class NoSupportError(Exception):
-
-    def __str__(self) -> str:
-        return "no support"
+    pass
 
 
 class NotFoundError(Exception):
+    pass
 
-    def __str__(self) -> str:
-        return "path no found"
+
+class SWObjNameFormatError(Exception):
+    pass
+
+
+class UnExpectedConfigFieldError(Exception):
+    pass
+
+
+class URIFormatError(Exception):
+    pass
+
+
+class ConfigFormatError(Exception):
+    pass
+
+
+class ExistedError(Exception):
+    pass
+
+
+class MissingFieldError(Exception):
+    pass
+
+
+class FormatError(Exception):
+    pass
+
+
+class EnvironmentError(Exception):
+    pass
+
+
+class PythonEnvironmentError(Exception):
+    pass
+
+
+class FieldTypeOrValueError(Exception):
+    pass

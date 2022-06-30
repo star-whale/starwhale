@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS agent_info
     serial_number varchar(255) NOT NULL,
     connect_time  datetime     NOT NULL,
     agent_version varchar(255) NOT NULL,
+    agent_status  varchar(32)  NOT NULL,
     device_info   varchar(255) NOT NULL,
     created_time  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     modified_time datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -145,7 +146,8 @@ CREATE TABLE IF NOT EXISTS job_info
     finished_time   datetime,
     duration_ms     bigint           NOT NULL,
     job_status      varchar(50)      NOT NULL,
-    base_image_id   bigint           NOT NULL,
+    job_type        varchar(50)      NOT NULL,
+    swrt_version_id bigint           NOT NULL,
     device_type     tinyint UNSIGNED NOT NULL,
     device_amount   int              NOT NULL,
     result_output_path text          NOT NULL,
@@ -173,7 +175,7 @@ CREATE TABLE IF NOT EXISTS task_info
 (
     id              bigint           NOT NULL AUTO_INCREMENT COMMENT 'PK',
     task_uuid       varchar(255)     NOT NULL,
-    job_id          bigint           NOT NULL,
+    step_id         bigint           NOT NULL,
     agent_id        bigint           ,
     task_status     varchar(50)      NOT NULL,
     task_type       varchar(50)      NOT NULL,
@@ -183,8 +185,23 @@ CREATE TABLE IF NOT EXISTS task_info
     modified_time   datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE INDEX uk_task_uuid (task_uuid) USING BTREE,
-    INDEX idx_job_id (job_id) USING BTREE,
+    INDEX idx_step_id (step_id) USING BTREE,
     INDEX idx_agent_id (agent_id) USING BTREE,
     INDEX idx_task_status (task_status) USING BTREE,
     INDEX idx_task_type (task_type) USING BTREE
 );
+
+CREATE TABLE IF NOT EXISTS step
+(
+    id              bigint           NOT NULL AUTO_INCREMENT COMMENT 'PK',
+    step_name       varchar(255)     NOT NULL,
+    step_uuid       varchar(255)     NOT NULL,
+    job_id          bigint           NOT NULL,
+    last_step_id    bigint           ,
+    step_status     varchar(50)      NOT NULL,
+    created_time    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_time   datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE INDEX uk_step_uuid (step_uuid) USING BTREE,
+    INDEX idx_step_job_id (job_id) USING BTREE
+    );

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/require-default-props */
 
 import React, { ReactElement, ReactNode } from 'react'
 import RcForm, { useForm as RcUseForm } from 'rc-field-form'
@@ -188,7 +189,7 @@ export function createForm<S extends {} = Store>({
                 return React.createElement(
                     FormControl,
                     {
-                        error,
+                        error: error?.toString(),
                         label: props.required
                             ? React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, [
                                   React.createElement('div', {}, '*'),

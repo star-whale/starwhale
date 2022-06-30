@@ -1,0 +1,26 @@
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+.swMain-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: url("/static/img/banner-1920x1080.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: top center;
+}
+
+@media screen and (min-width: 1920px) and (max-width: 2560px) {
+  .swMain-wrapper {
+    background-image: url("/static/img/banner-2560x1440.jpg");
+  }
+}
+
+@media screen and (min-width: 3000px) and (max-width: 3840px) {
+  .swMain-wrapper {
+    background-image: url("/static/img/banner-3840x2160.jpg");
+  }
+}

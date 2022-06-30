@@ -1,15 +1,12 @@
 import React from 'react'
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom'
-import Header from '@/components/Header'
 import ProjectLayout from '@/pages/Project/ProjectLayout'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import { IThemedStyleProps } from '@/theme'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import Login from '@/pages/Home/Login'
-import ProjectOverview from './pages/Project/Overview'
 import ProjectListCard from './pages/Project/ProjectListCard'
-import BaseLayout from './pages/BaseLayout'
 import ModelLayout from './pages/Model/ModelLayout'
 import ModelOverview from './pages/Model/Overview'
 import ProjectModels from './pages/Project/Models'
@@ -21,15 +18,25 @@ import DatasetVersionListCard from './pages/Dataset/DatasetVersionListCard'
 import DatasetVersionLayout from './pages/Dataset/DatasetVersionLayout'
 import DatasetLayout from './pages/Dataset/DatasetLayout'
 import DatasetOverview from './pages/Dataset/Overview'
-import JobLayout from './pages/Job/JobLayout'
-import TaskLayout from './pages/Job/TaskLayout'
-import JobOverview from './pages/Job/JobOverview'
-import TaskListCard from './pages/Job/TaskListCard'
 import JobNewCard from './pages/Project/JobNewCard'
-import JobResult from './pages/Job/JobResult'
 import JobsLayout from './pages/Job/JobsLayout'
 import JobGridCard from './pages/Job/JobGridCard'
-import JobTest from './pages/Job/JobTest'
+import ApiHeader from './api/ApiHeader'
+import Pending from './pages/Home/Pending'
+import JobTasks from './pages/Job/JobTasks'
+import JobResults from './pages/Job/JobResults'
+import JobOverviewLayout from './pages/Job/JobOverviewLayout'
+import SettingsOverviewLayout from './pages/Settings/SettingsOverviewLayout'
+import SettingAgentListCard from './pages/Settings/SettingAgentListCard'
+import RuntimeVersionListCard from './pages/Runtime/RuntimeVersionListCard'
+import RuntimeVersionLayout from './pages/Runtime/RuntimeVersionLayout'
+import RuntimeLayout from './pages/Runtime/RuntimeLayout'
+import RuntimeOverview from './pages/Runtime/Overview'
+import ProjectRuntimes from './pages/Project/Runtimes'
+import JobDAG from './pages/Job/JobDAG'
+import ProjectEvaluations from './pages/Project/Evaluations'
+import EvaluationOverviewLayout from './pages/Evaluation/EvaluationOverviewLayout'
+import EvaluationResults from './pages/Evaluation/EvaluationResults'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -52,13 +59,22 @@ const Routes = () => {
     return (
         <BrowserRouter>
             <div className={styles.root}>
-                <Header />
+                <ApiHeader />
                 <Switch>
+                    {/* setting */}
+                    <Route exact path='/settings/:path?'>
+                        <SettingsOverviewLayout>
+                            <Switch>
+                                <Route exact path='/settings/agents' component={SettingAgentListCard} />
+                                <Redirect from='/settings/:path?' to='/settings/agents' />
+                            </Switch>
+                        </SettingsOverviewLayout>
+                    </Route>
+                    {/*  */}
                     <Route exact path='/projects/:projectId/jobgrids'>
                         <JobsLayout>
                             <Switch>
                                 <Route exact path='/projects/:projectId/jobgrids' component={JobGridCard} />
-                                <Route exact path='/projects/:projectId/jobgrids/test' component={JobTest} />
                             </Switch>
                         </JobsLayout>
                     </Route>
@@ -66,28 +82,56 @@ const Routes = () => {
                     <Route exact path='/projects/:projectId/:path?'>
                         <ProjectLayout>
                             <Switch>
-                                <Route exact path='/projects/:projectId' component={ProjectOverview} />
                                 <Route exact path='/projects/:projectId/models' component={ProjectModels} />
                                 <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
                                 <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
+                                <Route exact path='/projects/:projectId/evaluations' component={ProjectEvaluations} />
+                                <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
                                 <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
+                                <Redirect from='/projects/:projectId' to='/projects/:projectId/models' />
                             </Switch>
                         </ProjectLayout>
                     </Route>
+                    {/* evaluation */}
+                    <Route exact path='/projects/:projectId/evaluations/:jobId/:path?'>
+                        <EvaluationOverviewLayout>
+                            <Switch>
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/evaluations/:jobId/results'
+                                    component={EvaluationResults}
+                                />
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/evaluations/:jobId/tasks'
+                                    component={JobTasks}
+                                />
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/evaluations/:jobId/actions'
+                                    component={JobDAG}
+                                />
+                                <Redirect
+                                    from='/projects/:projectId/evaluations/:jobId'
+                                    to='/projects/:projectId/evaluations/:jobId/results'
+                                />
+                            </Switch>
+                        </EvaluationOverviewLayout>
+                    </Route>
                     {/* job & task */}
                     <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
-                        <TaskLayout>
+                        <JobOverviewLayout>
                             <Switch>
-                                <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={JobOverview} />
-                                <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResult} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={JobTasks} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/results' component={JobResults} />
+                                <Route exact path='/projects/:projectId/jobs/:jobId/actions' component={JobDAG} />
+                                <Redirect
+                                    from='/projects/:projectId/jobs/:jobId'
+                                    to='/projects/:projectId/jobs/:jobId/actions'
+                                />
                             </Switch>
-                        </TaskLayout>
+                        </JobOverviewLayout>
                     </Route>
-                    {/* <Route exact path='/projects/:projectId/jobs/:jobId'>
-                        <JobLayout>
-                            <Switch></Switch>
-                        </JobLayout>
-                    </Route> */}
                     {/* datasets */}
                     <Route exact path='/projects/:projectId/datasets/:datasetId/versions'>
                         <DatasetVersionLayout>
@@ -111,6 +155,29 @@ const Routes = () => {
                             </Switch>
                         </DatasetLayout>
                     </Route>
+                    {/* runtime */}
+                    <Route exact path='/projects/:projectId/runtimes/:runtimeId/versions'>
+                        <RuntimeVersionLayout>
+                            <Switch>
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/runtimes/:runtimeId/versions'
+                                    component={RuntimeVersionListCard}
+                                />
+                            </Switch>
+                        </RuntimeVersionLayout>
+                    </Route>
+                    <Route exact path='/projects/:projectId/runtimes/:runtimeId/:path?/:path?'>
+                        <RuntimeLayout>
+                            <Switch>
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/runtimes/:runtimeId'
+                                    component={RuntimeOverview}
+                                />
+                            </Switch>
+                        </RuntimeLayout>
+                    </Route>
                     {/* model */}
                     <Route exact path='/projects/:projectId/models/:modelId/versions'>
                         <ModelVersionLayout>
@@ -132,14 +199,14 @@ const Routes = () => {
                     </Route>
                     {/* other */}
                     <Route exact path='/login' component={Login} />
+                    <Route exact path='/logout' component={Pending} />
                     <Route>
-                        <BaseLayout sidebar={undefined}>
+                        <ProjectLayout>
                             <Switch>
-                                {/* <Route exact path='/' component={Home} /> */}
                                 <Route exact path='/projects' component={ProjectListCard} />
                                 <Redirect from='/' to='/projects' />
                             </Switch>
-                        </BaseLayout>
+                        </ProjectLayout>
                     </Route>
                 </Switch>
             </div>

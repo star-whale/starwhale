@@ -1,8 +1,17 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.api;
@@ -11,29 +20,28 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.RevertSWMPVersionRequest;
-import ai.starwhale.mlops.api.protocol.swmp.SWMPRequest;
-import ai.starwhale.mlops.api.protocol.swmp.SWMPVersionRequest;
+import ai.starwhale.mlops.api.protocol.swmp.SWMPTagRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
+import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.util.RandomUtil;
-import ai.starwhale.mlops.domain.swmp.SWMPFile;
-import ai.starwhale.mlops.domain.swmp.SWMPObject;
-import ai.starwhale.mlops.domain.swmp.SWMPObject.Version;
+import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.domain.swmp.SWModelPackageService;
-import ai.starwhale.mlops.domain.user.User;
-import ai.starwhale.mlops.domain.user.UserService;
-import ai.starwhale.mlops.exception.ApiOperationException;
+import ai.starwhale.mlops.domain.swmp.bo.SWMPQuery;
+import ai.starwhale.mlops.domain.swmp.bo.SWMPVersion;
+import ai.starwhale.mlops.domain.swmp.bo.SWMPVersionQuery;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
-import io.jsonwebtoken.lang.Strings;
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,33 +59,35 @@ public class SWModelPackageController implements SWModelPackageApi{
     private SWModelPackageService swmpService;
 
     @Resource
-    private UserService userService;
+    private IDConvertor idConvertor;
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(String projectId, String versionId,
+    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(String projectUrl, String versionId,
         String modelName, Integer pageNum, Integer pageSize) {
         PageInfo<SWModelPackageVO> pageInfo;
         if(StringUtils.hasText(versionId)) {
-            List<SWModelPackageVO> voList = swmpService.findModelByVersionId(
-                List.of(versionId.split("[,;]")));
+            List<SWModelPackageVO> voList = swmpService
+                .findModelByVersionId(Stream.of(versionId.split("[,;]")).map(idConvertor::revert).collect(
+                    Collectors.toList()));
             pageInfo = PageInfo.of(voList);
         } else {
             pageInfo = swmpService.listSWMP(
-                SWMPObject.builder().projectId(projectId).name(modelName).build(),
-                PageParams.builder().pageNum(pageNum).pageSize(pageSize).build());
+                SWMPQuery.builder()
+                    .projectUrl(projectUrl)
+                    .namePrefix(modelName)
+                    .build(),
+                PageParams.builder()
+                    .pageNum(pageNum)
+                    .pageSize(pageSize)
+                    .build());
         }
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> revertModelVersion(String projectId,String modelId,
+    public ResponseEntity<ResponseMessage<String>> revertModelVersion(String projectUrl, String swmpUrl,
         RevertSWMPVersionRequest revertRequest) {
-        SWMPObject swmp = SWMPObject.builder()
-            .id(modelId)
-            .projectId(projectId)
-            .version(Version.builder().id(revertRequest.getVersionId()).build())
-            .build();
-        Boolean res = swmpService.revertVersionTo(swmp);
+        Boolean res = swmpService.revertVersionTo(projectUrl, swmpUrl, revertRequest.getVersion());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert swmp version failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -86,9 +96,11 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> deleteModelById(String projectId,String modelId) {
-        Boolean res = swmpService.deleteSWMP(
-            SWMPObject.builder().projectId(projectId).id(modelId).build());
+    public ResponseEntity<ResponseMessage<String>> deleteModel(String projectUrl, String modelUrl) {
+        Boolean res = swmpService.deleteSWMP(SWMPQuery.builder()
+            .projectUrl(projectUrl)
+            .swmpUrl(modelUrl)
+            .build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Delete swmp failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -97,24 +109,35 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(String projectId,String modelId, String versionId) {
-        SWMPObject swmp = SWMPObject.builder().projectId(projectId).id(modelId).build();
-        if(Strings.hasText(versionId)) {
-            swmp.setVersion(Version.builder().id(versionId).build());
+    public ResponseEntity<ResponseMessage<String>> recoverModel(String projectUrl, String modelUrl) {
+        Boolean res = swmpService.recoverSWMP(projectUrl, modelUrl);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover model failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(String projectUrl, String modelUrl, String versionUrl) {
         SWModelPackageInfoVO swmpInfo = swmpService.getSWMPInfo(
-            SWMPObject.builder().projectId(projectId).id(modelId).build());
+           SWMPQuery.builder()
+               .projectUrl(projectUrl)
+               .swmpUrl(modelUrl)
+               .swmpVersionUrl(versionUrl)
+               .build());
         return ResponseEntity.ok(Code.success.asResponse(swmpInfo));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(String projectId,
-        String modelId, String modelVersionName, Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(String projectUrl,
+        String modelUrl, String name, String tag, Integer pageNum, Integer pageSize) {
         PageInfo<SWModelPackageVersionVO> pageInfo = swmpService.listSWMPVersionHistory(
-            SWMPObject.builder()
-                .projectId(projectId)
-                .id(modelId)
-                .version(Version.builder().name(modelVersionName).build())
+            SWMPVersionQuery.builder()
+                .projectUrl(projectUrl)
+                .swmpUrl(modelUrl)
+                .versionName(name)
+                .versionTag(tag)
                 .build(),
             PageParams.builder()
                 .pageNum(pageNum)
@@ -123,21 +146,21 @@ public class SWModelPackageController implements SWModelPackageApi{
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
-    @Override
-    public ResponseEntity<ResponseMessage<String>> createModelVersion(String projectId, String modelId,
-        MultipartFile zipFile, SWMPVersionRequest request) {
-        User user = userService.currentUserDetail();
-        String versionId = createVersion(projectId, modelId, zipFile, request.getImportPath(), user.getId());
-        log.info("Create swmp version successfully, id = {}", versionId);
-        return ResponseEntity.ok(Code.success
-            .asResponse("success"));
-    }
+//    @Override
+//    public ResponseEntity<ResponseMessage<String>> createModelVersion(String projectId, String modelId,
+//        MultipartFile zipFile, SWMPVersionRequest request) {
+//        User user = userService.currentUserDetail();
+//        Long versionId = createVersion(projectId, idConvertor.revert(modelId), zipFile, request.getImportPath(), user.getId());
+//        log.info("Create swmp version successfully, id = {}", versionId);
+//        return ResponseEntity.ok(Code.success
+//            .asResponse("success"));
+//    }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> modifyModel(String projectId, String modelId, String versionId,
-        String tag) {
-        Boolean res = swmpService.modifySWMPVersion(
-            Version.builder().id(versionId).tag(tag).build());
+    public ResponseEntity<ResponseMessage<String>> modifyModel(String projectUrl, String modelUrl, String versionUrl,
+        SWMPTagRequest swmpTagRequest) {
+        Boolean res = swmpService.modifySWMPVersion(projectUrl, modelUrl, versionUrl,
+            SWMPVersion.builder().tag(swmpTagRequest.getTag()).build());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update swmp failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
@@ -146,15 +169,36 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> createModel(String projectId, MultipartFile zipFile, SWMPRequest swmpRequest) {
-        User user = userService.currentUserDetail();
-        String modelId = swmpService.addSWMP(
-            SWMPObject.builder().projectId(projectId).name(swmpRequest.getModelName()).ownerId(user.getId())
-                .build());
-        String versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
-        log.info("Create swmp successfully, version id = {}", versionId);
+    public ResponseEntity<ResponseMessage<String>> manageModelTag(String projectUrl,
+        String modelUrl, String versionUrl, SWMPTagRequest swmpTagRequest) {
+        TagAction ta;
+        try {
+            ta = TagAction.of(swmpTagRequest.getAction(), swmpTagRequest.getTag());
+        } catch (IllegalArgumentException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip(String.format("Unknown tag action %s ", swmpTagRequest.getAction())),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        Boolean res = swmpService.manageVersionTag(projectUrl, modelUrl, versionUrl, ta);
+        if(!res) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update model tag failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
+
+//    @Override
+//    public ResponseEntity<ResponseMessage<String>> createModel(String projectId, MultipartFile zipFile, SWMPRequest swmpRequest) {
+//        User user = userService.currentUserDetail();
+//        Long modelId = swmpService.addSWMP(
+//            SWMPObject.builder()
+//                .project(Project.builder().id(idConvertor.revert(projectId)).build())
+//                .name(swmpRequest.getModelName())
+//                .owner(user)
+//                .build());
+//        Long versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
+//        log.info("Create swmp successfully, version id = {}", versionId);
+//        return ResponseEntity.ok(Code.success.asResponse("success"));
+//    }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> upload(MultipartFile dsFile,
@@ -164,8 +208,15 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public byte[] pull(ClientSWMPRequest pullRequest) {
-        return swmpService.pull(pullRequest);
+    public void pull(ClientSWMPRequest pullRequest, HttpServletResponse httpResponse) {
+        swmpService.pull(pullRequest,httpResponse);
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<SWModelPackageInfoVO>>> listModel(String project,
+        String name) {
+        List<SWModelPackageInfoVO> swModelPackageInfoVOS = swmpService.listSWMPInfo(project, name);
+        return ResponseEntity.ok(Code.success.asResponse(swModelPackageInfoVOS));
     }
 
     @Override
@@ -175,8 +226,8 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public byte[] pullModel(ClientSWMPRequest pullRequest) {
-        return pull(pullRequest);
+    public void pullModel(ClientSWMPRequest pullRequest, HttpServletResponse httpResponse) {
+        pull(pullRequest,httpResponse);
     }
 
     @Override
@@ -184,32 +235,32 @@ public class SWModelPackageController implements SWModelPackageApi{
         return ResponseEntity.ok(swmpService.query(queryRequest));
     }
 
-    private String createVersion(String projectId, String modelId, MultipartFile zipFile, String importPath, String userId) {
-        String path = importPath;
-        String meta = "";
-        if (zipFile != null) {
-            // upload file
-            SWMPFile swmpFile = new SWMPFile(projectId, modelId);
-            String fileName = swmpFile.generateZipFileName();
-            File dest = new File(swmpFile.getZipFilePath(), fileName);
-            try {
-                zipFile.transferTo(dest);
-            } catch (IOException e) {
-                throw new ApiOperationException("Model File upload error.");
-            }
-            path = dest.getPath();
-            meta = swmpFile.meta();
-        }
-        SWMPObject swmp = SWMPObject.builder()
-            .id(modelId)
-            .version(Version.builder()
-                .storagePath(path)
-                .meta(meta)
-                .name(RandomUtil.randomHexString(8))
-                .tag("")
-                .ownerId(userId)
-                .build())
-            .build();
-        return swmpService.addVersion(swmp);
-    }
+//    private Long createVersion(String projectId, Long modelId, MultipartFile zipFile, String importPath, Long userId) {
+//        String path = importPath;
+//        String meta = "";
+//        if (zipFile != null) {
+//            // upload file
+//            SWMPFile swmpFile = new SWMPFile(projectId, String.valueOf(modelId));
+//            String fileName = swmpFile.generateZipFileName();
+//            File dest = new File(swmpFile.getZipFilePath(), fileName);
+//            try {
+//                zipFile.transferTo(dest);
+//            } catch (IOException e) {
+//                throw new ApiOperationException("Model File upload error.");
+//            }
+//            path = dest.getPath();
+//            meta = swmpFile.meta();
+//        }
+//        SWMPObject swmp = SWMPObject.builder()
+//            .id(modelId)
+//            .version(SWMPVersion.builder()
+//                .storagePath(path)
+//                .meta(meta)
+//                .name(RandomUtil.randomHexString(8))
+//                .tag("")
+//                .ownerId(userId)
+//                .build())
+//            .build();
+//        return swmpService.addVersion(swmp);
+//    }
 }

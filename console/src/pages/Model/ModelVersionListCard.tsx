@@ -10,14 +10,13 @@ import { Button, SIZE as ButtonSize } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
-import { useModel } from '@model/hooks/useModel'
+import IconFont from '@/components/IconFont'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
     const { modelId, projectId } = useParams<{ modelId: string; projectId: string }>()
-    const { model } = useModel()
 
     const modelsInfo = useFetchModelVersions(projectId, modelId, page)
     const [isCreateModelVersionOpen, setIsCreateModelVersionOpen] = useState(false)
@@ -27,7 +26,7 @@ export default function ModelVersionListCard() {
             await modelsInfo.refetch()
             setIsCreateModelVersionOpen(false)
         },
-        [modelsInfo]
+        [modelsInfo, projectId, modelId]
     )
     const [t] = useTranslation()
 
@@ -35,7 +34,11 @@ export default function ModelVersionListCard() {
         <Card
             title={t('model versions')}
             extra={
-                <Button size={ButtonSize.compact} onClick={() => setIsCreateModelVersionOpen(true)}>
+                <Button
+                    startEnhancer={<IconFont type='add' kind='white' />}
+                    size={ButtonSize.compact}
+                    onClick={() => setIsCreateModelVersionOpen(true)}
+                >
                     {t('create')}
                 </Button>
             }
@@ -47,7 +50,7 @@ export default function ModelVersionListCard() {
                     modelsInfo.data?.list.map((model) => {
                         return [
                             model.meta,
-                            model.createTime && formatTimestampDateTime(model.createTime),
+                            model.createdTime && formatTimestampDateTime(model.createdTime),
                             model.owner && <User user={model.owner} />,
                             <Button size='mini' key={model.id} onClick={() => {}}>
                                 {t('Revert')}

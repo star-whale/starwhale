@@ -21,18 +21,24 @@ export default function DatasetVersionLayout({ children }: IDatasetLayoutProps) 
     useEffect(() => {
         setDatasetLoading(datasetInfo.isLoading)
         if (datasetInfo.isSuccess) {
-            if (datasetInfo.data.id !== dataset?.id) {
+            if (datasetInfo.data.versionName !== dataset?.versionName) {
                 setDataset(datasetInfo.data)
             }
         } else if (datasetInfo.isLoading) {
             setDataset(undefined)
         }
-    }, [dataset?.id, datasetInfo.data, datasetInfo.isLoading, datasetInfo.isSuccess, setDataset, setDatasetLoading])
+    }, [
+        dataset?.versionName,
+        datasetInfo.data,
+        datasetInfo.isLoading,
+        datasetInfo.isSuccess,
+        setDataset,
+        setDatasetLoading,
+    ])
 
     const [t] = useTranslation()
-    const datasetName = dataset?.name ?? '-'
+    const datasetName = dataset?.versionName ?? '-'
     const project = projectInfo.data ?? {}
-    const projectName = project?.name ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
@@ -50,7 +56,7 @@ export default function DatasetVersionLayout({ children }: IDatasetLayoutProps) 
             },
         ]
         return items
-    }, [projectName, datasetName, t])
+    }, [project?.id, datasetId, datasetName, t])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

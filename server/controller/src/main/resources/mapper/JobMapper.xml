@@ -10,79 +10,98 @@
 <mapper namespace="ai.starwhale.mlops.domain.job.mapper.JobMapper">
 
     <sql id="select_jobs">
-        select j.id as job_id,
-               j.job_uuid,
-               j.project_id,
-               j.swmp_version_id,
-               j.owner_id,
-               j.created_time as job_created_time,
-               j.finished_time as job_finished_time,
-               j.duration_ms as job_duration_ms,
-               j.job_status,
-               j.base_image_id,
-               j.device_type,
-               j.device_amount,
-               j.result_output_path as job_result_output_path,
-               p.id as project_id,
-               p.project_name,
-               u.id as user_id,
-               u.user_name,
-               u.user_enabled,
-               u.role_id,
-               u.created_time as user_created_time,
-               u.modified_time as user_modified_time,
-               mv.id as mv_id,
-               mv.swmp_id,
-               mv.version_name as mv_version_name,
-               mv.version_tag as mv_version_tag,
-               mv.version_meta as mv_version_meta,
-               mv.created_time as mv_created_time,
-               mv.modified_time as mv_modified_time,
-               mv.storage_path as mv_storage_path,
-               b.id as image_id,
-               b.image_name,
-               b.created_time as image_created_time,
-               b.modified_time as image_modified_time,
-               r.role_name,
-               r.role_name_en,
-               m.swmp_name as swmp_name
-        from job_info as j,
-             user_info as u,
-             project_info as p,
-             swmp_version as mv,
-             swmp_info as m,
-             base_image as b,
-             user_role as r
-        where u.id = j.owner_id
-          and p.id = j.project_id
-          and r.id = u.role_id
-          and mv.id = j.swmp_version_id
-          and m.id = mv.swmp_id
-          and b.id = j.base_image_id
+        select * from (select j.id as job_id,
+                              j.job_uuid,
+                              j.project_id,
+                              j.swmp_version_id,
+                              j.owner_id,
+                              j.created_time as job_created_time,
+                              j.finished_time as job_finished_time,
+                              j.duration_ms as job_duration_ms,
+                              j.job_status,
+                              j.job_type,
+                              j.swrt_version_id as swrt_version_id,
+                              j.device_type,
+                              j.device_amount,
+                              j.result_output_path as job_result_output_path,
+                              j.job_comment,
+                              j.is_deleted as job_is_deleted,
+                              p.project_name,
+                              u.id as user_id,
+                              u.user_name,
+                              u.user_enabled,
+                              u.role_id,
+                              u.created_time as user_created_time,
+                              u.modified_time as user_modified_time,
+                              mv.id as mv_id,
+                              mv.swmp_id,
+                              mv.version_name as mv_version_name,
+                              mv.version_tag as mv_version_tag,
+                              mv.version_meta as mv_version_meta,
+                              mv.created_time as mv_created_time,
+                              mv.modified_time as mv_modified_time,
+                              mv.storage_path as mv_storage_path,
+                              r.role_name,
+                              r.role_name_en,
+                              m.swmp_name as swmp_name
+                       from job_info as j,
+                            user_info as u,
+                            project_info as p,
+                            swmp_version as mv,
+                            swmp_info as m,
+                            user_role as r
+                       where u.id = j.owner_id
+                         and p.id = j.project_id
+                         and r.id = u.role_id
+                         and mv.id = j.swmp_version_id
+                         and m.id = mv.swmp_id) as j2
     </sql>
 
     <select id="listJobs" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
-         and j.project_id = #{projectId}
-        <choose>
-            <when test="swmpId != null">
-                and swmp_id = #{swmpId}
-            </when>
-            <otherwise>
-                order by swmp_id,j.id desc
-            </otherwise>
-        </choose>
+        <where>
+            and job_is_deleted = 0
+            and project_id = #{projectId}
+        </where>
+        <if test="swmpId != null and swmpId != ''">
+            and swmp_id = #{swmpId}
+        </if>
+        order by job_id desc
+    </select>
 
+    <select id="listJobsByStatus" resultMap="jobResultMap" >
+        <include refid="select_jobs"/>
+        <where>
+            and job_is_deleted = 0
+            and job_status = #{jobStatus}
+            and project_id = #{projectId}
+        </where>
+        <if test="swmpId != null and swmpId != ''">
+            and swmp_id = #{swmpId}
+        </if>
+        order by job_id desc
     </select>
 
     <select id="findJobById" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
-        and j.id = #{jobId}
+        <where>
+            and job_id = #{jobId}
+        </where>
+    </select>
+
+    <select id="findJobByUUID" resultMap="jobResultMap" >
+        <include refid="select_jobs"/>
+        <where>
+            and job_uuid = #{uuid}
+        </where>
     </select>
 
     <select id="findJobByStatusIn" resultMap="jobResultMap" >
         <include refid="select_jobs"/>
-        and j.job_status in
+        <where>
+            and job_is_deleted = 0
+            and job_status in
+        </where>
         <foreach item="item" index="index" collection="jobStatuses"
           open="(" separator="," close=")">
             #{item}
@@ -108,7 +127,37 @@
         update job_info set result_output_path = #{resultDir} WHERE id = #{jobId}
     </update>
 
-    <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.JobEntity" useGeneratedKeys="true" keyProperty="id">
+    <update id="updateJobComment">
+        update job_info set job_comment = #{comment}
+        where id = #{id}
+    </update>
+
+    <update id="updateJobCommentByUUID">
+        update job_info set job_comment = #{comment}
+        where job_uuid = #{uuid}
+    </update>
+
+    <update id="removeJob" >
+        update job_info set is_deleted = 1
+        where id = #{id}
+    </update>
+
+    <update id="removeJobByUUID" >
+        update job_info set is_deleted = 1
+        where job_uuid = #{uuid}
+    </update>
+
+    <update id="recoverJob" >
+        update job_info set is_deleted = 0
+        where id = #{id}
+    </update>
+
+    <update id="recoverJobByUUID" >
+        update job_info set is_deleted = 0
+        where job_uuid = #{uuid}
+    </update>
+
+    <insert id="addJob" parameterType="ai.starwhale.mlops.domain.job.po.JobEntity" useGeneratedKeys="true" keyProperty="id">
         insert into job_info(job_uuid,
                              project_id,
                              swmp_version_id,
@@ -117,26 +166,28 @@
                              finished_time,
                              duration_ms,
                              job_status,
-                             base_image_id,
+                             job_type,
+                             swrt_version_id,
                              device_type,
                              device_amount,
                              result_output_path)
-        values (#{jobUuid},
-                #{projectId},
-                #{swmpVersionId},
-                #{ownerId},
-                #{createdTime},
-                #{finishedTime},
-                #{durationMs},
-                #{jobStatus},
-                #{baseImageId},
-                #{deviceType},
-                #{deviceAmount},
-                #{resultOutputPath}
+        values (#{job.jobUuid},
+                #{job.projectId},
+                #{job.swmpVersionId},
+                #{job.ownerId},
+                #{job.createdTime},
+                #{job.finishedTime},
+                #{job.durationMs},
+                #{job.jobStatus},
+                #{job.type},
+                #{job.runtimeVersionId},
+                #{job.deviceType},
+                #{job.deviceAmount},
+                #{job.resultOutputPath}
                 )
     </insert>
 
-    <resultMap id="jobResultMap" type="ai.starwhale.mlops.domain.job.JobEntity" >
+    <resultMap id="jobResultMap" type="ai.starwhale.mlops.domain.job.po.JobEntity" >
         <id property="id" column="job_id" />
         <result property="jobUuid" column="job_uuid"/>
         <result property="projectId" column="project_id"/>
@@ -147,12 +198,15 @@
         <result property="finishedTime" column="job_finished_time" />
         <result property="durationMs" column="job_duration_ms" />
         <result property="jobStatus" column="job_status" />
+        <result property="type" column="job_type" />
         <result property="deviceType" column="device_type" />
         <result property="deviceAmount" column="device_amount" />
         <result property="resultOutputPath" column="job_result_output_path" />
+        <result property="comment" column="job_comment"/>
+        <result property="isDeleted" column="job_is_deleted"/>
+        <result property="runtimeVersionId" column="swrt_version_id"/>
         <association property="project" resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
         <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper.swmpVersionResultMap" />
         <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />
-        <association property="baseImage" resultMap="ai.starwhale.mlops.domain.job.mapper.BaseImageMapper.baseImageResultMap" />
     </resultMap>
 </mapper>

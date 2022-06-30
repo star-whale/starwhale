@@ -1,28 +1,16 @@
 import click
 
-from starwhale.mngt.user import login, logout
-from starwhale.consts import DEFAULT_LOCAL_SW_CONTROLLER_ADDR
+from starwhale.mngt import gc, open_web
 
 
-def add_mngt_command(cli):
-    @cli.command("login", help="Login remote StarWhale Controller")
-    @click.option("--username", prompt="username")
-    @click.password_option(confirmation_prompt=False)
-    @click.option("--starwhale", prompt="starwhale controller web:", default=DEFAULT_LOCAL_SW_CONTROLLER_ADDR)
-    def _login(username, password, starwhale):
-        login(username, password, starwhale)
+def add_mngt_command(cli: click.core.Group) -> None:
+    @cli.command("gc", help="Standalone garbage collection")
+    @click.option("--dry-run", is_flag=True, help="Dry-run cleanup garbage collection")
+    @click.option("--yes", is_flag=True, help="All confirm yes")
+    def _gc(dry_run: bool, yes: bool) -> None:
+        gc(dry_run, yes)
 
-    @cli.command("logout", help="Logout StarWhale Controller")
-    def _logout():
-        click.confirm("Do you want to continue?", abort=True)
-        logout()
-
-    @cli.command("quickstart", help="StarWhale Quickstart")
-    def _quickstart():
-        #TODO: init git repo, add some gitignore
-        pass
-
-    @cli.command("autocomplete", help="Generate zsh/bash command auto complete")
-    def _autocompete():
-        pass
-
+    @cli.command("ui", help="Open instance web ui")
+    @click.argument("instance", default="")
+    def _ui(instance: str) -> None:
+        open_web(instance)

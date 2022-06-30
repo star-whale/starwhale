@@ -6,16 +6,17 @@ import { ICreateModelSchema } from '@model/schemas/model'
 import ModelForm from '@model/components/ModelForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
+// import { Button, SIZE as ButtonSize } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { Link, useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
+// import IconFont from '@/components/IconFont'
 
 export default function ModelListCard() {
     const [page] = usePage()
-    const { modelId, projectId } = useParams<{ modelId: string; projectId: string }>()
+    const { projectId } = useParams<{ modelId: string; projectId: string }>()
 
     const modelsInfo = useFetchModels(projectId, page)
     const [isCreateModelOpen, setIsCreateModelOpen] = useState(false)
@@ -25,18 +26,22 @@ export default function ModelListCard() {
             await modelsInfo.refetch()
             setIsCreateModelOpen(false)
         },
-        [modelsInfo]
+        [modelsInfo, projectId]
     )
     const [t] = useTranslation()
 
     return (
         <Card
             title={t('Models')}
-            extra={
-                <Button size={ButtonSize.compact} onClick={() => setIsCreateModelOpen(true)}>
-                    {t('create')}
-                </Button>
-            }
+            // extra={
+            //     <Button
+            //         startEnhancer={<IconFont type='add' kind='white' />}
+            //         size={ButtonSize.compact}
+            //         onClick={() => setIsCreateModelOpen(true)}
+            //     >
+            //         {t('create')}
+            //     </Button>
+            // }
         >
             <Table
                 isLoading={modelsInfo.isLoading}
@@ -48,7 +53,7 @@ export default function ModelListCard() {
                                 {model.name}
                             </Link>,
                             model.owner && <User user={model.owner} />,
-                            model.createTime && formatTimestampDateTime(model.createTime),
+                            model.createdTime && formatTimestampDateTime(model.createdTime),
                             <Link key={model.id} to={`/projects/${projectId}/models/${model.id}/versions`}>
                                 {t('Version History')}
                             </Link>,

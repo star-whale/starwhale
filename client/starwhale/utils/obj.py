@@ -1,14 +1,11 @@
 import typing as t
 from functools import wraps
 
-from loguru import logger
-
 
 class Dict2Obj(object):
-
     def __init__(self, d: dict) -> None:
         for (k, v) in d.items():
-            #TODO: use iterable type
+            # TODO: use iterable type
             if isinstance(v, (list, tuple, set)):
                 setattr(self, k, [Dict2Obj(i) if isinstance(i, dict) else i for i in v])
             else:
@@ -16,17 +13,16 @@ class Dict2Obj(object):
 
 
 class Obj2Dict(object):
-
     def __call__(self, func: t.Any) -> t.Any:
-
         @wraps(func)
         def _wraps(*args, **kwargs):
-            content =func(*args, **kwargs)
+            content = func(*args, **kwargs)
             if isinstance(content, (list, tuple, set)):
                 return [m if isinstance(m, dict) else m.as_dict() for m in content]
             elif isinstance(content, dict):
                 return content
             else:
-                #TODO: replace as_dict
+                # TODO: replace as_dict
                 return content.as_dict()
+
         return _wraps

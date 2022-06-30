@@ -1,0 +1,83 @@
+name: Console UI
+
+on:
+  push:
+    branches:
+      - main
+      - feat/*
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  filter:
+    runs-on: ubuntu-latest
+
+    outputs:
+      console: ${{ steps.filter.outputs.console }}
+      js: ${{ steps.filter.outputs.js }}
+      scss: ${{ steps.filter.outputs.scss }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check for console files changed
+        uses: getsentry/paths-filter@v2
+        id: filter
+        with:
+          base: main
+          filters: .github/file-filter.yml
+
+  build:
+    runs-on: ubuntu-latest
+
+    needs:
+      - filter
+    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.console == 'true') || github.event_name == 'push' }}
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "yarn"
+          cache-dependency-path: "./console/yarn.lock"
+
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: |
+          echo "::set-output name=dir::"
+          yarn cache dir
+
+      - name: Install yarn
+        working-directory: ./console
+        run: make install-yarn
+
+      - uses: actions/cache@v3
+        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+        with:
+          path: |
+            ${{ steps.yarn-cache-dir-path.outputs.dir }}
+            **/node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install project dependencies
+        working-directory: ./console
+        if: steps.yarn-cache.outputs.cache-hit != 'true' # Over here!
+        run: make install-dependencies
+
+      - name: Yarn lint
+        working-directory: ./console
+        run: make ci-lint
+
+      # - name: E2E lint
+      #   working-directory: ./console
+      #   run: |
+      #     yarn cy:run

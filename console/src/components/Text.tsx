@@ -15,7 +15,7 @@ const fontSizeMap: { [k in Exclude<ITextProps['size'], undefined>]: string } = {
 }
 
 export default function Text({ children, style, size = 'medium' }: ITextProps) {
-    const [css, theme] = useStyletron()
+    const [css] = useStyletron()
     return (
         <span
             style={style}

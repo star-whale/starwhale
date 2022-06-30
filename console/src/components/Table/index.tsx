@@ -7,8 +7,6 @@ import useTranslation from '@/hooks/useTranslation'
 import Text from '@/components/Text'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
-import { createUseStyles } from 'react-jss'
-import { useStyletron } from 'baseui'
 
 export interface ITableProps extends BaseTableProps {
     paginationProps?: IPaginationProps
@@ -17,7 +15,6 @@ export interface ITableProps extends BaseTableProps {
 export default function Table({ isLoading, columns, data, overrides, paginationProps }: ITableProps) {
     const [t] = useTranslation()
     const [page, setPage] = usePage()
-    const [css] = useStyletron()
 
     return (
         <>
@@ -29,8 +26,10 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     TableBodyRow: {
                         style: {
                             cursor: 'pointer',
+                            borderRadius: '4px',
                         },
                         props: {
+                            // eslint-disable-next-line
                             onClick: (e: React.MouseEvent) => {
                                 // e.currentTarget.querySelector('a')?.click()
                             },
@@ -38,22 +37,23 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     },
                     TableHeadCell: {
                         style: {
-                            backgroundColor: 'var(--color-brandBackground2)',
+                            backgroundColor: 'var(--color-brandTableHeaderBackground)',
                             fontWeight: 'bold',
                             borderBottom: 'none',
                             fontSize: 14,
                             lineHeight: '16px',
-                            padding: '16px 12px',
+                            padding: '15px 20px',
                         },
                     },
                     TableHeadRow: {
                         style: {
-                            backgroundColor: 'var(--color-brandBackground1)',
+                            borderRadius: '4px',
                         },
                     },
                     TableBodyCell: {
                         style: {
-                            padding: '12px',
+                            padding: '0px 20px',
+                            lineHeight: '44px',
                         },
                     },
                     ...overrides,

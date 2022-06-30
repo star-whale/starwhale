@@ -1,4 +1,4 @@
-//@flow
+// @flow
 import React from 'react'
 import { Client as Styletron } from 'styletron-engine-atomic'
 import { Provider as StyletronProvider } from 'styletron-react'
@@ -7,7 +7,6 @@ import { SidebarContext } from '@/contexts/SidebarContext'
 import { useSidebar } from '@/hooks/useSidebar'
 import Routes from '@/routes'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import themes from '@/theme'
 import { apiInit } from '@/api'
 import { ToasterContainer } from 'baseui/toast'
@@ -17,9 +16,10 @@ const engine = new Styletron()
 const queryClient = new QueryClient()
 
 export default function App(): any {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const sidebarData = useSidebar()
-    const themeType = useCurrentThemeType()
-    const theme = themes[themeType]
+    // const themeType = useCurrentThemeType()
+    const theme = themes.deep
 
     return (
         <QueryClientProvider client={queryClient}>

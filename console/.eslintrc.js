@@ -22,15 +22,23 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         'plugin:prettier/recommended',
         'prettier',
+        'plugin:storybook/recommended',
     ],
     plugins: ['@typescript-eslint', 'react', 'react-hooks', 'baseui'],
     rules: {
-        'quotes': ['error', 'single', { avoidEscape: true }],
+        '@typescript-eslint/no-explicit-any': 'off',
+        'quotes': [
+            'error',
+            'single',
+            {
+                avoidEscape: true,
+            },
+        ],
         'require-atomic-updates': 'off',
         'react-hooks/rules-of-hooks': 'error',
         'react-hooks/exhaustive-deps': 'error',
         '@typescript-eslint/no-unused-vars': 'error',
-        'no-console': 'error',
+        'no-console': 'warn',
         '@typescript-eslint/explicit-function-return-type': 'off',
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/naming-convention': [
@@ -42,22 +50,19 @@ module.exports = {
                     regex: '^I[A-Z]',
                     match: true,
                 },
-            },
-            // Allow camelCase variables (23.2), PascalCase variables (23.8), and UPPER_CASE variables (23.10)
+            }, // Allow camelCase variables (23.2), PascalCase variables (23.8), and UPPER_CASE variables (23.10)
             {
                 selector: 'variable',
                 format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
                 leadingUnderscore: 'allow',
                 trailingUnderscore: 'allow',
-            },
-            // Allow camelCase functions (23.2), and PascalCase functions (23.8)
+            }, // Allow camelCase functions (23.2), and PascalCase functions (23.8)
             {
                 selector: 'function',
                 format: ['camelCase', 'PascalCase'],
                 leadingUnderscore: 'allow',
                 trailingUnderscore: 'allow',
-            },
-            // Airbnb recommends PascalCase for classes (23.3), and although Airbnb does not make TypeScript recommendations, we are assuming this rule would similarly apply to anything "type like", including interfaces, type aliases, and enums
+            }, // Airbnb recommends PascalCase for classes (23.3), and although Airbnb does not make TypeScript recommendations, we are assuming this rule would similarly apply to anything "type like", including interfaces, type aliases, and enums
             {
                 selector: 'typeLike',
                 format: ['PascalCase'],
@@ -71,7 +76,12 @@ module.exports = {
         'react/jsx-one-expression-per-line': 'off',
         'react/jsx-wrap-multilines': 'off',
         'react/no-array-index-key': 'off',
-        'react/require-default-props': ['error', { ignoreFunctionalComponents: true }],
+        'react/require-default-props': [
+            'error',
+            {
+                ignoreFunctionalComponents: true,
+            },
+        ],
         'react-hooks/exhaustive-deps': [
             'warn',
             {
@@ -95,6 +105,8 @@ module.exports = {
         'baseui/deprecated-theme-api': 'warn',
         'baseui/deprecated-component-api': 'warn',
         'baseui/no-deep-imports': 'warn',
+        '@typescript-eslint/ban-ts-comment': 'off',
+        'react/destructuring-assignment': 'off',
     },
     settings: {
         'react': {

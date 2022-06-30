@@ -1,0 +1,31 @@
+---
+# minio container
+- name: set up a minio-data directory to make volume for docker container
+  file: path={{ minio_data_dir }} state=directory mode=777 group=root owner=1001
+
+- name: Start minio
+  community.docker.docker_container:
+    name: minio_by_bootstrap
+    image: "{{ minio_image }}"
+    state: started
+    pull: true
+    restart_policy: always
+    ports:
+      - "{{ minio_server_port }}:9000"
+      - "{{ minio_console_port }}:9001"
+    env:
+      MINIO_ROOT_USER: "{{ minio_access_key }}"
+      MINIO_ROOT_PASSWORD: "{{ minio_secret_key }}"
+      MINIO_DEFAULT_BUCKETS: "{{ minio_default_bucket }}"
+      MINIO_BROWSER: "on"
+      MINIO_CONSOLE_PORT_NUMBER: "{{ minio_console_port }}"
+    volumes:
+      - "{{ minio_data_dir }}:/data"
+  when: is_start | bool
+
+
+- name: Stop minio
+  community.docker.docker_container:
+    name: minio_by_bootstrap
+    state: stopped
+  when: is_stop | bool

@@ -1,8 +1,17 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.domain.storage;
@@ -63,6 +72,8 @@ public class StoragePathCoordinator {
      */
     static final String STORAGE_PATH_FORMATTER_SWMP = "%s/swmp/%s/%s";
 
+    static final String STORAGE_PATH_FORMATTER_SWRT = "%s/swrt/%s/%s";
+
     public StoragePathCoordinator(String systemStoragePathPrefix){
         this.systemStoragePathPrefix = systemStoragePathPrefix;
         this.prefix = String.format(STORAGE_PATH_FORMATTER_PREFIX,systemStoragePathPrefix,SYS_NAME);
@@ -109,6 +120,11 @@ public class StoragePathCoordinator {
     public String generateSwmpPath(String swmpName,String swmpVersion){
         checkKeyWord(swmpVersion,ValidSubject.SWMP);
         return String.format(STORAGE_PATH_FORMATTER_SWMP,prefix,swmpName,swmpVersion);
+    }
+
+    public String generateRuntimePath(String runtimeName,String runtimeVersion){
+        checkKeyWord(runtimeVersion,ValidSubject.RUNTIME);
+        return String.format(STORAGE_PATH_FORMATTER_SWRT,prefix, runtimeName, runtimeVersion);
     }
 
     private void checkKeyWord(String kw, ValidSubject validSubject){

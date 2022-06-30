@@ -1,0 +1,318 @@
+{
+  "code": "success",
+  "message": "Success",
+  "data": {
+    "total": 15,
+    "list": [
+      {
+        "id": "15",
+        "uuid": "6797733effd047eb8354877398c268fd",
+        "modelName": "mnist",
+        "modelVersion": "my2dgzbumfsgcnrtmftdgyjzgf4wizi",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "CPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653213195000,
+        "stopTime": 1653213314000,
+        "jobStatus": "SUCCESS",
+        "comment": null,
+        "duration": 119000
+      },
+      {
+        "id": "14",
+        "uuid": "867152f57cd440a093ffa2da14efdd3c",
+        "modelName": "mnist",
+        "modelVersion": "mu4wintfgzqtanrtmftdgyjznz4homi",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "GPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653041602000,
+        "stopTime": 1653041747000,
+        "jobStatus": "SUCCESS",
+        "comment": null,
+        "duration": 145000
+      },
+      {
+        "id": "13",
+        "uuid": "0268eb32f32247fabc947ac1696cf306",
+        "modelName": "mnist",
+        "modelVersion": "mnqtozbymizwcnrtmftdgyjzgv2xama",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "CPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653041535000,
+        "stopTime": 1653041804000,
+        "jobStatus": "SUCCESS",
+        "comment": null,
+        "duration": 269000
+      },
+      {
+        "id": "12",
+        "uuid": "78cafaa3610344aa90fcadf0a714f61e",
+        "modelName": "mnist",
+        "modelVersion": "grtgeyzugi4danrtmftdgyjzoq2xc2q",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "GPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653035171000,
+        "stopTime": 1653035293000,
+        "jobStatus": "FAIL",
+        "comment": null,
+        "duration": 122000
+      },
+      {
+        "id": "11",
+        "uuid": "22c37a803513436a877fc3d5d7b43b1e",
+        "modelName": "mnist",
+        "modelVersion": "gnqtczrzge3wcnrtmftdgyjznjqtg4a",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "GPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653034093000,
+        "stopTime": 1653034833000,
+        "jobStatus": "SUCCESS",
+        "comment": null,
+        "duration": 740000
+      },
+      {
+        "id": "10",
+        "uuid": "4bf0b6e539e94ca8acbf2153b47acbd4",
+        "modelName": "mnist",
+        "modelVersion": "mnqtozbymizwcnrtmftdgyjzgv2xama",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "GPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653033370000,
+        "stopTime": 1653040297000,
+        "jobStatus": "SUCCESS",
+        "comment": null,
+        "duration": 6927000
+      },
+      {
+        "id": "9",
+        "uuid": "b00678c0045d4beca64b0fb0af0c0b5d",
+        "modelName": "mnist",
+        "modelVersion": "grtgeyzugi4danrtmftdgyjzoq2xc2q",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "CPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653033362000,
+        "stopTime": 1653033457000,
+        "jobStatus": "FAIL",
+        "comment": null,
+        "duration": 95000
+      },
+      {
+        "id": "8",
+        "uuid": "32c6a2bb226446409c094c69d0461fd2",
+        "modelName": "mnist",
+        "modelVersion": "gq4taolcmjtdenrtmftdgyjzni3xs4i",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "CPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653033046000,
+        "stopTime": 1653033265000,
+        "jobStatus": "SUCCESS",
+        "comment": null,
+        "duration": 219000
+      },
+      {
+        "id": "7",
+        "uuid": "d140d29b51084ad8a4a41ce11ff225fc",
+        "modelName": "mnist",
+        "modelVersion": "mnqtozbymizwcnrtmftdgyjzgv2xama",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "CPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653032985000,
+        "stopTime": 1653040278000,
+        "jobStatus": "SUCCESS",
+        "comment": null,
+        "duration": 7293000
+      },
+      {
+        "id": "6",
+        "uuid": "7345a36f6259478abc06b7e23655e914",
+        "modelName": "mnist",
+        "modelVersion": "meydczbrmi2ggnrtmftdgyjzpfuto6q",
+        "datasets": null,
+        "baseImage": {
+          "id": "9",
+          "name": "ghcr.io/star-whale/starwhale:0.1.2-beta.4"
+        },
+        "device": "CPU",
+        "deviceAmount": 1,
+        "owner": {
+          "id": "1",
+          "name": "starwhale",
+          "createdTime": 1650970583000,
+          "role": {
+            "id": "1",
+            "roleName": "admin",
+            "roleNameEn": "admin"
+          },
+          "isEnabled": true
+        },
+        "createdTime": 1653032849000,
+        "stopTime": 1653033046000,
+        "jobStatus": "SUCCESS",
+        "comment": null,
+        "duration": 197000
+      }
+    ],
+    "pageNum": 1,
+    "pageSize": 10,
+    "size": 10,
+    "startRow": 0,
+    "endRow": 10,
+    "pages": 2,
+    "prePage": 0,
+    "nextPage": 2,
+    "isFirstPage": true,
+    "isLastPage": false,
+    "hasPreviousPage": false,
+    "hasNextPage": true,
+    "navigatePages": 8,
+    "navigatepageNums": [
+      1,
+      2
+    ],
+    "navigateFirstPage": 1,
+    "navigateLastPage": 2
+  }
+}

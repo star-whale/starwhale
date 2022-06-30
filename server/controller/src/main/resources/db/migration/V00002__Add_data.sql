@@ -25,10 +25,3 @@ values ('project_for_test1', 1);
 insert into project_info(project_name, owner_id)
 values ('project_for_test2', 2);
 
-insert into agent_info(agent_ip, connect_time, agent_version, device_info)
-values (inet_aton('192.168.1.1'), '2022-03-20 15:00:30', 'v1.0.0', '{}');
-insert into agent_info(agent_ip, connect_time, agent_version, device_info)
-values (inet_aton('192.168.1.2'), '2022-03-20 15:10:32', 'v1.0.0', '{}');
-insert into agent_info(agent_ip, connect_time, agent_version, device_info)
-values (inet_aton('192.168.1.3'), '2022-03-21 15:10:32', 'v1.1.0', '{}');
-

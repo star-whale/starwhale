@@ -1,4 +1,3 @@
-import en from 'javascript-time-ago/locale/en.json'
 export interface ILocaleItem {
     en: string
 }
@@ -23,13 +22,16 @@ const locales0 = {
         en: 'Model Version',
     },
     'model versions': {
-        en: 'model versions',
+        en: 'Model Versions',
     },
     'Models': {
         en: 'Models',
     },
     'Model Information': {
         en: 'Model Information',
+    },
+    'Model ID': {
+        en: 'Model ID',
     },
     'Dataset': {
         en: 'Dataset',
@@ -38,7 +40,7 @@ const locales0 = {
         en: 'Dataset Version',
     },
     'dataset versions': {
-        en: 'dataset versions',
+        en: 'Dataset Versions',
     },
     'datasets': {
         en: 'Datasets',
@@ -68,7 +70,7 @@ const locales0 = {
         en: 'PROJECT',
     },
     'projects': {
-        en: 'projects',
+        en: 'Projects',
     },
     'Project': {
         en: 'Project',
@@ -154,8 +156,8 @@ const locales0 = {
     'Result Output Path': {
         en: 'Result Output Path',
     },
-    'Device Count': {
-        en: 'Device Count',
+    'Device Amount': {
+        en: 'Device Amount',
     },
     'Run time': {
         en: 'Run time',
@@ -215,7 +217,7 @@ const locales0 = {
         en: 'submit',
     },
     'create': {
-        en: 'create',
+        en: 'Create',
     },
     'login': {
         en: 'login',
@@ -265,11 +267,110 @@ const locales0 = {
     'Pause': {
         en: 'Pause',
     },
+    'Resume': {
+        en: 'Resume',
+    },
     'Tasks': {
         en: 'Tasks',
     },
     'Results': {
         en: 'Results',
+    },
+    'no logs found': {
+        en: 'no logs found',
+    },
+    'Summary': {
+        en: 'Summary',
+    },
+    'Confusion Matrix': {
+        en: 'Confusion Matrix',
+    },
+    'Roc Auc': {
+        en: 'Roc Auc',
+    },
+    'Labels': {
+        en: 'Labels',
+    },
+    'Version Meta': {
+        en: 'Version Meta',
+    },
+    'Version Tag': {
+        en: 'Version Tag',
+    },
+    'Files': {
+        en: 'Files',
+    },
+    'Version Name': {
+        en: 'Version Name',
+    },
+    'data version revert done': {
+        en: 'data version revert done',
+    },
+    'something wrong with the server': {
+        en: 'something wrong with the server',
+    },
+    'System Info': {
+        en: 'System Info',
+    },
+    'Base Images': {
+        en: 'Base Images',
+    },
+    'Agent List': {
+        en: 'Agent List',
+    },
+    'SETTINGS': {
+        en: 'SETTINGS',
+    },
+    'Agent': {
+        en: 'Agent',
+    },
+    'System Version': {
+        en: 'System Version',
+    },
+    'Connected Time': {
+        en: 'Connected Time',
+    },
+    'UUID': {
+        en: 'UUID',
+    },
+    'agent delete done': {
+        en: 'agent delete done',
+    },
+    'base image delete done': {
+        en: 'base image delete done',
+    },
+    'Delete': {
+        en: 'Delete',
+    },
+    'Runtime': {
+        en: 'Runtime',
+    },
+    'Runtimes': {
+        en: 'Runtimes',
+    },
+    'Runtime Name': {
+        en: 'Runtime Name',
+    },
+    'Runtime Version': {
+        en: 'Runtime Version',
+    },
+    'runtime versions': {
+        en: 'Runtime Versions',
+    },
+    'DAG': {
+        en: 'Actions',
+    },
+    'Evaluation': {
+        en: 'Evaluation',
+    },
+    'Evaluation ID': {
+        en: 'Evaluation ID',
+    },
+    'Evaluations': {
+        en: 'Evaluations',
+    },
+    'Compare Evaluations': {
+        en: 'Compare Evaluations',
     },
 }
 

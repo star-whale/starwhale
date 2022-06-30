@@ -1,0 +1,21 @@
+version: 1.0
+name: mnist
+
+model:
+  - models/mnist_cnn.pt
+
+config:
+  - config/hyperparam.json
+
+run:
+  ppl: mnist.ppl:MNISTInference
+  exclude_pkg_data:
+    - venv
+    - .git
+    - .history
+    - .vscode
+
+desc: mnist by pytorch
+
+tag:
+  - multi_classification

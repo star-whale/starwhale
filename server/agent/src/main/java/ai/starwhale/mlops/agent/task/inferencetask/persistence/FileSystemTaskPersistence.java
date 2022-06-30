@@ -1,17 +1,27 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.agent.task.inferencetask.persistence;
 
-import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
+import ai.starwhale.mlops.agent.task.inferencetask.RuntimeManifest;
 import ai.starwhale.mlops.agent.utils.FileUtil;
 import ai.starwhale.mlops.agent.utils.TarUtil;
+import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
@@ -19,6 +29,8 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
@@ -32,7 +44,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -185,12 +196,40 @@ public class FileSystemTaskPersistence implements TaskPersistence {
         SWModelPackage model = task.getSwModelPackage();
 
         String cachePathStr = fileSystemPath.oneSwmpCacheDir(model.getName(), model.getVersion());
+        String targetDirStr = fileSystemPath.oneActiveTaskModelDir(task.getId());
+
+        cacheDir(model.getPath(), cachePathStr, targetDirStr);
+    }
+
+    @Override
+    public void preloadingSWRT(InferenceTask task) throws Exception {
+        SWRunTime runTime = task.getSwRunTime();
+
+        String cachePathStr = fileSystemPath.oneSwrtCacheDir(runTime.getName(), runTime.getVersion());
+        String targetDirStr = fileSystemPath.oneActiveTaskRuntimeDir(task.getId());
+
+        cacheDir(runTime.getPath(), cachePathStr, targetDirStr);
+    }
+
+    private static final YAMLMapper yamlMapper = new YAMLMapper();
+
+    static {
+        yamlMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    }
+
+    @Override
+    public RuntimeManifest runtimeManifest(InferenceTask task) throws IOException {
+        String pathStr = fileSystemPath.oneActiveTaskRuntimeManifestFile(task.getId());
+        return yamlMapper.readValue(new File(pathStr), RuntimeManifest.class);
+    }
+
+    private void cacheDir(String ossPath, String cachePathStr, String targetDirStr) throws IOException {
 
         // check if exist todo check with md5
         if (Files.notExists(Path.of(cachePathStr))) {
-            download(cachePathStr, model.getPath());
+            download(cachePathStr, ossPath);
         }
-        File targetDir = new File(fileSystemPath.oneActiveTaskModelDir(task.getId()));
+        File targetDir = new File(targetDirStr);
         Files.find(Path.of(cachePathStr), 1, (p, u) -> !p.toString().equals(cachePathStr)).forEach(path -> {
             try {
                 File src = path.toFile();
@@ -200,12 +239,13 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                     FileUtil.copyFileToDirectory(src, targetDir);
                 }
             } catch (IOException e) {
-                log.error("copy swmp:{} to {} error", path, targetDir.getPath());
+                log.error("copy dir:{} to {} error", path, targetDir.getPath());
             }
         });
     }
 
     /**
+     * todo lock with task id
      * lock avoid multi task download single file
      */
     private synchronized void download(String localPath, String remotePath) throws IOException {
@@ -254,6 +294,10 @@ public class FileSystemTaskPersistence implements TaskPersistence {
                             .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getOffset() + swdsBlock.getLocationInput().getSize() - 1))
                             .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
                     );
+                    ds.set("ext_attr", JSONUtil.createObj()
+                            .set("swds_name", swdsBlock.getDsName())
+                            .set("swds_version", swdsBlock.getDsVersion())
+                    );
                     swds.add(ds);
                 });
                 object.set("swds", swds);
@@ -286,6 +330,21 @@ public class FileSystemTaskPersistence implements TaskPersistence {
     public void uploadLog(InferenceTask task) throws IOException {
         // results is a set of files
         uploadLocalDir2Storage(fileSystemPath.oneActiveTaskLogDir(task.getId()), task.getResultPath().logDir());
+    }
+
+    @Override
+    public void recordLog(InferenceTask task, String toAppend) {
+        try {
+            Path logDir = Path.of(fileSystemPath.oneActiveTaskLogDir(task.getId()));
+            if (Files.notExists(logDir)) {
+                Files.createDirectories(logDir);
+            }
+            Path logFilePath = Path.of(fileSystemPath.oneActiveTaskAgentLogFile(task.getId()));
+
+            Files.writeString(logFilePath, toAppend + System.lineSeparator(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (Exception e) {
+            log.error("record log for task:{} error, info:{}", task.getId(), e.getMessage());
+        }
     }
 
     private void uploadLocalDir2Storage(String srcDir, String destDir) throws IOException {

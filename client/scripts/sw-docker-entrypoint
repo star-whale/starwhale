@@ -5,8 +5,10 @@ ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"
 WORKDIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
+PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
 _MANIFEST_RUNTIME=$(cat ${WORKDIR}/_manifest.yaml| grep "python:" | awk '{print $2}' | awk -F '.' '{print $1"."$2}') || true
 _MODEL_RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}') || true
+VERBOSE="-vvvv"
 
 _update_python_alter() {
     echo "--> set python/python3 to $1 ..."
@@ -16,6 +18,11 @@ _update_python_alter() {
 }
 
 pre_config() {
+    echo "--> debug config ..."
+    if [ "${SW_TASK_DISABLE_DEBUG}" = "1" ]; then
+        VERBOSE="-v"
+    fi
+
     echo "--> config pypi and conda config ..."
 
     if [ ${SW_PYPI_INDEX_URL} ] ; then
@@ -43,6 +50,12 @@ EOF
     else
         echo -e "\t ** use image builtin condarc"
     fi
+}
+
+set_pip_cache() {
+    echo "\t ** set pip cache dir:"
+    python3 -m pip config set global.cache-dir ${PIP_CACHE_DIR} || true
+    python3 -m pip cache dir || true
 }
 
 pre_check() {
@@ -75,10 +88,10 @@ set_python() {
     fi
 }
 
-activate_swmp_env() {
-    echo '--> prepare activate swmp env ...'
+restore_activate_runtime() {
+    echo '--> restore python env ...'
     export PYTHONWARNINGS="ignore:Unverified HTTPS request"
-    swcli model pre-activate .
+    swcli ${VERBOSE} runtime restore .
     unset PYTHONWARNINGS
 
     echo '--> source activate ...'
@@ -87,12 +100,12 @@ activate_swmp_env() {
 
 run_ppl() {
     echo "--> start to run swmp ppl, use $(which swcli) cli..."
-    swcli model ppl ${WORKDIR}/src
+    swcli ${VERBOSE} model ppl ${WORKDIR}/src
 }
 
 run_cmp() {
     echo "--> start to run swmp cmp, use $(which swcli) cli..."
-    swcli model cmp ${WORKDIR}/src
+    swcli ${VERBOSE} model cmp ${WORKDIR}/src
 }
 
 welcome() {
@@ -110,7 +123,8 @@ main() {
     pre_config
     pre_check
     set_python
-    activate_swmp_env
+    set_pip_cache
+    restore_activate_runtime
 
     if [ "$1" = "cmp" ]; then
         run_cmp

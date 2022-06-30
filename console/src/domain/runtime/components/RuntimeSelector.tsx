@@ -1,0 +1,71 @@
+import { Select, SelectProps, SIZE } from 'baseui/select'
+import _ from 'lodash'
+import React, { useEffect, useState } from 'react'
+import { useQuery } from 'react-query'
+import { listRuntimes } from '../services/runtime'
+
+export interface IRuntimeSelectorProps {
+    projectId: string
+    value?: string
+    onChange?: (newValue: string) => void
+    overrides?: SelectProps['overrides']
+    disabled?: boolean
+}
+
+export default function RuntimeSelector({ projectId, value, onChange, overrides, disabled }: IRuntimeSelectorProps) {
+    const [keyword, setKeyword] = useState<string>()
+    const [options, setOptions] = useState<{ id: string; label: React.ReactNode }[]>([])
+    const runtimesInfo = useQuery(`listRuntimes:${projectId}:${keyword}`, () =>
+        listRuntimes(projectId, { pageNum: 1, pageSize: 100, search: keyword })
+    )
+
+    const handleRuntimeInputChange = _.debounce((term: string) => {
+        if (!term) {
+            setOptions([])
+            return
+        }
+        setKeyword(term)
+    })
+
+    useEffect(() => {
+        if (runtimesInfo.isSuccess) {
+            setOptions(
+                runtimesInfo.data?.list.map((item) => ({
+                    id: item.id,
+                    label: item.name,
+                })) ?? []
+            )
+        } else {
+            setOptions([])
+        }
+    }, [runtimesInfo.data?.list, runtimesInfo.isSuccess])
+
+    return (
+        <Select
+            size={SIZE.compact}
+            disabled={disabled}
+            overrides={overrides}
+            isLoading={runtimesInfo.isFetching}
+            options={options}
+            onChange={(params) => {
+                if (!params.option) {
+                    return
+                }
+                onChange?.(params.option.id as string)
+            }}
+            onInputChange={(e) => {
+                const target = e.target as HTMLInputElement
+                handleRuntimeInputChange(target.value)
+            }}
+            value={
+                value
+                    ? [
+                          {
+                              id: value,
+                          },
+                      ]
+                    : []
+            }
+        />
+    )
+}

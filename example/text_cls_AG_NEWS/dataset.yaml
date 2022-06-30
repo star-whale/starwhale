@@ -1,0 +1,19 @@
+name: AG_NEWS
+
+mode: generate
+
+data_dir: data
+data_filter: "test.csv"
+label_filter: "test.csv"
+
+process: code.data_slicer:AGNEWSSlicer
+pip_req: requirements.txt
+
+desc: AG_NEWS data and label test dataset
+tag:
+ - bin
+
+attr:
+  batch_size: 64
+  alignment_size: 4k
+  volume_size: 2M

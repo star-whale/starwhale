@@ -8,6 +8,7 @@
       "@model/*": ["src/domain/model/*"],
       "@job/*": ["src/domain/job/*"],
       "@dataset/*": ["src/domain/dataset/*"],
+      "@runtime/*": ["src/domain/runtime/*"],
       "@base/*": ["src/domain/base/*"],
     }
   }

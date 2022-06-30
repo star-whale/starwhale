@@ -21,29 +21,27 @@ export default function DatasetLayout({ children }: IDatasetLayoutProps) {
     useEffect(() => {
         setDatasetLoading(datasetInfo.isLoading)
         if (datasetInfo.isSuccess) {
-            if (datasetInfo.data.id !== dataset?.id) {
+            if (datasetInfo.data.versionName !== dataset?.versionName) {
                 setDataset(datasetInfo.data)
             }
         } else if (datasetInfo.isLoading) {
             setDataset(undefined)
         }
-    }, [dataset?.id, datasetInfo.data, datasetInfo.isLoading, datasetInfo.isSuccess, setDataset, setDatasetLoading])
+    }, [
+        dataset?.versionName,
+        datasetInfo.data,
+        datasetInfo.isLoading,
+        datasetInfo.isSuccess,
+        setDataset,
+        setDatasetLoading,
+    ])
 
     const [t] = useTranslation()
-    const datasetName = dataset?.name ?? '-'
+    const datasetName = dataset?.versionName ?? '-'
     const project = projectInfo.data ?? {}
-    const projectName = project?.name ?? '-'
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
-            // {
-            //     title: t('projects'),
-            //     path: '/projects',
-            // },
-            // {
-            //     title: project?.name ?? '-',
-            //     path: `/projects/${project?.id}`,
-            // },
             {
                 title: t('Datasets'),
                 path: `/projects/${project?.id}/datasets`,
@@ -54,17 +52,7 @@ export default function DatasetLayout({ children }: IDatasetLayoutProps) {
             },
         ]
         return items
-    }, [projectName, datasetName, t])
+    }, [datasetId, project?.id, datasetName, t])
 
-    // const navItems: INavItem[] = useMemo(
-    //     () => [
-    //         // {
-    //         //     title: datasetName ?? t('overview'),
-    //         //     path: `/datasets/${datasetId}`,
-    //         //     icon: RiSurveyLine,
-    //         // },
-    //     ],
-    //     [datasetName, t]
-    // )
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

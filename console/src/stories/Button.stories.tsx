@@ -1,10 +1,8 @@
 import React from 'react'
 import { ComponentStory, ComponentMeta, Story } from '@storybook/react'
-// import { Story, Meta } from '@storybook/react/types-6-0'
 
-import { Button, ButtonProps } from 'baseui/button'
-
-// import { Button } from './Button'
+import IconFont from '../components/IconFont'
+import Button from '../components/Button'
 
 // More on default export: https://storybook.js.org/docs/react/writing-stories/introduction#default-export
 export default {
@@ -16,13 +14,16 @@ export default {
 
 // More on component templates: https://storybook.js.org/docs/react/writing-stories/introduction#using-args
 /* eslint-disable react/jsx-props-no-spreading */
-const Template: ComponentStory<typeof Button> = (args) => <Button {...args} />
+const Template: ComponentStory<typeof Button> = (args) => <Button {...args}>{args.children}</Button>
 
 export const Primary = Template.bind({})
 
 Primary.args = {
     isLoading: false,
-    displayName: 'primary',
+    disabled: false,
+    size: 'compact',
+    children: 'Primary',
+    startEnhancer: <IconFont type='add' kind='white' />,
 }
 
 // More on args: https://storybook.js.org/docs/react/writing-stories/args

@@ -1,13 +1,24 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.api.protocol.job;
 
 import ai.starwhale.mlops.api.protocol.runtime.BaseImageVO;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,8 +51,8 @@ public class JobVO implements Serializable {
     @Valid
     private List<String> datasets;
 
-    @JsonProperty("baseImage")
-    private BaseImageVO baseImage;
+    @JsonProperty("runtime")
+    private RuntimeVO runtime;
 
     @JsonProperty("device")
     private String device;
@@ -60,6 +71,9 @@ public class JobVO implements Serializable {
 
     @JsonProperty("jobStatus")
     private JobStatus jobStatus;
+
+    @JsonProperty("comment")
+    private String comment;
 
     @JsonProperty("duration")
     public Long getDuration(){

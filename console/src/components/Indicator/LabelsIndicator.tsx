@@ -1,32 +1,26 @@
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { memo, useCallback, useRef, useState } from 'react'
 import {
     StatefulDataTable,
-    BooleanColumn,
-    CategoricalColumn,
     NumericalColumn,
     StringColumn,
-    NUMERICAL_FORMATS,
     BatchActionT,
     RowActionT,
     CustomColumn,
 } from 'baseui/data-table'
-import { Alert, Check } from 'baseui/icon'
-import useTranslation from '../../hooks/useTranslation'
 import _ from 'lodash'
-import { useWindowResize } from '../../hooks/window/useWindowResize'
+import { StatefulTooltip } from 'baseui/tooltip'
+import useTranslation from '../../hooks/useTranslation'
 import { ILabel, ILabels } from './types'
 import useResizeObserver from '../../hooks/window/useResizeObserver'
 import BusyLoaderWrapper from '../BusyLoaderWrapper/BusyLoaderWrapper'
-import { StatefulTooltip } from 'baseui/tooltip'
 
 export interface ILabelsProps {
     style?: React.CSSProperties
     data: ILabels
     isLoading: boolean
-    onSelectRows?: () => void
 }
 
-function LabelsIndicator({ data, style, isLoading }: ILabelsProps) {
+function LabelsIndicator({ data: rawData, style, isLoading }: ILabelsProps) {
     const [t] = useTranslation()
     const [key, setKey] = useState(0)
     const wrapperRef = useRef<HTMLDivElement>(null)
@@ -34,20 +28,20 @@ function LabelsIndicator({ data, style, isLoading }: ILabelsProps) {
 
     const throttled = useRef(
         _.debounce(() => {
-            if (wrapperRef?.current?.offsetWidth != width) {
+            if (wrapperRef?.current?.offsetWidth !== width) {
                 setWidth(wrapperRef?.current?.offsetWidth)
                 setKey(key + 1)
             }
         }, 100)
     )
 
-    useResizeObserver((entries) => {
+    useResizeObserver(() => {
         throttled.current()
     }, wrapperRef)
 
     const renderCell = (props: any) => {
         return (
-            <StatefulTooltip accessibilityType={'tooltip'} content={props.value}>
+            <StatefulTooltip accessibilityType='tooltip' content={props?.value}>
                 <span>{props?.value?.toFixed(4)}</span>
             </StatefulTooltip>
         )
@@ -56,17 +50,17 @@ function LabelsIndicator({ data, style, isLoading }: ILabelsProps) {
     const columns = [
         StringColumn({
             title: t('Label'),
-            mapDataToValue: (data: ILabel) => data['id'],
+            mapDataToValue: (data: ILabel) => data.id,
         }),
         CustomColumn({
             title: t('Precision'),
             renderCell,
-            mapDataToValue: (data: ILabel) => data['precision'],
+            mapDataToValue: (data: ILabel) => data.precision,
         }),
         CustomColumn({
             title: t('Recall'),
             renderCell,
-            mapDataToValue: (data: ILabel) => data['recall'],
+            mapDataToValue: (data: ILabel) => data.recall,
         }),
         CustomColumn({
             title: t('F1-score'),
@@ -75,93 +69,67 @@ function LabelsIndicator({ data, style, isLoading }: ILabelsProps) {
         }),
         NumericalColumn({
             title: t('Support'),
-            mapDataToValue: (data: ILabel) => data['support'],
+            mapDataToValue: (data: ILabel) => data.support ?? 0,
         }),
     ]
 
     const hasAttrbute = useCallback(
         (k: string) => {
-            return _.values(data).find((item) => k in item)
+            return _.values(rawData).find((item) => k in item)
         },
-        [data]
+        [rawData]
     )
-    hasAttrbute('tp') &&
+    if (hasAttrbute('tp'))
         columns.push(
             NumericalColumn({
                 title: t('TP'),
-                mapDataToValue: (data: ILabel) => data['tp'],
+                mapDataToValue: (data: ILabel) => data.tp ?? 0,
             })
         )
-
-    hasAttrbute('tn') &&
+    if (hasAttrbute('tn'))
         columns.push(
             NumericalColumn({
                 title: t('TN'),
-                mapDataToValue: (data: ILabel) => data['tn'],
+                mapDataToValue: (data: ILabel) => data.tn ?? 0,
             })
         )
-    hasAttrbute('fp') &&
+    if (hasAttrbute('fp'))
         columns.push(
             NumericalColumn({
                 title: t('FP'),
-                mapDataToValue: (data: ILabel) => data['fp'],
+                mapDataToValue: (data: ILabel) => data.fp ?? 0,
             })
         )
-    hasAttrbute('fn') &&
+    if (hasAttrbute('fn'))
         columns.push(
             NumericalColumn({
                 title: t('FN'),
-                mapDataToValue: (data: ILabel) => data['fn'],
+                mapDataToValue: (data: ILabel) => data.fn ?? 0,
             })
         )
 
-    const [rows, setRows] = React.useState([] as Array<{ id: string; data: ILabel }>)
-
-    useEffect(() => {
-        const itemsToRowData: Array<{ id: string; data: ILabel }> = _.values(
-            _.map(data, function (value, key) {
-                return {
-                    id: key,
-                    data: {
-                        id: key,
-                        ...value,
-                    },
-                }
-            })
-        )
-        setRows(itemsToRowData)
-    }, [data])
-
-    function flagRows(ids: Array<string | number>) {
-        const nextRows = rows.map((row) => {
-            if (ids.includes(row.id)) {
-                const nextData = { ...row.data }
-                return { ...row, data: nextData }
+    const itemsToRowData: Array<{ id: string; data: ILabel }> = _.values(
+        _.map(rawData, (value, rawKey) => {
+            return {
+                id: rawKey,
+                data: {
+                    id: rawKey,
+                    ...value,
+                },
             }
-            return row
         })
-        setRows(nextRows)
-    }
-    function removeRows(ids: Array<string | number>) {
-        const nextRows = rows.filter((row) => !ids.includes(row.id))
-        setRows(nextRows)
-    }
-    function flagRow(id: string | number) {
-        flagRows([id])
-    }
-    function removeRow(id: string | number) {
-        removeRows([id])
-    }
+    )
+
     const rowActions: RowActionT[] = []
     const batchActions: BatchActionT[] = []
+    const rows = itemsToRowData
 
-    //TODO: selected rows interactive
     return (
         <BusyLoaderWrapper loaderType='skeleton' isLoading={isLoading}>
             <div
                 ref={wrapperRef}
                 key={key}
-                style={{ width: '100%', minHeight: 200, height: 120 + rows.length * 36 + `px`, ...style }}
+                style={{ width: '100%', minHeight: 200, height: `${120 + rows.length * 36}px`, ...style }}
             >
                 <StatefulDataTable batchActions={batchActions} rowActions={rowActions} columns={columns} rows={rows} />
             </div>

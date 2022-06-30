@@ -204,3 +204,27 @@ export function getReadableStorageQuantityStr(bytes?: number): string {
 export function numberToPercentStr(v: number): string {
     return `${(v * 100).toFixed(2)}%`
 }
+
+export function flattenObject(o: any, prefix = '', result: any = {}, keepNull = true) {
+    if (_.isString(o) || _.isNumber(o) || _.isBoolean(o) || (keepNull && _.isNull(o))) {
+        /* eslint-disable no-param-reassign */
+        result[prefix] = o
+        return result
+    }
+
+    if (_.isArray(o) || _.isPlainObject(o)) {
+        Object.keys(o).forEach((i) => {
+            let pref = prefix
+            if (_.isArray(o)) {
+                pref += `[${i}]`
+            } else if (_.isEmpty(prefix)) {
+                pref = i
+            } else {
+                pref = `${prefix} / ${i}`
+            }
+            flattenObject(o[i] ?? {}, pref, result, keepNull)
+        })
+        return result
+    }
+    return result
+}

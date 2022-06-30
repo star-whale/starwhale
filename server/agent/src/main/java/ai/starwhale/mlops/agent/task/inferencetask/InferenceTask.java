@@ -1,8 +1,17 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.agent.task.inferencetask;
@@ -11,9 +20,10 @@ import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
 import ai.starwhale.mlops.api.protocol.report.req.TaskLog;
 import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
+import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.swds.index.SWDSBlock;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.task.TaskType;
 import lombok.Builder;
@@ -43,6 +53,11 @@ public class InferenceTask {
      * the proper image to get swmp run
      */
     String imageId;
+
+    /**
+     * sw runtime info
+     */
+    SWRunTime swRunTime;
 
     /**
      * swmp meta info
@@ -81,7 +96,7 @@ public class InferenceTask {
     /**
      * input information at ppl stage: SWDS(blocks may come from different SWDS)、device info
      */
-    List<SWDSBlock> swdsBlocks;
+    List<SWDSBlockVO> swdsBlocks;
 
     Integer deviceAmount;
 
@@ -103,7 +118,7 @@ public class InferenceTask {
     ActionStatus actionStatus;
 
     public enum ActionStatus {
-        inProgress, completed
+        init, inProgress, completed
     }
 
     public boolean equals(Object obj) {
@@ -117,10 +132,10 @@ public class InferenceTask {
 
     public static InferenceTask fromTaskTrigger(TaskTrigger taskTrigger) {
         return InferenceTask.builder().id(taskTrigger.getId())
-                .imageId(taskTrigger.getImageId())
+                .swRunTime(taskTrigger.getSwrt())
                 .taskType(taskTrigger.getTaskType())
                 .status(InferenceTaskStatus.PREPARING)
-                .actionStatus(ActionStatus.inProgress)
+                .actionStatus(ActionStatus.init)
                 .cmpInputFilePaths(taskTrigger.getCmpInputFilePaths())
                 .deviceAmount(taskTrigger.getDeviceAmount())
                 .deviceClass(taskTrigger.getDeviceClass())
@@ -135,6 +150,8 @@ public class InferenceTask {
         TaskStatusInterface reportStatus = null;
         switch (this.status) {
             case PREPARING:
+                reportStatus = TaskStatusInterface.PREPARING;
+                break;
             case RUNNING:
             case UPLOADING:
                 reportStatus = TaskStatusInterface.RUNNING;

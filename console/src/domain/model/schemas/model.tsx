@@ -3,14 +3,19 @@ import { IUserSchema } from '@user/schemas/user'
 
 export interface IModelSchema extends IResourceSchema {
     name: string
-    createTime: number
     owner?: IUserSchema
 }
 
-export interface IModelDetailSchema extends IModelSchema {
-    modelName?: string
+export interface IModelDetailSchema {
+    id?: string
+    name?: string
+    versionMeta?: string
+    versionName?: string
+    versionTag?: string
+    createdTime?: number
     files?: Array<IModelFileSchema>
 }
+
 export interface IModelFileSchema {
     name: string
     size: string

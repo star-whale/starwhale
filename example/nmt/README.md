@@ -1,0 +1,18 @@
+- preapring
+  - exec `cd example/nmt`
+  - download data
+    - exec `cd data && wget https://www.manythings.org/anki/fra-eng.zip && unzip fra-eng.zip && mv fra.txt eng-fra.txt`
+    - Select a part of the file eng-fra.txt as the new test file(named 'test_eng-fra.txt') data.Simply put, 100 items can be randomly selected
+  - generate nmt models
+    - first, generate vocabulary
+      - exec `python3 main.py --mode vocab` and the dir of models/ would generate a file named 'vocab_eng-fra.bin'
+    - then, start to train the nmt model
+      - exec `python3 main.py --mode train` and finally the dir of models would generate two file which the suffix is .pth
+- use starwhale cli to evaluate the models
+  - install swcli: `pip install starwhale`
+  - build swmp(sw model package)\swrt(sw runtime)\swds(sw dataset) 
+    - `swcli model build .`
+    - `swcli runtime build .`
+    - `swcli dataset build .`
+  - create evaluate job for the models
+    - exec `swcli -vvv job create --model nmt/version/latest --dataset nmt/version/latest --runtime nmt/version/latest`.

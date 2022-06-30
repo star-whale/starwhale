@@ -1,10 +1,7 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
+import { IDeviceSchema } from '@/domain/setting/schemas/system'
+import { IRuntimeSchema } from '@/domain/runtime/schemas/runtime'
 import { IUserSchema } from '@user/schemas/user'
-import { IModelSchema } from '@model/schemas/model'
-import { IDatasetSchema } from '@dataset/schemas/dataset'
-import { IModelVersionSchema } from '@/domain/model/schemas/modelVersion'
-import { IBaseImageSchema, IDeviceSchema } from '../../runtime/schemas/runtime'
-import { IIndicator } from '@/components/Indicator/types'
 
 export enum JobActionType {
     CANCEL = 'cancel',
@@ -31,37 +28,39 @@ export interface IJobSchema extends IResourceSchema {
     owner?: IUserSchema
     modelName?: string
     modelVersion?: string
-    dataset?: IDatasetSchema
-    baseImage?: IBaseImageSchema
+    datasets?: string[]
+    runtime?: IRuntimeSchema
     device?: IDeviceSchema
-    deviceCount: number
+    deviceAmount: number
     duration: number
-    createTime: number
+    createdTime: number
     stopTime: number
     jobStatus: JobStatusType
 }
 
-export interface IJobDetailSchema extends IJobSchema {}
-
-export interface IUpdateJobSchema {}
+export type IJobDetailSchema = IJobSchema
 
 export interface ICreateJobSchema {
-    modelVersionId: string
-    datasetVersionIds?: string
-    baseImageId?: string
-    deviceId?: string
-    deviceCount?: number
-    // resultOutputPath?: string
+    modelVersionUrl: string
+    datasetVersionUrls?: string
+    runtimeVersionUrl?: string
+    device?: string
+    deviceAmount?: number
 }
 
 export interface IJobFormSchema extends IJobSchema {
     modelId: string
+    runtimeId: string
+    runtimeVersionUrl: string
     datasetId: string
     datasetVersionId: string
     datasetVersionIdsArr?: Array<string>
 }
+
 export interface ICreateJobFormSchema extends ICreateJobSchema {
     modelId: string
+    runtimeId: string
+    runtimeVersionUrl: string
     datasetId: string
     datasetVersionId: string
     datasetVersionIdsArr?: Array<string>

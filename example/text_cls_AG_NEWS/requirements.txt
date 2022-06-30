@@ -1,0 +1,5 @@
+numpy==1.21.0
+starwhale==0.2.0a11
+torch
+torchdata
+torchtext

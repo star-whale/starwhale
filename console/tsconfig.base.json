@@ -19,15 +19,20 @@
     "noEmit": true,
     "jsx": "react",
     "typeRoots": [
+      "./types",
       "./node_modules/@types",
-      "./@types"
     ]
   },
   "include": [
-    "src"
+    "src",
+    "types"
   ],
   "exclude": [
-    "src/stories"
+    "src/stories",
+    "**/iconfont.js",
+    "baseui/helpers/overrides",
+    "node_modules/baseui/helpers/**",
+    "node_modules/baseui/helpers/overrides.js"
   ],
   "extends": "./tsconfig.paths.json"
 }

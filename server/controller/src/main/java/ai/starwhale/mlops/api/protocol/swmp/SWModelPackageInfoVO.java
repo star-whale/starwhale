@@ -1,12 +1,22 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.api.protocol.swmp;
 
+import ai.starwhale.mlops.api.protocol.StorageFileVO;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -23,25 +33,35 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class SWModelPackageInfoVO implements Serializable {
 
-    @JsonProperty("modelName")
-    private String modelName;
+    @JsonProperty("id")
+    private String id;
+
+    @JsonProperty("name")
+    private String name;
+
+    @JsonProperty("versionName")
+    private String versionName;
+
+    @JsonProperty("versionTag")
+    private String versionTag;
+
+    @JsonProperty("versionMeta")
+    private String versionMeta;
+
+    @JsonProperty("manifest")
+    private String manifest;
+
+    @JsonProperty("createdTime")
+    private Long createdTime;
 
     @JsonProperty("files")
     @Valid
-    private List<ModelFile> files;
+    private List<StorageFileVO> files;
 
     public static SWModelPackageInfoVO empty() {
-        return new SWModelPackageInfoVO("", new ArrayList<>());
+        return new SWModelPackageInfoVO("","",
+            "", "", "", "",
+            0L , new ArrayList<>());
     }
 
-    @Data
-    @Builder
-    @Validated
-    public static class ModelFile implements Serializable{
-        @JsonProperty("name")
-        private String name;
-
-        @JsonProperty("size")
-        private String size;
-    }
 }

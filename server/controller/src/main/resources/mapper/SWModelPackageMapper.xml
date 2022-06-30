@@ -22,14 +22,40 @@
                u.created_time as user_created_time,
                u.user_enabled,
                r.role_name,
-               r.role_name_en
+               r.role_name_en,
+               p.project_name
         from swmp_info as s,
              user_info as u,
-             user_role as r
+             user_role as r,
+             project_info as p
         where s.is_deleted = 0
         and u.id = s.owner_id
         and r.id = u.role_id
+        and p.id = s.project_id
     </sql>
+
+<!--    <select id="listSWModelPackagesByQuery" parameterType="ai.starwhale.mlops.domain.swmp.bo.SWMPQuery" resultMap="swmpResultMap">-->
+<!--        <include refid="select_swmp"/>-->
+<!--        <if test="query.projectId != null and query.projectId != ''">-->
+<!--            and s.project_id = #{query.projectId}-->
+<!--        </if>-->
+<!--        <if test="query.projectName != null and query.projectName != ''">-->
+<!--            and p.project_name like concat(#{query.projectName}, '%')-->
+<!--        </if>-->
+<!--        <if test="query.swmpId != null and query.swmpId != ''">-->
+<!--            and s.id = #{query.swmpId}-->
+<!--        </if>-->
+<!--        <if test="query.swmpName != null and query.swmpName != ''">-->
+<!--            and s.swmp_name like concat(#{query.swmpName}, '%')-->
+<!--        </if>-->
+<!--        <if test="query.ownerId != null and query.ownerId != ''">-->
+<!--            and s.owner_id = #{query.ownerId}-->
+<!--        </if>-->
+<!--        <if test="query.ownerName != null and query.ownerName != ''">-->
+<!--            and u.user_name like concat(#{query.ownerName}, '%')-->
+<!--        </if>-->
+<!--    </select>-->
+
     <select id="listSWModelPackages" resultMap="swmpResultMap">
         <include refid="select_swmp"/>
         and project_id = #{projectId}
@@ -54,19 +80,26 @@
 
     <select id="findByNameForUpdate" resultMap="swmpResultMap" >
         <include refid="select_swmp"/>
-        and s.swmp_name = #{name} for update
+        and s.swmp_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
+        for update
     </select>
 
     <select id="findByName" resultMap="swmpResultMap" >
         <include refid="select_swmp"/>
         and s.swmp_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
     </select>
 
 
 
     <insert id="addSWModelPackage" useGeneratedKeys="true" keyProperty="id">
         insert into swmp_info(swmp_name, project_id, owner_id)
-        values(#{swmpName}, #{projectId}, #{ownerId})
+        values(#{entity.swmpName}, #{entity.projectId}, #{entity.ownerId})
     </insert>
 
     <delete id="deleteSWModelPackage" >
@@ -75,7 +108,45 @@
         where id = #{id}
     </delete>
 
-    <resultMap id="swmpResultMap" type="ai.starwhale.mlops.domain.swmp.SWModelPackageEntity" >
+    <update id="recoverSWModelPackage" >
+        update swmp_info
+        set is_deleted = 0
+        where id = #{id}
+    </update>
+
+    <select id="findDeletedSWModelPackageById" resultMap="swmpResultMap" >
+        select id as swmp_id,
+               swmp_name,
+               project_id,
+               owner_id,
+               is_deleted,
+               created_time as runtime_created_time,
+               modified_time as runtime_modified_time
+        from swmp_info
+        where is_deleted = 1
+          and id = #{id}
+    </select>
+
+    <select id="listDeletedSWModelPackages" resultMap="swmpResultMap">
+        select id as swmp_id,
+        swmp_name,
+        project_id,
+        owner_id,
+        is_deleted,
+        created_time as runtime_created_time,
+        modified_time as runtime_modified_time
+        from swmp_info
+        where is_deleted = 1
+        <if test="name != null and name != ''">
+            and swmp_name = #{name}
+        </if>
+        <if test="projectId != null">
+            and project_id = #{projectId}
+        </if>
+        order by modified_time desc
+    </select>
+
+    <resultMap id="swmpResultMap" type="ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity" >
         <id property="id" column="swmp_id" />
         <result property="swmpName" column="swmp_name" />
         <result property="projectId" column="project_id" />

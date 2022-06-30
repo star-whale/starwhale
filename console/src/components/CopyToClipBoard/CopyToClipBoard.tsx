@@ -1,15 +1,14 @@
 import React from 'react'
 
-import { Button, Icon } from '@/components'
-import ErrorBoundary from '@/components/ErrorBoundary/ErrorBoundary'
+import { Button } from '@/components'
+
+import { StatefulTooltip as Tooltip } from 'baseui/tooltip'
 
 export interface ICopyToClipBoardProps {
     contentRef: React.RefObject<any>
     showSuccessDelay?: number
     className?: string
 }
-
-import { StatefulTooltip as Tooltip } from 'baseui/tooltip'
 
 function CopyToClipboard({
     contentRef,
@@ -31,7 +30,7 @@ function CopyToClipboard({
         if (contentRef.current && !showCopiedIcon) {
             navigator.clipboard
                 .writeText(contentRef.current.innerText.trim(''))
-                .then(function () {
+                .then(() => {
                     setShowCopiedIcon(true)
                 })
                 .catch()
@@ -39,15 +38,14 @@ function CopyToClipboard({
     }, [contentRef, showCopiedIcon])
 
     return (
-        <ErrorBoundary>
-            <Tooltip
-            // title={showCopiedIcon ? 'Copied!' : 'Copy to clipboard'}
-            >
-                <span className={className} onClick={onCopy}>
-                    <Button>{/* {showCopiedIcon ? <Icon name='check' /> : <Icon name='copy' />} */}</Button>
-                </span>
-            </Tooltip>
-        </ErrorBoundary>
+        <Tooltip
+        // title={showCopiedIcon ? 'Copied!' : 'Copy to clipboard'}
+        >
+            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+            <span className={className} onClick={onCopy}>
+                <Button>{/* {showCopiedIcon ? <Icon name='check' /> : <Icon name='copy' />} */}</Button>
+            </span>
+        </Tooltip>
     )
 }
 

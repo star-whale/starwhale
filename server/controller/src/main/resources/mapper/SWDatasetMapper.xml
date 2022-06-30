@@ -52,14 +52,27 @@
             #{id}
         </foreach>
     </select>
+
+    <select id="findByNameForUpdate" resultMap="swdsResultMap" >
+        <include refid="select_swds"/>
+        and s.dataset_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
+        for update
+    </select>
+
     <select id="findByName" resultMap="swdsResultMap" >
         <include refid="select_swds"/>
         and s.dataset_name = #{name}
+        <if test="projectId != null">
+            and s.project_id = #{projectId}
+        </if>
     </select>
 
     <insert id="addDataset" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         insert into dataset_info(dataset_name, project_id, owner_id)
-        values(#{datasetName}, #{projectId}, #{ownerId})
+        values(#{swds.datasetName}, #{swds.projectId}, #{swds.ownerId})
     </insert>
 
     <delete id="deleteDataset" >
@@ -68,7 +81,45 @@
         where id = #{id}
     </delete>
 
-    <resultMap id="swdsResultMap" type="ai.starwhale.mlops.domain.swds.SWDatasetEntity" >
+    <update id="recoverDataset" >
+        update dataset_info
+        set is_deleted = 0
+        where id = #{id}
+    </update>
+
+    <select id="findDeletedDatasetById" resultMap="swdsResultMap" >
+        select id as swds_id,
+               dataset_name,
+               project_id,
+               owner_id,
+               is_deleted,
+               created_time as runtime_created_time,
+               modified_time as runtime_modified_time
+        from dataset_info
+        where is_deleted = 1
+          and id = #{id}
+    </select>
+
+    <select id="listDeletedDatasets" resultMap="swdsResultMap">
+        select id as swds_id,
+        dataset_name,
+        project_id,
+        owner_id,
+        is_deleted,
+        created_time as runtime_created_time,
+        modified_time as runtime_modified_time
+        from dataset_info
+        where is_deleted = 1
+        <if test="name != null and name != ''">
+            and dataset_name = #{name}
+        </if>
+        <if test="projectId != null">
+            and project_id = #{projectId}
+        </if>
+        order by modified_time desc
+    </select>
+
+    <resultMap id="swdsResultMap" type="ai.starwhale.mlops.domain.swds.po.SWDatasetEntity" >
         <id property="id" column="swds_id" />
         <result property="datasetName" column="dataset_name" />
         <result property="projectId" column="project_id" />

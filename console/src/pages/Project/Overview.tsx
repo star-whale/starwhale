@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from 'react'
-import { RiSurveyLine } from 'react-icons/ri'
 import Table from '@/components/Table'
 import useTranslation from '@/hooks/useTranslation'
 import { useProject, useProjectLoading } from '@project/hooks/useProject'
@@ -11,12 +10,11 @@ import { ICreateProjectSchema } from '@project/schemas/project'
 import { createProject } from '@project/services/project'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import ProjectForm from '@project/components/ProjectForm'
-import { usePage } from '@/hooks/usePage'
+import IconFont from '@/components/IconFont'
 
 export default function ProjectOverview() {
     const { project } = useProject()
     const { projectLoading } = useProjectLoading()
-    const [page] = usePage()
 
     const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
     const handleCreateProject = useCallback(async (data: ICreateProjectSchema) => {
@@ -31,7 +29,11 @@ export default function ProjectOverview() {
             title={t('overview')}
             titleIcon={undefined}
             extra={
-                <Button size={ButtonSize.compact} onClick={() => setIsCreateProjectModalOpen(true)}>
+                <Button
+                    startEnhancer={<IconFont type='add' kind='white' />}
+                    size={ButtonSize.compact}
+                    onClick={() => setIsCreateProjectModalOpen(true)}
+                >
                     {t('create')}
                 </Button>
             }
@@ -43,7 +45,7 @@ export default function ProjectOverview() {
                     [
                         project?.name,
                         project?.owner && <User user={project?.owner} />,
-                        project?.createTime && formatTimestampDateTime(project.createTime),
+                        project?.createdTime && formatTimestampDateTime(project.createdTime),
                     ],
                 ]}
             />

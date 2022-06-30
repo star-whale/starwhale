@@ -1,14 +1,25 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
+import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
+import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -115,15 +126,7 @@ public interface UserApi {
             schema = @Schema())
         @PathVariable("userId")
             String userId,
-        @NotNull
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "New password",
-            required = true,
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "userPwd")
-            String userPwd);
+        @Valid @RequestBody UserUpdatePasswordRequest userUpdatePasswordRequest);
 
     @Operation(summary = "Enable or disable a user")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
@@ -136,13 +139,5 @@ public interface UserApi {
             schema = @Schema())
         @PathVariable("userId")
             String userId,
-        @NotNull
-        @Parameter(
-            in = ParameterIn.QUERY,
-            description = "Is enabled: ture or false",
-            required = true,
-            schema = @Schema())
-        @Valid
-        @RequestParam(value = "isEnabled")
-            Boolean isEnabled);
+        @Valid @RequestBody UserUpdateStateRequest userUpdateStateRequest);
 }

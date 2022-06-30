@@ -1,11 +1,12 @@
 import axios from 'axios'
+import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
 import {
     ICreateDatasetVersionSchema,
     IDatasetVersionSchema,
     IUpdateDatasetVersionSchema,
     IDatasetVersionDetailSchema,
 } from '../schemas/datasetVersion'
-import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
+import { IDatasetSchema } from '../schemas/dataset'
 
 export async function listDatasetVersions(
     projectId: string,
@@ -25,13 +26,13 @@ export async function listDatasetVersionsByIds(
     projectId: string,
     datasetVersionIds: string,
     query: IListQuerySchema
-): Promise<IListSchema<IDatasetVersionSchema>> {
-    const resp = await axios.get<IListSchema<IDatasetVersionSchema>>(
-        `/api/v1/project/${projectId}/dataset/${datasetVersionIds}`,
-        {
-            params: query,
-        }
-    )
+): Promise<IListSchema<IDatasetSchema>> {
+    const resp = await axios.get<IListSchema<IDatasetSchema>>(`/api/v1/project/${projectId}/dataset`, {
+        params: {
+            ...query,
+            versionId: datasetVersionIds,
+        },
+    })
     return resp.data
 }
 
@@ -51,7 +52,7 @@ export async function createDatasetVersion(
     datasetId: string,
     data: ICreateDatasetVersionSchema
 ): Promise<IDatasetVersionSchema> {
-    var bodyFormData = new FormData()
+    const bodyFormData = new FormData()
     bodyFormData.append('importPath', data.importPath ?? '')
     if (data.zipFile && data.zipFile.length > 0) bodyFormData.append('zipFile', data.zipFile[0] as File)
 
@@ -82,8 +83,8 @@ export async function revertDatasetVersion(
     datasetId: string,
     datasetVersionId: string
 ): Promise<IDatasetVersionSchema> {
-    const resp = await axios.patch<IDatasetVersionSchema>(
-        `/api/v1/project/${projectId}/dataset/${datasetId}/version/${datasetVersionId}/revert`
-    )
+    const resp = await axios.post<IDatasetVersionSchema>(`/api/v1/project/${projectId}/dataset/${datasetId}/revert`, {
+        versionId: datasetVersionId,
+    })
     return resp.data
 }

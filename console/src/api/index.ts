@@ -1,6 +1,5 @@
+/* eslint-disable no-param-reassign */
 import axios from 'axios'
-import _ from 'lodash'
-import qs from 'qs'
 
 const key = 'token'
 const store = window.localStorage ?? {
@@ -11,7 +10,7 @@ const store = window.localStorage ?? {
 }
 
 export function apiInit() {
-    axios.interceptors.request.use(function (config) {
+    axios.interceptors.request.use((config) => {
         config.headers.Authorization = store?.token
         return config
     })
@@ -21,7 +20,10 @@ export const getToken = () => {
     return store?.token
 }
 export const setToken = (token: string | undefined) => {
-    if (!token) return store.removeItem(key)
+    if (!token) {
+        store.removeItem(key)
+        return
+    }
     store.setItem(key, token)
 }
 

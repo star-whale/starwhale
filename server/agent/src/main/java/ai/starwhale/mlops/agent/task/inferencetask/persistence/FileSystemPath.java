@@ -1,8 +1,17 @@
 /*
- * Copyright 2022.1-2022
- * StarWhale.ai All right reserved. This software is the confidential and proprietary information of
- * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
- * in accordance with the terms of the license agreement you entered into with StarWhale.com.
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package ai.starwhale.mlops.agent.task.inferencetask.persistence;
@@ -26,6 +35,8 @@ public class FileSystemPath {
         String InferenceTaskInfoFile = "taskInfo.json";
         String InferenceTaskInputConfigFile = "input.json";
         String InferenceTaskStatusFile = "current";
+        String InferenceTaskRuntimeManifestFile = "_manifest.yaml";
+        String InferenceTaskAgentLogFile = "agent.log";
     }
 
     private final String basePath;
@@ -45,7 +56,10 @@ public class FileSystemPath {
     private static final PathNode oneActiveInferenceTaskInputConfigFile = new PathNode(FileName.InferenceTaskInputConfigFile, PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskResultDir = new PathNode("result", PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskModelDir = new PathNode("swmp", PathNode.Type.value);
+    private static final PathNode oneActiveInferenceTaskRuntimeDir = new PathNode("swrt", PathNode.Type.value);
+    private static final PathNode oneActiveInferenceTaskRuntimeManifestFile = new PathNode(FileName.InferenceTaskRuntimeManifestFile, PathNode.Type.value);
     private static final PathNode oneActiveInferenceTaskLogsDir = new PathNode("log", PathNode.Type.value);
+    private static final PathNode oneActiveInferenceTaskAgentLogFile = new PathNode(FileName.InferenceTaskAgentLogFile, PathNode.Type.value);
 
     // archived dir
     private static final PathNode archivedTaskDir = new PathNode("archived", PathNode.Type.value);
@@ -56,6 +70,10 @@ public class FileSystemPath {
     private static final PathNode swmpCacheDir = new PathNode("swmp", PathNode.Type.value);
     private static final PathNode swmpNameDir = new PathNode("%s", PathNode.Type.variable);
     private static final PathNode oneSwmpDir = new PathNode("%s", PathNode.Type.variable);
+    // swrt cache dir
+    private static final PathNode swrtCacheDir = new PathNode("swrt", PathNode.Type.value);
+    private static final PathNode swrtNameDir = new PathNode("%s", PathNode.Type.variable);
+    private static final PathNode oneSwrtDir = new PathNode("%s", PathNode.Type.variable);
 
 
     static {
@@ -69,8 +87,11 @@ public class FileSystemPath {
                                                 .child(oneActiveInferenceTaskInputConfigFile)
                                         )
                                         .child(oneActiveInferenceTaskModelDir)
+                                        .child(oneActiveInferenceTaskRuntimeDir
+                                                .child(oneActiveInferenceTaskRuntimeManifestFile)
+                                        )
                                         .child(oneActiveInferenceTaskResultDir)
-                                        .child(oneActiveInferenceTaskLogsDir)
+                                        .child(oneActiveInferenceTaskLogsDir.child(oneActiveInferenceTaskAgentLogFile))
                                 )
                         )
                         .child(archivedTaskDir
@@ -79,6 +100,9 @@ public class FileSystemPath {
                 )
                 .child(swmpCacheDir
                         .child(swmpNameDir.child(oneSwmpDir))
+                )
+                .child(swrtCacheDir
+                        .child(swrtNameDir.child(oneSwrtDir))
                 );
     }
 
@@ -130,11 +154,22 @@ public class FileSystemPath {
         return oneActiveInferenceTaskModelDir.path(basePath, id);
     }
 
+    public String oneActiveTaskRuntimeDir(Long id) {
+        return oneActiveInferenceTaskRuntimeDir.path(basePath, id);
+    }
+
     /**
      * swds config file path,Eg:/var/starwhale/tasks/active/{taskId}/config/input.json(format:json)
      */
     public String oneActiveTaskInputConfigFile(Long id) {
         return oneActiveInferenceTaskInputConfigFile.path(basePath, id);
+    }
+
+    /**
+     * swds config file path,Eg:/var/starwhale/tasks/active/{taskId}/runtime/read_manifest.yaml(format:yaml)
+     */
+    public String oneActiveTaskRuntimeManifestFile(Long id) {
+        return oneActiveInferenceTaskRuntimeManifestFile.path(basePath, id);
     }
 
     /**
@@ -163,6 +198,22 @@ public class FileSystemPath {
      */
     public String oneSwmpCacheDir(String name, String version) {
         return oneSwmpDir.path(basePath, name, version);
+    }
+
+    /**
+     * swmp dir path,Eg:/var/starwhale/task/swrt/{name}/{version}(dir)
+     */
+    public String oneSwrtCacheDir(String name, String version) {
+        return oneSwrtDir.path(basePath, name, version);
+    }
+
+
+    /**
+     * @param id taskId
+     * @return task running log file path,Eg:/var/starwhale/task/{taskId}/log/agent.log(format:txt)
+     */
+    public String oneActiveTaskAgentLogFile(Long id) {
+        return oneActiveInferenceTaskAgentLogFile.path(basePath, id);
     }
 
     /**
@@ -221,6 +272,7 @@ public class FileSystemPath {
             }
             if (argsNum != objs.length) throw new IllegalArgumentException();
             Collections.reverse(nodes);
+            // String format = String.join(File.separator, nodes);
             String format = String.join("/", nodes);
             return String.format(format, objs);
         }
