@@ -131,7 +131,7 @@ function JobResults() {
                             paddingLeft: '12px',
                         }}
                     >
-                        Kind: {jobResult.data?.kind ?? ''}
+                        Type: {jobResult.data?.kind ?? ''}
                     </LabelSmall>
                     <div
                         style={{

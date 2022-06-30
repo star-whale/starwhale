@@ -52,7 +52,10 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     },
                     TableBodyCell: {
                         style: {
-                            padding: '0px 20px',
+                            paddingTop: 0,
+                            paddingBottom: 0,
+                            paddingLeft: 20,
+                            paddingRight: 20,
                             lineHeight: '44px',
                         },
                     },

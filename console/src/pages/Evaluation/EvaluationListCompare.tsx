@@ -86,19 +86,19 @@ export default function EvaluationListCompare({
             },
             {
                 key: 'createtime',
-                title: t('Created time'),
+                title: t('Created'),
                 values: rows.map((data: any) => data.createdTime && formatTimestampDateTime(data.createdTime)),
             },
             {
                 key: 'runtime',
-                title: t('Run time'),
+                title: t('Runtime'),
                 values: rows.map((data: any) =>
                     typeof data.duration === 'string' ? '-' : durationToStr(data.duration)
                 ),
             },
             {
                 key: 'endtime',
-                title: t('End time'),
+                title: t('End Time'),
                 values: rows.map((data: any) => (data.stopTime > 0 ? formatTimestampDateTime(data.stopTime) : '-')),
             },
             // {

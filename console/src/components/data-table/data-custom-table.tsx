@@ -108,7 +108,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 borderLeft: 'none',
                 // do not render a border on cells in the right-most column
                 // borderRight: columnIndex === data.columns.length - 1 ? 'none' : undefined,
-                border: 'none',
+                borderWidth: 0,
                 boxSizing: 'border-box',
                 paddingLeft: '20px',
                 paddingRight: '20px',

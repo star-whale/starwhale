@@ -30,7 +30,7 @@ export default function RuntimeOverview() {
             value: runtime?.versionTag ?? '',
         },
         {
-            label: t('Created time'),
+            label: t('Created'),
             value: runtime?.createdTime && formatTimestampDateTime(runtime.createdTime),
         },
     ]

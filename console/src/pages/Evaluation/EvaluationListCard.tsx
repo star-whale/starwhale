@@ -74,7 +74,7 @@ export default function EvaluationListCard() {
             }),
             StringColumn({
                 key: 'modelVersion',
-                title: t('Version'),
+                title: t('Model Version'),
                 mapDataToValue: (data: any) => data.modelVersion,
             }),
             StringColumn({
@@ -84,17 +84,17 @@ export default function EvaluationListCard() {
             }),
             StringColumn({
                 key: 'duration',
-                title: t('Run time'),
+                title: t('Runtime'),
                 mapDataToValue: (data: any) => (typeof data.duration === 'string' ? '-' : durationToStr(data.duration)),
             }),
             StringColumn({
                 key: 'createTime',
-                title: t('Created time'),
+                title: t('Created'),
                 mapDataToValue: (data: any) => data.createdTime && formatTimestampDateTime(data.createdTime),
             }),
             StringColumn({
                 key: 'stopTime',
-                title: t('End time'),
+                title: t('End Time'),
                 mapDataToValue: (data: any) => (data.stopTime > 0 ? formatTimestampDateTime(data.stopTime) : '-'),
             }),
             // CustomColumn({
