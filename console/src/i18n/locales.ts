@@ -159,14 +159,11 @@ const locales0 = {
     'Device Amount': {
         en: 'Device Amount',
     },
-    'Run time': {
-        en: 'Run time',
+    'Runtime': {
+        en: 'Runtime',
     },
-    'End time': {
-        en: 'End time',
-    },
-    'Created time': {
-        en: 'Created time',
+    'End Time': {
+        en: 'End Time',
     },
     'Status': {
         en: 'Status',
@@ -341,9 +338,6 @@ const locales0 = {
     },
     'Delete': {
         en: 'Delete',
-    },
-    'Runtime': {
-        en: 'Runtime',
     },
     'Runtimes': {
         en: 'Runtimes',
