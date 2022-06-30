@@ -30,8 +30,6 @@ public class TagManager {
             throw new TagException(String.format("Unable to find the version, url=%s ", bundleVersionURL.getVersionUrl()));
         }
         entity.setTag(TagUtil.getTags(tagAction, entity.getTag()));
-        int update = tagAccessor.updateTag(entity);
-        log.info("Tag has been modified. ID={}", entity.getId());
-        return update > 0;
+        return tagAccessor.updateTag(entity);
     }
 }

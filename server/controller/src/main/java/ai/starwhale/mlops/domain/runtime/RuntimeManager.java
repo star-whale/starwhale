@@ -107,13 +107,18 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
     }
 
     @Override
-    public int updateTag(HasTag entity) {
-        return runtimeVersionMapper.updateTag(entity.getId(), entity.getTag());
+    public Boolean updateTag(HasTag entity) {
+        int r = runtimeVersionMapper.updateTag(entity.getId(), entity.getTag());
+        if(r > 0) {
+            log.info("Runtime Version Tag has been modified. ID={}", entity.getId());
+        }
+        return r > 0;
     }
 
     @Override
-    public int revertTo(Long bundleId, Long bundleVersionId) {
-        return runtimeVersionMapper.revertTo(bundleId, bundleVersionId);
+    public Boolean revertTo(Long bundleId, Long bundleVersionId) {
+        log.info("Runtime Version {} has been revert to {}", bundleId, bundleVersionId);
+        return runtimeVersionMapper.revertTo(bundleId, bundleVersionId) > 0;
     }
 
     @Override

@@ -108,13 +108,17 @@ public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAc
     }
 
     @Override
-    public int updateTag(HasTag entity) {
-        return datasetVersionMapper.updateTag(entity.getId(), entity.getTag());
+    public Boolean updateTag(HasTag entity) {
+        int r = datasetVersionMapper.updateTag(entity.getId(), entity.getTag());
+        if(r > 0) {
+            log.info("Dataset Version Tag has been modified. ID={}", entity.getId());
+        }
+        return r > 0;
     }
 
     @Override
-    public int revertTo(Long bundleId, Long bundleVersionId) {
-        return datasetVersionMapper.revertTo(bundleId, bundleVersionId);
+    public Boolean revertTo(Long bundleId, Long bundleVersionId) {
+        return datasetVersionMapper.revertTo(bundleId, bundleVersionId) > 0;
     }
 
     @Override

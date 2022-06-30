@@ -97,8 +97,12 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
     }
 
     @Override
-    public int updateTag(HasTag entity) {
-        return versionMapper.updateTag(entity.getId(), entity.getTag());
+    public Boolean updateTag(HasTag entity) {
+        int r = versionMapper.updateTag(entity.getId(), entity.getTag());
+        if(r > 0) {
+            log.info("Model Version Tag has been modified. ID={}", entity.getId());
+        }
+        return r > 0;
     }
 
     @Override
@@ -112,8 +116,8 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
     }
 
     @Override
-    public int revertTo(Long bundleId, Long bundleVersionId) {
-        return versionMapper.revertTo(bundleVersionId, bundleVersionId);
+    public Boolean revertTo(Long bundleId, Long bundleVersionId) {
+        return versionMapper.revertTo(bundleVersionId, bundleVersionId) > 0;
     }
 
     @Override

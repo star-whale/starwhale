@@ -23,8 +23,6 @@ public class RevertManager {
         Long id = bundleManager.getBundleId(bundleVersionURL.getBundleUrl(), bundleVersionURL.getProjectUrl());
         Long versionId = bundleManager.getBundleVersionId(bundleVersionURL.getVersionUrl(), id);
 
-        int res = revertAccessor.revertTo(id, versionId);
-        log.info("Version {} has been revert to {}", id, versionId);
-        return res > 0;
+        return revertAccessor.revertTo(id, versionId);
     }
 }
