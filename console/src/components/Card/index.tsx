@@ -111,7 +111,7 @@ export default function Card({
                     style={{
                         ...headStyle,
                         color: 'var(--color-brandFontPrimary)',
-                        borderBottom: 'none',
+                        borderBottomWidth: 0,
                     }}
                 >
                     <div className={styles.cardHead}>

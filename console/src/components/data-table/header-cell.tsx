@@ -75,7 +75,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 outlineOffset: '-3px',
                 backgroundColor: 'var(--color-brandTableHeaderBackground)',
                 fontWeight: 'bold',
-                borderBottom: 'none',
+                borderBottomWidth: 0,
                 fontSize: 14,
                 lineHeight: '16px',
                 padding: '15px 20px',

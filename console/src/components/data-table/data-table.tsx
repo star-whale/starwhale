@@ -107,12 +107,12 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
             className={css({
                 ...theme.borders.border200,
                 // backgroundColor,
-                borderTop: 'none',
-                borderBottom: 'none',
-                borderLeft: 'none',
+                borderTopWidth: 0,
+                borderBottomWidth: 0,
+                borderRightWidth: 0,
+                borderLeftWidth: 0,
                 // do not render a border on cells in the right-most column
                 // borderRight: columnIndex === data.columns.length - 1 ? 'none' : undefined,
-                border: 'none',
                 boxSizing: 'border-box',
                 padding: '0 20px 0 20px',
                 display: 'flex',
@@ -473,7 +473,7 @@ function Headers() {
                                     ...theme.borders.border200,
                                     backgroundColor: theme.colors.backgroundPrimary,
                                     borderTop: 'none',
-                                    borderLeft: 'none',
+                                    borderLeftWidth: 'none',
                                     border: 'none',
                                     // @ts-ignore
                                     borderRight: columnIndex === ctx.columns.length - 1 ? 'none' : null,
