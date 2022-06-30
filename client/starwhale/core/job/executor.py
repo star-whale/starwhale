@@ -83,10 +83,9 @@ class EvalExecutor(object):
         if self.use_docker:
             if not self.runtime_uri:
                 raise FieldTypeOrValueError("runtime_uri is none")
-
-            if is_darwin():
+            if is_darwin(arm=True):
                 raise NoSupportError(
-                    "use docker as the evaluation job environment in MacOSX system"
+                    "use docker as the evaluation job environment in MacOSX system (Apple Silicon processor)"
                 )
 
     def __str__(self) -> str:

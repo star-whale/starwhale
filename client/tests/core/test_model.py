@@ -95,7 +95,7 @@ class StandaloneModelTestCase(TestCase):
 
         assert _info["version"] == build_version
         assert _info["name"] == name
-        assert _info["config"]["build"]["os"] == "Linux"
+        assert _info["config"]["build"]["os"] in ["Linux", "Darwin"]
         assert "history" not in _info
 
         model_uri = URI(name, expected_type=URIType.MODEL)
