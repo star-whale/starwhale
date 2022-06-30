@@ -67,8 +67,27 @@ title: NMT for french and engish
         ```
 - use starwhale cli to evaluate the models
   - build swmp(sw model package)\swrt(sw runtime)\swds(sw dataset) 
-    - `swcli model build .`
-    - `swcli runtime build .`
-    - `swcli dataset build .`
+    - build starwhale model
+      - `swcli model build .`
+    - build starwhale runtime
+      - `swcli runtime create -n nmt -m venv --python 3.8 .`
+        ```bash
+        2022-06-30 20:09:14.247 | DEBUG  | verbosity: 4, log level: DEBUG
+        🚧 start to create runtime environment...
+        2022-06-30 20:09:14.250 | INFO   | create venv @ /home/**/vscode_space/starwhale/example/nmt/venv...
+        👏 create venv@/home/**/vscode_space/starwhale/example/nmt/venv, python:3.8.10 (default, Mar 15 2022, 12:22:08)
+        [GCC 9.4.0]
+        🐶 install starwhale==0.2.0b7 venv@/home/**/vscode_space/starwhale/example/nmt/venv...
+        🍰 run command in shell 🍰
+        source /home/**/vscode_space/starwhale/example/nmt/venv/bin/activate
+        👏 python runtime environment is ready to use 🎉
+        ```
+      - follow the prompts to execute the activate environment command
+        `source /home/**/vscode_space/starwhale/example/nmt/venv/bin/activate`
+      - install by requirements
+        `python3 -m pip install -r requirements.txt`
+      - `swcli runtime build .`
+    - build starwhale dataset
+      - `swcli dataset build .`
   - create evaluate job for the models
     - exec `swcli -vvv job create --model nmt/version/latest --dataset nmt/version/latest --runtime nmt/version/latest`.

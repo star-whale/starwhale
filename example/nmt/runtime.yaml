@@ -1,6 +1,5 @@
-base_image: ghcr.io/star-whale/starwhale:0.2.0-alpha.12
-kw: {}
-mode: conda
+mode: venv
 name: nmt
 pip_req: requirements.txt
-python_version: '3.7'
+python_version: '3.8'
+starwhale_version: 0.2.0b7
