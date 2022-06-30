@@ -11,7 +11,10 @@ public class RevertManager {
 
     private final RevertAccessor revertAccessor;
 
-    public RevertManager(BundleManager bundleManager, RevertAccessor revertAccessor) {
+    public static RevertManager create(BundleManager bundleManager, RevertAccessor revertAccessor) {
+        return new RevertManager(bundleManager, revertAccessor);
+    }
+    private RevertManager(BundleManager bundleManager, RevertAccessor revertAccessor) {
         this.bundleManager = bundleManager;
         this.revertAccessor = revertAccessor;
     }

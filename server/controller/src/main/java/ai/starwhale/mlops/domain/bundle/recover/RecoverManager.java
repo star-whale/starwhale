@@ -1,18 +1,11 @@
 package ai.starwhale.mlops.domain.bundle.recover;
 
 import ai.starwhale.mlops.common.IDConvertor;
-import ai.starwhale.mlops.domain.bundle.BundleAccessor;
-import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleURL;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
-import ai.starwhale.mlops.domain.bundle.base.HasId;
 import ai.starwhale.mlops.domain.project.ProjectAccessor;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 
 @Slf4j
 public class RecoverManager {
@@ -21,13 +14,18 @@ public class RecoverManager {
     private final RecoverAccessor recoverAccessor;
     private final IDConvertor idConvertor;
 
-    public RecoverManager(
+    private RecoverManager(
         ProjectAccessor projectAccessor,
         RecoverAccessor recoverAccessor,
         IDConvertor idConvertor) {
         this.projectAccessor = projectAccessor;
         this.recoverAccessor = recoverAccessor;
         this.idConvertor = idConvertor;
+    }
+
+    public static RecoverManager create(ProjectAccessor projectAccessor,
+        RecoverAccessor recoverAccessor, IDConvertor idConvertor) {
+        return new RecoverManager(projectAccessor, recoverAccessor, idConvertor);
     }
 
     public Boolean recoverBundle(BundleURL bundleURL) throws RecoverException{

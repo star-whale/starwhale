@@ -210,10 +210,8 @@ public class RuntimeService {
 
     public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
         TagAction tagAction) {
-
-        TagManager tagManager = new TagManager(bundleManager(), runtimeManager);
         try {
-            return tagManager.updateTag(BundleVersionURL.builder()
+            return TagManager.create(bundleManager(), runtimeManager).updateTag(BundleVersionURL.builder()
                 .projectUrl(projectUrl)
                 .bundleUrl(runtimeUrl)
                 .versionUrl(versionUrl)
@@ -226,12 +224,12 @@ public class RuntimeService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String runtimeUrl, String runtimeVersionUrl) {
-        RevertManager revertManager = new RevertManager(bundleManager(), runtimeManager);
-        return revertManager.revertVersionTo(BundleVersionURL.builder()
-            .projectUrl(projectUrl)
-            .bundleUrl(runtimeUrl)
-            .versionUrl(runtimeVersionUrl)
-            .build());
+        return RevertManager.create(bundleManager(), runtimeManager)
+            .revertVersionTo(BundleVersionURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(runtimeUrl)
+                .versionUrl(runtimeVersionUrl)
+                .build());
     }
 
     public PageInfo<RuntimeVersionVO> listRuntimeVersionHistory(RuntimeVersionQuery query, PageParams pageParams) {
@@ -420,13 +418,12 @@ public class RuntimeService {
     }
 
     public Boolean recoverRuntime(String projectUrl, String runtimeUrl) {
-        RecoverManager recoverManager = new RecoverManager(projectManager,
-            runtimeManager, idConvertor);
         try {
-            return recoverManager.recoverBundle(BundleURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(runtimeUrl)
-                .build());
+            return RecoverManager.create(projectManager, runtimeManager, idConvertor)
+                    .recoverBundle(BundleURL.builder()
+                        .projectUrl(projectUrl)
+                        .bundleUrl(runtimeUrl)
+                        .build());
         } catch (RecoverException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }

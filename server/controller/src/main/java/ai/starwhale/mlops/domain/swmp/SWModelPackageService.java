@@ -26,7 +26,6 @@ import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.common.util.TagUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleURL;
 import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
@@ -38,8 +37,8 @@ import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swmp.bo.SWMPObject;
@@ -50,8 +49,8 @@ import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
-import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SWAuthException;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
@@ -139,13 +138,12 @@ public class SWModelPackageService {
     }
 
     public Boolean recoverSWMP(String projectUrl, String modelUrl) {
-        RecoverManager recoverManager = new RecoverManager(projectManager,
-            swmpManager, idConvertor);
         try {
-            return recoverManager.recoverBundle(BundleURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(modelUrl)
-                .build());
+            return RecoverManager.create(projectManager, swmpManager, idConvertor)
+                .recoverBundle(BundleURL.builder()
+                    .projectUrl(projectUrl)
+                    .bundleUrl(modelUrl)
+                    .build());
         } catch (RecoverException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }
@@ -253,11 +251,8 @@ public class SWModelPackageService {
 
     public Boolean manageVersionTag(String projectUrl, String modelUrl, String versionUrl,
         TagAction tagAction) {
-
-        TagManager tagManager = new TagManager(bundleManager(), swmpManager);
-
         try {
-            return tagManager.updateTag(BundleVersionURL.builder()
+            return TagManager.create(bundleManager(), swmpManager).updateTag(BundleVersionURL.builder()
                 .projectUrl(projectUrl)
                 .bundleUrl(modelUrl)
                 .versionUrl(versionUrl)
@@ -269,12 +264,12 @@ public class SWModelPackageService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String swmpUrl, String versionUrl) {
-        RevertManager revertManager = new RevertManager(bundleManager(), swmpManager);
-        return revertManager.revertVersionTo(BundleVersionURL.builder()
-            .projectUrl(projectUrl)
-            .bundleUrl(swmpUrl)
-            .versionUrl(versionUrl)
-            .build());
+        return RevertManager.create(bundleManager(), swmpManager)
+            .revertVersionTo(BundleVersionURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(swmpUrl)
+                .versionUrl(versionUrl)
+                .build());
     }
 
     public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPVersionQuery query, PageParams pageParams) {

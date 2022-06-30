@@ -4,10 +4,7 @@ import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.util.TagUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 
 @Slf4j
 public class TagManager {
@@ -16,7 +13,10 @@ public class TagManager {
 
     private final TagAccessor tagAccessor;
 
-    public TagManager(BundleManager bundleManager, TagAccessor tagAccessor) {
+    public static TagManager create(BundleManager bundleManager, TagAccessor tagAccessor) {
+        return new TagManager(bundleManager, tagAccessor);
+    }
+    private TagManager(BundleManager bundleManager, TagAccessor tagAccessor) {
         this.bundleManager = bundleManager;
         this.tagAccessor = tagAccessor;
     }
