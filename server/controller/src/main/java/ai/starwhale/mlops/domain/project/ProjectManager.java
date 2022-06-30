@@ -37,7 +37,7 @@ import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
-public class ProjectManager {
+public class ProjectManager implements ProjectAccessor{
 
     @Resource
     private ProjectMapper projectMapper;
@@ -97,6 +97,7 @@ public class ProjectManager {
         return isDeleted ? existProject.getIsDeleted() == 1 : existProject.getIsDeleted() == 0;
     }
 
+    @Override
     public Long getProjectId(String projectUrl) {
         if(idConvertor.isID(projectUrl)) {
             return idConvertor.revert(projectUrl);

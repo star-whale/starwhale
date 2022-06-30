@@ -17,6 +17,16 @@
 package ai.starwhale.mlops.domain.runtime;
 
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
+import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
+import ai.starwhale.mlops.domain.bundle.base.HasId;
+import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
+import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
+import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
+import ai.starwhale.mlops.domain.bundle.tag.HasTag;
+import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
@@ -25,6 +35,7 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,7 +43,8 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class RuntimeManager {
+public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
+    RevertAccessor, RecoverAccessor {
 
     @Resource
     private RuntimeMapper runtimeMapper;
@@ -67,5 +79,54 @@ public class RuntimeManager {
                 .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
+    }
+
+    @Override
+    public BundleEntity findById(Long id) {
+        return runtimeMapper.findRuntimeById(id);
+    }
+
+    @Override
+    public BundleEntity findByName(String name, Long projectId) {
+        return runtimeMapper.findByName(name, projectId);
+    }
+
+    @Override
+    public BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
+        return runtimeVersionMapper.findByNameAndRuntimeId(name, bundleId);
+    }
+
+    @Override
+    public HasTag findObjectWithTagById(Long id) {
+        RuntimeVersionEntity entity = runtimeVersionMapper.findVersionById(id);
+        return HasTagWrapper.builder()
+            .id(entity.getId())
+            .tag(entity.getVersionTag())
+            .build();
+    }
+
+    @Override
+    public int updateTag(HasTag entity) {
+        return runtimeVersionMapper.updateTag(entity.getId(), entity.getTag());
+    }
+
+    @Override
+    public int revertTo(Long bundleId, Long bundleVersionId) {
+        return runtimeVersionMapper.revertTo(bundleId, bundleVersionId);
+    }
+
+    @Override
+    public BundleEntity findDeletedBundleById(Long id) {
+        return runtimeMapper.findDeletedRuntimeById(id);
+    }
+
+    @Override
+    public List<? extends BundleEntity> listDeletedBundlesByName(String name, Long projectId) {
+        return runtimeMapper.listDeletedRuntimes(name, projectId);
+    }
+
+    @Override
+    public Boolean recover(Long id) {
+        return runtimeMapper.recoverRuntime(id) > 0;
     }
 }

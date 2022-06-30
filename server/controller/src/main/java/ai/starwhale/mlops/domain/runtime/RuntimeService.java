@@ -26,12 +26,19 @@ import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.common.util.TagUtil;
+import ai.starwhale.mlops.domain.bundle.BundleManager;
+import ai.starwhale.mlops.domain.bundle.BundleURL;
+import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
+import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
+import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
+import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
+import ai.starwhale.mlops.domain.bundle.tag.TagException;
+import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.runtime.bo.Runtime;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
@@ -112,6 +119,10 @@ public class RuntimeService {
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
+
+    private BundleManager bundleManager() {
+        return new BundleManager(idConvertor, projectManager, runtimeManager, runtimeManager, ValidSubject.RUNTIME);
+    }
 
     public PageInfo<RuntimeVO> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
@@ -197,26 +208,28 @@ public class RuntimeService {
 
     public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
         TagAction tagAction) {
-        Long id = runtimeManager.getRuntimeId(runtimeUrl, projectUrl);
-        Long versionId = runtimeManager.getRuntimeVersionId(versionUrl, id);
 
-        RuntimeVersionEntity entity = runtimeVersionMapper.findVersionById(versionId);
-        if(entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                .tip("Unable to find the version of runtime " + versionUrl), HttpStatus.BAD_REQUEST);
+        TagManager tagManager = new TagManager(bundleManager(), runtimeManager);
+        try {
+            return tagManager.updateTag(BundleVersionURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(runtimeUrl)
+                .versionUrl(versionUrl)
+                .build(), tagAction);
+        } catch (TagException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(e.getMessage()),
+                HttpStatus.BAD_REQUEST);
         }
-        entity.setVersionTag(TagUtil.getTags(tagAction, entity.getVersionTag()));
-        int update = runtimeVersionMapper.update(entity);
-        log.info("Runtime Version has been modified. ID={}", entity.getId());
-        return update > 0;
+
     }
 
     public Boolean revertVersionTo(String projectUrl, String runtimeUrl, String runtimeVersionUrl) {
-        Long runtimeId = runtimeManager.getRuntimeId(runtimeUrl, projectUrl);
-        Long versionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, runtimeId);
-        int res = runtimeVersionMapper.revertTo(runtimeId, versionId);
-        log.info("Runtime Version {} has been revert to {}", runtimeId, versionId);
-        return res > 0;
+        RevertManager revertManager = new RevertManager(bundleManager(), runtimeManager);
+        return revertManager.revertVersionTo(BundleVersionURL.builder()
+            .projectUrl(projectUrl)
+            .bundleUrl(runtimeUrl)
+            .versionUrl(runtimeVersionUrl)
+            .build());
     }
 
     public PageInfo<RuntimeVersionVO> listRuntimeVersionHistory(RuntimeVersionQuery query, PageParams pageParams) {
@@ -405,40 +418,15 @@ public class RuntimeService {
     }
 
     public Boolean recoverRuntime(String projectUrl, String runtimeUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        String name = runtimeUrl;
-        Long id;
-        if(idConvertor.isID(runtimeUrl)) {
-            id = idConvertor.revert(runtimeUrl);
-            RuntimeEntity entity = runtimeMapper.findDeletedRuntimeById(id);
-            if(entity == null) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                    .tip("Recover runtime error. Runtime can not be found. "), HttpStatus.BAD_REQUEST);
-            }
-            name = entity.getRuntimeName();
-        } else {
-            // To restore projects by name, need to check whether there are duplicate names
-            List<RuntimeEntity> deletedRuntimes = runtimeMapper.listDeletedRuntimes(name, projectId);
-            if(deletedRuntimes.size() > 1) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                    .tip(String.format("Recover runtime error. Duplicate names [%s] of deleted runtime. ", name)),
-                    HttpStatus.BAD_REQUEST);
-            } else if (deletedRuntimes.size() == 0) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
-                    .tip(String.format("Recover runtime error. Can not find deleted runtime [%s].", name)),
-                    HttpStatus.BAD_REQUEST);
-            }
-            id = deletedRuntimes.get(0).getId();
+        RecoverManager recoverManager = new RecoverManager(projectManager,
+            runtimeManager, idConvertor);
+        try {
+            return recoverManager.recoverBundle(BundleURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(runtimeUrl)
+                .build());
+        } catch (RecoverException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }
-
-        // Check for duplicate names
-        if(runtimeMapper.findByName(name, projectId) != null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                .tip(String.format("Recover runtime error. Runtime %s already exists", name)), HttpStatus.BAD_REQUEST);
-        }
-
-        int res = runtimeMapper.recoverRuntime(id);
-        log.info("Runtime has been recovered. Name={}", name);
-        return res > 0;
     }
 }

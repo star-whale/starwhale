@@ -111,6 +111,10 @@
         update dataset_version set version_tag = #{version.versionTag} where id = #{version.id}
     </update>
 
+    <update id="updateTag" parameterType="ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity">
+        update dataset_version set version_tag = #{tag} where id = #{versionId}
+    </update>
+
     <update id="updateFilesUploaded" parameterType="ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity">
         update dataset_version set files_uploaded = #{version.filesUploaded} where id = #{version.id}
     </update>
