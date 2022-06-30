@@ -2,11 +2,11 @@
 title: Image Classification on CIFAR-10
 ---
 
-This example will illustrate how to evaluate a pre-trained classification model on StarWhale under 5 steps.
+This example will illustrate how to evaluate a pre-trained classification model on Starwhale in 5 steps.
 
 1. Train the model
 2. Implement the dataset slicing method
-3. Implement the inference method and evaluation metrics computing method
+3. Implement the inference method and the evaluation metrics computing method
 4. Build Dataset and Model
 5. Run the evaluation job and see the metrics
 
@@ -14,7 +14,7 @@ This example will illustrate how to evaluate a pre-trained classification model 
 
 * Assume that you have Python3.7 or above installed
 
-Clone starwhale repo and install the requirements
+Clone the Starwhale repo and install the requirements:
 
 ```console
 git clone https://github.com/star-whale/starwhale.git
@@ -23,7 +23,7 @@ cd starwhale/example/cifar10
 pip install -r requirements.txt
 ```
 
-> :bulb: If you are from China mainland you're strongly recommended using a proxy
+> :bulb: If you are from the mainland of China, we strongly recommend using a proxy.
 
 ## Train the model
 
@@ -35,7 +35,7 @@ cd code
 python3 train.py
 ```
 
-The training process is rather slow on your laptop. You could reduce the train epochs in `train.py` to make it faster.
+The training process is relatively slow on your laptop. You can reduce the train epochs in `train.py` to make it faster.
 
 You will get the logs below:
 
@@ -51,11 +51,11 @@ Extracting ../data/cifar-10-python.tar.gz to ../data
 Finished Training
 ```
 
-Great! Now you have your model trained and saved. You could see it locates in the `models` directory.
+Great! Now you have your model trained and saved. You can see it in the `models` directory.
 
-## Slice the test dataset using Starwhale protocol
+## Slice the test dataset using the Starwhale protocol
 
-In the training section we got a dataset called [CIFA-10](https://www.cs.toronto.edu/~kriz/cifar.html).
+In the training section, we got a dataset called [CIFA-10](https://www.cs.toronto.edu/~kriz/cifar.html).
 
 ```console
 $ cd ../data
@@ -65,11 +65,11 @@ $ ls cifar-10-batches-py
 batches.meta  data_batch_1  data_batch_2  data_batch_3  data_batch_4  data_batch_5  readme.html  test_batch
 ```
 
-The test part of the dataset is a single file of size 30MB called `test_batch` which contains 10,000 images and labels.
+The test part of the dataset is a single file of size 30MB called `test_batch`, which contains 10,000 images and labels.
 
-Before version `0.1.2b7` StarWhale will slice the dataset into chunks where reside the batched images and batched labels. You need to tell StarWhale how to yield batches of byte arrays from each dataset file.
+Before version `0.1.2b7`, Starwhale sliced the dataset into chunks where the batched images and labels reside. You must tell Starwhale how to yield batches of byte arrays from each dataset file.
 
-In this example we will `unpickle` the dataset and get the numpy arrays of each image and a list for all the labels. Then transform them into byte arrays.
+In this example, we will `unpickle` the dataset to get the NumPy arrays of each image and a list of labels, then transform them into byte arrays.
 
 ```python
 class CIFAR10Slicer(BuildExecutor):
@@ -99,12 +99,12 @@ class CIFAR10Slicer(BuildExecutor):
             yield bytes(labels_list[last_idx:idx])
 ```
 
-You need to extend the abstract class `BuildExecutor` so that your dataset could be used by starwhale. The `path` argument is a file that matches `data_filter` or `label_filter` in `${code_base}/example/cifar10/dataset.yaml`. You could see the filters in this example both are `test_batch`
+You need to extend the abstract class `BuildExecutor`, so Starwhale can use it. The `path` argument is a file that matches `data_filter` or `label_filter` in `${code_base}/example/cifar10/dataset.yaml`. The filters used in this example are  `test_batch`.
 
 ## Implement the inference method and evaluation metrics computing method
 
-The inference method is called `ppl` and the evaluation metrics computing method is called `cmp`.
-Here is the code snap from `ppl.py` where both methods are implemented. You need to extend the abstract class `PipelineHandler` so that you could receive the byte arrays you just transformed in last step.
+The inference method is called `ppl,` and the evaluation metrics computing method is called `cmp`.
+Here is the code snap from `ppl.py`, which implements both methods. You need to extend the abstract class `PipelineHandler` so you can receive the byte arrays, which you transformed in the last step.
 
 ```python
 class CIFAR10Inference(PipelineHandler):
@@ -169,7 +169,7 @@ class CIFAR10Inference(PipelineHandler):
 
 ### Implement ppl
 
-StarWhale will feed the byte arrays of one batch to the `ppl` method. And take the output of `ppl` into a `inference_result` dict which looks like
+Starwhale will feed the byte arrays of one batch to the `ppl` method. And take the output of `ppl` into an `inference_result` dict, which looks like
 
 ```json
 {"result":[{resultObj1},{resultObj2}],"label":[{labelObj1},{labelObj2}]}
@@ -177,19 +177,16 @@ StarWhale will feed the byte arrays of one batch to the `ppl` method. And take t
 
 Now let's look at how `inference_result` is produced using the byte arrays of one batch.
 
-First we load our model trained before use `_load_model`. Then we transform byte array to tensor which could be a valid input for the model use `_pre`.
-And then, we do inference. At the end, we convert the output tensor to label use `_post` method.
+First, we load our model trained before with the `_load_model` method. Then we transform the byte array to a tensor which is the input for the model using `_pre`. After that, we make the inference. At last, we convert the output tensor into labels with the `_post` method.
 By the way, we also overwrite the `handle_label` method.
 
-StarWhale will automatically add result of `ppl` to `inference_result.result` and add result of `handle_label` to `inference_result.label`.
+Starwhale will automatically add the result of `ppl` to `inference_result.result` and add the result of `handle_label` to `inference_result.label`.
 
-The `inference_result` is used in the argument of `cmp` which is named `_data_loader`.
+The `inference_result` is used in the argument of `cmp` named `_data_loader`.
 
 ### Implement cmp
 
-`_data_loader` is an iterator for `result` and `label`. For a multiple classification problem, it is quite easy for you to implement the `cmp` method:
-
-Just annotate your `cmp` method with `multi_classification` annotation and copy the lines inside it
+`_data_loader` is an iterator for `result` and `label`. For a multiple classification problem, it is pretty easy to implement the `cmp` method by annotating your `cmp` method with the `multi_classification` annotation and coping the lines inside it.
 
 ```python
     @multi_classification(
@@ -208,15 +205,15 @@ Just annotate your `cmp` method with `multi_classification` annotation and copy 
         return _label, _result, _pr
 ```
 
-If you need to show `roc` and `auc`, you will also need to supply `_pr` in your `ppl` method.
+If you need to show `roc` and `auc`, you must supply `_pr` in your `ppl` method.
 
-By now we have finished all the coding part. Then let's begin the command line part.
+By now, we have finished all the coding parts. Then let's begin the command line part.
 
 ## Build Dataset and Model
 
 ### Build Dataset
 
-There is some descriptive information needed for StarWhale to build a StarWhale Dataset(SWDS). The information is described by a yaml file like below:
+Here is some descriptive information needed for Starwhale to build a Starwhale Dataset(SWDS). A yaml file describes the information as below:
 
 ```yaml
 name: cifar10
@@ -236,9 +233,9 @@ attr:
     volume_size: 2M
 ```
 
-Most of the fields are self-explained. The `process` descriptor is used to tell StarWhale that 'Hey, use CIFAR10Slicer to slice the dataset please!'. The `data_filter` is used to tell StarWhale to search files that contain data and named like `test_batch` recursively under `data_dir`. Then StarWhale will use the files searched as input for `process`.
+Most of the fields are self-explained. The `process` descriptor is the entry point of the data split method. The `data_filter` is for searching files containing data named like `test_batch` recursively under `data_dir`. Then Starwhale will use the files found as the input for `process`.
 
-After create the yaml file under `${code_base}/example/cifar10/`, we are ready to do it.
+After creating the yaml file under `${code_base}/example/cifar10/`, we are ready.
 
 ```console
 $ cd ..
@@ -254,11 +251,11 @@ cleanup done.
 8 out of 8 steps finished ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:04
 ```
 
-One step is left to success.
+There is one more step left.
 
 ### Build Model
 
-There is some descriptive information needed for StarWhale to build a StarWhale Model Package(SWMP). The information is described by a yaml file like below:
+Here is some descriptive information for Starwhale to build a Starwhale Model Package(SWMP). A yaml file describes the information as below:
 
 ```yaml
 version: 1.0
@@ -279,8 +276,8 @@ tag:
 - multi_classification
 ```
 
-Most of the fields are self-explained. The `ppl` descriptor is used to tell StarWhale that 'Hey, run the inference method and cmp method with CIFAR10Inference please!'.
-After create the yaml file under `${code_base}/example/cifar10/`, we are ready to do it.
+Most of the fields are self-explained. The `ppl` descriptor is the entry point of the inference and cmp method.
+After creating the yaml file under `${code_base}/example/cifar10/`, we are ready.
 
 ```console
 $ swcli model build . --skip-gen-env
@@ -292,11 +289,11 @@ $ swcli model build . --skip-gen-env
 6 out of 6 steps finished ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:03
 ```
 
-There we are. We have finished all the hard parts.
+Here we are. We have finished all the complex parts.
 
 ## Run the evaluation job and see the metrics
 
-Before we can really evaluate our model, we should copy the runtime, model and dataset to the StarWhale instance.Visit the console, create one job and watch the evaluation metrics.
+Before we evaluate our model, we should copy the runtime, model, and dataset to the Starwhale instance. Open the console, create one job, and look at the evaluation metrics.
 
 * **Create one evaluation job**
 ![create evaluation job](../img/cifar10_create.png)

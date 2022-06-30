@@ -2,9 +2,9 @@
 title: MNIST with Pytorch
 ---
 
-MNIST is the hello world code for Machine Learning, the doc will led you master all core Starwhale concepts and workflows.
+MNIST is the hello world code for Machine Learning. This document will let you master all core Starwhale concepts and workflows.
 
-## Downloading mnist example
+## Downloading the MNIST example
 
 ```bash
 git clone https://github.com/star-whale/starwhale.git
@@ -21,7 +21,7 @@ swcli runtime build .
 swcli runtime info pytorch-mnist/version/latest
 ```
 
-## Train MNIST Model
+## Train the MNIST Model
 
 ```bash
 make train
@@ -31,7 +31,7 @@ output: models/mnist_cnn.pt, which is pre-trained model.
 
 ## Building Model
 
-- Write some code with Starwhale Python SDK, full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/ppl.py).
+- Write some code with Starwhale Python SDK. Full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/ppl.py).
 
 ```python
 from starwhale.api.model import PipelineHandler
@@ -91,7 +91,7 @@ ppl: mnist.ppl:MNISTInference
 
 ## Building Dataset
 
-- Write some code with Starwhale Python SDK, full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/process.py).
+- Write some code with Starwhale Python SDK. Full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/process.py).
 
  ```python
   from starwhale.api.dataset import BuildExecutor
@@ -120,7 +120,7 @@ ppl: mnist.ppl:MNISTInference
     volume_size: 2M
  ```
 
-- Run one command to build dataset.
+- Run one command to build the dataset.
 
  ```bash
   swcli dataset build .
@@ -145,7 +145,7 @@ swcli runtime copy pytorch-mnist/version/latest cloud://pre-k8s/project/1
 
 ## Running Cloud Evaluation Job
 
-In job page, you can create an evaluation job.
+On the jobs page, you can create an evaluation job.
 
 ![Create Job Workflow](../img/create-job-workflow.gif)
 ![Show Job Results](../img/ui-job-results.jpg)

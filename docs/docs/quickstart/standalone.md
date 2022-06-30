@@ -128,7 +128,7 @@ Run an evaluation job in the currently activated python runtime.
  ```
 
 :::tip
-The `job create` command will pull the runtime base image from ghcr.io by default. It may cost a lot of time for users in China. `pip install` can be slow too.
+The `job create` command will pull the runtime base image from ghcr.io by default. It may cost a lot of time for users in the mainland of China. `pip install` can be slow too.
 :::
 
   👏 Now, you have completed the basic steps for Starwhale standalone.
