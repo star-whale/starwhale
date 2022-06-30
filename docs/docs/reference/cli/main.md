@@ -9,14 +9,14 @@ swcli [OPTIONS] COMMAND [ARGS]...
 ```
 
 :::note
-`sw`, `starwhale` are the `swcli` alias commands.
+`sw`, `starwhale` are aliases for the `swcli` commands.
 :::
 
 ## Options
 
 |Option|Description|
 |------|-----------|
-|`--version`|Show the starwhale version|
+|`--version`|Show the Starwhale version|
 |`-v` or `--verbose`|Show verbose log, support multi counts for `-v` args. More `-v` args, more logs.|
 |`--help`|Show help message.|
 

@@ -9,9 +9,9 @@ swcli job [OPTIONS] COMMAND [ARGS]...
 
 ## Summary
 
-- Commands for job lifecycle management.
-- For standalone instance, `job` command can create, list, info and compare evaluation jobs. All jobs meta are stored in local disk.
-- For cloud instance, `job` command manage the remote cloud jobs with HTTP API.
+- Commands for the job lifecycle management.
+- For standalone instances, the `job` command can create, list, info, and compare evaluation jobs. All jobs meta are stored in the local disk.
+- For cloud instances, the `job` command manages the remote cloud jobs through HTTP API.
 - **Job URI** in format: `[<Project URI>/job]<job id>`.
 
 ## All Sub-Commands
@@ -34,10 +34,10 @@ swcli job [OPTIONS] COMMAND [ARGS]...
 swcli job create [OPTIONS] [PROJECT]
 ```
 
-- This command creates a evaluation job which will run ppl and cmp with one model, one or more datasets and in one runtime.
-- For standalone instance, `create` command supports two running fundamentals: docker and host environment.
-- `PROJECT` argument use `Project URI` format. If omit the argument, the selected project is the default.
-- In standalone instance, set `--use-docker` option will restore runtime environment to run evaluation job in Starwhale Docker Image. It is consistent with the way of cloud instance.
+- This command creates an evaluation job that will run the pipeline and comparison with a model and one or more datasets in the specified runtime.
+- For standalone instances, the `create` command supports two running fundamentals: docker and host environment.
+- The `PROJECT` argument uses the `Project URI` format. If omitted, the selected project is the default.
+- In standalone instances, setting the `--use-docker` option will restore the runtime environment to run the evaluation job in the Starwhale Docker Image. It is consistent with the way of cloud instances.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -78,9 +78,9 @@ swcli job compare [OPTIONS] BASE_JOB [JOB]...
 ```
 
 - This command compares two or more jobs with evaluation results.
-- `BASE_JOB` argument is required in `Job URI` format.
-- `JOB` argument also uses `Job URI` format.
-- `compare` command supports two or more jobs to compare.
+- The `BASE_JOB` argument is required in `Job URI` format.
+- The `JOB` argument also uses the `Job URI` format.
+- The `compare` command supports two or more jobs to compare.
 - Example:
 
     ```bash
@@ -94,7 +94,7 @@ swcli job info [OPTIONS] JOB
 ```
 
 - This command shows detailed information about a job.
-- `JOB` argument uses `Job URI` format. It is required.
+- The `JOB` argument uses the `Job URI` format. It is required.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -133,7 +133,7 @@ swcli job remove [OPTIONS] JOB
 ```
 
 - This command removes a job.
-- `JOB` argument uses `Job URI` format. It is required. Short version is ok to remove.
+- The `JOB` argument uses the `Job URI` format. The short version is accepted here.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -155,7 +155,7 @@ swcli job recover [OPTIONS] JOB
 ```
 
 - This command recovers a removed job. You can run `swcli job list --show-removed` command to list all removed jobs.
-- `JOB` argument uses `Job URI` format. It is required. Job version must be full version.
+- The `JOB` argument uses the `Job URI` format. It is required. The job version must be in the full version format.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -172,8 +172,8 @@ swcli job recover [OPTIONS] JOB
 ## Pause a job
 
 - This command pauses a running job.
-- `JOB` argument uses `Job URI` format. It is required.
-- `pause` command supports short version format.
+- The `JOB` argument uses the `Job URI` format. It is required.
+- The `pause` command supports the short version format.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -183,8 +183,8 @@ swcli job recover [OPTIONS] JOB
 ## Resume a job
 
 - This command resumes a paused job.
-- `JOB` argument uses `Job URI` format. It is required.
-- `resume` command supports short version format.
+- The `JOB` argument uses the `Job URI` format. It is required.
+- The `resume` command supports the short version format.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -194,8 +194,8 @@ swcli job recover [OPTIONS] JOB
 ## Cancel a job
 
 - This command cancels a running/paused job.
-- `JOB` argument uses `Job URI` format. It is required.
-- `cancel` command supports short version format.
+- The `JOB` argument uses the `Job URI` format. It is required.
+- The `cancel` command supports the short version format.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|

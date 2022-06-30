@@ -1,6 +1,7 @@
 client:
   - "**/*.py"
   - "client/**"
+  - ".github/**/*.yaml"
 
 console:
   - "console/**"

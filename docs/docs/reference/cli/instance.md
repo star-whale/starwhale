@@ -10,13 +10,13 @@ swcli instance [OPTIONS] COMMAND [ARGS]...
 
 ## Summary
 
-- Commands for instance management.
-- For cloud instance, you should login it at first and cloud instance alias name is the best practice.
+- Commands for instances management.
+- For the cloud instance, you should log in first. Using the cloud instance alias name is the best practice.
 - **Instance URI** in format:
 
   - `local`: standalone instance.
-  - `[http(s)://]<hostname or ip>[:<port>]`: cloud instance with http address.
-  - `[cloud://]<cloud alias>`: cloud instance with alias name, which can be configured in instance login phase.
+  - `[http(s)://]<hostname or ip>[:<port>]`: cloud instance with HTTP address.
+  - `[cloud://]<cloud alias>`: cloud instance with an alias name, which can be configured in the instance login phase.
 
 
 ## All Sub-Commands
@@ -29,7 +29,7 @@ swcli instance [OPTIONS] COMMAND [ARGS]...
   |list|✅|✅|
   |info|✅|✅|
 
-## Login cloud instance
+## Log in a cloud instance
 
 ```bash
 swcli instance login [OPTIONS] [INSTANCE]
@@ -52,13 +52,13 @@ swcli instance login [OPTIONS] [INSTANCE]
     👨‍🍳 login http://console.pre.intra.starwhale.ai successfully!
     ```
 
-## Logout cloud instance
+## Log out a cloud instance
 
 ```bash
 swcli instance logout [OPTIONS] [INSTANCE]
 ```
 
-- `INSTANCE` argument uses `Instance URI` format. If ignore it, swcli will logout current selected instance.
+- `INSTANCE` argument uses the `Instance URI` format. If ignored, swcli will log out the currently selected instance.
 - Today when logout a instance, swcli will clear the related configurations in `~/.config/starwhale/config.yaml`.
 - Example:
 
@@ -73,8 +73,8 @@ swcli instance logout [OPTIONS] [INSTANCE]
 swcli instance select INSTANCE
 ```
 
-- `INSTANCE` argument is required, it uses `Instance URI` format.
-- For cloud instances, you should login it at first.
+- The `INSTANCE` argument is required. It uses the `Instance URI` format.
+- For cloud instances, you should log in first.
 - Example:
 
     ```bash
@@ -98,8 +98,8 @@ swcli instance list
 swcli instance info [INSTANCE]
 ```
 
-- This command show instance details.
-- For cloud instances, you should login it at first. If swcli cannot find the related cloud instance, it will use the selected instance details as the output.
+- This command shows instance details.
+- For cloud instances, you should log in first. If swcli cannot find the corresponding cloud instance, it will use the selected instance details as the output.
 - Example:
 
     ```bash
