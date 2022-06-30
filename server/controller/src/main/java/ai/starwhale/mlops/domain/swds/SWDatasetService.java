@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.bundle.BundleURL;
 import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
+import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
@@ -114,10 +115,11 @@ public class SWDatasetService {
     }
 
     public Boolean deleteSWDS(SWDSQuery query) {
-        Long id = swdsManager.getSWDSId(query.getSwdsUrl(), query.getProjectUrl());
-        int res = swdsMapper.deleteDataset(id);
-        log.info("SWDS has been deleted. ID={}", id);
-        return res > 0;
+        return RemoveManager.create(bundleManager(), swdsManager)
+            .removeBundle(BundleURL.builder()
+                .projectUrl(query.getProjectUrl())
+                .bundleUrl(query.getSwdsUrl())
+                .build());
     }
 
     public Boolean recoverSWDS(String projectUrl, String datasetUrl) {

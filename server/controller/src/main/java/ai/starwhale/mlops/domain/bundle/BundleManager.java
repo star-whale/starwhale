@@ -31,6 +31,14 @@ public class BundleManager {
         this.validSubject = validSubject;
     }
 
+    public Long getBundleId(BundleURL bundleURL) {
+        return getBundleId(bundleURL.getBundleUrl(), bundleURL.getProjectUrl());
+    }
+
+    public Long getBundleVersionId(BundleVersionURL bundleVersionURL) {
+        Long bundleId = getBundleId(bundleVersionURL.getBundleUrl(), bundleVersionURL.getProjectUrl());
+        return getBundleVersionId(bundleVersionURL.getVersionUrl(), bundleId);
+    }
     public Long getBundleId(String bundleUrl, String projectUrl) {
         if(idConvertor.isID(bundleUrl)) {
             return idConvertor.revert(bundleUrl);
@@ -55,9 +63,5 @@ public class BundleManager {
                 .tip(String.format("Unable to find %s %s", validSubject.name(), versionUrl)), HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
-    }
-
-    public ValidSubject getValidSubject() {
-        return validSubject;
     }
 }

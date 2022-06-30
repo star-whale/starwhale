@@ -23,6 +23,7 @@ import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.base.HasId;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
+import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.HasTag;
@@ -44,7 +45,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
-    RevertAccessor, RecoverAccessor {
+    RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     @Resource
     private RuntimeMapper runtimeMapper;
@@ -128,5 +129,14 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
     @Override
     public Boolean recover(Long id) {
         return runtimeMapper.recoverRuntime(id) > 0;
+    }
+
+    @Override
+    public Boolean remove(Long id) {
+        int r = runtimeMapper.deleteRuntime(id);
+        if (r > 0) {
+            log.info("SWRT has been removed. ID={}", id);
+        }
+        return r > 0;
     }
 }

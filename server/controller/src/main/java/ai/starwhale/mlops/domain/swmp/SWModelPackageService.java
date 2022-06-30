@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.bundle.BundleURL;
 import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
+import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
@@ -130,10 +131,11 @@ public class SWModelPackageService {
     }
 
     public Boolean deleteSWMP(SWMPQuery query) {
-        Long id = swmpManager.getSWMPId(query.getSwmpUrl(), query.getProjectUrl());
-        int res = swmpMapper.deleteSWModelPackage(id);
-        log.info("SWMP has been deleted. ID={}", id);
-        return res > 0;
+        return RemoveManager.create(bundleManager(), swmpManager)
+            .removeBundle(BundleURL.builder()
+                .projectUrl(query.getProjectUrl())
+                .bundleUrl(query.getSwmpUrl())
+                .build());
     }
 
     public Boolean recoverSWMP(String projectUrl, String modelUrl) {

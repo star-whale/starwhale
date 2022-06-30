@@ -31,6 +31,7 @@ import ai.starwhale.mlops.domain.bundle.BundleURL;
 import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
+import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
@@ -140,10 +141,11 @@ public class RuntimeService {
     }
 
     public Boolean deleteRuntime(RuntimeQuery runtimeQuery) {
-        Long id = runtimeManager.getRuntimeId(runtimeQuery.getRuntimeUrl(), runtimeQuery.getProjectUrl());
-        int res = runtimeMapper.deleteRuntime(id);
-        log.info("Runtime has been deleted. ID={}", id);
-        return res > 0;
+        return RemoveManager.create(bundleManager(), runtimeManager)
+            .removeBundle(BundleURL.builder()
+                .projectUrl(runtimeQuery.getProjectUrl())
+                .bundleUrl(runtimeQuery.getRuntimeUrl())
+                .build());
     }
 
     public RuntimeInfoVO getRuntimeInfo(RuntimeQuery runtimeQuery) {
