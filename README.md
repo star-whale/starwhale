@@ -44,7 +44,7 @@
 
 ## What is Starwhale
 
-Starwhale is a mlops platform. It provides **Instance**, **Project**, **Runtime**, **Model** and **Dataset** core concepts.
+Starwhale is a MLOps platform. It provides **Instance**, **Project**, **Runtime**, **Model** and **Dataset** core concepts.
 
 - **Instance**: Starwhale platform delivery method.
   - 👻 **Standalone Instance**: The simplest form that requires only the Starwhale Client(`swcli`). `swcli` is written by pure python3.
@@ -240,7 +240,7 @@ Starwhale is a mlops platform. It provides **Instance**, **Project**, **Runtime*
 
 ## Contributing
 
-🌼👏**PRs are always welcomed** 👍🍺. See more details in [How to contribute starwhale](https://doc.starwhale.ai/contribute).
+🌼👏**PRs are always welcomed** 👍🍺.
 
 ## License
 

@@ -130,3 +130,39 @@ jobs:
         uses: AndreMiras/coveralls-python-action@develop
         with:
           parallel-finished: true
+
+  e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    needs:
+      - filter
+    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.7"
+          architecture: "x64"
+
+      - name: Get pip cache
+        id: pip-cache-path
+        run: echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        id: pip-cache
+        with:
+          path: ${{ steps.pip-cache-path.outputs.dir }}
+          key: ${{ runner.os }}-e2e-${{ hashFiles('client/requirements-dev.txt')}}-${{ hashFiles('example/mnist/requirements.txt')}}
+
+      - name: Run end to end test
+        working-directory: .
+        env:
+          GITHUB_ACTION: 1
+        run: scripts/run_demo.sh

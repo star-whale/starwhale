@@ -9,15 +9,15 @@ module.exports = {
                 "tutorials/pfp",
                 "tutorials/speech",
             ],
-            "Fundamentals": ["fundamentals/concepts", "fundamentals/arch"],
+            "Fundamentals": ["fundamentals/concepts"],
             "Standalone Guides": [
                 "standalone/overview",
-                "standalone/runtime", "standalone/model", "standalone/dataset",
-                "standalone/evaluation",
-                "standalone/installation", "standalone/configuration",
+                "standalone/runtime",
+                "standalone/model",
+                "standalone/dataset",
+                "standalone/installation"
             ],
-            "Cloud Guides": ["cloud/main", "cloud/helm-charts", "cloud/ansible"],
-            "Python SDK Guides": ["sdk/main"],
+            "Cloud Guides": ["cloud/helm-charts"],
             "Reference": [
                 {
                     "Command Line Interface": [
@@ -25,9 +25,7 @@ module.exports = {
                         "reference/cli/runtime", "reference/cli/project", "reference/cli/instance", "reference/cli/job",
                         "reference/cli/utilities"]
                 }
-            ],
-            "Contributing": ["contribute/main"],
-            "Releases": ["release/main", "release/changelog"],
+            ]
         },
     ],
 };

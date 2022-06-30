@@ -8,7 +8,7 @@ title: Utilities
 swcli gc [OPTIONS]
 ```
 
-- This command purges removed entities in the standalone instance. Purged entities are not recoverable. The entities include projects, jobs, models, datasets and runtimes.
+- This command purges removed entities in the standalone instance. Purged entities are not recoverable. The entities include projects, jobs, models, datasets, and runtimes.
 - Only support **Standalone instance**.
 - Options:
 
@@ -36,8 +36,8 @@ swcli gc [OPTIONS]
 swcli ui [INSTANCE]
 ```
 
-- This command will open the instance web ui in the browser.
-- `INSTANCE` argument uses `Instance URI` format. If omit it, the current selected instance is the default.
+- This command will open the instance web UI in the browser.
+- `INSTANCE` argument uses the `Instance URI` format. If omitted, the currently selected instance is used.
 - Example:
 
     ```bash
