@@ -4,7 +4,7 @@ title: Standalone Quickstart
 
 ## Installing Starwhale
 
-Starwhale has three types of instances: Standalone, On-Premises, Cloud Hosted. Starting with standalone mode is ideal for understanding and mastering Starwhale.
+Starwhale has three types of instances: Standalone, On-Premises, and Cloud Hosted. Starting with the standalone mode is ideal for quickly understanding and mastering Starwhale.
 You install Starwhale Standalone by running:
 
 ```bash
@@ -12,24 +12,24 @@ python3 -m pip install --pre starwhale
 ```
 
 :::note
-The Starwhale version is currently under alpha preview, thus `--pre` is required.
+The Starwhale client version is currently under alpha preview. Thus `--pre` is required.
 :::
 :::note
-Starwhale standalone requires Python 3.7 or above. Today starwhale only supports Linux and MacOSX platform. Windows is coming soon.
+Starwhale standalone requires Python 3.7 or above. Currently, Starwhale only supports Linux and macOS X. Windows is coming soon.
 :::
 
-At the installation point, we recommended you follow the [doc](../standalone/installation.md).
+At the installation stage, we strongly recommend you follow the [doc](../standalone/installation.md).
 
-## Downloading the Example
+## Downloading Examples
 
-Download the starwhale example code by cloning Starwhale via:
+Download Starwhale examples by cloning Starwhale via:
 
 ```bash
 git clone https://github.com/star-whale/starwhale.git
 cd starwhale/example/mnist
 ```
 
-We will use ML/DL HelloWorld code `MNIST` to start your starwhale journey. The following steps are all performed in the `starwhale/example/mnist` directory.
+We will use ML/DL HelloWorld code `MNIST` to start your Starwhale journey. The following steps are all performed in the `starwhale/example/mnist` directory.
 
 ![Core Workflow](../img/core-workflow.gif)
 
@@ -48,13 +48,13 @@ We will use ML/DL HelloWorld code `MNIST` to start your starwhale journey. The f
   python3 -m pip install -r requirements.txt
   ```
 
-- Build Starwhale Runtime bundle.
+- Build the Starwhale Runtime bundle.
 
   ```bash
   swcli runtime build .
   ```
 
-- List and Info Local Starwhale Runtime.
+- Check your local Starwhale Runtimes.
 
   ```bash
   swcli runtime list
@@ -69,7 +69,7 @@ We will use ML/DL HelloWorld code `MNIST` to start your starwhale journey. The f
   swcli model build .
   ```
 
-- List and Info Local Starwhale Model.
+- Check your local Starwhale Models.
 
   ```bash
   swcli model list
@@ -78,7 +78,7 @@ We will use ML/DL HelloWorld code `MNIST` to start your starwhale journey. The f
 
 ## Building Dataset
 
-- Download MNIST raw data
+- Download the MNIST raw data
 
   ```bash
   mkdir -p data && cd data
@@ -97,38 +97,38 @@ We will use ML/DL HelloWorld code `MNIST` to start your starwhale journey. The f
   swcli dataset build .
   ```
 
-- List and Info Local Starwhale Dataset.
+- Check your local Starwhale Dataset.
 
   ```bash
   swcli dataset list
   swcli dataset info mnist/version/latest
   ```
 
-## Running Evaluation Job
+## Running an Evaluation Job
 
-Run evaluation job in current activated python runtime.
+Run an evaluation job in the currently activated python runtime.
 
-- Create Evaluation Job
+- Create an evaluation job
 
  ```bash
  swcli -vvv job create --model mnist/version/latest --dataset mnist/version/latest
  ```
 
-- Info Evaluation Result
+- Check the evaluation result
 
  ```bash
  swcli job list
  swcli job info ${version}
  ```
 
-- [Optional Step]Additional, you can also create a job in docker environment.
+- [Optional Step] You can also create a job with docker.
 
  ```bash
  swcli -vvv job create --model mnist/version/latest --runtime pytorch-mnist/version/latest --dataset mnist/version/latest --use-docker
  ```
 
 :::tip
-Job create command will pull runtime base image from ghcr.io by default, it maybe costs a lot of time, meanwhile, the process of `pip install` is also not fast.
+The `job create` command will pull the runtime base image from ghcr.io by default. It may cost a lot of time for users in China. `pip install` can be slow too.
 :::
 
-  👏 Now you have completed the basic step for starwhale standalone.
+  👏 Now, you have completed the basic steps for Starwhale standalone.

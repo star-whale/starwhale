@@ -10,10 +10,10 @@ swcli project [OPTIONS] COMMAND [ARGS]...
 
 ## Summary
 
-- Command for project lifecycle management.
-- Project contains models, datasets, runtimes and jobs.
-- For standalone instance, `project` command use local disk to store project meta. `self` project will be created and selected automatically.
-- For cloud instance, `project` command manage the remote cloud projects with HTTP API.
+- Command for the project lifecycle management.
+- Project contains models, datasets, runtimes, and jobs.
+- For standalone instances, the `project` command uses the local disk to store project meta. `self` project will be created and selected automatically.
+- For cloud instances, the `project` command manages the remote cloud projects through HTTP API.
 - **Project URI** in format: `[<Instance URI>/project]<project name>`.
 
 ## All Sub-Commands
@@ -34,7 +34,7 @@ swcli project create PROJECT
 ```
 
 - This command creates a new project.
-- `PROJECT` argument is required, which uses `Project URI` format.
+- `PROJECT` argument is required, which uses the `Project URI` format.
 - Example:
 
     ```bash
@@ -73,8 +73,8 @@ swcli project list [OPTIONS]
 swcli project select PROJECT
 ```
 
-- `PROJECT` argument is required, it uses `Project URI` format.
-- For cloud instances, you should login it at first.
+- `PROJECT` argument is required. It uses the `Project URI` format.
+- For cloud instances, you should log in first.
 - Example:
 
     ```bash
@@ -88,13 +88,13 @@ swcli project select PROJECT
 swcli project remove PROJECT
 ```
 
-- This command removes a project, you can run `swcli project recover` to recover the project.
-- `PROJECT` argument is required, it uses `Project URI` format.
+- This command removes a project. You can run `swcli project recover` to recover the project.
+- `PROJECT` argument is required. It uses the `Project URI` format.
 - Example:
 
     ```bash
     ❯ swcli project remove myproject
-    🐶 remove project myproject, you can recover it, don't panic.
+    🐶 remove project myproject. You can recover it, don't panic.
     ```
 
 ## Recover a project
@@ -103,8 +103,8 @@ swcli project remove PROJECT
 swcli project recover PROJECT
 ```
 
-- This command recover a removed project.
-- `PROJECT` argument is required, it uses `Project URI` format.
+- This command recovers a removed project.
+- `PROJECT` argument is required. It uses the `Project URI` format.
 - Example:
 
     ```bash

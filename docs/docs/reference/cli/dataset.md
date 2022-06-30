@@ -10,11 +10,10 @@ swcli [GLOBAL OPTIONS] dataset [OPTIONS] COMMAND [ARGS]...
 
 ## Summary
 
-- Commands for dataset lifecycle management.
-- For standalone instance, `dataset` command use local disk to build and store the Starwhale Dataset.
-- For cloud instance, `dataset` command manage the remote cloud datasets with HTTP API.
-- Dataset is in one project.
-- **Dataset URI** in format: `[<Project URI>/dataset]<dataset name>[/version/<version id>]`.
+- Commands for the dataset lifecycle management.
+- For standalone instances, the `dataset` command uses the local disk to build and store Starwhale Datasets.
+- For cloud instances, the `dataset` command manages remote datasets through the HTTP API.
+- **Dataset URI** in format: `[<Project URI>/dataset/]<dataset name>[/version/<version id>]`.
 
 ## All Sub-Commands
 
@@ -36,13 +35,13 @@ swcli [GLOBAL OPTIONS] dataset [OPTIONS] COMMAND [ARGS]...
 swcli build [OPTIONS] WORKDIR
 ```
 
-- This command builds a dataset with the specified working directory. The workdir must contains a `dataset.yaml` which will define the metadata and process handler for dataset building.
+- This command builds a dataset within the specified working directory. The working dir must contain a `dataset.yaml`, which defines the metadata and process handler for dataset building.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
     |------|--------|-------|-----------|-----|-----------|
     |`--project`|`-p`|❌|String|Selected project|Project URI|
-    |`--dataset-yaml`|`-f`|❌|String|dataset.yaml|Dataset yaml filename, default is ${WORKDIR}/dataset.yaml|
+    |`--dataset-yaml`|`-f`|❌|String|dataset.yaml|Dataset yaml filename, the default is ${WORKDIR}/dataset.yaml|
 
 - Example:
 
@@ -59,7 +58,7 @@ swcli build [OPTIONS] WORKDIR
     cleanup done.
     finish gen swds @ /home/liutianwei/.cache/starwhale/self/dataset/mnist/gv/gvsgemdbhazwknrtmftdgyjzoaygynq.swds/data
     🤖 calculate signature...
-    🌺 congratulation! you can run  swcli dataset info mnist/version/gvsgemdbhazwknrtmftdgyjzoaygynq
+    🌺 congratulation! you can run swcli dataset info mnist/version/gvsgemdbhazwknrtmftdgyjzoaygynq
     8 out of 8 steps finished ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:00
     ```
 
@@ -86,9 +85,9 @@ swcli dataset list [OPTIONS]
 swcli dataset remove [OPTIONS] DATASET
 ```
 
-- This command removes a dataset, you can run `swcli dataset recover` to recover the removed datasets.
-- `DATASET` argument uses the `Dataset URI` format, so you can remove the whole dataset or a specified-version dataset.
-- Support short version or tag in `Dataset URI` format when you remove a dataset.
+- This command removes a dataset. You can run `swcli dataset recover` to recover the removed datasets.
+- `DATASET` argument uses the `Dataset URI` format so that you can remove the whole dataset or a specified-version dataset.
+- Support the short version or tag in `Dataset URI` format when you remove a dataset.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -109,9 +108,9 @@ swcli dataset remove [OPTIONS] DATASET
 swcli dataset recover [OPTIONS] DATASET
 ```
 
-- This command recovers a removed dataset, you can run `swcli dataset list --show-removed` to fetch removed datasets.
-- `DATASET` argument uses the `Dataset URI` format, so you can recover the whole dataset or a specified-version dataset.
-- Only support full version in `Dataset URI` format when you recover a dataset.
+- This command recovers a removed dataset. You can run `swcli dataset list --show-removed` to fetch removed datasets.
+- `DATASET` argument uses the `Dataset URI` format so that you can recover the whole dataset or a specified-version dataset.
+- Only support the full version in `Dataset URI` format when you recover a dataset.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -132,7 +131,7 @@ swcli dataset info [OPTIONS] DATASET
 ```
 
 - This command inspects the dataset details.
-- `DATASET` argument uses the `Dataset URI` format, so you can inspect the whole dataset or a specified-version dataset.
+- The `DATASET` argument uses the `Dataset URI` format so that you can inspect the whole dataset or a specified-version dataset.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -145,7 +144,7 @@ swcli dataset info [OPTIONS] DATASET
 swcli dataset history [OPTIONS] DATASET
 ```
 
-- This command shows the history of a dataset, list all the versions of this dataset.
+- This command shows a dataset's history and lists all its versions.
 - `DATASET` argument uses the `Dataset URI` format.
 - Options:
 
@@ -165,7 +164,7 @@ swcli dataset history [OPTIONS] DATASET
 swcli dataset tag [OPTIONS] DATASET TAGS
 ```
 
-- This command adds or removes tags on the specified version of a dataset.
+- This command adds or removes tags on a specified dataset version.
 - `DATASET` argument uses the `Dataset URI` format which must include `/version/{version id}` part.
 - You can write one or more `TAG` arguments.
 - Options:
@@ -187,8 +186,8 @@ swcli dataset tag [OPTIONS] DATASET TAGS
 swcli dataset render-fuse [OPTIONS] TARGET
 ```
 
-- This command render a `input.json` with fuse storage backend, which will be used as the `swcli model ppl --input-json` option for debug.
-- `TARGET` argument is required, `Dataset URI` or dataset workdir path is ok for `TARGET` argument.
+- This command renders an `input.json` with fuse storage backend, which can be used as the `swcli model ppl --input-json` option for debugging.
+- The `TARGET` argument is required. `Dataset URI` or dataset working dir is ok for the `TARGET` argument.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
@@ -211,16 +210,16 @@ swcli dataset copy [OPTIONS] SRC DEST
 ```
 
 - This command copies a dataset to another place, either locally or remotely.
-- `SRC` uses `Dataset URI`, which can locate one existed version of a dataset in standalone or cloud instance.
-- `DEST` uses `Project URI`, which implies the storage project in destination instance. If `DEST` project has already stored the same name and version dataset, you can set `--force` argument to force update.
-- Today this command supports copy dataset from standalone to cloud and from cloud to standalone. `standalone -> standalone`, `cloud -> cloud` no support.
+- `SRC` uses `Dataset URI`, which can locate one existing dataset version in the standalone or cloud instance.
+- `DEST` uses `Project URI`, which implies the storage project in the destination instance. If the `DEST` project has already stored the same name and version dataset, you can set the `--force` argument to force update.
+- Today, this command supports copy datasets from standalone to cloud and from cloud to standalone. `standalone -> standalone` or `cloud -> cloud` is not supported.
 - Options:
 
     |Option|Alias Option|Required|Type|Default|Description|
     |------|--------|-------|-----------|-----|-----------|
     |`--force`|`-f`|❌|Boolean|False|Force to copy dataset|
 
-- Example: copy a dataset from local standalone to remote cloud(upload)
+- Example: copy a dataset from the local standalone instance to a remote cloud instance(upload)
 
     ```bash
     ❯ swcli dataset copy mnist/version/latest cloud://pre-k8s/project/1
@@ -239,7 +238,7 @@ swcli dataset copy [OPTIONS] SRC DEST
     👏 copy done
     ```
 
-- Example: copy a dataset from remote cloud to local standalone(download)
+- Example: copy a dataset from a remote cloud instance to the local standalone instance(download)
 
     ```bash
     ❯ swcli dataset copy cloud://pre-k8s/project/1/dataset/mnist/version/gvsgemdbhazwknrtmftdgyjzoaygynq self --force

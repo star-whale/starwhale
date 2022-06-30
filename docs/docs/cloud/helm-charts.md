@@ -2,12 +2,12 @@
 title: Helm Charts Installation
 ---
 
-## Starwhale Helm Charts
+## Helm Charts
 
-Starwhale is a MLOps platform. Starwhale Helm Charts help you deploy the whole platform in Kubernetes easily.
+Helm Charts helps you quickly deploy the whole Starwhale instance in Kubernetes.
 
-- Easy to deploy, upgrade and maintain Starwhale controller and agent services.
-- Easy to deploy 3rd dependencies, such as minio, mysql.
+- To deploy, upgrade, and maintain the Starwhale controller and agents.
+- To deploy third-party dependencies, such as minio, mysql, etc.
 
 ## TL; DR
 
@@ -24,7 +24,7 @@ helm install starwhale starwhale/starwhale -n starwhale --create-namespace
 
 ## Installing the Chart
 
-To install the chart with release name starwhale:
+To install the chart with the release name starwhale:
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
@@ -33,7 +33,7 @@ helm install starwhale starwhale/starwhale
 
 ## Uninstalling the Chart
 
-To uninstall/delete the starwhale deployment:
+To remove the starwhale deployment:
 
 ```bash
 helm delete starwhale
@@ -45,8 +45,8 @@ helm delete starwhale
 
 | Name | Description | Default Value|
 |------|-------------|--------------|
-|`image.registry`| image registry, you can find starwhale docker images in docker.io or ghcr.io. | `ghcr.io` |
-|`image.org` | image registry org, [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io) or [star-whale](https://github.com/orgs/star-whale)(ghcr.io) or some custom org name in other registry | `star-whale` |
+|`image.registry`| image registry, you can find Starwhale docker images in docker.io or ghcr.io. | `ghcr.io` |
+|`image.org` | image registry org, [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io) or [star-whale](https://github.com/orgs/star-whale)(ghcr.io) or some custom org name in other registries | `star-whale` |
 
 
 ### Starwhale parameters
@@ -78,7 +78,7 @@ helm delete starwhale
 
 | Name | Description | Default Value|
 |------|-------------|--------------|
-|`minikube.enabled`|minikube mode for all-in-one test.| `false` |
+|`minikube.enabled`|minikube mode for the all-in-one test.| `false` |
 
 In minikube mode, you can easy to build an all-in-one starwhale. Run command example:
 
@@ -88,6 +88,6 @@ helm upgrade --install starwhale starwhale/starwhale --namespace starwhale --cre
 
 ## Community
 
-- Report a bug or feature request, use [Github Issues](https://github.com/star-whale/starwhale/issues/new/choose).
-- Realtime Support, please join us on [Slack](https://join.slack.com/t/starwhale/shared_invite/zt-19b6cwnyo-BxMrZYWKj2J~kly1c32oEA).
-- Welcome for your pull request, [Github Repo](https://github.com/star-whale/starwhale).
+- To report a bug or request a feature, use [Github Issues](https://github.com/star-whale/starwhale/issues/new/choose).
+- For online support, please join us on [Slack](https://join.slack.com/t/starwhale/shared_invite/zt-19b6cwnyo-BxMrZYWKj2J~kly1c32oEA).
+- Your pull requests are always welcomed: [Github Repo](https://github.com/star-whale/starwhale).
