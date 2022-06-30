@@ -101,6 +101,16 @@ const Routes = () => {
                                     path='/projects/:projectId/evaluations/:jobId/results'
                                     component={EvaluationResults}
                                 />
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/evaluations/:jobId/tasks'
+                                    component={JobTasks}
+                                />
+                                <Route
+                                    exact
+                                    path='/projects/:projectId/evaluations/:jobId/actions'
+                                    component={JobDAG}
+                                />
                                 <Redirect
                                     from='/projects/:projectId/evaluations/:jobId'
                                     to='/projects/:projectId/evaluations/:jobId/results'

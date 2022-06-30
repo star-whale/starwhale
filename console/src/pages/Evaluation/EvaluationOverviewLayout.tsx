@@ -59,6 +59,17 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 path: `/projects/${projectId}/evaluations/${jobId}/results`,
                 icon: <IconFont type='results' />,
             },
+            {
+                title: t('DAG'),
+                path: `/projects/${projectId}/evaluations/${jobId}/actions`,
+                icon: <IconFont type='results' />,
+            },
+            {
+                title: t('Tasks'),
+                path: `/projects/${projectId}/evaluations/${jobId}/tasks`,
+                pattern: '/\\/tasks\\/?',
+                icon: <IconFont type='tasks' />,
+            },
         ]
         return items
     }, [projectId, jobId, t])

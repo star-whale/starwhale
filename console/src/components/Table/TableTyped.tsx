@@ -71,7 +71,7 @@ export function TableTyped({
             return {
                 ...column,
                 fillWidth: false,
-                // maxWidth: 100,
+                // maxWidth: 200,
             }
         }
 
@@ -178,7 +178,7 @@ export function TableTyped({
         [onColumnSave]
     )
 
-    console.log(id, $columns, $rows, config)
+    console.log(id, $columns, $rows, config, isLoading)
 
     return (
         <>
@@ -194,7 +194,7 @@ export function TableTyped({
                     columnable={columnable}
                     // @ts-ignore
                     onColumnSave={$onColumnSave}
-                    isLoading={!!isLoading}
+                    loading={!!isLoading}
                     batchActions={batchActions}
                     rowActions={rowActions}
                     // @ts-ignore
@@ -242,7 +242,20 @@ export function TableTyped({
                         ...overrides,
                     }}
                     // @ts-ignore
-                    loadingMessage={() => <Skeleton rows={3} height='100px' width='100%' animation />}
+                    loadingMessage={() => (
+                        <Skeleton
+                            overrides={{
+                                Root: {
+                                    style: {
+                                        paddingTop: '10px',
+                                    },
+                                },
+                            }}
+                            rows={10}
+                            width='100%'
+                            animation
+                        />
+                    )}
                     // @ts-ignore
                     emptyMessage={() => (
                         <div
@@ -258,8 +271,7 @@ export function TableTyped({
                                 gap: 8,
                             }}
                         >
-                            <FiInbox size={30} />
-                            <Text>{t('no data')}</Text>
+                            <FiInbox size={50} />
                         </div>
                     )}
                 />

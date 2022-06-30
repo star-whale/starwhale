@@ -145,3 +145,16 @@ table { border-collapse: separate; }
   align-items: center;
   justify-content: center;
 }
+
+@keyframes logo-width {
+  0% { width: 0%; }
+  50% { width: 50%; }
+  100% { width: 100%; }
+}
+
+.rtl {
+  direction: 'rtl';
+  text-overflow: 'ellipsis';
+  white-space: 'nowrap';
+  overflow: 'hidden';
+}

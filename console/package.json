@@ -164,7 +164,8 @@
     "http-proxy-middleware": "^2.0.1",
     "prettier": "^2.3.2",
     "sass": "^1.49.0",
-    "simple-progress-webpack-plugin": "^2.0.0"
+    "simple-progress-webpack-plugin": "^2.0.0",
+    "swagger-typescript-api": "^9.3.1"
   },
   "resolutions": {
     "babel-loader": "8.1.0",
