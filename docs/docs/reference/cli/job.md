@@ -125,7 +125,6 @@ swcli job list [OPTIONS]
     |`--page`||❌|Integer|1|Page number for jobs list|
     |`--size`||❌|Integer|20|Page size for jobs list|
 
-
 ## Remove a job
 
 ```bash

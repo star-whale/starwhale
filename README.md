@@ -245,7 +245,7 @@ alias kubectl="minikube kubectl --"
 
 > For users in the mainland of China, please add these startup parameters：`--image-mirror-country='cn' --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers` for `minikube start`
 
-**Installation process**
+Installation process:
 
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
@@ -268,7 +268,7 @@ Chart Version: 0.2.0
 App Version: 0.2.0
 ...
 
-Port Forward Visist:
+Port Forward Visit:
   - starwhale controller:
     - run: kubectl port-forward --namespace starwhale svc/my-starwhale-controller 8082:8082
     - visit: http://localhost:8082
