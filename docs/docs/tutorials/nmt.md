@@ -15,7 +15,7 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
 ## Prerequisites
 
 * Python3.7 +.
-* Starwhale.
+* Starwhale Client.
   * install: `pip install starwhale`
   * check version: `swcli --version`
 * Clone starwhale repo
