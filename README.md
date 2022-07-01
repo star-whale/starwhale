@@ -72,7 +72,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
 ## MNIST Quick Tour for the standalone instance
 
-<a href="https://starwhale.ai"><img src="https://github.com/star-whale/starwhale/blob/main/docs/docs/img/core-workflow.gif?raw=true" width="100%"></a>
+![Core Job Workflow](docs/docs/img/core-workflow.gif)
 
 - 🍰 **STEP1**: Installing Starwhale
 
@@ -307,14 +307,14 @@ kubectl port-forward --namespace starwhale svc/my-starwhale-controller 8082:8082
 ```
 
 ☕ **STEP3**: Upload the artifacts to the cloud instance
-> **pre-prepared resources**
-> Before starting this tutorial, the following three resources should already exist on your machine：
+> **pre-prepared artifacts**
+> Before starting this tutorial, the following three artifacts should already exist on your machine：
 >
 > - a starwhale model named mnist
 > - a starwhale dataset named mnist
 > - a starwhale runtime named pytorch-mnist
 >
-> The above three resources are what we built on our machine using starwhale.
+> The above three artifacts are what we built on our machine using starwhale.
 
 1. Use swcli to operate the remote server
     First, log in to the server:
