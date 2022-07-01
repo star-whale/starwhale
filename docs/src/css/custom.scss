@@ -1,5 +1,5 @@
 @import "/static/fonts/iconfont.css";
-
+@import "src/css/variables.scss";
 @font-face {
   font-family: "Cousine";
   font-style: normal;
@@ -60,7 +60,10 @@ html {
   --ifm-container-width-xl: "100%";
   --ifm-container-width: "100%";
 
+  --ifm-hero-background-color: transparent;
+
   --ifm-footer-background-color: #050d46;
+  --ifm-navbar-sidebar-width: 22rem;
 }
 · html[data-theme="dark"] {
   --ifm-background-color: #1a1e2c;
@@ -175,17 +178,6 @@ html[data-theme="dark"] .navbar--dark {
 }
 
 /* ===HEADER=== */
-
-/* header content */
-.hero--primary {
-  background-color: transparent;
-}
-
-@media only screen and (min-width: 767px) {
-  .hero--primary h1 {
-    text-align: center;
-  }
-}
 
 img[class^="heroLogo"] {
   width: 300px;
@@ -361,7 +353,7 @@ html[data-theme="dark"] .menu__link--active {
 
 /* ===NAV-SIDEBAR=== */
 html[data-theme="light"] .navbar-sidebar {
-  background-color: white;
+  background-color: #050d46;
 }
 
 html[data-theme="dark"] .navbar-sidebar {
@@ -369,8 +361,8 @@ html[data-theme="dark"] .navbar-sidebar {
 }
 
 html[data-theme="light"] .navbar-sidebar .navbar__brand {
-  background: url("/img/logo_36x36px.png") 0 center no-repeat;
-  background-size: 5.5rem;
+  background: url("/img/starwhale-white.png") 0 center no-repeat;
+  background-size: 7.5rem;
 }
 
 html[data-theme="light"] .navbar-sidebar .navbar__logo {
@@ -876,4 +868,42 @@ main > section {
 .button.button--primary:active {
   background-color: #1c4cad !important;
   box-shadow: none !important;
+}
+
+.max {
+  margin: 0 auto;
+  max-width: var(--max-page-width);
+}
+
+.bg-wrapper {
+  background-image: url("/static/img/banner-1.png");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-color: transparent;
+}
+
+@media screen and (min-width: 1920px) and (max-width: 2560px) {
+  .bg-wrapper {
+    background-image: url("/static/img/banner-2.png");
+  }
+}
+
+@media screen and (min-width: 3000px) and (max-width: 3840px) {
+  .bg-wrapper {
+    background-image: url("/static/img/banner-3.png");
+  }
+}
+
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+
+  & > div {
+    flex: 1;
+  }
+}
+
+.footer__copyright {
+  word-spacing: -4px;
 }
