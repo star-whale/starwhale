@@ -2,7 +2,7 @@
 title: NMT for french and engish
 ---
 
-This example will illustrate how to evaluate a pre-trained nmt model on StarWhale(`version:0.2.0`) under 7 steps
+This example will illustrate how to evaluate a pre-trained nmt model on StarWhale(`version:0.2.0`) under 7 steps:
 
 * Preparing Data
 * Train the model
