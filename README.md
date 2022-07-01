@@ -223,7 +223,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
 👏 Now, you have completed the fundamental steps for Starwhale standalone.
 
-Let's go ahead and finish tutorial on the on-premises instance.
+Let's go ahead and finish the tutorial on the on-premises instance.
 
 ## MNIST Quick Tour for on-premises instance
 
