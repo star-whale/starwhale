@@ -8,6 +8,7 @@ module.exports = {
                 "tutorials/cifar10",
                 "tutorials/pfp",
                 "tutorials/speech",
+                "tutorials/nmt"
             ],
             "Fundamentals": ["fundamentals/concepts"],
             "Standalone Guides": [
