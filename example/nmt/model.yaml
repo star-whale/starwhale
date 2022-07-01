@@ -15,4 +15,4 @@ run:
 desc: nmt by pytorch
 
 tag:
-  - multi_classification
+  - nmt

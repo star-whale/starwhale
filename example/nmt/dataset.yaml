@@ -3,8 +3,8 @@ name: nmt
 mode: generate
 
 data_dir: data
-data_filter: "test*.txt"
-label_filter: "test*.txt"
+data_filter: "test_eng-fra.txt"
+label_filter: "test_eng-fra.txt"
 
 process: code.dataset:DataSetProcessExecutor
 
@@ -14,5 +14,5 @@ tag:
 
 attr:
   batch_size: 100
-  alignment_size: 4M
-  volume_size: 64M
+  alignment_size: 4K
+  volume_size: 2M
