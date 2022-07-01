@@ -40,10 +40,12 @@ setup(
     author="Starwhale Team",
     author_email="developer@starwhale.ai",
     version=_format_version(),
-    description="MLOps Platform",
-    keywords="MLOps AI",
+    description="An MLOps Platform for Model Evaluation",
+    long_description=open("../README.md").read(),
+    long_description_content_type="text/markdown",
+    keywords="MLOps, AI, Starwhale, Model Evaluation",
     url="https://github.com/star-whale/starwhale",
-    license="Apache-2.0",
+    license="Apache License 2.0",
     packages=find_packages(exclude=["ez_setup", "tests*"]),
     include_package_data=True,
     install_requires=install_requires,
@@ -54,11 +56,23 @@ setup(
       sw = starwhale.cli:cli
       starwhale = starwhale.cli:cli
       """,
-    python_requires=">=3.7.0",
+    python_requires=">=3.7",
     scripts=[
         "scripts/sw-docker-entrypoint",
     ],
-    package_data={
-        "starwhale": ["swmp/templates/Dockerfile"],
-    },
+    classifiers=[
+        "Development Status :: 2 - Pre-Alpha",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Operating System :: OS Independent",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Topic :: Software Development :: Libraries",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    ],
 )
