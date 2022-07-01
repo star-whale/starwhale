@@ -34,7 +34,7 @@ For users in the mainland of China, please add these startup parameters：--imag
 ```bash
 helm repo add starwhale https://star-whale.github.io/charts
 helm repo update
-helm install my-starwhale starwhale/starwhale --version 0.2.0-beta.9 -n starwhale --create-namespace --set minikube.enabled=true
+helm install my-starwhale starwhale/starwhale --version 0.2.0 -n starwhale --create-namespace --set minikube.enabled=true
 ```
 After the installation is successful, the following prompt message appears:
 ```bash
@@ -46,10 +46,10 @@ REVISION: 1
 NOTES:
 ******************************************
 Chart Name: starwhale
-Chart Version: 0.2.0-beta.9
-App Version: 0.2.0-beta.9
+Chart Version: 0.2.0
+App Version: 0.2.0
 Starwhale Image:
-  - server: ghcr.io/star-whale/server:0.2.0-beta.9
+  - server: ghcr.io/star-whale/server:0.2.0
   - taskset: ghcr.io/star-whale/taskset:0.1.1
 
 ******************************************
@@ -78,7 +78,7 @@ Login Info:
 
 Then keep checking the minikube service status until all pods are running.
 ```bash
-watch -n 1 minikube kubectl  -- get pods -n starwhale
+watch -n 1 kubectl get pods -n starwhale
 ```
 
 | NAME | READY | STATUS | RESTARTS | AGE |
