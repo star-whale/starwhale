@@ -59,6 +59,17 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                 path: `/projects/${projectId}/evaluations/${jobId}/results`,
                 icon: <IconFont type='results' />,
             },
+            {
+                title: t('DAG'),
+                path: `/projects/${projectId}/evaluations/${jobId}/actions`,
+                icon: <IconFont type='results' />,
+            },
+            {
+                title: t('Tasks'),
+                path: `/projects/${projectId}/evaluations/${jobId}/tasks`,
+                pattern: '/\\/tasks\\/?',
+                icon: <IconFont type='tasks' />,
+            },
         ]
         return items
     }, [projectId, jobId, t])
@@ -77,15 +88,15 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
             value: job?.jobStatus ?? '-',
         },
         {
-            label: t('Run time'),
+            label: t('Runtime'),
             value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration) : '-',
         },
         {
-            label: t('Created time'),
+            label: t('Created'),
             value: job?.createdTime && formatTimestampDateTime(job.createdTime),
         },
         {
-            label: t('End time'),
+            label: t('End Time'),
             value: job?.stopTime && formatTimestampDateTime(job.stopTime),
         },
         {

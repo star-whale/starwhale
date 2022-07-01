@@ -30,7 +30,7 @@ export default function ModelOverview() {
             value: model?.id ?? '',
         },
         {
-            label: t('Created time'),
+            label: t('Created'),
             value: model?.createdTime && formatTimestampDateTime(model.createdTime),
         },
     ]

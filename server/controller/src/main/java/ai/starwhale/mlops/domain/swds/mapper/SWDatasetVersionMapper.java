@@ -46,6 +46,8 @@ public interface SWDatasetVersionMapper {
 
     int update(@Param("version")SWDatasetVersionEntity version);
 
+    int updateTag(@Param("versionId") Long versionId, @Param("tag") String tag);
+
     int updateFilesUploaded(@Param("version")SWDatasetVersionEntity version);
 
     int updateStatus(@Param("id")Long id ,@Param("status")Integer status);

@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
     title: "Starwhale",
-    tagline: "A MLOps Platform for Model Evaluation",
+    tagline: "An MLOps Platform for Model Evaluation",
     url: "https://doc.starwhale.ai",
     baseUrl: "/",
     onBrokenLinks: "warn",

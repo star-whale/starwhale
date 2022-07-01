@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.runtime.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,7 +30,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class RuntimeEntity extends BaseEntity {
+public class RuntimeEntity extends BaseEntity implements BundleEntity {
 
     private Long id;
 
@@ -42,4 +43,9 @@ public class RuntimeEntity extends BaseEntity {
     private UserEntity owner;
 
     private Integer isDeleted;
+
+    @Override
+    public String getName() {
+        return runtimeName;
+    }
 }

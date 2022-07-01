@@ -27,6 +27,14 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.common.util.TagUtil;
+import ai.starwhale.mlops.domain.bundle.BundleManager;
+import ai.starwhale.mlops.domain.bundle.BundleURL;
+import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
+import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
+import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
+import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
+import ai.starwhale.mlops.domain.bundle.tag.TagException;
+import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StorageService;
@@ -87,6 +95,10 @@ public class SWDatasetService {
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
 
+    private BundleManager bundleManager() {
+        return new BundleManager(idConvertor, projectManager, swdsManager, swdsManager, ValidSubject.SWDS);
+    }
+
     public PageInfo<DatasetVO> listSWDataset(SWDSQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(query.getProjectUrl());
@@ -109,41 +121,16 @@ public class SWDatasetService {
     }
 
     public Boolean recoverSWDS(String projectUrl, String datasetUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        String name = datasetUrl;
-        Long id;
-        if(idConvertor.isID(datasetUrl)) {
-            id = idConvertor.revert(datasetUrl);
-            SWDatasetEntity entity = swdsMapper.findDeletedDatasetById(id);
-            if(entity == null) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                    .tip("Recover dataset error. Dataset can not be found. "), HttpStatus.BAD_REQUEST);
-            }
-            name = entity.getDatasetName();
-        } else {
-            // To restore datasets by name, need to check whether there are duplicate names
-            List<SWDatasetEntity> deletedDatasets = swdsMapper.listDeletedDatasets(name, projectId);
-            if(deletedDatasets.size() > 1) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                    .tip(String.format("Recover dataset error. Duplicate names [%s] of deleted dataset. ", name)),
-                    HttpStatus.BAD_REQUEST);
-            } else if (deletedDatasets.size() == 0) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                    .tip(String.format("Recover dataset error. Can not find deleted dataset [%s].", name)),
-                    HttpStatus.BAD_REQUEST);
-            }
-            id = deletedDatasets.get(0).getId();
+        RecoverManager recoverManager = new RecoverManager(projectManager,
+            swdsManager, idConvertor);
+        try {
+            return recoverManager.recoverBundle(BundleURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(datasetUrl)
+                .build());
+        } catch (RecoverException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }
-
-        // Check for duplicate names
-        if(swdsMapper.findByName(name, projectId) != null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                .tip(String.format("Recover dataset error. Model %s already exists", name)), HttpStatus.BAD_REQUEST);
-        }
-
-        int res = swdsMapper.recoverDataset(id);
-        log.info("Dataset has been recovered. Name={}", name);
-        return res > 0;
     }
 
     public SWDatasetInfoVO getSWDSInfo(SWDSQuery query) {
@@ -209,26 +196,27 @@ public class SWDatasetService {
 
     public Boolean manageVersionTag(String projectUrl, String datasetUrl, String versionUrl,
         TagAction tagAction) {
-        Long id = swdsManager.getSWDSId(datasetUrl, projectUrl);
-        Long versionId = swdsManager.getSWDSVersionId(versionUrl, id);
 
-        SWDatasetVersionEntity entity = swdsVersionMapper.getVersionById(versionId);
-        if(entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                .tip("Unable to find the version of swds " + versionUrl), HttpStatus.BAD_REQUEST);
+        TagManager tagManager = new TagManager(bundleManager(), swdsManager);
+        try {
+            return tagManager.updateTag(BundleVersionURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(datasetUrl)
+                .versionUrl(versionUrl)
+                .build(), tagAction);
+        } catch (TagException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip(e.getMessage()),
+                HttpStatus.BAD_REQUEST);
         }
-        entity.setVersionTag(TagUtil.getTags(tagAction, entity.getVersionTag()));
-        int update = swdsVersionMapper.update(entity);
-        log.info("SWDS Version has been modified. ID={}", entity.getId());
-        return update > 0;
     }
 
     public Boolean revertVersionTo(String projectUrl, String swdsUrl, String versionUrl) {
-        Long id = swdsManager.getSWDSId(swdsUrl, projectUrl);
-        Long vid = swdsManager.getSWDSVersionId(versionUrl, id);
-        int res = swdsVersionMapper.revertTo(id, vid);
-        log.info("SWDS Version has been revert to {}" , vid);
-        return res > 0;
+        RevertManager revertManager = new RevertManager(bundleManager(), swdsManager);
+        return revertManager.revertVersionTo(BundleVersionURL.builder()
+            .projectUrl(projectUrl)
+            .bundleUrl(swdsUrl)
+            .versionUrl(versionUrl)
+            .build());
     }
 
     public PageInfo<DatasetVersionVO> listDatasetVersionHistory(SWDSVersionQuery query, PageParams pageParams) {

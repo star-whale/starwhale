@@ -2,26 +2,26 @@
 title: Text Classification on AG News dataset
 ---
 
-This example will illustrate how to evaluate a pre-trained text classification model on StarWhale under 6 steps
+This example illustrates how to evaluate a pre-trained text classification model on Starwhale in 6 steps.
 
 1. Create a Runtime
 2. Train the model
 3. Implement the dataset slicing method
 4. Implement the inference method and evaluation metrics computing method
-5. Build Runtime, Dataset and Model
+5. Build Runtime, Dataset, and Model
 6. Run the evaluation job and see the metrics
 
 ## Prerequisites
 
 * Assume that you have Python3.7 or above installed.
-* Clone Starwhale repo
+* Clone the Starwhale repo
 
     ```bash
     git clone https://github.com/star-whale/starwhale.git
     cd starwhale/example/text_cls_AG_NEWS
     ```
 
-> :bulb: If you are from China mainland you're strongly recommended using a proxy
+> :bulb: If you are from the mainland of China, we strongly recommend you use a proxy.
 
 * Install [Starwhale](../quickstart/standalone.md)
 
@@ -29,8 +29,8 @@ This example will illustrate how to evaluate a pre-trained text classification m
 
 ```bash
 $ swcli runtime create . --name pytorch_text -m venv --python=3.9 --force --base-image ghcr.io/star-whale/starwhale:0.2.0-alpha.12
-🚧 start to create runtime environment...
-🍰 run command in shell 🍰
+🚧 start to create the runtime environment...
+🍰 run the following command in your shell 🍰
         source ~/code/starwhale/example/text_cls_AG_NEWS/venv/bin/activate
 👏 python runtime environment is ready to use 🎉
 $ source ~/code/starwhale/example/text_cls_AG_NEWS/venv/bin/activate
@@ -42,7 +42,7 @@ $ source ~/code/starwhale/example/text_cls_AG_NEWS/venv/bin/activate
 
 ## Train the model
 
-> The training code in this repo is sourced from https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html. However, the dataset part is modified so that we could better understand how StarWhale works.
+> The training code in this repo is copied from https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html. However, the dataset part is modified to understand better how Starwhale works.
 
 ```console
 (pytorch_text) $ mkdir models
@@ -50,7 +50,7 @@ $ source ~/code/starwhale/example/text_cls_AG_NEWS/venv/bin/activate
 (pytorch_text) $ python train.py --device cpu --save-model-path  ../models/model.i --dictionary ../models/vocab.i --num-epochs 5
 ```
 
-You will get the logs below:
+You will get the logs as below:
 
 ```console
 | epoch   1 |   500/ 7125 batches | accuracy    0.385
@@ -86,27 +86,27 @@ Saving model to ../models/model.i
 Save vocab to ../models/vocab.i
 ```
 
-Great! Now you have your model trained and saved. You could see it locates in the `models` directory
+Great! Now you have your model trained and saved. You can see it in the `models` directory.
 
 ```console
 (pytorch_text) $ ls ../models
 model.i  vocab.i
 ```
 
-## Slice the test dataset using Starwhale protocol
+## Slice the test dataset using the Starwhale protocol
 
-In the training section we use a dataset called [AG_NEWS](https://paperswithcode.com/dataset/ag-news).
+In the training section, we use a dataset called [AG_NEWS](https://paperswithcode.com/dataset/ag-news).
 
 ```console
 (pytorch_text) $ ls ../data
 test.csv  train.csv
 ```
 
-The test part of the dataset is a file called `test.csv` which contains 7,600 lines of texts and labels.
+The test part of the dataset is a file called `test.csv`, which contains 7,600 lines of texts and labels.
 
-Before version `0.2.x` StarWhale will slice the dataset into chunks where reside the batched texts and batched labels. You need to tell StarWhale how to yield batches of byte arrays from each dataset file.
+Before version `0.2.x`, Starwhale sliced the dataset into chunks where the batched texts and labels reside. You must tell Starwhale how to yield batches of byte arrays from each dataset file.
 
-In this example we will read texts and labels in batch and convert them into byte array.
+In this example, we will read texts and labels in batch and convert them into byte arrays.
 
 ```python
 def yield_data(batch, path, label=False):
@@ -134,12 +134,12 @@ class AGNEWSSlicer(BuildExecutor):
 
 ```
 
-You need to extend the abstract class `BuildExecutor` so that your dataset could be used by starwhale. The `path` argument is a file that matches `data_filter` or `label_filter` in `${code_base}/example/text_cls_AG_NEWS/dataset.yaml`. You could see the filters in this example both are `test.csv`
+You need to extend the abstract class `BuildExecutor`, so Starwhale can use it. The `path` argument is a file that matches `data_filter` or `label_filter` in `${code_base}/example/text_cls_AG_NEWS/dataset.yaml`. The filters used in this example are `test.csv`.
 
 ## Implement the inference method and evaluation metrics computing method
 
-The inference method is called `ppl` and the evaluation metrics computing method is called `cmp`.
-Here is the code snap from `ppl.py` where both methods are implemented. You need to extend the abstract class `PipelineHandler` so that you could receive the byte arrays you just transformed in last step.
+The inference method is called `ppl,` and the evaluation metrics computing method is called `cmp`.
+Here is the code snap from `ppl.py`, which implements both methods. You need to extend the abstract class `PipelineHandler` so you can receive the byte arrays, which you transformed in the last step.
 
 ```python
 class TextClassificationHandler(PipelineHandler):
@@ -186,27 +186,25 @@ class TextClassificationHandler(PipelineHandler):
 
 ### Implement ppl
 
-StarWhale will feed the byte arrays of one batch to the `ppl` method. And take the output of `ppl` into a `inference_result` dict which looks like
+Starwhale will feed the byte arrays of one batch to the `ppl` method and put the output of `ppl` into an `inference_result` dict, which looks like:
 
 ```json
 {"result":[{resultObj1},{resultObj2}],"label":[{labelObj1},{labelObj2}]}
 ```
 
-StarWhale will automatically add result of `ppl` to `inference_result.result` and add result of `handle_label` to `inference_result.label`.
+Starwhale will automatically add the result of `ppl` to `inference_result.result` and the result of `handle_label` to `inference_result.label`.
 
-The `inference_result` is used in the argument of `cmp` which is named `_data_loader`.
+The `inference_result` is used in the argument of `cmp` named `_data_loader`.
 
 ### Implement cmp
 
-`_data_loader` is an iterator for `result` and `label`. For a multiple classification problem, it is quite easy for you to implement the `cmp` method:
-
-Just annotate your `cmp` method with `multi_classification` annotation and copy the lines inside it. Because AG_NEWS has only 4 labels, `all_labels` is set to `[i for i in range(1, 5)]`
+`_data_loader` is an iterator for `result` and `label`. For a multiple classification problem, it is pretty easy to implement the `cmp` method by annotating your `cmp` method with the `multi_classification` annotation and coping the lines inside it. Because AG_NEWS has only 4 labels, `all_labels` is set to `[i for i in range(1, 5)]`
 
 If you need to show `roc` and `auc`, you will also need to supply `_pr` in your `ppl` method.
 
-By now we have finished all the coding part. Then let's begin the command line part.
+By now, we have finished all the coding parts. Then let's begin the command line part.
 
-## Build Runtime, Model and Dataset
+## Build Runtime, Model, and Dataset
 
 ### Build Runtime
 
@@ -227,7 +225,7 @@ By now we have finished all the coding part. Then let's begin the command line p
 
 #### Write the yaml file
 
-There is some descriptive information needed for StarWhale to build a StarWhale Dataset(SWDS). The information is described by a yaml file like below:
+Here is some descriptive information needed for Starwhale to build a Starwhale Dataset(SWDS). A yaml file describes the information as below:
 
 ```yaml
 name: AG_NEWS
@@ -251,9 +249,9 @@ attr:
   volume_size: 2M
 ```
 
-Most of the fields are self-explained. The `process` descriptor is used to tell StarWhale that 'Hey, use AGNEWSSlicer to slice the dataset please!'. The `data_filter` is used to tell StarWhale to search files that contain data and named like `test.csv` recursively under `data_dir`. Then StarWhale will use the files searched as input for `process`.
+Most of the fields are self-explained. The `process` descriptor is the entry point of the data split method. The `data_filter` is for searching files containing data named like `test.csv` recursively under `data_dir`. Then Starwhale will use the files found as the input for `process`.
 
-After create the yaml file under `${code_base}/example/text_cls_AG_NEWS/`, we are ready to do it.
+After creating the yaml file under `${code_base}/example/text_cls_AG_NEWS/`, we are ready.
 
 ```console
 $ swcli dataset build .
@@ -270,11 +268,11 @@ finish gen swds @ ~/.cache/starwhale/self/dataset/ag_news/ga/gaygeyrsmi2wcmrsmuy
   8 out of 8 steps finished ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:00
 ```
 
-One step is left to success.
+There is one more step left.
 
 ### Build Model
 
-There is some descriptive information needed for StarWhale to build a StarWhale Model Package(SWMP). The information is described by a yaml file like below:
+Here is some descriptive information for Starwhale to build a Starwhale Model Package(SWMP). A yaml file describes the information as below:
 
 ```yaml
 version: 1.0
@@ -296,14 +294,14 @@ run:
     - .history
     - .vscode
 
-desc: TextClassification by pytorch
+desc: TextClassification by PyTorch
 
 tag:
   - TextClassification
 ```
 
-Most of the fields are self-explained. The `ppl` descriptor is used to tell StarWhale that 'Hey, run the inference method and cmp method with CIFAR10Inference please!'.
-After create the yaml file under `${code_base}/example/text_cls_AG_NEWS/`, we are ready to do it.
+Most of the fields are self-explained. The `ppl` descriptor is the entry point of the inference and cmp method.
+After creating the yaml file under `${code_base}/example/text_cls_AG_NEWS/`, we are ready.
 
 ```console
 (pytorch_text) $ swcli model build .
@@ -315,18 +313,18 @@ After create the yaml file under `${code_base}/example/text_cls_AG_NEWS/`, we ar
 🦋 .swmp bundle:~/.cache/starwhale/self/model/text_cls/mq/mq2tmmlfgmzdqztfgbqtmntfg53dk4a.swmp
 ```
 
-There we are. We have finished all the hard parts.
+Here we are. We have finished all the complex parts.
 
 ## Run the evaluation job and see the metrics
 
 We have two ways to evaluate our models:
 
-* Evaluate model on standalone instance
-* Evaluate model on cloud instance
+* Evaluate model on a standalone instance
+* Evaluate model on a cloud instance
 
-### Evaluate model on local instance
+### Evaluate the model on your local standalone instance
 
-#### Create the job
+#### Create a job
 
 ```console
 $ swcli -vvv job create self --model text_cls/version/latest --dataset ag_news/version/latest --runtime pytorch_text/version/latest --docker-verbose
@@ -420,20 +418,20 @@ Summary
   4       11110   214    1208   2572                                                                                                      4   0.0527   0.0024   0.0249   0.1703
 ```
 
-> :bulb: Docker is required to start as demon on the machine
+> :bulb: Docker is required to run as a demon service on the machine
 
-Congratulations, we have finished the whole example! From now on, we can update the training method, get a new model, build a new SWMP and evaluate our model from time to time.
+Congratulations, we have finished the whole example! From now on, we can update the training method, get a new model, build a new SWMP, and evaluate our model from time to time.
 
-### Evaluate model on cloud instance
+### Evaluate model on a cloud instance
 
-* **Login on one cloud instance**
+* **Log in to one cloud instance**
 
 ```console
 (pytorch_text) $ swcli instance login http://console.pre.intra.starwhale.ai --username starwhale --password abcd1234 --alias pre-k8s
 ‍🍳 login http://console.pre.intra.starwhale.ai successfully!
 ```
 
-* **Copy the model we build before to cloud instance**
+* **Copy the model we built before to the cloud instance**
 
 ```console
 (pytorch_text) $ swcli model copy text_cls/version/gzstmmztmyyt cloud://pre-k8s/project/1
@@ -442,7 +440,7 @@ Congratulations, we have finished the whole example! From now on, we can update 
 👏 copy done.
 ```
 
-* **Copy the dataset we build before to cloud instance**
+* **Copy the dataset we built before to the cloud instance**
 
 ```console
 (pytorch_text) $ swcli dataset copy ag_news/version/me3tkzdgga4t cloud://pre-k8s/project/1
@@ -455,7 +453,7 @@ Congratulations, we have finished the whole example! From now on, we can update 
 👏 copy done
 ```
 
-* **Copy the runtime we build before to cloud instance**
+* **Copy the runtime we built before to the cloud instance**
 
 ```console
 (pytorch_text) $ swcli runtime copy pytorch_text/version/hbtdqnztmy2d cloud://pre-k8s/project/1

@@ -36,5 +36,7 @@ public interface RuntimeVersionMapper {
 
     int update(@Param("version")RuntimeVersionEntity version);
 
+    int updateTag(@Param("versionId") Long versionId, @Param("tag") String tag);
+
     RuntimeVersionEntity findByNameAndRuntimeId(@Param("rtVersion")String rtVersion, @Param("runtimeId")Long runtimeId);
 }

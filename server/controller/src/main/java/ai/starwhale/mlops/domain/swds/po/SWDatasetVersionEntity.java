@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.swds.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
+import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,7 +30,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SWDatasetVersionEntity extends BaseEntity {
+public class SWDatasetVersionEntity extends BaseEntity implements BundleVersionEntity {
 
     private Long id;
 
@@ -59,4 +60,9 @@ public class SWDatasetVersionEntity extends BaseEntity {
 
     public static final Integer STATUS_AVAILABLE=1;
     public static final Integer STATUS_UN_AVAILABLE=0;
+
+    @Override
+    public String getName() {
+        return versionName;
+    }
 }
