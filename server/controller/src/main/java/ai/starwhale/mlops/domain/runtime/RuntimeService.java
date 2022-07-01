@@ -31,6 +31,7 @@ import ai.starwhale.mlops.domain.bundle.BundleURL;
 import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
+import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
@@ -140,10 +141,11 @@ public class RuntimeService {
     }
 
     public Boolean deleteRuntime(RuntimeQuery runtimeQuery) {
-        Long id = runtimeManager.getRuntimeId(runtimeQuery.getRuntimeUrl(), runtimeQuery.getProjectUrl());
-        int res = runtimeMapper.deleteRuntime(id);
-        log.info("Runtime has been deleted. ID={}", id);
-        return res > 0;
+        return RemoveManager.create(bundleManager(), runtimeManager)
+            .removeBundle(BundleURL.builder()
+                .projectUrl(runtimeQuery.getProjectUrl())
+                .bundleUrl(runtimeQuery.getRuntimeUrl())
+                .build());
     }
 
     public RuntimeInfoVO getRuntimeInfo(RuntimeQuery runtimeQuery) {
@@ -208,10 +210,8 @@ public class RuntimeService {
 
     public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
         TagAction tagAction) {
-
-        TagManager tagManager = new TagManager(bundleManager(), runtimeManager);
         try {
-            return tagManager.updateTag(BundleVersionURL.builder()
+            return TagManager.create(bundleManager(), runtimeManager).updateTag(BundleVersionURL.builder()
                 .projectUrl(projectUrl)
                 .bundleUrl(runtimeUrl)
                 .versionUrl(versionUrl)
@@ -224,12 +224,12 @@ public class RuntimeService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String runtimeUrl, String runtimeVersionUrl) {
-        RevertManager revertManager = new RevertManager(bundleManager(), runtimeManager);
-        return revertManager.revertVersionTo(BundleVersionURL.builder()
-            .projectUrl(projectUrl)
-            .bundleUrl(runtimeUrl)
-            .versionUrl(runtimeVersionUrl)
-            .build());
+        return RevertManager.create(bundleManager(), runtimeManager)
+            .revertVersionTo(BundleVersionURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(runtimeUrl)
+                .versionUrl(runtimeVersionUrl)
+                .build());
     }
 
     public PageInfo<RuntimeVersionVO> listRuntimeVersionHistory(RuntimeVersionQuery query, PageParams pageParams) {
@@ -418,13 +418,12 @@ public class RuntimeService {
     }
 
     public Boolean recoverRuntime(String projectUrl, String runtimeUrl) {
-        RecoverManager recoverManager = new RecoverManager(projectManager,
-            runtimeManager, idConvertor);
         try {
-            return recoverManager.recoverBundle(BundleURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(runtimeUrl)
-                .build());
+            return RecoverManager.create(projectManager, runtimeManager, idConvertor)
+                    .recoverBundle(BundleURL.builder()
+                        .projectUrl(projectUrl)
+                        .bundleUrl(runtimeUrl)
+                        .build());
         } catch (RecoverException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }

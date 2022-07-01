@@ -26,17 +26,17 @@ import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.common.util.TagUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleURL;
 import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
+import ai.starwhale.mlops.domain.bundle.remove.RemoveManager;
 import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
 import ai.starwhale.mlops.domain.bundle.tag.TagException;
 import ai.starwhale.mlops.domain.bundle.tag.TagManager;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swds.bo.SWDSObject;
 import ai.starwhale.mlops.domain.swds.bo.SWDSQuery;
@@ -114,20 +114,20 @@ public class SWDatasetService {
     }
 
     public Boolean deleteSWDS(SWDSQuery query) {
-        Long id = swdsManager.getSWDSId(query.getSwdsUrl(), query.getProjectUrl());
-        int res = swdsMapper.deleteDataset(id);
-        log.info("SWDS has been deleted. ID={}", id);
-        return res > 0;
+        return RemoveManager.create(bundleManager(), swdsManager)
+            .removeBundle(BundleURL.builder()
+                .projectUrl(query.getProjectUrl())
+                .bundleUrl(query.getSwdsUrl())
+                .build());
     }
 
     public Boolean recoverSWDS(String projectUrl, String datasetUrl) {
-        RecoverManager recoverManager = new RecoverManager(projectManager,
-            swdsManager, idConvertor);
         try {
-            return recoverManager.recoverBundle(BundleURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(datasetUrl)
-                .build());
+            return RecoverManager.create(projectManager, swdsManager, idConvertor)
+                .recoverBundle(BundleURL.builder()
+                    .projectUrl(projectUrl)
+                    .bundleUrl(datasetUrl)
+                    .build());
         } catch (RecoverException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }
@@ -197,9 +197,8 @@ public class SWDatasetService {
     public Boolean manageVersionTag(String projectUrl, String datasetUrl, String versionUrl,
         TagAction tagAction) {
 
-        TagManager tagManager = new TagManager(bundleManager(), swdsManager);
         try {
-            return tagManager.updateTag(BundleVersionURL.builder()
+            return TagManager.create(bundleManager(), swdsManager).updateTag(BundleVersionURL.builder()
                 .projectUrl(projectUrl)
                 .bundleUrl(datasetUrl)
                 .versionUrl(versionUrl)
@@ -211,12 +210,12 @@ public class SWDatasetService {
     }
 
     public Boolean revertVersionTo(String projectUrl, String swdsUrl, String versionUrl) {
-        RevertManager revertManager = new RevertManager(bundleManager(), swdsManager);
-        return revertManager.revertVersionTo(BundleVersionURL.builder()
-            .projectUrl(projectUrl)
-            .bundleUrl(swdsUrl)
-            .versionUrl(versionUrl)
-            .build());
+        return RevertManager.create(bundleManager(), swdsManager)
+            .revertVersionTo(BundleVersionURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(swdsUrl)
+                .versionUrl(versionUrl)
+                .build());
     }
 
     public PageInfo<DatasetVersionVO> listDatasetVersionHistory(SWDSVersionQuery query, PageParams pageParams) {

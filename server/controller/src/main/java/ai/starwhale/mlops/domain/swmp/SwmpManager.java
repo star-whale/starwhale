@@ -22,6 +22,7 @@ import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
+import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.HasTag;
@@ -36,12 +37,14 @@ import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import java.util.List;
 import javax.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
-    RevertAccessor, RecoverAccessor {
+    RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     @Resource
     private SWModelPackageMapper swmpMapper;
@@ -94,8 +97,12 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
     }
 
     @Override
-    public int updateTag(HasTag entity) {
-        return versionMapper.updateTag(entity.getId(), entity.getTag());
+    public Boolean updateTag(HasTag entity) {
+        int r = versionMapper.updateTag(entity.getId(), entity.getTag());
+        if(r > 0) {
+            log.info("Model Version Tag has been modified. ID={}", entity.getId());
+        }
+        return r > 0;
     }
 
     @Override
@@ -109,8 +116,8 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
     }
 
     @Override
-    public int revertTo(Long bundleId, Long bundleVersionId) {
-        return versionMapper.revertTo(bundleVersionId, bundleVersionId);
+    public Boolean revertTo(Long bundleId, Long bundleVersionId) {
+        return versionMapper.revertTo(bundleVersionId, bundleVersionId) > 0;
     }
 
     @Override
@@ -126,5 +133,14 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
     @Override
     public Boolean recover(Long id) {
         return swmpMapper.recoverSWModelPackage(id) > 0;
+    }
+
+    @Override
+    public Boolean remove(Long id) {
+        int r = swmpMapper.deleteSWModelPackage(id);
+        if(r > 0) {
+            log.info("SWMP has been removed. ID={}", id);
+        }
+        return r > 0;
     }
 }
