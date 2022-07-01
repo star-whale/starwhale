@@ -24,7 +24,7 @@ export default function DatasetOverview() {
             value: dataset?.versionTag ?? '',
         },
         {
-            label: t('Created time'),
+            label: t('Created'),
             value: dataset?.createdTime && formatTimestampDateTime(dataset.createdTime),
         },
     ]

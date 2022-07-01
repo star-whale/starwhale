@@ -84,15 +84,15 @@ function JobOverviewLayout({ children }: IJobLayoutProps) {
             value: job?.jobStatus ?? '-',
         },
         {
-            label: t('Run time'),
+            label: t('Runtime'),
             value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration) : '-',
         },
         {
-            label: t('Created time'),
+            label: t('Created'),
             value: job?.createdTime && formatTimestampDateTime(job.createdTime),
         },
         {
-            label: t('End time'),
+            label: t('End Time'),
             value: job?.stopTime && formatTimestampDateTime(job.stopTime),
         },
         {

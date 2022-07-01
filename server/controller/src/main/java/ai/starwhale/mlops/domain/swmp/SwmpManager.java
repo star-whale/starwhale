@@ -17,6 +17,15 @@
 package ai.starwhale.mlops.domain.swmp;
 
 import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.domain.bundle.BundleAccessor;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
+import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
+import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
+import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
+import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
+import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
+import ai.starwhale.mlops.domain.bundle.tag.HasTag;
+import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
@@ -25,12 +34,14 @@ import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SwmpManager {
+public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
+    RevertAccessor, RecoverAccessor {
 
     @Resource
     private SWModelPackageMapper swmpMapper;
@@ -46,6 +57,7 @@ public class SwmpManager {
         if(idConvertor.isID(swmpUrl)) {
             return idConvertor.revert(swmpUrl);
         }
+
         Long projectId = projectManager.getProjectId(projectUrl);
         SWModelPackageEntity entity = swmpMapper.findByName(swmpUrl, projectId);
         if(entity == null) {
@@ -65,5 +77,54 @@ public class SwmpManager {
                 .tip(String.format("Unable to find swmp %s", versionUrl)), HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
+    }
+
+    @Override
+    public BundleEntity findById(Long id) {
+        return swmpMapper.findSWModelPackageById(id);
+    }
+
+    @Override
+    public HasTag findObjectWithTagById(Long id) {
+        SWModelPackageVersionEntity entity = versionMapper.findVersionById(id);
+        return HasTagWrapper.builder()
+            .id(entity.getId())
+            .tag(entity.getVersionTag())
+            .build();
+    }
+
+    @Override
+    public int updateTag(HasTag entity) {
+        return versionMapper.updateTag(entity.getId(), entity.getTag());
+    }
+
+    @Override
+    public BundleEntity findByName(String name, Long projectId) {
+        return swmpMapper.findByName(name, projectId);
+    }
+
+    @Override
+    public BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
+        return versionMapper.findByNameAndSwmpId(name, bundleId);
+    }
+
+    @Override
+    public int revertTo(Long bundleId, Long bundleVersionId) {
+        return versionMapper.revertTo(bundleVersionId, bundleVersionId);
+    }
+
+    @Override
+    public BundleEntity findDeletedBundleById(Long id) {
+        return swmpMapper.findDeletedSWModelPackageById(id);
+    }
+
+    @Override
+    public List<? extends BundleEntity> listDeletedBundlesByName(String name, Long projectId) {
+        return swmpMapper.listDeletedSWModelPackages(name, projectId);
+    }
+
+    @Override
+    public Boolean recover(Long id) {
+        return swmpMapper.recoverSWModelPackage(id) > 0;
     }
 }

@@ -104,6 +104,10 @@
         update runtime_version set version_tag = #{version.versionTag} where id = #{version.id}
     </update>
 
+    <update id="updateTag" parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity">
+        update runtime_version set version_tag = #{tag} where id = #{versionId}
+    </update>
+
     <resultMap id="runtimeVersionResultMap" type="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity" >
         <id property="id" column="rv_id" />
         <result property="runtimeId" column="runtime_id" />

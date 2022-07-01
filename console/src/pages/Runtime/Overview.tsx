@@ -30,7 +30,7 @@ export default function RuntimeOverview() {
             value: runtime?.versionTag ?? '',
         },
         {
-            label: t('Created time'),
+            label: t('Created'),
             value: runtime?.createdTime && formatTimestampDateTime(runtime.createdTime),
         },
     ]
@@ -45,7 +45,7 @@ export default function RuntimeOverview() {
             }}
             bodyStyle={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
                 gap: '12px',
             }}
         >

@@ -2,13 +2,13 @@
 title: Audio Classification on Speech Commands dataset
 ---
 
-This example will illustrate how to evaluate a pre-trained audio classification model on Starwhale(`version:0.2.0b8`) under 6 steps.
+This example illustrates how to evaluate a pre-trained audio classification model on Starwhale(`version:0.2.0b8`) in 6 steps.
 
 1. Create a Runtime
 2. Train the model
 3. Implement the dataset slicing method
 4. Implement the inference method and evaluation metrics computing method
-5. Build Runtime, Model and Dataset
+5. Build Runtime, Model, and Dataset
 6. Run the evaluation job and see the metrics
 
 ## Prerequisites
@@ -21,7 +21,7 @@ $ git clone https://github.com/star-whale/starwhale.git
 $ cd starwhale/example/speech_command
 ```
 
-> :bulb: If you are from China mainland you're strongly recommended using a proxy
+> :bulb: If you are from the mainland of China, we strongly recommend you use a proxy.
 
 ## Create a Runtime
 
@@ -43,7 +43,7 @@ $ source ~/code/starwhale/example/speech_command/venv/bin/activate
 
 ## Train the model
 
-> The training code in this repo is sourced from https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html. However, some code is modified so that we could better understand how StarWhale works.
+> The training code in this repo is copied from https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html. However, some code is modified to understand better how Starwhale works.
 
 ```shell
 (audio_pytorch) $ mkdir models
@@ -52,7 +52,7 @@ $ source ~/code/starwhale/example/speech_command/venv/bin/activate
 (audio_pytorch) $ python train.py
 ```
 
-You will get the logs below:
+You will get the logs as below:
 
 ```shell
   0%|                                                          | 0/1 [00:00<?, ?it/s]Train Epoch: 1 [0/84843 (0%)]   Loss: 3.755602
@@ -78,21 +78,21 @@ Test Epoch: 1   Accuracy: 12200/22010 (55%)
 100%|█████████████████████████████████████████████████████████▉| 0.9999999999999929/1 [05:53<00:00, 353.91s/it]
 ```
 
-Great! Now you have your model trained and saved. You could see it locates in the `models` directory.
+Great! Now, you have your model trained and saved. You can see it in the `models` directory.
 
-## Slice the test dataset using Starwhale protocol
+## Slice the test dataset using the Starwhale protocol
 
-In the training section we use a dataset called [SpeechCommands](https://paperswithcode.com/dataset/speech-commands).
+In the training section, we use a dataset called [SpeechCommands](https://paperswithcode.com/dataset/speech-commands).
 
 ```shell
 (audio_pytorch) $ ls ../data
 SpeechCommands  speech_commands_v0.02.tar.gz
 ```
 
-Before version `0.2.x` StarWhale will slice the dataset into chunks where reside the batched audios and batched labels. You need to tell StarWhale how to yield batches of byte arrays from files in the dataset.
+Before version `0.2.x`, Starwhale sliced the dataset into chunks where the batched audios and labels reside. You must tell Starwhale how to yield batches of byte arrays from each dataset file.
 
-In order to read all test files in this dataset, we overwrite `load_list` method of parent class `BuildExecutor` in StarWhale sdk.
-In order to package audios and labels in batch and convert them into byte array, we overwrite `iter_all_dataset_slice` and `iter_all_label_slice` method of parent class `BuildExecutor` in StarWhale sdk.We package audios' path into `FileBytes` which could make us easy to debug.
+To read all test files in this dataset, we overwrite `load_list` method of the parent class `BuildExecutor` in Starwhale SDK.
+To package audios and labels in batches and convert them into byte arrays, we overwrite `iter_all_dataset_slice` and `iter_all_label_slice` methods of the parent class `BuildExecutor` in Starwhale SDK. We package paths of audios into `FileBytes` so that it is easier to debug.
 
 ```python
 class FileBytes:
@@ -161,12 +161,12 @@ class SpeechCommandsSlicer(BuildExecutor):
             yield _pickle_label(datafiles[last_idx:idx])
 ```
 
-You need to extend the abstract class `BuildExecutor` so that your dataset could be used by StarWhale.
+You need to extend the abstract class `BuildExecutor`, so Starwhale can use it.
 
 ## Implement the inference method and evaluation metrics computing method
 
-The inference method is called `ppl` and the evaluation metrics computing method is called `cmp`.
-Here is the code snap from `ppl.py` where both methods are implemented. You need to extend the abstract class `PipelineHandler` so that you could receive the byte arrays you just transformed in last step.
+The inference method is called `ppl`, and the evaluation metrics computing method is called `cmp`.
+Here is the code snap from `ppl.py`, which implements both methods. You need to extend the abstract class `PipelineHandler` so you can receive the byte arrays, which you transformed in the last step.
 
 ```python
 class M5Inference(PipelineHandler):
@@ -236,23 +236,23 @@ class M5Inference(PipelineHandler):
 
 ### Implement ppl
 
-StarWhale will feed the byte arrays of one batch to the `ppl` method. And take the output of `ppl` into a `inference_result` dict which looks like
+Starwhale will feed the byte arrays of one batch to the `ppl` method and put  the output of `ppl` into an `inference_result` dict, which looks like
 
 ```json
 {"result":[{resultObj1},{resultObj2}],"label":[{labelObj1},{labelObj2}]}
 ```
 
-StarWhale will automatically add result of `ppl` to `inference_result.result` and add result of `handle_label` to `inference_result.label`.
+Starwhale will automatically add the result of `ppl` to `inference_result.result` and the result of `handle_label` to `inference_result.label`.
 
-The `inference_result` is used in the argument of `cmp` which is named `_data_loader`.
+The `inference_result` is used in the argument of `cmp` named `_data_loader`.
 
 ### Implement cmp
 
-`_data_loader` is an iterator for `result` and `label`. For a multiple classification problem, it is quite easy for you to implement the `cmp` method: Just annotate your `cmp` method with `multi_classification` annotation and copy the lines inside it.
+`_data_loader` is an iterator for `result` and `label`. For a multiple classification problem, it is pretty easy to implement the `cmp` method by annotating your `cmp` method with the `multi_classification` annotation and coping the lines inside it.
 
-If you need to show `roc` and `auc`, you will also need to supply `_pr` in your `ppl` method.By now we have finished all the coding part. Then let's begin the command line part.
+If you need to show `roc` and `auc`, you will also need to supply `_pr` in your `ppl` method. By now, we have finished all the coding parts. Then let's begin the command line part.
 
-## Build Runtime, Model and Dataset
+## Build Runtime, Model, and Dataset
 
 ### Build Runtime
 
@@ -272,7 +272,7 @@ If you need to show `roc` and `auc`, you will also need to supply `_pr` in your 
 
 ### Build Dataset
 
-There is some descriptive information needed for StarWhale to build a StarWhale Dataset(SWDS). The information is described by a yaml file like below:
+Here is some descriptive information needed for Starwhale to build a Starwhale Dataset(SWDS). A yaml file describes the information as below:
 
 ```yaml
 name: SpeechCommands
@@ -291,9 +291,9 @@ attr:
   volume_size: 64M
 ```
 
-Most of the fields are self-explained. The `process` descriptor is used to tell StarWhale that 'Hey, use SpeechCommandsSlicer to slice the dataset please!'.  Then StarWhale will use the files locate in `testing_list.txt` as input for `process`.
+Most of the fields are self-explained. The `process` descriptor is the entry point of the data split method, and Starwhale will use the files in `testing_list.txt` as the input for `process`.
 
-After create the yaml file under `${code_base}/example/speech_command/`, we are ready to do it.
+After creating the yaml file under `${code_base}/example/speech_command/`, we are ready.
 
 ```shell
 (audio_pytorch) $ swcli dataset build .
@@ -311,11 +311,11 @@ finish gen swds @ /home/anda/.cache/starwhale/self/dataset/speechcommands/gm/gmz
   8 out of 8 steps finished ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:01:54
 ```
 
-One step is left to success.
+There is one more step left.
 
 ### Build Model
 
-There is some descriptive information needed for StarWhale to build a StarWhale Model Package(SWMP). The information is described by a yaml file like below:
+Here is some descriptive information for Starwhale to build a Starwhale Model Package(SWMP). A yaml file describes the information as below:
 
 ```yaml
 version: 1.0
@@ -327,11 +327,11 @@ run:
 
 desc: m5 by pytorch
 tag:
-  - speech command clasification
+  - speech command classification
 ```
 
-Most of the fields are self-explained. The `ppl` descriptor is used to tell StarWhale that 'Hey, run the inference method and cmp method with M5Inference please!'.
-After create the yaml file under `${code_base}/example/speech_command/`, we are ready to do it.
+Most of the fields are self-explained. The `ppl` descriptor is the entry point of the inference and cmp method.
+After creating the yaml file under `${code_base}/example/speech_command/`, we are ready.
 
 ```shell
 (audio_pytorch) $ swcli model build .
@@ -344,18 +344,18 @@ After create the yaml file under `${code_base}/example/speech_command/`, we are 
   6 out of 6 steps finished ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:17
 ```
 
-There we are. We have finished all the hard parts.
+Here we are. We have finished all the complex parts.
 
 ## Run the evaluation job and see the metrics
 
-We have two ways to evaluate our model
+We have two ways to evaluate our model.
 
-* Evaluate model on local instance
-* Evaluate model on cloud instance
+* Evaluate the model on the local standalone instance
+* Evaluate the model on a cloud instance
 
-### Evaluate model on local instance
+### Evaluate the model on the local standalone instance
 
-#### Create the job
+#### Create a job
 
 ```shell
 $ swcli job create self --model m5/version/latest --dataset speechcommands/version/latest --runtime audio_pytorch/version/latest
@@ -490,20 +490,20 @@ Summary
   zero       20682   0     1078   0
 ```
 
-> :bulb: Docker is required to start as demon on the machine
+> :bulb: Docker is required to start as a demon service on the machine
 
 Congratulations, we have nearly finished the whole example! From now on, we can update the training method, get a new model, build a new SWMP and evaluate our model from time to time.
 
-### Evaluate model on cloud instance
+### Evaluate the model on a cloud instance
 
-* **Login on one cloud instance**
+* **Log in to a cloud instance**
 
 ```shell
 (audio_pytorch) $ swcli instance login http://console.pre.intra.starwhale.ai --username starwhale --password abcd1234 --alias pre-k8s
 ‍🍳 login http://console.pre.intra.starwhale.ai successfully!
 ```
 
-* **Copy the model we build before to cloud instance**
+* **Copy the model we built before to the cloud instance**
 
 ```shell
 (audio_pytorch) $ swcli model copy m5/version/mfstoolehayd cloud://pre-k8s/project/1
@@ -512,7 +512,7 @@ Congratulations, we have nearly finished the whole example! From now on, we can 
 👏 copy done.
 ```
 
-* **Copy the dataset we build before to cloud instance**
+* **Copy the dataset we built before to the cloud instance**
 
 ```shell
 (audio_pytorch) $ swcli dataset copy speechcommands/version/gmzgczrqmezd cloud://pre-k8s/project/1
@@ -543,7 +543,7 @@ Congratulations, we have nearly finished the whole example! From now on, we can 
 👏 copy done
 ```
 
-* **Copy the runtime we build before to cloud instance**
+* **Copy the runtime we built before to the cloud instance**
 
 ```shell
 (audio_pytorch) $ swcli runtime copy audio_pytorch/version/ga2wkmbwmizw cloud://pre-k8s/project/1

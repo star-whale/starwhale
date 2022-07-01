@@ -51,9 +51,10 @@ def is_windows() -> bool:
     return platform.system() == "Windows"
 
 
-def is_darwin() -> bool:
-    # TODO: check m1 chip system
-    return platform.system() == "Darwin"
+def is_darwin(arm: bool = False) -> bool:
+    if platform.system() != "Darwin":
+        return False
+    return not arm or platform.processor() == "arm"
 
 
 def is_linux() -> bool:

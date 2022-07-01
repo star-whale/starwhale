@@ -39,7 +39,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                         style: {
                             backgroundColor: 'var(--color-brandTableHeaderBackground)',
                             fontWeight: 'bold',
-                            borderBottom: 'none',
+                            borderBottomWidth: 0,
                             fontSize: 14,
                             lineHeight: '16px',
                             padding: '15px 20px',
@@ -52,7 +52,10 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                     },
                     TableBodyCell: {
                         style: {
-                            padding: '0px 20px',
+                            paddingTop: 0,
+                            paddingBottom: 0,
+                            paddingLeft: '20px',
+                            paddingRight: '20px',
                             lineHeight: '44px',
                         },
                     },

@@ -27,6 +27,14 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.common.util.TagUtil;
+import ai.starwhale.mlops.domain.bundle.BundleManager;
+import ai.starwhale.mlops.domain.bundle.BundleURL;
+import ai.starwhale.mlops.domain.bundle.BundleVersionURL;
+import ai.starwhale.mlops.domain.bundle.recover.RecoverException;
+import ai.starwhale.mlops.domain.bundle.recover.RecoverManager;
+import ai.starwhale.mlops.domain.bundle.revert.RevertManager;
+import ai.starwhale.mlops.domain.bundle.tag.TagException;
+import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
@@ -114,7 +122,6 @@ public class SWModelPackageService {
     @Resource
     private SwmpManager swmpManager;
 
-
     public PageInfo<SWModelPackageVO> listSWMP(SWMPQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(query.getProjectUrl());
@@ -130,41 +137,16 @@ public class SWModelPackageService {
     }
 
     public Boolean recoverSWMP(String projectUrl, String modelUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
-        String name = modelUrl;
-        Long id;
-        if(idConvertor.isID(modelUrl)) {
-            id = idConvertor.revert(modelUrl);
-            SWModelPackageEntity entity = swmpMapper.findDeletedSWModelPackageById(id);
-            if(entity == null) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                    .tip("Recover model error. Model can not be found. "), HttpStatus.BAD_REQUEST);
-            }
-            name = entity.getSwmpName();
-        } else {
-            // To restore models by name, need to check whether there are duplicate names
-            List<SWModelPackageEntity> deletedSWModelPackages = swmpMapper.listDeletedSWModelPackages(name, projectId);
-            if(deletedSWModelPackages.size() > 1) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                    .tip(String.format("Recover model error. Duplicate names [%s] of deleted model. ", name)),
-                    HttpStatus.BAD_REQUEST);
-            } else if (deletedSWModelPackages.size() == 0) {
-                throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                    .tip(String.format("Recover model error. Can not find deleted model [%s].", name)),
-                    HttpStatus.BAD_REQUEST);
-            }
-            id = deletedSWModelPackages.get(0).getId();
+        RecoverManager recoverManager = new RecoverManager(projectManager,
+            swmpManager, idConvertor);
+        try {
+            return recoverManager.recoverBundle(BundleURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(modelUrl)
+                .build());
+        } catch (RecoverException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }
-        // Check for duplicate names
-
-        if(swmpMapper.findByName(name, projectId) != null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip(String.format("Recover model error. Model %s already exists", name)), HttpStatus.BAD_REQUEST);
-        }
-
-        int res = swmpMapper.recoverSWModelPackage(id);
-        log.info("Model has been recovered. Name={}", name);
-        return res > 0;
     }
 
     public List<SWModelPackageInfoVO> listSWMPInfo(String project, String name) {
@@ -269,26 +251,28 @@ public class SWModelPackageService {
 
     public Boolean manageVersionTag(String projectUrl, String modelUrl, String versionUrl,
         TagAction tagAction) {
-        Long id = swmpManager.getSWMPId(modelUrl, projectUrl);
-        Long versionId = swmpManager.getSWMPVersionId(versionUrl, id);
 
-        SWModelPackageVersionEntity entity = swmpVersionMapper.findVersionById(versionId);
-        if(entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip("Unable to find the version of swmp " + versionUrl), HttpStatus.BAD_REQUEST);
+        TagManager tagManager = new TagManager(bundleManager(), swmpManager);
+
+        try {
+            return tagManager.updateTag(BundleVersionURL.builder()
+                .projectUrl(projectUrl)
+                .bundleUrl(modelUrl)
+                .versionUrl(versionUrl)
+                .build(), tagAction);
+        } catch (TagException e) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip(e.getMessage()),
+                HttpStatus.BAD_REQUEST);
         }
-        entity.setVersionTag(TagUtil.getTags(tagAction, entity.getVersionTag()));
-        int update = swmpVersionMapper.update(entity);
-        log.info("SWMPVersion has been modified. ID={}", entity.getId());
-        return update > 0;
     }
 
     public Boolean revertVersionTo(String projectUrl, String swmpUrl, String versionUrl) {
-        Long id = swmpManager.getSWMPId(swmpUrl, projectUrl);
-        Long vid = swmpManager.getSWMPVersionId(versionUrl, id);
-        int res = swmpVersionMapper.revertTo(id, vid);
-        log.info("SWMP Version has been revert to {}", vid);
-        return res > 0;
+        RevertManager revertManager = new RevertManager(bundleManager(), swmpManager);
+        return revertManager.revertVersionTo(BundleVersionURL.builder()
+            .projectUrl(projectUrl)
+            .bundleUrl(swmpUrl)
+            .versionUrl(versionUrl)
+            .build());
     }
 
     public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPVersionQuery query, PageParams pageParams) {
@@ -482,5 +466,9 @@ public class SWModelPackageService {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP),HttpStatus.NOT_FOUND);
         }
         return "";
+    }
+
+    private BundleManager bundleManager() {
+        return new BundleManager(idConvertor, projectManager, swmpManager, swmpManager, ValidSubject.SWMP);
     }
 }

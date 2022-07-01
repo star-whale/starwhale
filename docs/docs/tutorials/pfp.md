@@ -2,28 +2,28 @@
 title: Object Detection & segmentation on PeenFudanPed dataset
 ---
 
-This example will illustrate how to evaluate a pre-trained image object detection & segmentation model on StarWhale(`version:0.2.0b8`) under 6 steps
+This example illustrates how to evaluate a pre-trained image object detection & segmentation model on Starwhale(`version:0.2.0b8`) in 6 steps
 
 * Create a Runtime
 * Train the model
 * Implement the dataset slicing method
 * Implement the inference method and evaluation metrics computing method
-* Build Runtime, Model and Dataset
-* Run the evaluation job and see the metrics
+* Build Runtime, Model, and Dataset
+* Run the evaluation job and look at the metrics
 
-> :bulb: This example requires CUDA device
+> :bulb: This example requires CUDA.
 
 ## Prerequisites
 
 * Assume that you have Python3.7 or above installed.
-* Clone starwhale repo
+* Clone the Starwhale repo
 
 ```shell
 $ git clone https://github.com/star-whale/starwhale.git
 $ cd starwhale/example/PennFudanPed
 ```
 
-> :bulb: If you are from China mainland you're strongly recommended using a proxy
+> :bulb: If you are from the mainland of China, we strongly recommend you use a proxy.
 
 ## Create a Runtime
 
@@ -47,7 +47,7 @@ $ source ./venv/bin/activate
 
 ## Train the model
 
-> The training code in this repo is sourced from https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html However, some code is modified so that we could better understand how StarWhale works.
+> The training code in this repo is copied from https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html However, some code is modified to understand better how Starwhale works.
 
 ```shell
 (visual_pytorch) $ mkdir models
@@ -59,7 +59,7 @@ $ source ./venv/bin/activate
 (visual_pytorch) $ python train.py
 ```
 
-You will get the logs below:
+You will get the logs as below:
 
 ```shell
 Epoch: [0]  [ 0/60]  eta: 0:00:53  lr: 0.000090  loss: 4.0966 (4.0966)  loss_classifier: 0.6816 (0.6816)  loss_box_reg: 0.5010 (0.5010)  loss_mask: 2.8732 (2.8732)  loss_objectness: 0.0377 (0.0377)  loss_rpn_box_reg: 0.0030 (0.0030)  time: 0.8854  data: 0.2439  max mem: 2301
@@ -71,21 +71,21 @@ index created!
 That's it!
 ```
 
-Great! Now you have your model trained and saved. You could see it locates in the `models` directory.
+Great! Now, you have your model trained and saved. You can see it in the `models` directory.
 
-## Slice the test dataset using Starwhale protocol
+## Slice the test dataset using the Starwhale protocol
 
-In the training section we use a dataset called [PennFudanPed](https://www.cis.upenn.edu/~jshi/ped_html/).
+In the training section, we use a dataset called [PennFudanPed](https://www.cis.upenn.edu/~jshi/ped_html/).
 
 ```shell
 (visual_pytorch) $ ls ../data
 PennFudanPed  PennFudanPed.zip
 ```
 
-Before version `0.2.x` StarWhale will slice the dataset into chunks where reside the batched audios and batched labels. You need to tell StarWhale how to yield batches of byte arrays from files in the dataset.
+Before version `0.2.x`, Starwhale sliced the dataset into chunks where the batched texts and labels reside. You must tell Starwhale how to yield batches of byte arrays from each dataset file.
 
-In order to package images and labels in batch and convert them into byte array, we overwrite `iter_all_dataset_slice` and `iter_all_label_slice` method of parent class `BuildExecutor` in StarWhale sdk.
-We package images' and labels' path into `FileBytes` which could make us easy to debug.
+To package images and labels in batch and convert them into byte arrays, we overwrite the `iter_all_dataset_slice` and `iter_all_label_slice` methods of the parent class `BuildExecutor` in the Starwhale SDK.
+We package paths of images and labels into `FileBytes` so that it is easier to debug.
 
 ```python
 class FileBytes:
@@ -157,16 +157,16 @@ class PennFudanPedSlicer(BuildExecutor):
         pass
 ```
 
-You need to extend the abstract class `BuildExecutor` so that your dataset could be used by StarWhale.
+You need to extend the abstract class `BuildExecutor`, so Starwhale can use it.
 
 ## Implement the inference method and evaluation metrics computing method
 
-The inference method is called `ppl` and the evaluation metrics computing method is called `cmp`.
-Here is the code snap from `ppl.py` where both methods are implemented. You need to extend the abstract class `PipelineHandler` so that you could receive the byte arrays you just transformed in last step.
+The inference method is called `ppl`, and the evaluation metrics computing method is called `cmp`.
+Here is the code snap from `ppl.py`, which implements both methods. You need to extend the abstract class `PipelineHandler` so you can receive the byte arrays, which you transformed in the last step.
 
-There is a [flaw](https://github.com/star-whale/starwhale/issues/611) for the StarWhale(`version:0.2.0b8`) sdk that we must convert tensors to list(`tensor_dict_to_list_dict`) so that they could be serialized, and then convert list back to tensor(`list_dict_to_tensor_dict`). This is not that concise, because the framework hires jsonline to serialize python objects.
+There is a [flaw](https://github.com/star-whale/starwhale/issues/611) in the Starwhale(`version:0.2.0b8`) SDK. You must convert tensors to lists(`tensor_dict_to_list_dict`) in order to serialize them, and then convert them back(`list_dict_to_tensor_dict`). This is because the framework uses jsonline to serialize Python objects.
 
-> :bulb: The reason why we serialize result of ppl instead of trigger cmp directly is that ppl and cmp are designed to be decoupled  phases. The ppl phase is designed to be executed on distributed machines which could reduce inference time significantly on large test dataset. So, there must be an inter-protocol between ppl and cmp.
+> :bulb: The reason we serialize ppl results instead of directly invoking cmp is that we design ppl and cmp as decoupled phases. We expect the ppl phase to be executed on distributed machines, which can significantly reduce inference time on large test datasets. So, there must be an inter-protocol between ppl and cmp.
 
 ```python
 _DTYPE_DICT_OUTPUT = {'boxes': torch.float32, 'labels': torch.int64, 'scores': torch.float32, 'masks': torch.uint8}
@@ -246,27 +246,25 @@ class MARSKRCNN(PipelineHandler):
 
 ### Implement ppl
 
-StarWhale will feed the byte arrays of one batch to the `ppl` method. And take the output of `ppl` into a `inference_result` dict which looks like
+Starwhale will feed the byte arrays of one batch to the `ppl` method and put the output of `ppl` into an `inference_result` dict, which looks like:
 
 ```json
 {"result":[{resultObj1},{resultObj2}],"label":[{labelObj1},{labelObj2}]}
 ```
 
-StarWhale will automatically add result of `ppl` to `inference_result.result` and add result of `handle_label` to `inference_result.label`.
+Starwhale will automatically add the result of `ppl` to `inference_result.result` and the result of `handle_label` to `inference_result.label`.
 
-The `inference_result` is used in the argument of `cmp` which is named `_data_loader`.
+The `inference_result` is used in the argument of `cmp` named `_data_loader`.
 
 ### Implement cmp
 
-`_data_loader` is an iterator for `result` and `label`. For a multiple classification problem, it is quite easy for you to implement the `cmp` method:
-
-Just annotate your `cmp` method with `multi_classification` annotation and copy the lines inside it.
+`_data_loader` is an iterator for `result` and `label`. For a multiple classification problem, it is pretty easy to implement the `cmp` method by annotating your `cmp` method with the `multi_classification` annotation and coping the lines inside it.
 
 If you need to show `roc` and `auc`, you will also need to supply `_pr` in your `ppl` method.
 
-By now we have finished all the coding part. Then let's begin the command line part.
+By now, we have finished all the coding parts. Then let's begin the command line part.
 
-## Build Runtime, Model and Dataset
+## Build Runtime, Model, and Dataset
 
 ### Build Runtime
 
@@ -285,7 +283,7 @@ By now we have finished all the coding part. Then let's begin the command line p
 ```
 
 ### Build Dataset
-There is some descriptive information needed for StarWhale to build a StarWhale Dataset(SWDS). The information is described by a yaml file like below:
+Here is some descriptive information needed for Starwhale to build a Starwhale Dataset(SWDS). A yaml file describes the information as below:
 
 ```yaml
 name: penn_fudan_ped
@@ -305,9 +303,9 @@ attr:
     volume_size: 8M
 ```
 
-Most of the fields are self-explained. The `process` descriptor is used to tell StarWhale that 'Hey, use SpeechCommandsSlicer to slice the dataset please!'.  Then StarWhale will use the files locate in `testing_list.txt` as input for `process`.
+Most of the fields are self-explained. The `process` descriptor is the entry point of the data split method, and Starwhale will use the files in `testing_list.txt` as the input for `process`.
 
-After create the yaml file under `${code_base}/example/PennFudanPed/`, we are ready to do it.
+After creating the yaml file under `${code_base}/example/PennFudanPed/`, we are ready.
 
 ```shell
 (visual_pytorch) $ swcli dataset build .
@@ -325,11 +323,11 @@ finish gen swds @ /home/renyanda/.cache/starwhale/self/dataset/penn_fudan_ped/g5
   8 out of 8 steps finished ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:04
 ```
 
-One step is left to success.
+There is one more step left.
 
 ### Build Model
 
-There is some descriptive information needed for StarWhale to build a StarWhale Model Package(SWMP). The information is described by a yaml file like below:
+Here is some descriptive information for Starwhale to build a Starwhale Model Package(SWMP). A yaml file describes the information as below:
 
 ```yaml
 version: 1.0
@@ -338,13 +336,13 @@ model:
   - models/maskrcnn.pth
 run:
   ppl: code.ppl:MARSKRCNN
-desc: mask rcnn resnet50 by pytorch
+desc: mask rcnn resnet50 by PyTorch
 tag:
   - instance segmentation & object dectection
 ```
 
-Most of the fields are self-explained. The `ppl` descriptor is used to tell StarWhale that 'Hey, run the inference method and cmp method with M5Inference please!'.
-After create the yaml file under `${code_base}/example/PennFudanPed/`, we are ready to do it.
+Most of the fields are self-explained. The `ppl` descriptor is the entry point of the inference and cmp method.
+After creating the yaml file under `${code_base}/example/PennFudanPed/`, we are ready.
 
 ```shell
 (visual_pytorch) $ swcli model build .
@@ -357,16 +355,16 @@ After create the yaml file under `${code_base}/example/PennFudanPed/`, we are re
   6 out of 6 steps finished ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:03
 ```
 
-There we are. We have finished all the hard parts.
+Here we are. We have finished all the complex parts.
 
 ## Run the evaluation job and see the metrics
 
-We have two ways to evaluate our model
+We have two ways to evaluate our model.
 
-* Evaluate model on local instance
-* Evaluate model on cloud instance
+* Evaluate the model on the local standalone instance
+* Evaluate the model on a cloud instance
 
-### Evaluate model on local instance
+### Evaluate the model on the local standalone instance
 
 #### Create the job
 
@@ -409,16 +407,16 @@ IoU metric: segm
 
 Congratulations, we have nearly finished the whole example! From now on, we can update the training method, get a new model, build a new SWMP and evaluate our model from time to time.
 
-### Evaluate model on cloud instance
+### Evaluate model on a cloud instance
 
-* **Login on one cloud instance**
+* **Log in to a cloud instance**
 
 ```shell
 (visual_pytorch) $ swcli instance login http://console.pre.intra.starwhale.ai --username starwhale --password abcd1234 --alias pre-k8s
 ‍🍳 login http://console.pre.intra.starwhale.ai successfully!
 ```
 
-* **Copy the model to cloud instance**
+* **Copy the model to the cloud instance**
 
 ```shell
 (visual_pytorch) $ swcli model copy mask_rcnn/version/mfstoolehayd cloud://pre-k8s/project/1
@@ -427,7 +425,7 @@ Congratulations, we have nearly finished the whole example! From now on, we can 
 👏 copy done.
 ```
 
-* **Copy the dataset to cloud instance**
+* **Copy the dataset to the cloud instance**
 
 ```shell
 (visual_pytorch) $ swcli dataset copy penn_fudan_ped/version/gmzgczrqmezd cloud://pre-k8s/project/1
@@ -458,7 +456,7 @@ Congratulations, we have nearly finished the whole example! From now on, we can 
 👏 copy done
 ```
 
-* **Copy the runtime to cloud instance**
+* **Copy the runtime to the cloud instance**
 
 ```shell
 (visual_pytorch) $ swcli runtime copy visual_pytorch/version/ga2wkmbwmizw cloud://pre-k8s/project/1

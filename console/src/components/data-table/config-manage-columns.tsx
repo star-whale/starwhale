@@ -106,8 +106,11 @@ function ConfigManageColumns(props: PropsT) {
                             justifyContent: 'space-between',
                             background: hoverd ? '#F0F4FF' : '#FFFFFF',
                         }}
+                        title={column.title}
                     >
-                        <LabelSmall>{column.title}</LabelSmall>
+                        <LabelSmall $style={{ flex: 1, overflow: 'hidden' }} className='line-clamp'>
+                            {column.title}
+                        </LabelSmall>
                         <div>
                             {(pined || hoverd) && (
                                 <Button
@@ -325,13 +328,22 @@ function ConfigManageColumns(props: PropsT) {
                                                     alignItems: 'center',
                                                     gap: '9px',
                                                     height: '32px',
+                                                    willChange: 'transform',
+                                                    flexWrap: 'nowrap',
+                                                    justifyContent: 'space-between',
                                                 }}
+                                                title={column.title}
                                             >
                                                 <Checkbox
                                                     checked={selectedIds?.includes(id)}
                                                     onChange={() => handleSelectOne(id)}
                                                 />
-                                                <LabelSmall>{column.title}</LabelSmall>
+                                                <LabelSmall
+                                                    $style={{ flex: 1, overflow: 'hidden' }}
+                                                    className='line-clamp'
+                                                >
+                                                    {column.title}
+                                                </LabelSmall>
                                             </div>
                                         )
                                     })}

@@ -65,9 +65,9 @@ export default function JobListCard() {
                         t('sth name', [t('Model')]),
                         t('Version'),
                         t('Owner'),
-                        t('Created time'),
-                        t('Run time'),
-                        t('End time'),
+                        t('Created'),
+                        t('Runtime'),
+                        t('End Time'),
                         t('Status'),
                         t('Action'),
                     ]}

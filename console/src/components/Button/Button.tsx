@@ -52,10 +52,10 @@ export default function Button({
                         'width': isFull ? '100%' : 'auto',
                         'padding': '0',
                         'margin': '0',
-                        'background': 'transparent',
+                        'backgroundColor': 'transparent',
                         'color': '#2B65D9',
                         ':hover': {
-                            background: 'transparent',
+                            backgroundColor: 'transparent',
                         },
                     },
                 },
@@ -69,10 +69,10 @@ export default function Button({
                     style: {
                         'borderRadius': '4px',
                         'width': isFull ? '100%' : 'auto',
-                        'background': 'transparent',
+                        'backgroundColor': 'transparent',
                         'color': 'rgba(2,16,43,0.20)',
                         ':hover': {
-                            background: 'transparent',
+                            backgroundColor: 'transparent',
                             color: 'var(--color-brandPrimaryHover)',
                         },
                     },
