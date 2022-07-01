@@ -47,14 +47,6 @@ class NMTPipeline(PipelineHandler):
             _label.extend(_data[self._label_field])
             (result) = _data[self._ppl_data_field]
             _result.extend(result)
-        
-        print("cmp-result:%s" % len(_result))
-        for r in _result:
-            print(r)
-        
-        print("cmp-label:%s" % len(_label))
-        for l in _label:
-            print(l)
 
         bleu = BLEU(_result, [_label])
 

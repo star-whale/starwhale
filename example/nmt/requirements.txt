@@ -1,6 +1,4 @@
 numpy
 torch
-torchvision
-scikit-learn
 nltk
 starwhale

@@ -47,9 +47,10 @@ if __name__ == '__main__':
         encoder = EncoderRNN(vocab.input_lang.n_words, hidden_size, device).to(device)
         attn_decoder = AttnDecoderRNN(vocab.output_lang.n_words, hidden_size, device, dropout_p=0.1).to(device)
 
-        trainIters(vocab.input_lang, vocab.output_lang, pairs, device, encoder, attn_decoder, 190000, print_every=1000)
+        print('start to train...')
+        trainIters(vocab.input_lang, vocab.output_lang, pairs, device, encoder, attn_decoder, 10000, print_every=1000)
 
-        evaluateRandomly(device, vocab.input_lang, vocab.output_lang, pairs, encoder, attn_decoder)
+        #evaluateRandomly(device, vocab.input_lang, vocab.output_lang, pairs, encoder, attn_decoder)
     elif args.mode == 'eval':
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

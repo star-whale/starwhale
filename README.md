@@ -72,7 +72,7 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
 ## MNIST Quick Tour for the standalone instance
 
-<a href="https://starwhale.ai"><img src="https://github.com/star-whale/starwhale/blob/main/docs/docs/img/core-workflow.gif?raw=true" width="100%"></a>
+![Core Job Workflow](docs/docs/img/core-workflow.gif)
 
 - 🍰 **STEP1**: Installing Starwhale
 
@@ -222,6 +222,146 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
    ```
 
 👏 Now, you have completed the fundamental steps for Starwhale standalone.
+
+Let's go ahead and finish the tutorial on the on-premises instance.
+
+## MNIST Quick Tour for on-premises instance
+
+![Create Job Workflow](docs/docs/img/create-job-workflow.gif)
+
+🍰 **STEP1**: installing minikube and helm
+
+- Minikube 1.25+
+- Helm 3.2.0+
+
+There are standard installation tutorials for [minikube](https://minikube.sigs.k8s.io/docs/start/) and [helm](https://helm.sh/docs/intro/install/) here.
+
+🍵 **STEP2**: Start minikube
+
+```bash
+minikube start
+alias kubectl="minikube kubectl --"
+```
+
+> For users in the mainland of China, please add these startup parameters：`--image-mirror-country='cn' --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers` for `minikube start`
+
+**Installation process**
+
+```bash
+helm repo add starwhale https://star-whale.github.io/charts
+helm repo update
+helm install my-starwhale starwhale/starwhale --version 0.2.0 -n starwhale --create-namespace --set minikube.enabled=true
+```
+
+After the installation is successful, the following prompt message appears:
+
+```bash
+NAME: my-starwhale
+LAST DEPLOYED: Thu Jun 23 14:48:02 2022
+NAMESPACE: starwhale
+STATUS: deployed
+REVISION: 1
+NOTES:
+******************************************
+Chart Name: starwhale
+Chart Version: 0.2.0
+App Version: 0.2.0
+...
+
+Port Forward Visist:
+  - starwhale controller:
+    - run: kubectl port-forward --namespace starwhale svc/my-starwhale-controller 8082:8082
+    - visit: http://localhost:8082
+  - minio admin:
+    - run: kubectl port-forward --namespace starwhale svc/my-starwhale-minio 9001:9001
+    - visit: http://localhost:9001
+  - mysql:
+    - run: kubectl port-forward --namespace starwhale svc/my-starwhale-mysql 3306:3306
+    - visit: mysql -h 127.0.0.1 -P 3306 -ustarwhale -pstarwhale
+
+******************************************
+Login Info:
+- starwhale: u:starwhale, p:abcd1234
+- minio admin: u:minioadmin, p:minioadmin
+
+*_* Enjoy using Starwhale. *_*
+```
+
+Then keep checking the minikube service status until all pods are running.
+
+```bash
+watch -n 1 kubectl get pods -n starwhale
+```
+
+| NAME | READY | STATUS | RESTARTS | AGE |
+|:-----|-------|--------|----------|-----|
+|my-starwhale-agent-cpu-64699|2/2|Running|0|1m
+|my-starwhale-controller-7d864558bc-vxvb8|1/1|Running|0|1m
+|my-starwhale-minio-7d45db75f6-7wq9b|1/1|Running|0|2m
+|my-starwhale-mysql-0|1/1|Running|0|2m
+
+Make the Starwhale controller accessible locally with the following command:
+
+```bash
+kubectl port-forward --namespace starwhale svc/my-starwhale-controller 8082:8082
+```
+
+☕ **STEP3**: Upload the artifacts to the cloud instance
+> **pre-prepared artifacts**
+> Before starting this tutorial, the following three artifacts should already exist on your machine：
+>
+> - a starwhale model named mnist
+> - a starwhale dataset named mnist
+> - a starwhale runtime named pytorch-mnist
+>
+> The above three artifacts are what we built on our machine using starwhale.
+
+1. Use swcli to operate the remote server
+    First, log in to the server:
+
+    ```bash
+    swcli instance login --username starwhale --password abcd1234 --alias server http://localhost:8082
+    ```
+
+    Use the server instance as the default:
+
+    ```bash
+    swcli instance select server
+    ```
+
+2. Create a project named 'project_for_mnist' and make it default:
+
+    ```bash
+    swcli project create project_for_mnist
+    swcli project select project_for_mnist
+    ```
+
+3. Start copying the model, dataset, and runtime that we constructed earlier:
+
+    ```bash
+    swcli model copy local/project/self/model/mnist/version/latest http://localhost:8082/
+    swcli dataset copy local/project/self/dataset/mnist/version/latest http://localhost:8082/
+    swcli runtime copy local/project/self/runtime/pytorch-mnist/version/latest http://localhost:8082/
+    ```
+
+🍞 **STEP4**: Use the web UI to run an evaluation
+
+1. login
+Ok, let's use the username(starwhale) and password(abcd1234) to open the server web UI(<http://localhost:8082/>).
+
+2. Then, we will see the project named 'project_for_mnist' that we created earlier with swcli.
+![project list](docs/docs/img/ui-list-project.jpg)
+Click the project name, you will see the model, runtime, and dataset uploaded in the previous step.
+![model list](docs/docs/img/ui-list-model.jpg)
+![dataset list](docs/docs/img/ui-list-dataset.jpg)
+![runtime list](docs/docs/img/ui-list-runtime.jpg)
+3. Create an evaluation job
+![Create job](docs/docs/img/ui-create-job.jpg)
+
+4. The job is completed and the results can be viewed
+![Show Job Results](docs/docs/img/ui-job-results.jpg)
+
+**Congratulations! You have completed the evaluation process for a model.**
 
 ## Documentation, Community, and Support
 
