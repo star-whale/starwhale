@@ -226,21 +226,24 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 Let's go ahead and finish tutorial on the on-premises instance.
 
 ## MNIST Quick Tour for on-premises instance
+
 ![Create Job Workflow](docs/docs/img/create-job-workflow.gif)
 
 🍰 **STEP1**: installing minikube and helm
+
 - Minikube 1.25+
 - Helm 3.2.0+
 
 There are standard installation tutorials for [minikube](https://minikube.sigs.k8s.io/docs/start/) and [helm](https://helm.sh/docs/intro/install/) here.
 
-
 🍵 **STEP2**: Start minikube
+
 ```bash
 minikube start
 alias kubectl="minikube kubectl --"
 ```
-For users in the mainland of China, please add these startup parameters：--image-mirror-country='cn' --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers
+
+> For users in the mainland of China, please add these startup parameters：`--image-mirror-country='cn' --image-repository=registry.cn-hangzhou.aliyuncs.com/google_containers` for `minikube start`
 
 **Installation process**
 
@@ -249,7 +252,9 @@ helm repo add starwhale https://star-whale.github.io/charts
 helm repo update
 helm install my-starwhale starwhale/starwhale --version 0.2.0 -n starwhale --create-namespace --set minikube.enabled=true
 ```
+
 After the installation is successful, the following prompt message appears:
+
 ```bash
 NAME: my-starwhale
 LAST DEPLOYED: Thu Jun 23 14:48:02 2022
@@ -283,6 +288,7 @@ Login Info:
 ```
 
 Then keep checking the minikube service status until all pods are running.
+
 ```bash
 watch -n 1 kubectl get pods -n starwhale
 ```
@@ -295,25 +301,30 @@ watch -n 1 kubectl get pods -n starwhale
 |my-starwhale-mysql-0|1/1|Running|0|2m
 
 Make the Starwhale controller accessible locally with the following command:
+
 ```bash
 kubectl port-forward --namespace starwhale svc/my-starwhale-controller 8082:8082
 ```
 
-☕ **STEP3**: Upload resources to the server
+☕ **STEP3**: Upload the artifacts to the cloud instance
 > **pre-prepared resources**
 > Before starting this tutorial, the following three resources should already exist on your machine：
+>
 > - a starwhale model named mnist
 > - a starwhale dataset named mnist
 > - a starwhale runtime named pytorch-mnist
-> 
+>
 > The above three resources are what we built on our machine using starwhale.
+
 1. Use swcli to operate the remote server
     First, log in to the server:
+
     ```bash
     swcli instance login --username starwhale --password abcd1234 --alias server http://localhost:8082
     ```
 
     Use the server instance as the default:
+
     ```bash
     swcli instance select server
     ```
@@ -332,9 +343,11 @@ kubectl port-forward --namespace starwhale svc/my-starwhale-controller 8082:8082
     swcli dataset copy local/project/self/dataset/mnist/version/latest http://localhost:8082/
     swcli runtime copy local/project/self/runtime/pytorch-mnist/version/latest http://localhost:8082/
     ```
+
 🍞 **STEP4**: Use the web UI to run an evaluation
+
 1. login
-Ok, let's use the username(starwhale) and password(abcd1234) to open the server web UI(http://localhost:8082/). 
+Ok, let's use the username(starwhale) and password(abcd1234) to open the server web UI(<http://localhost:8082/>).
 
 2. Then, we will see the project named 'project_for_mnist' that we created earlier with swcli.
 ![project list](docs/docs/img/ui-list-project.jpg)
@@ -342,7 +355,7 @@ Click the project name, you will see the model, runtime, and dataset uploaded in
 ![model list](docs/docs/img/ui-list-model.jpg)
 ![dataset list](docs/docs/img/ui-list-dataset.jpg)
 ![runtime list](docs/docs/img/ui-list-runtime.jpg)
-1. Create an evaluation job
+3. Create an evaluation job
 ![Create job](docs/docs/img/ui-create-job.jpg)
 
 4. The job is completed and the results can be viewed

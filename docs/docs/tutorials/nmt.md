@@ -13,41 +13,42 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
 * Evaluate model on cloud instance
 
 ## Prerequisites
+
 * Python3.7 +.
-* starwhale. 
+* Starwhale.
   * install: `pip install starwhale`
-  * valid: `swcli --version`
+  * check version: `swcli --version`
 * Clone starwhale repo
 
 ## Preparing Data
 
-- enter the director `example/nmt`
-- download train data
-  - exec `mkdir data && cd data && wget https://www.manythings.org/anki/fra-eng.zip && unzip fra-eng.zip && mv fra.txt eng-fra.txt`
+* Enter the director `example/nmt`
+* Download train data
+  * exec `mkdir data && cd data && wget https://www.manythings.org/anki/fra-eng.zip && unzip fra-eng.zip && mv fra.txt eng-fra.txt`
+
     ```bash
     --2022-06-29 18:29:22--  https://www.manythings.org/anki/fra-eng.zip
-      Resolving www.manythings.org (www.manythings.org)... 172.67.186.54, 104.21.92.44, 2606:4700:3030::6815:5c2c, ...
-      Connecting to www.manythings.org (www.manythings.org)|172.67.186.54|:443... connected.
-      HTTP request sent, awaiting response... 200 OK
-      Length: 6612164 (6.3M) [application/zip]
+      ...
       Saving to: ‘fra-eng.zip’
-
-      fra-eng.zip 100%[=====================================================================>] 6.31M 2.06MB/s in 3.1s    
-
+      ... 
       2022-06-29 18:29:26 (2.06 MB/s) - ‘fra-eng.zip’ saved [6612164/6612164]
-
       Archive:  fra-eng.zip
         inflating: _about.txt              
         inflating: fra.txt 
     ```
-  - Copy the test file we prepared for you
+
+  * Copy the test file we prepared for you
+
     ```bash
     cp test/test_eng-fra.txt data/test_eng-fra.txt  
     ```
+
 ## Train NMT Model
-  - Generate nmt models
-    - First, generate vocabulary
-      - exec `mkdir models && python3 main.py --mode vocab` and the dir of models/ would generate a file named 'vocab_eng-fra.bin'
+
+* Generate nmt models
+  * First, generate vocabulary
+    * exec `mkdir models && python3 main.py --mode vocab` and the dir of models/ would generate a file named 'vocab_eng-fra.bin'
+
          ```bash
           Reading lines...
           Read 194513 sentence pairs
@@ -59,8 +60,10 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
           generated vocabulary, source 15140 words, target 24329 words
           vocabulary saved to models/vocab_eng-fra.bin
          ```
-    - Then, start to train the nmt model
-      - exec `python3 main.py --mode train` and finally the dir of models would generate two file which the suffix is .pth(It is recommended to use a machine with gpu)
+
+  * Then, start to train the nmt model
+    * exec `python3 main.py --mode train` and finally the dir of models would generate two file which the suffix is .pth(It is recommended to use a machine with gpu)
+
         ```bash
         preapring data...
         start to train...
@@ -77,9 +80,10 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
         Saving model to /home/**/starwhale/example/nmt/models/encoder.pth
         Saving model to /home/**/starwhale/example/nmt/models/decoder.pth
         ```
+
 ## Build Model With Starwhale
 
-- Develop the evaluation process with Starwhale Python SDK, full code is [here](https://github.com/star-whale/starwhale/blob/main/example/nmt/code/ppl.py).
+* Develop the evaluation process with Starwhale Python SDK, full code is [here](https://github.com/star-whale/starwhale/blob/main/example/nmt/code/ppl.py).
 
   ```python
   from starwhale.api.model import PipelineHandler
@@ -132,7 +136,8 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
           return model
   ```
 
-- Define `model.yaml`.
+* Define `model.yaml`.
+
   ```yaml
   version: 1.0
   name: nmt
@@ -149,19 +154,23 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
     - nmt
   ```
 
-- Build Starwhale Model(Please execute this command in the directory where 'model.yaml' is located,the same with runtime and dataset build)
+* Build Starwhale Model(Please execute this command in the directory where 'model.yaml' is located,the same with runtime and dataset build)
    `swcli model build .`
 
 ## Build Runtime With Starwhale
-- Write requirements.txt
+
+* Write requirements.txt
+
   ```txt
   numpy
   torch
   nltk
   starwhale
   ```
-- Build Starwhale Runtime
-  - `swcli runtime create -n nmt -m venv --python 3.8 .`
+
+* Build Starwhale Runtime
+  * `swcli runtime create -n nmt -m venv --python 3.8 .`
+
     ```bash
     2022-06-30 20:09:14.247 | DEBUG  | verbosity: 4, log level: DEBUG
     🚧 start to create runtime environment...
@@ -173,13 +182,17 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
     source /home/**/vscode_space/starwhale/example/nmt/venv/bin/activate
     👏 python runtime environment is ready to use 🎉
     ```
-  - follow the prompts to execute the activate environment command
+
+  * follow the prompts to execute the activate environment command
     `source /home/**/vscode_space/starwhale/example/nmt/venv/bin/activate`
-  - install by requirements
+  * install by requirements
     `python3 -m pip install -r requirements.txt`
-  - `swcli runtime build .`
+  * `swcli runtime build .`
+
 ## Build Dataset With Starwhale
-- Use Starwhale python SDK to customize dataset generation rules
+
+* Use Starwhale python SDK to customize dataset generation rules
+
   ```python
   from starwhale.api.dataset import BuildExecutor
 
@@ -219,7 +232,9 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
               if index >= lines - 1:
                   break
   ```
-- Define `dataset.yaml`.
+
+* Define `dataset.yaml`.
+
   ```yaml
   name: nmt
   mode: generate
@@ -236,56 +251,49 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
     volume_size: 2M
   ```
 
-- Build Starwhale Dataset
-  - `swcli dataset build .`
+* Build Starwhale Dataset
+  * `swcli dataset build .`
 
 ## Evaluation process
-  - Create evaluate job for the models
-    - exec `swcli -vvv job create --model nmt/version/latest --dataset nmt/version/latest --runtime nmt/version/latest`.
+
+* Create evaluate job for the models
+  * exec `swcli -vvv job create --model nmt/version/latest --dataset nmt/version/latest --runtime nmt/version/latest`.
+
       ```bash
       ...
-      ⠴ run ppl... ━━━━━━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  26% 0:00:01 0:00:022022-07-01 10:41:09.622 | INFO   | [0] data handle -> success
-      src lebels: 100
-      ⠴ run ppl... ━━━━━━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  26% 0:00:01 0:00:022022-07-01 10:41:09.624 | INFO   | [1]data-label loaded, data size:3.81KB, label size:4.17KB ,batch:100
-      -----> ppl: 3899, 100
-      ppl-src sentexces: 75
-      ⠧ run ppl... ━━━━━━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  26% 0:00:01 0:00:032022-07-01 10:41:10.461 | INFO   | [1] data handle -> success
-      src lebels: 75
-      ⠧ run ppl... ━━━━━━━━━━╸━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  26% 0:00:01 0:00:032022-07-01 10:41:10.463 | INFO   | finish.
-      👏 finish run ppl: PipelineHandler status@/home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/ppl/status, log@/home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/ppl/log, result@/home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/ppl/result
-      try to import code.ppl:NMTPipeline@/home/**/.cache/starwhale/self/workdir/model/nmt/gq/gqygmzddgaywkztdg42gizjvo5utcni/src...
-      🗣  swcli python prefix:/usr, runtime env python prefix:/home/**/vscode_space/starwhale/example/nmt/venv, swcli will inject sys.path
-      👏 finish run cmp: PipelineHandler status@/home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp/status, log@/home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp/log, result@/home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp/result
+      👏 finish run ppl: PipelineHandler ... result@/home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/ppl/result
+      ...
+      👏 finish run cmp: PipelineHandler ... result@/home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp/result
         7 out of 7 steps finished ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:03
       👏 success to create job(project id: local/project/self)
       🐦 run cmd to fetch job info: swcli job info gqzdgzrzgfst
       ```
-    - Follow the prompts to execute the info command:`swcli job info gqzdgzrzgfst`
-        ```bash
-        ╭─ Starwhale Instance ────────────────────────────────────────────────────────────────────────────────────────╮
-        │                                     ⭐ local (local) 🐳                                     🤡**@normal │
-        ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
-        ───────────────────── Inspect _manifest.yaml for eval:local/project/self/job/gqzdgzrzgfst ─────────────────────
-        {
-            'created_at': '2022-07-01 10:41:07 CST',
-            'datasets': [
-                'local/project/self/dataset/nmt/version/latest'
-            ],
-            'desc': None,
-            'finished_at': '2022-07-01 10:41:10 CST',
-            'model': 'nmt/version/latest',
-            'model_dir': '/home/**/.cache/starwhale/self/workdir/model/nmt/gq/gqygmzddgaywkztdg42gizjvo5utcni/src',
-            'name': None,
-            'phase': 'all',
-            'runtime': 'nmt/version/latest',
-            'status': 'success',
-            'version': 'gqzdgzrzgfstmylbgrstmnjrpi3xeni'
-        }
-        ─────────────────────────────────────────── Evaluation process dirs ───────────────────────────────────────────
-        🌵 ppl: /home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/ppl
-        🐫 cmp: /home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp
-        ```
-    - the prompts 'cmp: /home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp' show the dir where the result file locate, so we can view the result file content by `cat /home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp/result/current`
+
+  * Follow the prompts to execute the info command:`swcli job info gqzdgzrzgfst`
+
+    ```bash
+    {
+        'created_at': '2022-07-01 10:41:07 CST',
+        'datasets': [
+            'local/project/self/dataset/nmt/version/latest'
+        ],
+        'desc': None,
+        'finished_at': '2022-07-01 10:41:10 CST',
+        'model': 'nmt/version/latest',
+        'model_dir': '/home/**/.cache/starwhale/self/workdir/model/nmt/gq/gqygmzddgaywkztdg42gizjvo5utcni/src',
+        'name': None,
+        'phase': 'all',
+        'runtime': 'nmt/version/latest',
+        'status': 'success',
+        'version': 'gqzdgzrzgfstmylbgrstmnjrpi3xeni'
+    }
+    ─────────────────────────────────────────── Evaluation process dirs ───────────────────────────────────────────
+    🌵 ppl: /home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/ppl
+    🐫 cmp: /home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp
+    ```
+
+  * the prompts 'cmp: /home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp' show the dir where the result file locate, so we can view the result file content by `cat /home/**/.cache/starwhale/self/job/gq/gqzdgzrzgfstmylbgrstmnjrpi3xeni/cmp/result/current`
+
       ```bash
       {"summary": {"bleu_score": 0.0}}
       ```
@@ -304,7 +312,7 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
 ```shell
 (nmt) $ swcli model copy nmt/version/latest cloud://pre-k8s/project/1
 🚧 start to copy local/project/self/model/nmt/version/latest -> http://console.pre.intra.starwhale.ai/project/1...
-  🎳 upload gqygmzddgaywkztdg42gizjvo5utcni.swmp ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:05 71.0 MB 9.1 MB/s
+  🎳 upload gqygmzddgaywkztdg42gizjvo5utcni.swmp ━━━━━━━━━━━━━ 100% 0:00:05 71.0 MB 9.1 MB/s
 👏 copy done.
 ```
 
@@ -313,11 +321,11 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
 ```shell
 (nmt) $ swcli dataset copy nmt/version/latest cloud://pre-k8s/project/1
 🚧 start to copy local/project/self/dataset/nmt/version/latest -> http://console.pre.intra.starwhale.ai/project/1...
-  ⬆ _manifest.yaml         ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 1.2 kB    ?
-  ⬆ data_ubyte_0.swds_bin  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 8.1 kB    ?
-  ⬆ index.jsonl            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 338 bytes ?
-  ⬆ label_ubyte_0.swds_bin ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 12.2 kB   ?
-  ⬆ archive.swds_meta      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 81.9 kB   ?
+  ⬆ _manifest.yaml         ━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 1.2 kB
+  ⬆ data_ubyte_0.swds_bin  ━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 8.1 kB
+  ⬆ index.jsonl            ━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 338 bytes
+  ⬆ label_ubyte_0.swds_bin ━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 12.2 kB
+  ⬆ archive.swds_meta      ━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 81.9 kB
 👏 copy done
 ```
 
@@ -326,7 +334,7 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
 ```shell
 (nmt) $ swcli runtime copy nmt/version/latest cloud://pre-k8s/project/1
 🚧 start to copy local/project/self/runtime/nmt/version/latest -> http://console.pre.intra.starwhale.ai/project/1...
-  🎳 upload mjsdkzbymmztmztdg42gizjvge2honq.swrt ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 20.5 kB ?
+  🎳 upload mjsdkzbymmztmztdg42gizjvge2honq.swrt ━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 20.5 kB
 👏 copy done.
 ```
 
