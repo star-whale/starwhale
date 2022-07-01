@@ -44,50 +44,50 @@
 
 ## What is Starwhale
 
-Starwhale is a MLOps platform. It provides **Instance**, **Project**, **Runtime**, **Model** and **Dataset** core concepts.
+Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime**, **Model**, and **Dataset**.
 
-- **Instance**: Starwhale platform delivery method.
+- **Instance**: Each installation of Starwhale is called an instance.
   - 👻 **Standalone Instance**: The simplest form that requires only the Starwhale Client(`swcli`). `swcli` is written by pure python3.
   - 🎍 **On-Premises Instance**: Cloud form, we call it **private cloud instance**. Kubernetes and BareMetal both meet the basic environmental requirements.
-  - ☁️ **Cloud Hosted Instance**: Cloud form, we call it **public cloud instance**. Starwhale team maintains web service.
+  - ☁️ **Cloud Hosted Instance**: Cloud form, we call it **public cloud instance**. Starwhale team maintains the web service.
 
-  **Starwhale tries to keep concepts consistent across different types of instances. In this way, people can easily exchange data and migrate between instances.**
+  **Starwhale tries to keep concepts consistent across different types of instances. In this way, people can easily exchange data and migrate between them.**
 
 - **Project**: The basic unit for organizing different resources.
 
-- **ML Basic Elements**: The Machine Learning/Deep Learning running environments or artifacts. Starwhale empowers the ML/DL basic elements with packaging, versioning, reproducibility and shareable.
-  - 🐌 **Runtime**: Describe software dependencies to "run", which includes python libraries, native libraries, native binaries etc.
-  - 🐇 **Model**: Use `model.yaml` to describe how to organize the model arbitrary files.
-  - 🐫 **Dataset**: Use `dataset.yaml` to process and package data files, then produce a Starwhale dataset. It is a unified description of how the data and labels are stored and organized. Starwhale dataset can be loaded efficiently.
+- **ML Basic Elements**: The Machine Learning/Deep Learning running environments or artifacts. Starwhale empowers the ML/DL essential elements with packaging, versioning, reproducibility, and shareability.
+  - 🐌 **Runtime**: Software dependencies description to "run" a model, which includes python libraries, native libraries, native binaries, etc.
+  - 🐇 **Model**: The standard model format used in model delivery.
+  - 🐫 **Dataset**: A unified description of how the data and labels are stored and organized. Starwhale datasets can be loaded efficiently.
 
-- **Running Fundamentals**: Starwhale uses **Job**, **Step** and **Task** to execute ML/DL actions like model training， evaluation and serving. Starwhale **Controller-Agents** structure make scale-out easily.
-  - 🥕 **Job**: A set of programs to do specific work, each job consists of one or more steps.
-  - 🌵 **Step**: Represent distinct stages of the work, each step consists of one or more tasks.
-  - 🥑 **Task**: Operation entity, tasks are in some specific steps.
+- **Running Fundamentals**: Starwhale uses **Job**, **Step**, and **Task** to execute ML/DL actions like model training， evaluation, and serving. Starwhale's **Controller-Agents** structure scales out easily.
+  - 🥕 **Job**: A set of programs to do specific work. Each job consists of one or more steps.
+  - 🌵 **Step**: Represents distinct stages of the work. Each step consists of one or more tasks.
+  - 🥑 **Task**: Operation entity. Tasks are in some specific steps.
 
 - **Scenarios**: Starwhale provides the best practice and out-of-the-box for different ML/DL scenarios.
-  - 🚝 **Model Training**: Use Starwhale Python SDK to record experiment meta, metric, log and artifact.
-  - 🛥️ **Model Evaluation**: `PipelineHandler` and some report decorators can help you only write some preprocessing and post-processing code, then get a completed, useful, user-friendly evaluation reports.
-  - 🛫 **Model Serving**: Starwhale Model is able to deploy as a web service or stream service in production, which will own deployment capability, observability and scalability directly, data and algorithm engineers should not write the ml/dl irrelevant code.
+  - 🚝 **Model Training(TBD)**: Use Starwhale Python SDK to record experiment meta, metric, log, and artifact.
+  - 🛥️ **Model Evaluation**: `PipelineHandler` and some report decorators can give you complete, helpful, and user-friendly evaluation reports with only a few lines of codes.
+  - 🛫 **Model Serving(TBD)**: Starwhale Model can be deployed as a web service or stream service in production with deployment capability, observability, and scalability. Data scientists do not need to write ML/DL irrelevant codes.
 
-## MNIST Quick Tour for standalone instance
+## MNIST Quick Tour for the standalone instance
 
 <a href="https://starwhale.ai"><img src="https://github.com/star-whale/starwhale/blob/main/docs/docs/img/core-workflow.gif?raw=true" width="100%"></a>
 
-- 🍰 **STEP1**: installing starwhale
+- 🍰 **STEP1**: Installing Starwhale
 
     ```bash
     python3 -m pip install --pre starwhale
     ```
 
-- 🍵 **STEP2**: downloading mnist example
+- 🍵 **STEP2**: Downloading the MNIST example
 
     ```bash
     git clone https://github.com/star-whale/starwhale.git
     cd starwhale/example/mnist
     ```
 
-- ☕ **STEP3**: building runtime
+- ☕ **STEP3**: Building a runtime
 
     ```bash
     swcli runtime create -n pytorch-mnist -m venv --python 3.9 .
@@ -97,9 +97,9 @@ Starwhale is a MLOps platform. It provides **Instance**, **Project**, **Runtime*
     swcli runtime info pytorch-mnist/version/latest
     ```
 
-- 🍞 **STEP4**: building model
+- 🍞 **STEP4**: Building a model
 
-  - Write some code with Starwhale Python SDK, full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/ppl.py).
+  - Write some code with Starwhale Python SDK. Complete code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/ppl.py).
 
    ```python
    from starwhale.api.model import PipelineHandler
@@ -157,14 +157,14 @@ Starwhale is a MLOps platform. It provides **Instance**, **Project**, **Runtime*
     ppl: mnist.ppl:MNISTInference
   ```
 
-  - Run one command to build model.
+  - Run one command to build the model.
 
    ```bash
     swcli model build .
     swcli model info mnist/version/latest
    ```
 
-- 🍺 **STEP5**: building dataset
+- 🍺 **STEP5**: Building a dataset
 
   - Download MNIST RAW data files.
 
@@ -177,7 +177,7 @@ Starwhale is a MLOps platform. It provides **Instance**, **Project**, **Runtime*
     ls -lah data/*
    ```
 
-  - Write some code with Starwhale Python SDK, full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/process.py).
+  - Write some code with Starwhale Python SDK. Full code is [here](https://github.com/star-whale/starwhale/blob/main/example/mnist/mnist/process.py).
 
    ```python
     from starwhale.api.dataset import BuildExecutor
@@ -206,14 +206,14 @@ Starwhale is a MLOps platform. It provides **Instance**, **Project**, **Runtime*
       volume_size: 2M
    ```
 
-  - Run one command to build dataset.
+  - Run one command to build the dataset.
 
    ```bash
     swcli dataset build .
     swcli dataset info mnist/version/latest
    ```
 
-- 🍖 **STEP6**: running evaluation job
+- 🍖 **STEP6**: Running an evaluation job
 
    ```bash
     swcli -vvv job create --model mnist/version/latest --dataset mnist/version/latest
@@ -221,22 +221,22 @@ Starwhale is a MLOps platform. It provides **Instance**, **Project**, **Runtime*
     swcli job info ${version}
    ```
 
-👏 Now you have completed the basic step for starwhale standalone.
+👏 Now, you have completed the fundamental steps for Starwhale standalone.
 
-## Documentation, Community and Support
+## Documentation, Community, and Support
 
 - Visit [Starwhale HomePage](https://starwhale.ai).
 - More information in the [official documentation](https://doc.starwhale.ai).
 - For general questions and support, join the [Slack](https://starwhale.slack.com/).
 - For bug reports and feature requests, please use [Github Issue](https://github.com/star-whale/starwhale/issues).
 - To get community updates, follow [@starwhaleai](https://twitter.com/starwhaleai) on Twitter.
-- For starwhale artifacts, please visit:
+- For Starwhale artifacts, please visit:
 
   - Python Package on [Pypi](https://pypi.org/project/starwhale/).
   - Helm Charts on [Artifacthub](https://artifacthub.io/packages/helm/starwhale/starwhale).
   - Docker Images on [Docker Hub](https://hub.docker.com/u/starwhaleai) and [ghcr.io](https://github.com/orgs/star-whale/packages).
 
-- Additional, you can always finds us at *developer@starwhale.ai*.
+- Additionally, you can always find us at *developer@starwhale.ai*.
 
 ## Contributing
 
@@ -244,4 +244,4 @@ Starwhale is a MLOps platform. It provides **Instance**, **Project**, **Runtime*
 
 ## License
 
-Starwhale is Licensed under the [Apache License 2.0](https://github.com/star-whale/starwhale/blob/main/LICENSE).
+Starwhale is licensed under the [Apache License 2.0](https://github.com/star-whale/starwhale/blob/main/LICENSE).
