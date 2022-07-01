@@ -11,4 +11,4 @@ build-docs:
 	yarn build
 
 lint-docs:
-	markdownlint docs/*.md
+	markdownlint docs && markdownlint --disable=MD041 ../README.md
