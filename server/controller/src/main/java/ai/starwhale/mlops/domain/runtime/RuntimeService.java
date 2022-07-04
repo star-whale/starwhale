@@ -142,14 +142,13 @@ public class RuntimeService {
 
     public Boolean deleteRuntime(RuntimeQuery runtimeQuery) {
         return RemoveManager.create(bundleManager(), runtimeManager)
-            .removeBundle(BundleURL.builder()
-                .projectUrl(runtimeQuery.getProjectUrl())
-                .bundleUrl(runtimeQuery.getRuntimeUrl())
-                .build());
+            .removeBundle(BundleURL.create(runtimeQuery.getProjectUrl(), runtimeQuery.getRuntimeUrl()));
     }
 
     public RuntimeInfoVO getRuntimeInfo(RuntimeQuery runtimeQuery) {
-        Long runtimeId = runtimeManager.getRuntimeId(runtimeQuery.getRuntimeUrl(), runtimeQuery.getProjectUrl());
+        BundleManager bundleManager = bundleManager();
+        BundleURL bundleURL = BundleURL.create(runtimeQuery.getProjectUrl(), runtimeQuery.getRuntimeUrl());
+        Long runtimeId = bundleManager.getBundleId(bundleURL);
         RuntimeEntity rt = runtimeMapper.findRuntimeById(runtimeId);
         if(rt == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
@@ -158,7 +157,8 @@ public class RuntimeService {
 
         RuntimeVersionEntity versionEntity = null;
         if(!StrUtil.isEmpty(runtimeQuery.getRuntimeVersionUrl())) {
-            Long versionId = runtimeManager.getRuntimeVersionId(runtimeQuery.getRuntimeVersionUrl(), rt.getId());
+            Long versionId = bundleManager.getBundleVersionId(BundleVersionURL
+                .create(bundleURL, runtimeQuery.getRuntimeVersionUrl()), runtimeId);
             versionEntity = runtimeVersionMapper.findVersionById(versionId);
         }
         if(versionEntity == null) {
@@ -195,8 +195,8 @@ public class RuntimeService {
     }
 
     public Boolean modifyRuntimeVersion(String projectUrl, String runtimeUrl, String runtimeVersionUrl, RuntimeVersion version) {
-        Long runtimeId = runtimeManager.getRuntimeId(runtimeUrl, projectUrl);
-        Long versionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, runtimeId);
+        Long versionId = bundleManager().getBundleVersionId(BundleVersionURL
+            .create(projectUrl, runtimeUrl, runtimeVersionUrl));
         String tag = version.getVersionTag();
         RuntimeVersionEntity entity = RuntimeVersionEntity.builder()
             .id(versionId)
@@ -211,11 +211,8 @@ public class RuntimeService {
     public Boolean manageVersionTag(String projectUrl, String runtimeUrl, String versionUrl,
         TagAction tagAction) {
         try {
-            return TagManager.create(bundleManager(), runtimeManager).updateTag(BundleVersionURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(runtimeUrl)
-                .versionUrl(versionUrl)
-                .build(), tagAction);
+            return TagManager.create(bundleManager(), runtimeManager)
+                .updateTag(BundleVersionURL.create(projectUrl, runtimeUrl, versionUrl), tagAction);
         } catch (TagException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(e.getMessage()),
                 HttpStatus.BAD_REQUEST);
@@ -225,36 +222,15 @@ public class RuntimeService {
 
     public Boolean revertVersionTo(String projectUrl, String runtimeUrl, String runtimeVersionUrl) {
         return RevertManager.create(bundleManager(), runtimeManager)
-            .revertVersionTo(BundleVersionURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(runtimeUrl)
-                .versionUrl(runtimeVersionUrl)
-                .build());
+            .revertVersionTo(BundleVersionURL.create(projectUrl, runtimeUrl, runtimeVersionUrl));
     }
 
     public PageInfo<RuntimeVersionVO> listRuntimeVersionHistory(RuntimeVersionQuery query, PageParams pageParams) {
-        Long runtimeId = runtimeManager.getRuntimeId(query.getRuntimeUrl(), query.getProjectUrl());
+        Long runtimeId = bundleManager().getBundleId(BundleURL.create(query.getProjectUrl(), query.getRuntimeUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<RuntimeVersionEntity> entities = runtimeVersionMapper.listVersions(
             runtimeId, query.getVersionName(), query.getVersionTag());
         return PageUtil.toPageInfo(entities, versionConvertor::convert);
-    }
-
-    public Long addRuntime(Runtime runtime) {
-        RuntimeEntity entity = RuntimeEntity.builder()
-            .runtimeName(runtime.getName())
-            .ownerId(runtime.getOwnerId())
-            .projectId(runtime.getProjectId())
-            .build();
-        if(entity.getProjectId() == 0) {
-            ProjectEntity defaultProject = projectManager.findDefaultProject();
-            if(defaultProject != null) {
-                entity.setProjectId(defaultProject.getId());
-            }
-        }
-        runtimeMapper.addRuntime(entity);
-        log.info("Runtime has been created. ID={}", entity.getId());
-        return entity.getId();
     }
 
     public List<RuntimeVO> findRuntimeByVersionIds(List<Long> versionIDs) {
@@ -420,10 +396,7 @@ public class RuntimeService {
     public Boolean recoverRuntime(String projectUrl, String runtimeUrl) {
         try {
             return RecoverManager.create(projectManager, runtimeManager, idConvertor)
-                    .recoverBundle(BundleURL.builder()
-                        .projectUrl(projectUrl)
-                        .bundleUrl(runtimeUrl)
-                        .build());
+                    .recoverBundle(BundleURL.create(projectUrl, runtimeUrl));
         } catch (RecoverException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }

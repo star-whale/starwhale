@@ -184,31 +184,6 @@ public interface DatasetApi {
         @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
-//    @Operation(summary = "Create a new dataset version",
-//        description = "Create a new version of the dataset. "
-//            + "The data resources can be selected by uploading the file package or entering the server path.")
-//    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-//    @PostMapping(
-//        value = "/project/{projectId}/dataset/{datasetId}/version",
-//        produces = {"application/json"},
-//        consumes = {"multipart/form-data"})
-//    ResponseEntity<ResponseMessage<String>> createDatasetVersion(
-//        @Parameter(
-//            in = ParameterIn.PATH,
-//            description = "Project id",
-//            schema = @Schema())
-//        @PathVariable("projectId")
-//            String projectId,
-//        @Parameter(
-//            in = ParameterIn.PATH,
-//            description = "Dataset ID",
-//            required = true,
-//            schema = @Schema())
-//        @PathVariable("datasetId")
-//            String datasetId,
-//        @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
-//        SWDSVersionRequest swdsVersionRequest);
-
     @Operation(summary = "Create a new dataset version",
         description = "Create a new version of the dataset. "
             + "The data resources can be selected by uploading the file package or entering the server path.")
@@ -314,27 +289,6 @@ public interface DatasetApi {
         @Valid
         @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
-
-//    @Operation(summary = "Create a new dataset",
-//        description = "Create a new data set and create an initial version. "
-//            + "The data resources are selected by uploading a file package or entering a server path.")
-//    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-//    @PostMapping(
-//        value = "/project/{projectId}/dataset",
-//        produces = {"application/json"},
-//        consumes = {"multipart/form-data"})
-//    ResponseEntity<ResponseMessage<String>> createDataset(
-//        @Parameter(
-//            in = ParameterIn.PATH,
-//            description = "Project id",
-//            schema = @Schema())
-//        @PathVariable("projectId")
-//            String projectId,
-//        @Parameter(in = ParameterIn.DEFAULT, required = true, schema = @Schema())
-//        @RequestParam(value = "datasetName")
-//            String datasetName,
-//        @Parameter(description = "file detail") @RequestPart(value = "zipFile", required = false) MultipartFile zipFile,
-//        SWDSRequest swdsRequest);
 
     @Operation(summary = "head for swds info ",
         description = "head for swds info")

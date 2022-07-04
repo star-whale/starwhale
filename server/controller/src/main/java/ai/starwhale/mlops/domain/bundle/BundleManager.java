@@ -36,10 +36,13 @@ public class BundleManager {
     }
 
     public Long getBundleVersionId(BundleVersionURL bundleVersionURL) {
-        Long bundleId = getBundleId(bundleVersionURL.getBundleUrl(), bundleVersionURL.getProjectUrl());
+        Long bundleId = getBundleId(bundleVersionURL.getBundleURL());
+        return getBundleVersionId(bundleVersionURL, bundleId);
+    }
+    public Long getBundleVersionId(BundleVersionURL bundleVersionURL, Long bundleId) {
         return getBundleVersionId(bundleVersionURL.getVersionUrl(), bundleId);
     }
-    public Long getBundleId(String bundleUrl, String projectUrl) {
+    private Long getBundleId(String bundleUrl, String projectUrl) {
         if(idConvertor.isID(bundleUrl)) {
             return idConvertor.revert(bundleUrl);
         }
@@ -53,7 +56,7 @@ public class BundleManager {
         return entity.getId();
     }
 
-    public Long getBundleVersionId(String versionUrl, Long bundleId) {
+    private Long getBundleVersionId(String versionUrl, Long bundleId) {
         if(idConvertor.isID(versionUrl)) {
             return idConvertor.revert(versionUrl);
         }

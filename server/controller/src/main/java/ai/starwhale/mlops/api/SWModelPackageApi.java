@@ -214,30 +214,6 @@ public interface SWModelPackageApi {
         @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
-//    @Operation(summary = "Create a new dataset version",
-//        description = "Create a new model version. "
-//            + "The model file can be selected by uploading the file package or entering the server path")
-//    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-//    @PostMapping(
-//        value = "/project/{projectUrl}/model/{modelUrl}/version",
-//        produces = {"application/json"},
-//        consumes = {"multipart/form-data"})
-//    ResponseEntity<ResponseMessage<String>> createModelVersion(
-//        @Parameter(
-//            in = ParameterIn.PATH,
-//            description = "Project Url",
-//            schema = @Schema())
-//        @PathVariable("projectUrl")
-//            String projectUrl,
-//        @Parameter(
-//            in = ParameterIn.PATH,
-//            description = "Model Url",
-//            schema = @Schema())
-//        @PathVariable("modelUrl")
-//            String modelUrl,
-//        @Parameter(description = "file detail") @Valid @RequestPart("zipFile") MultipartFile zipFile,
-//        SWMPVersionRequest swmpVersionRequest);
-
     @Operation(summary = "Set tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}")
@@ -273,24 +249,6 @@ public interface SWModelPackageApi {
         @PathVariable("versionUrl")
         String versionUrl,
         @Valid @RequestBody SWMPTagRequest swmpTagRequest);
-
-//    @Operation(summary = "Create a new model",
-//        description = "Create a new model and create an initial version. "
-//            + "The model file is selected by uploading a file package or entering a server path.")
-//    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-//    @PostMapping(
-//        value = "/project/{projectUrl}/model",
-//        produces = {"application/json"},
-//        consumes = {"multipart/form-data"})
-//    ResponseEntity<ResponseMessage<String>> createModel(
-//        @Parameter(
-//            in = ParameterIn.PATH,
-//            description = "Project url",
-//            schema = @Schema())
-//        @PathVariable("projectUrl")
-//            String projectUrl,
-//        @Parameter(description = "file detail") @RequestPart("zipFile") MultipartFile zipFile,
-//        SWMPRequest swmpRequest);
 
     @Operation(summary = "Create a new swmp version",
         description = "Create a new version of the swmp. "

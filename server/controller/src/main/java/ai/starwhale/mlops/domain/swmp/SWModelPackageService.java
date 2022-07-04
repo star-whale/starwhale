@@ -131,19 +131,13 @@ public class SWModelPackageService {
 
     public Boolean deleteSWMP(SWMPQuery query) {
         return RemoveManager.create(bundleManager(), swmpManager)
-            .removeBundle(BundleURL.builder()
-                .projectUrl(query.getProjectUrl())
-                .bundleUrl(query.getSwmpUrl())
-                .build());
+            .removeBundle(BundleURL.create(query.getProjectUrl(), query.getSwmpUrl()));
     }
 
     public Boolean recoverSWMP(String projectUrl, String modelUrl) {
         try {
             return RecoverManager.create(projectManager, swmpManager, idConvertor)
-                .recoverBundle(BundleURL.builder()
-                    .projectUrl(projectUrl)
-                    .bundleUrl(modelUrl)
-                    .build());
+                .recoverBundle(BundleURL.create(projectUrl, modelUrl));
         } catch (RecoverException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }
@@ -185,7 +179,9 @@ public class SWModelPackageService {
     }
 
     public SWModelPackageInfoVO getSWMPInfo(SWMPQuery query) {
-        Long swmpId = swmpManager.getSWMPId(query.getSwmpUrl(), query.getProjectUrl());
+        BundleManager bundleManager = bundleManager();
+        BundleURL bundleURL = BundleURL.create(query.getProjectUrl(), query.getSwmpUrl());
+        Long swmpId = bundleManager.getBundleId(bundleURL);
         SWModelPackageEntity model = swmpMapper.findSWModelPackageById(swmpId);
         if (model == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
@@ -195,7 +191,8 @@ public class SWModelPackageService {
         SWModelPackageVersionEntity versionEntity = null;
         if(!StrUtil.isEmpty(query.getSwmpVersionUrl())) {
             // find version by versionId
-            Long versionId = swmpManager.getSWMPVersionId(query.getSwmpVersionUrl(), model.getId());
+            Long versionId = bundleManager.getBundleVersionId(BundleVersionURL
+                .create(bundleURL, query.getSwmpVersionUrl()));
             versionEntity = swmpVersionMapper.findVersionById(versionId);
         }
         if(versionEntity == null) {
@@ -237,8 +234,8 @@ public class SWModelPackageService {
     }
 
     public Boolean modifySWMPVersion(String projectUrl, String swmpUrl, String versionUrl, SWMPVersion version) {
-        Long swmpId = swmpManager.getSWMPId(swmpUrl, projectUrl);
-        Long versionId = swmpManager.getSWMPVersionId(versionUrl, swmpId);
+        Long versionId = bundleManager().getBundleVersionId(BundleVersionURL
+            .create(projectUrl, swmpUrl, versionUrl));
         SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
             .id(versionId)
             .versionTag(version.getTag())
@@ -252,11 +249,10 @@ public class SWModelPackageService {
     public Boolean manageVersionTag(String projectUrl, String modelUrl, String versionUrl,
         TagAction tagAction) {
         try {
-            return TagManager.create(bundleManager(), swmpManager).updateTag(BundleVersionURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(modelUrl)
-                .versionUrl(versionUrl)
-                .build(), tagAction);
+            return TagManager.create(bundleManager(), swmpManager)
+                .updateTag(
+                    BundleVersionURL.create(projectUrl, modelUrl, versionUrl),
+                    tagAction);
         } catch (TagException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP).tip(e.getMessage()),
                 HttpStatus.BAD_REQUEST);
@@ -265,15 +261,12 @@ public class SWModelPackageService {
 
     public Boolean revertVersionTo(String projectUrl, String swmpUrl, String versionUrl) {
         return RevertManager.create(bundleManager(), swmpManager)
-            .revertVersionTo(BundleVersionURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(swmpUrl)
-                .versionUrl(versionUrl)
-                .build());
+            .revertVersionTo(BundleVersionURL.create(projectUrl, swmpUrl, versionUrl));
     }
 
     public PageInfo<SWModelPackageVersionVO> listSWMPVersionHistory(SWMPVersionQuery query, PageParams pageParams) {
-        Long swmpId = swmpManager.getSWMPId(query.getSwmpUrl(), query.getProjectUrl());
+        Long swmpId = bundleManager().getBundleId(BundleURL
+            .create(query.getProjectUrl(), query.getSwmpUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWModelPackageVersionEntity> entities = swmpVersionMapper.listVersions(
             swmpId, query.getVersionName(), query.getVersionTag());
@@ -282,37 +275,6 @@ public class SWModelPackageService {
             vo.setSize(storageService.getStorageSize(entity.getStoragePath()));
             return vo;
         });
-    }
-
-    public Long addSWMP(SWMPObject swmp) {
-        SWModelPackageEntity entity = SWModelPackageEntity.builder()
-            .swmpName(swmp.getName())
-            .ownerId(swmp.getOwner().getId())
-            .projectId(swmp.getProject().getId())
-            .build();
-        if(entity.getProjectId() == 0) {
-            ProjectEntity defaultProject = projectManager.findDefaultProject();
-            if(defaultProject != null) {
-                entity.setProjectId(defaultProject.getId());
-            }
-        }
-        swmpMapper.addSWModelPackage(entity);
-        log.info("SWMP has been created. ID={}, NAME={}", entity.getId(), entity.getSwmpName());
-        return entity.getId();
-    }
-
-    public Long addVersion(SWMPObject swmp) {
-        SWModelPackageVersionEntity entity = SWModelPackageVersionEntity.builder()
-            .swmpId(swmp.getId())
-            .ownerId(swmp.getVersion().getOwnerId())
-            .versionTag(swmp.getVersion().getTag())
-            .versionName(swmp.getVersion().getName())
-            .versionMeta(swmp.getVersion().getMeta())
-            .storagePath(swmp.getVersion().getStoragePath())
-            .build();
-        swmpVersionMapper.addNewVersion(entity);
-        log.info("SWMP Version has been created. ID={}", entity.getId());
-        return entity.getId();
     }
 
     public List<SWModelPackageVO> findModelByVersionId(List<Long> versionIds) {
