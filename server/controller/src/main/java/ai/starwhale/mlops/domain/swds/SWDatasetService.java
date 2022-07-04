@@ -115,26 +115,22 @@ public class SWDatasetService {
 
     public Boolean deleteSWDS(SWDSQuery query) {
         return RemoveManager.create(bundleManager(), swdsManager)
-            .removeBundle(BundleURL.builder()
-                .projectUrl(query.getProjectUrl())
-                .bundleUrl(query.getSwdsUrl())
-                .build());
+            .removeBundle(BundleURL.create(query.getProjectUrl(), query.getSwdsUrl()));
     }
 
     public Boolean recoverSWDS(String projectUrl, String datasetUrl) {
         try {
             return RecoverManager.create(projectManager, swdsManager, idConvertor)
-                .recoverBundle(BundleURL.builder()
-                    .projectUrl(projectUrl)
-                    .bundleUrl(datasetUrl)
-                    .build());
+                .recoverBundle(BundleURL.create(projectUrl, datasetUrl));
         } catch (RecoverException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip(e.getMessage()),HttpStatus.BAD_REQUEST);
         }
     }
 
     public SWDatasetInfoVO getSWDSInfo(SWDSQuery query) {
-        Long datasetId = swdsManager.getSWDSId(query.getSwdsUrl(), query.getProjectUrl());
+        BundleManager bundleManager = bundleManager();
+        BundleURL bundleURL = BundleURL.create(query.getProjectUrl(), query.getSwdsUrl());
+        Long datasetId = bundleManager.getBundleId(bundleURL);
         SWDatasetEntity ds = swdsMapper.findDatasetById(datasetId);
         if(ds == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
@@ -143,7 +139,8 @@ public class SWDatasetService {
 
         SWDatasetVersionEntity versionEntity = null;
         if(!StrUtil.isEmpty(query.getSwdsVersionUrl())) {
-            Long versionId = swdsManager.getSWDSVersionId(query.getSwdsVersionUrl(), ds.getId());
+            Long versionId = bundleManager.getBundleVersionId(BundleVersionURL
+                .create(bundleURL, query.getSwdsVersionUrl()), datasetId);
             versionEntity = swdsVersionMapper.getVersionById(versionId);
         }
         if(versionEntity == null) {
@@ -183,8 +180,8 @@ public class SWDatasetService {
 
 
     public Boolean modifySWDSVersion(String projectUrl, String swdsUrl, String versionUrl, SWDSVersion version) {
-        Long swdsId = swdsManager.getSWDSId(swdsUrl, projectUrl);
-        Long versionId = swdsManager.getSWDSVersionId(versionUrl, swdsId);
+        Long versionId = bundleManager().getBundleVersionId(BundleVersionURL
+            .create(projectUrl, swdsUrl, versionUrl));
         SWDatasetVersionEntity entity = SWDatasetVersionEntity.builder()
             .id(versionId)
             .versionTag(version.getTag())
@@ -198,11 +195,10 @@ public class SWDatasetService {
         TagAction tagAction) {
 
         try {
-            return TagManager.create(bundleManager(), swdsManager).updateTag(BundleVersionURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(datasetUrl)
-                .versionUrl(versionUrl)
-                .build(), tagAction);
+            return TagManager.create(bundleManager(), swdsManager)
+                .updateTag(
+                    BundleVersionURL.create(projectUrl, datasetUrl, versionUrl),
+                    tagAction);
         } catch (TagException e) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip(e.getMessage()),
                 HttpStatus.BAD_REQUEST);
@@ -211,52 +207,15 @@ public class SWDatasetService {
 
     public Boolean revertVersionTo(String projectUrl, String swdsUrl, String versionUrl) {
         return RevertManager.create(bundleManager(), swdsManager)
-            .revertVersionTo(BundleVersionURL.builder()
-                .projectUrl(projectUrl)
-                .bundleUrl(swdsUrl)
-                .versionUrl(versionUrl)
-                .build());
+            .revertVersionTo(BundleVersionURL.create(projectUrl, swdsUrl, versionUrl));
     }
 
     public PageInfo<DatasetVersionVO> listDatasetVersionHistory(SWDSVersionQuery query, PageParams pageParams) {
-        Long swdsId = swdsManager.getSWDSId(query.getSwdsUrl(), query.getProjectUrl());
+        Long swdsId = bundleManager().getBundleId(BundleURL.create(query.getProjectUrl(), query.getSwdsUrl()));
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<SWDatasetVersionEntity> entities = swdsVersionMapper.listVersions(
             swdsId, query.getVersionName(), query.getVersionTag());
         return PageUtil.toPageInfo(entities, versionConvertor::convert);
-    }
-
-    public Long addDataset(SWDSObject swds) {
-        SWDatasetEntity entity = SWDatasetEntity.builder()
-            .datasetName(swds.getName())
-            .ownerId(swds.getOwnerId())
-            .projectId(swds.getProjectId())
-            .build();
-        if(entity.getProjectId() == 0) {
-            ProjectEntity defaultProject = projectManager.findDefaultProject();
-            if(defaultProject == null) {
-                throw new StarWhaleApiException(new SWProcessException(ErrorType.DB)
-                    .tip("Unable to find default project by user " + entity.getOwnerId()), HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-            entity.setProjectId(defaultProject.getId());
-        }
-        swdsMapper.addDataset(entity);
-        log.info("SWDS has been created. ID={}", entity.getId());
-        return entity.getId();
-    }
-
-    public Long addVersion(SWDSObject swds) {
-        SWDatasetVersionEntity entity = SWDatasetVersionEntity.builder()
-            .datasetId(swds.getId())
-            .ownerId(swds.getCurrentVersion().getOwnerId())
-            .versionTag(swds.getCurrentVersion().getTag())
-            .versionName(swds.getCurrentVersion().getName())
-            .versionMeta(swds.getCurrentVersion().getMeta())
-            .storagePath(swds.getCurrentVersion().getStoragePath())
-            .build();
-        swdsVersionMapper.addNewVersion(entity);
-        log.info("SWDS Version has been created. DSID={}, VID={}", entity.getDatasetId(), entity.getId());
-        return entity.getId();
     }
 
     public List<DatasetVO> findDatasetsByVersionIds(List<Long> versionIds) {

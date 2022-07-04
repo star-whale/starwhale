@@ -22,9 +22,7 @@ public class TagManager {
     }
 
     public Boolean updateTag(BundleVersionURL bundleVersionURL, TagAction tagAction) throws TagException {
-        Long id = bundleManager.getBundleId(bundleVersionURL.getBundleUrl(), bundleVersionURL.getProjectUrl());
-        Long versionId = bundleManager.getBundleVersionId(bundleVersionURL.getVersionUrl(), id);
-
+        Long versionId = bundleManager.getBundleVersionId(bundleVersionURL);
         HasTag entity = tagAccessor.findObjectWithTagById(versionId);
         if(entity == null) {
             throw new TagException(String.format("Unable to find the version, url=%s ", bundleVersionURL.getVersionUrl()));

@@ -26,7 +26,6 @@ import ai.starwhale.mlops.storage.StorageObjectInfo;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import java.io.IOException;
-import java.lang.ref.Reference;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
