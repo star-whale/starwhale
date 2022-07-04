@@ -8,6 +8,9 @@ SW_CLI_CONFIG = CONFIG_DIR / "config.yaml"
 ENV_SW_CLI_CONFIG = "SW_CLI_CONFIG"
 ENV_LOG_LEVEL = "SW_LOG_LEVEL"
 ENV_SW_IMAGE_REPO = "SW_IMAGE_REPO"
+# SW_LOCAL_STORAGE env used for generating default swcli config
+# and overriding 'storage.root' swcli config in runtime
+ENV_SW_LOCAL_STORAGE = "SW_LOCAL_STORAGE"
 
 DEFAULT_STARWHALE_API_VERSION = "1.0"
 DEFAULT_MANIFEST_NAME = "_manifest.yaml"

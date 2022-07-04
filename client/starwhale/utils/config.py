@@ -13,6 +13,7 @@ from starwhale.consts import (
     SW_LOCAL_STORAGE,
     ENV_SW_CLI_CONFIG,
     STANDALONE_INSTANCE,
+    ENV_SW_LOCAL_STORAGE,
     LOCAL_CONFIG_VERSION,
 )
 from starwhale.utils.error import NotFoundError
@@ -40,6 +41,10 @@ def load_swcli_config() -> t.Dict[str, t.Any]:
         with open(fpath) as f:
             _config = yaml.safe_load(f)
 
+            env = os.environ.get(ENV_SW_LOCAL_STORAGE)
+            if env:
+                _config["storage"]["root"] = env
+
             _version = _config.get("version")
             if _version != LOCAL_CONFIG_VERSION:
                 console.print(
@@ -57,6 +62,7 @@ def load_swcli_config() -> t.Dict[str, t.Any]:
 def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
     from starwhale.base.type import InstanceType
 
+    env_root = os.environ.get(ENV_SW_LOCAL_STORAGE)
     c = dict(
         version=LOCAL_CONFIG_VERSION,
         instances={
@@ -69,7 +75,7 @@ def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
             )
         },
         current_instance=DEFAULT_INSTANCE,
-        storage=dict(root=str(SW_LOCAL_STORAGE.resolve())),
+        storage=dict(root=env_root or str(SW_LOCAL_STORAGE.resolve())),
     )
     render_swcli_config(c, fpath)
     return c
@@ -84,10 +90,7 @@ def update_swcli_config(**kw: t.Any) -> None:
 
 
 def get_swcli_config_path() -> str:
-    fpath = os.environ.get(ENV_SW_CLI_CONFIG, "")
-    if not fpath or not os.path.exists(fpath):
-        fpath = str(SW_CLI_CONFIG)
-    return fpath
+    return os.environ.get(ENV_SW_CLI_CONFIG, "") or str(SW_CLI_CONFIG)
 
 
 def render_swcli_config(c: t.Dict[str, t.Any], path: str = "") -> None:

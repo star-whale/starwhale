@@ -6,7 +6,10 @@ from starwhale.utils import config as sw_config
 from starwhale.utils.error import NotFoundError
 from starwhale.utils.config import (
     SWCliConfigMixed,
+    ENV_SW_CLI_CONFIG,
     load_swcli_config,
+    render_swcli_config,
+    ENV_SW_LOCAL_STORAGE,
     get_swcli_config_path,
 )
 
@@ -23,6 +26,34 @@ class SWCliConfigTestCase(TestCase):
     def test_config_path(self):
         path = get_swcli_config_path()
         assert path.endswith(".config/starwhale/config.yaml")
+
+    def test_config_path_env(self):
+        env_def = "foo"
+        os.environ[ENV_SW_CLI_CONFIG] = env_def
+        path = get_swcli_config_path()
+        assert path == env_def
+        os.environ.pop(ENV_SW_CLI_CONFIG)
+
+    def test_local_storage_root(self):
+        _config = load_swcli_config()
+        assert _config["storage"]["root"].endswith("starwhale")
+
+    def test_local_storage_root_env_new_conf(self):
+        env_def = "bar"
+        os.environ[ENV_SW_LOCAL_STORAGE] = env_def
+        _config = load_swcli_config()
+        assert _config["storage"]["root"] == env_def
+        os.environ.pop(ENV_SW_LOCAL_STORAGE)
+
+    def test_local_storage_root_env_exist_conf(self):
+        path = get_swcli_config_path()
+        render_swcli_config({"storage": {"root": "foo"}}, path)
+
+        env_def = "bar"
+        os.environ[ENV_SW_LOCAL_STORAGE] = env_def
+        _config = load_swcli_config()
+        assert _config["storage"]["root"] == env_def
+        os.environ.pop(ENV_SW_LOCAL_STORAGE)
 
     def test_load_default_swcli_config(self):
         _config = load_swcli_config()
