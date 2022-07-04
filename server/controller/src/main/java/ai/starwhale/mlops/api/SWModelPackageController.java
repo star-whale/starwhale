@@ -146,16 +146,6 @@ public class SWModelPackageController implements SWModelPackageApi{
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
-//    @Override
-//    public ResponseEntity<ResponseMessage<String>> createModelVersion(String projectId, String modelId,
-//        MultipartFile zipFile, SWMPVersionRequest request) {
-//        User user = userService.currentUserDetail();
-//        Long versionId = createVersion(projectId, idConvertor.revert(modelId), zipFile, request.getImportPath(), user.getId());
-//        log.info("Create swmp version successfully, id = {}", versionId);
-//        return ResponseEntity.ok(Code.success
-//            .asResponse("success"));
-//    }
-
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyModel(String projectUrl, String modelUrl, String versionUrl,
         SWMPTagRequest swmpTagRequest) {
@@ -185,20 +175,6 @@ public class SWModelPackageController implements SWModelPackageApi{
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
-
-//    @Override
-//    public ResponseEntity<ResponseMessage<String>> createModel(String projectId, MultipartFile zipFile, SWMPRequest swmpRequest) {
-//        User user = userService.currentUserDetail();
-//        Long modelId = swmpService.addSWMP(
-//            SWMPObject.builder()
-//                .project(Project.builder().id(idConvertor.revert(projectId)).build())
-//                .name(swmpRequest.getModelName())
-//                .owner(user)
-//                .build());
-//        Long versionId = createVersion(projectId, modelId, zipFile, swmpRequest.getImportPath(), user.getId());
-//        log.info("Create swmp successfully, version id = {}", versionId);
-//        return ResponseEntity.ok(Code.success.asResponse("success"));
-//    }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> upload(MultipartFile dsFile,
@@ -234,33 +210,4 @@ public class SWModelPackageController implements SWModelPackageApi{
     public ResponseEntity<String> headModel(ClientSWMPRequest queryRequest) {
         return ResponseEntity.ok(swmpService.query(queryRequest));
     }
-
-//    private Long createVersion(String projectId, Long modelId, MultipartFile zipFile, String importPath, Long userId) {
-//        String path = importPath;
-//        String meta = "";
-//        if (zipFile != null) {
-//            // upload file
-//            SWMPFile swmpFile = new SWMPFile(projectId, String.valueOf(modelId));
-//            String fileName = swmpFile.generateZipFileName();
-//            File dest = new File(swmpFile.getZipFilePath(), fileName);
-//            try {
-//                zipFile.transferTo(dest);
-//            } catch (IOException e) {
-//                throw new ApiOperationException("Model File upload error.");
-//            }
-//            path = dest.getPath();
-//            meta = swmpFile.meta();
-//        }
-//        SWMPObject swmp = SWMPObject.builder()
-//            .id(modelId)
-//            .version(SWMPVersion.builder()
-//                .storagePath(path)
-//                .meta(meta)
-//                .name(RandomUtil.randomHexString(8))
-//                .tag("")
-//                .ownerId(userId)
-//                .build())
-//            .build();
-//        return swmpService.addVersion(swmp);
-//    }
 }
