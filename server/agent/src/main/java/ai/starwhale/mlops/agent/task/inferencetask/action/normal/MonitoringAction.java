@@ -104,7 +104,7 @@ public class MonitoringAction extends AbsBaseTaskAction {
 
                         originTask.retryRestart();
                         // this invokes must before restart
-                        logRecorder.restart(originTask.getId(), originTask.getContainerId());
+                        // logRecorder.restart(originTask.getId(), originTask.getContainerId());
 
                         containerClient.startContainer(originTask.getContainerId());
 
