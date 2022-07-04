@@ -18,20 +18,17 @@ package ai.starwhale.mlops.domain.runtime;
 
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
-import ai.starwhale.mlops.domain.bundle.base.HasId;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
-import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.HasTag;
 import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
-import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -53,22 +50,6 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
     private RuntimeVersionMapper runtimeVersionMapper;
     @Resource
     private IDConvertor idConvertor;
-
-    @Resource
-    private ProjectManager projectManager;
-
-    public Long getRuntimeId(String runtimeUrl, String projectUrl) {
-        if(idConvertor.isID(runtimeUrl)) {
-            return idConvertor.revert(runtimeUrl);
-        }
-        Long projectId = projectManager.getProjectId(projectUrl);
-        RuntimeEntity runtimeEntity = runtimeMapper.findByName(runtimeUrl, projectId);
-        if(runtimeEntity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                .tip(String.format("Unable to find Runtime %s", runtimeUrl)), HttpStatus.BAD_REQUEST);
-        }
-        return runtimeEntity.getId();
-    }
 
     public Long getRuntimeVersionId(String versionUrl, Long runtimeId) {
         if(idConvertor.isID(versionUrl)) {

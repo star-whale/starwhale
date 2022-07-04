@@ -18,19 +18,17 @@ package ai.starwhale.mlops.domain.swds;
 
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
-import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
+import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
 import ai.starwhale.mlops.domain.bundle.base.BundleVersionEntity;
 import ai.starwhale.mlops.domain.bundle.recover.RecoverAccessor;
 import ai.starwhale.mlops.domain.bundle.remove.RemoveAccessor;
 import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
-import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.HasTag;
 import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
-import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -54,22 +52,6 @@ public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAc
 
     @Resource
     private IDConvertor idConvertor;
-
-    @Resource
-    private ProjectManager projectManager;
-
-    public Long getSWDSId(String swdsUrl, String projectUrl) {
-        if(idConvertor.isID(swdsUrl)) {
-            return idConvertor.revert(swdsUrl);
-        }
-        Long projectId = projectManager.getProjectId(projectUrl);
-        SWDatasetEntity entity = datasetMapper.findByName(swdsUrl, projectId);
-        if(entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
-                .tip(String.format("Unable to find swds %s", swdsUrl)), HttpStatus.BAD_REQUEST);
-        }
-        return entity.getId();
-    }
 
     public Long getSWDSVersionId(String versionUrl, Long swdsId) {
         if(idConvertor.isID(versionUrl)) {

@@ -27,10 +27,8 @@ import ai.starwhale.mlops.domain.bundle.revert.RevertAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.bundle.tag.HasTag;
 import ai.starwhale.mlops.domain.bundle.tag.HasTagWrapper;
-import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
-import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -52,23 +50,6 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
     private SWModelPackageVersionMapper versionMapper;
     @Resource
     private IDConvertor idConvertor;
-
-    @Resource
-    private ProjectManager projectManager;
-
-    public Long getSWMPId(String swmpUrl, String projectUrl) {
-        if(idConvertor.isID(swmpUrl)) {
-            return idConvertor.revert(swmpUrl);
-        }
-
-        Long projectId = projectManager.getProjectId(projectUrl);
-        SWModelPackageEntity entity = swmpMapper.findByName(swmpUrl, projectId);
-        if(entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP)
-                .tip(String.format("Unable to find swmp %s", swmpUrl)), HttpStatus.BAD_REQUEST);
-        }
-        return entity.getId();
-    }
 
     public Long getSWMPVersionId(String versionUrl, Long swmpId) {
         if(idConvertor.isID(versionUrl)) {
