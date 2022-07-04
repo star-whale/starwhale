@@ -24,28 +24,16 @@ finish() {
 
 trap finish EXIT
 
-clean_user_data() {
-	rm -f "$HOME/.config/starwhale/config.yaml"
-	rm -rf "$HOME/.cache/starwhale"
-}
-
-if ! in_github_action; then
-  read -r -p "This script will remove all local data below:
-  $HOME/.cache/starwhale
-  $HOME/.config/starwhale/config.yaml
-Do you want to proceed? (yes/no) " yn
-  case $yn in
-    yes ) clean_user_data;;
-    no ) exit;;
-    * ) exit 1;;
-  esac
-fi
-
 if ! in_github_action; then
   cp -rf . "$WORK_DIR/"
   rm -rf "$WORK_DIR/venv"
   rm -rf "$WORK_DIR/example/mnist/venv"
   rm -f "$WORK_DIR/example/mnist/runtime.yaml"
+
+  # use a separate data & config dir
+  LOCAL_DATA_DIR=$(mktemp -d -p $WORK_DIR)
+  export SW_CLI_CONFIG="$LOCAL_DATA_DIR/config.yaml"
+  export SW_LOCAL_STORAGE=$LOCAL_DATA_DIR/data
 fi
 
 echo "start test in $WORK_DIR"
