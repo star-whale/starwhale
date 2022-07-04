@@ -19,8 +19,8 @@ This example illustrates how to evaluate a pre-trained image object detection & 
 * Clone the Starwhale repo
 
 ```shell
-$ git clone https://github.com/star-whale/starwhale.git
-$ cd starwhale/example/PennFudanPed
+git clone https://github.com/star-whale/starwhale.git
+cd starwhale/example/PennFudanPed
 ```
 
 > :bulb: If you are from the mainland of China, we strongly recommend you use a proxy.
@@ -47,7 +47,7 @@ $ source ./venv/bin/activate
 
 ## Train the model
 
-> The training code in this repo is copied from https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html However, some code is modified to understand better how Starwhale works.
+> The training code in this repo is copied from [torchvision tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html). However, some code is modified to understand better how Starwhale works.
 
 ```shell
 (visual_pytorch) $ mkdir models
@@ -283,6 +283,7 @@ By now, we have finished all the coding parts. Then let's begin the command line
 ```
 
 ### Build Dataset
+
 Here is some descriptive information needed for Starwhale to build a Starwhale Dataset(SWDS). A yaml file describes the information as below:
 
 ```yaml

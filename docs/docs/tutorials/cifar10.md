@@ -27,7 +27,7 @@ pip install -r requirements.txt
 
 ## Train the model
 
-> The training code in this repo is sourced from https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
+> The training code in this repo is sourced from [cifar10 tutorial](https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html).
 
 ```console
 mkdir models

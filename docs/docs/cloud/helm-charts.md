@@ -48,7 +48,6 @@ helm delete starwhale
 |`image.registry`| image registry, you can find Starwhale docker images in docker.io or ghcr.io. | `ghcr.io` |
 |`image.org` | image registry org, [starwhaleai](https://hub.docker.com/u/starwhaleai)(docker.io) or [star-whale](https://github.com/orgs/star-whale)(ghcr.io) or some custom org name in other registries | `star-whale` |
 
-
 ### Starwhale parameters
 
 | Name | Description | Default Value|

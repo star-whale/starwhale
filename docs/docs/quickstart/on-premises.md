@@ -11,12 +11,16 @@ It is recommended to read [standalone quickstart](./standalone.md) first.
 Starwhale provides two ways to install an On-Premises instance in your private cluster:
 
 - For Kubernetes:
+
   - Standard Kubernetes Cluster: A pre-deployed Kubernetes cluster is required.
   - Minikube: You should have minikube and docker installed on your machine.
   - For more deployment details of Kubernetes, you can refer to this [doc](../cloud/helm-charts.md).
+
 - For Bare Metal: You should have these components installed: docker(>=19.03), nvidia-docker-plugin(optional). You can get more details from this [doc](../cloud/ansible.md).
 
-**In this tutorial, minikube is used instead of the standard Kubernetes cluster**
+:::notes
+In this tutorial, minikube is used instead of the standard Kubernetes cluster
+:::
 
 ### Prerequisites
 
@@ -147,7 +151,7 @@ swcli runtime copy local/project/self/runtime/pytorch-mnist/version/latest http:
 
 ### login
 
-Ok, let's use the username(starwhale) and password(abcd1234) to open the server web UI(<http://localhost:8082/>).
+Ok, let's use the username(starwhale) and password(abcd1234) to open the server [web UI](http://localhost:8082/).
 
 Then, we will see the project named 'project_for_mnist' that we created earlier with swcli.
 ![project list](../img/ui-list-project.jpg)
@@ -160,8 +164,6 @@ Click the project name, you will see the model, runtime, and dataset uploaded in
 
 ![Create job](../img/ui-create-job.jpg)
 ![Create Job Workflow](../img/create-job-workflow.gif)
-
-#### The job is completed and the results can be viewed
 
 ![Show Job Results](../img/ui-job-results.jpg)
 

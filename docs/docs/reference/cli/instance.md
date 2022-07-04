@@ -18,7 +18,6 @@ swcli instance [OPTIONS] COMMAND [ARGS]...
   - `[http(s)://]<hostname or ip>[:<port>]`: cloud instance with HTTP address.
   - `[cloud://]<cloud alias>`: cloud instance with an alias name, which can be configured in the instance login phase.
 
-
 ## All Sub-Commands
 
   |Command|Standalone|Cloud|

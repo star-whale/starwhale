@@ -42,7 +42,7 @@ $ source ~/code/starwhale/example/text_cls_AG_NEWS/venv/bin/activate
 
 ## Train the model
 
-> The training code in this repo is copied from https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html. However, the dataset part is modified to understand better how Starwhale works.
+> The training code in this repo is copied from [Pytorch Tutorial](https://pytorch.org/tutorials/beginner/text_sentiment_ngrams_tutorial.html). However, the dataset part is modified to understand better how Starwhale works.
 
 ```console
 (pytorch_text) $ mkdir models

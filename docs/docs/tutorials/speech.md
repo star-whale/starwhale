@@ -17,8 +17,8 @@ This example illustrates how to evaluate a pre-trained audio classification mode
 * Clone starwhale repo
 
 ```shell
-$ git clone https://github.com/star-whale/starwhale.git
-$ cd starwhale/example/speech_command
+git clone https://github.com/star-whale/starwhale.git
+cd starwhale/example/speech_command
 ```
 
 > :bulb: If you are from the mainland of China, we strongly recommend you use a proxy.
@@ -43,7 +43,7 @@ $ source ~/code/starwhale/example/speech_command/venv/bin/activate
 
 ## Train the model
 
-> The training code in this repo is copied from https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html. However, some code is modified to understand better how Starwhale works.
+> The training code in this repo is copied from [torchaudio tutorial](https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html). However, some code is modified to understand better how Starwhale works.
 
 ```shell
 (audio_pytorch) $ mkdir models
