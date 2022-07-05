@@ -12,6 +12,8 @@ def login(host, port):
     token = res.headers["Authorization"]
     os.environ['token'] = token
 
+    print("Login ok.")
+
 
 def url(host, port):
     return "http://" + host + ":" + port + "/api/v1"
