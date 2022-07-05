@@ -16,8 +16,12 @@
 
 package ai.starwhale.mlops.agent.task.log;
 
-import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import java.util.Map;
 
 public interface Reader {
-    void read(String readerId, InferenceTask task);
+    void subscribe(Long taskId, String readerId);
+    void unSubscribe(Long taskId, String readerId);
+    String read(Long taskId, String readerId);
+    Map<String, String> read(Long taskId);
+    void clean();
 }

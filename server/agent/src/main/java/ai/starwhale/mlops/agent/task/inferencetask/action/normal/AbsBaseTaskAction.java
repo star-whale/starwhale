@@ -24,18 +24,16 @@ import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask.ActionStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
+import ai.starwhale.mlops.agent.task.inferencetask.action.ExecuteStage;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.log.LogRecorder;
 import cn.hutool.json.JSONUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Objects;
-
 @Slf4j
-public abstract class AbsBaseTaskAction implements Action<InferenceTask, InferenceTask> {
+public abstract class AbsBaseTaskAction implements Action<InferenceTask, InferenceTask>, ExecuteStage {
 
     @Autowired
     protected TaskPersistence taskPersistence;
@@ -55,8 +53,15 @@ public abstract class AbsBaseTaskAction implements Action<InferenceTask, Inferen
     @Autowired
     protected AgentProperties agentProperties;
 
+    @Autowired
+    protected LogRecorder logRecorder;
+
+    private final String logPattern = "task:{}, stage:{}, msg:{}, taskDetail:{}";
+
     @Override
     public void pre(InferenceTask task, Context context) {
+        info(task, String.format("enter %s stage.", stage().desc()));
+        task.setStage(stage());
         task.setActionStatus(ActionStatus.inProgress);
         taskPersistence.save(task);
     }
@@ -64,21 +69,23 @@ public abstract class AbsBaseTaskAction implements Action<InferenceTask, Inferen
     // at normal action, the newTask don't use at post
     @Override
     public void post(InferenceTask originTask, InferenceTask newTask, Context context) {
+        info(originTask, String.format("exit %s stage.", stage().desc()));
         originTask.setActionStatus(ActionStatus.completed);
         taskPersistence.save(originTask);
     }
 
-    protected void recordLog(InferenceTask task, String simpleMsg, Exception e) {
-        taskPersistence.recordLog(task, simpleMsg + ":" + getStackTrace(e));
+    @Override
+    public void fail(InferenceTask originTask, Context context, Exception e) {
+        log.error("execute task:{}, error:{}", originTask.getId(), e.getMessage());
+        error(originTask, e.getMessage(), e);
     }
 
-    private String getStackTrace(Throwable throwable) {
-        if (Objects.isNull(throwable)) return "";
-        StringWriter sw = new StringWriter();
-
-        try (PrintWriter pw = new PrintWriter(sw)) {
-            throwable.printStackTrace(pw);
-            return sw.toString();
-        }
+    protected void info(InferenceTask task, String simpleMsg) {
+        logRecorder.info(this.getClass().getName(), logPattern, new Object[]{task.getId(), stage().desc(), simpleMsg, JSONUtil.toJsonStr(task)}, task);
     }
+
+    protected void error(InferenceTask task, String simpleMsg, Exception e) {
+        logRecorder.error(this.getClass().getName(), logPattern, new Object[]{task.getId(), stage().desc(), simpleMsg, JSONUtil.toJsonStr(task)}, e, task);
+    }
+
 }

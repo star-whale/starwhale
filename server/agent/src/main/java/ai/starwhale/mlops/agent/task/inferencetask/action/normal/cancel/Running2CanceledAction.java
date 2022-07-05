@@ -22,13 +22,12 @@ import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 public class Running2CanceledAction extends AbsBaseCancelTaskAction {
     @Override
-    public Optional<InferenceStage> stage() {
-        return Optional.of(InferenceStage.RUNNING);
+    public InferenceStage stage() {
+        return InferenceStage.RUNNING2CANCELED;
     }
 
     @Override

@@ -23,8 +23,8 @@ import ai.starwhale.mlops.agent.node.base.SystemInfo;
 import ai.starwhale.mlops.agent.task.Action;
 import ai.starwhale.mlops.agent.task.Context;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
-import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
+import ai.starwhale.mlops.agent.task.log.LogRecorder;
 import ai.starwhale.mlops.api.ReportApi;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
@@ -39,7 +39,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -80,7 +82,7 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
         List<InferenceTask> failedTasks = List.copyOf(taskPool.failedTasks);
 
         List<TaskReport> all = new ArrayList<>();
-        // without stop the world
+        // without stop the world todo
         all.addAll(new ArrayList<>(
                 taskPool.preparingTasks.stream().map(task -> task.toTaskReport(logRecorder.generateLogs(task.getId())))
                         .collect(Collectors.toList())));
@@ -163,7 +165,7 @@ public class ReportAction implements Action<ReportRequest, ReportResponse> {
             }
 
             if (CollectionUtil.isNotEmpty(response.getLogReaders())) {
-                logRecorder.addRecords(response.getLogReaders());
+                logRecorder.batchSubscribe(response.getLogReaders());
             }
         }
     }

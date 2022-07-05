@@ -21,12 +21,11 @@ import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.inferencetask.action.normal.AbsBaseTaskAction;
-import cn.hutool.core.bean.BeanUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Objects;
 
-public abstract class AbsBaseCancelTaskAction extends AbsBaseTaskAction implements ExecuteStage {
+public abstract class AbsBaseCancelTaskAction extends AbsBaseTaskAction {
     @Autowired
     protected TaskPool taskPool;
 
@@ -37,7 +36,6 @@ public abstract class AbsBaseCancelTaskAction extends AbsBaseTaskAction implemen
 
     @Override
     public void pre(InferenceTask task, Context context) {
-        task.setStage(stage().orElse(task.getStage()));
         task.setStatus(InferenceTaskStatus.CANCELING);
         super.pre(task, context);
     }

@@ -19,6 +19,6 @@ package ai.starwhale.mlops.agent.task.log;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 
 public interface Appender {
-    void append(InferenceTask task, String content);
+    void append(InferenceTask task, LoggingEvent loggingEvent);
     void finishAppend(InferenceTask task);
 }

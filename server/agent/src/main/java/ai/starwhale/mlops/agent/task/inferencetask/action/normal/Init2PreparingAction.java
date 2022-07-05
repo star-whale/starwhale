@@ -19,9 +19,9 @@ package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceStage;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.domain.node.Device;
-import cn.hutool.core.bean.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -56,5 +56,10 @@ public class Init2PreparingAction extends AbsBaseTaskAction {
     public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
         // add the new task to the tail
         taskPool.add2PreparingQueue(newTask);
+    }
+
+    @Override
+    public InferenceStage stage() {
+        return InferenceStage.INIT2PREPARING;
     }
 }

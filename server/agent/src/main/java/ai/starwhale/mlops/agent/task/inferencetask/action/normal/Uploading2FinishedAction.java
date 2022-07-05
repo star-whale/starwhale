@@ -17,9 +17,9 @@
 package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceStage;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
-import cn.hutool.core.bean.BeanUtil;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -39,5 +39,10 @@ public class Uploading2FinishedAction extends AbsBaseTaskAction {
     public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
         taskPool.uploadingTasks.remove(originTask);
         taskPool.succeedTasks.add(newTask);
+    }
+
+    @Override
+    public InferenceStage stage() {
+        return InferenceStage.UPLOADING2FINISHED;
     }
 }

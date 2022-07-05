@@ -18,10 +18,9 @@ package ai.starwhale.mlops.agent.test;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
-import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.log.LogRecorder;
 import ai.starwhale.mlops.api.protocol.report.resp.LogReader;
-import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -50,7 +49,7 @@ public class LogRecorderTest {
     private TaskPersistence taskPersistence;
 
     //@Test
-    public void test() {
+    /*public void test() {
         logRecorder.addRecords(List.of(
                 LogReader.builder().readerId("r-1").taskId(1L).build(),
                 LogReader.builder().readerId("r-2").taskId(2L).build()
@@ -64,5 +63,5 @@ public class LogRecorderTest {
         );
 
         logRecorder.waitQueueScheduler();
-    }
+    }*/
 }
