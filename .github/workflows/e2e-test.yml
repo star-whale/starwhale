@@ -43,6 +43,8 @@ jobs:
           sudo echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
 
       - uses: actions/checkout@v3
+        with:
+          lfs: true
 
       - name: Setup python
         uses: actions/setup-python@v3
