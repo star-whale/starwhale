@@ -22,12 +22,7 @@ import org.apache.commons.io.output.NullOutputStream;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.zip.CRC32;

@@ -19,9 +19,12 @@ package ai.starwhale.mlops.agent.task.log;
 import java.util.Map;
 
 public interface Reader {
+    int logSize();
+    int subscriberSize();
     void subscribe(Long taskId, String readerId);
     void unSubscribe(Long taskId, String readerId);
     String read(Long taskId, String readerId);
+    int offset(Long taskId, String readerId);
     Map<String, String> read(Long taskId);
     void clean();
 }

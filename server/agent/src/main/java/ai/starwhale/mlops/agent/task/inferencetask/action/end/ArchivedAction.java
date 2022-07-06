@@ -57,7 +57,7 @@ public class ArchivedAction extends AbsBaseTaskAction {
         taskPool.failedTasks.remove(originTask);
         taskPool.succeedTasks.remove(originTask);
         taskPool.canceledTasks.remove(originTask);
-
+        info(originTask, "task was archived.");
         // todo logRecorder.remove(originTask.getId());
 
     }

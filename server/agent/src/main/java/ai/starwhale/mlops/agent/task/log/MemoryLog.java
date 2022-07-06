@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.agent.task.log;
 
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
 import ch.qos.logback.classic.PatternLayout;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,13 +47,23 @@ public class MemoryLog implements Appender, Reader {
         logCache.putIfAbsent(task.getId(), new LogObject());
         List<String> taskLog = logCache.get(task.getId()).getLogs();
         taskLog.add(patternLayout.doLayout(loggingEvent));
+        if (task.getStatus() == InferenceTaskStatus.ARCHIVED) finishAppend(task);
     }
 
-    @Override
     public void finishAppend(InferenceTask task) {
         logCache.get(task.getId()).setFinished(true);
     }
 
+
+    @Override
+    public int logSize() {
+        return logCache.size();
+    }
+
+    @Override
+    public int subscriberSize() {
+        return (int) offsets.values().stream().filter(m->!m.isEmpty()).count();
+    }
 
     @Override
     public void subscribe(Long taskId, String readerId) {
@@ -106,6 +117,14 @@ public class MemoryLog implements Appender, Reader {
     }
 
     @Override
+    public int offset(Long taskId, String readerId) {
+        if(offsets.containsKey(taskId)) {
+            return offsets.get(taskId).get(readerId);
+        }
+        return 0;
+    }
+
+    @Override
     public Map<String, String> read(Long taskId) {
         Map<String, String> results = new HashMap<>();
         Map<String, Integer> taskOffsets = offsets.get(taskId);
@@ -117,7 +136,7 @@ public class MemoryLog implements Appender, Reader {
 }
 
 class LogObject {
-    private List<String> logs = new ArrayList<>();
+    private final List<String> logs = new ArrayList<>();
     private boolean finished = false;
 
     public boolean isFinished() {

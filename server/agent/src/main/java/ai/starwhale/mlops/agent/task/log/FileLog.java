@@ -37,13 +37,4 @@ public class FileLog implements Appender {
         taskPersistence.recordLog(task, patternLayout.doLayout(loggingEvent));
     }
 
-    @Override
-    public void finishAppend(InferenceTask task) {
-        try {
-            taskPersistence.uploadLog(task);
-        } catch (Exception e) {
-            log.error("upload log for task {} error", task.getId(), e);
-        }
-    }
-
 }
