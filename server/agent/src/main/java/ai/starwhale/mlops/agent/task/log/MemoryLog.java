@@ -62,7 +62,7 @@ public class MemoryLog implements Appender, Reader {
 
     @Override
     public int subscriberSize() {
-        return (int) offsets.values().stream().filter(m->!m.isEmpty()).count();
+        return (int) offsets.values().stream().filter(m -> !m.isEmpty()).count();
     }
 
     @Override
@@ -74,7 +74,7 @@ public class MemoryLog implements Appender, Reader {
 
     @Override
     public void unSubscribe(Long taskId, String readerId) {
-        if(offsets.containsKey(taskId)) {
+        if (offsets.containsKey(taskId)) {
             offsets.get(taskId).remove(readerId);
         }
         // clean when unsubscribe
@@ -118,7 +118,7 @@ public class MemoryLog implements Appender, Reader {
 
     @Override
     public int offset(Long taskId, String readerId) {
-        if(offsets.containsKey(taskId)) {
+        if (offsets.containsKey(taskId)) {
             return offsets.get(taskId).get(readerId);
         }
         return 0;
@@ -127,10 +127,8 @@ public class MemoryLog implements Appender, Reader {
     @Override
     public Map<String, String> read(Long taskId) {
         Map<String, String> results = new HashMap<>();
-        Map<String, Integer> taskOffsets = offsets.get(taskId);
-        taskOffsets.forEach((readerId, offset)->{
-            results.put(readerId, read(taskId, readerId));
-        });
+        offsets.getOrDefault(taskId, new HashMap<>())
+                .forEach((readerId, offset) -> results.put(readerId, read(taskId, readerId)));
         return results;
     }
 }
