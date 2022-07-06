@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
+package ai.starwhale.mlops.agent.task.log;
 
-import ai.starwhale.mlops.agent.task.inferencetask.InferenceStage;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 
-import java.util.Optional;
-
-public interface ExecuteStage {
-    /**
-     * represent current stage
-     * @return current stage
-     */
-    default Optional<InferenceStage> stage() {
-        return Optional.empty();
-    }
+public interface Appender {
+    void append(InferenceTask task, LoggingEvent loggingEvent);
 }

@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.agent.task.inferencetask.action.normal.cancel;
+package ai.starwhale.mlops.agent.task.log;
 
-import ai.starwhale.mlops.agent.task.Context;
-import ai.starwhale.mlops.agent.task.inferencetask.InferenceStage;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
-import org.springframework.stereotype.Service;
+import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
+import ch.qos.logback.classic.PatternLayout;
+import lombok.extern.slf4j.Slf4j;
 
-import java.util.Objects;
 
-@Service
-public class Uploading2CanceledAction extends AbsBaseCancelTaskAction {
-    @Override
-    public InferenceStage stage() {
-        return InferenceStage.UPLOADING2CANCELED;
+@Slf4j
+public class FileLog implements Appender {
+    private final TaskPersistence taskPersistence;
+    private final PatternLayout patternLayout;
+
+    public FileLog(TaskPersistence taskPersistence, PatternLayout patternLayout) {
+        this.taskPersistence = taskPersistence;
+        this.patternLayout = patternLayout;
     }
 
     @Override
-    public void success(InferenceTask originTask, InferenceTask newTask, Context context) {
-        if (Objects.nonNull(newTask)) {
-            taskPool.uploadingTasks.remove(originTask);
-            super.success(originTask, newTask, context);
-        }
+    public void append(InferenceTask task, LoggingEvent loggingEvent) {
+        taskPersistence.recordLog(task, patternLayout.doLayout(loggingEvent));
     }
+
 }

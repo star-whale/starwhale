@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.agent.task.inferencetask;
 
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
+import ai.starwhale.mlops.agent.task.log.LogRecorder;
 import org.springframework.scheduling.annotation.Scheduled;
 
 public class AgentTaskScheduler {
@@ -53,13 +54,13 @@ public class AgentTaskScheduler {
         this.executor.uploadTaskResults();
     }
 
-    @Scheduled(fixedDelayString = "${sw.agent.task.schedule.fixedDelay.in.milliseconds:5000}")
+    @Scheduled(fixedDelayString = "${sw.agent.task.schedule.report.fixedDelay.in.milliseconds:2000}")
     public void reportTasks() {
         this.executor.reportTasks();
     }
 
-    @Scheduled(fixedDelayString = "${sw.agent.task.container.log.schedule.fixedDelay.in.milliseconds:5000}")
+    @Scheduled(fixedDelayString = "${sw.agent.task.schedule.logClean.fixedDelay.in.milliseconds:10000}")
     public void logScheduler() {
-        this.logRecorder.waitQueueScheduler();
+        this.logRecorder.getRealtimeReader().clean();
     }
 }

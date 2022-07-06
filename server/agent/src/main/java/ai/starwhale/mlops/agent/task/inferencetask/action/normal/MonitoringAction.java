@@ -18,13 +18,11 @@ package ai.starwhale.mlops.agent.task.inferencetask.action.normal;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceStage;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
-import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence.ExecuteStatus;
-import cn.hutool.core.bean.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -33,8 +31,6 @@ import java.util.Optional;
 @Service
 public class MonitoringAction extends AbsBaseTaskAction {
 
-    @Autowired
-    private LogRecorder logRecorder;
 
     @Override
     public InferenceTask processing(InferenceTask runningTask, Context context)
@@ -76,6 +72,8 @@ public class MonitoringAction extends AbsBaseTaskAction {
             sourcePool.release(newTask.getDevices());
             // only update memory list,there is no need to update the disk file(already update by taskContainer)
             taskPool.runningTasks.remove(originTask);
+            // log error
+            error(originTask, "task execution failed", null);
         } else {
             // try to detect container status
             ContainerClient.ContainerStatus status = containerClient.status(newTask.getContainerId());
@@ -89,8 +87,7 @@ public class MonitoringAction extends AbsBaseTaskAction {
                         log.error("task:{} maximum number of restart retries:{} has been reached, task failed",
                                 originTask.getId(), agentProperties.getTask().getRetryRestartMaxNum());
 
-                        recordLog(originTask,
-                                String.format("stage:running, task:%s container is dead, maximum number of restart retries num has been reached, task failed", originTask.getId()), null);
+                        error(originTask, String.format("container:%s is dead, maximum number of restart retries num has been reached, task failed!", originTask.getContainerId()), null);
 
                         sourcePool.release(newTask.getDevices());
                         newTask.setStatus(InferenceTaskStatus.FAIL);
@@ -99,12 +96,11 @@ public class MonitoringAction extends AbsBaseTaskAction {
                     } else {
                         log.warn("container:{} is dead, now will restart it", originTask.getContainerId());
 
-                        recordLog(originTask,
-                                String.format("stage:running, task:%s container:%s is dead, now will restart it", originTask.getId(), originTask.getContainerId()), null);
+                        error(originTask, String.format("container:%s is dead, now will restart it.", originTask.getContainerId()), null);
 
                         originTask.retryRestart();
                         // this invokes must before restart
-                        logRecorder.restart(originTask.getId(), originTask.getContainerId());
+                        // logRecorder.restart(originTask.getId(), originTask.getContainerId());
 
                         containerClient.startContainer(originTask.getContainerId());
 
@@ -114,8 +110,8 @@ public class MonitoringAction extends AbsBaseTaskAction {
                     // already be removed or any else error
                     log.error("container:{} may be removed, now will return error", newTask.getContainerId());
 
-                    recordLog(originTask,
-                            String.format("stage:running, task:%s container:%s not found, may be removed, now will return error", originTask.getId(), originTask.getContainerId()), null);
+                    error(originTask,
+                            String.format("container:%s not found, may be removed, now will return error", originTask.getContainerId()), null);
 
                     newTask.setStatus(InferenceTaskStatus.FAIL);
                     taskPool.failedTasks.add(newTask);
@@ -126,5 +122,10 @@ public class MonitoringAction extends AbsBaseTaskAction {
                     break;
             }
         }
+    }
+
+    @Override
+    public InferenceStage stage() {
+        return InferenceStage.RUNNING;
     }
 }

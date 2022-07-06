@@ -36,7 +36,7 @@ public class FileSystemPath {
         String InferenceTaskInputConfigFile = "input.json";
         String InferenceTaskStatusFile = "current";
         String InferenceTaskRuntimeManifestFile = "_manifest.yaml";
-        String InferenceTaskAgentLogFile = "agent.log";
+        String InferenceTaskAgentLogFile = "task.log";
     }
 
     private final String basePath;

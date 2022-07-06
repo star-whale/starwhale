@@ -23,6 +23,7 @@ import ai.starwhale.mlops.agent.container.ImageConfig.Mount;
 import ai.starwhale.mlops.agent.exception.ErrorCode;
 import ai.starwhale.mlops.agent.node.SourcePool.AllocateRequest;
 import ai.starwhale.mlops.agent.task.Context;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceStage;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask.ActionStatus;
 import ai.starwhale.mlops.agent.task.inferencetask.InferenceTaskStatus;
@@ -227,15 +228,15 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
 
     @Override
     public void fail(InferenceTask originTask, Context context, Exception e) {
-        log.error("execute task:{}, error:{}", originTask.getId(), e.getMessage());
+        super.fail(originTask, context, e);
 
         if (originTask.getRetryRunNum() >= agentProperties.getTask().getRetryRunMaxNum()) {
             // release device and move to failed list
             log.error("task:{} maximum number of failed retries:{} has been reached, task failed",
                     originTask.getId(), agentProperties.getTask().getRetryRunMaxNum());
 
-            recordLog(originTask, String.format(
-                    "stage:preparing to running, execute task:%s error, maximum number of rerun retries num has been reached, task failed", originTask.getId()), e);
+            error(originTask,
+                    "execute task error, maximum number of rerun retries num has been reached, task failed!", e);
 
             sourcePool.release(originTask.getDevices());
             originTask.setStatus(InferenceTaskStatus.FAIL);
@@ -244,12 +245,14 @@ public class Preparing2RunningAction extends AbsBaseTaskAction {
             taskPersistence.save(originTask);
         } else {
             // todo: retry or take it to the tail of queue
-
-            recordLog(originTask, String.format(
-                    "stage:preparing to running, execute task:%s error, now will rerun it", originTask.getId()), e);
-
+            error(originTask, "execute task error, now will rerun it.", e);
             originTask.retryRun();
             taskPersistence.save(originTask);
         }
+    }
+
+    @Override
+    public InferenceStage stage() {
+        return InferenceStage.PREPARING2RUNNING;
     }
 }

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.agent.task.inferencetask;
+package ai.starwhale.mlops.agent.task.log;
 
 import ai.starwhale.mlops.agent.container.ContainerClient;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
 import ai.starwhale.mlops.api.protocol.report.req.TaskLog;
 import ai.starwhale.mlops.api.protocol.report.resp.LogReader;
@@ -30,7 +31,8 @@ import java.io.IOException;
 import java.util.*;
 
 @Slf4j
-public class LogRecorder {
+@Deprecated
+public class LogRecorderForDocker {
     private final ContainerClient containerClient;
     private final TaskPersistence taskPersistence;
     /**
@@ -50,7 +52,7 @@ public class LogRecorder {
      */
     private final Map<Long, Map<String, Integer>> offsets = new HashMap<>();
 
-    public LogRecorder(ContainerClient containerClient, TaskPersistence taskPersistence) {
+    public LogRecorderForDocker(ContainerClient containerClient, TaskPersistence taskPersistence) {
         this.containerClient = containerClient;
         this.taskPersistence = taskPersistence;
     }

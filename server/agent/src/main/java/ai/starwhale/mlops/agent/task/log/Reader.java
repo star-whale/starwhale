@@ -14,25 +14,17 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.agent.task.inferencetask;
+package ai.starwhale.mlops.agent.task.log;
 
-/**
- * task's execute stage
- */
-public enum InferenceStage {
-    INIT2PREPARING("init to preparing"),
-    PREPARING2RUNNING("preparing to running"), PREPARING2CANCELED("preparing yo canceled"),
-    RUNNING("runtime monitoring"), RUNNING2CANCELED("running to canceled"),
-    UPLOADING2FINISHED("uploading result file"), UPLOADING2CANCELED("uploading to canceled"),
-    ARCHIVED("archived");
+import java.util.Map;
 
-    private final String desc;
-
-    InferenceStage(String desc) {
-        this.desc = desc;
-    }
-
-    public String desc() {
-        return desc;
-    }
+public interface Reader {
+    int logSize();
+    int subscriberSize();
+    void subscribe(Long taskId, String readerId);
+    void unSubscribe(Long taskId, String readerId);
+    String read(Long taskId, String readerId);
+    int offset(Long taskId, String readerId);
+    Map<String, String> read(Long taskId);
+    void clean();
 }

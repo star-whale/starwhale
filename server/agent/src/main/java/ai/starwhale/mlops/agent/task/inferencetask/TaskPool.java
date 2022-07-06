@@ -16,7 +16,8 @@
 
 package ai.starwhale.mlops.agent.task.inferencetask;
 
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class TaskPool {
 
@@ -55,13 +56,13 @@ public class TaskPool {
                 break;
             case CANCELING:
                 switch (task.getStage()) {
-                    case PREPARING:
+                    case PREPARING2CANCELED:
                         add2PreparingQueue(task);
                         break;
-                    case RUNNING:
+                    case RUNNING2CANCELED:
                         runningTasks.add(task);
                         break;
-                    case UPLOADING:
+                    case UPLOADING2CANCELED:
                         uploadingTasks.add(task);
                         break;
                 }

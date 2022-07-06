@@ -16,19 +16,23 @@
 
 package ai.starwhale.mlops.agent.configuration;
 
-import ai.starwhale.mlops.agent.container.ContainerClient;
 import ai.starwhale.mlops.agent.node.SourcePool;
 import ai.starwhale.mlops.agent.task.Action;
-import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
-import ai.starwhale.mlops.agent.task.inferencetask.LogRecorder;
-import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.inferencetask.AgentTaskScheduler;
+import ai.starwhale.mlops.agent.task.inferencetask.InferenceTask;
+import ai.starwhale.mlops.agent.task.inferencetask.TaskPool;
 import ai.starwhale.mlops.agent.task.inferencetask.executor.TaskExecutor;
 import ai.starwhale.mlops.agent.task.inferencetask.initializer.TaskPoolInitializer;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.FileSystemPath;
 import ai.starwhale.mlops.agent.task.inferencetask.persistence.TaskPersistence;
+import ai.starwhale.mlops.agent.task.log.FileLog;
+import ai.starwhale.mlops.agent.task.log.LogConfigurator;
+import ai.starwhale.mlops.agent.task.log.LogRecorder;
+import ai.starwhale.mlops.agent.task.log.MemoryLog;
 import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
 import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.PatternLayout;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,8 +56,30 @@ public class TaskConfiguration {
     }
 
     @Bean
-    public LogRecorder logRecorder(ContainerClient containerClient, TaskPersistence taskPersistence) {
-        return new LogRecorder(containerClient, taskPersistence);
+    public LogRecorder logRecorder(TaskPersistence taskPersistence) {
+        LoggerContext loggerContext = LogConfigurator.getLoggerContext();
+        LogConfigurator.defaultConfigure(loggerContext);
+
+        LogRecorder logRecorder = new LogRecorder(loggerContext);
+        // for ui
+        PatternLayout consoleLayout = new PatternLayout();
+        consoleLayout.setContext(loggerContext);
+        consoleLayout.setPattern(LogConfigurator.resolve(loggerContext, "${CONSOLE_LOG_PATTERN}"));
+        consoleLayout.setOutputPatternAsHeader(false);
+        consoleLayout.start();
+        MemoryLog memoryLog = new MemoryLog(consoleLayout);
+        logRecorder.register(memoryLog);
+        logRecorder.registerRealtimeReader(memoryLog);
+
+        // for file
+        PatternLayout fileLayout = new PatternLayout();
+        fileLayout.setContext(loggerContext);
+        fileLayout.setPattern(LogConfigurator.resolve(loggerContext, "${FILE_LOG_PATTERN}"));
+        fileLayout.setOutputPatternAsHeader(false);
+        fileLayout.start();
+        logRecorder.register(new FileLog(taskPersistence, fileLayout));
+
+        return logRecorder;
     }
 
     @Bean
