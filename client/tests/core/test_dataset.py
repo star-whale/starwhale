@@ -7,7 +7,12 @@ import yaml
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
-from starwhale.consts import DefaultYAMLName, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
+from starwhale.consts import (
+    DefaultYAMLName,
+    SW_TMP_DIR_NAME,
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
@@ -64,7 +69,6 @@ class StandaloneDatasetTestCase(TestCase):
         assert m_cls.call_count == 1
         assert m_cls.call_args[1]["data_dir"] == (Path(workdir) / "data").resolve()
         assert m_cls.call_args[1]["alignment_bytes_size"] == 4096
-        assert m_cls.call_args[1]["output_dir"] == (snapshot_workdir / "data").resolve()
 
         assert snapshot_workdir.exists()
         assert (snapshot_workdir / "data").exists()
@@ -128,3 +132,6 @@ class StandaloneDatasetTestCase(TestCase):
 
         DatasetTermView.render_fuse_json(fname, force=True)
         DatasetTermView.build(workdir, "self")
+
+        # make sure tmp dir is empty
+        assert len(os.listdir(sw.rootdir / SW_TMP_DIR_NAME)) == 0

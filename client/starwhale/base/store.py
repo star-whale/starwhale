@@ -1,4 +1,5 @@
 import typing as t
+import tempfile
 from abc import ABCMeta, abstractmethod, abstractproperty
 from pathlib import Path
 
@@ -7,13 +8,14 @@ from fs.tarfs import TarFS
 
 from starwhale.consts import (
     RECOVER_DIRNAME,
+    SW_TMP_DIR_NAME,
     SHORT_VERSION_CNT,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import guess_real_path
+from starwhale.utils.fs import ensure_dir, guess_real_path
 from starwhale.utils.config import SWCliConfigMixed
 
 
@@ -33,6 +35,9 @@ class BaseStorage(object):
         self.sw_config = SWCliConfigMixed()
         self.project_dir = self.sw_config.rootdir / self.uri.project
         self.loc, self.id = self._guess()
+
+        self.building = False
+        self._tmp_dir: t.Union[None, Path] = None
 
     @abstractmethod
     def _guess(self) -> t.Tuple[Path, str]:
@@ -94,7 +99,17 @@ class BaseStorage(object):
             / version
         )
 
+    @property
+    def tmp_dir(self):
+        if not self._tmp_dir:
+            base = self.sw_config.rootdir / SW_TMP_DIR_NAME
+            ensure_dir(base)
+            self._tmp_dir = Path(tempfile.mkdtemp(dir=base))
+        return self._tmp_dir
+
     def _get_snapshot_workdir_for_bundle(self) -> Path:
+        if self.building:
+            return self.tmp_dir
         version = self.uri.object.version
         return (
             self.project_dir

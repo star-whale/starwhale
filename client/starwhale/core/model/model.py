@@ -28,7 +28,7 @@ from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.utils.load import import_cls
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.utils.error import ExistedError, NoSupportError, FileFormatError
+from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
 
@@ -169,6 +169,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.store = ModelStorage(uri)
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+        self.yaml_name = DefaultYAMLName.MODEL
 
     def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.add(tags, quiet)
@@ -287,7 +288,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             )
         return rs, {}
 
-    def build(
+    def buildImpl(
         self, workdir: Path, yaml_name: str = DefaultYAMLName.MODEL, **kw: t.Any
     ) -> None:
         _mp = workdir / yaml_name
@@ -333,9 +334,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def _prepare_snapshot(self) -> None:
         logger.info("[step:prepare-snapshot]prepare model snapshot dirs...")
-
-        if self.store.snapshot_workdir.exists():
-            raise ExistedError(str(self.store.snapshot_workdir))
 
         ensure_dir(self.store.snapshot_workdir)
         ensure_dir(self.store.src_dir)
