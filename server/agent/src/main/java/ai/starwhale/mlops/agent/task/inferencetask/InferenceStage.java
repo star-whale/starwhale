@@ -22,7 +22,7 @@ package ai.starwhale.mlops.agent.task.inferencetask;
 public enum InferenceStage {
     INIT2PREPARING("init to preparing"),
     PREPARING2RUNNING("preparing to running"), PREPARING2CANCELED("preparing yo canceled"),
-    RUNNING("running"), RUNNING2CANCELED("running to canceled"),
+    RUNNING("running monitor"), RUNNING2CANCELED("running to canceled"),
     UPLOADING2FINISHED("uploading result file"), UPLOADING2CANCELED("uploading to canceled"),
     ARCHIVED("archived");
 
