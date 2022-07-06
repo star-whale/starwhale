@@ -53,12 +53,12 @@ public class ArchivedAction extends AbsBaseTaskAction {
         }
         // upload agent log to the storage
         taskPersistence.uploadLog(originTask);
+        info(originTask, "task was archived.");
         // remove from origin list
         taskPool.failedTasks.remove(originTask);
         taskPool.succeedTasks.remove(originTask);
         taskPool.canceledTasks.remove(originTask);
-        info(originTask, "task was archived.");
-        // todo logRecorder.remove(originTask.getId());
+
 
     }
 
