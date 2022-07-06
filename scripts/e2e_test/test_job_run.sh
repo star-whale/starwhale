@@ -66,3 +66,8 @@ curl -X 'GET' \
 echo "agent log is:"
 docker logs compose_agent_1
 
+job_status=`cat jobStatus`
+if [[ "$job_status" = "FAIL" ]] ; then
+  exit 1
+fi
+

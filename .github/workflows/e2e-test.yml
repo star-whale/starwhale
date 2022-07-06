@@ -196,13 +196,19 @@ jobs:
           sudo cat /etc/hosts
           chmod u+x /tmp/checkservice.sh && /tmp/checkservice.sh http://127.0.0.1:$PORT_CONTROLLER
 
-      - name: Run end to end test
+      - name: standalone and job test
         working-directory: .
         env:
           GITHUB_ACTION: 1
         run: |
           scripts/run_demo.sh
           scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
-          scripts/e2e_test/run_api_test.sh `pwd` 127.0.0.1 $PORT_CONTROLLER
           scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
 
+      - name: api test
+        working-directory: ./scripts/apitest/pytest
+        run: |
+          pip install -r requirements.txt
+          pytest --host 127.0.0.1 --port $PORT_CONTROLLER
+
+          
