@@ -73,8 +73,9 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 ## MNIST Quick Tour for the standalone instance
 
 ### Use Notebook
-* You can try it in [Google Colab](https://colab.research.google.com/github/starwhale/starwhale/blob/master/example/mnist/notebook.ipynb)
-* Or run [example/mnist/notebook.ipynb](example/mnist/notebook.ipynb) locally using [vscode](https://code.visualstudio.com/) or [jupyterlab](https://github.com/jupyterlab/jupyterlab)
+
+- You can try it in [Google Colab](https://colab.research.google.com/github/star-whale/starwhale/blob/main/example/mnist/notebook.ipynb)
+- Or run [example/mnist/notebook.ipynb](example/mnist/notebook.ipynb) locally using [vscode](https://code.visualstudio.com/) or [jupyterlab](https://github.com/jupyterlab/jupyterlab)
 
 ### Use your own python env
 
