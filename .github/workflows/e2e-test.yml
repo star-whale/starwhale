@@ -32,10 +32,6 @@ jobs:
       run:
         shell: bash
 
-    needs:
-      - filter
-    if: ${{ (github.event_name == 'pull_request' && (needs.filter.outputs.client == 'true' || needs.filter.outputs.server == 'true' || needs.filter.outputs.scripts == 'true')) || github.event_name == 'push' }}
-
     steps:
 
       - name: Start nexus
