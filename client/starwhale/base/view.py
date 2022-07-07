@@ -12,7 +12,7 @@ from rich.table import Table
 from rich.pretty import Pretty
 from rich.console import RenderableType
 
-from starwhale.utils import console, pretty_bytes, snake_to_camel
+from starwhale.utils import Order, console, pretty_bytes, sort_obj_list, snake_to_camel
 from starwhale.consts import UserRoleType, SHORT_VERSION_CNT
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
@@ -226,7 +226,8 @@ class BaseTermView(SWCliConfigMixed):
                     }
                 )
 
-        return result
+        order_keys = [Order("name"), Order("created_at", True)]
+        return sort_obj_list(result, order_keys)
 
     @staticmethod
     def place_holder_for_empty(place_holder: str = "--") -> t.Callable:

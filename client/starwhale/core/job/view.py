@@ -6,7 +6,7 @@ from rich.tree import Tree
 from rich.table import Table
 from rich.pretty import Pretty
 
-from starwhale.utils import console
+from starwhale.utils import Order, console, sort_obj_list
 from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
@@ -280,7 +280,11 @@ class JobTermView(BaseTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        return Job.list(URI(project_uri, expected_type=URIType.PROJECT), page, size)
+        jobs, pager = Job.list(
+            URI(project_uri, expected_type=URIType.PROJECT), page, size
+        )
+        jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])
+        return (jobs, pager)
 
 
 class JobTermViewRich(JobTermView):
@@ -296,7 +300,7 @@ class JobTermViewRich(JobTermView):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
         _jobs, _pager = super().list(project_uri, fullname, show_removed, page, size)
-        table = Table(title="Job List", box=box.SIMPLE)
+        table = Table(title="Job List", box=box.SIMPLE, expand=True)
         table.add_column("Name", justify="left", style="cyan", no_wrap=True)
         table.add_column("Model", no_wrap=True)
         table.add_column("Datasets")
