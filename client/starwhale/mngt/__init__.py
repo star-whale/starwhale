@@ -1,4 +1,5 @@
 import sys
+import os.path
 import webbrowser
 from pathlib import Path
 
@@ -7,6 +8,7 @@ import click
 from starwhale.utils import console
 from starwhale.consts import (
     RECOVER_DIRNAME,
+    SW_TMP_DIR_NAME,
     VERSION_PREFIX_CNT,
     STANDALONE_INSTANCE,
     DEFAULT_MANIFEST_NAME,
@@ -21,7 +23,7 @@ def gc(dry_run: bool = False, yes: bool = False) -> None:
 
     for project_dir in sw.rootdir.iterdir():
         project_name = project_dir.name
-        if project_name == RECOVER_DIRNAME:
+        if project_name in (RECOVER_DIRNAME, SW_TMP_DIR_NAME):
             continue
 
         if not yes and not click.confirm(
@@ -65,11 +67,7 @@ def gc(dry_run: bool = False, yes: bool = False) -> None:
             for _p in _removed_paths:
                 empty_dir(_p)
 
-    for project_dir in (sw.rootdir / RECOVER_DIRNAME).iterdir():
-        if not dry_run and (yes or click.confirm("continue to remove?")):
-            empty_dir(project_dir)
-
-        console.print(f":no_entry_sign: [red]{project_dir}[/] removed")
+    _gc_special_dirs(sw.rootdir, dry_run, yes)
 
 
 def _get_workdir_path(project_dir: Path, typ: str, bundle_path: Path) -> Path:
@@ -84,6 +82,18 @@ def _get_workdir_path(project_dir: Path, typ: str, bundle_path: Path) -> Path:
         return _rpath
     else:
         return project_dir / "workdir" / typ / object_prefix
+
+
+def _gc_special_dirs(root: Path, dry_run: bool, yes: bool):
+    if os.path.isdir(root / RECOVER_DIRNAME):
+        for project_dir in (root / RECOVER_DIRNAME).iterdir():
+            if not dry_run and (yes or click.confirm("continue to remove?")):
+                empty_dir(project_dir)
+
+            console.print(f":no_entry_sign: [red]{project_dir}[/] removed")
+    if os.path.isdir(root / SW_TMP_DIR_NAME) and not dry_run:
+        # no need to confirm without dry_run, they are really garbage
+        empty_dir(root / SW_TMP_DIR_NAME)
 
 
 def open_web(instance_uri: str = "") -> None:

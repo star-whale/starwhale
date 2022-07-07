@@ -1,8 +1,10 @@
+import os
 import typing as t
 import tarfile
 import platform
 from abc import ABCMeta, abstractmethod, abstractclassmethod
 from pathlib import Path
+from contextlib import ExitStack
 
 import yaml
 from loguru import logger
@@ -35,6 +37,7 @@ class BaseBundle(object):
         self.uri = uri
         self.name = self.uri.object.name
         self.sw_config = SWCliConfigMixed()
+        self.yaml_name = ""
 
     @abstractmethod
     def info(self) -> t.Dict[str, t.Any]:
@@ -82,16 +85,29 @@ class BaseBundle(object):
     def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
         raise NotImplementedError
 
-    @abstractmethod
-    def build(
-        self,
-        workdir: Path,
-        yaml_name: str = "",
-        **kw: t.Any,
-    ) -> None:
+    def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:
         raise NotImplementedError
 
-    def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> Path:
+    def build(self, workdir: Path, yaml_name: str = "", **kw: t.Any) -> None:
+        self.store.building = True  # type: ignore
+
+        # use a temp dir to build resources
+        # and mv results to dst dir to prevent leaving garbage when interrupt
+        def when_exit():
+            src = self.store.snapshot_workdir  # type: ignore
+            self.store.building = False  # type: ignore
+            dst = self.store.snapshot_workdir  # type: ignore
+            ensure_dir(dst.parent)
+            os.rename(src, dst)
+            console.print(f"finish gen resource @ {dst}")
+
+        with ExitStack() as stack:
+            stack.callback(when_exit)
+            yaml_name = yaml_name or self.yaml_name
+            self.buildImpl(workdir, yaml_name, **kw)
+
+    @abstractmethod
+    def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
         raise NotImplementedError
 
 

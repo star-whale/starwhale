@@ -18,6 +18,8 @@ class DatasetStorage(BaseStorage):
 
     @property
     def snapshot_workdir(self) -> Path:
+        if self.building:
+            return self.tmp_dir
         version = self.uri.object.version
         return (
             self.project_dir

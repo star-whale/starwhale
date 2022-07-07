@@ -42,7 +42,7 @@ from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.utils.load import import_cls
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.utils.error import ExistedError, NoSupportError
+from starwhale.utils.error import NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
 
@@ -89,6 +89,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         self.store = DatasetStorage(uri)
         self.tag = StandaloneTag(uri)
         self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+        self.yaml_name = DefaultYAMLName.DATASET
 
     def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.add(tags, quiet)
@@ -213,7 +214,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
         return rs, {}
 
-    def build(
+    def buildImpl(
         self, workdir: Path, yaml_name: str = DefaultYAMLName.DATASET, **kw: t.Any
     ) -> None:
         _dp = workdir / yaml_name
@@ -326,9 +327,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
 
     def _prepare_snapshot(self) -> None:
-        if self.store.snapshot_workdir.exists():
-            raise ExistedError(str(self.store.snapshot_workdir))
-
         ensure_dir(self.store.data_dir)
         ensure_dir(self.store.src_dir)
 
