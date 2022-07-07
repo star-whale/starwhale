@@ -64,8 +64,8 @@ jobs:
 
 
 
-      - name: overwrite pypirc
+      - name: run e2e
         working-directory: ./scripts/e2e_test
         env:
           GITHUB_ACTION: 1
-        run: start_test.sh
+        run: ./start_test.sh
