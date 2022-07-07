@@ -9,6 +9,7 @@ import typing as t
 import hashlib
 import platform
 from datetime import datetime
+from functools import cmp_to_key
 
 from rich.console import Console
 
@@ -135,3 +136,30 @@ def get_downloadable_sw_version() -> str:
 def snake_to_camel(snake: str) -> str:
     parts = snake.split("_")
     return "".join(i.title() for i in parts)
+
+
+class Order:
+    def __init__(self, field: str, reverse: bool = False):
+        self.field = field
+        self.reverse = reverse
+
+
+def sort_obj_list(data: t.List[t.Any], orders: t.List[Order]) -> t.Any:
+    def cmp(a: t.Any, b: t.Any) -> int:
+        return (a > b) - (a < b)
+
+    def get_field(item: t.Dict, field: str):
+        for k in field.split("."):
+            item = item.get(k)
+        return item
+
+    def compare(lhs, rhs):
+        m = 0
+        for o in orders:
+            m = cmp(get_field(lhs, o.field), get_field(rhs, o.field))
+            m = o.reverse and -m or m
+            if m != 0:
+                return m
+        return m
+
+    return sorted(data, key=cmp_to_key(compare))
