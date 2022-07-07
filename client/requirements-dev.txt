@@ -1,4 +1,4 @@
-twine==4.0.0
+- r requirements-install.txt
 black==22.3.0
 flake8==4.0.1
 mypy==0.950
@@ -14,8 +14,6 @@ testfixtures >= 6.10.3
 pytest-env >= 0.6.0
 pytest-xdist >= 2.0
 pytest-cov>=3.0.0
-setuptools>=62.0.0
-wheel >= 0.35.0
 pyfakefs >= 4.5.6
 pytest-mock >= 3.7.0
 requests-mock >= 1.9.3

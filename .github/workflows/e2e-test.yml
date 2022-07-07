@@ -34,14 +34,6 @@ jobs:
 
     steps:
 
-      - name: Start nexus
-        run: |
-          docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
-
-      - name: Add hosts to /etc/hosts
-        run: |
-          sudo echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
-
       - uses: actions/checkout@v3
         with:
           lfs: true
@@ -52,13 +44,6 @@ jobs:
           python-version: "3.7"
           architecture: "x64"
 
-      - name: Install dependencies
-        working-directory: ./client
-        run: |
-          pip install twine==4.0.0
-          pip install wheel
-          pip install setuptools
-          make build-wheel
 
       # jar build
       - name: Cache local Maven repository
@@ -77,138 +62,10 @@ jobs:
           cache: "maven"
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
 
-      - name: Build with Maven
-        working-directory: ./server
-        run: make build-package
 
-      - name: Build server docker image
-        working-directory: ./docker
-        run: |
-          docker build -t server -f Dockerfile.server .
-          docker tag server $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
 
       - name: overwrite pypirc
-        run: |
-          echo '' > ~/.pypirc
-          echo "[distutils]" | tee -a ~/.pypirc
-          echo "index-servers = nexus" | tee -a ~/.pypirc
-          echo "[nexus]" | tee -a ~/.pypirc
-          echo "repository =  http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/" | tee -a ~/.pypirc
-          echo "username = $NEXUS_USER_NAME" | tee -a ~/.pypirc
-          echo "password = $NEXUS_USER_PWD" | tee -a ~/.pypirc
-
-      - name: overwrite pip config
-        run: |
-          mkdir ~/.pip
-          echo '' > ~/.pip/pip.conf
-          echo "[global]" | tee -a ~/.pip/pip.conf
-          echo "index-url = http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple" | tee -a ~/.pip/pip.conf
-          echo "extra-index-url=https://pypi.org/simple" | tee -a ~/.pip/pip.conf
-          echo "[install]" | tee -a ~/.pip/pip.conf
-          echo "trusted-host=$NEXUS_HOSTNAME" | tee -a ~/.pip/pip.conf
-          cat ~/.pip/pip.conf
-
-      - name: create daemon json for taskset
-        run: |
-          echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"$IP_DOCKER_COMPOSE_BRIDGE_RANGE\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /tmp/docker-daemon.json
-
-      - name: override docker compose
-        working-directory: ./docker/compose
-        run: |
-          echo '' > compose.override.yaml
-          echo 'services:' | tee -a  compose.override.yaml
-          echo '  controller:' | tee -a  compose.override.yaml
-          echo "    image: $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server" | tee -a  compose.override.yaml
-          echo '  agent:' | tee -a  compose.override.yaml
-          echo "    image: $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server" | tee -a  compose.override.yaml
-          echo '    environment:' | tee -a  compose.override.yaml
-          echo "      - SW_PYPI_INDEX_URL=http://$IP_DOCKER_COMPOSE_BRIDGE:$PORT_NEXUS/$REPO_NAME_PYPI/simple" | tee -a  compose.override.yaml
-          echo "      - SW_PYPI_EXTRA_INDEX_URL=https://pypi.org/simple" | tee -a  compose.override.yaml
-          echo "      - SW_PYPI_TRUSTED_HOST=$IP_DOCKER_COMPOSE_BRIDGE" | tee -a  compose.override.yaml
-          echo "      - SW_TASK_USE_HOST_NETWORK=1" | tee -a  compose.override.yaml
-          echo '    extra_hosts:' | tee -a  compose.override.yaml
-          echo "      - \"$NEXUS_HOSTNAME:$IP_DOCKER_COMPOSE_BRIDGE\"" | tee -a  compose.override.yaml
-          echo '  taskset:' | tee -a  compose.override.yaml
-          echo '    volumes:' | tee -a  compose.override.yaml
-          echo '      - agent_data:/opt/starwhale' | tee -a  compose.override.yaml
-          echo '      - taskset_dind_data:/var/lib/docker' | tee -a  compose.override.yaml
-          echo '      - /tmp/docker-daemon.json:/etc/docker/daemon.json' | tee -a  compose.override.yaml
-          echo '    extra_hosts:' | tee -a  compose.override.yaml
-          echo "      - \"$NEXUS_HOSTNAME:$IP_DOCKER_COMPOSE_BRIDGE\"" | tee -a  compose.override.yaml
-
-      - name: overwrite pypirc
-        run: |
-          echo '' > ~/.pypirc
-          echo "[distutils]" | tee -a ~/.pypirc
-          echo "index-servers = nexus" | tee -a ~/.pypirc
-          echo "[nexus]" | tee -a ~/.pypirc
-          echo "repository =  http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/" | tee -a ~/.pypirc
-          echo "username = $NEXUS_USER_NAME" | tee -a ~/.pypirc
-          echo "password = $NEXUS_USER_PWD" | tee -a ~/.pypirc
-
-      - name: create service check file
-        run: |
-          echo 'while true' > /tmp/checkservice.sh
-          echo 'do' | tee -a /tmp/checkservice.sh
-          echo '	if [ `curl -sL -w %{http_code} "$1" -o /dev/null` != 000 ]; then' | tee -a /tmp/checkservice.sh
-          echo '		echo "URL does exist: $1"' | tee -a /tmp/checkservice.sh
-          echo '		break' | tee -a /tmp/checkservice.sh
-          echo '	else' | tee -a /tmp/checkservice.sh
-          echo '		echo "URL does not exist: $1"' | tee -a /tmp/checkservice.sh
-          echo '		curl -sL -w %{http_code} "$1" -o /dev/null' | tee -a /tmp/checkservice.sh
-          echo '	fi' | tee -a /tmp/checkservice.sh
-          echo '	sleep 2' | tee -a /tmp/checkservice.sh
-          echo 'done' | tee -a /tmp/checkservice.sh
-          cat /tmp/checkservice.sh
-
-
-      - name: check nexus service
-        run: chmod u+x /tmp/checkservice.sh && /tmp/checkservice.sh http://$NEXUS_HOSTNAME:$PORT_NEXUS
-
-      - name: create docker/pypi repository in nexus
-        run: |
-          curl -u $NEXUS_USER_NAME:$NEXUS_USER_PWD -X 'POST' "http://$NEXUS_HOSTNAME:$PORT_NEXUS/service/rest/v1/repositories/docker/hosted" -H 'accept: application/json' -H 'Content-Type: application/json'  -d "{\"name\":\"$REPO_NAME_DOCKER\",\"online\":true,\"storage\":{\"blobStoreName\":\"default\",\"strictContentTypeValidation\":true,\"writePolicy\":\"allow_once\"},\"component\":{\"proprietaryComponents\":true},\"docker\":{\"v1Enabled\":false,\"forceBasicAuth\":false,\"httpPort\":$PORT_NEXUS_DOCKER}}"
-          curl -u $NEXUS_USER_NAME:$NEXUS_USER_PWD -X 'PUT' "http://$NEXUS_HOSTNAME:$PORT_NEXUS/service/rest/v1/security/realms/active"  -H 'accept: application/json' -H 'Content-Type: application/json' -d "[\"DockerToken\",\"NexusAuthenticatingRealm\", \"NexusAuthorizingRealm\"]"
-          curl -u $NEXUS_USER_NAME:$NEXUS_USER_PWD -X 'POST' "http://$NEXUS_HOSTNAME:$PORT_NEXUS/service/rest/v1/repositories/pypi/hosted" -H 'accept: application/json' -H 'Content-Type: application/json' -d "{\"name\":\"$REPO_NAME_PYPI\",\"online\":true,\"storage\":{\"blobStoreName\":\"default\",\"strictContentTypeValidation\":true,\"writePolicy\":\"allow_once\"},\"component\":{\"proprietaryComponents\":true}}"
-
-      - name: upload pypi to nexus
-        working-directory: ./client
-        run: twine upload --repository nexus dist/*
-
-      - name: Build starwhale docker image
-        working-directory: ./docker
-        run: |
-          docker build -t starwhale -f Dockerfile.starwhale --build-arg PIPY_REPO_E2E=true --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg NEXUS_HOSTNAME=$IP_DOCKER_BRIDGE --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
-          docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
-
-      - name: docker push to nexus
-        run: |
-          docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
-          docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
-          docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
-
-      - name: start docker compose
-        working-directory: ./docker/compose
-        run: docker-compose up -d
-
-      - name: check controller service
-        run: |
-          sudo cat /etc/hosts
-          chmod u+x /tmp/checkservice.sh && /tmp/checkservice.sh http://127.0.0.1:$PORT_CONTROLLER
-
-      - name: standalone and job test
-        working-directory: .
+        working-directory: ./scripts/e2e_test
         env:
           GITHUB_ACTION: 1
-        run: |
-          scripts/run_demo.sh
-          scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
-          scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
-
-      - name: api test
-        working-directory: ./scripts/apitest/pytest
-        run: |
-          pip install -r requirements.txt
-          pytest --host 127.0.0.1 --port $PORT_CONTROLLER
-
-          
+        run: start_test.sh

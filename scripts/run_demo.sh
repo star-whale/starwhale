@@ -2,18 +2,22 @@
 
 set -e
 
+PYTHON_VERSION="${PYTHON_VERSION:=3.7}"
+
 in_github_action() {
   [ -n "$GITHUB_ACTION" ]
 }
 
+script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
+cd "$script_dir"/..
 if in_github_action; then
   WORK_DIR="$(pwd)"
 else
   WORK_DIR=$(mktemp -d)
-  script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
-  cd "$script_dir"/..
   echo "use $(pwd) as source"
 fi
+
+echo $WORK_DIR > WORK_DIR
 
 finish() {
   if ! in_github_action; then
@@ -22,10 +26,15 @@ finish() {
   echo 'cleanup'
 }
 
-trap finish EXIT
+if [ -z $PARENT_CLEAN ]; then
+  trap finish EXIT
+fi
+
 
 if ! in_github_action; then
-  cp -rf . "$WORK_DIR/"
+  cp -rf ./client "$WORK_DIR"
+  cp -rf ./example "$WORK_DIR"
+  cp -rf ./README.md "$WORK_DIR"
   rm -rf "$WORK_DIR/venv"
   rm -rf "$WORK_DIR/example/mnist/venv"
   rm -f "$WORK_DIR/example/mnist/runtime.yaml"
@@ -46,7 +55,7 @@ echo "install swcli"
 make install-sw
 
 cd "$WORK_DIR/example/mnist" || exit
-swcli runtime create -n pytorch-mnist -m venv --python 3.7 .
+swcli runtime create -n pytorch-mnist -m venv --python $PYTHON_VERSION .
 # shellcheck source=/dev/null
 . venv/bin/activate
 
