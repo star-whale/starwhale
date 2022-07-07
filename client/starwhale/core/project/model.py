@@ -143,7 +143,8 @@ class StandaloneProject(Project):
         rt = []
         for pdir in sw.rootdir.iterdir():
             # TODO: add more project details
-            if pdir.name == RECOVER_DIRNAME:
+            valid, _ = validate_obj_name(pdir.name)
+            if not valid:
                 continue
 
             rt.append(
