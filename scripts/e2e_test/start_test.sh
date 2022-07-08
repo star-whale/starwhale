@@ -48,13 +48,13 @@ start_nexus() {
 
 build_swcli() {
   if in_github_action; then
-      pip install --upgrade pip
+      python3 -m pip install --upgrade pip
   else
-      python3 -m venv venve2e && . venve2e/bin/activate && pip install --upgrade pip
+      python3 -m venv venve2e && . venve2e/bin/activate && python3 -m pip install --upgrade pip
   fi
 
   pushd ../../client
-  pip install -r requirements-install.txt
+  python3 -m pip install -r requirements-install.txt
   make build-wheel
   popd
 }
