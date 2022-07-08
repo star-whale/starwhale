@@ -4,11 +4,15 @@ in_github_action() {
   [ -n "$GITHUB_ACTION" ]
 }
 
+file_exists() {
+  [ -f "$1" ]
+}
+
   if in_github_action; then
       export SW_PYPI_EXTRA_INDEX_URL='https://pypi.org/simple'
   else
       SW_PYPI_EXTRA_INDEX_URL='https://pypi.doubanio.com/simple/'
-      PARENT_CLEAN=true
+      export PARENT_CLEAN=true
   fi
 
 declare_env() {
@@ -89,8 +93,11 @@ EOF
 }
 
 overwrite_pypirc() {
-  cp ~/.pypirc ~/.pypirc.bake2etest
-  cat > ~/.pypirc << EOF
+  if file_exists "$HOME/.pypirc" ; then
+    cp $HOME/.pypirc $HOME/.pypirc.bake2etest
+  else
+    touch $HOME/.pypirc
+  cat >$HOME/.pypirc << EOF
 [distutils]
 index-servers =
     nexus
@@ -100,12 +107,17 @@ repository =  http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/
 username = $NEXUS_USER_NAME
 password = $NEXUS_USER_PWD
 EOF
+  cat $HOME/.pypirc
 
 }
 
 overwrite_pip_config() {
-  cp ~/.pip/pip.conf ~/.pip/pip.conf.bake2etest
-  cat > ~/.pip/pip.conf << EOF
+  if file_exists "$HOME/.pip/pip.conf" ; then
+    cp $HOME/.pip/pip.conf $HOME/.pip/pip.conf.bake2etest
+  else
+    touch $HOME/.pip/pip.conf
+
+  cat >$HOME/.pip/pip.conf << EOF
 [global]
 index-url = http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple
 extra-index-url=$SW_PYPI_EXTRA_INDEX_URL
@@ -113,6 +125,7 @@ extra-index-url=$SW_PYPI_EXTRA_INDEX_URL
 [install]
 trusted-host=$NEXUS_HOSTNAME
 EOF
+  cat $HOME/.pip/pip.conf
 
 }
 
