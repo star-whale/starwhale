@@ -97,6 +97,7 @@ overwrite_pypirc() {
     cp $HOME/.pypirc $HOME/.pypirc.bake2etest
   else
     touch $HOME/.pypirc
+  fi
   cat >$HOME/.pypirc << EOF
 [distutils]
 index-servers =
@@ -107,8 +108,8 @@ repository =  http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/
 username = $NEXUS_USER_NAME
 password = $NEXUS_USER_PWD
 EOF
-  cat $HOME/.pypirc
 
+  cat $HOME/.pypirc
 }
 
 overwrite_pip_config() {
@@ -116,6 +117,7 @@ overwrite_pip_config() {
     cp $HOME/.pip/pip.conf $HOME/.pip/pip.conf.bake2etest
   else
     touch $HOME/.pip/pip.conf
+  fi
 
   cat >$HOME/.pip/pip.conf << EOF
 [global]
@@ -125,8 +127,8 @@ extra-index-url=$SW_PYPI_EXTRA_INDEX_URL
 [install]
 trusted-host=$NEXUS_HOSTNAME
 EOF
-  cat $HOME/.pip/pip.conf
 
+  cat $HOME/.pip/pip.conf
 }
 
 create_daemon_json_for_taskset() {
