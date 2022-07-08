@@ -1,4 +1,10 @@
-#!/bin/bash -x
+#!/usr/bin/env bash
+
+set -e
+
+if [[ ! -z ${DEBUG} ]]; then
+    set -x
+fi
 
 source $WORK_DIR/venv/bin/activate
 export SW_CLI_CONFIG="$LOCAL_DATA_DIR/config.yaml"

@@ -267,9 +267,6 @@ main() {
   check_controller_service
   standalone_test
   api_test
-  if ! in_github_action; then
-      restore_env
-  fi
 }
 
 main
