@@ -20,15 +20,13 @@ fi
 echo $WORK_DIR > WORK_DIR
 
 finish() {
-  if ! in_github_action; then
+  if ! in_github_action && test -z $PARENT_CLEAN ; then
     rm -rf "$WORK_DIR"
   fi
   echo 'cleanup'
 }
 
-if [ -z $PARENT_CLEAN ]; then
-  trap finish EXIT
-fi
+trap finish EXIT
 
 
 if ! in_github_action; then

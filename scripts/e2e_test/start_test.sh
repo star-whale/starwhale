@@ -192,6 +192,7 @@ standalone_test() {
   rm -rf venv*
   pushd ../
   scripts/run_demo.sh
+  export WORK_DIR=`cat WORK_DIR`
   scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
   scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
   popd
@@ -229,12 +230,15 @@ restore_env() {
   popd
   pushd ../../
   WORK_DIR=`cat WORK_DIR`
-  if ! in_github_action; then
+  if test -n $WORK_DIR ; then
     rm -rf "$WORK_DIR"
   fi
-  echo 'cleanup'
   popd
+  echo 'cleanup'
 }
+if ! in_github_action; then
+  trap restore_env EXIT
+fi
 
 main() {
   declare_env
