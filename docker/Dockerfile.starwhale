@@ -4,6 +4,12 @@ FROM ${BASE_IMAGE}
 ARG SW_VERSION=0.1.0
 ENV SW_VERSION ${SW_VERSION}
 
+ARG LOCAL_PYPI_HOSTNAME=host.nexus
+ARG PORT_NEXUS=8081
+ARG PIPY_REPO_E2E=
+COPY external/config-e2e-pypi-repo.sh /tmp/
+RUN chmod u+x /tmp/config-e2e-pypi-repo.sh && /tmp/config-e2e-pypi-repo.sh ${PIPY_REPO_E2E} ${LOCAL_PYPI_HOSTNAME} ${PORT_NEXUS}
+
 RUN rm -rf /opt/starwhale.venv \
     && virtualenv /opt/starwhale.venv \
     && /opt/starwhale.venv/bin/python -m pip install starwhale==${SW_VERSION} \

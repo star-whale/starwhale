@@ -8,22 +8,25 @@ on:
     branches:
       - main
 env:
-  PYPI_RELEASE_VERSION: 0.0.0-dev
+  PYPI_RELEASE_VERSION: 100.0.0
   RELEASE_VERSION: 0.0.0-dev
   NEXUS_HOSTNAME: host.nexus
   NEXUS_IMAGE: sonatype/nexus3:3.40.1
   NEXUS_USER_NAME: admin
   NEXUS_USER_PWD: admin123
   PORT_NEXUS: 8081
+  PORT_CONTROLLER: 8082
   PORT_NEXUS_DOCKER: 9001
   IP_DOCKER_COMPOSE_BRIDGE: 172.18.0.1
+  SW_IMAGE_REPO: host.nexus:9001
+  IP_DOCKER_BRIDGE: 172.17.0.1
   IP_DOCKER_COMPOSE_BRIDGE_RANGE: 172.0.0.0/8
   REPO_NAME_DOCKER: docker-hosted
   REPO_NAME_PYPI: pypi-hosted
 
 
 jobs:
-  pypi-release:
+  e2e-test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -31,15 +34,9 @@ jobs:
 
     steps:
 
-      - name: Start nexus
-        run: |
-            docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
-
-      - name: Add hosts to /etc/hosts
-        run: |
-          sudo echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
-
       - uses: actions/checkout@v3
+        with:
+          lfs: true
 
       - name: Setup python
         uses: actions/setup-python@v3
@@ -47,62 +44,6 @@ jobs:
           python-version: "3.7"
           architecture: "x64"
 
-      - name: Get pip cache
-        id: pip-cache-path
-        run: echo "::set-output name=dir::$(pip cache dir)"
-
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        id: pip-cache
-        with:
-          path: ${{ steps.pip-cache-path.outputs.dir }}
-          key: ${{ runner.os }}-codestyle-${{ hashFiles('client/requirements-dev.txt')}}
-
-      - name: Install dependencies
-        working-directory: ./client
-        run:
-          make install-dev-req
-          make build-wheel
-
-      - name: Build starwhale docker image
-        working-directory: ./docker
-        run: |
-          docker build -t starwhale -f Dockerfile.starwhale .
-          docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "yarn"
-          cache-dependency-path: "./console/yarn.lock"
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-
-      - name: Install yarn
-        working-directory: ./console
-        run: make install-yarn
-
-      - uses: actions/cache@v3
-        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
-        with:
-          path: |
-            ${{ steps.yarn-cache-dir-path.outputs.dir }}
-            **/node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-
-      - name: Install project dependencies
-        working-directory: ./console
-        if: steps.yarn-cache.outputs.cache-hit != 'true' # Over here!
-        run: make install-dependencies
-
-      - name: Yarn Build
-        working-directory: ./console
-        run: make build-ui
 
       # jar build
       - name: Cache local Maven repository
@@ -121,131 +62,10 @@ jobs:
           cache: "maven"
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
 
-      - name: Build with Maven
-        working-directory: ./server
-        run: make build-package
 
-      - name: Build server docker image
-        working-directory: ./docker
-        run: |
-          docker build -t server -f Dockerfile.server .
-          docker tag server $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
 
-      - name: clear docker overwride file
-        working-directory: ./docker/compose
-        run: echo '' > compose.override.yaml
-
-      - name: over write docker daemon.json for taskset
-        uses: "finnp/create-file-action@master"
+      - name: run e2e
+        working-directory: ./scripts/e2e_test
         env:
-          FILE_NAME: "/tmp/docker-daemon.json"
-          FILE_CONTENT: |
-                      {
-                      "hosts": [
-                        "tcp://0.0.0.0:2376",
-                        "unix:///var/run/docker.sock"
-                      ],
-                      "insecure-registries": [
-                        "10.0.0.0/8",
-                        "127.0.0.0/8",
-                        "$IP_DOCKER_COMPOSE_BRIDGE_RANGE",
-                        "192.0.0.0/8"
-                      ],
-                      "live-restore": true,
-                      "max-concurrent-downloads": 20,
-                      "max-concurrent-uploads": 20,
-                      "registry-mirrors": [
-                        "http://$NEXUS_HOSTNAME:PORT_NEXUS_DOCKER"
-                      ],
-                      "mtu": 1450,
-                      "runtimes": {
-                        "nvidia": {
-                          "path": "nvidia-container-runtime",
-                          "runtimeArgs": []
-                        }
-                      },
-                      "storage-driver": "overlay2"
-                    }
-              
-
-      - name: over write docker compose
-        uses: "finnp/create-file-action@master"
-        env:
-          FILE_NAME: "./docker/compose/compose.override.yaml"
-          FILE_CONTENT: |
-            services:
-              controller:
-                image: $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
-                          
-              agent:
-                image: $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
-                environment:
-                  - SW_PYPI_INDEX_URL=http://$NEXUS_HOSTNAME:$PORT_NEXUS/$REPO_NAME_PYPI/simple/
-                  - SW_PYPI_EXTRA_INDEX_URL=http://$NEXUS_HOSTNAME:$PORT_NEXUS/$REPO_NAME_PYPI/simple/
-                  - SW_PYPI_TRUSTED_HOST=$NEXUS_HOSTNAME
-                          
-              taskset:
-                volumes:
-                  - agent_data:/opt/starwhale
-                  - taskset_dind_data:/var/lib/docker
-                  - /tmp/docker-daemon.json:/etc/docker/daemon.json
-                extra_hosts:
-                  - "$NEXUS_HOSTNAME:$IP_DOCKER_COMPOSE_BRIDGE"
-
-      #[distutils]
-      #index-servers =
-      #    nexus
-      #
-      #[nexus]
-      #repository =  http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/
-      #username = $NEXUS_USER_NAME
-      #password = $NEXUS_USER_PWD
-      - name: modify pypi repository
-        uses: "finnp/create-file-action@master"
-        env:
-          FILE_NAME: "~/.pypirc"
-          FILE_CONTENT: |
-            [distutils]
-            index-servers =
-                nexus
-            
-            [nexus]
-            repository =  http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/
-            username = $NEXUS_USER_NAME
-            password = $NEXUS_USER_PWD
-
-      - name: wait nexsu service up
-        uses: ifaxity/wait-on-action
-        with:
-          resource: http-get://$NEXUS_HOSTNAME:PORT_NEXUS
-
-      - name: create docker/pypi repository in nexus
-        run: |
-            curl -u $NEXUS_USER_NAME:$NEXUS_USER_PWD -X 'POST' 'http://$NEXUS_HOSTNAME:8081/service/rest/v1/repositories/docker/hosted' -H 'accept: application/json' -H 'Content-Type: application/json'  -d '{"name":"$REPO_NAME_DOCKER","online":true,"storage":{"blobStoreName":"default","strictContentTypeValidation":true,"writePolicy":"allow_once"},"component":{"proprietaryComponents":true},"docker":{"v1Enabled":false,"forceBasicAuth":false,"httpPort":$PORT_NEXUS_DOCKER}}'
-            curl -u $NEXUS_USER_NAME:$NEXUS_USER_PWD -X 'PUT' 'http://$NEXUS_HOSTNAME:8081/service/rest/v1/security/realms/active'  -H 'accept: application/json' -H 'Content-Type: application/json' -d '["DockerToken","NexusAuthenticatingRealm", "NexusAuthorizingRealm"]'
-            curl -u $NEXUS_USER_NAME:$NEXUS_USER_PWD -X 'POST' 'http://$NEXUS_HOSTNAME:8081/service/rest/v1/repositories/pypi/hosted' -H 'accept: application/json' -H 'Content-Type: application/json' -d '{"name":"$REPO_NAME_PYPI","online":true,"storage":{"blobStoreName":"default","strictContentTypeValidation":true,"writePolicy":"allow_once"},"component":{"proprietaryComponents":true}}'
-
-
-      - name: docker push to nexus
-        run: |
-            docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
-            docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
-            docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale
-            
-      - name: upload pypi to nexus
-        run:
-            twine upload --repository nexus dist/*
-
-      - name: start docker compose
-        working-directory: ./docker/compose
-        run: docker-compose up
-
-      - name: wait docker service up
-        uses: ifaxity/wait-on-action
-        with:
-          resource: http-get://localhost:8082
-
-      - name: run swcli stand alone e2e
-
-      - name: run server e2e
-
+          PYTHON_VERSION: 3.7
+        run: ./start_test.sh

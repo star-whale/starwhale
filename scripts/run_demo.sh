@@ -2,21 +2,25 @@
 
 set -e
 
+PYTHON_VERSION="${PYTHON_VERSION:=3.7}"
+
 in_github_action() {
   [ -n "$GITHUB_ACTION" ]
 }
 
+script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
+cd "$script_dir"/..
 if in_github_action; then
   WORK_DIR="$(pwd)"
 else
   WORK_DIR=$(mktemp -d)
-  script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
-  cd "$script_dir"/..
   echo "use $(pwd) as source"
 fi
 
+echo $WORK_DIR > WORK_DIR
+
 finish() {
-  if ! in_github_action; then
+  if ! in_github_action && test -z $PARENT_CLEAN ; then
     rm -rf "$WORK_DIR"
   fi
   echo 'cleanup'
@@ -24,8 +28,11 @@ finish() {
 
 trap finish EXIT
 
+
 if ! in_github_action; then
-  cp -rf . "$WORK_DIR/"
+  cp -rf ./client "$WORK_DIR"
+  cp -rf ./example "$WORK_DIR"
+  cp -rf ./README.md "$WORK_DIR"
   rm -rf "$WORK_DIR/venv"
   rm -rf "$WORK_DIR/example/mnist/venv"
   rm -f "$WORK_DIR/example/mnist/runtime.yaml"
@@ -34,6 +41,7 @@ if ! in_github_action; then
   LOCAL_DATA_DIR=$(mktemp -d -p $WORK_DIR)
   export SW_CLI_CONFIG="$LOCAL_DATA_DIR/config.yaml"
   export SW_LOCAL_STORAGE=$LOCAL_DATA_DIR/data
+  echo $LOCAL_DATA_DIR > LOCAL_DATA_DIR
 fi
 
 echo "start test in $WORK_DIR"
@@ -46,7 +54,7 @@ echo "install swcli"
 make install-sw
 
 cd "$WORK_DIR/example/mnist" || exit
-swcli runtime create -n pytorch-mnist -m venv --python 3.7 .
+swcli runtime create -n pytorch-mnist -m venv --python $PYTHON_VERSION .
 # shellcheck source=/dev/null
 . venv/bin/activate
 
