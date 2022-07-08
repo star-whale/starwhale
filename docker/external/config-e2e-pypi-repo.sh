@@ -6,7 +6,7 @@ if [[ ! -z ${DEBUG} ]]; then
     set -x
 fi
 
-if [ ! $1 ] ; then
+if [ -z $1 ] ; then
     echo "PYPI overwrite is false"
 else
     echo "[global]
