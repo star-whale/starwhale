@@ -41,6 +41,7 @@ if ! in_github_action; then
   LOCAL_DATA_DIR=$(mktemp -d -p $WORK_DIR)
   export SW_CLI_CONFIG="$LOCAL_DATA_DIR/config.yaml"
   export SW_LOCAL_STORAGE=$LOCAL_DATA_DIR/data
+  echo $LOCAL_DATA_DIR > LOCAL_DATA_DIR
 fi
 
 echo "start test in $WORK_DIR"

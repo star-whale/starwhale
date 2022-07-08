@@ -8,12 +8,12 @@ file_exists() {
   [ -f "$1" ]
 }
 
-  if in_github_action; then
-      export SW_PYPI_EXTRA_INDEX_URL='https://pypi.org/simple'
-  else
-      SW_PYPI_EXTRA_INDEX_URL='https://pypi.doubanio.com/simple/'
-      export PARENT_CLEAN=true
-  fi
+if in_github_action; then
+    export SW_PYPI_EXTRA_INDEX_URL='https://pypi.org/simple'
+else
+    SW_PYPI_EXTRA_INDEX_URL='https://pypi.doubanio.com/simple/'
+    export PARENT_CLEAN=true
+fi
 
 declare_env() {
   export PYPI_RELEASE_VERSION="${PYPI_RELEASE_VERSION:=100.0.0}"
@@ -36,7 +36,7 @@ declare_env() {
 
 start_nexus() {
   docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
-  sudo cp /etc/hosts /etc/hosts.bake2etest
+  sudo cp /etc/hosts /etc/hosts.bak_e2e
   sudo echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
 }
 
@@ -65,7 +65,7 @@ build_server_image() {
 }
 
 override_docker_compose() {
-  cp compose/compose.override.yaml compose/compose.override.yaml.bake2etest
+  cp compose/compose.override.yaml compose/compose.override.yaml.bak_e2e
   cat > compose/compose.override.yaml << EOF
 services:
   controller:
@@ -94,7 +94,7 @@ EOF
 
 overwrite_pypirc() {
   if file_exists "$HOME/.pypirc" ; then
-    cp $HOME/.pypirc $HOME/.pypirc.bake2etest
+    cp $HOME/.pypirc $HOME/.pypirc.bak_e2e
   else
     touch $HOME/.pypirc
   fi
@@ -114,7 +114,7 @@ EOF
 
 overwrite_pip_config() {
   if file_exists "$HOME/.pip/pip.conf" ; then
-    cp $HOME/.pip/pip.conf $HOME/.pip/pip.conf.bake2etest
+    cp $HOME/.pip/pip.conf $HOME/.pip/pip.conf.bak_e2e
   else
     mkdir -p $HOME/.pip
     touch $HOME/.pip/pip.conf
@@ -194,6 +194,7 @@ standalone_test() {
   pushd ../
   scripts/run_demo.sh
   export WORK_DIR=`cat WORK_DIR`
+  export LOCAL_DATA_DIR=`cat LOCAL_DATA_DIR`
   scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
   scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
   popd
@@ -210,9 +211,9 @@ api_test() {
 
 restore_env() {
   rm -rf venve2e
-  mv ~/.pypirc.bake2etest ~/.pypirc
-  mv ~/.pip/pip.conf.bake2etest ~/.pip/pip.conf
-  sudo mv /etc/hosts.bake2etest /etc/hosts
+  mv ~/.pypirc.bak_e2e ~/.pypirc
+  mv ~/.pip/pip.conf.bak_e2e ~/.pip/pip.conf
+  sudo mv /etc/hosts.bak_e2e /etc/hosts
   rm /tmp/service_wait.sh
   docker kill nexus
   docker container rm nexus
@@ -220,21 +221,22 @@ restore_env() {
   docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
   docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
   docker image rm server
-  pushd ../../docker/compose
-  mv compose.override.yaml.bake2etest compose.override.yaml
+  script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
+  cd $script_dir/../../docker/compose
+  mv compose.override.yaml.bak_e2e compose.override.yaml
   dc=`which docker-compose`
   if [ -z $dc ]; then
       docker compose down
   else
       docker-compose down
   fi
-  popd
-  pushd ../../
+  cd $script_dir/../../
   WORK_DIR=`cat WORK_DIR`
   if test -n $WORK_DIR ; then
     rm -rf "$WORK_DIR"
   fi
-  popd
+  rm WORK_DIR
+  rm LOCAL_DATA_DIR
   echo 'cleanup'
 }
 if ! in_github_action; then

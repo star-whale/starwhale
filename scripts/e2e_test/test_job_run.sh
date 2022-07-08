@@ -38,6 +38,10 @@ do
     -H 'accept: application/json' \
     -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus
   job_status=`cat jobStatus`
+  if [ "$job_status" == "null" ] ; then
+    echo "Error! job_status id is null"  1>&2
+    exit 1
+  fi
   if [[ "$job_status" = "SUCCESS" ]] ; then
       echo "job success done"
       break
@@ -71,7 +75,7 @@ echo "agent log is:"
 docker logs compose_agent_1
 
 job_status=`cat jobStatus`
-if [[ "$job_status" = "FAIL" ]] ; then
+if [[ "$job_status" == "FAIL" ]] ; then
   exit 1
 fi
 
