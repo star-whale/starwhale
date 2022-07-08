@@ -77,8 +77,8 @@ curl -X 'GET' \
   -H 'accept: plain/text' \
   -H "$auth_header"
 
-echo "agent log is:"
-docker logs compose_agent_1
+#echo "agent log is:"
+#docker logs compose_agent_1
 
 job_status=`cat jobStatus`
 if [[ "$job_status" == "FAIL" ]] ; then
