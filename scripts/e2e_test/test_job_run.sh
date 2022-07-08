@@ -26,8 +26,8 @@ job_id=`curl -X 'POST' \
   "comment": "string"
 }' | jq -r '.data'`
 
-if [ job_id=="null" ] ; then
-  echo "job id is null"
+if [ "$job_id" == "null" ] ; then
+  echo "Error! job id is null"  1>&2
   exit 1
 fi
 
