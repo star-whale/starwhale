@@ -67,6 +67,5 @@ jobs:
       - name: run e2e
         working-directory: ./scripts/e2e_test
         env:
-          GITHUB_ACTION: 1
           PYTHON_VERSION: 3.7
         run: ./start_test.sh
