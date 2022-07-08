@@ -116,6 +116,7 @@ overwrite_pip_config() {
   if file_exists "$HOME/.pip/pip.conf" ; then
     cp $HOME/.pip/pip.conf $HOME/.pip/pip.conf.bake2etest
   else
+    mkdir -p $HOME/.pip
     touch $HOME/.pip/pip.conf
   fi
 
