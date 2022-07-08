@@ -1,4 +1,10 @@
-#!/bin/bash -x
+#!/usr/bin/env bash
+
+set -e
+
+if [[ ! -z ${DEBUG} ]]; then
+    set -x
+fi
 
 curl -D - --location --request POST "http://$1/api/v1/login" \
 --header 'Accept: application/json' \

@@ -1,4 +1,10 @@
-#!/bin/bash -x
+#!/usr/bin/env bash
+
+set -e
+
+if [[ ! -z ${DEBUG} ]]; then
+    set -x
+fi
 
 in_github_action() {
   [ -n "$GITHUB_ACTION" ]
