@@ -1,14 +1,25 @@
 import typing as t
 
-from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.consts import DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE, STANDALONE_INSTANCE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import ignore_error
 
 
-class CloudInstance(CloudRequestMixed):
+class Instance:
+    uri: URI
+
+
+class StandaloneInstance(Instance):
+    def __init__(self) -> None:
+        super().__init__()
+        self.uri = URI(STANDALONE_INSTANCE, expected_type=URIType.INSTANCE)
+
+
+class CloudInstance(Instance, CloudRequestMixed):
     def __init__(self, uri: str) -> None:
+        super().__init__()
         self.uri = URI(uri, expected_type=URIType.INSTANCE)
 
     @ignore_error("--")
