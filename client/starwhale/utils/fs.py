@@ -17,7 +17,8 @@ _MIN_GUESS_NAME_LENGTH = 5
 def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> None:
     p = Path(path)
     try:
-        _saved = p.open("r").read()
+        with p.open("r") as f:
+            _saved = f.read()
     except IOError as e:
         if e.errno == errno.ENOENT:
             # no such file or directory

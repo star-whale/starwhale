@@ -121,6 +121,7 @@ class StandaloneTag(object):
     def get_manifest_by_dir(cls, dir: Path) -> t.Dict[str, t.Any]:
         _mf = dir / DEFAULT_MANIFEST_NAME
         if _mf.exists():
-            return yaml.safe_load(_mf.open()) or {}
+            with open(_mf) as f:
+                return yaml.safe_load(f) or {}
         else:
             return {}
