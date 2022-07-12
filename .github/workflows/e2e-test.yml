@@ -46,7 +46,7 @@ jobs:
 
     needs:
       - filter
-    if: ${{ (github.event_name == 'pull_request' && ( needs.filter.outputs.java == 'java' || needs.filter.outputs.client == 'client')) || github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'pull_request' && ( needs.filter.outputs.java == 'true' || needs.filter.outputs.client == 'true')) || github.event_name == 'push' }}
 
     defaults:
       run:
