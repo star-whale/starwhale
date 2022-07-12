@@ -280,7 +280,7 @@ const HeaderContext = React.createContext<HeaderContextT>({
     columns: [],
     columnHighlightIndex: -1,
     emptyMessage: '',
-    filters: new Map(),
+    filters: [],
     loading: false,
     loadingMessage: '',
     isScrollingX: false,
@@ -498,7 +498,9 @@ function Headers() {
 
     const headerRender = useCallback(
         (column: ColumnT & { index: number }) => {
-            const activeFilter = ctx.filters ? ctx.filters.get(column.title) : null
+            // TODO
+            // const activeFilter = ctx.filters ? ctx.filters.find((v) => v.key == column.title) : null
+            const activeFilter = null
             const columnIndex = column.index
             return (
                 <Tooltip
@@ -516,7 +518,7 @@ function Headers() {
                                 >
                                     {locale.datatable.filterAppliedTo} {column.title}
                                 </p>
-                                {activeFilter && (
+                                {/* {activeFilter && (
                                     <p
                                         className={css({
                                             ...theme.typography.font150,
@@ -525,7 +527,7 @@ function Headers() {
                                     >
                                         {activeFilter.description}
                                     </p>
-                                )}
+                                )} */}
                             </div>
                         )
                     }}
@@ -784,6 +786,7 @@ function MeasureScrollbarWidth(props) {
 export function DataTable({
     batchActions,
     columns,
+    rawColumns,
     filters,
     emptyMessage,
     loading,
@@ -906,23 +909,27 @@ export function DataTable({
         return toSort.map((el) => el[1])
     }, [sortIndex, sortDirection, columns, allRows])
 
+    // only
     const filteredIndices = React.useMemo(() => {
         const set = new Set(allRows.map((_, idx) => idx))
-        // @ts-ignore
-        Array.from(filters || new Set(), (f) => f).forEach(([title, filter]) => {
-            const columnIndex = columns.findIndex((c) => c.title === title)
-            const column = columns[columnIndex]
-            if (!column) {
-                return
-            }
 
-            const filterFn = column.buildFilter(filter)
-            Array.from(set).forEach((idx) => {
-                if (!filterFn(column.mapDataToValue(allRows[idx].data))) {
-                    set.delete(idx)
+        Array.from(filters || new Set(), (f) => f)
+            .filter((v: any) => !v.disable)
+            .forEach((filter: any) => {
+                const columnIndex = rawColumns.findIndex((c) => c.key === filter.key)
+                const column = rawColumns[columnIndex]
+
+                if (!column) {
+                    return
                 }
+
+                const filterFn = filter?.op.buildFilter(filter) // ?? column.buildFilter(filter)
+                Array.from(set).forEach((idx) => {
+                    if (!filterFn(column.mapDataToValue(allRows[idx].data), allRows[idx].data, column)) {
+                        set.delete(idx)
+                    }
+                })
             })
-        })
 
         if (textQuery) {
             // @ts-ignore
@@ -950,7 +957,7 @@ export function DataTable({
         }
 
         return set
-    }, [filters, textQuery, columns, allRows])
+    }, [filters, textQuery, rawColumns, allRows, columns])
 
     const rows = React.useMemo(() => {
         // @ts-ignore
@@ -1013,7 +1020,6 @@ export function DataTable({
         resetAfterColumnIndex,
         rowHeightAtIndex,
     ])
-
     const isSelectable = batchActions ? !!batchActions.length : false
     const isSelectedAll = React.useMemo(() => {
         if (!selectedRowIds) {

@@ -17,6 +17,7 @@ import { useFetchEvaluationAttrs } from '@/domain/evaluation/hooks/useFetchEvalu
 import { usePage } from '@/hooks/usePage'
 import { ColumnT } from '@/components/data-table/types'
 import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
+import _ from 'lodash'
 import EvaluationListCompare from './EvaluationListCompare'
 
 export default function EvaluationListCard() {
@@ -55,6 +56,8 @@ export default function EvaluationListCard() {
             CustomColumn({
                 key: 'uuid',
                 title: t('Evaluation ID'),
+                // filterable: true,
+                // renderFilter: () => <div>1</div>,
                 mapDataToValue: (item: any) => item,
                 // @ts-ignore
                 renderCell: (props: any) => {
@@ -70,6 +73,7 @@ export default function EvaluationListCard() {
             StringColumn({
                 key: 'modelName',
                 title: t('sth name', [t('Model')]),
+                filterable: true,
                 mapDataToValue: (data: any) => data.modelName,
             }),
             StringColumn({
@@ -97,56 +101,6 @@ export default function EvaluationListCard() {
                 title: t('End Time'),
                 mapDataToValue: (data: any) => (data.stopTime > 0 ? formatTimestampDateTime(data.stopTime) : '-'),
             }),
-            // CustomColumn({
-            //     key: 'action',
-            //     title: t('Action'),
-            //     // @ts-ignore
-            //     renderCell: (props: any) => {
-            //         const data = props.value ?? {}
-            //         const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
-            //             [JobStatusType.CREATED]: (
-            //                 <>
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
-            //                         {t('Cancel')}
-            //                     </StyledLink>
-            //                     &nbsp;&nbsp;
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.PAUSE)}>
-            //                         {t('Pause')}
-            //                     </StyledLink>
-            //                 </>
-            //             ),
-            //             [JobStatusType.RUNNING]: (
-            //                 <>
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
-            //                         {t('Cancel')}
-            //                     </StyledLink>
-            //                     &nbsp;&nbsp;
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.PAUSE)}>
-            //                         {t('Pause')}
-            //                     </StyledLink>
-            //                 </>
-            //             ),
-            //             [JobStatusType.PAUSED]: (
-            //                 <>
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
-            //                         {t('Cancel')}
-            //                     </StyledLink>
-            //                     &nbsp;&nbsp;
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.RESUME)}>
-            //                         {t('Resume')}
-            //                     </StyledLink>
-            //                 </>
-            //             ),
-            //             [JobStatusType.SUCCESS]: (
-            //                 <Link to={`/projects/${projectId}/evaluations/${data.id}/results`}>
-            //                     {t('View Results')}
-            //                 </Link>
-            //             ),
-            //         }
-            //         return actions[data.jobStatus as JobStatusType] ?? ''
-            //     },
-            //     mapDataToValue: (item: any) => item,
-            // }),
         ],
         [projectId, t]
     )
@@ -167,6 +121,7 @@ export default function EvaluationListCard() {
                         StringColumn({
                             key: attr.name,
                             title: name,
+                            filterType: 'string',
                             mapDataToValue: (data: any) => data.attributes?.[attr.name],
                         })
                     )
@@ -178,6 +133,7 @@ export default function EvaluationListCard() {
                             key: attr.name,
                             title: name,
                             sortable: true,
+                            filterType: 'number',
                             sortFn: (a: any, b: any) => {
                                 // eslint-disable-next-line
                                 const aNum = Number(a)
@@ -214,7 +170,19 @@ export default function EvaluationListCard() {
                 },
             },
         ],
-        []
+        [setCompareRows]
+    )
+
+    const $data = useMemo(
+        () =>
+            evaluationsInfo.data?.list?.map((raw) => {
+                const $attributes = raw.attributes?.filter((item: any) => _.startsWith(item.name, 'summary'))
+                return {
+                    ...raw,
+                    attributes: $attributes,
+                }
+            }) ?? [],
+        [evaluationsInfo.data]
     )
 
     return (
@@ -247,8 +215,7 @@ export default function EvaluationListCard() {
                     batchActions={batchAction}
                     isLoading={evaluationsInfo.isLoading}
                     columns={$columnsWithAttrs}
-                    // @ts-ignore
-                    data={evaluationsInfo.data?.list ?? []}
+                    data={$data}
                 />
                 <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                     <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>

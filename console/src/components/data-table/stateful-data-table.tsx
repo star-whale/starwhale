@@ -5,22 +5,23 @@ This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 */
 
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import ResizeObserver from 'resize-observer-polyfill'
 
 import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
 import { Search } from 'baseui/icon'
 import { Input, SIZE as INPUT_SIZES } from 'baseui/input'
-import { Popover } from 'baseui/popover'
 import { useStyletron } from 'baseui'
-import { Tag } from 'baseui/tag'
 import _ from 'lodash'
-import FilterMenu from './filter-menu'
 import { DataTable } from './data-custom-table'
 import { StatefulContainer } from './stateful-container'
 import { LocaleContext } from './locales'
-import type { ColumnT, ConfigT, RowT, StatefulContainerPropsT, StatefulDataTablePropsT } from './types'
+import type { ColumnT, ConfigT, StatefulContainerPropsT, StatefulDataTablePropsT } from './types'
 import ConfigManageColumns from './config-manage-columns'
+import FilterOperateMenu from './filter-operate-menu'
+import ConfigViews from './config-views'
+import { Operators } from './filter-operate-selector'
+import useStore from './store'
 
 // @ts-ignore
 function useResizeObserver(
@@ -50,7 +51,7 @@ function QueryInput(props: any) {
     }, [onChange, value])
 
     return (
-        <div className={css({ width: '375px', marginBottom: theme.sizing.scale500 })}>
+        <div className={css({ width: '360px' })}>
             <Input
                 aria-label={locale.datatable.searchAriaLabel}
                 overrides={{
@@ -77,81 +78,6 @@ function QueryInput(props: any) {
     )
 }
 
-interface IFilterTags {
-    title: string
-    filter: { description: string }
-    onFilterAdd: (v: string, { description: string }: any) => any
-    onFilterRemove: (v: string) => any
-    columns: ColumnT[]
-    rows: RowT[]
-}
-function FilterTag(props: IFilterTags) {
-    const [, theme] = useStyletron()
-    const [isOpen, setIsOpen] = React.useState(false)
-    // @ts-ignore
-    const columnIndex = props.columns.findIndex((c) => c.title === props.title)
-    const column = props.columns[columnIndex]
-    if (!column) {
-        return null
-    }
-
-    const data = props.rows.map((r) => column.mapDataToValue(r.data))
-    const Filter = column.renderFilter
-
-    return (
-        <Popover
-            focusLock
-            returnFocus
-            key={props.title}
-            isOpen={isOpen}
-            onClickOutside={() => setIsOpen(false)}
-            content={() => (
-                // @ts-ignore
-                <Filter
-                    close={() => setIsOpen(false)}
-                    data={data}
-                    filterParams={props.filter}
-                    setFilter={(filterParams: any) => props.onFilterAdd(props.title, filterParams)}
-                />
-            )}
-        >
-            <div>
-                <Tag
-                    onClick={() => setIsOpen(!isOpen)}
-                    onActionClick={() => props.onFilterRemove(props.title)}
-                    overrides={{
-                        Root: {
-                            style: {
-                                borderTopLeftRadius: '36px',
-                                borderTopRightRadius: '36px',
-                                borderBottomLeftRadius: '36px',
-                                borderBottomRightRadius: '36px',
-                                height: '36px',
-                                marginTop: 0,
-                                marginBottom: theme.sizing.scale500,
-                            },
-                        },
-                        Action: {
-                            style: {
-                                borderTopRightRadius: '36px',
-                                borderBottomRightRadius: '36px',
-                                height: '22px',
-                            },
-                        },
-                        Text: {
-                            style: {
-                                maxWidth: '160px',
-                            },
-                        },
-                    }}
-                >
-                    {props.title}: {props.filter.description}
-                </Tag>
-            </div>
-        </Popover>
-    )
-}
-
 export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const [css, theme] = useStyletron()
     const headlineRef = React.useRef(null)
@@ -163,16 +89,18 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const filterable = props.filterable === undefined ? true : props.filterable
     const searchable = props.searchable === undefined ? true : props.searchable
     const columnable = props.columnable === undefined ? true : props.columnable
+    const viewable = props.viewable === undefined ? true : props.viewable
 
     const { columns } = props
-    const { pinnedIds = [], selectIds = [] }: ConfigT = props.config || {}
+    const store = useStore()
+    const { pinnedIds = [], selectedIds = [] }: ConfigT = store.currentView || {}
 
     const $columns = useMemo(() => {
         if (!columnable) return columns
 
         const columnsMap = _.keyBy(columns, (c) => c.key) as Record<string, ColumnT>
 
-        return selectIds
+        return selectedIds
             .filter((id: any) => id in columnsMap)
             .map((id: any) => {
                 return {
@@ -180,7 +108,71 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                     pin: pinnedIds.includes(id) ? 'LEFT' : undefined,
                 }
             }) as ColumnT[]
-    }, [columns, selectIds, pinnedIds, columnable])
+    }, [columns, columnable, pinnedIds, selectedIds])
+
+    const $filters = React.useMemo(() => {
+        return (
+            props.initialFilters?.map((v) => ({
+                ...v,
+                op: Operators[v.op?.key || 'default'],
+            })) || []
+        )
+    }, [props.initialFilters])
+
+    const $filtersEnabled = React.useMemo(() => {
+        return $filters?.filter((c) => !c.disable)
+    }, [$filters])
+
+    const handleApply = useCallback(
+        // eslint-disable-next-line @typescript-eslint/no-shadow
+        (selectedIds, sortedIds, pinnedIds) => {
+            store.onCurrentViewColumnsChange(selectedIds, pinnedIds, sortedIds)
+        },
+        [store]
+    )
+    const handleSave = useCallback(
+        (view) => {
+            store.onShowViewModel(true, view)
+        },
+        [store]
+    )
+    const handleSaveAs = useCallback(
+        (view) => {
+            store.onShowViewModel(true, {
+                ...view,
+                id: undefined,
+            })
+        },
+        [store]
+    )
+
+    const handeFilterSet = useCallback(
+        (categories) => {
+            store.onCurrentViewFiltersChange(categories)
+        },
+        [store]
+    )
+
+    const handleFilterSave = useCallback(
+        (filters) => {
+            store.onShowViewModel(true, {
+                ...store.currentView,
+                filters,
+            })
+        },
+        [store]
+    )
+
+    const handleFilterSaveAs = useCallback(
+        (filters) => {
+            store.onShowViewModel(true, {
+                ...store.currentView,
+                id: undefined,
+                filters,
+            })
+        },
+        [store]
+    )
 
     return (
         <StatefulContainer
@@ -191,6 +183,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
             initialSelectedRowIds={props.initialSelectedRowIds}
             initialSortIndex={props.initialSortIndex}
             initialSortDirection={props.initialSortDirection}
+            onFilterSet={props.onFilterSet}
             onFilterAdd={props.onFilterAdd}
             onFilterRemove={props.onFilterRemove}
             onIncludedRowsChange={props.onIncludedRowsChange}
@@ -200,14 +193,12 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
             rows={props.rows}
             rowActions={props.rowActions}
             rowHighlightIndex={props.rowHighlightIndex}
-            onColumnSave={props.onColumnSave}
-            config={props.config}
         >
             {/* @ts-ignore */}
             {({
-                filters,
-                onFilterAdd,
-                onFilterRemove,
+                // onFilterSet,
+                // onFilterAdd,
+                // onFilterRemove,
                 onIncludedRowsChange,
                 onRowHighlightChange,
                 onSelectMany,
@@ -221,8 +212,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                 sortIndex,
                 sortDirection,
                 textQuery,
-                onColumnSave,
-                config,
             }: StatefulContainerPropsT['children']) => (
                 <>
                     <div className={css({ height: `${headlineHeight}px` })}>
@@ -233,41 +222,24 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 justifyContent: 'space-between',
                             })}
                         >
-                            {!selectedRowIds.size && (
-                                <div
-                                    className={css({
-                                        alignItems: 'end',
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        paddingTop: theme.sizing.scale500,
-                                    })}
-                                >
-                                    {searchable && <QueryInput onChange={onTextQueryChange} />}
+                            <div
+                                className='flex-row-center mb-20 g-20'
+                                style={{ flexWrap: 'wrap', justifyContent: 'start' }}
+                            >
+                                {viewable && <ConfigViews columns={props.columns} rows={props.rows} />}
+                                {filterable && (
+                                    <FilterOperateMenu
+                                        filters={store.currentView.filters ?? []}
+                                        columns={props.columns}
+                                        rows={props.rows}
+                                        onFilterSet={handeFilterSet}
+                                        onSave={handleFilterSave}
+                                        onSaveAs={handleFilterSaveAs}
+                                    />
+                                )}
 
-                                    {filterable && (
-                                        <>
-                                            <FilterMenu
-                                                columns={$columns}
-                                                filters={filters}
-                                                rows={props.rows}
-                                                onSetFilter={onFilterAdd}
-                                            />
-
-                                            {Array.from(filters).map(([title, filter]) => (
-                                                <FilterTag
-                                                    key={title}
-                                                    columns={$columns}
-                                                    filter={filter}
-                                                    onFilterAdd={onFilterAdd}
-                                                    onFilterRemove={onFilterRemove}
-                                                    rows={props.rows}
-                                                    title={title}
-                                                />
-                                            ))}
-                                        </>
-                                    )}
-                                </div>
-                            )}
+                                {searchable && <QueryInput onChange={onTextQueryChange} />}
+                            </div>
 
                             {Boolean(selectedRowIds.size) && props.batchActions && (
                                 <div
@@ -320,19 +292,13 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                             )}
 
                             {columnable && (
-                                <div
-                                    className={css({
-                                        alignItems: 'center',
-                                        display: 'flex',
-                                        flexWrap: 'wrap',
-                                        paddingTop: theme.sizing.scale500,
-                                    })}
-                                >
+                                <div className='flex-row-center mb-20'>
                                     <ConfigManageColumns
+                                        view={store.currentView}
                                         columns={props.columns}
-                                        onColumnSave={onColumnSave}
-                                        config={config}
-                                        // onSaveAs={onColumnSaveAs}
+                                        onApply={handleApply}
+                                        onSave={handleSave}
+                                        onSaveAs={handleSaveAs}
                                     />
                                 </div>
                             )}
@@ -345,8 +311,9 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                             <DataTable
                                 batchActions={props.batchActions}
                                 columns={$columns}
+                                rawColumns={props.columns}
                                 emptyMessage={props.emptyMessage}
-                                filters={filters}
+                                filters={$filtersEnabled}
                                 loading={props.loading}
                                 loadingMessage={props.loadingMessage}
                                 onIncludedRowsChange={onIncludedRowsChange}

@@ -208,7 +208,7 @@ const HeaderContext = React.createContext<HeaderContextT>({
     columns: [],
     columnHighlightIndex: -1,
     emptyMessage: '',
-    filters: new Map(),
+    filters: [],
     loading: false,
     loadingMessage: '',
     isScrollingX: false,
@@ -435,7 +435,9 @@ function Headers() {
             })}
         >
             {ctx.columns.map((column, columnIndex) => {
-                const activeFilter = ctx.filters ? ctx.filters.get(column.title) : null
+                // TODO fixme
+                // const activeFilter = ctx.filters ? ctx.filters.get(column.title) : null
+                const activeFilter = null
 
                 return (
                     <React.Fragment key={columnIndex}>
@@ -454,7 +456,7 @@ function Headers() {
                                         >
                                             {locale.datatable.filterAppliedTo} {column.title}
                                         </p>
-                                        {activeFilter && (
+                                        {/* {activeFilter && (
                                             <p
                                                 className={css({
                                                     ...theme.typography.font150,
@@ -463,7 +465,7 @@ function Headers() {
                                             >
                                                 {activeFilter.description}
                                             </p>
-                                        )}
+                                        )} */}
                                     </div>
                                 )
                             }}

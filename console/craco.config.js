@@ -2,6 +2,7 @@ const path = require('path')
 const webpack = require('webpack')
 const SimpleProgressWebpackPlugin = require('simple-progress-webpack-plugin')
 const CracoEsbuildPlugin = require('craco-esbuild')
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 
 module.exports = {
     plugins: [{ plugin: CracoEsbuildPlugin }],
@@ -22,6 +23,7 @@ module.exports = {
                 'process.env.DEBUG': JSON.stringify(process.env.DEBUG),
                 'process.env.PROXY': JSON.stringify(process.env.PROXY),
             }),
+            // new BundleAnalyzerPlugin(),
         ],
         configure: (webpackConfig, { env, paths }) => {
             // https://github.com/pmndrs/react-spring/issues/1078#issuecomment-752143468

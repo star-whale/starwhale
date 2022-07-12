@@ -5,7 +5,7 @@ This source code is licensed under the MIT license found in the
 LICENSE file in the root directory of this source tree.
 */
 
-import React, { useMemo, useCallback, useRef, useEffect } from 'react'
+import React, { useMemo, useCallback, useRef, useEffect, useImperativeHandle } from 'react'
 import { SHAPE, SIZE, KIND } from 'baseui/button'
 import { Search, Icon } from 'baseui/icon'
 import { useStyletron } from 'baseui'
@@ -19,45 +19,38 @@ import useSelection from '@/hooks/useSelection'
 import { AiOutlinePushpin } from 'react-icons/ai'
 import { RiDeleteBin6Line } from 'react-icons/ri'
 import { useDrawer } from '@/hooks/useDrawer'
-
 import { DnDContainer } from '../DnD/DnDContainer'
 import { matchesQuery } from './text-search'
 import type { ColumnT, ConfigT } from './types'
+// import { LocaleContext } from './locales'
 
 type PropsT = {
-    config: ConfigT
+    isInline?: boolean
+    view: ConfigT
     columns: ColumnT[]
-    onColumnSave?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
-    // onColumnSaveAs?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
+    onApply?: (columnSortedIds: T[], columnVisibleIds: T[], pinnedIds: T[]) => void
+    onSave?: (view: ConfigT) => void
+    onSaveAs?: (view: ConfigT) => void
 }
-type T = string
 
-function ConfigManageColumns(props: PropsT) {
+type T = string
+const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((props, configRef) => {
     const [css, theme] = useStyletron()
     // const locale = React.useContext(LocaleContext)
     const [isOpen, setIsOpen] = React.useState(false)
     const [query, setQuery] = React.useState('')
     const { expandedWidth, expanded, setExpanded } = useDrawer()
 
-    // const handleClose = React.useCallback(() => {
-    //     setIsOpen(false)
-    //     setHighlightIndex(-1)
-    //     setQuery('')
-    // }, [])
-
     useEffect(() => {
+        if (props.isInline) {
+            return
+        }
         if (isOpen && !expanded) {
             setExpanded(true)
         } else if (!isOpen && expanded) {
             setExpanded(false)
         }
-    }, [isOpen, expanded, setExpanded, expandedWidth])
-
-    // const filterableColumns = React.useMemo(() => {
-    //     return props.columns.filter((column) => {
-    //         return column.filterable && !props.filters.has(column.title)
-    //     })
-    // }, [props.columns, props.filters])
+    }, [props.isInline, isOpen, expanded, setExpanded, expandedWidth])
 
     const ref = useRef(null)
     const { columns } = props
@@ -74,7 +67,7 @@ function ConfigManageColumns(props: PropsT) {
     const {
         selectedIds,
         sortedIds,
-        pinedIds,
+        pinnedIds,
         handleSelectMany,
         handleSelectNone,
         handleSelectOne,
@@ -82,9 +75,9 @@ function ConfigManageColumns(props: PropsT) {
         handlePinOne,
         handleEmpty,
     } = useSelection<T>({
-        initialSelectedIds: props.config?.selectIds ?? [],
-        initialPinedIds: props.config?.pinnedIds ?? [],
-        initialSortedIds: props.config?.sortedIds ?? [],
+        initialSelectedIds: props.view?.selectedIds ?? [],
+        initialPinnedIds: props.view?.pinnedIds ?? [],
+        initialSortedIds: props.view?.sortedIds ?? [],
     })
 
     const dndData = useMemo(() => {
@@ -163,78 +156,138 @@ function ConfigManageColumns(props: PropsT) {
             return {
                 id: column?.key as string,
                 // @ts-ignore
-                text: <DnDCell column={column} pined={pinedIds.includes(id)} />,
+                text: <DnDCell column={column} pined={pinnedIds.includes(id)} />,
             }
         })
-    }, [selectedIds, pinedIds, columns, handlePinOne, handleSelectOne])
+    }, [selectedIds, pinnedIds, columns, handlePinOne, handleSelectOne])
 
     const handleSave = useCallback(() => {
-        props.onColumnSave?.(sortedIds, selectedIds, pinedIds)
-    }, [props, selectedIds, sortedIds, pinedIds])
+        props.onSave?.({
+            ...props.view,
+            selectedIds,
+            sortedIds,
+            pinnedIds,
+        })
+    }, [props, selectedIds, sortedIds, pinnedIds])
+    const handleSaveAs = useCallback(() => {
+        props.onSaveAs?.({
+            ...props.view,
+            selectedIds,
+            sortedIds,
+            pinnedIds,
+        })
+    }, [props, selectedIds, sortedIds, pinnedIds])
+    const handleApply = useCallback(() => {
+        props.onApply?.(selectedIds, pinnedIds, sortedIds)
+    }, [props, selectedIds, sortedIds, pinnedIds])
+
+    useImperativeHandle(
+        configRef,
+        () => ({
+            getConfig: () => {
+                return {
+                    selectedIds,
+                    sortedIds,
+                    pinnedIds,
+                }
+            },
+        }),
+        [selectedIds, sortedIds, pinnedIds]
+    )
+
+    const Wrapper = React.useCallback(
+        // eslint-disable-next-line react/no-unused-prop-types
+        ({ children }: { children: React.ReactNode }) => {
+            return props.isInline ? (
+                <div>{children}</div>
+            ) : (
+                ref.current && (
+                    <Drawer
+                        size='520px'
+                        isOpen={isOpen}
+                        autoFocus
+                        // showBackdrop={false}
+                        onClose={() => setIsOpen(false)}
+                        // mountNode={document.body}
+                        overrides={{
+                            Root: {
+                                style: {
+                                    zIndex: '102',
+                                    margin: 0,
+                                },
+                            },
+                            DrawerContainer: {
+                                style: {
+                                    borderRadius: '0',
+                                    boxSizing: 'border-box',
+                                    padding: '0px 0 10px',
+                                    boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
+                                    margin: 0,
+                                },
+                            },
+                            DrawerBody: {
+                                style: {
+                                    marginLeft: 0,
+                                    marginRight: 0,
+                                    marginTop: 0,
+                                    marginBottom: 0,
+                                },
+                            },
+                        }}
+                    >
+                        {children}
+                    </Drawer>
+                )
+            )
+        },
+        [props.isInline, isOpen]
+    )
 
     return (
         <div ref={ref}>
-            <Button
-                onClick={() => setIsOpen(!isOpen)}
-                shape={SHAPE.pill}
-                size={SIZE.compact}
-                as='link'
-                startEnhancer={() => <Icon />}
-                overrides={{
-                    BaseButton: {
-                        style: {
-                            marginLeft: theme.sizing.scale500,
-                            marginBottom: theme.sizing.scale500,
-                        },
-                    },
-                }}
-            >
-                Manage Columns
-            </Button>
-            {ref.current && (
-                <Drawer
-                    size='520px'
-                    isOpen={isOpen}
-                    autoFocus
-                    // showBackdrop={false}
-                    onClose={() => setIsOpen(false)}
-                    mountNode={document.body || ref.current}
+            {!props.isInline && (
+                <Button
+                    onClick={() => setIsOpen(!isOpen)}
+                    shape={SHAPE.pill}
+                    size={SIZE.compact}
+                    as='link'
+                    startEnhancer={() => <Icon />}
                     overrides={{
-                        Root: {
+                        BaseButton: {
                             style: {
-                                zIndex: '102',
-                                margin: 0,
-                            },
-                        },
-                        DrawerContainer: {
-                            style: {
-                                borderRadius: '0',
-                                boxSizing: 'border-box',
-                                padding: '0px 0 10px',
-                                boxShadow: '0 4px 14px 0 rgba(0, 0, 0, 0.3)',
-                                margin: 0,
-                            },
-                        },
-                        DrawerBody: {
-                            style: {
-                                marginLeft: 0,
-                                marginRight: 0,
-                                marginTop: 0,
-                                marginBottom: 0,
+                                marginLeft: theme.sizing.scale500,
                             },
                         },
                     }}
                 >
+                    Manage Columns
+                </Button>
+            )}
+            {ref.current && (
+                <Wrapper>
                     <div
-                        className={css({
-                            display: 'flex',
-                            flexDirection: 'column',
-                            height: '56px',
-                            lineHeight: '56px',
-                            borderBottom: '1px solid #EEF1F6',
-                            paddingLeft: '20px',
-                            marginBottom: '20px',
-                        })}
+                        className={css(
+                            props.isInline
+                                ? {
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      height: '56px',
+                                      lineHeight: '56px',
+                                      borderTop: '1px solid #EEF1F6',
+                                      paddingLeft: 0,
+                                      marginTop: '20px',
+                                      fontWeight: 'bold',
+                                  }
+                                : {
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      height: '56px',
+                                      lineHeight: '56px',
+                                      borderBottom: '1px solid #EEF1F6',
+                                      paddingLeft: '20px',
+                                      marginBottom: '20px',
+                                  }
+                        )}
                     >
                         Manage Columns
                     </div>
@@ -244,8 +297,8 @@ function ConfigManageColumns(props: PropsT) {
                             flexDirection: 'column',
                             gap: '20px',
                             height: 'calc(100% - 76px)',
-                            paddingLeft: '20px',
-                            paddingRight: '20px',
+                            paddingLeft: props.isInline ? 0 : '20px',
+                            paddingRight: props.isInline ? 0 : '20px',
                         })}
                     >
                         <div
@@ -404,23 +457,46 @@ function ConfigManageColumns(props: PropsT) {
                                 )}
                             </div>
                         </div>
-                        <div
-                            className={css({
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                gap: '20px',
-                            })}
-                        >
-                            <Button kind={KIND.secondary} size={SIZE.mini}>
-                                Save AS
-                            </Button>
-                            <Button onClick={handleSave}>Save</Button>
-                        </div>
+                        {!props.isInline && (
+                            <div
+                                className={css({
+                                    display: 'flex',
+                                    justifyContent: 'start',
+                                    gap: '20px',
+                                })}
+                            >
+                                <Button onClick={handleSaveAs} kind={KIND.secondary} size={SIZE.mini}>
+                                    Save AS
+                                </Button>
+                                <Button onClick={handleSave} kind={KIND.secondary}>
+                                    Save
+                                </Button>
+                                <Button
+                                    overrides={{
+                                        BaseButton: {
+                                            style: {
+                                                marginLeft: 'auto',
+                                            },
+                                        },
+                                    }}
+                                    size={SIZE.mini}
+                                    onClick={handleApply}
+                                >
+                                    OK
+                                </Button>
+                            </div>
+                        )}
                     </div>
-                </Drawer>
+                </Wrapper>
             )}
         </div>
     )
-}
+})
 
+ConfigManageColumns.defaultProps = {
+    isInline: false,
+    onApply: () => {},
+    onSave: () => {},
+    onSaveAs: () => {},
+}
 export default ConfigManageColumns

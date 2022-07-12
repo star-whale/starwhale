@@ -18,7 +18,7 @@ import _ from 'lodash'
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
     return {
         kind: options.kind,
-        buildFilter: options.buildFilter || (() => () => true),
+        buildFilter: options.buildFilter || ((params) => (data) => true),
         textQueryFilter: options.textQueryFilter,
         fillWidth: options.fillWidth === undefined ? true : options.fillWidth,
         filterable: Boolean(options.filterable) && Boolean(options.renderFilter) && Boolean(options.buildFilter),
@@ -93,6 +93,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         onAsyncChange: options?.onAsyncChange,
         key: options.key ?? options.title.toLocaleLowerCase().replace(' ', ''),
         pin: options.pin,
+        filterType: options.filterType,
     }
 }
 

@@ -51,7 +51,10 @@ export default function Button({
                         'lineHeight': '14px',
                         'width': isFull ? '100%' : 'auto',
                         'padding': '0',
-                        'margin': '0',
+                        'marginBottom': '0',
+                        'marginTop': '0',
+                        'marginLeft': '0',
+                        'marginRight': '0',
                         'backgroundColor': 'transparent',
                         'color': '#2B65D9',
                         ':hover': {

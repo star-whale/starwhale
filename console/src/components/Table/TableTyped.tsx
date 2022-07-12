@@ -17,12 +17,16 @@ import {
     CustomColumn,
     Types,
 } from '@/components/data-table'
-import _ from 'lodash'
+import _, { uniqueId } from 'lodash'
 // import useResizeObserver from '@/hooks/window/useResizeObserver'
 import CategoricalTagsColumn from '../data-table/column-categorical-tags'
 import { useCallback } from 'react'
-import { useTableConfig } from '@/hooks/useTableConfig'
+import { useTableConfig, useTableViewConfig } from '@/hooks/useTableConfig'
 import { areEqual } from 'react-window'
+import type { ColumnT, ConfigT } from '../data-table/types'
+import { useUID, useUIDSeed } from 'react-uid'
+import useStore from '../data-table/store'
+import { useEffect } from 'react'
 
 export interface ITableProps extends BaseTableProps {
     batchActions?: Types.BatchActionT[]
@@ -32,7 +36,9 @@ export interface ITableProps extends BaseTableProps {
     filterable?: boolean
     searchable?: boolean
     columnable?: boolean
+    viewable?: boolean
     id?: string
+    data: any[]
 }
 
 export function TableTyped({
@@ -47,22 +53,13 @@ export function TableTyped({
     searchable = false,
     filterable = false,
     columnable = false,
+    viewable = false,
     id,
 }: ITableProps) {
     const [t] = useTranslation()
     const [page, setPage] = usePage()
-    const [key, setKey] = useState(0)
     const wrapperRef = useRef<HTMLDivElement>(null)
-    // const [width, setWidth] = useState(wrapperRef?.current?.offsetWidth)
-
-    console.log('【TableTyped】')
-
-    // useResizeObserver((entries) => {
-    //     if (entries[0].contentRect?.width !== width) {
-    //         setWidth(entries[0].contentRect?.width)
-    //         setKey(key + 1)
-    //     }
-    // }, wrapperRef)
+    console.log('【TableRendered】')
 
     let $columns = columns.map((raw: any, index) => {
         let column = raw
@@ -136,12 +133,16 @@ export function TableTyped({
         }
     })
 
-    const $rows = data.map((raw, index) => {
-        return {
-            id: index + '',
-            data: raw,
-        }
-    })
+    const $rows = useMemo(
+        () =>
+            data.map((raw, index) => {
+                return {
+                    id: index + '',
+                    data: raw,
+                }
+            }),
+        [data]
+    )
 
     const ROW_HEIGHT = 44
 
@@ -153,58 +154,52 @@ export function TableTyped({
     //     },
     // ]
 
-    const { config, setConfig } = useTableConfig([id], {
-        selectIds: $columns.map((v) => v.key),
-        sortedIds: [],
-        pinnedIds: [],
-    })
-    const [columnVisibleIds, setColumnVisibleIds] = useState<string[]>(config.selectIds)
-    const [columnSortedIds, setColumnSortedIds] = useState<string[]>(config.sortedIds)
-    const [pinnedIds, setPinnedIds] = useState<string[]>(config.pinnedIds)
-    const $onColumnSave = useCallback(
-        (columnSortedIds, columnVisibleIds, pinnedIds) => {
-            setColumnSortedIds(columnSortedIds)
-            setColumnVisibleIds(columnVisibleIds)
-            setPinnedIds(pinnedIds)
+    // const { config: views, setConfig: setViews } = useTableViewConfig<ConfigT[]>([id, 'views'], [])
+    // const { config: currentView, setConfig: setCurrentView } = useTableViewConfig<ConfigT>([id, 'currentView'], {
+    //     name: '',
+    //     filters: [],
+    //     selectedIds: $columns.map((v) => v.key) ?? [],
+    //     sortedIds: [],
+    //     pinnedIds: [],
+    // })
 
-            setConfig({
-                selectIds: columnVisibleIds,
-                sortedIds: columnSortedIds,
-                pinnedIds,
+    const store = useStore()
+    const $filters = useMemo(() => {
+        return store.currentView?.filters
+    }, [store])
+
+    useEffect(() => {
+        if (!store.isInit)
+            useStore.setState({
+                isInit: true,
+                currentView: {
+                    name: '',
+                    filters: [],
+                    selectedIds: $columns.map((v) => v.key) ?? [],
+                    sortedIds: [],
+                    pinnedIds: [],
+                },
             })
-            // @ts-ignore
-            onColumnSave?.(columnSortedIds, columnVisibleIds, pinnedIds)
-        },
-        [onColumnSave]
-    )
-
-    console.log(id, $columns, $rows, config, isLoading)
+    }, [$columns])
 
     return (
         <>
             <div
                 style={{ width: '100%', minHeight: 500, height: `${120 + Math.min($rows.length, 10) * ROW_HEIGHT}px` }}
                 ref={wrapperRef}
-                key={key}
             >
                 <StatefulDataTable
                     resizableColumnWidths
+                    initialFilters={$filters}
                     searchable={searchable}
                     filterable={filterable}
                     columnable={columnable}
-                    // @ts-ignore
-                    onColumnSave={$onColumnSave}
+                    viewable={viewable}
                     loading={!!isLoading}
                     batchActions={batchActions}
                     rowActions={rowActions}
-                    // @ts-ignore
                     columns={$columns}
                     rows={$rows}
-                    config={{
-                        selectIds: columnVisibleIds,
-                        sortedIds: columnSortedIds,
-                        pinnedIds,
-                    }}
                     overrides={{
                         TableBodyRow: {
                             style: {

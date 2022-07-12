@@ -53,23 +53,8 @@ function useSortParameters(initialSortIndex = -1, initialSortDirection = null) {
 export function StatefulContainer(props: StatefulContainerPropsT) {
     useDuplicateColumnTitleWarning(props.columns)
     const [sortIndex, sortDirection, handleSort] = useSortParameters(props.initialSortIndex, props.initialSortDirection)
-    const [filters, setFilters] = React.useState(props.initialFilters || new Map())
-    const [textQuery, setTextQuery] = React.useState('')
 
-    function handleFilterAdd(title, filterParams) {
-        filters.set(title, filterParams)
-        if (props.onFilterAdd) {
-            props.onFilterAdd(title, filterParams)
-        }
-        setFilters(new Map(filters))
-    }
-    function handleFilterRemove(title) {
-        filters.delete(title)
-        if (props.onFilterRemove) {
-            props.onFilterRemove(title)
-        }
-        setFilters(new Map(filters))
-    }
+    const [textQuery, setTextQuery] = React.useState('')
 
     const [selectedRowIds, setSelectedRowIds] = React.useState(props.initialSelectedRowIds || new Set())
     function handleSelectChange(next) {
@@ -112,9 +97,6 @@ export function StatefulContainer(props: StatefulContainerPropsT) {
     )
 
     return props.children({
-        filters,
-        onFilterAdd: handleFilterAdd,
-        onFilterRemove: handleFilterRemove,
         onIncludedRowsChange: handleIncludedRowsChange,
         onRowHighlightChange: handleRowHighlightChange,
         onSelectMany: handleSelectMany,
@@ -128,7 +110,5 @@ export function StatefulContainer(props: StatefulContainerPropsT) {
         sortIndex,
         sortDirection,
         textQuery,
-        onColumnSave: props.onColumnSave,
-        config: props.config,
     })
 }
