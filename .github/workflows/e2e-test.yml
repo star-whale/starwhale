@@ -24,16 +24,35 @@ env:
   REPO_NAME_DOCKER: docker-hosted
   REPO_NAME_PYPI: pypi-hosted
 
-
 jobs:
+  filter:
+    runs-on: ubuntu-latest
+
+    outputs:
+      java: ${{ steps.filter.outputs.java }}
+      client: ${{ steps.filter.outputs.client }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check for console files changed
+        uses: getsentry/paths-filter@v2
+        id: filter
+        with:
+          base: main
+          filters: .github/file-filter.yml
+
   e2e-test:
     runs-on: ubuntu-latest
+
+    needs:
+      - filter
+    if: ${{ (github.event_name == 'pull_request' && ( needs.filter.outputs.java == 'java' || needs.filter.outputs.client == 'client')) || github.event_name == 'push' }}
+
     defaults:
       run:
         shell: bash
 
     steps:
-
       - uses: actions/checkout@v3
         with:
           lfs: true
@@ -43,7 +62,6 @@ jobs:
         with:
           python-version: "3.7"
           architecture: "x64"
-
 
       # jar build
       - name: Cache local Maven repository
@@ -61,8 +79,6 @@ jobs:
           distribution: "adopt"
           cache: "maven"
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
-
-
 
       - name: run e2e
         working-directory: ./scripts/e2e_test
