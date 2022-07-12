@@ -211,6 +211,7 @@ export default function EvaluationListCard() {
                     searchable
                     filterable
                     columnable
+                    viewable
                     id='evaluations'
                     batchActions={batchAction}
                     isLoading={evaluationsInfo.isLoading}
