@@ -3,16 +3,23 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import yaml
+from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
-from starwhale.consts import DefaultYAMLName, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
+from starwhale.consts import (
+    HTTPMethod,
+    DefaultYAMLName,
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import StandaloneModel
+from starwhale.core.instance.view import InstanceTermView
 
 from .. import ROOT_DIR
 
@@ -136,3 +143,36 @@ class StandaloneModelTestCase(TestCase):
         ModelTermView.list()
 
         ModelTermView.build(workdir, "self")
+
+    @Mocker()
+    @patch("starwhale.core.model.model.CloudModel.list")
+    def test_list_with_project(self, req: Mocker, mock_list: MagicMock):
+        base_url = "http://1.1.0.0:8182/api/v1"
+
+        req.request(
+            HTTPMethod.POST,
+            f"{base_url}/login",
+            json={"data": {"role": {"roleName": "admin"}}},
+            headers={"Authorization": "token"},
+        )
+        InstanceTermView().login("http://1.1.0.0:8182", "foo", "bar", alias="remote")
+        instances = InstanceTermView().list()
+        assert len(instances) == 2  # local and remote
+
+        # default current project is local/self
+        models, _ = ModelTermView.list()
+        assert len(models) == 0
+
+        mock_models = (
+            {
+                "proj": [
+                    {"version": "foo", "is_removed": False, "created_at": 1},
+                    {"version": "bar", "is_removed": False, "created_at": 2},
+                ]
+            },
+            None,
+        )
+        mock_list.return_value = mock_models
+        # list supports using instance/project uri which is not current_instance/current_project
+        models, _ = ModelTermView.list("remote/whatever")
+        assert len(models) == 2  # project foo and bar
