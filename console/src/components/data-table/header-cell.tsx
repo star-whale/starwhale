@@ -1,10 +1,3 @@
-/*
-Copyright (c) Uber Technologies, Inc.
-
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-*/
-
 import * as React from 'react'
 
 import { Checkbox } from 'baseui/checkbox'
@@ -67,8 +60,6 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 display: props.isMeasured ? 'inline-flex' : 'flex',
                 flexGrow: 1,
                 height: '100%',
-                paddingLeft: theme.sizing.scale500,
-                paddingRight: theme.sizing.scale500,
                 flexWrap: 'nowrap',
                 whiteSpace: 'nowrap',
                 outline: focusVisible ? `3px solid ${theme.colors.accent}` : 'none',
@@ -78,7 +69,10 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 borderBottomWidth: 0,
                 fontSize: 14,
                 lineHeight: '16px',
-                padding: '15px 20px',
+                paddingTop: '15px',
+                paddingBottom: '15px',
+                paddingLeft: '20px',
+                paddingRight: '20px',
             })}
             title={props.title}
             // @ts-ignore

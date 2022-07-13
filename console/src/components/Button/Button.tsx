@@ -3,6 +3,7 @@ import { createUseStyles } from 'react-jss'
 import { Button as BaseButton, ButtonProps, KIND } from 'baseui/button'
 import classNames from 'classnames'
 import { mergeOverrides } from '@/utils/baseui'
+import { useStyletron } from 'baseui'
 
 export interface IButtonProps extends ButtonProps {
     as?: 'link' | 'button' | 'transparent'
@@ -12,9 +13,11 @@ export interface IButtonProps extends ButtonProps {
 }
 
 const useStyles = createUseStyles({
-    baseButton: {
-        borderRadius: '4px',
-    },
+    // baseButton: {
+    //     style: {
+    //         borderRadius: theme.borders.radius100,
+    //     }
+    // }
 })
 
 /* eslint-disable react/jsx-props-no-spreading */
@@ -27,12 +30,16 @@ export default function Button({
     ...props
 }: IButtonProps) {
     const styles = useStyles()
+    const [, theme] = useStyletron()
 
     let overrides = mergeOverrides(
         {
             BaseButton: {
                 style: {
-                    borderRadius: '4px',
+                    borderTopLeftRadius: theme.borders.radius200,
+                    borderTopRightRadius: theme.borders.radius200,
+                    borderBottomLeftRadius: theme.borders.radius200,
+                    borderBottomRightRadius: theme.borders.radius200,
                     lineHeight: '14px',
                     padding: '9px',
                     width: isFull ? '100%' : 'auto',
@@ -47,10 +54,16 @@ export default function Button({
             {
                 BaseButton: {
                     style: {
-                        'borderRadius': '4px',
+                        'borderTopLeftRadius': theme.borders.radius200,
+                        'borderTopRightRadius': theme.borders.radius200,
+                        'borderBottomLeftRadius': theme.borders.radius200,
+                        'borderBottomRightRadius': theme.borders.radius200,
                         'lineHeight': '14px',
                         'width': isFull ? '100%' : 'auto',
-                        'padding': '0',
+                        // 'paddingBottom': '0',
+                        // 'paddingTop': '0',
+                        'paddingLeft': '0',
+                        'paddingRight': '0',
                         'marginBottom': '0',
                         'marginTop': '0',
                         'marginLeft': '0',
@@ -70,7 +83,10 @@ export default function Button({
             {
                 BaseButton: {
                     style: {
-                        'borderRadius': '4px',
+                        'borderTopLeftRadius': theme.borders.radius200,
+                        'borderTopRightRadius': theme.borders.radius200,
+                        'borderBottomLeftRadius': theme.borders.radius200,
+                        'borderBottomRightRadius': theme.borders.radius200,
                         'width': isFull ? '100%' : 'auto',
                         'backgroundColor': 'transparent',
                         'color': 'rgba(2,16,43,0.20)',
@@ -86,7 +102,7 @@ export default function Button({
     }
 
     return (
-        <BaseButton size={size} kind={kind} className={classNames(styles.baseButton)} {...props} overrides={overrides}>
+        <BaseButton size={size} kind={kind} {...props} overrides={overrides}>
             {children}
         </BaseButton>
     )

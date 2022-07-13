@@ -42,7 +42,10 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             borderBottomWidth: 0,
                             fontSize: 14,
                             lineHeight: '16px',
-                            padding: '15px 20px',
+                            paddingTop: '15px',
+                            paddingBottom: '15px',
+                            paddingLeft: '20px',
+                            paddingRight: '20px',
                         },
                     },
                     TableHeadRow: {

@@ -1,9 +1,3 @@
-/*
-Copyright (c) Uber Technologies, Inc.
-
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-*/
 // @flow
 
 import React, { useCallback } from 'react'
@@ -102,13 +96,10 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
             data-type='CellPlacement'
             className={css({
                 ...theme.borders.border200,
-                // backgroundColor,
-                borderTopWidth: 0,
-                borderBottomWidth: 0,
-                borderLeftWidth: 0,
-                // do not render a border on cells in the right-most column
-                // borderRight: columnIndex === data.columns.length - 1 ? 'none' : undefined,
-                borderWidth: 0,
+                borderTop: 'none',
+                borderBottom: 'none',
+                borderRight: 'none',
+                borderLeft: 'none',
                 boxSizing: 'border-box',
                 paddingLeft: '20px',
                 paddingRight: '20px',
@@ -537,8 +528,9 @@ function Headers() {
                             ...theme.borders.border200,
                             backgroundColor: theme.colors.backgroundPrimary,
                             borderTop: 'none',
-                            borderLeftWidth: 0,
-                            border: 'none',
+                            borderBottom: 'none',
+                            borderRight: 'none',
+                            borderLeft: 'none',
                             // @ts-ignore
                             // borderRight: columnIndex === ctx.columns.length - 1 ? 'none' : '1px solid #e6e6e6',
                             boxSizing: 'border-box',
@@ -606,7 +598,7 @@ function Headers() {
                         position: 'sticky',
                         float: 'left',
                         left: 0,
-                        borderLeftWidth: '0',
+                        borderLeft: 'none',
                         marginRight: '-2px',
                         borderRight: '1px solid #CFD7E6',
                         display: 'flex',

@@ -1,10 +1,3 @@
-/*
-Copyright (c) Uber Technologies, Inc.
-
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-*/
-
 import React, { useMemo, useCallback, useRef, useEffect } from 'react'
 import { Select, StyledDropdownListItem } from 'baseui/select'
 import { StyledList, StyledEmptyState, OptionListProps } from 'baseui/menu'

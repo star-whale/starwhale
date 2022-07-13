@@ -5,6 +5,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { useDeepEffect } from '@/hooks/useDeepEffects'
 import { ConfigT } from './types'
 import Toggle from '../Selector/Toggle'
+import { useStyletron } from 'baseui'
 
 type ViewListPropsT = {
     views: ConfigT[]
@@ -12,6 +13,7 @@ type ViewListPropsT = {
 }
 function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
     const [t] = useTranslation()
+    const [, theme] = useStyletron()
     const [views, setViews] = React.useState(
         props.views.map((v) => ({
             ...v,
@@ -81,7 +83,7 @@ function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
                 TableBodyRow: {
                     style: {
                         cursor: 'pointer',
-                        borderRadius: '4px',
+                        borderRadius: theme.borders.radius100,
                     },
                 },
                 TableHeadCell: {
@@ -91,7 +93,10 @@ function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
                         borderBottomWidth: 0,
                         fontSize: 14,
                         lineHeight: '16px',
-                        padding: '15px 20px',
+                        paddingTop: '15px',
+                        paddingBottom: '15px',
+                        paddingLeft: '20px',
+                        paddingRight: '20px',
                     },
                 },
                 TableHeadRow: {
