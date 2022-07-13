@@ -135,6 +135,12 @@ def get_downloadable_sw_version() -> str:
     return "" if _v == SW_DEV_DUMMY_VERSION else _v
 
 
+def get_field(item: t.Dict, field: str):
+    for k in field.split("."):
+        item = item.get(k)
+    return item
+
+
 def snake_to_camel(snake: str) -> str:
     parts = snake.split("_")
     return "".join(i.title() for i in parts)
@@ -149,11 +155,6 @@ class Order:
 def sort_obj_list(data: t.List[t.Any], orders: t.List[Order]) -> t.Any:
     def cmp(a: t.Any, b: t.Any) -> int:
         return (a > b) - (a < b)
-
-    def get_field(item: t.Dict, field: str):
-        for k in field.split("."):
-            item = item.get(k)
-        return item
 
     def compare(lhs, rhs):
         m = 0
