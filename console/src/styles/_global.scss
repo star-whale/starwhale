@@ -166,3 +166,37 @@ table { border-collapse: separate; }
 .g-20 {
   gap: 20px;
 }
+
+.resize-left {
+  width: 18px;
+  height: 40px;
+  display:inline-block;
+  background-image: url(../assets/left.svg);
+  background-size: 100% auto;
+  background-repeat: no-repeat;
+  cursor: pointer;
+
+  &--hover {
+    background-image: url(../assets/left-shadow.png);
+  }
+  position: relative;
+  left: -3px;
+}
+
+
+.resize-right {
+  width: 18px;
+  height: 40px;
+  display:inline-block;
+  background-image: url(../assets/right.svg);
+  background-size: 100% auto;
+  background-repeat: no-repeat;
+  cursor: pointer;
+
+  &--hover {
+    background-image: url(../assets/right-shadow.png);
+  }
+  position: relative;
+  top: -19px;
+  right: 5px;
+}

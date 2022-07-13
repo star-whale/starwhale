@@ -234,7 +234,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
                             </div>
 
-                            {Boolean(selectedRowIds.size) && props.batchActions && (
+                            {false && Boolean(selectedRowIds.size) && props.batchActions && (
                                 <div
                                     style={{
                                         display: 'flex',
@@ -243,7 +243,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                         paddingBottom: theme.sizing.scale400,
                                     }}
                                 >
-                                    {props.batchActions.map((action) => {
+                                    {props.batchActions?.map((action) => {
                                         const onClick = (event: React.SyntheticEvent<HTMLButtonElement>) => {
                                             action.onClick({
                                                 clearSelection: onSelectNone,
@@ -284,7 +284,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 </div>
                             )}
 
-                            {columnable && (
+                            {columnable && !Boolean(selectedRowIds.size) && (
                                 <div className='flex-row-center mb-20'>
                                     <ConfigManageColumns
                                         view={store.currentView}

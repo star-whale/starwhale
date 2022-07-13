@@ -19,8 +19,16 @@ import { ColumnT } from '@/components/data-table/types'
 import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
 import _ from 'lodash'
 import EvaluationListCompare from './EvaluationListCompare'
+import ResizeLeft from '@/assets/left.svg'
+import ResizeLeftShadow from '@/assets/left-shadow.png'
+import ResizeRight from '@/assets/right.svg'
+import ResizeRightShadow from '@/assets/right-shadow.png'
+import { useStyletron } from 'baseui'
+import { relative } from 'path'
+import { RowT } from 'baseui/data-table'
 
 export default function EvaluationListCard() {
+    const [css] = useStyletron()
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
@@ -159,7 +167,11 @@ export default function EvaluationListCard() {
         return columnsWithAttrs
     }, [evaluationAttrsInfo, columns])
 
-    const [compareRows, setCompareRows] = useState([])
+    const [compareRows, setCompareRows] = useState<RowT[]>([])
+    const handleSelectChange = useCallback((selection: RowT[]) => {
+        const rows = selection.map((item: any) => item.data)
+        setCompareRows(rows)
+    }, [])
     const batchAction = useMemo(
         () => [
             {
@@ -185,11 +197,100 @@ export default function EvaluationListCard() {
         [evaluationsInfo.data]
     )
 
+    const gridLayout = [
+        // RIGHT:
+        '0px 10px 1fr',
+        // MIDDLE:
+        '1fr 10px 1fr',
+        // LEFT:
+        '1fr 10px 0px',
+    ]
+    const [gridMode, setGridMode] = useState(1)
+    const resizeRef = React.useRef<HTMLDivElement>(null)
+    const gridRef = React.useRef<HTMLDivElement>(null)
+    const leftRef = React.useRef<HTMLDivElement | null>(null)
+    const [resizeWidth, setResizeWidth] = useState(0)
+    const resizeEnd = () => {
+        document.body.style.userSelect = 'unset'
+        document.body.style.cursor = 'unset'
+        document.removeEventListener('mouseup', resizeEnd)
+        document.removeEventListener('mousemove', resize)
+    }
+    const grdiModeRef = React.useRef(1)
+    const resizeStart = () => {
+        if (gridMode != 1) return
+        grdiModeRef.current == 1
+        document.body.style.userSelect = 'none'
+        document.body.style.cursor = 'col-resize'
+        document.addEventListener('mouseup', resizeEnd)
+        document.addEventListener('mousemove', resize)
+    }
+    const resize = useCallback(
+        (e: MouseEvent) => {
+            console.log(resizeWidth, gridMode, grdiModeRef.current)
+
+            window.requestAnimationFrame(() => {
+                if (resizeRef.current && leftRef.current) {
+                    const offset = resizeRef.current.getBoundingClientRect().left - e.clientX
+                    // leftRef.current!.style.width = `${leftRef.current?.getBoundingClientRect().width - offset}px`
+                    // leftRef.current!.style.flexBasis = `${leftRef.current?.getBoundingClientRect().width - offset}px`
+                    // console.log('resize', leftRef.current?.getBoundingClientRect(), e.clientX, offset)
+                    const newWidth = leftRef.current?.getBoundingClientRect().width - offset
+                    if (newWidth + 300 > gridRef.current!.getBoundingClientRect().width) {
+                        grdiModeRef.current = 2
+                        setGridMode(2)
+                    } else if (newWidth < 440) {
+                        grdiModeRef.current = 0
+                        setGridMode(0)
+                    } else if (grdiModeRef.current == 1) {
+                        gridRef.current!.style.gridTemplateColumns = `${Math.max(
+                            newWidth,
+                            440
+                        )}px 10px minmax(400px, 1fr)`
+                    }
+                }
+            })
+        },
+        [grdiModeRef, setGridMode]
+    )
+    const handleResizeStart = resizeStart
+
+    React.useEffect(() => {
+        return resizeEnd
+    })
+
+    const handleResize = useCallback(
+        (dir) => {
+            let next = Math.min(gridLayout.length - 1, gridMode + dir)
+            next = Math.max(0, next)
+            grdiModeRef.current = next
+            setGridMode(next)
+        },
+        [gridMode, setGridMode, grdiModeRef]
+    )
+
     return (
-        <>
+        <div
+            ref={gridRef}
+            style={{
+                display: 'grid',
+                gridTemplateColumns: compareRows.length === 0 ? '1fr' : gridLayout[gridMode],
+                overflow: 'hidden',
+                width: '100%',
+            }}
+        >
             <Card
+                onMountCard={(ref) => {
+                    leftRef.current = ref
+                }}
                 title={t('Evaluations')}
-                style={{ marginRight: expanded ? expandedWidth : '0' }}
+                style={{
+                    marginRight: expanded ? expandedWidth : '0',
+                    flexShrink: 1,
+                    minWidth: '440px',
+                    marginBottom: 0,
+                    // gridColumn:
+                }}
                 extra={
                     <Button
                         startEnhancer={<IconFont type='add' kind='white' />}
@@ -216,6 +317,7 @@ export default function EvaluationListCard() {
                     batchActions={batchAction}
                     isLoading={evaluationsInfo.isLoading}
                     columns={$columnsWithAttrs}
+                    onSelectionChange={handleSelectChange}
                     data={$data}
                 />
                 <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
@@ -226,10 +328,36 @@ export default function EvaluationListCard() {
                 </Modal>
             </Card>
             {compareRows.length > 0 && (
-                <Card title={t('Compare Evaluations')} style={{ marginRight: expanded ? expandedWidth : '0' }}>
-                    <EvaluationListCompare rows={compareRows} attrs={evaluationAttrsInfo?.data ?? []} />
-                </Card>
+                <>
+                    <div
+                        ref={resizeRef}
+                        className={css({
+                            'width': '10px',
+                            'flexBasis': '10px',
+                            'cursor': 'col-resize',
+                            'paddingTop': '112px',
+                            'zIndex': 20,
+                            'overflow': 'visible',
+                            ':hover': {
+                                backgroundColor: '#E',
+                            },
+                            'position': 'relative',
+                            'right': gridMode == 2 ? '14px' : undefined,
+                            'left': gridMode == 0 ? '4px' : undefined,
+                        })}
+                        onMouseDown={handleResizeStart}
+                    >
+                        <i className='resize-left resize-left--hover' onClick={() => handleResize(1)}></i>
+                        <i className='resize-right resize-right--hover' onClick={() => handleResize(-1)} />
+                    </div>
+                    <Card
+                        title={t('Compare Evaluations')}
+                        style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}
+                    >
+                        <EvaluationListCompare rows={compareRows} attrs={evaluationAttrsInfo?.data ?? []} />
+                    </Card>
+                </>
             )}
-        </>
+        </div>
     )
 }

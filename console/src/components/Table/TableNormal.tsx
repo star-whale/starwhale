@@ -147,6 +147,24 @@ export function TableTyped({
     )
 
     const ROW_HEIGHT = 44
+
+    // @ts-ignore
+    // const $batchActions: BatchActionT[] = [
+    //     {
+    //         label: 'Compare',
+    //         onClick: () => {},
+    //     },
+    // ]
+
+    // const { config: views, setConfig: setViews } = useTableViewConfig<ConfigT[]>([id, 'views'], [])
+    // const { config: currentView, setConfig: setCurrentView } = useTableViewConfig<ConfigT>([id, 'currentView'], {
+    //     name: '',
+    //     filters: [],
+    //     selectedIds: $columns.map((v) => v.key) ?? [],
+    //     sortedIds: [],
+    //     pinnedIds: [],
+    // })
+
     const store = useStore()
     const $filters = useMemo(() => {
         return store.currentView?.filters
@@ -169,8 +187,7 @@ export function TableTyped({
     return (
         <>
             <div
-                // style={{ width: '100%', minHeight: 500, height: `${120 + Math.min($rows.length, 10) * ROW_HEIGHT}px` }}
-                style={{ width: '100%', minHeight: 500, height: `calc(100vh - 270px)` }}
+                style={{ width: '100%', minHeight: 500, height: `${120 + Math.min($rows.length, 10) * ROW_HEIGHT}px` }}
                 ref={wrapperRef}
             >
                 <StatefulDataTable
