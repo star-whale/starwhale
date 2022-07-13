@@ -4,7 +4,9 @@ import click
 from textual import events
 from textual.app import App
 from textual.widget import Widget, RenderableType
-from textual.widgets import Footer, Header, ScrollView
+from textual.widgets import Header, ScrollView
+
+from starwhale.base.uri import URI
 
 from .widgets import Jobs, Models, Datasets, Runtimes
 from .project_tree import ProjectTree, ProjectClick
@@ -28,9 +30,18 @@ class Dashboard(App):
     async def on_mount(self, event: events.Mount) -> None:
         self.body = ScrollView(fluid=False)
         await self.view.dock(Header(style=""), edge="top")
-        await self.view.dock(Footer(), edge="bottom")
+
+        # pass empty dir to URI, it will use current instance / project
+        uri = URI("")
         await self.view.dock(
-            ScrollView(ProjectTree("Starwhale", "projects")),
+            ScrollView(
+                ProjectTree(
+                    "Starwhale",
+                    "projects",
+                    current_instance=uri.instance_alias,
+                    current_project=uri.project,
+                )
+            ),
             edge="left",
             size=30,
             name="sidebar",
