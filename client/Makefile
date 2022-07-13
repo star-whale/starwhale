@@ -32,6 +32,10 @@ black-format:
 isort-format:
 	isort $(PY_CHANGED_FILES)
 
+.POHNY: format
+format:
+	black --config pyproject.toml . && isort .
+
 .POHNY: ci-format-checker
 ci-format-checker:
 	echo "run black"

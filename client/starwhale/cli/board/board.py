@@ -11,12 +11,11 @@ from textual.app import App, Reactive
 from textual.widget import Widget, RenderableType
 from textual.widgets import Footer, Header, ScrollView
 
-from ..utils import pretty_bytes, snake_to_camel
-from ..consts import STANDALONE_INSTANCE
-from ..core.model.view import ModelTermView
-from ..core.instance.view import InstanceTermView
-from ..core.project.model import Project
-from ..core.instance.model import Instance, CloudInstance, StandaloneInstance
+from starwhale.utils import pretty_bytes, snake_to_camel
+from starwhale.consts import DEFAULT_PROJECT, DEFAULT_INSTANCE
+from starwhale.core.model.view import ModelTermView
+
+from .project_tree import ProjectTree, ProjectClick
 
 
 @dataclass
@@ -58,6 +57,7 @@ class TableWidget(Widget):
         pass
 
     def render(self) -> Table:
+        self.app.sub_title = self.__class__.__name__
         return self._info or self.table
 
     def reload(self) -> None:
@@ -122,7 +122,9 @@ class TableWidget(Widget):
 class Models(TableWidget):
     """Models represents starwhale model view"""
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(
+        self, uri: str = f"{DEFAULT_INSTANCE}/{DEFAULT_PROJECT}", **kwargs
+    ) -> None:
         super().__init__(**kwargs)
         self.render_fn = [
             Column("name"),
@@ -131,89 +133,39 @@ class Models(TableWidget):
             Column("size", render=lambda _, x: pretty_bytes(x["size"])),
             Column("created_at", "Created At"),
         ]
-        self.reload()
-
-    def reloadImpl(self) -> None:
-        self.data, _ = ModelTermView("local/self").list()
-
-
-class Projects(TableWidget):
-    """Projects represents starwhale project view"""
-
-    def __init__(self, uri: str, **kwargs):
-        super().__init__(**kwargs)
-        self.render_fn = [
-            Column("name"),
-            Column("owner"),
-            Column("created_at", "Created At"),
-        ]
         self.uri = uri
         self.reload()
 
-        self.current = None
-
     def reloadImpl(self) -> None:
-        self.data, _ = Project.list(self.uri)
-
-
-class Instances(TableWidget):
-    """Instance represents starwhale instance view"""
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.render_fn = [
-            Column("name"),
-            Column("uri"),
-            Column("user_name"),
-            Column("user_role"),
-            Column("current_project"),
-            Column("updated_at", "Last Update"),
-        ]
-        self.reload()
-
-        self.current = None
-
-    show_projects: Reactive[bool] = Reactive(False)
-
-    def reloadImpl(self) -> None:
-        self.data = InstanceTermView().list()
-
-    def get_current(self) -> Instance:
-        row = self.data[self.cursor_line]
-        # TODO refine instance detection logic
-        name = row["name"]
-        if name == STANDALONE_INSTANCE:
-            return StandaloneInstance()
-        return CloudInstance(name)
-
-    async def key_enter(self):
-        self.show_projects = True
-
-    def key_h(self):
-        self.show_projects = False
-
-    def render(self) -> Table:
-        if self.show_projects:
-            return Projects(uri=self.get_current().uri.raw).render()
-        return super().render()
+        self.data, _ = ModelTermView.list(self.uri)
 
 
 class Dashboard(App):
     def __init__(self, **kwargs):
-        self.body: t.Union[ScrollView, None] = None
-        self.table = Instances()
         super().__init__(**kwargs)
 
     async def on_load(self, event: events.Load) -> None:
         pass
 
     async def on_mount(self, event: events.Mount) -> None:
+        self.body = ScrollView()
         await self.view.dock(Header(style=""), edge="top")
         await self.view.dock(Footer(), edge="bottom")
-        await self.view.dock(self.table, edge="right")
+        await self.view.dock(
+            ScrollView(ProjectTree("Starwhale", "projects")),
+            edge="left",
+            size=30,
+            name="sidebar",
+        )
+        await self.view.dock(self.body, edge="top")
 
     async def on_key(self, event: events.Key) -> None:
-        await self.table.on_key(event)
+        pass
+
+    async def handle_project_click(self, message: ProjectClick) -> None:
+        self.model = Models(message.uri)
+        await self.body.update(self.model)
+        await self.model.focus()
 
 
 @click.command(
