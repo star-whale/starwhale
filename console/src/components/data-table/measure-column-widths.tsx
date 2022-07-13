@@ -6,6 +6,8 @@ import { useStyletron } from 'baseui'
 
 import HeaderCell from './header-cell'
 import type { ColumnT, RowT } from './types'
+import usePrevious from '../../hooks/usePrevious'
+import { useEffect } from 'react'
 
 const IS_BROWSER = true
 
@@ -21,7 +23,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 onLayout(columnIndex, ref.current.getBoundingClientRect())
             }
         }
-    }, [onLayout, columnIndex])
+    }, [column, onLayout, columnIndex])
 
     return (
         <div
@@ -112,9 +114,11 @@ export default function MeasureColumnWidths({
 }: MeasureColumnWidthsPropsT) {
     const [css] = useStyletron()
 
-    const widthMap = React.useMemo(() => {
-        return new Map()
-    }, [])
+    // const widthMap = React.useMemo(() => {
+    //     return new Map()
+    // }, [])
+
+    const [widthMap, setWidthMap] = React.useState(new Map())
 
     const sampleSize = rows.length < MAX_SAMPLE_SIZE ? rows.length : MAX_SAMPLE_SIZE
     // const finishedMeasurementCount = (sampleSize + 1) * columns.length
@@ -122,6 +126,16 @@ export default function MeasureColumnWidths({
     const sampleIndexes = React.useMemo<number[]>(() => {
         return generateSampleIndices(0, rows.length - 1, sampleSize)
     }, [rows, sampleSize])
+
+    const oldColumns = usePrevious(columns)
+
+    useEffect(() => {
+        const changed = columns.filter((c, index) => c.key !== oldColumns?.[index]?.key)
+        if (changed.length > 0) {
+            // console.log('changed', oldColumns, columns, changed)
+            setWidthMap(new Map())
+        }
+    }, [oldColumns, columns, widthMap])
 
     const handleDimensionsChange = React.useCallback(
         (columnIndex, dimensions) => {
@@ -134,16 +148,15 @@ export default function MeasureColumnWidths({
             if (nextWidth !== widthMap.get(columnIndex)) {
                 widthMap.set(columnIndex, nextWidth)
             }
+
             if (
                 // Refresh at 100% of done
-                widthMap.size === columns.length ||
+                widthMap.size === columns.length
                 // ...50%
-                widthMap.size === Math.floor(columns.length / 2) ||
-                // ...25%
-                widthMap.size === Math.floor(columns.length / 4)
+                // || widthMap.size === Math.floor(columns.length / 2)
             ) {
-                // console.log(widthMap)
-
+                // console.log('updating', widthMap)
+                setWidthMap(widthMap)
                 onWidthsChange(Array.from(widthMap.values()))
             }
         },

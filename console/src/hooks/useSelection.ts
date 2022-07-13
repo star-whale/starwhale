@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import React, { useCallback, useEffect } from 'react'
+import usePrevious from './usePrevious'
 
 export interface IUseSelectionPropsT<T = any> {
     initialSelectedIds: T[]
@@ -13,19 +14,32 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
     const [selectedIds, setSelectedIds] = React.useState(new Set(initialSelectedIds))
     const [sortedIds, setSortedIds] = React.useState(new Set(initialSortedIds))
     const [pinnedIds, setPinnedIds] = React.useState(new Set(initialPinnedIds))
+
+    const oldInitialSelectedIds = usePrevious(initialSelectedIds)
+    const oldInitialPinnedIds = usePrevious(initialPinnedIds)
+    const oldInitialSortedIds = usePrevious(initialSortedIds)
     const firstRender = React.useRef(true)
 
     useEffect(() => {
         if (
-            !_.isEqual(new Set(initialSelectedIds), selectedIds) ||
-            !_.isEqual(new Set(initialSortedIds), sortedIds) ||
-            !_.isEqual(new Set(initialPinnedIds), pinnedIds)
+            !_.isEqual(initialSelectedIds, oldInitialSelectedIds) ||
+            !_.isEqual(initialSortedIds, oldInitialSortedIds) ||
+            !_.isEqual(initialPinnedIds, oldInitialPinnedIds)
         ) {
+            // console.log('reset', initialSelectedIds, oldInitialSelectedIds)
             setSelectedIds(new Set(initialSelectedIds))
             setSortedIds(new Set(initialSortedIds))
             setPinnedIds(new Set(initialPinnedIds))
         }
-    }, [firstRender, initialSelectedIds, initialPinnedIds, initialSortedIds, selectedIds, sortedIds, pinnedIds])
+    }, [
+        firstRender,
+        initialSelectedIds,
+        initialPinnedIds,
+        initialSortedIds,
+        oldInitialSelectedIds,
+        oldInitialPinnedIds,
+        oldInitialSortedIds,
+    ])
 
     useEffect(() => {
         setSelectedIds((prevIds) => {
