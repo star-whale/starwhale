@@ -170,12 +170,13 @@ table { border-collapse: separate; }
 .resize-left {
   width: 18px;
   height: 40px;
-  display:inline-block;
   background-image: url(../assets/left.svg);
   background-size: 100% auto;
   background-repeat: no-repeat;
+  background-position: center center;
   cursor: pointer;
-
+  @extend .flex-column-center;
+  color: rgba(2,16,43,0.60);
   &--hover {
     background-image: url(../assets/left-shadow.png);
   }
@@ -187,16 +188,19 @@ table { border-collapse: separate; }
 .resize-right {
   width: 18px;
   height: 40px;
-  display:inline-block;
   background-image: url(../assets/right.svg);
   background-size: 100% auto;
   background-repeat: no-repeat;
+  background-position: center center;
   cursor: pointer;
+  @extend .flex-column-center;
+  color: rgba(2,16,43,0.60);
 
   &--hover {
     background-image: url(../assets/right-shadow.png);
   }
   position: relative;
-  top: -19px;
+  top: -14px;
   right: 5px;
+
 }

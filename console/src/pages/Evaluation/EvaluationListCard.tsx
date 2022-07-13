@@ -347,8 +347,25 @@ export default function EvaluationListCard() {
                         })}
                         onMouseDown={handleResizeStart}
                     >
-                        <i className='resize-left resize-left--hover' onClick={() => handleResize(1)}></i>
-                        <i className='resize-right resize-right--hover' onClick={() => handleResize(-1)} />
+                        <i className='resize-left resize-left--hover' onClick={() => handleResize(1)}>
+                            <IconFont
+                                type='fold2'
+                                size={12}
+                                style={{
+                                    transform: 'rotate(-90deg) translateY(-2px)',
+                                    marginBottom: '2px',
+                                }}
+                            />
+                        </i>
+                        <i className='resize-right resize-right--hover' onClick={() => handleResize(-1)}>
+                            <IconFont
+                                type='unfold2'
+                                size={12}
+                                style={{
+                                    transform: 'rotate(-90deg) translateY(2px)',
+                                }}
+                            />
+                        </i>
                     </div>
                     <Card
                         title={t('Compare Evaluations')}
