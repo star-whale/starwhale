@@ -8,9 +8,11 @@ import string
 import typing as t
 import hashlib
 import platform
+from pathlib import Path
 from datetime import datetime
 from functools import cmp_to_key
 
+import yaml
 from rich.console import Console
 
 from starwhale import __version__
@@ -163,3 +165,9 @@ def sort_obj_list(data: t.List[t.Any], orders: t.List[Order]) -> t.Any:
         return m
 
     return sorted(data, key=cmp_to_key(compare))
+
+
+def load_yaml(path: t.Union[str, Path]):
+    """load_yaml loads yaml from path, it may raise exception such as yaml.YAMLError"""
+    with open(path) as f:
+        return yaml.safe_load(f)

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import yaml
 
+from starwhale.utils import load_yaml
 from starwhale.consts import (
     UserRoleType,
     SW_CLI_CONFIG,
@@ -38,22 +39,21 @@ def load_swcli_config() -> t.Dict[str, t.Any]:
     if not os.path.exists(fpath):
         _config = render_default_swcli_config(fpath)
     else:
-        with open(fpath) as f:
-            _config = yaml.safe_load(f)
+        _config = load_yaml(fpath)
 
-            env = os.environ.get(ENV_SW_LOCAL_STORAGE)
-            if env:
-                _config["storage"]["root"] = env
+        env = os.environ.get(ENV_SW_LOCAL_STORAGE)
+        if env:
+            _config["storage"]["root"] = env
 
-            _version = _config.get("version")
-            if _version != LOCAL_CONFIG_VERSION:
-                console.print(
-                    f":cherries: {fpath} use unexpected version({_version}), swcli only support {LOCAL_CONFIG_VERSION} version."
-                )
-                console.print(
-                    f":carrot: {fpath} will be upgraded to {LOCAL_CONFIG_VERSION} automatically."
-                )
-                _config = render_default_swcli_config(fpath)
+        _version = _config.get("version")
+        if _version != LOCAL_CONFIG_VERSION:
+            console.print(
+                f":cherries: {fpath} use unexpected version({_version}), swcli only support {LOCAL_CONFIG_VERSION} version."
+            )
+            console.print(
+                f":carrot: {fpath} will be upgraded to {LOCAL_CONFIG_VERSION} automatically."
+            )
+            _config = render_default_swcli_config(fpath)
 
     ensure_dir(Path(_config["storage"]["root"]) / DEFAULT_PROJECT, recursion=True)
     return _config

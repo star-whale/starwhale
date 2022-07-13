@@ -189,7 +189,8 @@ class LocalStorageBundleMixin(object):
                     _manifest["config"].update(_store.manifest)
                 elif _store.bundle_path.exists():
                     with TarFS(str(_store.bundle_path)) as tar:
-                        _om = yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
+                        with tar.open(DEFAULT_MANIFEST_NAME) as f:
+                            _om = yaml.safe_load(f)
                         _manifest["config"].update(_om)
                 else:
                     raise NotFoundError(

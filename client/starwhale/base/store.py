@@ -6,6 +6,7 @@ from pathlib import Path
 import yaml
 from fs.tarfs import TarFS
 
+from starwhale.utils import load_yaml
 from starwhale.consts import (
     RECOVER_DIRNAME,
     SW_TMP_DIR_NAME,
@@ -85,7 +86,7 @@ class BaseStorage(object):
         if not self.manifest_path.exists():
             return {}
         else:
-            return yaml.safe_load(self.manifest_path.open())
+            return load_yaml(self.manifest_path)
 
     def _get_recover_snapshot_workdir_for_bundle(self) -> Path:
         version = self.uri.object.version
@@ -224,7 +225,8 @@ class BaseStorage(object):
             _extracted_manifest = _extracted_dir / DEFAULT_MANIFEST_NAME
 
             if _extracted_manifest.exists():
-                return yaml.safe_load(_extracted_manifest.open())
+                return load_yaml(_extracted_manifest)
 
         with TarFS(str(fpath)) as tar:
-            return yaml.safe_load(tar.open(DEFAULT_MANIFEST_NAME))
+            with tar.open(DEFAULT_MANIFEST_NAME) as f:
+                return yaml.safe_load(f)

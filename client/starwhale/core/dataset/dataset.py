@@ -4,9 +4,7 @@ import typing as t
 from copy import deepcopy
 from pathlib import Path
 
-import yaml
-
-from starwhale.utils import convert_to_bytes
+from starwhale.utils import load_yaml, convert_to_bytes
 from starwhale.consts import SWDSSubFileType, DEFAULT_STARWHALE_API_VERSION
 from starwhale.utils.error import NoSupportError
 
@@ -103,9 +101,6 @@ class DatasetConfig(object):
 
     @classmethod
     def create_by_yaml(cls, fpath: t.Union[str, Path]) -> DatasetConfig:
-        fpath = Path(fpath)
-
-        with fpath.open("r") as f:
-            c = yaml.safe_load(f)
+        c = load_yaml(fpath)
 
         return cls(**c)

@@ -7,12 +7,11 @@ from copy import deepcopy
 from pathlib import Path
 from collections import defaultdict
 
-import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
-from starwhale.utils import console
+from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
@@ -108,7 +107,7 @@ class ModelConfig(object):
 
     @classmethod
     def create_by_yaml(cls, path: Path) -> ModelConfig:
-        c = yaml.safe_load(path.open())
+        c = load_yaml(path)
         return cls(**c)
 
     def __str__(self) -> str:

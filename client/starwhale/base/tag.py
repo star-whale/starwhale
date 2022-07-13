@@ -3,7 +3,7 @@ from pathlib import Path
 
 import yaml
 
-from starwhale.utils import now_str, validate_obj_name
+from starwhale.utils import now_str, load_yaml, validate_obj_name
 from starwhale.consts import DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -45,7 +45,7 @@ class StandaloneTag(object):
             ensure_file(self._manifest_path, yaml.safe_dump(_dft))
             return _dft
         else:
-            return yaml.safe_load(self._manifest_path.open())
+            return load_yaml(self._manifest_path)
 
     def _save_manifest(self, _manifest: t.Dict[str, t.Any]) -> None:
         _manifest["updated_at"] = now_str()  # type: ignore
@@ -121,7 +121,6 @@ class StandaloneTag(object):
     def get_manifest_by_dir(cls, dir: Path) -> t.Dict[str, t.Any]:
         _mf = dir / DEFAULT_MANIFEST_NAME
         if _mf.exists():
-            with open(_mf) as f:
-                return yaml.safe_load(f) or {}
+            return load_yaml(_mf) or {}
         else:
             return {}

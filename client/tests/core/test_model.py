@@ -2,11 +2,11 @@ import os
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import yaml
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
+from starwhale.utils import load_yaml
 from starwhale.consts import (
     HTTPMethod,
     DefaultYAMLName,
@@ -83,7 +83,7 @@ class StandaloneModelTestCase(TestCase):
         assert snapshot_workdir.exists()
         assert (snapshot_workdir / "src").exists()
 
-        _manifest = yaml.safe_load((snapshot_workdir / DEFAULT_MANIFEST_NAME).open())
+        _manifest = load_yaml(snapshot_workdir / DEFAULT_MANIFEST_NAME)
         assert _manifest["name"] == name
         assert _manifest["version"] == build_version
 
