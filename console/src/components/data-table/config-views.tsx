@@ -30,10 +30,12 @@ function ConfigViews(props: PropsT) {
     }, [store.currentView])
 
     const $options: any = useMemo(() => {
-        return store.views.map((v) => ({
-            id: v.id,
-            label: v.name,
-        }))
+        return store.views
+            .filter((v) => v.isShow)
+            .map((v) => ({
+                id: v.id,
+                label: v.name,
+            }))
     }, [store.views])
 
     const viewListRef = useRef(null)

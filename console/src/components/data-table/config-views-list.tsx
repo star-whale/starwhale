@@ -120,7 +120,7 @@ function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
                 {(row, rowIndex) => <Toggle value={row.def} onChange={(v) => handleDefault(row, rowIndex, v)} />}
             </TableBuilderColumn>
             <TableBuilderColumn header='Visibility'>
-                {(row, rowIndex) => <Toggle value={row.def} onChange={(v) => handleShow(row, rowIndex, v)} />}
+                {(row, rowIndex) => <Toggle value={row.isShow} onChange={(v) => handleShow(row, rowIndex, v)} />}
             </TableBuilderColumn>
             <TableBuilderColumn header='Views'>{(row) => row.name}</TableBuilderColumn>
             <TableBuilderColumn header=''>
