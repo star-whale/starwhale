@@ -7,6 +7,7 @@ import yaml
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
+from starwhale.utils import load_yaml
 from starwhale.consts import (
     ENV_VENV,
     PythonRunEnv,
@@ -58,7 +59,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "install",
         ]
 
-        _rt_config = yaml.safe_load(open(runtime_path, "r"))
+        _rt_config = load_yaml(runtime_path)
         assert _rt_config["name"] == name
         assert _rt_config["mode"] == "venv"
         assert _rt_config["python_version"] == "3.9"
@@ -79,7 +80,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "--python",
             "3.8",
         ]
-        _rt_config = yaml.safe_load(open(runtime_path, "r"))
+        _rt_config = load_yaml(runtime_path)
         assert _rt_config["python_version"] == "3.8"
 
     @patch("starwhale.utils.venv.check_call")
@@ -95,7 +96,7 @@ class StandaloneRuntimeTestCase(TestCase):
             mode=PythonRunEnv.CONDA,
         )
         assert os.path.exists(os.path.join(workdir, runtime_path))
-        _rt_config = yaml.safe_load(open(runtime_path, "r"))
+        _rt_config = load_yaml(runtime_path)
         assert _rt_config["mode"] == "conda"
         assert m_call.call_args_list[0][0][0] == [
             "conda",
@@ -167,9 +168,7 @@ class StandaloneRuntimeTestCase(TestCase):
         assert os.path.exists(runtime_workdir)
         assert "latest" in sr.tag.list()
 
-        _manifest = yaml.safe_load(
-            open(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
-        )
+        _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
 
         assert (
             _manifest["user_raw_config"]["python_version"]

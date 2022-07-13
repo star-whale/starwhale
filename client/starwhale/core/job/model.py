@@ -6,9 +6,9 @@ from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from collections import defaultdict
 
-import yaml
 import jsonlines
 
+from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir
@@ -274,7 +274,7 @@ class StandaloneJob(Job):
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _rt = []
         for _path, _is_removed in JobStorage.iter_all_jobs(project_uri):
-            _manifest = yaml.safe_load(_path.open())
+            _manifest = load_yaml(_path)
             if not _manifest:
                 continue
 

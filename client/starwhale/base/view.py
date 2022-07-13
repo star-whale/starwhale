@@ -4,7 +4,6 @@ import json
 import typing as t
 from functools import wraps
 
-import yaml
 from rich import box
 from rich import print as rprint
 from rich.panel import Panel
@@ -12,7 +11,14 @@ from rich.table import Table
 from rich.pretty import Pretty
 from rich.console import RenderableType
 
-from starwhale.utils import Order, console, pretty_bytes, sort_obj_list, snake_to_camel
+from starwhale.utils import (
+    Order,
+    console,
+    load_yaml,
+    pretty_bytes,
+    sort_obj_list,
+    snake_to_camel,
+)
 from starwhale.consts import UserRoleType, SHORT_VERSION_CNT
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
@@ -108,7 +114,7 @@ class BaseTermView(SWCliConfigMixed):
         console.print(f":construction: start to build {typ} bundle...")
         _project_uri = URI(project, expected_type=URIType.PROJECT)
         _path = os.path.join(workdir, yaml_name)
-        _config = yaml.safe_load(open(_path, "r"))
+        _config = load_yaml(_path)
         if "name" not in _config:
             raise FileFormatError(f"{_path}, no name field")
 

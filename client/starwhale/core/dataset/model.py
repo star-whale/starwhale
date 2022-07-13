@@ -7,12 +7,11 @@ from abc import ABCMeta
 from pathlib import Path
 from collections import defaultdict
 
-import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
-from starwhale.utils import console
+from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     JSON_INDENT,
     DataLoaderKind,
@@ -103,7 +102,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         if not _mf.exists():
             raise Exception(f"need {DEFAULT_MANIFEST_NAME} @ {workdir}")
 
-        _manifest = yaml.safe_load(_mf.open())
+        _manifest = load_yaml(_mf)
         _fuse = dict(
             backend=SWDSBackendType.FUSE,
             kind=DataLoaderKind.SWDS,
@@ -156,7 +155,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         _r = []
 
         for _bf in self.store.iter_bundle_history():
-            _manifest = yaml.safe_load((_bf.path / DEFAULT_MANIFEST_NAME).open())
+            _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
 
             _r.append(
                 dict(
@@ -198,7 +197,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             bundle_type=BundleType.DATASET,
             uri_type=URIType.DATASET,
         ):
-            _manifest = yaml.safe_load((_bf.path / DEFAULT_MANIFEST_NAME).open())
+            _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
 
             rs[_bf.name].append(
                 dict(

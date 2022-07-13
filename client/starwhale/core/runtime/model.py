@@ -10,7 +10,12 @@ from collections import defaultdict
 import yaml
 from loguru import logger
 
-from starwhale.utils import console, validate_obj_name, get_downloadable_sw_version
+from starwhale.utils import (
+    console,
+    load_yaml,
+    validate_obj_name,
+    get_downloadable_sw_version,
+)
 from starwhale.consts import (
     PythonRunEnv,
     SW_IMAGE_FMT,
@@ -85,7 +90,7 @@ class RuntimeConfig(object):
 
     @classmethod
     def create_by_yaml(cls, path: Path) -> RuntimeConfig:
-        c = yaml.safe_load(path.open())
+        c = load_yaml(path)
         return cls(**c)
 
     def as_dict(self) -> t.Dict[str, t.Any]:
@@ -407,7 +412,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         ):
             raise NoSupportError("only support swrt extract workdir")
 
-        _manifest = yaml.safe_load((workdir / DEFAULT_MANIFEST_NAME).open())
+        _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
         restore_python_env(
             workdir=workdir,
             mode=_manifest["dep"]["env"],

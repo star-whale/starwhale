@@ -1,7 +1,6 @@
 from http import HTTPStatus
 from pathlib import Path
 
-import yaml
 from rich.progress import (
     TaskID,
     Progress,
@@ -13,7 +12,7 @@ from rich.progress import (
     TransferSpeedColumn,
 )
 
-from starwhale.utils import console
+from starwhale.utils import console, load_yaml
 from starwhale.consts import HTTPMethod, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
@@ -218,7 +217,7 @@ class BundleCopy(CloudRequestMixed):
         if not upload_id:
             raise Exception("get invalid upload_id")
         _headers = {"X-SW-UPLOAD-ID": str(upload_id)}
-        _manifest = yaml.safe_load(_manifest_path.open())
+        _manifest = load_yaml(_manifest_path)
 
         # TODO: add retry deco
         def _upload_blob(_fp: Path, _tid: TaskID) -> None:
@@ -310,7 +309,7 @@ class BundleCopy(CloudRequestMixed):
         _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
         _tid = progress.add_task(f":arrow_down: {DEFAULT_MANIFEST_NAME}")
         _download(_manifest_path, DEFAULT_MANIFEST_NAME, _tid)
-        _manifest = yaml.safe_load(_manifest_path.open())
+        _manifest = load_yaml(_manifest_path)
 
         _p_map = {}
         for _k in _manifest.get("signature", {}):

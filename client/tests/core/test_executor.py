@@ -2,10 +2,10 @@ import os
 import json
 from unittest.mock import patch, MagicMock
 
-import yaml
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
+from starwhale.utils import load_yaml
 from starwhale.consts import (
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
@@ -101,7 +101,7 @@ class StandaloneEvalExecutor(TestCase):
         ppl_dir = job_dir / "ppl"
         cmp_dir = job_dir / "cmp"
         _manifest_path = job_dir / DEFAULT_MANIFEST_NAME
-        _manifest = yaml.safe_load(_manifest_path.open())
+        _manifest = load_yaml(_manifest_path)
 
         assert _manifest["version"] == build_version
         assert ppl_dir.exists()
@@ -157,7 +157,7 @@ class StandaloneEvalExecutor(TestCase):
         )
 
         _manifest_path = job_dir / DEFAULT_MANIFEST_NAME
-        _manifest = yaml.safe_load(_manifest_path.open())
+        _manifest = load_yaml(_manifest_path)
         assert _manifest_path.exists()
         assert _manifest["phase"] == "all"
         assert _manifest["version"] == build_version

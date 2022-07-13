@@ -3,10 +3,10 @@ import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import yaml
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
+from starwhale.utils import load_yaml
 from starwhale.consts import (
     DefaultYAMLName,
     SW_TMP_DIR_NAME,
@@ -74,7 +74,7 @@ class StandaloneDatasetTestCase(TestCase):
         assert (snapshot_workdir / "data").exists()
         assert (snapshot_workdir / "src").exists()
 
-        _manifest = yaml.safe_load((snapshot_workdir / DEFAULT_MANIFEST_NAME).open())
+        _manifest = load_yaml(snapshot_workdir / DEFAULT_MANIFEST_NAME)
         assert _manifest["name"] == name
 
         dataset_uri = URI(
