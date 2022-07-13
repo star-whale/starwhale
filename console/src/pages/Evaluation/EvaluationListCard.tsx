@@ -352,6 +352,7 @@ export default function EvaluationListCard() {
                                 type='fold2'
                                 size={12}
                                 style={{
+                                    color: gridMode !== 2 ? undefined : '#ccc',
                                     transform: 'rotate(-90deg) translateY(-2px)',
                                     marginBottom: '2px',
                                 }}
@@ -362,6 +363,7 @@ export default function EvaluationListCard() {
                                 type='unfold2'
                                 size={12}
                                 style={{
+                                    color: gridMode !== 0 ? undefined : '#ccc',
                                     transform: 'rotate(-90deg) translateY(2px)',
                                 }}
                             />
