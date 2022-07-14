@@ -185,9 +185,10 @@ class Jobs(TableWidget):
         super().__init__(**kwargs)
         self.render_fn = [
             Column("manifest.version", "Name"),
-            Column("manifest.model"),
+            Column("manifest.model", "Model"),
             Column(
                 "manifest.datasets",
+                "Datasets",
                 render=lambda _, x: console.Pretty(get_field(x, "manifest.datasets")),
             ),
             Column("manifest.created_at", "Created At"),
