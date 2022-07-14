@@ -47,6 +47,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
 
     return (
         <div
+            data-type='header-cell'
             ref={ref}
             role='button'
             tabIndex={0}

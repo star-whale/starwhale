@@ -207,7 +207,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                 textQuery,
             }: StatefulContainerPropsT['children']) => (
                 <>
-                    <div className={css({ height: `${headlineHeight}px` })}>
+                    <div data-type='table-toolbar' className={css({ height: `${headlineHeight}px` })}>
                         <div
                             ref={headlineRef}
                             className={css({
@@ -298,7 +298,10 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                         </div>
                     </div>
 
-                    <div style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}>
+                    <div
+                        data-type='table-wrapper'
+                        style={{ width: '100%', height: `calc(100% - ${headlineHeight}px)` }}
+                    >
                         {/* @ts-ignore */}
                         {$columns.length > 0 && (
                             <DataTable

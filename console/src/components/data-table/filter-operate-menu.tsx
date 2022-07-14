@@ -77,30 +77,41 @@ export const CategoricalFilter = React.forwardRef<
 
     const handleSelectOne = useCallback(
         (index) => {
-            categories[index].disable = !categories[index].disable
-            setCategories([...categories])
+            const $categories = categories.map((v) => ({
+                ...v,
+            }))
+            $categories[index].disable = !categories[index].disable
+            setCategories($categories)
         },
         [categories, setCategories]
     )
 
     const handleAddFilter = useEventCallback(() => {
-        categories.push({
+        const $categories = categories.map((v) => ({
+            ...v,
+        }))
+        $categories.push({
             disable: false,
         })
-        setCategories([...categories])
+        setCategories($categories)
     })
 
     const handleDeleteOne = useCallback(
         (index) => {
-            categories.splice(index, 1)
-            setCategories([...categories])
+            const $categories = categories.map((v) => ({
+                ...v,
+            }))
+            $categories.splice(index, 1)
+            setCategories($categories)
         },
         [categories, setCategories]
     )
 
     const handleChange = useCallback(
         (v: FilterOperateSelectorValueT, index: number) => {
-            const $categories = [...categories]
+            const $categories = categories.map((v) => ({
+                ...v,
+            }))
             $categories[index] = v
             setCategories($categories)
         },

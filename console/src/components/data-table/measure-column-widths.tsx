@@ -176,7 +176,7 @@ export default function MeasureColumnWidths({
 
     return (
         // eslint-disable-next-line jsx-a11y/role-supports-aria-props
-        <div data-type='MeasureColumn' className={hiddenStyle} aria-hidden role='none'>
+        <div data-type='table-measure-column' className={hiddenStyle} aria-hidden role='none'>
             {columns.map((column, i) => {
                 return (
                     <MeasureColumn
