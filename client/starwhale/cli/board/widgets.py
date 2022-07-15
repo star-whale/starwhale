@@ -4,12 +4,19 @@ from dataclasses import dataclass
 
 from rich import console
 from textual import events
+from rich.text import Text
 from rich.style import Style
 from rich.table import box, Table
 from textual.app import Reactive
 from textual.widget import Widget, RenderableType
 
-from starwhale.utils import get_field, pretty_bytes, snake_to_camel
+from starwhale.utils import (
+    Order,
+    get_field,
+    pretty_bytes,
+    sort_obj_list,
+    snake_to_camel,
+)
 from starwhale.consts import DEFAULT_PROJECT, STANDALONE_INSTANCE
 from starwhale.core.job.view import JobTermView
 from starwhale.core.model.view import ModelTermView
@@ -26,6 +33,42 @@ class Column:
     render: t.Optional[t.Callable[[int, t.Any], t.Any]] = None
 
 
+class OrderBy:
+    def __init__(self) -> None:
+        self.orderby_keys: t.Dict[str, str] = {
+            "C": "created_at",
+            "N": "name",
+            "S": "size",
+        }
+        self.current_order = Order("")
+
+    def record_key(self, key: str) -> bool:
+        if key not in self.orderby_keys:
+            return False
+
+        field = self.orderby_keys[key]
+        if self.current_order.field == field:
+            self.current_order.reverse = not self.current_order.reverse
+        else:
+            self.current_order.field = field
+            self.current_order.reverse = False
+        return True
+
+    def sort(self, data: t.Sequence):
+        if not self.current_order.field:
+            return data
+        return sort_obj_list(data, [self.current_order])
+
+    def get_order_icon(self) -> t.Tuple[str, RenderableType]:
+        if not self.current_order.field:
+            return "", ""
+        field = self.current_order.field
+        if self.current_order.reverse:
+            return field, Text(" ↓", style="green")
+        else:
+            return field, Text(" ↑", style="red")
+
+
 class TableWidget(Widget):
     """TableWidget makes an interactive rich.Table"""
 
@@ -35,6 +78,7 @@ class TableWidget(Widget):
         self.data: t.Sequence = []
         self.render_fn: t.List[Column] = []
         self._info: t.Any = None
+        self._orderby = OrderBy()
 
     show_info: Reactive[bool] = Reactive(False)
     cursor_line: Reactive[int] = Reactive(0, repaint=False)
@@ -64,10 +108,16 @@ class TableWidget(Widget):
     def reload(self) -> None:
         self.table.columns = []
         for i in self.render_fn:
-            self.table.add_column(i.name and i.name or snake_to_camel(i.key))
+            name = Text(i.name and i.name or snake_to_camel(i.key))
+            f, icon = self._orderby.get_order_icon()
+            if i.key == f:
+                name += icon
+            self.table.add_column(name)
         self.reloadImpl()
         self.table.rows = []
-        for idx, item in enumerate(self.data):
+
+        data = self._orderby.sort(self.data)
+        for idx, item in enumerate(data):
 
             def try_render(col: Column):
                 if col.render:
@@ -87,6 +137,8 @@ class TableWidget(Widget):
 
     async def on_key(self, event: events.Key) -> None:
         if event.key == "r":
+            self.reload()
+        if self._orderby.record_key(event.key):
             self.reload()
         await self.dispatch_key(event)
 
