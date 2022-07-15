@@ -204,3 +204,25 @@ table { border-collapse: separate; }
   right: 5px;
 
 }
+
+// ================ data-table ================ 
+.table-columns-pinned [data-type="table-row"] [data-type="table-cell"]:last-child {
+  border-right:1px solid rgb(207, 215, 230);
+}
+[data-type="table-headers-pinned"] > div:last-child {
+  border-right:1px solid rgb(207, 215, 230);
+}
+
+// [data-type="table-headers-pinned"]  {
+//   // tricky way, caused by border
+//   // padding-right: 3px;
+//   // background-color: var(--color-brandTableHeaderBackground);
+// }
+
+[data-type="table-cell"] > div {
+  // padding: 0 20px;
+  text-overflow: ellipsis;
+}
+[data-type="table-cell"]  {
+  break-inside: 'avoid';
+}

@@ -41,6 +41,8 @@ interface IIconFontProps {
         | 'runtime'
         | 'fold2'
         | 'unfold2'
+        | 'decline'
+        | 'rise'
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {
@@ -60,6 +62,7 @@ export default function IconFont({ size = 14, type = 'user', kind = 'inherit', s
                 fontSize: size,
                 color: kind === 'inherit' ? 'inherit' : colors[kind],
                 padding: 0,
+                display: 'inline-block',
                 fontWeight: 'normal',
                 ...style,
             }}

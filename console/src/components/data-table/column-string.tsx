@@ -8,6 +8,7 @@ import Column from './column'
 import { COLUMNS } from './constants'
 import { HighlightCellText } from './text-search'
 import type { ColumnT, SharedColumnOptionsT } from './types'
+import { Value } from 'baseui/select'
 
 type OptionsT = {
     lineClamp?: number
@@ -29,6 +30,7 @@ function StringCell(props: any) {
     return (
         <div
             data-type='StringCell'
+            title={props.value}
             className={css({
                 display: '-webkit-box',
                 WebkitLineClamp: props.lineClamp || 1,

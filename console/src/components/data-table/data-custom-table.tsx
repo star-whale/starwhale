@@ -98,12 +98,15 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                 borderRight: 'none',
                 borderLeft: 'none',
                 boxSizing: 'border-box',
-                paddingLeft: '20px',
-                paddingRight: '20px',
                 paddingTop: '0',
                 paddingBottom: '0',
                 display: 'flex',
                 alignItems: 'center',
+                paddingLeft: '20px',
+                paddingRight: '20px',
+                textOverflow: 'ellipsis',
+                overflow: 'hidden',
+                position: 'relative',
             })}
             style={style}
             onMouseEnter={() => {
@@ -181,7 +184,7 @@ function compareCellPlacement(prevProps: any, nextProps: any) {
 }
 
 // @ts-ignore
-const CellPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, style = {}, data }) => {
+const RowPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, style = {}, data }) => {
     const columns = data.columns.map((v, columnIndex) => ({
         ...v,
         index: columnIndex,
@@ -216,6 +219,7 @@ const CellPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, sty
 
     return (
         <div
+            data-type='table-row'
             key={index}
             // @ts-ignore
             style={{
@@ -235,12 +239,12 @@ const CellPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, sty
             >
                 {cells}
             </div>
-            <div style={{ flex: 1, borderBottom: '1px solid #EEF1F6' }} />
+            {/* <div style={{ flex: 1, borderBottom: '1px solid #EEF1F6', minWidth: 0 }} /> */}
         </div>
     )
 }, compareCellPlacement)
 
-CellPlacementMemo.displayName = 'CellPlacement'
+RowPlacementMemo.displayName = 'RowPlacement'
 
 const HeaderContext = React.createContext<HeaderContextT>({
     columns: [],
@@ -586,33 +590,36 @@ function Headers({ width }: { width: number }) {
                 {headersLeft}
             </div>
 
-            <div
-                data-type='table-headers'
-                style={{
-                    width: '100%',
-                    position: 'absolute',
-                    left: 0,
-                    marginLeft: headersLeftWidth,
-                    transform: `translate3d(-${ctx.scrollLeft}px,0px,0px)`,
-                }}
-            >
-                <div
-                    style={{
-                        display: 'flex',
-                        breakInside: 'avoid',
-                        width: 'fit-content',
-                        height: HEADER_ROW_HEIGHT,
-                    }}
-                >
-                    {headers}
-                </div>
-            </div>
-
-            <div
-                style={{
-                    flex: '1',
-                }}
-            />
+            {headers.length > 0 && (
+                <>
+                    <div
+                        data-type='table-headers'
+                        style={{
+                            width: '100%',
+                            position: 'absolute',
+                            left: 0,
+                            marginLeft: headersLeftWidth,
+                            transform: `translate3d(-${ctx.scrollLeft}px,0px,0px)`,
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                breakInside: 'avoid',
+                                width: 'fit-content',
+                                height: HEADER_ROW_HEIGHT,
+                            }}
+                        >
+                            {headers}
+                        </div>
+                    </div>
+                    <div
+                        style={{
+                            flex: '1',
+                        }}
+                    />
+                </>
+            )}
         </div>
     )
 }
@@ -1213,7 +1220,7 @@ export function DataTable({
                                 ref={setPinnedGridRef as any}
                                 overscanRowCount={10}
                                 height={height - HEADER_ROW_HEIGHT}
-                                width={sum(pinnedItemData.normalizedWidths) + 5}
+                                width={sum(pinnedItemData.normalizedWidths)}
                                 itemData={pinnedItemData}
                                 // onScroll={handleScroll}
                                 itemSize={rowHeightAtIndex}
@@ -1231,7 +1238,7 @@ export function DataTable({
                                 direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
                             >
                                 {/* @ts-ignore */}
-                                {CellPlacementMemo}
+                                {RowPlacementMemo}
                             </VariableSizeList>
                             <VariableSizeList
                                 className='table-columns'
@@ -1248,7 +1255,7 @@ export function DataTable({
                                 direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
                             >
                                 {/* @ts-ignore */}
-                                {CellPlacementMemo}
+                                {RowPlacementMemo}
                             </VariableSizeList>
                         </div>
                     </HeaderContext.Provider>

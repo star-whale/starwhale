@@ -129,7 +129,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                             display: 'flex',
                             alignItems: 'center',
                             position: 'absolute',
-                            right: -4,
+                            right: -3,
                         }}
                     >
                         {props.sortDirection === SORT_DIRECTIONS.DESC && (
