@@ -152,7 +152,7 @@ class Order:
         self.reverse = reverse
 
 
-def sort_obj_list(data: t.List[t.Any], orders: t.List[Order]) -> t.Any:
+def sort_obj_list(data: t.Sequence, orders: t.List[Order]) -> t.Any:
     def cmp(a: t.Any, b: t.Any) -> int:
         return (a > b) - (a < b)
 
