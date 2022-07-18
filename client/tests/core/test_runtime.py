@@ -54,16 +54,21 @@ class StandaloneRuntimeTestCase(TestCase):
             "3.9",
         ]
 
-        assert m_call.call_args[0][0][:2] == [
-            os.path.join(venv_dir, "bin", "pip"),
-            "install",
-        ]
+        assert m_call.call_args[0][0].startswith(
+            " ".join(
+                [
+                    os.path.join(venv_dir, "bin", "pip"),
+                    "install",
+                ]
+            )
+        )
 
         _rt_config = load_yaml(runtime_path)
+
         assert _rt_config["name"] == name
         assert _rt_config["mode"] == "venv"
-        assert _rt_config["python_version"] == "3.9"
-        assert "starwhale_version" in _rt_config
+        assert _rt_config["environment"]["python"] == "3.9"
+        assert "_starwhale_version" not in _rt_config
         assert "base_image" not in _rt_config
 
         empty_dir(workdir)
@@ -81,7 +86,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "3.8",
         ]
         _rt_config = load_yaml(runtime_path)
-        assert _rt_config["python_version"] == "3.8"
+        assert _rt_config["environment"]["python"] == "3.8"
 
     @patch("starwhale.utils.venv.check_call")
     def test_create_conda(self, m_call: MagicMock) -> None:
@@ -106,16 +111,20 @@ class StandaloneRuntimeTestCase(TestCase):
             "--yes",
             "python=3.7",
         ]
-        assert m_call.call_args_list[1][0][0][:8] == [
-            "conda",
-            "run",
-            "--name",
-            name,
-            "python3",
-            "-m",
-            "pip",
-            "install",
-        ]
+        assert m_call.call_args_list[1][0][0].startswith(
+            " ".join(
+                [
+                    "conda",
+                    "run",
+                    "--name",
+                    name,
+                    "python3",
+                    "-m",
+                    "pip",
+                    "install",
+                ]
+            )
+        )
 
     @patch("starwhale.utils.venv.get_user_runtime_python_bin")
     @patch("starwhale.utils.venv.check_call")
@@ -171,14 +180,17 @@ class StandaloneRuntimeTestCase(TestCase):
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
 
         assert (
-            _manifest["user_raw_config"]["python_version"]
-            == runtime_config["python_version"]
+            _manifest["user_raw_config"]["environment"]["python"]
+            == runtime_config["environment"]["python"]
         )
-        assert _manifest["dep"]["python"] == runtime_config["python_version"]
+        assert (
+            _manifest["environment"]["python"]
+            == runtime_config["environment"]["python"]
+        )
         assert _manifest["version"] == sr.uri.object.version
-        assert _manifest["dep"]["env"] == "venv"
-        assert _manifest["dep"]["venv"]["use"]
-        assert not _manifest["dep"]["local_gen_env"]
+        assert _manifest["environment"]["env"] == "venv"
+        assert _manifest["environment"]["venv"]["use"]
+        assert not _manifest["environment"]["local_gen_env"]
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
@@ -300,11 +312,14 @@ class StandaloneRuntimeTestCase(TestCase):
 
     def get_runtime_config(self) -> t.Dict[str, t.Any]:
         return {
-            "base_image": "ghcr.io/star-whale/starwhale:latest",
-            "mode": "venv",
             "name": "rttest",
-            "pip_req": "requirements.txt",
-            "python_version": "3.7",
+            "mode": "venv",
+            "environment": {
+                "python": "3.7",
+            },
+            "dependencies": [
+                "requirements.txt",
+            ],
         }
 
     @patch("starwhale.utils.venv.virtualenv.cli_run")
@@ -332,15 +347,17 @@ class StandaloneRuntimeTestCase(TestCase):
 
         Runtime.restore(Path(workdir))
         assert m_call.call_count == 2
-        pip_lock_cmd = m_call.call_args_list[0][0][0]
-        pip_cmd = m_call.call_args_list[1][0][0]
+        pip_cmds = [
+            m_call.call_args_list[0][0][0].split()[-1],
+            m_call.call_args_list[1][0][0].split()[-1],
+        ]
         assert m_venv.call_args[0][0] == [
             os.path.join(python_dir, "venv"),
             "--python",
             "3.7",
         ]
-        assert pip_lock_cmd[-1] == os.path.join(python_dir, "requirements-lock.txt")
-        assert pip_cmd[-1] == os.path.join(python_dir, "requirements-test.txt")
+        assert os.path.join(python_dir, "requirements-lock.txt") in pip_cmds
+        assert os.path.join(python_dir, "requirements-test.txt") in pip_cmds
 
         RuntimeTermView.restore(workdir)
 
@@ -355,7 +372,13 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.create_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
             contents=yaml.safe_dump(
-                {"dep": {"env": "conda", "local_gen_env": False, "python": "3.7"}}
+                {
+                    "environment": {
+                        "env": "conda",
+                        "local_gen_env": False,
+                        "python": "3.7",
+                    }
+                }
             ),
         )
         ensure_dir(conda_dir)
@@ -363,7 +386,8 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.create_file(lock_file_path, contents="test1==0.0.1")
 
         Runtime.restore(Path(workdir))
-        assert m_call.call_args[0][0] == " ".join(
+
+        assert m_call.call_args_list[0][0][0] == " ".join(
             [
                 "conda",
                 "env",

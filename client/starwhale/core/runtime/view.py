@@ -129,7 +129,9 @@ class RuntimeTermView(BaseTermView):
             store = RuntimeStorage(uri)
             workdir = store.snapshot_workdir
 
-        console.print(f":golfer: try to restore python runtime environment{workdir}...")
+        console.print(
+            f":golfer: try to restore python runtime environment: {workdir} ..."
+        )
         Runtime.restore(workdir)
 
     @classmethod
