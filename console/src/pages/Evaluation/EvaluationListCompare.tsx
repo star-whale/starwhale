@@ -143,7 +143,13 @@ export default function EvaluationListCompare({
     // )
     const comparePinnedKey = '20'
     const compareShowCellChanges = true
-    const conmparePinnedRow = rows.find((row) => row.id === comparePinnedKey)
+    let conmparePinnedRow = rows.find((row) => row.id === comparePinnedKey) ?? {}
+    conmparePinnedRow = {
+        ...conmparePinnedRow,
+        ..._.mapValues(_.keyBy(conmparePinnedRow.attributes, 'name'), (o) => o.value),
+    }
+    console.log(conmparePinnedRow)
+
     const conmparePinnedRowIndex = rows.findIndex((row) => row.id === comparePinnedKey) // +1 for first column being attrs
     const $columns = useMemo(
         () => [
@@ -169,6 +175,11 @@ export default function EvaluationListCompare({
                             comparedValue: conmparePinnedRow?.[data.key],
                             data,
                         }
+
+                        if (renderedValue === newProps.comparedValue) {
+                            return NoneCompareCell(newProps)
+                        }
+
                         if (compareShowCellChanges && comparePinnedKey && conmparePinnedRowIndex != index) {
                             return (
                                 <div
@@ -181,8 +192,7 @@ export default function EvaluationListCompare({
                                         alignItems: 'center',
                                         height: '100%',
                                         width: '100%',
-                                        backgroundColor:
-                                            renderedValue !== newProps.comparedValue ? '#FFFAF5' : undefined,
+                                        backgroundColor: '#FFFAF5',
                                     }}
                                 >
                                     {renderCompare(newProps)}
@@ -193,6 +203,8 @@ export default function EvaluationListCompare({
                     },
                     mapDataToValue: ({ values, ...item }: any) => ({
                         ...item,
+                        values,
+                        index,
                         value: values[index],
                     }),
                 })
@@ -290,6 +302,7 @@ export default function EvaluationListCompare({
                 id='compare'
                 isLoading={evaluationsInfo.isLoading}
                 columns={$columns}
+                compareable
                 // @ts-ignore
                 data={$rowWithAttrs}
             />

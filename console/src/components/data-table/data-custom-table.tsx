@@ -13,6 +13,7 @@ import MeasureColumnWidths from './measure-column-widths'
 import type { ColumnT, DataTablePropsT, RowT, SortDirectionsT, RowActionT } from './types'
 import { LocaleContext } from './locales'
 import { headerHeight } from '@/consts'
+import cn from 'classnames'
 
 // consider pulling this out to a prop if useful.
 const HEADER_ROW_HEIGHT = 54
@@ -80,6 +81,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     const [css, theme] = useStyletron()
     const column = data.columns[columnIndex]
     const row = data.rows[rowIndex]
+    const rowCount = data.rows.length
 
     // eslint-disable-next-line
     const Cell = React.useMemo(() => column.renderCell ?? null, [column])
@@ -88,26 +90,37 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
 
     return (
         <div
-            data-type='table-cell'
             data-column-index={columnIndex}
             data-row-index={rowIndex}
-            className={css({
-                ...theme.borders.border200,
-                borderTop: 'none',
-                borderBottom: 'none',
-                borderRight: 'none',
-                borderLeft: 'none',
-                boxSizing: 'border-box',
-                paddingTop: '0',
-                paddingBottom: '0',
-                display: 'flex',
-                alignItems: 'center',
-                paddingLeft: '20px',
-                paddingRight: '20px',
-                textOverflow: 'ellipsis',
-                overflow: 'hidden',
-                position: 'relative',
-            })}
+            className={cn(
+                'table-cell',
+                rowIndex,
+                rowCount,
+                rowIndex === 0 ? 'table-cell--first' : undefined,
+                rowIndex === rowCount - 1 ? 'table-cell--last' : undefined,
+
+                css({
+                    ...theme.borders.border200,
+                    'borderTop': 'none',
+                    'borderBottom': 'none',
+                    'borderRight': 'none',
+                    'borderLeft': 'none',
+                    'boxSizing': 'border-box',
+                    'paddingTop': '0',
+                    'paddingBottom': '0',
+                    'display': 'flex',
+                    'alignItems': 'center',
+                    'paddingLeft': '20px',
+                    'paddingRight': '20px',
+                    'textOverflow': 'ellipsis',
+                    'overflow': 'hidden',
+                    'position': 'relative',
+                    'breakinside': 'avoid',
+                    '& > div': {
+                        textOverflow: 'ellipsis',
+                    },
+                })
+            )}
             style={style}
             onMouseEnter={() => {
                 data.onRowMouseEnter(rowIndex, data.rows[rowIndex])
@@ -184,7 +197,7 @@ function compareCellPlacement(prevProps: any, nextProps: any) {
 }
 
 // @ts-ignore
-const RowPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, style = {}, data }) => {
+const RowPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ pinned, index, style = {}, data }) => {
     const columns = data.columns.map((v, columnIndex) => ({
         ...v,
         index: columnIndex,
@@ -194,6 +207,19 @@ const RowPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, styl
     const renderer = useCallback(
         (column: ColumnT & { index: number }) => {
             const columnIndex = column.index
+
+            // don't render pin table if row was a normal row
+            if (column.pin === 'LEFT' && !pinned) {
+                return (
+                    <div
+                        style={{
+                            width: normalizedWidths[columnIndex],
+                            background: '#FFF',
+                            borderBottom: '1px solid #EEF1F6',
+                        }}
+                    ></div>
+                )
+            }
 
             return (
                 <CellPlacement
@@ -214,13 +240,14 @@ const RowPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ index, styl
     )
 
     const cells = React.useMemo(() => {
-        return columns.map(renderer)
-    }, [columns, renderer])
+        return columns.filter((v) => (pinned ? v.pin === 'LEFT' : true)).map(renderer)
+    }, [normalizedWidths, columns, renderer])
 
     return (
         <div
             data-type='table-row'
             key={index}
+            className='table-row'
             // @ts-ignore
             style={{
                 ...style,
@@ -487,16 +514,6 @@ function Headers({ width }: { width: number }) {
                                 >
                                     {locale.datatable.filterAppliedTo} {column.title}
                                 </p>
-                                {/* {activeFilter && (
-                                    <p
-                                        className={css({
-                                            ...theme.typography.font150,
-                                            color: theme.colors.contentInversePrimary,
-                                        })}
-                                    >
-                                        {activeFilter.description}
-                                    </p>
-                                )} */}
                             </div>
                         )
                     }}
@@ -559,22 +576,24 @@ function Headers({ width }: { width: number }) {
 
     return (
         <div
-            data-type='table-headers-wrapper'
-            className={css({
-                position: 'sticky',
-                top: 0,
-                left: 0,
-                display: 'flex',
-                zIndex: 2,
-                backgroundColor: '#F3F5F9',
-                overflow: 'hidden',
-            })}
+            className={cn(
+                'table-headers-wrapper',
+                css({
+                    position: 'sticky',
+                    top: 0,
+                    left: 0,
+                    display: 'flex',
+                    zIndex: 2,
+                    backgroundColor: '#F3F5F9',
+                    overflow: 'hidden',
+                })
+            )}
             style={{
                 width: width,
             }}
         >
             <div
-                data-type='table-headers-pinned'
+                className='table-headers-pinned'
                 style={{
                     position: 'sticky',
                     left: 0,
@@ -593,7 +612,7 @@ function Headers({ width }: { width: number }) {
             {headers.length > 0 && (
                 <>
                     <div
-                        data-type='table-headers'
+                        className='table-headers'
                         style={{
                             width: '100%',
                             position: 'absolute',
@@ -662,82 +681,123 @@ const InnerTableElement = React.forwardRef<{ children: React.ReactNode; style: R
 
         const highlightedRow = ctx.rows[ctx.rowHighlightIndex]
 
+        // @ts-ignore
+        const $children = props.children.map((o) => {
+            return {
+                ...o,
+                props: {
+                    ...o.props,
+                    pinned: true,
+                },
+            }
+        })
+
+        const pinnedWidth = sum(ctx.columns.map((v, index) => (v.pin == 'LEFT' ? ctx.widths[index] : 0)))
+
         return (
-            // @ts-ignore
-            <div ref={ref} data-type='table-inner' style={props.style}>
-                {/* <Headers /> */}
+            <>
+                <div
+                    style={{
+                        position: 'sticky',
+                        width: 0,
+                        height: 0,
+                        left: 0,
+                        zIndex: 100,
+                        borderLeftWidth: '0',
+                        borderRight: '1px solid #CFD7E6',
+                        overflow: 'visible',
+                        breakInside: 'avoid',
+                    }}
+                >
+                    <div
+                        className='table-columns-pinned'
+                        // @ts-ignore
+                        style={{
+                            ...props.style,
+                            width: pinnedWidth,
+                            position: 'relative',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        {viewState === RENDERING && $children}
+                    </div>
+                </div>
+                {/* @ts-ignore */}
+                <div ref={ref} data-type='table-inner' style={props.style} onScroll={ctx.onRowScroll}>
+                    {/* <Headers /> */}
 
-                {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage}</LoadingOrEmptyMessage>}
+                    {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage}</LoadingOrEmptyMessage>}
 
-                {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage}</LoadingOrEmptyMessage>}
+                    {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage}</LoadingOrEmptyMessage>}
 
-                {viewState === RENDERING && props.children}
+                    {viewState === RENDERING && props.children}
 
-                {ctx.rowActions &&
-                    Boolean(ctx.rowActions.length) &&
-                    ctx.rowHighlightIndex > 0 &&
-                    Boolean(highlightedRow) &&
-                    !ctx.isScrollingX && (
-                        <div
-                            style={{
-                                alignItems: 'center',
-                                backgroundColor: theme.colors.backgroundTertiary,
-                                display: 'flex',
-                                height: `${ctx.rowHeight}px`,
-                                padding: '0 16px',
-                                paddingLeft: theme.sizing.scale300,
-                                paddingRight: theme.sizing.scale300,
-                                position: 'absolute',
-                                right: theme.direction !== 'rtl' ? 0 - ctx.scrollLeft : 'initial',
-                                left: theme.direction === 'rtl' ? 0 : 'initial',
-                                top: ctx.rowHighlightIndex * ctx.rowHeight + HEADER_ROW_HEIGHT,
-                            }}
-                        >
-                            {(typeof ctx.rowActions === 'function'
-                                ? ctx.rowActions(highlightedRow)
-                                : ctx.rowActions
-                            ).map((rowAction) => {
-                                if (rowAction.renderButton) {
-                                    const RowActionButton = rowAction.renderButton
-                                    // @ts-ignore
-                                    return <RowActionButton />
-                                }
-
-                                const RowActionIcon = rowAction.renderIcon
-                                return (
-                                    <Button
+                    {ctx.rowActions &&
+                        Boolean(ctx.rowActions.length) &&
+                        ctx.rowHighlightIndex > 0 &&
+                        Boolean(highlightedRow) &&
+                        !ctx.isScrollingX && (
+                            <div
+                                style={{
+                                    alignItems: 'center',
+                                    backgroundColor: theme.colors.backgroundTertiary,
+                                    display: 'flex',
+                                    height: `${ctx.rowHeight}px`,
+                                    padding: '0 16px',
+                                    paddingLeft: theme.sizing.scale300,
+                                    paddingRight: theme.sizing.scale300,
+                                    position: 'absolute',
+                                    right: theme.direction !== 'rtl' ? 0 - ctx.scrollLeft : 'initial',
+                                    left: theme.direction === 'rtl' ? 0 : 'initial',
+                                    top: ctx.rowHighlightIndex * ctx.rowHeight + HEADER_ROW_HEIGHT,
+                                }}
+                            >
+                                {(typeof ctx.rowActions === 'function'
+                                    ? ctx.rowActions(highlightedRow)
+                                    : ctx.rowActions
+                                ).map((rowAction) => {
+                                    if (rowAction.renderButton) {
+                                        const RowActionButton = rowAction.renderButton
                                         // @ts-ignore
-                                        alt={rowAction.label}
-                                        key={rowAction.label}
-                                        onClick={(event) =>
-                                            rowAction.onClick({
-                                                event,
-                                                row: ctx.rows[ctx.rowHighlightIndex],
-                                            })
-                                        }
-                                        size={BUTTON_SIZES.compact}
-                                        kind={BUTTON_KINDS.tertiary}
-                                        shape={BUTTON_SHAPES.round}
-                                        overrides={{
-                                            BaseButton: {
-                                                style: {
-                                                    marginLeft: theme.sizing.scale300,
-                                                    paddingTop: theme.sizing.scale100,
-                                                    paddingRight: theme.sizing.scale100,
-                                                    paddingBottom: theme.sizing.scale100,
-                                                    paddingLeft: theme.sizing.scale100,
+                                        return <RowActionButton />
+                                    }
+
+                                    const RowActionIcon = rowAction.renderIcon
+                                    return (
+                                        <Button
+                                            // @ts-ignore
+                                            alt={rowAction.label}
+                                            key={rowAction.label}
+                                            onClick={(event) =>
+                                                rowAction.onClick({
+                                                    event,
+                                                    row: ctx.rows[ctx.rowHighlightIndex],
+                                                })
+                                            }
+                                            size={BUTTON_SIZES.compact}
+                                            kind={BUTTON_KINDS.tertiary}
+                                            shape={BUTTON_SHAPES.round}
+                                            overrides={{
+                                                BaseButton: {
+                                                    style: {
+                                                        marginLeft: theme.sizing.scale300,
+                                                        paddingTop: theme.sizing.scale100,
+                                                        paddingRight: theme.sizing.scale100,
+                                                        paddingBottom: theme.sizing.scale100,
+                                                        paddingLeft: theme.sizing.scale100,
+                                                    },
                                                 },
-                                            },
-                                        }}
-                                    >
-                                        {/* @ts-ignore */}
-                                        <RowActionIcon size={24} />
-                                    </Button>
-                                )
-                            })}
-                        </div>
-                    )}
-            </div>
+                                            }}
+                                        >
+                                            {/* @ts-ignore */}
+                                            <RowActionIcon size={24} />
+                                        </Button>
+                                    )
+                                })}
+                            </div>
+                        )}
+                </div>
+            </>
         )
     }
 )
@@ -807,9 +867,7 @@ export function DataTable({
     )
 
     // We use state for our ref, to allow hooks to  update when the ref changes.
-    // flowlint-next-line unclear-type:off
     const [gridRef, setGridRef] = React.useState<VariableSizeGrid<any> | null>(null)
-    const [pinnedGridRef, setPinnedGridRef] = React.useState<VariableSizeGrid<any> | null>(null)
     const [measuredWidths, setMeasuredWidths] = React.useState(columns.map(() => 0))
     const [resizeDeltas, setResizeDeltas] = React.useState(columns.map(() => 0))
     React.useEffect(() => {
@@ -823,13 +881,11 @@ export function DataTable({
 
     const resetAfterColumnIndex = React.useCallback(
         (columnIndex) => {
-            if (gridRef && pinnedGridRef) {
+            if (gridRef) {
                 // for grid
                 // gridRef.resetAfterColumnIndex?.(columnIndex, true)
                 // @ts-ignore
                 gridRef.resetAfterIndex?.(columnIndex, true)
-                // @ts-ignore
-                pinnedGridRef.resetAfterIndex?.(columnIndex, true)
             }
         },
         [gridRef]
@@ -869,10 +925,21 @@ export function DataTable({
         }
         return () => {}
     }, [recentlyScrolledX, isScrollingX])
-    const handleScroll = React.useCallback(
+    const handleRowScroll = React.useCallback(
         (e) => {
-            // params.scrollLeft
+            console.log('handleRowScroll', e)
             const eventScrollLeft = e.target.scrollLeft
+            setScrollLeft(eventScrollLeft)
+            if (eventScrollLeft !== scrollLeft) {
+                setRecentlyScrolledX(true)
+            }
+        },
+        [scrollLeft, setScrollLeft, setRecentlyScrolledX]
+    )
+    const handleScroll = React.useCallback(
+        (params) => {
+            console.log(params)
+            const eventScrollLeft = params.scrollLeft
             setScrollLeft(eventScrollLeft)
             if (eventScrollLeft !== scrollLeft) {
                 setRecentlyScrolledX(true)
@@ -1129,33 +1196,6 @@ export function DataTable({
         normalizedWidths,
     ])
 
-    const pinnedItemData = React.useMemo(() => {
-        return {
-            columnHighlightIndex,
-            // warning: this can cause performance problem, and inline edit will have wrong behaviour so use row own behaviour
-            // rowHighlightIndex,
-            isRowSelected,
-            isSelectable,
-            onRowMouseEnter: handleRowMouseEnter,
-            onSelectOne: handleSelectOne,
-            columns: columns.filter((v) => v.pin == 'LEFT'),
-            rows,
-            textQuery,
-            normalizedWidths: columns.map((v, index) => (v.pin == 'LEFT' ? normalizedWidths[index] : 0)),
-        }
-    }, [
-        handleRowMouseEnter,
-        columnHighlightIndex,
-        isRowSelected,
-        isSelectable,
-        // rowHighlightIndex,
-        rows,
-        columns,
-        handleSelectOne,
-        textQuery,
-        normalizedWidths,
-    ])
-
     return (
         <>
             <MeasureColumnWidths
@@ -1201,63 +1241,29 @@ export function DataTable({
                             sortIndex: typeof sortIndex === 'number' ? sortIndex : -1,
                             tableHeight: height,
                             widths: normalizedWidths,
+                            onRowScroll: handleRowScroll,
                         }}
                     >
                         {/* 8px for scrollbar */}
-                        <Headers width={width + SCROLLBAR_WIDTH} />
+                        <Headers width={width} />
 
-                        <div
-                            data-type='table-body-wrapper'
-                            style={{
-                                overflow: 'auto',
-                                height: height + SCROLLBAR_WIDTH - HEADER_ROW_HEIGHT,
-                                width: width + SCROLLBAR_WIDTH,
-                            }}
+                        <VariableSizeList
+                            className={'table-columns'}
+                            ref={setGridRef as any}
+                            overscanRowCount={10}
+                            innerElementType={InnerTableElement}
+                            height={height - HEADER_ROW_HEIGHT}
+                            width={width}
+                            itemData={itemData}
                             onScroll={handleScroll}
+                            itemSize={rowHeightAtIndex}
+                            itemCount={rows.length}
+                            style={{ overflow: 'auto' }}
+                            direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
                         >
-                            <VariableSizeList
-                                className='table-columns-pinned'
-                                ref={setPinnedGridRef as any}
-                                overscanRowCount={10}
-                                height={height - HEADER_ROW_HEIGHT}
-                                width={sum(pinnedItemData.normalizedWidths)}
-                                itemData={pinnedItemData}
-                                // onScroll={handleScroll}
-                                itemSize={rowHeightAtIndex}
-                                itemCount={rows.length - 1}
-                                style={{
-                                    height: 0,
-                                    position: 'sticky',
-                                    left: 0,
-                                    zIndex: 50,
-                                    borderLeftWidth: '0',
-                                    borderRight: '1px solid #CFD7E6',
-                                    overflow: 'visible',
-                                    breakInside: 'avoid',
-                                }}
-                                direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
-                            >
-                                {/* @ts-ignore */}
-                                {RowPlacementMemo}
-                            </VariableSizeList>
-                            <VariableSizeList
-                                className='table-columns'
-                                ref={setGridRef as any}
-                                overscanRowCount={10}
-                                innerElementType={InnerTableElement}
-                                height={height - HEADER_ROW_HEIGHT}
-                                width={width}
-                                itemData={itemData}
-                                // onScroll={handleScroll}
-                                itemSize={rowHeightAtIndex}
-                                itemCount={rows.length - 1}
-                                style={{ overflow: 'visible' }}
-                                direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
-                            >
-                                {/* @ts-ignore */}
-                                {RowPlacementMemo}
-                            </VariableSizeList>
-                        </div>
+                            {/* @ts-ignore */}
+                            {RowPlacementMemo}
+                        </VariableSizeList>
                     </HeaderContext.Provider>
                 )}
             </AutoSizer>
