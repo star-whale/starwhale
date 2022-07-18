@@ -49,6 +49,7 @@ version-resolver:
       - 'security'
       - 'good first issue'
       - 'chore'
+  default: patch
 
 exclude-labels:
   - 'skip-changelog'
