@@ -8,7 +8,10 @@ from pathlib import Path
 from collections import defaultdict
 
 import yaml
+import attrs
+from fs import open_fs
 from loguru import logger
+from fs.copy import copy_fs, copy_file
 
 from starwhale.utils import (
     console,
@@ -17,6 +20,8 @@ from starwhale.utils import (
     get_downloadable_sw_version,
 )
 from starwhale.consts import (
+    SupportOS,
+    SupportArch,
     PythonRunEnv,
     SW_IMAGE_FMT,
     DefaultYAMLName,
@@ -25,6 +30,8 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     ENV_SW_IMAGE_REPO,
     DEFAULT_IMAGE_REPO,
+    DEFAULT_CUDA_VERSION,
+    DEFAULT_CONDA_CHANNEL,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_PYTHON_VERSION,
 )
@@ -46,6 +53,7 @@ from starwhale.utils.venv import (
 )
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import (
+    FormatError,
     ExistedError,
     NotFoundError,
     NoSupportError,
@@ -56,23 +64,188 @@ from starwhale.base.bundle_copy import BundleCopy
 
 from .store import RuntimeStorage
 
+RUNTIME_API_VERSION = "1.1"
 
-class RuntimeConfig(object):
+
+class RuntimeArtifactType:
+    DEPEND = "dependencies"
+    WHEELS = "wheels"
+    FILES = "files"
+
+
+class Environment:
+    def __init__(
+        self,
+        arch: str = SupportArch.X86_64,
+        os: str = SupportOS.UBUNTU,
+        python: str = DEFAULT_PYTHON_VERSION,
+        cuda: str = DEFAULT_CUDA_VERSION,
+    ) -> None:
+        self.arch = arch.lower()
+        self.os = os.lower()
+
+        # TODO: use user's swcli python version as the python argument version
+        self.python = self._trunc_python_version(python)
+        self.cuda = cuda
+
+        self._do_validate()
+
+    def asdict(self) -> t.Dict[str, str]:
+        return deepcopy(self.__dict__)
+
+    def _do_validate(self) -> None:
+        if self.os not in (SupportOS.UBUNTU,):
+            raise NoSupportError(f"environment.os {self.os}")
+
+        if not self.python.startswith("3."):
+            raise ConfigFormatError(f"only support Python3, set {self.python}")
+
+    def _trunc_python_version(self, python_version: str) -> str:
+        _tp = python_version.strip().split(".")
+        # TODO: support python full version format: {major}:{minor}:{micro}
+        return ".".join(_tp[:2])
+
+    def __str__(self) -> str:
+        return f"Starwhale Runtime Environment: {self.os}-{self.arch}-python:{self.python}-cuda:{self.cuda}"
+
+    __repr__ = __str__
+
+
+class Dependencies:
+    def __init__(self, deps: t.Optional[t.List[str]] = None) -> None:
+        deps = deps or []
+
+        self.pip_pkgs: t.List[str] = []
+        self.pip_files: t.List[str] = []
+        self.conda_pkgs: t.List[str] = []
+        self.conda_files: t.List[str] = []
+        self.wheels: t.List[str] = []
+        self.files: t.List[t.Dict[str, str]] = []
+        self._unparsed: t.List[t.Any] = []
+
+        _dmap: t.Dict[str, t.List[t.Any]] = {
+            "pip": self.pip_pkgs,
+            "conda": self.conda_pkgs,
+            "wheels": self.wheels,
+            "files": self.files,
+        }
+
+        for d in deps:
+            if isinstance(d, str):
+                if d.endswith((".txt", ".in")):
+                    self.pip_files.append(d)
+                elif d.endswith((".yaml", ".yml")):
+                    self.pip_files.append(d)
+                else:
+                    self._unparsed.append(d)
+            elif isinstance(d, dict):
+                for _k, _v in d.items():
+                    if _k in _dmap:
+                        _dmap[_k].extend(_v)
+                    else:
+                        self._unparsed.append(d)
+            else:
+                self._unparsed.append(d)
+
+        if self._unparsed:
+            logger.warning(f"unparsed dependencies:{self._unparsed}")
+
+        self._do_validate()
+
+    def _do_validate(self) -> None:
+        for _f in self.files:
+            if not _f.get("src") or not _f.get("dest"):
+                raise FormatError("dependencies.file MUST include src and dest fields.")
+
+    def __str__(self) -> str:
+        return f"Starwhale Runtime Dependencies: pip:{len(self.pip_pkgs + self.pip_files)}, conda:{len(self.conda_pkgs + self.conda_files)}, wheels:{len(self.wheels)}, files:{len(self.files)}"
+
+    def asdict(self) -> t.Dict[str, t.Any]:
+        _d = deepcopy(self.__dict__)
+        _d.pop("_unparsed", None)
+        return _d
+
+    __repr__ = __str__
+
+
+class Hooks:
+    def __init__(self, pre: str = "", post: str = "") -> None:
+        self.pre = pre
+        self.post = post
+
+    def asdict(self) -> t.Dict[str, str]:
+        return deepcopy(self.__dict__)
+
+
+@attrs.define
+class DockerConfig:
+    registry: str = "docker.io"
+    image: str = "runtime_dummy:latest"
+
+
+@attrs.define
+class PipConfig:
+    index_url: str = ""
+    extra_index_url: str = ""
+    trusted_host: str = ""
+
+
+@attrs.define
+class CondaConfig:
+    channels: t.List[str] = [DEFAULT_CONDA_CHANNEL]
+
+
+class Configs:
+    def __init__(
+        self,
+        docker: t.Optional[t.Dict[str, str]] = None,
+        conda: t.Optional[t.Dict[str, t.Any]] = None,
+        pip: t.Optional[t.Dict[str, str]] = None,
+    ) -> None:
+        self.docker = DockerConfig(**(docker or {}))
+        self.conda = CondaConfig(**(conda or {}))
+        self.pip = PipConfig(**(pip or {}))
+
+    def asdict(self) -> t.Dict[str, t.Dict[str, t.Any]]:
+        return {
+            "docker": attrs.asdict(self.docker),
+            "conda": attrs.asdict(self.conda),
+            "pip": attrs.asdict(self.pip),
+        }
+
+
+class RuntimeConfig:
     def __init__(
         self,
         name: str,
         mode: str = PythonRunEnv.VENV,
-        python_version: str = DEFAULT_PYTHON_VERSION,
-        pip_req: str = DUMP_USER_PIP_REQ_FNAME,
+        api_version: str = RUNTIME_API_VERSION,
+        configs: t.Optional[t.Dict[str, t.Any]] = None,
+        hooks: t.Optional[t.Dict[str, t.Any]] = None,
+        dependencies: t.Optional[t.List[t.Any]] = None,
+        environment: t.Optional[t.Dict[str, t.Any]] = None,
+        python_version: str = "",
+        pip_req: str = "",
         **kw: t.Any,
     ) -> None:
         self.name = name.strip().lower()
         self.mode = mode
-        self.python_version = python_version.strip()
-        self.pip_req = pip_req
-        self.kw = kw
-        self.starwhale_version = get_downloadable_sw_version()
+        self.api_version = api_version
+        self.configs = Configs(**(configs or {}))
+        self.hooks = Hooks(**(hooks or {}))
 
+        environment = environment or {}
+        if python_version and not environment.get("python"):
+            environment["python"] = python_version
+        self.environment = Environment(**environment)
+
+        dependencies = dependencies or []
+        if pip_req:
+            dependencies.append(pip_req)
+        self.dependencies = Dependencies(dependencies)
+
+        self.kw = kw
+        self._starwhale_version = get_downloadable_sw_version()
         self._do_validate()
 
     def _do_validate(self) -> None:
@@ -83,19 +256,27 @@ class RuntimeConfig(object):
         if self.mode not in (PythonRunEnv.CONDA, PythonRunEnv.VENV):
             raise ConfigFormatError(f"{self.mode} no support")
 
-        if not self.python_version.startswith("3."):
-            raise ConfigFormatError(f"only support Python3, set {self.python_version}")
-
-        # TODO: add more validators
+        if self.api_version != RUNTIME_API_VERSION:
+            raise NoSupportError(f"runtime api_version: {self.api_version}")
 
     @classmethod
     def create_by_yaml(cls, path: Path) -> RuntimeConfig:
         c = load_yaml(path)
         return cls(**c)
 
-    def as_dict(self) -> t.Dict[str, t.Any]:
+    def asdict(self) -> t.Dict[str, t.Any]:
         _d = deepcopy(self.__dict__)
         _d.pop("kw", None)
+        _d.pop("_starwhale_version", None)
+
+        _d.update(
+            dict(
+                hooks=self.hooks.asdict(),
+                configs=self.configs.asdict(),
+                environment=self.environment.asdict(),
+                dependencies=self.dependencies.asdict(),
+            )
+        )
         return _d
 
 
@@ -159,7 +340,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         self.typ = InstanceType.STANDALONE
         self.store = RuntimeStorage(uri)
         self.tag = StandaloneTag(uri)
-        self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+        self._manifest: t.Dict[str, t.Any] = {}
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
@@ -228,14 +409,20 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         **kw: t.Any,
     ) -> None:
         # TODO: tune for no runtime.yaml file
-        _mp = workdir / yaml_name
-        _swrt_config = self._load_runtime_config(_mp)
-        _pip_req_path = detect_pip_req(workdir, _swrt_config.pip_req)
-        _python_version = _swrt_config.python_version
+        _swrt_config = self._load_runtime_config(workdir / yaml_name)
+        # TODO: user custom the lock of requirements.txt or conda.yaml
+        _pip_req_path = detect_pip_req(workdir, "requirements.txt")
+        _python_version = _swrt_config.environment.python
 
         operations = [
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),
+            (
+                self._render_environment,
+                5,
+                "dump environment",
+                dict(config=_swrt_config),
+            ),
             (
                 self._dump_dep,
                 50,
@@ -256,19 +443,100 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 dict(config=_swrt_config),
             ),
             (
+                self._copy_src,
+                20,
+                "dump src files:wheel, native files",
+                dict(config=_swrt_config, workdir=workdir, yaml_name=yaml_name),
+            ),
+            (
                 self._render_manifest,
                 5,
                 "render manifest",
-                dict(user_raw_config=_swrt_config.as_dict()),
+                dict(user_raw_config=_swrt_config.asdict()),
             ),
             (self._make_tar, 20, "make runtime bundle", dict(ftype=BundleType.RUNTIME)),
             (self._make_latest_tag, 5, "make latest tag"),
         ]
         run_with_progress_bar("runtime bundle building...", operations)
 
+    def _render_environment(self, config: RuntimeConfig) -> None:
+        # TODO: refactor docker image in environment
+        self._manifest["environment"] = {
+            "starwhale_version": config._starwhale_version,
+        }
+
+    def _copy_src(
+        self,
+        config: RuntimeConfig,
+        workdir: Path,
+        yaml_name: str = DefaultYAMLName.RUNTIME,
+    ) -> None:
+        workdir_fs = open_fs(str(workdir.resolve()))
+        snapshot_fs = open_fs(str(self.store.snapshot_workdir.resolve()))
+        copy_file(workdir_fs, yaml_name, snapshot_fs, yaml_name)
+
+        self._manifest["artifacts"] = {
+            "runtime_yaml": yaml_name,
+            RuntimeArtifactType.WHEELS: [],
+            RuntimeArtifactType.DEPEND: [],
+            RuntimeArtifactType.FILES: [],
+        }
+
+        console.print("[step:copy-wheels]start to copy wheels...")
+        ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.WHEELS)
+        for _fname in config.dependencies.wheels:
+            _fpath = workdir / _fname
+            if not _fpath.exists():
+                logger.warning(f"not found wheel: {_fpath}")
+                continue
+
+            _dest = f"{RuntimeArtifactType.WHEELS}/{_fname.lstrip('/')}"
+            self._manifest["artifacts"][RuntimeArtifactType.WHEELS].append(_dest)
+            copy_file(
+                workdir_fs,
+                _fname,
+                snapshot_fs,
+                _dest,
+            )
+
+        console.print("[step:copy-files]start to copy files...")
+        ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.FILES)
+        for _f in config.dependencies.files:
+            _src = workdir / _f["src"]
+            _dest = f"{RuntimeArtifactType.FILES}/{_f['dest'].lstrip('/')}"
+            if not _src.exists():
+                logger.warning(f"not found src-file: {_src}")
+                continue
+
+            _f["_dest"] = _dest
+            self._manifest["artifacts"][RuntimeArtifactType.FILES].append(_f)
+            # TODO: auto mkdir target parent dir?
+            if _src.is_dir():
+                # TODO: support .swignore file
+                copy_fs(str(_src), str(self.store.snapshot_workdir / _dest))
+            elif _src.is_file():
+                copy_file(workdir_fs, _f["src"], snapshot_fs, _dest)
+
+        console.print("[step:copy-deps]start to copy pip/conda requirement files")
+        ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.DEPEND)
+        for _fname in config.dependencies.conda_files + config.dependencies.pip_files:
+            _fpath = workdir / _fname
+            if not _fpath.exists():
+                logger.warning(f"not found dependencies: {_fpath}")
+                continue
+
+            _dest = f"{RuntimeArtifactType.DEPEND}/{_fname.lstrip('/')}"
+            self._manifest["artifacts"][RuntimeArtifactType.DEPEND].append(_dest)
+            copy_file(
+                workdir_fs,
+                _fname,
+                snapshot_fs,
+                _dest,
+            )
+
     def _dump_base_image(self, config: RuntimeConfig) -> None:
         _repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
-        _tag = config.starwhale_version or "latest"
+        _tag = config._starwhale_version or "latest"
         base_image = SW_IMAGE_FMT.format(repo=_repo, tag=_tag)
 
         console.print(
@@ -366,8 +634,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         )
 
         _pkg_name = SW_PYPI_PKG_NAME
-        if config.starwhale_version:
-            _pkg_name = f"{_pkg_name}=={config.starwhale_version}"
+        if config._starwhale_version:
+            _pkg_name = f"{_pkg_name}=={config._starwhale_version}"
 
         console.print(f":dog: install {_pkg_name} {mode}@{_id}...")
         if mode == PythonRunEnv.VENV:
@@ -401,7 +669,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             raise ExistedError(f"{_rm} was already existed")
 
         ensure_dir(workdir)
-        ensure_file(_rm, yaml.safe_dump(config.as_dict(), default_flow_style=False))
+        ensure_file(_rm, yaml.safe_dump(config.asdict(), default_flow_style=False))
 
     @classmethod
     def restore(cls, workdir: Path) -> None:

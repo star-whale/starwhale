@@ -60,10 +60,11 @@ class StandaloneRuntimeTestCase(TestCase):
         ]
 
         _rt_config = load_yaml(runtime_path)
+
         assert _rt_config["name"] == name
         assert _rt_config["mode"] == "venv"
-        assert _rt_config["python_version"] == "3.9"
-        assert "starwhale_version" in _rt_config
+        assert _rt_config["environment"]["python"] == "3.9"
+        assert "_starwhale_version" not in _rt_config
         assert "base_image" not in _rt_config
 
         empty_dir(workdir)
@@ -81,7 +82,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "3.8",
         ]
         _rt_config = load_yaml(runtime_path)
-        assert _rt_config["python_version"] == "3.8"
+        assert _rt_config["environment"]["python"] == "3.8"
 
     @patch("starwhale.utils.venv.check_call")
     def test_create_conda(self, m_call: MagicMock) -> None:
@@ -171,10 +172,10 @@ class StandaloneRuntimeTestCase(TestCase):
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
 
         assert (
-            _manifest["user_raw_config"]["python_version"]
-            == runtime_config["python_version"]
+            _manifest["user_raw_config"]["environment"]["python"]
+            == runtime_config["environment"]["python"]
         )
-        assert _manifest["dep"]["python"] == runtime_config["python_version"]
+        assert _manifest["dep"]["python"] == runtime_config["environment"]["python"]
         assert _manifest["version"] == sr.uri.object.version
         assert _manifest["dep"]["env"] == "venv"
         assert _manifest["dep"]["venv"]["use"]
@@ -300,11 +301,14 @@ class StandaloneRuntimeTestCase(TestCase):
 
     def get_runtime_config(self) -> t.Dict[str, t.Any]:
         return {
-            "base_image": "ghcr.io/star-whale/starwhale:latest",
-            "mode": "venv",
             "name": "rttest",
-            "pip_req": "requirements.txt",
-            "python_version": "3.7",
+            "mode": "venv",
+            "environment": {
+                "python": "3.7",
+            },
+            "dependencies": [
+                "requirements.txt",
+            ],
         }
 
     @patch("starwhale.utils.venv.virtualenv.cli_run")
