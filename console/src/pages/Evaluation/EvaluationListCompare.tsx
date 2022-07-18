@@ -97,6 +97,8 @@ const NoneCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<an
     )
 }
 const NumberCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<number>) => {
+    value = Number(value)
+    comparedValue = Number(comparedValue)
     return (
         <div title={renderedValue} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {renderedValue} {value > comparedValue && <IconFont type='rise' style={{ color: '#00B368' }} />}{' '}

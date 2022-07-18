@@ -1,7 +1,7 @@
 // @flow
 
 import React, { useCallback } from 'react'
-import { VariableSizeGrid, VariableSizeList } from 'react-window'
+import { FixedSizeGrid, VariableSizeGrid, VariableSizeList } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
 
 import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
@@ -197,79 +197,83 @@ function compareCellPlacement(prevProps: any, nextProps: any) {
 }
 
 // @ts-ignore
-const RowPlacementMemo = React.memo<CellPlacementPropsT, unknown>(({ pinned, index, style = {}, data }) => {
-    const columns = data.columns.map((v, columnIndex) => ({
-        ...v,
-        index: columnIndex,
-    }))
-    const { normalizedWidths } = data
+const RowPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPropsT, unknown>(
+    // @ts-ignore
+    ({ pinned, rowIndex, style = {}, data }) => {
+        const columns = data.columns.map((v, columnIndex) => ({
+            ...v,
+            index: columnIndex,
+        }))
+        const { normalizedWidths } = data
 
-    const renderer = useCallback(
-        (column: ColumnT & { index: number }) => {
-            const columnIndex = column.index
+        const renderer = useCallback(
+            (column: ColumnT & { index: number }) => {
+                const columnIndex = column.index
 
-            // don't render pin table if row was a normal row
-            if (column.pin === 'LEFT' && !pinned) {
+                // don't render pin table if row was a normal row
+                if (column.pin === 'LEFT' && !pinned) {
+                    return (
+                        <div
+                            style={{
+                                width: normalizedWidths[columnIndex],
+                                background: '#FFF',
+                                borderBottom: '1px solid #EEF1F6',
+                            }}
+                        ></div>
+                    )
+                }
+
                 return (
-                    <div
+                    <CellPlacement
+                        key={`${columnIndex}:${rowIndex}`}
+                        columnIndex={columnIndex}
+                        rowIndex={rowIndex}
+                        data={data}
+                        // @ts-ignore
                         style={{
                             width: normalizedWidths[columnIndex],
                             background: '#FFF',
                             borderBottom: '1px solid #EEF1F6',
                         }}
-                    ></div>
+                    />
                 )
-            }
+            },
+            [data, normalizedWidths, rowIndex]
+        )
 
-            return (
-                <CellPlacement
-                    key={`${columnIndex}:${index}`}
-                    columnIndex={columnIndex}
-                    rowIndex={index}
-                    data={data}
-                    // @ts-ignore
-                    style={{
-                        width: normalizedWidths[columnIndex],
-                        background: '#FFF',
-                        borderBottom: '1px solid #EEF1F6',
-                    }}
-                />
-            )
-        },
-        [data, normalizedWidths, index]
-    )
+        const cells = React.useMemo(() => {
+            return columns.filter((v) => (pinned ? v.pin === 'LEFT' : true)).map(renderer)
+        }, [normalizedWidths, columns, renderer])
 
-    const cells = React.useMemo(() => {
-        return columns.filter((v) => (pinned ? v.pin === 'LEFT' : true)).map(renderer)
-    }, [normalizedWidths, columns, renderer])
-
-    return (
-        <div
-            data-type='table-row'
-            key={index}
-            className='table-row'
-            // @ts-ignore
-            style={{
-                ...style,
-                display: 'flex',
-                breakInside: 'avoid',
-                width: '100%',
-            }}
-            data-row-index={index}
-        >
+        return (
             <div
+                data-type='table-row'
+                key={rowIndex}
+                className='table-row'
+                // @ts-ignore
                 style={{
+                    ...style,
                     display: 'flex',
-                    width: 'fix-content',
                     breakInside: 'avoid',
+                    width: '100%',
                 }}
+                data-row-index={rowIndex}
             >
-                {cells}
+                <div
+                    style={{
+                        display: 'flex',
+                        width: 'fix-content',
+                        breakInside: 'avoid',
+                    }}
+                >
+                    {cells}
+                </div>
+                {/* <div style={{ flex: 1, borderBottom: '1px solid #EEF1F6', minWidth: 0 }} /> */}
             </div>
-            {/* <div style={{ flex: 1, borderBottom: '1px solid #EEF1F6', minWidth: 0 }} /> */}
-        </div>
-    )
-}, compareCellPlacement)
+        )
+    },
+    compareCellPlacement
+)
 
 RowPlacementMemo.displayName = 'RowPlacement'
 
@@ -883,9 +887,9 @@ export function DataTable({
         (columnIndex) => {
             if (gridRef) {
                 // for grid
-                // gridRef.resetAfterColumnIndex?.(columnIndex, true)
+                gridRef.resetAfterColumnIndex?.(columnIndex, true)
                 // @ts-ignore
-                gridRef.resetAfterIndex?.(columnIndex, true)
+                // gridRef.resetAfterIndex?.(columnIndex, true)
             }
         },
         [gridRef]
@@ -938,7 +942,6 @@ export function DataTable({
     )
     const handleScroll = React.useCallback(
         (params) => {
-            console.log(params)
             const eventScrollLeft = params.scrollLeft
             setScrollLeft(eventScrollLeft)
             if (eventScrollLeft !== scrollLeft) {
@@ -1244,26 +1247,28 @@ export function DataTable({
                             onRowScroll: handleRowScroll,
                         }}
                     >
-                        {/* 8px for scrollbar */}
                         <Headers width={width} />
-
-                        <VariableSizeList
+                        {/* only one column */}
+                        <VariableSizeGrid
                             className={'table-columns'}
                             ref={setGridRef as any}
                             overscanRowCount={10}
                             innerElementType={InnerTableElement}
                             height={height - HEADER_ROW_HEIGHT}
+                            columnWidth={(index: number) => sum(normalizedWidths)}
+                            columnCount={1}
                             width={width}
                             itemData={itemData}
                             onScroll={handleScroll}
-                            itemSize={rowHeightAtIndex}
-                            itemCount={rows.length}
+                            // itemSize={rowHeightAtIndex}
+                            rowCount={rows.length}
+                            rowHeight={rowHeightAtIndex}
                             style={{ overflow: 'auto' }}
                             direction={theme.direction === 'rtl' ? 'rtl' : 'ltr'}
                         >
                             {/* @ts-ignore */}
                             {RowPlacementMemo}
-                        </VariableSizeList>
+                        </VariableSizeGrid>
                     </HeaderContext.Provider>
                 )}
             </AutoSizer>

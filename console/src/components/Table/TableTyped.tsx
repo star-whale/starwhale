@@ -37,13 +37,13 @@ const useStyles = createUseStyles({
         '& .baseui-table-cell-content': {},
     },
     tableCompareable: {
-        '& table-cell--last': {
-            borderBottom: '1px solid #2B65D9',
+        '& .table-cell--last': {
+            // borderBottom: '1px solid #2B65D9 !important',
         },
     },
     tablePinnable: {
         '& .table-columns-pinned .table-row .table-cell:last-child': {
-            borderRight: '1px solid rgb(207, 215, 230);',
+            borderRight: '1px solid rgb(207, 215, 230); ',
         },
         '& .table-headers-pinned > div:last-child': {
             borderRight: '1px solid rgb(207, 215, 230)',
