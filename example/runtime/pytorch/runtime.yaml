@@ -20,10 +20,8 @@ dependencies:       # optional, default: requirement.txt
     - name: prepare
       src: scripts/prepare.sh
       dest: bin/prepare.sh
-      pre: |
-        ls bin/prepare.sh
-      post: |
-        bash bin/prepare.sh
+      pre: ls bin/prepare.sh
+      post: bash bin/prepare.sh
 
 configs:    # optional
   docker:

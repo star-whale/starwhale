@@ -8,7 +8,6 @@ from pathlib import Path
 from collections import defaultdict
 
 import yaml
-import attrs
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
@@ -80,13 +79,14 @@ class Environment:
         os: str = SupportOS.UBUNTU,
         python: str = DEFAULT_PYTHON_VERSION,
         cuda: str = DEFAULT_CUDA_VERSION,
+        **kw: t.Any,
     ) -> None:
         self.arch = arch.lower()
         self.os = os.lower()
 
         # TODO: use user's swcli python version as the python argument version
-        self.python = self._trunc_python_version(python)
-        self.cuda = cuda
+        self.python = self._trunc_python_version(str(python))
+        self.cuda = str(cuda)
 
         self._do_validate()
 
@@ -169,7 +169,7 @@ class Dependencies:
 
 
 class Hooks:
-    def __init__(self, pre: str = "", post: str = "") -> None:
+    def __init__(self, pre: str = "", post: str = "", **kw: t.Any) -> None:
         self.pre = pre
         self.post = post
 
@@ -177,22 +177,33 @@ class Hooks:
         return deepcopy(self.__dict__)
 
 
-@attrs.define
 class DockerConfig:
-    registry: str = "docker.io"
-    image: str = "runtime_dummy:latest"
+    def __init__(
+        self,
+        registry: str = "docker.io",
+        image: str = "runtime_dummy:latest",
+        **kw: t.Any,
+    ) -> None:
+        self.registry = registry
+        self.image = image
 
 
-@attrs.define
 class PipConfig:
-    index_url: str = ""
-    extra_index_url: str = ""
-    trusted_host: str = ""
+    def __init__(
+        self,
+        index_url: str = "",
+        extra_index_url: str = "",
+        trusted_host: str = "",
+        **kw: t.Any,
+    ) -> None:
+        self.index_url = index_url
+        self.extra_index_url = extra_index_url
+        self.trusted_host = trusted_host
 
 
-@attrs.define
 class CondaConfig:
-    channels: t.List[str] = [DEFAULT_CONDA_CHANNEL]
+    def __init__(self, channels: t.Optional[t.List[str]] = None, **kw: t.Any) -> None:
+        self.channels = channels or [DEFAULT_CONDA_CHANNEL]
 
 
 class Configs:
@@ -201,6 +212,7 @@ class Configs:
         docker: t.Optional[t.Dict[str, str]] = None,
         conda: t.Optional[t.Dict[str, t.Any]] = None,
         pip: t.Optional[t.Dict[str, str]] = None,
+        **kw: t.Any,
     ) -> None:
         self.docker = DockerConfig(**(docker or {}))
         self.conda = CondaConfig(**(conda or {}))
@@ -208,9 +220,9 @@ class Configs:
 
     def asdict(self) -> t.Dict[str, t.Dict[str, t.Any]]:
         return {
-            "docker": attrs.asdict(self.docker),
-            "conda": attrs.asdict(self.conda),
-            "pip": attrs.asdict(self.pip),
+            "docker": self.docker.__dict__,
+            "conda": self.conda.__dict__,
+            "pip": self.pip.__dict__,
         }
 
 
@@ -230,7 +242,7 @@ class RuntimeConfig:
     ) -> None:
         self.name = name.strip().lower()
         self.mode = mode
-        self.api_version = api_version
+        self.api_version = str(api_version)
         self.configs = Configs(**(configs or {}))
         self.hooks = Hooks(**(hooks or {}))
 
@@ -482,7 +494,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             RuntimeArtifactType.FILES: [],
         }
 
-        console.print("[step:copy-wheels]start to copy wheels...")
+        logger.info("[step:copy-wheels]start to copy wheels...")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.WHEELS)
         for _fname in config.dependencies.wheels:
             _fpath = workdir / _fname
@@ -499,7 +511,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 _dest,
             )
 
-        console.print("[step:copy-files]start to copy files...")
+        logger.info("[step:copy-files]start to copy files...")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.FILES)
         for _f in config.dependencies.files:
             _src = workdir / _f["src"]
@@ -515,9 +527,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 # TODO: support .swignore file
                 copy_fs(str(_src), str(self.store.snapshot_workdir / _dest))
             elif _src.is_file():
+                ensure_dir((self.store.snapshot_workdir / _dest).parent)
                 copy_file(workdir_fs, _f["src"], snapshot_fs, _dest)
 
-        console.print("[step:copy-deps]start to copy pip/conda requirement files")
+        logger.info("[step:copy-deps]start to copy pip/conda requirement files")
         ensure_dir(self.store.snapshot_workdir / RuntimeArtifactType.DEPEND)
         for _fname in config.dependencies.conda_files + config.dependencies.pip_files:
             _fpath = workdir / _fname
