@@ -15,7 +15,7 @@ dependencies:       # optional, default: requirement.txt
     - numpy >= 1.21.0
     - scikit-learn
   - wheels:
-    - dummy.whl
+    - dummy-0.0.0-py3-none-any.whl
   - files:
     - name: prepare
       src: scripts/prepare.sh
