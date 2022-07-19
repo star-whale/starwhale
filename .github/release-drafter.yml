@@ -1,0 +1,55 @@
+name-template: 'v$RESOLVED_VERSION 🐋'
+tag-template: 'v$RESOLVED_VERSION'
+template: |
+  # 🧭 What's Changed
+  $CHANGES
+  # ⚙️ Who Contributes
+  $CONTRIBUTORS
+categories:
+  - title: '🏆 Milestone'
+    label: 'milestone'
+  - title: '🚀 New'
+    labels:
+    - 'feature'
+    - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+    - 'bug'
+    - 'fix'
+    - 'bugfix'
+    - 'hotfix'
+  - title: '🧰 Maintenance'
+    labels:
+    - 'maintenance'
+    - 'chore'
+  - title: '🗂 Documentation'
+    label: 'doc'
+  - title: '🔗 Dependency Updates'
+    label: 'dependencies'
+  - title: '👋 Welcome'
+    label: 'good first issue'
+
+version-resolver:
+  major:
+    labels:
+      - 'milestone'
+  minor:
+    labels:
+      - 'enhancement'
+      - 'feature'
+  patch:
+    labels:
+      - 'bug'
+      - 'fix'
+      - 'bugfix'
+      - 'hotfix'
+      - 'maintenance'
+      - 'doc'
+      - 'dependencies'
+      - 'security'
+      - 'good first issue'
+      - 'chore'
+  default: patch
+
+exclude-labels:
+  - 'skip-changelog'
