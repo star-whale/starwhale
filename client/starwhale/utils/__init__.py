@@ -49,6 +49,10 @@ def in_production() -> bool:
     return os.environ.get("SW_PRODUCTION", "") == "1"
 
 
+def in_container() -> bool:
+    return os.environ.get("SW_CONTAINER", "") == "1"
+
+
 def is_windows() -> bool:
     # TODO: for windows nt?
     return platform.system() == "Windows"

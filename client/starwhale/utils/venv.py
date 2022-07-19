@@ -19,6 +19,7 @@ from starwhale.consts import (
     ENV_CONDA_PREFIX,
     SW_PYPI_PKG_NAME,
     DEFAULT_PYTHON_VERSION,
+    WHEEL_FILE_EXTENSION,
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.utils.error import (
@@ -89,9 +90,13 @@ def _do_pip_install_req(
         cmd += ["--pre"]
 
     if isinstance(req, Path):
-        cmd += ["-r", str(req.absolute())]
+        if not req.name.endswith(WHEEL_FILE_EXTENSION):
+            cmd += ["-r"]
+        cmd += [str(req.absolute())]
     elif os.path.isfile(req):
-        cmd += ["-r", req]
+        if not req.endswith(WHEEL_FILE_EXTENSION):
+            cmd += ["-r"]
+        cmd += [req]
     else:
         cmd += [req]
 
@@ -595,12 +600,13 @@ def restore_python_env(
     python_version: str,
     local_gen_env: bool = False,
     pip_req: str = "",
+    wheels: t.Optional[t.List[str]] = None,
 ) -> None:
     console.print(
         f":bread: restore python:{python_version} {mode}@{workdir}, use local env data: {local_gen_env}"
     )
     _f = _do_restore_conda if mode == PythonRunEnv.CONDA else _do_restore_venv
-    _f(workdir, local_gen_env, python_version, pip_req)
+    _f(workdir, local_gen_env, python_version, pip_req, wheels)
 
 
 def _do_restore_conda(
@@ -608,6 +614,7 @@ def _do_restore_conda(
     _local_gen_env: bool,
     _python_version: str,
     _pip_req: str,
+    _wheels: t.Optional[t.List[str]],
 ) -> None:
     _conda_dir = _workdir / "dep" / "conda"
     _tar_fpath = _conda_dir / CONDA_ENV_TAR
@@ -620,14 +627,22 @@ def _do_restore_conda(
         logger.info(f"extract {_tar_fpath} ...")
         with tarfile.open(str(_tar_fpath)) as f:
             f.extractall(str(_env_dir))
+        # TODO: conda local bundle restore wheel?
         venv_activate_render(_env_dir, _workdir)
     else:
         logger.info("restore conda env ...")
         _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
         conda_restore(_env_yaml, _env_dir)
-        _pip_req_path = _python_dir / _pip_req
-        if _pip_req_path.exists():
-            conda_install_req(req=_pip_req_path, prefix_path=_env_dir)
+
+        reqs = [_python_dir / _pip_req] + [
+            _workdir / _w for _w in _wheels or [] if _w.endswith(WHEEL_FILE_EXTENSION)
+        ]
+        for _r in reqs:
+            if not _r.exists():
+                logger.warning(f"[conda install req]not found: {_r}")
+                continue
+            conda_install_req(req=_r, prefix_path=_env_dir)
+
         conda_activate_render(_env_dir, _workdir)
 
 
@@ -635,7 +650,8 @@ def _do_restore_venv(
     _workdir: Path,
     _local_gen_env: bool,
     _python_version: str,
-    pip_req: str,
+    _pip_req: str,
+    _wheels: t.Optional[t.List[str]],
     _rebuild: bool = False,
 ) -> None:
     _python_dir = _workdir / "dep" / "python"
@@ -646,7 +662,7 @@ def _do_restore_venv(
         logger.info(f"setup venv and pip install {_venv_dir}")
         _relocate = False
         venv_setup(_venv_dir, python_version=_python_version)
-        for _name in (DUMP_PIP_REQ_FNAME, pip_req):
+        for _name in (DUMP_PIP_REQ_FNAME, _pip_req):
             _path = _python_dir / _name
             if not _name or not _path.exists():
                 continue
@@ -654,6 +670,12 @@ def _do_restore_venv(
             logger.info(f"pip install {_path} ...")
             venv_install_req(_venv_dir, _path)
 
+    for _w in _wheels or []:
+        _path = _workdir / _w
+        if _path.exists() and _w.endswith(WHEEL_FILE_EXTENSION):
+            venv_install_req(_venv_dir, _path)
+        else:
+            logger.warning(f"[venv install req]not found or unexpected type: {_path}")
     venv_activate_render(_venv_dir, _workdir, relocate=_relocate)
 
 

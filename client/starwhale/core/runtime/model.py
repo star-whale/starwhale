@@ -6,6 +6,7 @@ from abc import ABCMeta
 from copy import deepcopy
 from pathlib import Path
 from collections import defaultdict
+import shutil
 
 import yaml
 from fs import open_fs
@@ -14,6 +15,7 @@ from fs.copy import copy_fs, copy_file
 
 from starwhale.utils import (
     console,
+    in_container,
     load_yaml,
     validate_obj_name,
     get_downloadable_sw_version,
@@ -67,6 +69,7 @@ RUNTIME_API_VERSION = "1.1"
 
 
 class RuntimeArtifactType:
+    RUNTIME = "runtime_yaml"
     DEPEND = "dependencies"
     WHEELS = "wheels"
     FILES = "files"
@@ -488,7 +491,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         copy_file(workdir_fs, yaml_name, snapshot_fs, yaml_name)
 
         self._manifest["artifacts"] = {
-            "runtime_yaml": yaml_name,
+            RuntimeArtifactType.RUNTIME: yaml_name,
             RuntimeArtifactType.WHEELS: [],
             RuntimeArtifactType.DEPEND: [],
             RuntimeArtifactType.FILES: [],
@@ -520,7 +523,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 logger.warning(f"not found src-file: {_src}")
                 continue
 
-            _f["_dest"] = _dest
+            _f["_swrt_dest"] = _dest
             self._manifest["artifacts"][RuntimeArtifactType.FILES].append(_f)
             # TODO: auto mkdir target parent dir?
             if _src.is_dir():
@@ -694,13 +697,48 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             raise NoSupportError("only support swrt extract workdir")
 
         _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
-        restore_python_env(
-            workdir=workdir,
-            mode=_manifest["dep"]["env"],
-            python_version=_manifest["dep"]["python"],
-            local_gen_env=_manifest["dep"]["local_gen_env"],
-            pip_req=_manifest.get("user_raw_config", {}).get("pip_req", ""),
-        )
+
+        operations = [
+            (
+                restore_python_env,
+                20,
+                "restore python env",
+                dict(
+                    workdir=workdir,
+                    mode=_manifest["dep"]["env"],
+                    python_version=_manifest["dep"]["python"],
+                    local_gen_env=_manifest["dep"]["local_gen_env"],
+                    pip_req=_manifest.get("user_raw_config", {}).get("pip_req", ""),
+                    wheels=_manifest["artifacts"].get(RuntimeArtifactType.FILES, []),
+                ),
+            ),
+            (
+                cls._setup_native_files,
+                10,
+                "setup native files",
+                dict(workdir=workdir, files=_manifest["artifacts"]["files"]),
+            ),
+        ]
+
+        run_with_progress_bar("runtime restore...", operations)
+
+    @staticmethod
+    def _setup_native_files(workdir: Path, files: t.List[t.Dict[str, str]]) -> None:
+        # TODO: support native file pre-hook, post-hook
+
+        for _f in files:
+            if _f["dest"].startswith("/") and in_container():
+                logger.warning(f"NOTICE! dest dir: {_f['dest']}")
+                _dest = Path(_f["dest"])
+            else:
+                _dest = workdir / _f["dest"].lstrip("/")
+            _src = workdir / _f["swrt_dest"]
+
+            if _src.is_dir():
+                copy_fs(str(_src), str(_dest))
+            else:
+                ensure_dir(_dest.parent)
+                shutil.copy(str(_src), str(_dest))
 
 
 class CloudRuntime(CloudRequestMixed, Runtime):
