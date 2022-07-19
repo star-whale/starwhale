@@ -6,7 +6,7 @@ import logging
 import loguru
 
 
-class StreamWrapper(object):
+class StreamWrapper:
     is_wrapper = True
 
     def __init__(

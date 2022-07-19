@@ -39,7 +39,7 @@ class _LogType:
 _jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
 
 
-class _RunConfig(object):
+class _RunConfig:
     def __init__(
         self,
         swds_config_path: _ptype = "",
@@ -94,7 +94,7 @@ class _RunConfig(object):
         _set("input_config", SWEnv.input_config)
 
 
-class PipelineHandler(object):
+class PipelineHandler(metaclass=ABCMeta):
     class ResultOutputType:
         JSONL = "jsonline"
         PLAIN = "plain"
@@ -104,8 +104,6 @@ class PipelineHandler(object):
         RUNNING = "running"
         SUCCESS = "success"
         FAILED = "failed"
-
-    __metaclass__ = ABCMeta
 
     def __init__(
         self,

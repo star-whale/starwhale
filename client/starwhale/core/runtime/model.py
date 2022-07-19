@@ -57,7 +57,7 @@ from starwhale.base.bundle_copy import BundleCopy
 from .store import RuntimeStorage
 
 
-class RuntimeConfig(object):
+class RuntimeConfig:
     def __init__(
         self,
         name: str,
@@ -99,9 +99,7 @@ class RuntimeConfig(object):
         return _d
 
 
-class Runtime(BaseBundle):
-    __metaclass__ = ABCMeta
-
+class Runtime(BaseBundle, metaclass=ABCMeta):
     @classmethod
     def restore(cls, workdir: Path) -> None:
         StandaloneRuntime.restore(workdir)

@@ -49,9 +49,7 @@ from .store import DatasetStorage
 from .dataset import DatasetConfig, DSProcessMode, ARCHIVE_SWDS_META
 
 
-class Dataset(BaseBundle):
-    __metaclass__ = ABCMeta
-
+class Dataset(BaseBundle, metaclass=ABCMeta):
     def __str__(self) -> str:
         return f"Starwhale Dataset: {self.uri}"
 

@@ -100,7 +100,7 @@ def render_swcli_config(c: t.Dict[str, t.Any], path: str = "") -> None:
 
 
 # TODO: abstract better common base or mixed class
-class SWCliConfigMixed(object):
+class SWCliConfigMixed:
     def __init__(self, swcli_config: t.Union[t.Dict[str, t.Any], None] = None) -> None:
         self._config = swcli_config or load_swcli_config()
 

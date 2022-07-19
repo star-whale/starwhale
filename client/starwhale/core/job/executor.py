@@ -35,7 +35,7 @@ _STATUS = PipelineHandler.STATUS
 
 
 # TODO: add DAG
-class EvalExecutor(object):
+class EvalExecutor:
     def __init__(
         self,
         model_uri: str,

@@ -30,10 +30,7 @@ class DataField(t.NamedTuple):
 # TODO: use attr to simplify code
 
 
-class DataLoader(object):
-
-    __metaclass__ = ABCMeta
-
+class DataLoader(metaclass=ABCMeta):
     def __init__(
         self,
         storage: StorageBackend,
@@ -145,9 +142,7 @@ class SWDSDataLoader(DataLoader):
             )
 
 
-class StorageBackend(object):
-    __metaclass__ = ABCMeta
-
+class StorageBackend(metaclass=ABCMeta):
     def __init__(
         self,
         backend: str,
@@ -256,7 +251,7 @@ class FuseStorageBackend(StorageBackend):
 
 
 # TODO: add mock test
-class S3BufferedFileLike(object):
+class S3BufferedFileLike:
     # TODO: add s3 typing
     def __init__(self, s3: t.Any, bucket: str, key: str, start: int, end: int) -> None:
         self.key = key

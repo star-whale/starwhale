@@ -16,7 +16,7 @@ from starwhale.utils.error import (
 )
 
 
-class StandaloneTag(object):
+class StandaloneTag:
     def __init__(self, uri: URI) -> None:
         self.uri = uri
         self._do_validate()

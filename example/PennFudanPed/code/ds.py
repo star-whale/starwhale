@@ -46,7 +46,7 @@ def mask_to_coco_target(mask_img, img_idx):
     return target
 
 
-class PennFudanDataset(object):
+class PennFudanDataset:
     def __init__(self, root, transforms):
         self.root = root
         self.transforms = transforms
