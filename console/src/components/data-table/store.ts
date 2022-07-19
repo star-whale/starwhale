@@ -144,30 +144,30 @@ const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get
 })
 
 export interface IRowState {
-    rowSelectedIds: Set<any>
+    rowSelectedIds: Array<any>
     onSelectMany: (args: any[]) => void
     onSelectNone: () => void
     onSelectOne: (id: any) => void
 }
 const createRowSlice: IStateCreator<IRowState> = (set, get, store) => ({
-    rowSelectedIds: new Set(),
+    rowSelectedIds: [],
     onSelectMany: (incomingRows: any[]) =>
         set({
-            rowSelectedIds: new Set([...Array.from(get().rowSelectedIds), ...incomingRows]),
+            rowSelectedIds: [...get().rowSelectedIds, ...incomingRows],
         }),
     onSelectNone: () =>
         set({
-            rowSelectedIds: new Set(),
+            rowSelectedIds: [],
         }),
     onSelectOne: (id: any) => {
-        const selectedRowIds = get().rowSelectedIds
+        const selectedRowIds = new Set(get().rowSelectedIds)
         if (selectedRowIds.has(id)) {
             selectedRowIds.delete(id)
         } else {
             selectedRowIds.add(id)
         }
         set({
-            rowSelectedIds: new Set(selectedRowIds),
+            rowSelectedIds: Array.from(selectedRowIds),
         })
     },
 })
