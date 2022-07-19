@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import os
+import shutil
 import typing as t
 from abc import ABCMeta
 from copy import deepcopy
 from pathlib import Path
 from collections import defaultdict
-import shutil
 
 import yaml
 from fs import open_fs
@@ -15,8 +15,8 @@ from fs.copy import copy_fs, copy_file
 
 from starwhale.utils import (
     console,
-    in_container,
     load_yaml,
+    in_container,
     validate_obj_name,
     get_downloadable_sw_version,
 )
@@ -39,7 +39,7 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, get_path_created_time
-from starwhale.base.type import URIType, BundleType, InstanceType
+from starwhale.base.type import URIType, BundleType, InstanceType, RuntimeArtifactType
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
@@ -66,13 +66,6 @@ from starwhale.base.bundle_copy import BundleCopy
 from .store import RuntimeStorage
 
 RUNTIME_API_VERSION = "1.1"
-
-
-class RuntimeArtifactType:
-    RUNTIME = "runtime_yaml"
-    DEPEND = "dependencies"
-    WHEELS = "wheels"
-    FILES = "files"
 
 
 class Environment:
@@ -441,7 +434,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             (
                 self._dump_dep,
                 50,
-                "dump python dependency",
+                "dump python dependencies",
                 dict(
                     gen_all_bundles=kw.get("gen_all_bundles", False),
                     pip_req_path=_pip_req_path,
@@ -449,6 +442,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     mode=_swrt_config.mode,
                     include_editable=kw.get("include_editable", False),
                     identity=_swrt_config.name,
+                    deps=_swrt_config.dependencies,
                 ),
             ),
             (
@@ -568,9 +562,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         mode: str = PythonRunEnv.AUTO,
         include_editable: bool = False,
         identity: str = "",
+        deps: t.Optional[Dependencies] = None,
     ) -> None:
         logger.info("[step:dep]start dump python dep...")
-        _dep = dump_python_dep_env(
+        _pyenv = dump_python_dep_env(
             dep_dir=self.store.snapshot_workdir / "dep",
             pip_req_fpath=pip_req_path,
             gen_all_bundles=gen_all_bundles,
@@ -579,7 +574,17 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             include_editable=include_editable,
             identity=identity,
         )
-        self._manifest["dep"] = _dep
+        self._manifest["environment"] = _pyenv
+
+        deps = deps or Dependencies()
+        # TODO: add pip requirement-lock.txt and conda_export.yaml into _files
+        self._manifest["dependencies"] = {
+            "pip_pkgs": deps.pip_pkgs,
+            "conda_pkgs": deps.conda_pkgs,
+            "pip_files": deps.pip_files + [pip_req_path],
+            "conda_files": deps.conda_files,
+        }
+
         logger.info("[step:dep]finish dump dep")
 
     def _prepare_snapshot(self) -> None:
@@ -705,10 +710,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "restore python env",
                 dict(
                     workdir=workdir,
-                    mode=_manifest["dep"]["env"],
-                    python_version=_manifest["dep"]["python"],
-                    local_gen_env=_manifest["dep"]["local_gen_env"],
-                    pip_req=_manifest.get("user_raw_config", {}).get("pip_req", ""),
+                    mode=_manifest["environment"]["env"],
+                    python_version=_manifest["environment"]["python"],
+                    local_gen_env=_manifest["environment"]["local_gen_env"],
+                    deps=_manifest["dependencies"],
                     wheels=_manifest["artifacts"].get(RuntimeArtifactType.FILES, []),
                 ),
             ),
@@ -725,7 +730,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     @staticmethod
     def _setup_native_files(workdir: Path, files: t.List[t.Dict[str, str]]) -> None:
         # TODO: support native file pre-hook, post-hook
-
         for _f in files:
             if _f["dest"].startswith("/") and in_container():
                 logger.warning(f"NOTICE! dest dir: {_f['dest']}")
@@ -738,7 +742,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 copy_fs(str(_src), str(_dest))
             else:
                 ensure_dir(_dest.parent)
-                shutil.copy(str(_src), str(_dest))
+                shutil.copyfile(str(_src), str(_dest))
 
 
 class CloudRuntime(CloudRequestMixed, Runtime):

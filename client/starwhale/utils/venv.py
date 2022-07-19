@@ -18,8 +18,8 @@ from starwhale.consts import (
     PythonRunEnv,
     ENV_CONDA_PREFIX,
     SW_PYPI_PKG_NAME,
-    DEFAULT_PYTHON_VERSION,
     WHEEL_FILE_EXTENSION,
+    DEFAULT_PYTHON_VERSION,
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.utils.error import (
@@ -601,12 +601,13 @@ def restore_python_env(
     local_gen_env: bool = False,
     pip_req: str = "",
     wheels: t.Optional[t.List[str]] = None,
+    deps: t.Optional[t.Dict[str, t.List[str]]] = None,
 ) -> None:
     console.print(
         f":bread: restore python:{python_version} {mode}@{workdir}, use local env data: {local_gen_env}"
     )
     _f = _do_restore_conda if mode == PythonRunEnv.CONDA else _do_restore_venv
-    _f(workdir, local_gen_env, python_version, pip_req, wheels)
+    _f(workdir, local_gen_env, python_version, pip_req, wheels, deps)
 
 
 def _do_restore_conda(
@@ -615,6 +616,7 @@ def _do_restore_conda(
     _python_version: str,
     _pip_req: str,
     _wheels: t.Optional[t.List[str]],
+    _deps: t.Optional[t.Dict[str, t.List[str]]],
 ) -> None:
     _conda_dir = _workdir / "dep" / "conda"
     _tar_fpath = _conda_dir / CONDA_ENV_TAR
@@ -634,15 +636,24 @@ def _do_restore_conda(
         _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
         conda_restore(_env_yaml, _env_dir)
 
+        _deps = _deps or {}
+        # TODO: support conda_files to restore that is from _manifest["dependencies"]
         reqs = [_python_dir / _pip_req] + [
             _workdir / _w for _w in _wheels or [] if _w.endswith(WHEEL_FILE_EXTENSION)
         ]
-        for _r in reqs:
-            if not _r.exists():
+
+        from starwhale.base.type import RuntimeArtifactType
+
+        for _pf in _deps.get("pip_files", []):
+            reqs.append(_workdir / RuntimeArtifactType.DEPEND / _pf)
+
+        for _r in reqs + _deps.get("pip_pkgs", []):  # type:ignore
+            if isinstance(_r, Path) and not _r.exists():
                 logger.warning(f"[conda install req]not found: {_r}")
                 continue
             conda_install_req(req=_r, prefix_path=_env_dir)
 
+        # TODO: support conda install
         conda_activate_render(_env_dir, _workdir)
 
 
@@ -652,6 +663,7 @@ def _do_restore_venv(
     _python_version: str,
     _pip_req: str,
     _wheels: t.Optional[t.List[str]],
+    _deps: t.Optional[t.Dict[str, t.List[str]]],
     _rebuild: bool = False,
 ) -> None:
     _python_dir = _workdir / "dep" / "python"
