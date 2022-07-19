@@ -26,7 +26,7 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
             !_.isEqual(initialSortedIds, oldInitialSortedIds) ||
             !_.isEqual(initialPinnedIds, oldInitialPinnedIds)
         ) {
-            // console.log('reset', initialSelectedIds, oldInitialSelectedIds)
+            console.log('reset', initialSelectedIds, oldInitialSelectedIds)
             setSelectedIds(new Set(initialSelectedIds))
             setSortedIds(new Set(initialSortedIds))
             setPinnedIds(new Set(initialPinnedIds))

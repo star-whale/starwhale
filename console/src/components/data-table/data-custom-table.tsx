@@ -38,8 +38,10 @@ type HeaderContextT = {
     onResize: (columnIndex: number, delta: number) => void
     onSelectMany: () => void
     onSelectNone: () => void
+    onSelectOne: (row: RowT) => void
     onSort: (num: number) => void
     resizableColumnWidths: boolean
+    compareable: boolean
     rowActions: RowActionT[] | ((row: RowT) => RowActionT[])
     rowHeight: number
     rowHighlightIndex: number
@@ -80,6 +82,7 @@ const sum = (ns) => ns.reduce((s, n) => s + n, 0)
 function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     const [css, theme] = useStyletron()
     const column = data.columns[columnIndex]
+    const columnCount = data.columns.length
     const row = data.rows[rowIndex]
     const rowCount = data.rows.length
 
@@ -110,8 +113,8 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
                     'paddingBottom': '0',
                     'display': 'flex',
                     'alignItems': 'center',
-                    'paddingLeft': '20px',
-                    'paddingRight': '20px',
+                    'paddingLeft': columnIndex === 0 ? '20px' : '12px',
+                    'paddingRight': '12px',
                     'textOverflow': 'ellipsis',
                     'overflow': 'hidden',
                     'position': 'relative',
@@ -214,12 +217,13 @@ const RowPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPr
                 if (column.pin === 'LEFT' && !pinned) {
                     return (
                         <div
+                            key={`${columnIndex}:${rowIndex}`}
                             style={{
                                 width: normalizedWidths[columnIndex],
                                 background: '#FFF',
                                 borderBottom: '1px solid #EEF1F6',
                             }}
-                        ></div>
+                        />
                     )
                 }
 
@@ -294,8 +298,10 @@ const HeaderContext = React.createContext<HeaderContextT>({
     onResize: () => {},
     onSelectMany: () => {},
     onSelectNone: () => {},
+    onSelectOne: () => {},
     onSort: () => {},
     resizableColumnWidths: false,
+    compareable: false,
     rowActions: [],
     rowHeight: 0,
     rowHighlightIndex: -1,
@@ -321,8 +327,10 @@ type HeaderProps = {
     onResizeIndexChange: (columnIndex: number) => void
     onSelectMany: () => void
     onSelectNone: () => void
+    onSelectOne: (row: RowT) => void
     onSort: () => void
     resizableColumnWidths: boolean
+    compareable: boolean
     resizeIndex: number
     resizeMaxWidth: number
     resizeMinWidth: number
@@ -416,6 +424,7 @@ function Header(props: HeaderProps) {
                 // @ts-ignore
                 index={props.index}
                 sortable={props.isSortable}
+                compareable={props.compareable}
                 isHovered={!isResizing && props.hoverIndex === props.index}
                 isSelectable={props.isSelectable && props.index === 0}
                 isSelectedAll={props.isSelectedAll}
@@ -432,6 +441,7 @@ function Header(props: HeaderProps) {
                 }}
                 onSelectAll={props.onSelectMany}
                 onSelectNone={props.onSelectNone}
+                onSelectOne={props.onSelectOne}
                 onSort={props.onSort}
                 sortDirection={props.sortIndex === props.index ? props.sortDirection : null}
                 title={props.columnTitle}
@@ -468,7 +478,7 @@ function Header(props: HeaderProps) {
                             right: `${(RULER_OFFSET + endResizePos - startResizePos) * -1}px`,
                         }}
                     >
-                        {/* {isResizingThisColumn && (
+                        {isResizingThisColumn && (
                             <div
                                 className={css({
                                     backgroundColor: theme.colors.contentPrimary,
@@ -478,7 +488,7 @@ function Header(props: HeaderProps) {
                                     width: '1px',
                                 })}
                             />
-                        )} */}
+                        )}
                     </div>
                 </div>
             )}
@@ -502,6 +512,13 @@ function Headers({ width }: { width: number }) {
             // const activeFilter = ctx.filters ? ctx.filters.find((v) => v.key == column.title) : null
             const activeFilter = null
             const columnIndex = column.index
+
+            const handleSelectOne = () => {
+                ctx.onSelectOne?.({
+                    id: column.key as string,
+                } as any)
+            }
+
             return (
                 <Tooltip
                     key={columnIndex}
@@ -550,8 +567,10 @@ function Headers({ width }: { width: number }) {
                             onResizeIndexChange={setResizeIndex}
                             onSelectMany={ctx.onSelectMany}
                             onSelectNone={ctx.onSelectNone}
+                            onSelectOne={handleSelectOne}
                             onSort={() => ctx.onSort(columnIndex)}
                             resizableColumnWidths={ctx.resizableColumnWidths}
+                            compareable={ctx.compareable}
                             resizeIndex={resizeIndex}
                             resizeMinWidth={ctx.measuredWidths[columnIndex]}
                             resizeMaxWidth={column.maxWidth || Infinity}
@@ -850,11 +869,12 @@ export function DataTable({
     onSelectOne,
     onSort,
     resizableColumnWidths = false,
+    compareable = false,
     rows: allRows,
     rowActions = [],
     rowHeight = 44,
     rowHighlightIndex: rowHighlightIndexControlled,
-    selectedRowIds,
+    selectedRowIds: $selectedRowIds = new Set(),
     sortIndex,
     sortDirection,
     textQuery = '',
@@ -862,6 +882,9 @@ export function DataTable({
 }: DataTablePropsT) {
     const [, theme] = useStyletron()
     const locale = React.useContext(LocaleContext)
+
+    // TODO remove this
+    const selectedRowIds = new Set(Array.from($selectedRowIds))
 
     const rowHeightAtIndex = React.useCallback(
         (index) => {
@@ -1104,7 +1127,7 @@ export function DataTable({
     )
     const handleSelectMany = React.useCallback(() => {
         if (onSelectMany) {
-            onSelectMany(rows)
+            onSelectMany(rows.map((v) => v.id))
         }
     }, [rows, onSelectMany])
     const handleSelectNone = React.useCallback(() => {
@@ -1115,7 +1138,7 @@ export function DataTable({
     const handleSelectOne = React.useCallback(
         (row) => {
             if (onSelectOne) {
-                onSelectOne(row)
+                onSelectOne(row.id)
             }
         },
         [onSelectOne]
@@ -1235,6 +1258,7 @@ export function DataTable({
                             onSelectNone: handleSelectNone,
                             onSort: handleSort,
                             resizableColumnWidths,
+                            compareable,
                             rowActions,
                             rowHeight,
                             rowHighlightIndex,
@@ -1245,6 +1269,7 @@ export function DataTable({
                             tableHeight: height,
                             widths: normalizedWidths,
                             onRowScroll: handleRowScroll,
+                            onSelectOne: handleSelectOne,
                         }}
                     >
                         <Headers width={width} />

@@ -43,6 +43,7 @@ interface IIconFontProps {
         | 'unfold2'
         | 'decline'
         | 'rise'
+        | 'pin'
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {

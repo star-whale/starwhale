@@ -9,17 +9,20 @@ import type { ColumnT, ConfigT } from './types'
 import Button from '../Button'
 import ViewList from './config-views-list'
 import ViewsEdit from './config-views-edit'
-import useStore from './store'
+import { ITableState, IStore } from './store'
 
 type PropsT = {
     columns: ColumnT[]
     rows: any[]
+    store: ITableState
+    useStore: IStore
 }
 
 function ConfigViews(props: PropsT) {
     const [t] = useTranslation()
 
-    const store = useStore()
+    const store = props.store
+    const useStore = props.useStore
     const [isManageViewOpen, setIsManageViewOpen] = React.useState(false)
     const [selectId, setSelectId] = React.useState(store.currentView?.id ?? '')
 

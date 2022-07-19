@@ -14,7 +14,7 @@ import ConfigManageColumns from './config-manage-columns'
 import FilterOperateMenu from './filter-operate-menu'
 import ConfigViews from './config-views'
 import { Operators } from './filter-operate-selector'
-import useStore from './store'
+import useRowSelection from './useRowSelection'
 
 // @ts-ignore
 function useResizeObserver(
@@ -83,9 +83,11 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
     const searchable = props.searchable === undefined ? true : props.searchable
     const columnable = props.columnable === undefined ? true : props.columnable
     const viewable = props.viewable === undefined ? true : props.viewable
+    const compareable = props.viewable === undefined ? true : props.compareable
+    const store = props.store
+    const useStore = props.useStore
 
     const { columns } = props
-    const store = useStore()
     const { pinnedIds = [], selectedIds = [] }: ConfigT = store.currentView || {}
 
     const $columns = useMemo(() => {
@@ -167,6 +169,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
         [store]
     )
 
+    const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
+
     return (
         <StatefulContainer
             batchActions={props.batchActions}
@@ -194,14 +198,14 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                 // onFilterRemove,
                 onIncludedRowsChange,
                 onRowHighlightChange,
-                onSelectMany,
-                onSelectNone,
-                onSelectOne,
+                // onSelectMany,
+                // onSelectNone,
+                // onSelectOne,
                 onSort,
                 onTextQueryChange,
                 resizableColumnWidths,
                 rowHighlightIndex,
-                selectedRowIds,
+                // selectedRowIds,
                 sortIndex,
                 sortDirection,
                 textQuery,
@@ -219,7 +223,14 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 className='flex-row-center mb-20 g-20'
                                 style={{ flexWrap: 'wrap', justifyContent: 'start' }}
                             >
-                                {viewable && <ConfigViews columns={props.columns} rows={props.rows} />}
+                                {viewable && (
+                                    <ConfigViews
+                                        useStore={useStore}
+                                        store={store}
+                                        columns={props.columns}
+                                        rows={props.rows}
+                                    />
+                                )}
                                 {filterable && (
                                     <FilterOperateMenu
                                         filters={store.currentView.filters ?? []}
@@ -234,7 +245,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 {searchable && <QueryInput onChange={onTextQueryChange} />}
                             </div>
 
-                            {false && Boolean(selectedRowIds.size) && props.batchActions && (
+                            {false && Boolean(rowSelectedIds.size) && props.batchActions && (
                                 <div
                                     style={{
                                         display: 'flex',
@@ -248,7 +259,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                             action.onClick({
                                                 clearSelection: onSelectNone,
                                                 event,
-                                                selection: props.rows.filter((r) => selectedRowIds.has(r.id)),
+                                                selection: props.rows.filter((r) => rowSelectedIds.has(r.id)),
                                             })
                                         }
 
@@ -284,7 +295,7 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 </div>
                             )}
 
-                            {columnable && !Boolean(selectedRowIds.size) && (
+                            {columnable && !Boolean(rowSelectedIds.size) && (
                                 <div className='flex-row-center mb-20'>
                                     <ConfigManageColumns
                                         view={store.currentView}
@@ -314,17 +325,17 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 loadingMessage={props.loadingMessage}
                                 onIncludedRowsChange={onIncludedRowsChange}
                                 onRowHighlightChange={onRowHighlightChange}
-                                onSelectionChange={props.onSelectionChange}
                                 onSelectMany={onSelectMany}
                                 onSelectNone={onSelectNone}
                                 onSelectOne={onSelectOne}
                                 onSort={onSort}
                                 resizableColumnWidths={resizableColumnWidths}
+                                compareable={compareable}
                                 rowHighlightIndex={rowHighlightIndex}
                                 rows={props.rows}
                                 rowActions={props.rowActions}
                                 rowHeight={props.rowHeight}
-                                selectedRowIds={selectedRowIds}
+                                selectedRowIds={rowSelectedIds}
                                 sortDirection={sortDirection}
                                 sortIndex={sortIndex}
                                 textQuery={textQuery}

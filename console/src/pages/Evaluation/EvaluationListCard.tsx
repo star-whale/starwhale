@@ -168,10 +168,14 @@ export default function EvaluationListCard() {
     }, [evaluationAttrsInfo, columns])
 
     const [compareRows, setCompareRows] = useState<RowT[]>([])
-    const handleSelectChange = useCallback((selection: RowT[]) => {
-        const rows = selection.map((item: any) => item.data)
-        setCompareRows(rows)
-    }, [])
+    const handleSelectChange = useCallback(
+        (selection: RowT[]) => {
+            console.log(selection)
+            const rows = selection.map((item: any) => item.data)
+            setCompareRows(rows)
+        },
+        [setCompareRows]
+    )
     const batchAction = useMemo(
         () => [
             {
@@ -305,10 +309,6 @@ export default function EvaluationListCard() {
                 }
             >
                 <Table
-                    // @ts-ignore
-                    // onColumnSave={(columnSortedIds, columnVisibleIds, sortedIds) => {
-                    //     console.log(columnSortedIds, columnVisibleIds)
-                    // }}
                     searchable
                     filterable
                     columnable

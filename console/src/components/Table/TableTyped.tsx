@@ -25,7 +25,7 @@ import { useTableConfig, useTableViewConfig } from '@/hooks/useTableConfig'
 import { areEqual } from 'react-window'
 import type { ColumnT, ConfigT, RowT } from '../data-table/types'
 import { useUID, useUIDSeed } from 'react-uid'
-import useStore from '../data-table/store'
+import { useCustomStore } from '../data-table/store'
 import { useEffect } from 'react'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
@@ -87,6 +87,9 @@ export function TableTyped({
     const [page, setPage] = usePage()
     const wrapperRef = useRef<HTMLDivElement>(null)
     console.log('【TableRendered】')
+
+    const useStore = useCustomStore(id ?? '')
+    const store = useStore()
 
     let $columns = columns.map((raw: any, index) => {
         let column = raw
@@ -171,14 +174,12 @@ export function TableTyped({
         [data]
     )
 
-    const ROW_HEIGHT = 44
-    const store = useStore()
     const $filters = useMemo(() => {
         return store.currentView?.filters
     }, [store])
 
     useEffect(() => {
-        if (!store.isInit)
+        if (!store.isInit) {
             useStore.setState({
                 isInit: true,
                 currentView: {
@@ -189,9 +190,22 @@ export function TableTyped({
                     pinnedIds: [],
                 },
             })
+        }
     }, [$columns])
 
     const styles = useStyles()
+
+    useEffect(() => {
+        const unsub = useStore.subscribe(
+            (state: any) => state.currentView.filters,
+            function (state: any, prevState: any) {
+                console.log('subscribe', state, prevState)
+
+                // rows.filter((r) => next.has(r.id)
+            }
+        )
+        return unsub
+    }, [])
 
     return (
         <>
@@ -202,12 +216,15 @@ export function TableTyped({
                 ref={wrapperRef}
             >
                 <StatefulDataTable
+                    store={store}
+                    useStore={useStore}
                     resizableColumnWidths
                     onSelectionChange={onSelectionChange}
                     initialFilters={$filters}
                     searchable={searchable}
                     filterable={filterable}
                     columnable={columnable}
+                    compareable={compareable}
                     viewable={viewable}
                     loading={!!isLoading}
                     batchActions={batchActions}

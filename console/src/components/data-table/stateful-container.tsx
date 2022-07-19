@@ -50,31 +50,6 @@ export function StatefulContainer(props: StatefulContainerPropsT) {
 
     const [textQuery, setTextQuery] = React.useState('')
 
-    const [selectedRowIds, setSelectedRowIds] = React.useState(props.initialSelectedRowIds || new Set())
-    function handleSelectChange(next) {
-        setSelectedRowIds(next)
-
-        const selectionCallback = props.onSelectionChange
-        if (selectionCallback) {
-            selectionCallback(props.rows.filter((r) => next.has(r.id)))
-        }
-    }
-    function handleSelectMany(incomingRows) {
-        // only adds rows that are visible in the table
-        handleSelectChange(new Set([...selectedRowIds, ...incomingRows.map((r) => r.id)]))
-    }
-    function handleSelectNone() {
-        handleSelectChange(new Set())
-    }
-    function handleSelectOne(row) {
-        if (selectedRowIds.has(row.id)) {
-            selectedRowIds.delete(row.id)
-        } else {
-            selectedRowIds.add(row.id)
-        }
-        handleSelectChange(new Set(selectedRowIds))
-    }
-
     const { onIncludedRowsChange, onRowHighlightChange } = props
     const handleIncludedRowsChange = React.useCallback(
         (rows) => {
@@ -93,14 +68,10 @@ export function StatefulContainer(props: StatefulContainerPropsT) {
     return props.children({
         onIncludedRowsChange: handleIncludedRowsChange,
         onRowHighlightChange: handleRowHighlightChange,
-        onSelectMany: handleSelectMany,
-        onSelectNone: handleSelectNone,
-        onSelectOne: handleSelectOne,
         onSort: handleSort,
         onTextQueryChange: setTextQuery,
         resizableColumnWidths: Boolean(props.resizableColumnWidths),
         rowHighlightIndex: props.rowHighlightIndex,
-        selectedRowIds,
         sortIndex,
         sortDirection,
         textQuery,

@@ -3,6 +3,7 @@
 import * as React from 'react'
 
 import { COLUMNS, SORT_DIRECTIONS } from './constants'
+import { IStore, ITableState } from './store'
 
 export type SortDirectionsT = typeof SORT_DIRECTIONS.ASC | typeof SORT_DIRECTIONS.DESC | null
 
@@ -139,7 +140,10 @@ export type StatefulDataTablePropsT = {
     searchable?: boolean
     columnable?: boolean
     viewable?: boolean
+    compareable?: boolean
     controlRef?: ControlRefT
+    store: ITableState
+    useStore: IStore
 }
 
 export type DataTablePropsT = {
@@ -159,7 +163,7 @@ export type DataTablePropsT = {
     sortIndex?: number
     sortDirection?: SortDirectionsT
     textQuery?: string
-} & StatefulDataTablePropsT
+} & Omit<StatefulDataTablePropsT, 'store' | 'useStore'>
 
 export type StatefulContainerPropsT = {
     children: {

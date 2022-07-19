@@ -165,24 +165,9 @@ export function TableTyped({
     //     pinnedIds: [],
     // })
 
-    const store = useStore()
     const $filters = useMemo(() => {
-        return store.currentView?.filters
-    }, [store])
-
-    useEffect(() => {
-        if (!store.isInit)
-            useStore.setState({
-                isInit: true,
-                currentView: {
-                    name: '',
-                    filters: [],
-                    selectedIds: $columns.map((v) => v.key) ?? [],
-                    sortedIds: [],
-                    pinnedIds: [],
-                },
-            })
-    }, [$columns])
+        return []
+    }, [])
 
     return (
         <>

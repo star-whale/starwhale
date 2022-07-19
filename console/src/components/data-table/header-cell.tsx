@@ -7,11 +7,12 @@ import { isFocusVisible } from '@/utils/focusVisible'
 
 import { SORT_DIRECTIONS } from './constants'
 import type { SortDirectionsT } from './types'
+import IconFont from '@/components/IconFont'
+import { RowT } from 'baseui/data-table'
 
 type HeaderCellPropsT = {
     index: number
     isHovered: boolean
-    // @eslint-disable-next-line  react/require-default-props
     isMeasured?: boolean
     isSelectable: boolean
     isSelectedAll: boolean
@@ -20,10 +21,12 @@ type HeaderCellPropsT = {
     onMouseLeave: (num: number) => void
     onSelectAll: () => void
     onSelectNone: () => void
+    onSelectOne?: (row: RowT) => void
     onSort: (num: number) => void
     sortable: boolean
     sortDirection: SortDirectionsT
     title: string
+    compareable?: boolean
 }
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
@@ -72,8 +75,8 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 lineHeight: '16px',
                 paddingTop: '15px',
                 paddingBottom: '15px',
-                paddingLeft: '20px',
-                paddingRight: '20px',
+                paddingLeft: props.index === 0 ? '20px' : '12px',
+                paddingRight: '12px',
             })}
             title={props.title}
             // @ts-ignore
@@ -114,6 +117,19 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 </span>
             )}
             {props.title}
+
+            {props.isHovered && props.compareable && (
+                <div
+                    style={{
+                        // backgroundColor,
+                        marginLeft: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                >
+                    <IconFont type='pin' />
+                </div>
+            )}
             <div
                 className={css({
                     position: 'relative',
@@ -125,7 +141,6 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 {(props.isHovered || props.sortDirection) && props.sortable && (
                     <div
                         style={{
-                            // backgroundColor,
                             display: 'flex',
                             alignItems: 'center',
                             position: 'absolute',
@@ -148,6 +163,21 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                         )}
                     </div>
                 )}
+                {props.isHovered && props.compareable && (
+                    <div
+                        // @ts-ignore
+                        onClick={props.onSelectOne}
+                        style={{
+                            marginLeft: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            position: 'absolute',
+                            right: -3,
+                        }}
+                    >
+                        <IconFont type='close' />
+                    </div>
+                )}
             </div>
         </div>
     )
@@ -155,6 +185,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
 HeaderCell.displayName = 'HeaderCell'
 HeaderCell.defaultProps = {
     isMeasured: false,
+    compareable: false,
 }
 
 export default HeaderCell

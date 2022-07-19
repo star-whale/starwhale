@@ -150,7 +150,7 @@ export default function EvaluationListCompare({
         ...conmparePinnedRow,
         ..._.mapValues(_.keyBy(conmparePinnedRow.attributes, 'name'), (o) => o.value),
     }
-    console.log(conmparePinnedRow)
+    console.log(conmparePinnedRow, rows)
 
     const conmparePinnedRowIndex = rows.findIndex((row) => row.id === comparePinnedKey) // +1 for first column being attrs
     const $columns = useMemo(
@@ -178,11 +178,34 @@ export default function EvaluationListCompare({
                             data,
                         }
 
+                        if (comparePinnedKey && conmparePinnedRowIndex === index) {
+                            return (
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        left: 0,
+                                        right: 0,
+                                        padding: '0 20px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        height: '100%',
+                                        width: '100%',
+                                        borderLeft: '1px dashed blue',
+                                        borderRight: '1px dashed blue',
+                                        borderBottom:
+                                            props.y === rows.length - 1 ? '1px dashed blue !important' : undefined,
+                                    }}
+                                >
+                                    {NoneCompareCell(newProps)}
+                                </div>
+                            )
+                        }
+
                         if (renderedValue === newProps.comparedValue) {
                             return NoneCompareCell(newProps)
                         }
 
-                        if (compareShowCellChanges && comparePinnedKey && conmparePinnedRowIndex != index) {
+                        if (compareShowCellChanges && comparePinnedKey && conmparePinnedRowIndex !== index) {
                             return (
                                 <div
                                     style={{
