@@ -22,7 +22,7 @@ _header_struct = struct.Struct(">IIQIIII")
 _header_size = _header_struct.size
 
 
-class BuildExecutor(object):
+class BuildExecutor(metaclass=ABCMeta):
     """
     BuildExecutor can build swds.
 
@@ -39,8 +39,6 @@ class BuildExecutor(object):
     """
 
     # TODO: add more docstring for class
-
-    __metaclass__ = ABCMeta
 
     INDEX_NAME = "index.jsonl"
     _DATA_TMP_IDX = "_tmp_index_data.jsonl"

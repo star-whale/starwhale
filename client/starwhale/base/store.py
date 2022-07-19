@@ -28,9 +28,7 @@ class BundleField(t.NamedTuple):
     is_removed: bool = False
 
 
-class BaseStorage(object):
-    __metaclass__ = ABCMeta
-
+class BaseStorage(metaclass=ABCMeta):
     def __init__(self, uri: URI) -> None:
         self.uri = uri
         self.sw_config = SWCliConfigMixed()

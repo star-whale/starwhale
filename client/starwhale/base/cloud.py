@@ -26,7 +26,7 @@ _DEFAULT_TIMEOUT_SECS = 90
 _UPLOAD_CHUNK_SIZE = 20 * 1024 * 1024
 
 
-class CloudRequestMixed(object):
+class CloudRequestMixed:
     def fmt_timestamp(self, ts: t.Union[float, str]) -> str:
         return datetime.fromtimestamp(float(ts) / 1000.0).strftime(FMT_DATETIME).strip()
 

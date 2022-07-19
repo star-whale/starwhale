@@ -30,9 +30,7 @@ from starwhale.utils.config import SWCliConfigMixed
 from .uri import URI
 
 
-class BaseBundle(object):
-    __metaclass__ = ABCMeta
-
+class BaseBundle(metaclass=ABCMeta):
     def __init__(self, uri: URI) -> None:
         self.uri = uri
         self.name = self.uri.object.name
@@ -111,7 +109,7 @@ class BaseBundle(object):
         raise NotImplementedError
 
 
-class LocalStorageBundleMixin(object):
+class LocalStorageBundleMixin:
     def __init__(self) -> None:
         self._manifest: t.Dict[str, t.Any] = {}
 

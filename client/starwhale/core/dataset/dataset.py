@@ -21,7 +21,7 @@ ARCHIVE_SWDS_META = "archive.%s" % SWDSSubFileType.META
 
 
 # TODO: use attr to tune code
-class DatasetAttr(object):
+class DatasetAttr:
     def __init__(
         self,
         volume_size: t.Union[int, str] = D_FILE_VOLUME_SIZE,
@@ -42,7 +42,7 @@ class DatasetAttr(object):
 
 # TODO: abstract base class from DataSetConfig and ModelConfig
 # TODO: use attr to tune code
-class DatasetConfig(object):
+class DatasetConfig:
     def __init__(
         self,
         name: str,

@@ -34,7 +34,7 @@ from starwhale.base.bundle_copy import BundleCopy
 from .store import ModelStorage
 
 
-class ModelRunConfig(object):
+class ModelRunConfig:
 
     # TODO: use attr to tune class
     def __init__(
@@ -69,7 +69,7 @@ class ModelRunConfig(object):
         return deepcopy(self.__dict__)
 
 
-class ModelConfig(object):
+class ModelConfig:
 
     # TODO: use attr to tune class
     def __init__(
@@ -122,9 +122,7 @@ class ModelConfig(object):
         return _r
 
 
-class Model(BaseBundle):
-    __metaclass__ = ABCMeta
-
+class Model(BaseBundle, metaclass=ABCMeta):
     def __str__(self) -> str:
         return f"Starwhale Model: {self.uri}"
 

@@ -2,7 +2,7 @@ import typing as t
 from functools import wraps
 
 
-class Dict2Obj(object):
+class Dict2Obj:
     def __init__(self, d: dict) -> None:
         for (k, v) in d.items():
             # TODO: use iterable type
@@ -12,7 +12,7 @@ class Dict2Obj(object):
                 setattr(self, k, Dict2Obj(v) if isinstance(v, dict) else v)
 
 
-class Obj2Dict(object):
+class Obj2Dict:
     def __call__(self, func: t.Any) -> t.Any:
         @wraps(func)
         def _wraps(*args, **kwargs):

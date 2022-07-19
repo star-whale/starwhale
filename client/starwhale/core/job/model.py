@@ -25,9 +25,7 @@ from .executor import EvalExecutor
 _device_id_map = {"cpu": 1, "gpu": 2}
 
 
-class Job(object):
-    __metaclass__ = ABCMeta
-
+class Job(metaclass=ABCMeta):
     def __init__(self, uri: URI) -> None:
         self.uri = uri
         self.name = uri.object.name
@@ -435,3 +433,11 @@ class CloudJob(Job, CloudRequestMixed):
             tasks.append(_t)
 
         return tasks, self.parse_pager(r)
+
+    def _get_report(self) -> t.Dict[str, t.Any]:
+        # TODO: need to implement it
+        return {}
+
+    def compare(self, jobs: t.List[Job]) -> t.Dict[str, t.Any]:
+        # TODO: need to implement it
+        return {}

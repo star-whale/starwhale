@@ -11,7 +11,7 @@ from starwhale.utils.config import SWCliConfigMixed
 from .type import InstanceType
 
 
-class ObjField(object):
+class ObjField:
     def __init__(
         self, typ: str = URIType.UNKNOWN, name: str = "", version: str = ""
     ) -> None:
@@ -29,7 +29,7 @@ class InstanceField(t.NamedTuple):
     alias: str
 
 
-class URI(object):
+class URI:
     def __init__(self, raw: str, expected_type: str = URIType.UNKNOWN) -> None:
         self.raw = raw.strip().strip("/").lower()
         self._sw_config = SWCliConfigMixed()

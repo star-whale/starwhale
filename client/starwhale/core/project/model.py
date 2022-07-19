@@ -33,10 +33,7 @@ class ProjectObjType:
     RUNTIME = "runtime"
 
 
-class Project(object):
-
-    __metaclass__ = ABCMeta
-
+class Project(metaclass=ABCMeta):
     def __init__(self, uri: URI) -> None:
         self.uri = uri
         self.name = uri.project.lower()
