@@ -58,6 +58,15 @@ class UserRoleType:
     NORMAL = "normal"
 
 
+class SupportArch:
+    X86_64 = "x86_64"
+    AARCH64 = "aarch64"
+
+
+class SupportOS:
+    UBUNTU = "ubuntu:20.04"
+
+
 FMT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 
 # TODO: use better DEFAULT words?
@@ -113,3 +122,8 @@ CNTR_DEFAULT_PIP_CACHE_DIR = "/root/.cache/pip"
 
 SW_DEV_DUMMY_VERSION = "0.0.0.dev0"
 SW_PYPI_PKG_NAME = "starwhale"
+
+DEFAULT_CUDA_VERSION = "11.4.0"
+DEFAULT_CONDA_CHANNEL = "conda-forge"
+
+WHEEL_FILE_EXTENSION = ".whl"

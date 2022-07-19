@@ -1,0 +1,34 @@
+api_version: 1.1 # optional, runtime.yml schema version, current support 1.0/1.1. if no version, swcli guess version
+
+name: pytorch # required, runtime name
+mode: venv # optional, venv or conda, default is venv
+
+environment: # optional
+  arch: x86_64 # optional, x86_64 or aarch64
+  os: ubuntu:20.04 # optional, only support ubuntu:20.04, format: {os name}:{os version}
+  python: 3.8 # optional, default is swcli python version
+  cuda: 11.4.0 # optional, default 11.4.0 . prepare a cuda supported version list.
+
+dependencies: # optional, default: requirement.txt
+  - requirements.txt
+  - pip:
+      - numpy >= 1.21.0
+      - scikit-learn
+  - wheels:
+      - dummy-0.0.0-py3-none-any.whl
+  - files:
+      - name: prepare
+        src: scripts/prepare.sh
+        dest: bin/prepare.sh
+        pre: ls bin/prepare.sh
+        post: bash bin/prepare.sh
+
+configs: # optional
+  docker:
+    registry: ghcr.io
+    image: star-whale/runtime/pytorch
+
+  pip:
+    index-url: https://pypi.doubanio.com/simple/
+    extra-index-url: https://mirrors.bfsu.edu.cn/pypi/web/simple/
+    trusted-host: "mirrors.bfsu.edu.cn pypi.doubanio.com"

@@ -30,11 +30,13 @@ build/
 /server/**/target/**
 .history
 .vscode
+.cspell
 
 # Env
 *venv/
 /env-build
 .DS_Store
+.python-version
 
 # User Test Data
 example/.idea/
@@ -47,8 +49,6 @@ example/PennFudanPed/data/
 example/PennFudanPed/models/
 example/nmt/models/
 example/nmt/data/
-
-
 
 # UI
 node_modules

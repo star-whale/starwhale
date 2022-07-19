@@ -52,6 +52,13 @@ class BundleType:
     RUNTIME = ".swrt"
 
 
+class RuntimeArtifactType:
+    RUNTIME = "runtime_yaml"
+    DEPEND = "dependencies"
+    WHEELS = "wheels"
+    FILES = "files"
+
+
 def get_bundle_type_by_uri(uri_type: str) -> str:
     if uri_type == URIType.DATASET:
         return BundleType.DATASET
