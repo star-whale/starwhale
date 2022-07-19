@@ -21,8 +21,8 @@ sw:
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
     s3-config:
       bucket: ${SW_STORAGE_BUCKET:starwhale}
-      accessKey: ${SW_STORAGE_ACCESSKEY:starwhale}
-      secretKey: ${SW_STORAGE_SECRETKEY:starwhale}
+      accessKey: ${SW_STORAGE_ACCESSKEY:minioadmin}
+      secretKey: ${SW_STORAGE_SECRETKEY:minioadmin}
       region: ${SW_STORAGE_REGION:local}
       endpoint: ${SW_STORAGE_ENDPOINT:http://localhost:9000}
   controller:
