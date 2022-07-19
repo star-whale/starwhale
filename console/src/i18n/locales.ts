@@ -366,6 +366,19 @@ const locales0 = {
     'Compare Evaluations': {
         en: 'Compare Evaluations',
     },
+    // data table
+    'Add a New View': {
+        en: 'Add a New View',
+    },
+    'Edit View': {
+        en: 'Edit View',
+    },
+    'Manage Views': {
+        en: 'Manage Views',
+    },
+    'Edit': {
+        en: 'Edit',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

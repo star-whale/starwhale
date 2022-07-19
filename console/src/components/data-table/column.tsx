@@ -1,12 +1,5 @@
 /* eslint-disable */
 
-/*
-Copyright (c) Uber Technologies, Inc.
-
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-*/
-
 import * as React from 'react'
 
 import { Checkbox } from 'baseui/checkbox'
@@ -18,7 +11,7 @@ import _ from 'lodash'
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
     return {
         kind: options.kind,
-        buildFilter: options.buildFilter || (() => () => true),
+        buildFilter: options.buildFilter || ((params) => (data) => true),
         textQueryFilter: options.textQueryFilter,
         fillWidth: options.fillWidth === undefined ? true : options.fillWidth,
         filterable: Boolean(options.filterable) && Boolean(options.renderFilter) && Boolean(options.buildFilter),
@@ -36,53 +29,59 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
             } else if (options.cellBlockAlign === 'end') {
                 cellBlockAlign = 'flex-end'
             }
+            //@ts-ignore
+            // if (!Boolean(props.onSelect)) {
+            //     //@ts-ignore
+            //     return <ProvidedCell {...props} />
+            // }
 
             return (
                 <div
                     // @ts-ignore
                     ref={ref}
+                    data-type='column-cell'
                     className={css({
                         ...theme.typography.font100,
                         boxSizing: 'border-box',
                         color: theme.colors.contentPrimary,
                         // @ts-ignore
-                        display: props.isMeasured ? 'inline-block' : null,
-                        // height: '100%',
-                        // paddingTop: theme.sizing.scale300,
-                        // paddingLeft: theme.sizing.scale500,
-                        // paddingBottom: theme.sizing.scale300,
-                        // paddingRight: theme.sizing.scale500,
+                        // display: props.isMeasured ? 'inline-block' : undefined,
                         // @ts-ignore
-                        width: props.isMeasured ? null : '100%',
+                        // width: props.isMeasured ? undefined : '100%',
                         padding: '0',
+                        height: '100%',
+                        alignItems: 'center',
+                        display: 'flex',
+                        width: '100%',
                     })}
                 >
-                    <div
-                        data-type='column'
+                    {/* <div
+                        data-type='column-cell-1'
                         className={css({
-                            alignItems: cellBlockAlign,
+                            flex: 1,
+                            alignItems: 'center',
                             display: 'flex',
                             height: '100%',
                         })}
-                    >
-                        {/* @ts-ignore */}
-                        {Boolean(props.onSelect) && (
-                            <span className={css({ paddingRight: theme.sizing.scale300 })}>
-                                {/* @ts-ignore */}
-                                <Checkbox
-                                    //@ts-ignore
-                                    onChange={props.onSelect}
-                                    //@ts-ignore
-                                    checked={props.isSelected}
-                                    overrides={{
-                                        Checkmark: { style: { marginTop: null, marginBottom: null } },
-                                    }}
-                                />
-                            </span>
-                        )}
-                        {/* @ts-ignore */}
-                        <ProvidedCell {...props} />
-                    </div>
+                    > */}
+                    {/* @ts-ignore */}
+                    {Boolean(props.onSelect) && (
+                        <span className={css({ paddingRight: theme.sizing.scale300 })}>
+                            {/* @ts-ignore */}
+                            <Checkbox
+                                //@ts-ignore
+                                onChange={props.onSelect}
+                                //@ts-ignore
+                                checked={props.isSelected}
+                                overrides={{
+                                    Checkmark: { style: { marginTop: null, marginBottom: null } },
+                                }}
+                            />
+                        </span>
+                    )}
+                    {/* @ts-ignore */}
+                    <ProvidedCell {...props} />
+                    {/* </div> */}
                 </div>
             )
         }),
@@ -93,6 +92,7 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
         onAsyncChange: options?.onAsyncChange,
         key: options.key ?? options.title.toLocaleLowerCase().replace(' ', ''),
         pin: options.pin,
+        filterType: options.filterType,
     }
 }
 

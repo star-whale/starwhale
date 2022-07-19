@@ -1,11 +1,5 @@
 // @ts-nocheck
 
-/*
-Copyright (c) Uber Technologies, Inc.
-
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-*/
 // @flow
 
 import * as React from 'react'
@@ -53,48 +47,8 @@ function useSortParameters(initialSortIndex = -1, initialSortDirection = null) {
 export function StatefulContainer(props: StatefulContainerPropsT) {
     useDuplicateColumnTitleWarning(props.columns)
     const [sortIndex, sortDirection, handleSort] = useSortParameters(props.initialSortIndex, props.initialSortDirection)
-    const [filters, setFilters] = React.useState(props.initialFilters || new Map())
+
     const [textQuery, setTextQuery] = React.useState('')
-
-    function handleFilterAdd(title, filterParams) {
-        filters.set(title, filterParams)
-        if (props.onFilterAdd) {
-            props.onFilterAdd(title, filterParams)
-        }
-        setFilters(new Map(filters))
-    }
-    function handleFilterRemove(title) {
-        filters.delete(title)
-        if (props.onFilterRemove) {
-            props.onFilterRemove(title)
-        }
-        setFilters(new Map(filters))
-    }
-
-    const [selectedRowIds, setSelectedRowIds] = React.useState(props.initialSelectedRowIds || new Set())
-    function handleSelectChange(next) {
-        setSelectedRowIds(next)
-
-        const selectionCallback = props.onSelectionChange
-        if (selectionCallback) {
-            selectionCallback(props.rows.filter((r) => next.has(r.id)))
-        }
-    }
-    function handleSelectMany(incomingRows) {
-        // only adds rows that are visible in the table
-        handleSelectChange(new Set([...selectedRowIds, ...incomingRows.map((r) => r.id)]))
-    }
-    function handleSelectNone() {
-        handleSelectChange(new Set())
-    }
-    function handleSelectOne(row) {
-        if (selectedRowIds.has(row.id)) {
-            selectedRowIds.delete(row.id)
-        } else {
-            selectedRowIds.add(row.id)
-        }
-        handleSelectChange(new Set(selectedRowIds))
-    }
 
     const { onIncludedRowsChange, onRowHighlightChange } = props
     const handleIncludedRowsChange = React.useCallback(
@@ -112,23 +66,14 @@ export function StatefulContainer(props: StatefulContainerPropsT) {
     )
 
     return props.children({
-        filters,
-        onFilterAdd: handleFilterAdd,
-        onFilterRemove: handleFilterRemove,
         onIncludedRowsChange: handleIncludedRowsChange,
         onRowHighlightChange: handleRowHighlightChange,
-        onSelectMany: handleSelectMany,
-        onSelectNone: handleSelectNone,
-        onSelectOne: handleSelectOne,
         onSort: handleSort,
         onTextQueryChange: setTextQuery,
         resizableColumnWidths: Boolean(props.resizableColumnWidths),
         rowHighlightIndex: props.rowHighlightIndex,
-        selectedRowIds,
         sortIndex,
         sortDirection,
         textQuery,
-        onColumnSave: props.onColumnSave,
-        config: props.config,
     })
 }

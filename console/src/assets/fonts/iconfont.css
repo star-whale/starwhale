@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 3410006 */
-  src: url('iconfont.woff2?t=1654568455522') format('woff2'),
-       url('iconfont.woff?t=1654568455522') format('woff'),
-       url('iconfont.ttf?t=1654568455522') format('truetype');
+  src: url('iconfont.woff2?t=1657709729103') format('woff2'),
+       url('iconfont.woff?t=1657709729103') format('woff'),
+       url('iconfont.ttf?t=1657709729103') format('truetype');
 }
 
 .iconfont {
@@ -13,12 +13,80 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.icon-runtime:before {
-  content: "\e62a";
-}
-
 .icon-setting2:before {
   content: "\e61e";
+}
+
+.icon-decline:before {
+  content: "\e63a";
+}
+
+.icon-rise:before {
+  content: "\e63b";
+}
+
+.icon-a-sortdesc:before {
+  content: "\e62b";
+}
+
+.icon-info:before {
+  content: "\e62c";
+}
+
+.icon-item-reduce:before {
+  content: "\e62d";
+}
+
+.icon-success1:before {
+  content: "\e62e";
+}
+
+.icon-a-sortasc:before {
+  content: "\e62f";
+}
+
+.icon-filter:before {
+  content: "\e630";
+}
+
+.icon-edit:before {
+  content: "\e631";
+}
+
+.icon-item-add:before {
+  content: "\e632";
+}
+
+.icon-evaluation:before {
+  content: "\e633";
+}
+
+.icon-pin:before {
+  content: "\e634";
+}
+
+.icon-error:before {
+  content: "\e635";
+}
+
+.icon-more:before {
+  content: "\e636";
+}
+
+.icon-delete:before {
+  content: "\e637";
+}
+
+.icon-warning:before {
+  content: "\e638";
+}
+
+.icon-view:before {
+  content: "\e639";
+}
+
+.icon-runtime:before {
+  content: "\e62a";
 }
 
 .icon-success:before {

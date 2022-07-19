@@ -1,10 +1,3 @@
-/*
-Copyright (c) Uber Technologies, Inc.
-
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-*/
-
 export type DataTableLocaleT = {
     emptyState: string
     loadingState: string
@@ -46,7 +39,7 @@ const locale = {
     emptyState: 'No rows match the filter criteria defined. Please remove one or more filters to view more data.',
     loadingState: 'Loading rows.',
     searchAriaLabel: 'Search by text',
-    filterAdd: 'Add Filter',
+    filterAdd: 'Filters',
     filterExclude: 'Exclude',
     filterApply: 'Apply',
     filterExcludeRange: 'Exclude range',

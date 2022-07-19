@@ -1,10 +1,3 @@
-/*
-Copyright (c) Uber Technologies, Inc.
-
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-*/
-
 import * as React from 'react'
 
 import { Checkbox } from 'baseui/checkbox'
@@ -14,11 +7,12 @@ import { isFocusVisible } from '@/utils/focusVisible'
 
 import { SORT_DIRECTIONS } from './constants'
 import type { SortDirectionsT } from './types'
+import IconFont from '@/components/IconFont'
+import { RowT } from 'baseui/data-table'
 
 type HeaderCellPropsT = {
     index: number
     isHovered: boolean
-    // @eslint-disable-next-line  react/require-default-props
     isMeasured?: boolean
     isSelectable: boolean
     isSelectedAll: boolean
@@ -27,10 +21,12 @@ type HeaderCellPropsT = {
     onMouseLeave: (num: number) => void
     onSelectAll: () => void
     onSelectNone: () => void
+    onSelectOne?: (row: RowT) => void
     onSort: (num: number) => void
     sortable: boolean
     sortDirection: SortDirectionsT
     title: string
+    compareable?: boolean
 }
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
@@ -54,6 +50,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
 
     return (
         <div
+            data-type='header-cell'
             ref={ref}
             role='button'
             tabIndex={0}
@@ -67,8 +64,6 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 display: props.isMeasured ? 'inline-flex' : 'flex',
                 flexGrow: 1,
                 height: '100%',
-                paddingLeft: theme.sizing.scale500,
-                paddingRight: theme.sizing.scale500,
                 flexWrap: 'nowrap',
                 whiteSpace: 'nowrap',
                 outline: focusVisible ? `3px solid ${theme.colors.accent}` : 'none',
@@ -78,7 +73,10 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 borderBottomWidth: 0,
                 fontSize: 14,
                 lineHeight: '16px',
-                padding: '15px 20px',
+                paddingTop: '15px',
+                paddingBottom: '15px',
+                paddingLeft: props.index === 0 ? '20px' : '12px',
+                paddingRight: '12px',
             })}
             title={props.title}
             // @ts-ignore
@@ -119,6 +117,19 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 </span>
             )}
             {props.title}
+
+            {props.isHovered && props.compareable && (
+                <div
+                    style={{
+                        // backgroundColor,
+                        marginLeft: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                >
+                    <IconFont type='pin' />
+                </div>
+            )}
             <div
                 className={css({
                     position: 'relative',
@@ -130,11 +141,10 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 {(props.isHovered || props.sortDirection) && props.sortable && (
                     <div
                         style={{
-                            // backgroundColor,
                             display: 'flex',
                             alignItems: 'center',
                             position: 'absolute',
-                            right: -4,
+                            right: -3,
                         }}
                     >
                         {props.sortDirection === SORT_DIRECTIONS.DESC && (
@@ -153,6 +163,21 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                         )}
                     </div>
                 )}
+                {props.isHovered && props.compareable && (
+                    <div
+                        // @ts-ignore
+                        onClick={props.onSelectOne}
+                        style={{
+                            marginLeft: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            position: 'absolute',
+                            right: -3,
+                        }}
+                    >
+                        <IconFont type='close' />
+                    </div>
+                )}
             </div>
         </div>
     )
@@ -160,6 +185,7 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
 HeaderCell.displayName = 'HeaderCell'
 HeaderCell.defaultProps = {
     isMeasured: false,
+    compareable: false,
 }
 
 export default HeaderCell

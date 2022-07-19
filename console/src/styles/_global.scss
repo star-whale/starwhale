@@ -16,7 +16,6 @@
        url('../assets/fonts/cousine-v25-latin-regular.svg#Cousine') format('svg'); /* Legacy iOS */
 }
 
-
 body {
   margin: 0;
   font-family: Cousine, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',Arial,'Noto Sans',sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol','Noto Color Emoji';
@@ -36,7 +35,7 @@ a:-webkit-any-link {
   width: 8px;
   background: rgba(2,16,43,0.12);
   border-radius: 4px;
-  cursor: pointer;
+  cursor: pointer !important;
 }
  
 ::-webkit-scrollbar-track {
@@ -47,7 +46,8 @@ a:-webkit-any-link {
   background: rgba(2,16,43,0.12);
   border-radius: 4px;
   width: 8px;
-  outline: 1px solid slategrey;
+  cursor: pointer;
+  // outline: 1px solid slategrey;
 }
 
 code {
@@ -158,3 +158,50 @@ table { border-collapse: separate; }
   white-space: 'nowrap';
   overflow: 'hidden';
 }
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.g-20 {
+  gap: 20px;
+}
+
+.resize-left {
+  width: 18px;
+  height: 40px;
+  background-image: url(../assets/left.svg);
+  background-size: 100% auto;
+  background-repeat: no-repeat;
+  background-position: center center;
+  cursor: pointer;
+  @extend .flex-column-center;
+  color: rgba(2,16,43,0.60);
+  &--hover {
+    background-image: url(../assets/left-shadow.png);
+  }
+  position: relative;
+  left: -3px;
+}
+
+
+.resize-right {
+  width: 18px;
+  height: 40px;
+  background-image: url(../assets/right.svg);
+  background-size: 100% auto;
+  background-repeat: no-repeat;
+  background-position: center center;
+  cursor: pointer;
+  @extend .flex-column-center;
+  color: rgba(2,16,43,0.60);
+
+  &--hover {
+    background-image: url(../assets/right-shadow.png);
+  }
+  position: relative;
+  top: -14px;
+  right: 5px;
+
+}
+
