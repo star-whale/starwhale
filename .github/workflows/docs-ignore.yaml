@@ -4,93 +4,16 @@ on:
   push:
     branches:
       - main
-    paths:
+    paths-ignore:
       - 'docs/**'
   pull_request:
     branches:
       - main
-    paths:
+    paths-ignore:
       - 'docs/**'
 
 jobs:
-  filter:
-    runs-on: ubuntu-latest
-
-    outputs:
-      docs: ${{ steps.filter.outputs.docs }}
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Check for python files changed
-        uses: getsentry/paths-filter@v2
-        id: filter
-        with:
-          base: main
-          filters: .github/file-filter.yml
-
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-
-    needs:
-      - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.docs == 'true') || github.event_name == 'push' }}
-
     steps:
-      - uses: actions/checkout@v3
-        with:
-          lfs: true
-
-      - name: Use Node.js 16
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
-          cache: "yarn"
-          cache-dependency-path: "./docs/yarn.lock"
-
-      - name: Install yarn
-        run: npm install -g yarn
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-docs-dir-path
-        run: |
-          echo "::set-output name=dir::"
-          yarn cache dir
-
-      - uses: actions/cache@v3
-        id: yarn-cache-docs
-        with:
-          path: |
-            ${{ steps.yarn-cache-docs-dir-path.outputs.dir }}
-            **/node_modules
-          key: ${{ runner.os }}-yarn-docs-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-docs-
-
-      - name: Install docs dependencies
-        working-directory: ./docs
-        if: steps.yarn-cache-docs.outputs.cache-hit != 'true' # Over here!
-        run: make install-req
-
-      - name: Install markdownlint cli
-        run: npm -g install markdownlint-cli
-
-      - name: Lint docs
-        working-directory: ./docs
-        run: make lint-docs
-
-      - name: Build docs
-        working-directory: ./docs
-        run: make build-docs
-
-      - name: Publish to Github Pages
-        if: ${{ github.ref == 'refs/heads/main'}}
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/build
-          user_name: github-actions[bot]
-          cname: doc.starwhale.ai
-          user_email: "github-actions[bot]@users.noreply.github.com"
+      - run: 'echo "No build required" '
