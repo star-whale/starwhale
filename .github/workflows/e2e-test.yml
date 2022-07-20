@@ -1,12 +1,9 @@
 name: End to End test for starwhale
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  schedule:
+    - cron:  '34 10,13 * * *'
+
 env:
   PYPI_RELEASE_VERSION: 100.0.0
   RELEASE_VERSION: 0.0.0-dev
