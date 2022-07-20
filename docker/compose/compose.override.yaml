@@ -1,21 +1,8 @@
 services:
-  controller:
-    image: host.nexus:9001/server
+  services:
+    controller:
+      image: ghcr.io/star-whale/server:0.2.0-beta.20
 
-  agent:
-    image: host.nexus:9001/server
-    environment:
-      - SW_PYPI_INDEX_URL=http://172.18.0.1:8081/pypi-hosted/simple
-      - SW_PYPI_EXTRA_INDEX_URL=https://pypi.doubanio.com/simple/
-      - SW_PYPI_TRUSTED_HOST=172.18.0.1
-      - SW_TASK_USE_HOST_NETWORK=1
-    extra_hosts:
-      - host.nexus:172.18.0.1
-  taskset:
-    volumes:
-      - agent_data:/opt/starwhale
-      - taskset_dind_data:/var/lib/docker
-      - /tmp/docker-daemon.json:/etc/docker/daemon.json
-    extra_hosts:
-      - host.nexus:172.18.0.1
+    agent:
+      image: ghcr.io/star-whale/server:0.2.0-beta.20
 
