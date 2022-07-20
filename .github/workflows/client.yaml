@@ -4,35 +4,21 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'client/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'client/**'
 
 jobs:
-  filter:
-    runs-on: ubuntu-latest
-
-    outputs:
-      client: ${{ steps.filter.outputs.client }}
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Check for python files changed
-        uses: getsentry/paths-filter@v2
-        id: filter
-        with:
-          base: main
-          filters: .github/file-filter.yml
 
   codestyle:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
-
-    needs:
-      - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v3
@@ -78,10 +64,6 @@ jobs:
     defaults:
       run:
         shell: bash
-
-    needs:
-      - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v3
@@ -136,10 +118,6 @@ jobs:
     defaults:
       run:
         shell: bash
-
-    needs:
-      - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
 
     steps:
       - uses: actions/checkout@v3

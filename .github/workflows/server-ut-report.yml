@@ -4,31 +4,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'server/**'
 
 jobs:
 
-  filter:
-    runs-on: ubuntu-latest
-
-    outputs:
-      server: ${{ steps.filter.outputs.server }}
-      java: ${{ steps.filter.outputs.java }}
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Check for java files changed
-        uses: getsentry/paths-filter@v2
-        id: filter
-        with:
-          base: main
-          filters: .github/file-filter.yml
-
   build:
     runs-on: ubuntu-latest
-
-    needs:
-      - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.server == 'true') || github.event_name == 'push' }}
 
     permissions:
       contents: read

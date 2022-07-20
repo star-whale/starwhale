@@ -5,35 +5,21 @@ on:
     branches:
       - main
       - feat/**
+    paths:
+      - 'bootstrap/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'bootstrap/**'
 
 jobs:
-  filter:
-    runs-on: ubuntu-latest
-
-    outputs:
-      bootstrap: ${{ steps.filter.outputs.bootstrap }}
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Check for bootstrap files changed
-        uses: getsentry/paths-filter@v2
-        id: filter
-        with:
-          base: main
-          filters: .github/file-filter.yml
 
   lint:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
-
-    needs:
-      - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.bootstrap == 'true') || github.event_name == 'push' }}
 
     steps:
       # Important: This sets up your GITHUB_WORKSPACE environment variable

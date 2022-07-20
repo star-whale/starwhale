@@ -5,34 +5,18 @@ on:
     branches:
       - main
       - feat/*
+    paths:
+      - 'console/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'console/**'
 
 jobs:
-  filter:
-    runs-on: ubuntu-latest
-
-    outputs:
-      console: ${{ steps.filter.outputs.console }}
-      js: ${{ steps.filter.outputs.js }}
-      scss: ${{ steps.filter.outputs.scss }}
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Check for console files changed
-        uses: getsentry/paths-filter@v2
-        id: filter
-        with:
-          base: main
-          filters: .github/file-filter.yml
 
   build:
     runs-on: ubuntu-latest
-
-    needs:
-      - filter
-    if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.console == 'true') || github.event_name == 'push' }}
 
     strategy:
       matrix:
