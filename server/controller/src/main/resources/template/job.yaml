@@ -36,7 +36,6 @@ spec:
           cd /opt/starwhale && find ./ -type f \( -name \*.swmp -o -name \*.swrt \) -exec tar -C swmp/ -xf {} \; &&
           mkdir -p config && echo $INPUT > config/input.json &&
           rm swmp/dep/python/requirements-lock.txt
-      containers:
       - name: 'worker'
         image: 'docker.io/library/busybox'
         imagePullPolicy: IfNotPresent
@@ -58,6 +57,19 @@ spec:
           value: pypi.mirrors.ustc.edu.cn
         - name: SW_PIP_CACHE_DIR
           value: /root/.cache/pip
+      containers:
+      - name: result-uploader
+        imagePullPolicy: IfNotPresent
+        image: minio/mc:latest
+        volumeMounts:
+        - mountPath: /opt/starwhale
+          name: data
+        command:
+        - sh
+        - -c
+        - >-
+          mc alias set minio http://192.168.1.26:9000 minioadmin minioadmin &&
+          mc cp -r /opt/starwhale/result/current $DST
       volumes:
       - name: pip-cache
         hostPath:

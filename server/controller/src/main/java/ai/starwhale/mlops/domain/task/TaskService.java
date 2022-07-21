@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
+import ai.starwhale.mlops.deploy.Kubernetes;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -34,6 +35,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
+
+import io.kubernetes.client.openapi.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -77,17 +80,14 @@ public class TaskService {
 
     }
 
-    public String logContent(Long taskId,String logFileName){
-        ResultPath resultPath = resultPathOfTask(taskId);
-        String logDir = resultPath.logDir();
-        try(InputStream inputStream = storageAccessService.get(
-            logDir + PATH_SPLITERATOR + logFileName)) {
-            return new String(inputStream.readAllBytes());
-        } catch (IOException e) {
-            log.error("read logs path from storage failed {}",taskId,e);
-            throw new SWProcessException(ErrorType.DB).tip("read log path from db failed");
+    public String logContent(Long taskId,String logFileName) {
+        try {
+            Kubernetes kubernetes = new Kubernetes("default");
+            return kubernetes.log(taskId.toString());
+        } catch (Exception e) {
+            log.error(e.getMessage());
+            return "";
         }
-
     }
 
     private ResultPath resultPathOfTask(Long taskId) {

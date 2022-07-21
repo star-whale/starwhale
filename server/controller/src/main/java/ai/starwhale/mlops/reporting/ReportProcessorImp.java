@@ -27,6 +27,7 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Node;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
+import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
@@ -49,7 +50,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.google.protobuf.Api;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -125,8 +130,42 @@ public class ReportProcessorImp implements ReportProcessor {
     }
 
     @Scheduled(fixedDelayString = "${sw.controller.task.schedule.fixedDelay.in.milliseconds:1000}")
-    public void process() throws IOException {
+    public void process() throws IOException, ApiException {
         Kubernetes client = new Kubernetes("default");
+        V1JobList jobList = new V1JobList();
+        try {
+             jobList = client.get();
+        } catch (ApiException e) {
+            log.error(e.getMessage());
+        }
+
+        // fetch job status
+        List<V1Job> done = new ArrayList<>();
+        List<V1Job> undone = new ArrayList<>();
+        jobList.getItems().forEach(j -> {
+            if (j.getStatus() == null) {
+                undone.add(j);
+            }
+            if (j.getStatus().getActive() == null) {
+                done.add(j);
+            } else {
+                undone.add(j);
+            }
+        });
+
+        // report task
+        List<ReportedTask> reports = done.stream().map(i -> {
+            Long id = Long.parseLong(i.getMetadata().getName());
+            return new ReportedTask(id, TaskStatus.SUCCESS, TaskType.PPL);
+        }).collect(Collectors.toList());
+
+        copyTaskStatusFromAgentReport(reports);
+
+        // only one task run in dev env
+        if (!undone.isEmpty()) {
+            return;
+        }
+
         Node fakeNode = new Node();
         Device dev = new Device();
         dev.setClazz(Device.Clazz.CPU);
@@ -142,15 +181,19 @@ public class ReportProcessorImp implements ReportProcessor {
             Map<String, String> envs = new HashMap<>();
             List<String> downloads = new ArrayList<>();
             String prefix = "minio/starwhale/";
-            task.getSwdsBlocks().forEach(i -> downloads.add(prefix + i.getLocationInput().getFile()+";/opt/starwhale/swmp/"));
-            task.getSwdsBlocks().forEach(i -> downloads.add(prefix + i.getLocationLabel().getFile()+";/opt/starwhale/swmp/"));
             downloads.add(prefix + task.getSwModelPackage().getPath()+";/opt/starwhale/swmp/");
             downloads.add(prefix + task.getSwrt().getPath()+";/opt/starwhale/swrt/");
             envs.put("DOWNLOADS", Strings.join(downloads, ' '));
             String input = generateConfigFile(task);
             envs.put("INPUT", input);
             try {
-                V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of("ppl"), envs);
+                String cmd = "ppl";
+                if (task.getTaskType() == TaskType.CMP) {
+                   cmd = "cmp";
+                }
+                V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), envs);
+                // set result upload path
+                job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+task.getResultPath().resultDir())));
                 client.deploy(job);
             } catch (Exception e) {
                 throw new RuntimeException(e);

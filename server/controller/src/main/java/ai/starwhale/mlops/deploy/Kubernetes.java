@@ -1,19 +1,21 @@
 package ai.starwhale.mlops.deploy;
 
+import io.kubernetes.client.PodLogs;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
+import io.kubernetes.client.proto.Meta;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.Yaml;
+import io.kubernetes.client.util.labels.LabelSelector;
+import org.bouncycastle.util.Strings;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.io.InputStream;
+import java.util.*;
 
 public class Kubernetes {
     private ApiClient client;
@@ -58,7 +60,7 @@ public class Kubernetes {
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec, "can not get pod spec");
 
-        V1Container container = podSpec.getContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst().orElse(null);
+        V1Container container = podSpec.getInitContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst().orElse(null);
         Objects.requireNonNull(container, "can not get container by name " + containerName);
 
         if (!image.isEmpty()) {
@@ -70,7 +72,12 @@ public class Kubernetes {
         if (!env.isEmpty()) {
             List<V1EnvVar> ee = new ArrayList<>();
             env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
-            podSpec.getInitContainers().forEach(c -> c.env(ee));
+            podSpec.getInitContainers().forEach(c -> {
+                if (c.getName().equals(containerName)) {
+                    return;
+                }
+                c.env(ee);
+            });
         }
 
         return job;
@@ -82,6 +89,26 @@ public class Kubernetes {
      * @return job list
      */
     public V1JobList get() throws ApiException {
-        return batchV1Api.listNamespacedJob(ns, null, null, null, null, null, null, null, null, null, null);
+        return batchV1Api.listNamespacedJob(ns, null, null, null, null, null, null, null, null, 30, null);
+    }
+
+    public String log(String jobName) throws ApiException, IOException {
+        V1LabelSelector labelSelector = new V1LabelSelector();
+        Map<String, String> labels = new HashMap<>();
+        labels.put("job-name", jobName);
+        labelSelector.matchLabels(labels);
+        V1PodList podList = coreV1Api.listNamespacedPod(ns, null, null, null, null, LabelSelector.parse(labelSelector).toString(), null, null, null, 30, null);
+
+        if (podList.getItems().isEmpty()) {
+            return "";
+        }
+        if (podList.getItems().size() > 1) {
+            throw new ApiException("to many pods");
+        }
+
+        V1Pod pod = podList.getItems().get(0);
+        PodLogs logs = new PodLogs();
+        InputStream is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), "worker");
+        return Strings.fromUTF8ByteArray(is.readAllBytes());
     }
 }
