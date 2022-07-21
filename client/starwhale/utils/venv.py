@@ -42,6 +42,7 @@ _DUMMY_FIELD = -1
 
 _ConfigsT = t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]]
 _DepsT = t.Optional[t.Dict[str, t.Union[t.List[str], str]]]
+_PipConfigT = t.Optional[t.Dict[str, str]]
 
 
 class PythonVersionField(t.NamedTuple):
@@ -71,14 +72,14 @@ def conda_install_req(
 
     if use_pip_install:
         prefix_cmd += ["python3", "-m", "pip"]
-        _do_pip_install_req(prefix_cmd, req, enable_pre)
+        _do_pip_install_req(prefix_cmd, req, enable_pre, configs.get("pip"))  # type: ignore
     else:
         channels = configs.get("conda", {}).get("channels", [DEFAULT_CONDA_CHANNEL])
         for _c in channels:
             prefix_cmd += ["--channel", _c]
 
         prefix_cmd += ["--yes", "--override-channels"]
-        check_call(" ".join(prefix_cmd + [str(req)]), shell=True)
+        check_call(prefix_cmd + [str(req)])
 
 
 def _do_pip_install_req(
@@ -86,6 +87,7 @@ def _do_pip_install_req(
     prefix_cmd: t.List[t.Any],
     req: t.Union[str, Path],
     enable_pre: bool = False,
+    pip_config: _PipConfigT = None,
 ) -> None:
     cmd = prefix_cmd + [
         "install",
@@ -93,19 +95,21 @@ def _do_pip_install_req(
         "w",
     ]
 
+    pip_config = pip_config or {}
     _env = os.environ
-    if _env.get("SW_PYPI_INDEX_URL"):
-        cmd += [
-            "--index-url",
-            _env["SW_PYPI_INDEX_URL"],
-        ]
-    if _env.get("SW_PYPI_EXTRA_INDEX_URL"):
-        cmd += [
-            "--extra-index-url",
-            _env["SW_PYPI_EXTRA_INDEX_URL"],
-        ]
-    if _env.get("SW_PYPI_TRUSTED_HOST"):
-        cmd += ["--trusted-host", _env["SW_PYPI_TRUSTED_HOST"]]
+
+    _index_url = (
+        f"{pip_config.get('index_url', '')} {_env.get('SW_PYPI_INDEX_URL', '')}".strip()
+    )
+    _extra_index_url = f"{pip_config.get('extra_index_url', '')} {_env.get('SW_PYPI_EXTRA_INDEX_URL', '')}".strip()
+    _trusted_host = f"{pip_config.get('trusted_host', '')} {_env.get('SW_PYPI_TRUSTED_HOST', '')}".strip()
+
+    if _index_url:
+        cmd += ["--index-url", _index_url]
+    if _extra_index_url:
+        cmd += ["--extra-index-url", _extra_index_url]
+    if _trusted_host:
+        cmd += ["--trusted-host", _trusted_host]
 
     if enable_pre:
         cmd += ["--pre"]
@@ -121,13 +125,14 @@ def _do_pip_install_req(
     else:
         cmd += [req]
 
-    check_call(" ".join(cmd), shell=True)
+    check_call(cmd)
 
 
 def venv_install_req(
     venvdir: t.Union[str, Path],
     req: t.Union[str, Path],
     enable_pre: bool = False,
+    pip_config: _PipConfigT = None,
 ) -> None:
     if not req:
         return
@@ -135,7 +140,7 @@ def venv_install_req(
     venvdir = str(venvdir)
     req = str(req)
     prefix_cmd = [os.path.join(venvdir, "bin", "pip")]
-    _do_pip_install_req(prefix_cmd, req, enable_pre)
+    _do_pip_install_req(prefix_cmd, req, enable_pre, pip_config)
 
 
 def venv_activate(venvdir: t.Union[str, Path]) -> None:
@@ -703,10 +708,11 @@ def iter_pip_reqs(
     for _pf in _deps.get("pip_files", []):
         reqs.append(_workdir / RuntimeArtifactType.DEPEND / _pf)
 
-    _pkgs = " ".join([repr(_p) for _p in _deps.get("pip_pkgs", []) if _p])
-    _pkgs = _pkgs.strip()
-    if _pkgs:
-        reqs.append(_pkgs)  # type: ignore
+    for _p in _deps.get("pip_pkgs", []):
+        _p = _p.strip()
+        if not _p:
+            continue
+        reqs.append(_p)  # type: ignore
 
     for _w in _wheels or []:
         if _w.endswith(WHEEL_FILE_EXTENSION):
@@ -739,7 +745,9 @@ def _do_restore_venv(
 
         for _r in iter_pip_reqs(_workdir, _wheels, _deps):
             logger.debug(f"pip install {_r} ...")
-            venv_install_req(_venv_dir, _r)
+            venv_install_req(
+                _venv_dir, _r, pip_config=_configs.get("pip")
+            )  # type:ignore
 
     # TODO: local mode venv cannot export the installed wheel pkgs today.
     venv_activate_render(_venv_dir, _workdir, relocate=_relocate)

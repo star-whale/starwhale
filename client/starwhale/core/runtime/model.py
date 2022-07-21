@@ -424,9 +424,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),
             (
-                self._render_environment,
+                self._dump_context,
                 5,
-                "dump environment",
+                "dump environment and configs",
                 dict(config=_swrt_config),
             ),
             (
@@ -466,7 +466,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         ]
         run_with_progress_bar("runtime bundle building...", operations)
 
-    def _render_environment(self, config: RuntimeConfig) -> None:
+    def _dump_context(self, config: RuntimeConfig) -> None:
+        self._manifest["configs"] = config.configs.asdict()
+
         # TODO: refactor docker image in environment
         self._manifest["environment"] = {
             "starwhale_version": config._starwhale_version,

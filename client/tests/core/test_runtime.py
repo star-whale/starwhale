@@ -54,7 +54,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "3.9",
         ]
 
-        assert m_call.call_args[0][0].startswith(
+        assert " ".join(m_call.call_args[0][0]).startswith(
             " ".join(
                 [
                     os.path.join(venv_dir, "bin", "pip"),
@@ -111,7 +111,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "--yes",
             "python=3.7",
         ]
-        assert m_call.call_args_list[1][0][0].startswith(
+        assert " ".join(m_call.call_args_list[1][0][0]).startswith(
             " ".join(
                 [
                     "conda",
@@ -348,8 +348,8 @@ class StandaloneRuntimeTestCase(TestCase):
         Runtime.restore(Path(workdir))
         assert m_call.call_count == 2
         pip_cmds = [
-            m_call.call_args_list[0][0][0].split()[-1],
-            m_call.call_args_list[1][0][0].split()[-1],
+            m_call.call_args_list[0][0][0][-1],
+            m_call.call_args_list[1][0][0][-1],
         ]
         assert m_venv.call_args[0][0] == [
             os.path.join(python_dir, "venv"),
