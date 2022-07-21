@@ -40,6 +40,9 @@ SUPPORTED_PIP_REQ = [DUMP_USER_PIP_REQ_FNAME, "pip-req.txt", "pip3-req.txt"]
 
 _DUMMY_FIELD = -1
 
+_ConfigsT = t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]]
+_DepsT = t.Optional[t.Dict[str, t.Union[t.List[str], str]]]
+
 
 class PythonVersionField(t.NamedTuple):
     major: int = _DUMMY_FIELD
@@ -48,12 +51,12 @@ class PythonVersionField(t.NamedTuple):
 
 
 def conda_install_req(
-    req: t.Union[str, Path, PurePath],
+    req: t.Union[str, Path],
     env_name: str = "",
     prefix_path: t.Optional[Path] = None,
     enable_pre: bool = False,
     use_pip_install: bool = True,
-    configs: t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]] = None,
+    configs: _ConfigsT = None,
 ) -> None:
     if not req:
         return
@@ -81,7 +84,7 @@ def conda_install_req(
 def _do_pip_install_req(
     # TODO: support multiple reqs
     prefix_cmd: t.List[t.Any],
-    req: t.Union[str, Path, PurePath],
+    req: t.Union[str, Path],
     enable_pre: bool = False,
 ) -> None:
     cmd = prefix_cmd + [
@@ -123,7 +126,7 @@ def _do_pip_install_req(
 
 def venv_install_req(
     venvdir: t.Union[str, Path],
-    req: t.Union[str, Path, PurePath],
+    req: t.Union[str, Path],
     enable_pre: bool = False,
 ) -> None:
     if not req:
@@ -623,8 +626,8 @@ def restore_python_env(
     python_version: str,
     local_gen_env: bool = False,
     wheels: t.Optional[t.List[str]] = None,
-    deps: t.Optional[t.Dict[str, t.Union[t.List[str], str]]] = None,
-    configs: t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]] = None,
+    deps: _DepsT = None,
+    configs: _ConfigsT = None,
 ) -> None:
     console.print(
         f":bread: restore python:{python_version} {mode}@{workdir}, use local env data: {local_gen_env}"
@@ -638,8 +641,8 @@ def _do_restore_conda(
     _local_gen_env: bool,
     _python_version: str,
     _wheels: t.Optional[t.List[str]],
-    _deps: t.Optional[t.Dict[str, t.Union[t.List[str], str]]],
-    _configs: t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]],
+    _deps: _DepsT,
+    _configs: _ConfigsT,
 ) -> None:
     _conda_dir = _workdir / "dep" / "conda"
     _tar_fpath = _conda_dir / CONDA_ENV_TAR
@@ -684,8 +687,8 @@ def _do_restore_conda(
 def iter_pip_reqs(
     _workdir: Path,
     _wheels: t.Optional[t.List[str]],
-    _deps: t.Optional[t.Dict[str, t.Union[t.List[str], str]]],
-) -> t.Generator[t.Union[str, PurePath], None, None]:
+    _deps: _DepsT,
+) -> t.Generator[t.Union[str, Path], None, None]:
     _python_dir = _workdir / "dep" / "python"
     # TODO: use --lock/--unlock feature to refactor fixed, implicit pip lock files
 
@@ -721,8 +724,8 @@ def _do_restore_venv(
     _local_gen_env: bool,
     _python_version: str,
     _wheels: t.Optional[t.List[str]],
-    _deps: t.Optional[t.Dict[str, t.Union[t.List[str], str]]],
-    _configs: t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]],
+    _deps: _DepsT,
+    _configs: _ConfigsT,
     _rebuild: bool = False,
 ) -> None:
     _python_dir = _workdir / "dep" / "python"
