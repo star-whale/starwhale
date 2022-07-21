@@ -60,10 +60,10 @@ export default function IconFont({ size = 14, type = 'user', kind = 'inherit', s
             style={{
                 width: size,
                 height: size,
-                fontSize: size,
+                lineHeight: `${size}px`,
                 color: kind === 'inherit' ? 'inherit' : colors[kind],
                 padding: 0,
-                // display: 'inline-block',
+                display: 'inline-block',
                 fontWeight: 'normal',
                 ...style,
             }}
