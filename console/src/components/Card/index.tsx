@@ -24,6 +24,11 @@ const useStyles = createUseStyles({
             '& a:visited': linkStyle,
         }
     },
+    cardBody: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+    },
 })
 
 export interface ICardProps {
@@ -141,7 +146,7 @@ export default function Card({
                     </div>
                 </div>
             )}
-            <div className={classNames(styles.cardBody, bodyClassName)} style={bodyStyle}>
+            <div className={classNames(dynamicStyles.cardBody, styles.cardBody, bodyClassName)} style={bodyStyle}>
                 {c}
             </div>
         </div>

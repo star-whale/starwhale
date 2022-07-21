@@ -2,7 +2,7 @@ name: End to End test for starwhale
 
 on:
   schedule:
-    - cron:  '34 10,13 * * *'
+    - cron: "34 10,13 * * *"
 
 env:
   PYPI_RELEASE_VERSION: 100.0.0
@@ -21,16 +21,15 @@ env:
   REPO_NAME_DOCKER: docker-hosted
   REPO_NAME_PYPI: pypi-hosted
 
-
 jobs:
   e2e-test:
     runs-on: ubuntu-latest
+
     defaults:
       run:
         shell: bash
 
     steps:
-
       - uses: actions/checkout@v3
         with:
           lfs: true
@@ -40,7 +39,6 @@ jobs:
         with:
           python-version: "3.7"
           architecture: "x64"
-
 
       # jar build
       - name: Cache local Maven repository
@@ -58,8 +56,6 @@ jobs:
           distribution: "adopt"
           cache: "maven"
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
-
-
 
       - name: run e2e
         working-directory: ./scripts/e2e_test

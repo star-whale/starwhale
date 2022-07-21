@@ -1,24 +1,45 @@
+import _ from 'lodash'
 import React, { useCallback, useEffect } from 'react'
+import usePrevious from './usePrevious'
 
-// type T = number | string
 export interface IUseSelectionPropsT<T = any> {
     initialSelectedIds: T[]
-    initialPinedIds: T[]
+    initialPinnedIds: T[]
     initialSortedIds: T[]
     onSelectionChange?: (values: T[]) => void
 }
 
-// let count = 0
-// let count1 = 0
-// let count2 = 0
-
 export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
-    const { initialSelectedIds = [], initialPinedIds = [], initialSortedIds = [] } = props
+    const { initialSelectedIds = [], initialPinnedIds = [], initialSortedIds = [] } = props
     const [selectedIds, setSelectedIds] = React.useState(new Set(initialSelectedIds))
     const [sortedIds, setSortedIds] = React.useState(new Set(initialSortedIds))
-    const [pinedIds, setPinedIds] = React.useState(new Set(initialPinedIds))
+    const [pinnedIds, setPinnedIds] = React.useState(new Set(initialPinnedIds))
 
-    // console.log('【render】', count++, selectedIds, sortedIds, pinedIds)
+    const oldInitialSelectedIds = usePrevious(initialSelectedIds)
+    const oldInitialPinnedIds = usePrevious(initialPinnedIds)
+    const oldInitialSortedIds = usePrevious(initialSortedIds)
+    const firstRender = React.useRef(true)
+
+    useEffect(() => {
+        if (
+            !_.isEqual(initialSelectedIds, oldInitialSelectedIds) ||
+            !_.isEqual(initialSortedIds, oldInitialSortedIds) ||
+            !_.isEqual(initialPinnedIds, oldInitialPinnedIds)
+        ) {
+            // console.log('useSelection', initialSelectedIds, initialSortedIds, initialPinnedIds)
+            setSelectedIds(new Set(initialSelectedIds))
+            setSortedIds(new Set(initialSortedIds))
+            setPinnedIds(new Set(initialPinnedIds))
+        }
+    }, [
+        firstRender,
+        initialSelectedIds,
+        initialPinnedIds,
+        initialSortedIds,
+        oldInitialSelectedIds,
+        oldInitialPinnedIds,
+        oldInitialSortedIds,
+    ])
 
     useEffect(() => {
         setSelectedIds((prevIds) => {
@@ -29,13 +50,9 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
                 ...newSelectedIds,
             ])
 
-            // console.log('【render effect 1】 ', count1++, sortedSelectedIds)
-
             return sortedSelectedIds
         })
     }, [sortedIds])
-
-    // useEffect(() => {
 
     const handleSelectChange = useCallback(
         (next: Set<T>) => {
@@ -79,50 +96,50 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
         (ids: T[], dragId: T) => {
             const sortedMergeSelectedIds = Array.from(ids).filter((v: T) => selectedIds.has(v))
             setSortedIds(new Set(sortedMergeSelectedIds))
-            const $pinedIds = new Set(pinedIds)
+            const $pinnedIds = new Set(pinnedIds)
             const dragIndex = sortedMergeSelectedIds.findIndex((v: T) => v === dragId)
-            $pinedIds.delete(dragId)
+            $pinnedIds.delete(dragId)
 
             // move pined column to no pined column will auto remove pined status
             const pindedFlag: number[] = []
             Array.from(sortedMergeSelectedIds).forEach((v: T, index) => {
-                if ($pinedIds.has(v)) {
+                if ($pinnedIds.has(v)) {
                     pindedFlag.push(index)
                 }
             })
 
             const maxPinedFlag = Math.max(...pindedFlag)
             if (dragIndex > maxPinedFlag) {
-                $pinedIds.delete(dragId)
+                $pinnedIds.delete(dragId)
             } else if (dragIndex < maxPinedFlag) {
-                $pinedIds.add(dragId)
+                $pinnedIds.add(dragId)
             }
 
-            setPinedIds($pinedIds)
+            setPinnedIds($pinnedIds)
         },
-        [setSortedIds, selectedIds, pinedIds]
+        [setSortedIds, selectedIds, pinnedIds]
     )
 
     const handlePinOne = useCallback(
         (id: T) => {
-            if (pinedIds.has(id)) {
-                pinedIds.delete(id)
+            if (pinnedIds.has(id)) {
+                pinnedIds.delete(id)
             } else {
-                pinedIds.add(id)
+                pinnedIds.add(id)
             }
-            setPinedIds(new Set(pinedIds))
+            setPinnedIds(new Set(pinnedIds))
             setSortedIds((prevIds) => {
-                const sortedMergePinedIds = [...Array.from(pinedIds), ...Array.from(prevIds)]
-                sortedMergePinedIds.sort((v1, v2) => {
-                    const index1 = pinedIds.has(v1) ? 1 : -1
-                    const index2 = pinedIds.has(v2) ? 1 : -1
+                const sortedMergePinnedIds = [...Array.from(pinnedIds), ...Array.from(prevIds)]
+                sortedMergePinnedIds.sort((v1, v2) => {
+                    const index1 = pinnedIds.has(v1) ? 1 : -1
+                    const index2 = pinnedIds.has(v2) ? 1 : -1
                     return index2 - index1
                 })
 
-                return new Set(sortedMergePinedIds)
+                return new Set(sortedMergePinnedIds)
             })
         },
-        [setPinedIds, pinedIds]
+        [setPinnedIds, pinnedIds]
     )
 
     return {
@@ -133,17 +150,17 @@ export default function useSelection<T>(props: IUseSelectionPropsT<T>) {
         handleSelectOne,
         sortedIds: Array.from(sortedIds),
         handleOrderChange,
-        pinedIds: Array.from(pinedIds),
+        pinnedIds: Array.from(pinnedIds),
         handlePinOne,
         handleReset: () => {
             setSelectedIds(new Set(initialSelectedIds))
             setSortedIds(new Set(initialSortedIds))
-            setPinedIds(new Set(initialPinedIds))
+            setPinnedIds(new Set(initialPinnedIds))
         },
         handleEmpty: () => {
             setSelectedIds(new Set())
             setSortedIds(new Set())
-            setPinedIds(new Set())
+            setPinnedIds(new Set())
         },
     }
 }

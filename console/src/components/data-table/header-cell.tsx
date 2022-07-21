@@ -1,10 +1,3 @@
-/*
-Copyright (c) Uber Technologies, Inc.
-
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-*/
-
 import * as React from 'react'
 
 import { Checkbox } from 'baseui/checkbox'
@@ -12,13 +5,15 @@ import { useStyletron } from 'baseui'
 import { ChevronDown, ChevronUp } from 'baseui/icon'
 import { isFocusVisible } from '@/utils/focusVisible'
 
-import { SORT_DIRECTIONS } from './constants'
+import IconFont from '@/components/IconFont'
+import cn from 'classnames'
 import type { SortDirectionsT } from './types'
+import { SORT_DIRECTIONS } from './constants'
+import Button from '../Button'
 
 type HeaderCellPropsT = {
     index: number
     isHovered: boolean
-    // @eslint-disable-next-line  react/require-default-props
     isMeasured?: boolean
     isSelectable: boolean
     isSelectedAll: boolean
@@ -27,10 +22,14 @@ type HeaderCellPropsT = {
     onMouseLeave: (num: number) => void
     onSelectAll: () => void
     onSelectNone: () => void
+    onNoSelect?: (id: any) => void
+    isFocus?: boolean
+    onFocus?: (arg: boolean) => void
     onSort: (num: number) => void
     sortable: boolean
     sortDirection: SortDirectionsT
     title: string
+    compareable?: boolean
 }
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
@@ -54,32 +53,41 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
 
     return (
         <div
+            data-type='header-cell'
             ref={ref}
             role='button'
             tabIndex={0}
-            className={css({
-                ...theme.typography.font350,
-                alignItems: 'center',
-                // backgroundColor,
-                boxSizing: 'border-box',
-                color: theme.colors.contentPrimary,
-                cursor: props.sortable ? 'pointer' : undefined,
-                display: props.isMeasured ? 'inline-flex' : 'flex',
-                flexGrow: 1,
-                height: '100%',
-                paddingLeft: theme.sizing.scale500,
-                paddingRight: theme.sizing.scale500,
-                flexWrap: 'nowrap',
-                whiteSpace: 'nowrap',
-                outline: focusVisible ? `3px solid ${theme.colors.accent}` : 'none',
-                outlineOffset: '-3px',
-                backgroundColor: 'var(--color-brandTableHeaderBackground)',
-                fontWeight: 'bold',
-                borderBottomWidth: 0,
-                fontSize: 14,
-                lineHeight: '16px',
-                padding: '15px 20px',
-            })}
+            className={cn(
+                props.isHovered ? 'header-cell--hovered' : undefined,
+                props.isFocus ? 'header-cell--focused' : undefined,
+                css({
+                    ...theme.typography.font350,
+                    alignItems: 'center',
+                    // backgroundColor,
+                    boxSizing: 'border-box',
+                    color: theme.colors.contentPrimary,
+                    cursor: props.sortable ? 'pointer' : undefined,
+                    display: props.isMeasured ? 'inline-flex' : 'flex',
+                    flexGrow: 1,
+                    height: '100%',
+                    flexWrap: 'nowrap',
+                    whiteSpace: 'nowrap',
+                    outline: focusVisible ? `3px solid ${theme.colors.accent}` : 'none',
+                    outlineOffset: '-3px',
+                    backgroundColor: 'var(--color-brandTableHeaderBackground)',
+                    fontWeight: 'bold',
+                    borderBottomWidth: 0,
+                    fontSize: 14,
+                    lineHeight: '16px',
+                    paddingTop: '15px',
+                    paddingBottom: '15px',
+                    paddingLeft: props.index === 0 ? '20px' : '12px',
+                    paddingRight: '12px',
+                    borderRight: props.isFocus ? '1px dashed #2B65D9' : undefined,
+                    borderLeft: props.isFocus ? '1px dashed #2B65D9' : undefined,
+                    borderTop: props.isFocus ? '1px dashed #2B65D9' : undefined,
+                })
+            )}
             title={props.title}
             // @ts-ignore
             onMouseEnter={props.onMouseEnter}
@@ -119,6 +127,26 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 </span>
             )}
             {props.title}
+
+            {props.compareable && ((props.isHovered && props.index !== 0) || props.isFocus) && (
+                <Button
+                    onClick={() => {
+                        props.onFocus?.(!props.isFocus)
+                    }}
+                    overrides={{
+                        BaseButton: {
+                            style: {
+                                marginLeft: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                            },
+                        },
+                    }}
+                    as='link'
+                >
+                    <IconFont type='pin' />
+                </Button>
+            )}
             <div
                 className={css({
                     position: 'relative',
@@ -130,11 +158,10 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 {(props.isHovered || props.sortDirection) && props.sortable && (
                     <div
                         style={{
-                            // backgroundColor,
                             display: 'flex',
                             alignItems: 'center',
                             position: 'absolute',
-                            right: -4,
+                            right: -3,
                         }}
                     >
                         {props.sortDirection === SORT_DIRECTIONS.DESC && (
@@ -153,6 +180,26 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                         )}
                     </div>
                 )}
+                {props.isHovered && props.compareable && props.index !== 0 && (
+                    <Button
+                        // @ts-ignore
+                        onClick={props.onNoSelect}
+                        overrides={{
+                            BaseButton: {
+                                style: {
+                                    marginLeft: '10px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    position: 'absolute',
+                                    right: 0,
+                                },
+                            },
+                        }}
+                        as='link'
+                    >
+                        <IconFont type='close' />
+                    </Button>
+                )}
             </div>
         </div>
     )
@@ -160,6 +207,10 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
 HeaderCell.displayName = 'HeaderCell'
 HeaderCell.defaultProps = {
     isMeasured: false,
+    compareable: false,
+    isFocus: false,
+    onNoSelect: () => {},
+    onFocus: () => {},
 }
 
 export default HeaderCell
