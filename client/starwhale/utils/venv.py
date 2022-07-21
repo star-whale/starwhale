@@ -19,6 +19,7 @@ from starwhale.consts import (
     ENV_CONDA_PREFIX,
     SW_PYPI_PKG_NAME,
     WHEEL_FILE_EXTENSION,
+    DEFAULT_CONDA_CHANNEL,
     DEFAULT_PYTHON_VERSION,
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
@@ -47,15 +48,17 @@ class PythonVersionField(t.NamedTuple):
 
 
 def conda_install_req(
-    req: t.Union[str, Path],
+    req: t.Union[str, Path, PurePath],
     env_name: str = "",
     prefix_path: t.Optional[Path] = None,
     enable_pre: bool = False,
     use_pip_install: bool = True,
+    configs: t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]] = None,
 ) -> None:
     if not req:
         return
 
+    configs = configs or {}
     prefix_cmd = [get_conda_bin(), "run" if use_pip_install else "install"]
 
     if env_name:
@@ -67,13 +70,18 @@ def conda_install_req(
         prefix_cmd += ["python3", "-m", "pip"]
         _do_pip_install_req(prefix_cmd, req, enable_pre)
     else:
+        channels = configs.get("conda", {}).get("channels", [DEFAULT_CONDA_CHANNEL])
+        for _c in channels:
+            prefix_cmd += ["--channel", _c]
+
+        prefix_cmd += ["--yes", "--override-channels"]
         check_call(" ".join(prefix_cmd + [str(req)]), shell=True)
 
 
 def _do_pip_install_req(
     # TODO: support multiple reqs
     prefix_cmd: t.List[t.Any],
-    req: t.Union[str, Path],
+    req: t.Union[str, Path, PurePath],
     enable_pre: bool = False,
 ) -> None:
     cmd = prefix_cmd + [
@@ -102,7 +110,7 @@ def _do_pip_install_req(
     if isinstance(req, PurePath):
         if not req.name.endswith(WHEEL_FILE_EXTENSION):
             cmd += ["-r"]
-        cmd += [str(req.absolute())]
+        cmd += [str(req.absolute())]  # type: ignore
     elif os.path.isfile(req):
         if not req.endswith(WHEEL_FILE_EXTENSION):
             cmd += ["-r"]
@@ -114,7 +122,9 @@ def _do_pip_install_req(
 
 
 def venv_install_req(
-    venvdir: t.Union[str, Path], req: t.Union[str, Path], enable_pre: bool = False
+    venvdir: t.Union[str, Path],
+    req: t.Union[str, Path, PurePath],
+    enable_pre: bool = False,
 ) -> None:
     if not req:
         return
@@ -614,12 +624,13 @@ def restore_python_env(
     local_gen_env: bool = False,
     wheels: t.Optional[t.List[str]] = None,
     deps: t.Optional[t.Dict[str, t.Union[t.List[str], str]]] = None,
+    configs: t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]] = None,
 ) -> None:
     console.print(
         f":bread: restore python:{python_version} {mode}@{workdir}, use local env data: {local_gen_env}"
     )
     _f = _do_restore_conda if mode == PythonRunEnv.CONDA else _do_restore_venv
-    _f(workdir, local_gen_env, python_version, wheels, deps)
+    _f(workdir, local_gen_env, python_version, wheels, deps, configs)
 
 
 def _do_restore_conda(
@@ -628,6 +639,7 @@ def _do_restore_conda(
     _python_version: str,
     _wheels: t.Optional[t.List[str]],
     _deps: t.Optional[t.Dict[str, t.Union[t.List[str], str]]],
+    _configs: t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]],
 ) -> None:
     _conda_dir = _workdir / "dep" / "conda"
     _tar_fpath = _conda_dir / CONDA_ENV_TAR
@@ -650,7 +662,7 @@ def _do_restore_conda(
         _deps = _deps or {}
         for _r in iter_pip_reqs(_workdir, _wheels, _deps):
             logger.debug(f"conda run pip install: {_r}")
-            conda_install_req(req=_r, prefix_path=_env_dir)
+            conda_install_req(req=_r, prefix_path=_env_dir, configs=_configs)
 
         # TODO: config conda channel
         # TODO: support conda_files to restore that is from _manifest["dependencies"]
@@ -659,7 +671,10 @@ def _do_restore_conda(
         if _conda_pkgs:
             logger.debug(f"conda install: {_conda_pkgs}")
             conda_install_req(
-                req=_conda_pkgs, prefix_path=_env_dir, use_pip_install=False
+                req=_conda_pkgs,
+                prefix_path=_env_dir,
+                use_pip_install=False,
+                configs=_configs,
             )
 
         # TODO: check local mode conda export the installed wheel pkgs
@@ -707,6 +722,7 @@ def _do_restore_venv(
     _python_version: str,
     _wheels: t.Optional[t.List[str]],
     _deps: t.Optional[t.Dict[str, t.Union[t.List[str], str]]],
+    _configs: t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]],
     _rebuild: bool = False,
 ) -> None:
     _python_dir = _workdir / "dep" / "python"

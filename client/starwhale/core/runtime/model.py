@@ -722,6 +722,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     wheels=_manifest.get("artifacts", {}).get(
                         RuntimeArtifactType.WHEELS, []
                     ),
+                    configs=_manifest.get("configs", {}),
                 ),
             ),
             (
