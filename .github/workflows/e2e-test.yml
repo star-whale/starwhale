@@ -2,7 +2,7 @@ name: End to End test for starwhale
 
 on:
   schedule:
-    - cron:  '34 10,13 * * *'
+    - cron: "34 10,13 * * *"
 
 env:
   PYPI_RELEASE_VERSION: 100.0.0
@@ -22,28 +22,8 @@ env:
   REPO_NAME_PYPI: pypi-hosted
 
 jobs:
-  filter:
-    runs-on: ubuntu-latest
-
-    outputs:
-      java: ${{ steps.filter.outputs.java }}
-      client: ${{ steps.filter.outputs.client }}
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Check for console files changed
-        uses: getsentry/paths-filter@v2
-        id: filter
-        with:
-          base: main
-          filters: .github/file-filter.yml
-
   e2e-test:
     runs-on: ubuntu-latest
-
-    needs:
-      - filter
-    if: ${{ (github.event_name == 'pull_request' && ( needs.filter.outputs.java == 'true' || needs.filter.outputs.client == 'true')) || github.event_name == 'push' }}
 
     defaults:
       run:
