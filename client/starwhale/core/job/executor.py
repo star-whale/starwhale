@@ -339,7 +339,6 @@ class EvalExecutor:
             "SW_PYPI_INDEX_URL",
             "SW_PYPI_EXTRA_INDEX_URL",
             "SW_PYPI_TRUSTED_HOST",
-            "SW_RESET_CONDA_CONFIG",
         ):
             if _ee not in _env:
                 continue

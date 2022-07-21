@@ -43,13 +43,6 @@ EOF
     else
         echo -e "\t ** use image builtin pip.conf"
     fi
-
-    if [ "${SW_RESET_CONDA_CONFIG}" = "1" ]; then
-        echo -e "\t ** REMOVE CONDA custom config, use default"
-        mv ~/.condarc ~/.condarc_sw_backup || true
-    else
-        echo -e "\t ** use image builtin condarc"
-    fi
 }
 
 set_pip_cache() {

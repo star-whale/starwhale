@@ -57,11 +57,11 @@ nexus3:
 
 # todo self define hostname
 nexus-repository-manager:
-  nexus: 
+  nexus:
     nexusPort: 8081
-    # hostAliases: 
+    # hostAliases:
     #   - nexus.pre.intra.starwhale.ai
-    env: 
+    env:
       - name: NEXUS_SECURITY_RANDOMPASSWORD
         value: "false"
     resources:
@@ -184,8 +184,6 @@ ingress:
   path: /
 
 mirror:
-  conda:
-    enabled: true
   pypi:
     enabled: true
     indexUrl: "http://10.131.0.1:3141/root/pypi-douban/+simple/"

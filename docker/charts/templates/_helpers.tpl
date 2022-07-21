@@ -74,13 +74,6 @@ Create the name of the service account to use
 Config mirror environment
 */}}
 {{- define "chart.mirror.env" -}}
-- name: SW_RESET_CONDA_CONFIG
-{{- if .Values.mirror.conda.enabled }}
-  value: "0"
-{{- else }}
-  value: "1"
-{{- end }}
-
 {{- if .Values.mirror.pypi.enabled }}
 - name: SW_PYPI_INDEX_URL
   value: "{{ .Values.mirror.pypi.indexUrl }}"
