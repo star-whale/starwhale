@@ -39,6 +39,11 @@ interface IIconFontProps {
         | 'setting2'
         | 'success'
         | 'runtime'
+        | 'fold2'
+        | 'unfold2'
+        | 'decline'
+        | 'rise'
+        | 'pin'
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {
@@ -58,13 +63,16 @@ export default function IconFont({ size = 14, type = 'user', kind = 'inherit', s
                 fontSize: size,
                 color: kind === 'inherit' ? 'inherit' : colors[kind],
                 padding: 0,
+                // display: 'inline-block',
                 fontWeight: 'normal',
                 ...style,
             }}
         >
             {type === 'project' && <img src={projectSvg} alt={type} width={20} />}
             {type === 'setting2' && <img src={settingSvg} alt={type} width={20} />}
-            {!['project', 'setting2'].includes(type) && <span className={`iconfont icon-${type}`} />}
+            {!['project', 'setting2'].includes(type) && (
+                <span className={`iconfont icon-${type}`} style={{ fontSize: size }} />
+            )}
         </div>
     )
 }

@@ -8,3 +8,12 @@ export const useTableConfig = (keys: Array<any>, value: Record<string, any>) => 
         setConfig,
     }
 }
+
+export const useTableViewConfig = <T>(keys: Array<any>, value: T) => {
+    const [config, setConfig] = useLocalStorage(['table', ...keys].join('/'), value)
+
+    return {
+        config,
+        setConfig,
+    }
+}

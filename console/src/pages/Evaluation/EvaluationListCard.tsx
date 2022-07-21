@@ -17,9 +17,14 @@ import { useFetchEvaluationAttrs } from '@/domain/evaluation/hooks/useFetchEvalu
 import { usePage } from '@/hooks/usePage'
 import { ColumnT } from '@/components/data-table/types'
 import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
+import _ from 'lodash'
+import { useStyletron } from 'baseui'
+import { useEvaluationCompareStore, useEvaluationStore } from '@/components/data-table/store'
+import { headerHeight } from '@/consts'
 import EvaluationListCompare from './EvaluationListCompare'
 
 export default function EvaluationListCard() {
+    const [css] = useStyletron()
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
@@ -37,6 +42,9 @@ export default function EvaluationListCard() {
         },
         [evaluationsInfo, projectId]
     )
+
+    const store = useEvaluationStore()
+
     // const handleAction = useCallback(
     //     async (jobId, type: JobActionType) => {
     //         await doJobAction(projectId, jobId, type)
@@ -55,6 +63,8 @@ export default function EvaluationListCard() {
             CustomColumn({
                 key: 'uuid',
                 title: t('Evaluation ID'),
+                // filterable: true,
+                // renderFilter: () => <div>1</div>,
                 mapDataToValue: (item: any) => item,
                 // @ts-ignore
                 renderCell: (props: any) => {
@@ -70,6 +80,7 @@ export default function EvaluationListCard() {
             StringColumn({
                 key: 'modelName',
                 title: t('sth name', [t('Model')]),
+                filterable: true,
                 mapDataToValue: (data: any) => data.modelName,
             }),
             StringColumn({
@@ -97,56 +108,6 @@ export default function EvaluationListCard() {
                 title: t('End Time'),
                 mapDataToValue: (data: any) => (data.stopTime > 0 ? formatTimestampDateTime(data.stopTime) : '-'),
             }),
-            // CustomColumn({
-            //     key: 'action',
-            //     title: t('Action'),
-            //     // @ts-ignore
-            //     renderCell: (props: any) => {
-            //         const data = props.value ?? {}
-            //         const actions: Partial<Record<JobStatusType, React.ReactNode>> = {
-            //             [JobStatusType.CREATED]: (
-            //                 <>
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
-            //                         {t('Cancel')}
-            //                     </StyledLink>
-            //                     &nbsp;&nbsp;
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.PAUSE)}>
-            //                         {t('Pause')}
-            //                     </StyledLink>
-            //                 </>
-            //             ),
-            //             [JobStatusType.RUNNING]: (
-            //                 <>
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
-            //                         {t('Cancel')}
-            //                     </StyledLink>
-            //                     &nbsp;&nbsp;
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.PAUSE)}>
-            //                         {t('Pause')}
-            //                     </StyledLink>
-            //                 </>
-            //             ),
-            //             [JobStatusType.PAUSED]: (
-            //                 <>
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.CANCEL)}>
-            //                         {t('Cancel')}
-            //                     </StyledLink>
-            //                     &nbsp;&nbsp;
-            //                     <StyledLink onClick={() => handleAction(data.id, JobActionType.RESUME)}>
-            //                         {t('Resume')}
-            //                     </StyledLink>
-            //                 </>
-            //             ),
-            //             [JobStatusType.SUCCESS]: (
-            //                 <Link to={`/projects/${projectId}/evaluations/${data.id}/results`}>
-            //                     {t('View Results')}
-            //                 </Link>
-            //             ),
-            //         }
-            //         return actions[data.jobStatus as JobStatusType] ?? ''
-            //     },
-            //     mapDataToValue: (item: any) => item,
-            // }),
         ],
         [projectId, t]
     )
@@ -167,6 +128,7 @@ export default function EvaluationListCard() {
                         StringColumn({
                             key: attr.name,
                             title: name,
+                            filterType: 'string',
                             mapDataToValue: (data: any) => data.attributes?.[attr.name],
                         })
                     )
@@ -178,6 +140,7 @@ export default function EvaluationListCard() {
                             key: attr.name,
                             title: name,
                             sortable: true,
+                            filterType: 'number',
                             sortFn: (a: any, b: any) => {
                                 // eslint-disable-next-line
                                 const aNum = Number(a)
@@ -203,7 +166,15 @@ export default function EvaluationListCard() {
         return columnsWithAttrs
     }, [evaluationAttrsInfo, columns])
 
-    const [compareRows, setCompareRows] = useState([])
+    const [compareRows, setCompareRows] = useState<any[]>([])
+    // const handleSelectChange = useCallback(
+    //     (selection: RowT[]) => {
+    //         console.log(selection)
+    //         const rows = selection.map((item: any) => item.data)
+    //         setCompareRows(rows)
+    //     },
+    //     [setCompareRows]
+    // )
     const batchAction = useMemo(
         () => [
             {
@@ -214,14 +185,130 @@ export default function EvaluationListCard() {
                 },
             },
         ],
-        []
+        [setCompareRows]
     )
 
+    const $data = useMemo(
+        () =>
+            evaluationsInfo.data?.list?.map((raw) => {
+                const $attributes = raw.attributes?.filter((item: any) => _.startsWith(item.name, 'summary'))
+                return {
+                    ...raw,
+                    attributes: $attributes,
+                }
+            }) ?? [],
+        [evaluationsInfo.data]
+    )
+
+    const gridLayout = useMemo(() => {
+        return [
+            // RIGHT:
+            '0px 10px 1fr',
+            // MIDDLE:
+            '1fr 10px 1fr',
+            // LEFT:
+            '1fr 10px 0px',
+        ]
+    }, [])
+    const [gridMode, setGridMode] = useState(1)
+    const resizeRef = React.useRef<HTMLDivElement>(null)
+    const gridRef = React.useRef<HTMLDivElement>(null)
+    const leftRef = React.useRef<HTMLDivElement | null>(null)
+
+    const grdiModeRef = React.useRef(1)
+    const resize = useCallback(
+        (e: MouseEvent) => {
+            window.requestAnimationFrame(() => {
+                if (resizeRef.current && leftRef.current) {
+                    const offset = resizeRef.current.getBoundingClientRect().left - e.clientX
+                    // leftRef.current!.style.width = `${leftRef.current?.getBoundingClientRect().width - offset}px`
+                    // leftRef.current!.style.flexBasis = `${leftRef.current?.getBoundingClientRect().width - offset}px`
+                    // console.log('resize', leftRef.current?.getBoundingClientRect(), e.clientX, offset)
+                    const newWidth = leftRef.current?.getBoundingClientRect().width - offset
+                    // eslint-disable-next-line
+                    if (newWidth + 300 > gridRef.current!.getBoundingClientRect().width) {
+                        grdiModeRef.current = 2
+                        setGridMode(2)
+                    } else if (newWidth < 440) {
+                        grdiModeRef.current = 0
+                        setGridMode(0)
+                    } else if (grdiModeRef.current === 1) {
+                        // eslint-disable-next-line
+                        gridRef.current!.style.gridTemplateColumns = `${Math.max(
+                            newWidth,
+                            440
+                        )}px 10px minmax(400px, 1fr)`
+                    }
+                }
+            })
+        },
+        [grdiModeRef, setGridMode]
+    )
+    const resizeEnd = () => {
+        document.body.style.userSelect = 'unset'
+        document.body.style.cursor = 'unset'
+        document.removeEventListener('mouseup', resizeEnd)
+        document.removeEventListener('mousemove', resize)
+    }
+    const resizeStart = () => {
+        if (gridMode !== 1) return
+        grdiModeRef.current = 1
+        document.body.style.userSelect = 'none'
+        document.body.style.cursor = 'col-resize'
+        document.addEventListener('mouseup', resizeEnd)
+        document.addEventListener('mousemove', resize)
+    }
+    const handleResizeStart = resizeStart
+
+    React.useEffect(() => {
+        return resizeEnd
+    })
+
+    const handleResize = useCallback(
+        (dir) => {
+            let next = Math.min(gridLayout.length - 1, gridMode + dir)
+            next = Math.max(0, next)
+            grdiModeRef.current = next
+            setGridMode(next)
+        },
+        [gridMode, setGridMode, grdiModeRef, gridLayout]
+    )
+
+    React.useEffect(() => {
+        setCompareRows($data.filter((r) => store.rowSelectedIds.includes(r.id)))
+    }, [store.rowSelectedIds, $data])
+
+    React.useEffect(() => {
+        const unsub = useEvaluationCompareStore.subscribe(
+            (state: any) => state.rowSelectedIds,
+            (state: any[]) => store.onSelectMany(state)
+        )
+        return unsub
+    }, [store, $data])
+
     return (
-        <>
+        <div
+            ref={gridRef}
+            style={{
+                display: 'grid',
+                gridTemplateColumns: compareRows.length === 0 ? '1fr' : gridLayout[gridMode],
+                overflow: 'hidden',
+                width: '100%',
+                height: `calc(100vh - ${2 * headerHeight}px)`,
+            }}
+        >
             <Card
+                onMountCard={(ref) => {
+                    leftRef.current = ref
+                }}
                 title={t('Evaluations')}
-                style={{ marginRight: expanded ? expandedWidth : '0' }}
+                style={{
+                    marginRight: expanded ? expandedWidth : '0',
+                    flexShrink: 1,
+                    minWidth: '440px',
+                    marginBottom: 0,
+                    // gridColumn:
+                }}
                 extra={
                     <Button
                         startEnhancer={<IconFont type='add' kind='white' />}
@@ -236,19 +323,17 @@ export default function EvaluationListCard() {
                 }
             >
                 <Table
-                    // @ts-ignore
-                    // onColumnSave={(columnSortedIds, columnVisibleIds, sortedIds) => {
-                    //     console.log(columnSortedIds, columnVisibleIds)
-                    // }}
+                    useStore={useEvaluationStore}
                     searchable
                     filterable
                     columnable
+                    viewable
                     id='evaluations'
                     batchActions={batchAction}
                     isLoading={evaluationsInfo.isLoading}
                     columns={$columnsWithAttrs}
-                    // @ts-ignore
-                    data={evaluationsInfo.data?.list ?? []}
+                    // onSelectionChange={handleSelectChange}
+                    data={$data}
                 />
                 <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                     <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
@@ -258,10 +343,68 @@ export default function EvaluationListCard() {
                 </Modal>
             </Card>
             {compareRows.length > 0 && (
-                <Card title={t('Compare Evaluations')} style={{ marginRight: expanded ? expandedWidth : '0' }}>
-                    <EvaluationListCompare rows={compareRows} attrs={evaluationAttrsInfo?.data ?? []} />
-                </Card>
+                <>
+                    {/* eslint-disable-next-line jsx-a11y/role-has-required-aria-props */}
+                    <div
+                        ref={resizeRef}
+                        className={css({
+                            'width': '10px',
+                            'flexBasis': '10px',
+                            'cursor': 'col-resize',
+                            'paddingTop': '112px',
+                            'zIndex': 20,
+                            'overflow': 'visible',
+                            ':hover': {
+                                backgroundColor: '',
+                            },
+                            'position': 'relative',
+                            'right': gridMode === 2 ? '14px' : undefined,
+                            'left': gridMode === 0 ? '4px' : undefined,
+                        })}
+                        role='button'
+                        tabIndex={0}
+                        onMouseDown={handleResizeStart}
+                    >
+                        <i
+                            role='button'
+                            tabIndex={0}
+                            className='resize-left resize-left--hover'
+                            onClick={() => handleResize(1)}
+                        >
+                            <IconFont
+                                type='fold2'
+                                size={12}
+                                style={{
+                                    color: gridMode !== 2 ? undefined : '#ccc',
+                                    transform: 'rotate(-90deg) translateY(-2px)',
+                                    marginBottom: '2px',
+                                }}
+                            />
+                        </i>
+                        <i
+                            role='button'
+                            tabIndex={0}
+                            className='resize-right resize-right--hover'
+                            onClick={() => handleResize(-1)}
+                        >
+                            <IconFont
+                                type='unfold2'
+                                size={12}
+                                style={{
+                                    color: gridMode !== 0 ? undefined : '#ccc',
+                                    transform: 'rotate(-90deg) translateY(2px)',
+                                }}
+                            />
+                        </i>
+                    </div>
+                    <Card
+                        title={t('Compare Evaluations')}
+                        style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}
+                    >
+                        <EvaluationListCompare rows={compareRows} attrs={evaluationAttrsInfo?.data ?? []} />
+                    </Card>
+                </>
             )}
-        </>
+        </div>
     )
 }

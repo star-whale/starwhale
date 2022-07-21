@@ -25,31 +25,8 @@ import { useTableConfig, useTableViewConfig } from '@/hooks/useTableConfig'
 import { areEqual } from 'react-window'
 import type { ColumnT, ConfigT, RowT } from '../data-table/types'
 import { useUID, useUIDSeed } from 'react-uid'
-import { IStore } from '../data-table/store'
+import useStore from '../data-table/store'
 import { useEffect } from 'react'
-import { useStyletron } from 'baseui'
-import { createUseStyles } from 'react-jss'
-import cn from 'classnames'
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
-
-const useStyles = createUseStyles({
-    table: {
-        '& .baseui-table-cell-content': {},
-    },
-    tableCompareable: {
-        '& .table-cell--last': {
-            // borderBottom: '1px solid #2B65D9 !important',
-        },
-    },
-    tablePinnable: {
-        '& .table-columns-pinned .table-row .table-cell:last-child': {
-            borderRight: '1px solid rgb(207, 215, 230); ',
-        },
-        '& .table-headers-pinned > div:last-child': {
-            borderRight: '1px solid rgb(207, 215, 230)',
-        },
-    },
-})
 
 export interface ITableProps extends BaseTableProps {
     batchActions?: Types.BatchActionT[]
@@ -60,11 +37,9 @@ export interface ITableProps extends BaseTableProps {
     filterable?: boolean
     searchable?: boolean
     columnable?: boolean
-    compareable?: boolean
     viewable?: boolean
     id?: string
     data: any[]
-    useStore: IStore
 }
 
 export function TableTyped({
@@ -80,15 +55,13 @@ export function TableTyped({
     searchable = false,
     filterable = false,
     columnable = false,
-    compareable = false,
     viewable = false,
-    useStore,
+    id,
 }: ITableProps) {
     const [t] = useTranslation()
     const [page, setPage] = usePage()
     const wrapperRef = useRef<HTMLDivElement>(null)
-    const store = useStore()
-    console.log('【TableRendered】', store.key)
+    console.log('【TableRendered】')
 
     let $columns = columns.map((raw: any, index) => {
         let column = raw
@@ -166,52 +139,49 @@ export function TableTyped({
         () =>
             data.map((raw, index) => {
                 return {
-                    id: raw.id ?? index + '',
+                    id: index + '',
                     data: raw,
                 }
             }),
         [data]
     )
 
+    const ROW_HEIGHT = 44
+
+    // @ts-ignore
+    // const $batchActions: BatchActionT[] = [
+    //     {
+    //         label: 'Compare',
+    //         onClick: () => {},
+    //     },
+    // ]
+
+    // const { config: views, setConfig: setViews } = useTableViewConfig<ConfigT[]>([id, 'views'], [])
+    // const { config: currentView, setConfig: setCurrentView } = useTableViewConfig<ConfigT>([id, 'currentView'], {
+    //     name: '',
+    //     filters: [],
+    //     selectedIds: $columns.map((v) => v.key) ?? [],
+    //     sortedIds: [],
+    //     pinnedIds: [],
+    // })
+
     const $filters = useMemo(() => {
-        return store.currentView?.filters
-    }, [store])
-
-    useEffect(() => {
-        if (!store.isInit) {
-            useStore.setState({
-                isInit: true,
-                currentView: {
-                    name: '',
-                    filters: [],
-                    selectedIds: $columns.map((v) => v.key) ?? [],
-                    sortedIds: [],
-                    pinnedIds: [],
-                },
-            })
-        }
-    }, [$columns])
-
-    const styles = useStyles()
+        return []
+    }, [])
 
     return (
         <>
             <div
-                // style={{ width: '100%', minHeight: 500, height: `${120 + Math.min($rows.length, 10) * ROW_HEIGHT}px` }}
-                className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
-                style={{ width: '100%', minHeight: 500, height: '100%' }}
+                style={{ width: '100%', minHeight: 500, height: `${120 + Math.min($rows.length, 10) * ROW_HEIGHT}px` }}
                 ref={wrapperRef}
             >
                 <StatefulDataTable
-                    store={store}
-                    useStore={useStore}
                     resizableColumnWidths
                     onSelectionChange={onSelectionChange}
                     initialFilters={$filters}
                     searchable={searchable}
                     filterable={filterable}
                     columnable={columnable}
-                    compareable={compareable}
                     viewable={viewable}
                     loading={!!isLoading}
                     batchActions={batchActions}

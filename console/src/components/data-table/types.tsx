@@ -1,14 +1,10 @@
-/*
-Copyright (c) Uber Technologies, Inc.
-
-This source code is licensed under the MIT license found in the
-LICENSE file in the root directory of this source tree.
-*/
 // @flow
 
 import * as React from 'react'
 
 import { COLUMNS, SORT_DIRECTIONS } from './constants'
+// eslint-disable-next-line import/no-cycle
+import { IStore } from './store'
 
 export type SortDirectionsT = typeof SORT_DIRECTIONS.ASC | typeof SORT_DIRECTIONS.DESC | null
 
@@ -20,6 +16,17 @@ export type ColumnsT =
     | typeof COLUMNS.DATETIME
     | typeof COLUMNS.NUMERICAL
     | typeof COLUMNS.STRING
+
+export enum FilterTypes {
+    sysDefault = 'sysDefault',
+    default = 'default',
+    string = 'string',
+    number = 'number',
+    enum = 'enum',
+    // float = 'float',
+    // boolean = 'boolean',
+    // date = 'date',
+}
 
 // These options are available on all column kinds. Most have additional
 // unique options depending on the data visualization requirements.
@@ -35,6 +42,7 @@ export type SharedColumnOptionsT<ValueT> = {
     title: string
     key?: string
     pin?: 'LEFT'
+    filterType?: keyof typeof FilterTypes
     onAsyncChange?: (value: ValueT, columnIndex: number, rowIndex: number) => Promise<void>
 }
 
@@ -97,22 +105,29 @@ export type ControlRefT = {
 }
 
 export type ConfigT = {
-    selectIds?: Array<any>
+    id?: string
+    def?: boolean
+    isShow?: boolean
+    selectedIds?: Array<any>
     sortedIds?: Array<any>
     pinnedIds?: Array<any>
+    filters?: Array<any>
+    name?: string
 }
 
 export type StatefulDataTablePropsT = {
     batchActions?: BatchActionT[]
     columns: ColumnT[]
+    rawColumns: ColumnT[]
     emptyMessage?: string | React.Component<any>
     filterable?: boolean
-    initialFilters?: Map<string, { description: string }>
+    initialFilters?: any[]
     initialSelectedRowIds?: Set<number | string>
     initialSortIndex?: number
     initialSortDirection?: SortDirectionsT
     loading?: boolean
     loadingMessage?: string | React.Component<any>
+    onFilterSet?: (v: any[]) => void
     onFilterAdd?: (v: string, { description: string }: any) => any
     onFilterRemove?: (v: string) => any
     onIncludedRowsChange?: (rows: RowT[]) => void
@@ -125,14 +140,15 @@ export type StatefulDataTablePropsT = {
     rowHighlightIndex?: number
     searchable?: boolean
     columnable?: boolean
+    viewable?: boolean
+    compareable?: boolean
     controlRef?: ControlRefT
-    onColumnSave?: (props: any) => void
-    config?: ConfigT
+    useStore: IStore
 }
 
 export type DataTablePropsT = {
     emptyMessage?: string | React.Component<any>
-    filters?: Map<string, { description: string }>
+    filters?: any[]
     loading?: boolean
     loadingMessage?: string | React.Component<any>
     onIncludedRowsChange?: (rows: RowT[]) => void
@@ -151,8 +167,9 @@ export type DataTablePropsT = {
 
 export type StatefulContainerPropsT = {
     children: {
-        filters: Map<string, { description: string }>
-        onFilterAdd: (title: string, filterParams: { description: string }) => void
+        filters: any[]
+        onFilterSet: (filterParams: any[]) => void
+        onFilterAdd: (title: string, filterParams: any[]) => void
         onFilterRemove: (title: string) => void
         onIncludedRowsChange: (rows: RowT[]) => void
         onRowHighlightChange: (rowIndex: number, row: RowT) => void
@@ -167,7 +184,5 @@ export type StatefulContainerPropsT = {
         sortIndex: number
         sortDirection: SortDirectionsT
         textQuery: string
-        onColumnSave: (props: any) => void
-        config: ConfigT
     }
 } & StatefulDataTablePropsT
