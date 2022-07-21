@@ -30,6 +30,11 @@ def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
 
     p.wait()
 
+    try:
+        p.stdout.close()  # type: ignore
+    except Exception as ex:
+        log(f"failed to close stdout:{ex}")
+
     if p.returncode != 0:
         cmd = kwargs.get("args") or args[0]
         e = CalledProcessError(p.returncode, cmd)
