@@ -172,7 +172,7 @@ def sort_obj_list(data: t.Sequence, orders: t.List[Order]) -> t.Any:
     return sorted(data, key=cmp_to_key(compare))
 
 
-def load_yaml(path: t.Union[str, Path]):
+def load_yaml(path: t.Union[str, Path]) -> t.Any:
     """load_yaml loads yaml from path, it may raise exception such as yaml.YAMLError"""
     with open(path) as f:
         return yaml.safe_load(f)

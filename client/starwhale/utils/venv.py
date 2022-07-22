@@ -188,18 +188,24 @@ def venv_setup(
     console.print(f":clap: create venv@{venvdir}, python:{session.interpreter.version}")  # type: ignore
 
 
+def pip_freeze_by_bin(
+    py_bin: str, lock_fpath: t.Union[str, Path], include_editable: bool = False
+) -> None:
+    logger.info(f"{py_bin}: pip freeze")
+    cmd = [py_bin, "-m", "pip", "freeze", "--require-virtualenv"]
+    if not include_editable:
+        cmd += ["--exclude-editable"]
+    cmd += [">", str(lock_fpath)]
+
+    check_call(" ".join(cmd), shell=True)
+
+
 def pip_freeze(
-    py_env: str, path: t.Union[str, Path], include_editable: bool = False
+    py_env: str, lock_fpath: t.Union[str, Path], include_editable: bool = False
 ) -> None:
     # TODO: add cmd timeout and error log
     _py_bin = get_user_runtime_python_bin(py_env)
-    logger.info(f"{_py_bin}: pip freeze")
-    cmd = [_py_bin, "-m", "pip", "freeze", "--require-virtualenv"]
-    if not include_editable:
-        cmd += ["--exclude-editable"]
-    cmd += [">", str(path)]
-
-    check_call(" ".join(cmd), shell=True)
+    pip_freeze_by_bin(_py_bin, lock_fpath, include_editable)
 
 
 def user_pip_install_pkg(py_env: str, pkg_name: str, enable_pre: bool = False) -> None:
@@ -279,11 +285,24 @@ def conda_create(
     check_call(cmd)
 
 
-def conda_export(path: t.Union[str, Path], env: str = "") -> None:
+def conda_export(
+    lock_fpath: t.Union[str, Path], name: str = "", prefix: str = ""
+) -> None:
     # TODO: add cmd timeout
-    cmd = f"{get_conda_bin()} env export"
-    env = f"-n {env}" if env else ""
-    check_call(f"{cmd} {env} > {path}", shell=True)
+    cmd = [
+        get_conda_bin(),
+        "env",
+        "export",
+    ]
+
+    if name:
+        cmd += ["--name", name]
+
+    if prefix:
+        cmd += ["--prefix", prefix]
+
+    cmd += ["--file", lock_fpath]
+    check_call(cmd)
 
 
 def conda_restore(

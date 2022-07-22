@@ -9,6 +9,7 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_PYTHON_VERSION,
 )
+from starwhale.base.type import RuntimeEnvURIType
 
 from .view import get_term_view, RuntimeTermView
 
@@ -202,3 +203,37 @@ def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
 @click.argument("workdir")
 def _activate(workdir: str, runtime_yaml: str) -> None:
     RuntimeTermView.activate(workdir, runtime_yaml)
+
+
+@runtime_cmd.command("lock")
+@click.argument("target_dir", default=".")
+@click.option(
+    "--disable-auto-inject",
+    is_flag=True,
+    help="Disable auto update runtime.yaml dependencies field with lock file name, only render the lock file",
+)
+@click.option(
+    "-e",
+    "--env",
+    default=RuntimeEnvURIType.SHELL,
+    help="Detect the python environment name, support:shell, venv name(pyenv), conda name, venv path, conda prefix path, default is current shell",
+)
+@click.option("--stdout", is_flag=True, help="Output lock file content to the stdout")
+@click.option(
+    "--include-editable",
+    is_flag=True,
+    help="Include editable packages, only for venv mode",
+)
+def _lock(
+    target_dir: str,
+    disable_auto_inject: bool,
+    env: str,
+    stdout: bool,
+    include_editable: bool,
+) -> None:
+    """
+    [Only Standalone]Lock Python venv or conda environment
+
+    TARGET_DIR: the runtime.yaml and local file dir, default is "."
+    """
+    RuntimeTermView.lock(target_dir, disable_auto_inject, env, stdout, include_editable)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import typing as t
+import tempfile
 from abc import ABCMeta
 from copy import deepcopy
 from pathlib import Path
@@ -39,17 +40,28 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir, ensure_file, get_path_created_time
-from starwhale.base.type import URIType, BundleType, InstanceType, RuntimeArtifactType
+from starwhale.base.type import (
+    URIType,
+    BundleType,
+    InstanceType,
+    RuntimeEnvURIType,
+    RuntimeArtifactType,
+    RuntimeLockFileType,
+)
 from starwhale.base.cloud import CloudRequestMixed
 from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
+    conda_export,
     detect_pip_req,
+    get_base_prefix,
     venv_install_req,
     conda_install_req,
     create_python_env,
+    pip_freeze_by_bin,
     restore_python_env,
     activate_python_env,
     dump_python_dep_env,
+    guess_current_py_env,
     DUMP_USER_PIP_REQ_FNAME,
 )
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
@@ -59,6 +71,7 @@ from starwhale.utils.error import (
     NotFoundError,
     NoSupportError,
     ConfigFormatError,
+    PythonEnvironmentError,
 )
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
@@ -338,6 +351,19 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     @classmethod
     def activate(cls, workdir: str, yaml_name: str) -> None:
         StandaloneRuntime.activate(workdir, yaml_name)
+
+    @classmethod
+    def lock(
+        cls,
+        target_dir: str,
+        disable_auto_inject: bool,
+        env: str,
+        stdout: bool,
+        include_editable: bool,
+    ) -> None:
+        StandaloneRuntime.lock(
+            target_dir, disable_auto_inject, env, stdout, include_editable
+        )
 
 
 class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
@@ -677,6 +703,94 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         else:
             _id = _run_config.name
         activate_python_env(mode=_run_config.mode, identity=_id)
+
+    @classmethod
+    def lock(
+        cls,
+        target_dir: str,
+        disable_auto_inject: bool,
+        env: str,
+        stdout: bool,
+        include_editable: bool,
+    ) -> None:
+        runtime_fpath = Path(target_dir) / DefaultYAMLName.RUNTIME
+        mode, env_prefix, env_name = cls._fetch_python_env_meta(runtime_fpath, env)
+        console.print(
+            f":butterfly: lock dependencies at mode:{mode}, env prefix:{env_prefix}"
+        )
+
+        _, temp_lock_path = tempfile.mkstemp(prefix="starwhale-lock-")
+        if mode == PythonRunEnv.CONDA:
+            _kw = {"prefix": env_prefix, "name": env_name}
+            console.print(
+                f":cat_face: use conda env name({env_name})/prefix({env_prefix}) to export environment..."
+            )
+            conda_export(temp_lock_path, **_kw)
+        else:
+            _py_bin = os.path.join(env_prefix, "bin", "python3")
+            console.print(f":cat_face: use {_py_bin} to freeze requirements...")
+            pip_freeze_by_bin(_py_bin, temp_lock_path, include_editable)
+
+        if stdout:
+            console.rule("requirements lock")
+            with open(temp_lock_path) as f:
+                console.print(f.read())
+            os.unlink(temp_lock_path)
+        else:
+            dest_fname = (
+                RuntimeLockFileType.CONDA
+                if mode == PythonRunEnv.CONDA
+                else RuntimeLockFileType.VENV
+            )
+            console.print(f":mouse: dump lock file: {dest_fname}")
+            shutil.move(temp_lock_path, Path(target_dir) / dest_fname)
+
+            if not disable_auto_inject and runtime_fpath.exists():
+                cls._update_runtime_dep_lock_field(runtime_fpath, dest_fname)
+
+    @staticmethod
+    def _update_runtime_dep_lock_field(runtime_fpath: Path, lock_fname: str) -> None:
+        content = load_yaml(runtime_fpath)
+        deps = content.get("dependencies", [])
+        if lock_fname in deps:
+            return
+
+        console.print(f":monkey_face: update {runtime_fpath} dependencies field")
+        deps.append(lock_fname)
+        content["dependencies"] = deps
+        ensure_file(runtime_fpath, yaml.safe_dump(content, default_flow_style=False))
+
+    @staticmethod
+    def _fetch_python_env_meta(runtime_fpath: Path, env: str) -> t.Tuple[str, str, str]:
+        mode, env_prefix, env_name = "", "", ""
+        if runtime_fpath.exists():
+            mode = load_yaml(runtime_fpath).get("mode", PythonRunEnv.VENV)
+
+        if env == RuntimeEnvURIType.SHELL:
+            _current_py_env = guess_current_py_env()
+            if mode and _current_py_env != mode:
+                raise PythonEnvironmentError(
+                    f"runtime.yaml mode:{mode}, shell python env:{_current_py_env}"
+                )
+            mode = mode or _current_py_env
+            env_prefix = get_base_prefix(mode)
+        elif os.path.isdir(env):
+            if os.path.exists(os.path.join(env, "pyvenv.cfg")):
+                mode = PythonRunEnv.VENV
+            elif os.path.exists(os.path.join(env, "conda-meta")):
+                mode = PythonRunEnv.CONDA
+            else:
+                mode = PythonRunEnv.SYSTEM
+            env_prefix = env
+        else:
+            if mode == PythonRunEnv.CONDA:
+                env_name = env
+            else:
+                raise NoSupportError(
+                    f"no support to fetch env_prefix env({env}) in mode({mode})"
+                )
+
+        return mode, env_prefix, env_name
 
     @staticmethod
     def render_runtime_yaml(
