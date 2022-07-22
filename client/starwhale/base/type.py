@@ -59,6 +59,11 @@ class RuntimeArtifactType:
     FILES = "files"
 
 
+class RuntimeLockFileType:
+    VENV = "requirements-sw-lock.txt"
+    CONDA = "conda-sw-lock.yaml"
+
+
 def get_bundle_type_by_uri(uri_type: str) -> str:
     if uri_type == URIType.DATASET:
         return BundleType.DATASET

@@ -53,6 +53,25 @@ class RuntimeTermView(BaseTermView):
         Runtime.activate(workdir, yaml_name)
 
     @classmethod
+    def lock(
+        cls,
+        target_dir: str,
+        env_name: str = "",
+        prefix_path: str = "",
+        disable_auto_inject: bool = False,
+        stdout: bool = False,
+        include_editable: bool = False,
+    ) -> None:
+        Runtime.lock(
+            target_dir,
+            env_name,
+            prefix_path,
+            disable_auto_inject,
+            stdout,
+            include_editable,
+        )
+
+    @classmethod
     def build(
         cls,
         workdir: str,
