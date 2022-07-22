@@ -769,12 +769,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             mode = load_yaml(runtime_fpath).get("mode", PythonRunEnv.VENV)
 
         if env == RuntimeEnvURIType.SHELL:
-            _current_py_env = guess_current_py_env()
-            if mode and _current_py_env != mode:
+            _guess_mode = guess_current_py_env()
+            if mode and _guess_mode != mode:
                 raise PythonEnvironmentError(
-                    f"runtime.yaml mode:{mode}, shell python env:{_current_py_env}"
+                    f"runtime.yaml mode:{mode}, shell python env:{_guess_mode}"
                 )
-            mode = mode or _current_py_env
+            mode = mode or _guess_mode
             env_prefix = get_base_prefix(mode)
         elif os.path.isdir(env):
             if os.path.exists(os.path.join(env, "pyvenv.cfg")):
