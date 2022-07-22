@@ -9,7 +9,6 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_PYTHON_VERSION,
 )
-from starwhale.base.type import RuntimeEnvURIType
 
 from .view import get_term_view, RuntimeTermView
 
@@ -212,12 +211,8 @@ def _activate(workdir: str, runtime_yaml: str) -> None:
     is_flag=True,
     help="Disable auto update runtime.yaml dependencies field with lock file name, only render the lock file",
 )
-@click.option(
-    "-e",
-    "--env",
-    default=RuntimeEnvURIType.SHELL,
-    help="Detect the python environment name, support:shell, venv name(pyenv), conda name, venv path, conda prefix path, default is current shell",
-)
+@click.option("-n", "--name", default="", help="conda name")
+@click.option("-p", "--prefix", default="", help="conda or virtualenv prefix path")
 @click.option("--stdout", is_flag=True, help="Output lock file content to the stdout")
 @click.option(
     "--include-editable",
@@ -227,7 +222,8 @@ def _activate(workdir: str, runtime_yaml: str) -> None:
 def _lock(
     target_dir: str,
     disable_auto_inject: bool,
-    env: str,
+    name: str,
+    prefix: str,
     stdout: bool,
     include_editable: bool,
 ) -> None:
@@ -236,4 +232,6 @@ def _lock(
 
     TARGET_DIR: the runtime.yaml and local file dir, default is "."
     """
-    RuntimeTermView.lock(target_dir, env, disable_auto_inject, stdout, include_editable)
+    RuntimeTermView.lock(
+        target_dir, name, prefix, disable_auto_inject, stdout, include_editable
+    )

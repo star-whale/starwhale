@@ -44,7 +44,6 @@ from starwhale.base.type import (
     URIType,
     BundleType,
     InstanceType,
-    RuntimeEnvURIType,
     RuntimeArtifactType,
     RuntimeLockFileType,
 )
@@ -61,8 +60,9 @@ from starwhale.utils.venv import (
     restore_python_env,
     activate_python_env,
     dump_python_dep_env,
-    guess_current_py_env,
+    check_valid_venv_prefix,
     DUMP_USER_PIP_REQ_FNAME,
+    check_valid_conda_prefix,
 )
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import (
@@ -71,8 +71,6 @@ from starwhale.utils.error import (
     NotFoundError,
     NoSupportError,
     ConfigFormatError,
-    FieldTypeOrValueError,
-    PythonEnvironmentError,
 )
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
@@ -357,13 +355,19 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     def lock(
         cls,
         target_dir: t.Union[str, Path],
-        env: str,
+        env_name: str = "",
+        prefix_path: str = "",
         disable_auto_inject: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
     ) -> None:
         StandaloneRuntime.lock(
-            target_dir, env, disable_auto_inject, stdout, include_editable
+            target_dir,
+            env_name,
+            prefix_path,
+            disable_auto_inject,
+            stdout,
+            include_editable,
         )
 
 
@@ -709,31 +713,48 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def lock(
         cls,
         target_dir: t.Union[str, Path],
-        env: str,
+        env_name: str = "",
+        prefix_path: str = "",
         disable_auto_inject: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
     ) -> None:
         runtime_fpath = Path(target_dir) / DefaultYAMLName.RUNTIME
-        mode, env_prefix, env_name = cls._fetch_python_env_meta(runtime_fpath, env)
-        console.print(
-            f":butterfly: lock dependencies at mode:{mode}, env prefix:{env_prefix}"
-        )
+        if not runtime_fpath.exists():
+            raise NotFoundError(runtime_fpath)
+
+        mode = load_yaml(runtime_fpath).get("mode", PythonRunEnv.VENV)
+        console.print(f":butterfly: lock dependencies at mode {mode}")
 
         _, temp_lock_path = tempfile.mkstemp(prefix="starwhale-lock-")
         if mode == PythonRunEnv.CONDA:
-            _kw = {"prefix": env_prefix, "name": env_name}
+            if not env_name and not prefix_path:
+                prefix_path = get_base_prefix(PythonRunEnv.CONDA)
+
+            if prefix_path and not check_valid_conda_prefix(prefix_path):
+                raise FormatError(f"conda prefix: {prefix_path}")
+
+            _kw = {"prefix": prefix_path, "name": env_name}
             console.print(
-                f":cat_face: use conda env name({env_name})/prefix({env_prefix}) to export environment..."
+                f":cat_face: use conda env name({env_name})/prefix({prefix_path}) to export environment..."
             )
             conda_export(temp_lock_path, **_kw)
         else:
-            _py_bin = os.path.join(env_prefix, "bin", "python3")
+            if env_name:
+                raise NoSupportError(
+                    f"lock environment by the env name({env_name}) in venv mode"
+                )
+
+            prefix_path = prefix_path or get_base_prefix(PythonRunEnv.VENV)
+            if not check_valid_venv_prefix(prefix_path):
+                raise FormatError(f"venv prefix: {prefix_path}")
+
+            _py_bin = os.path.join(prefix_path, "bin", "python3")
             console.print(f":cat_face: use {_py_bin} to freeze requirements...")
             pip_freeze_by_bin(_py_bin, temp_lock_path, include_editable)
 
         if stdout:
-            console.rule("requirements lock")
+            console.rule("dependencies lock")
             with open(temp_lock_path) as f:
                 console.print(f.read())
             os.unlink(temp_lock_path)
@@ -761,46 +782,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         content["dependencies"] = deps
         # TODO: safe_dump will change user's other yaml content format at first time
         ensure_file(runtime_fpath, yaml.safe_dump(content, default_flow_style=False))
-
-    @staticmethod
-    def _fetch_python_env_meta(runtime_fpath: Path, env: str) -> t.Tuple[str, str, str]:
-        mode, env_prefix, env_name = "", "", ""
-        if runtime_fpath.exists():
-            mode = load_yaml(runtime_fpath).get("mode", PythonRunEnv.VENV)
-
-        if env == RuntimeEnvURIType.SHELL:
-            _guess_mode = guess_current_py_env()
-            if mode and _guess_mode != mode:
-                raise PythonEnvironmentError(
-                    f"runtime.yaml mode:{mode}, shell python env:{_guess_mode}"
-                )
-            mode = mode or _guess_mode
-            env_prefix = get_base_prefix(mode)
-        elif os.path.isdir(env):
-            if os.path.exists(os.path.join(env, "pyvenv.cfg")):
-                _dir_mode = PythonRunEnv.VENV
-            elif os.path.exists(os.path.join(env, "conda-meta")):
-                _dir_mode = PythonRunEnv.CONDA
-            else:
-                _dir_mode = PythonRunEnv.SYSTEM
-
-            if not mode:
-                mode = _dir_mode
-            elif mode != _dir_mode:
-                raise FieldTypeOrValueError(
-                    f"runtime.yaml mode:{mode}, dir mode:{_dir_mode}"
-                )
-
-            env_prefix = env
-        else:
-            if mode == PythonRunEnv.CONDA:
-                env_name = env
-            else:
-                raise NoSupportError(
-                    f"no support to fetch env_prefix env({env}) in mode({mode})"
-                )
-
-        return mode, env_prefix, env_name
 
     @staticmethod
     def render_runtime_yaml(

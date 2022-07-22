@@ -570,6 +570,14 @@ def get_user_runtime_python_bin(py_env: str) -> str:
     return _py_bin
 
 
+def check_valid_venv_prefix(prefix: t.Union[str, Path]) -> bool:
+    return (Path(prefix) / "pyvenv.cfg").exists()
+
+
+def check_valid_conda_prefix(prefix: t.Union[str, Path]) -> bool:
+    return (Path(prefix) / "conda-meta").exists()
+
+
 def get_base_prefix(py_env: str) -> str:
     if py_env == PythonRunEnv.VENV:
         _path = os.environ.get(ENV_VENV, "")

@@ -56,12 +56,20 @@ class RuntimeTermView(BaseTermView):
     def lock(
         cls,
         target_dir: str,
-        env: str,
+        env_name: str = "",
+        prefix_path: str = "",
         disable_auto_inject: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
     ) -> None:
-        Runtime.lock(target_dir, env, disable_auto_inject, stdout, include_editable)
+        Runtime.lock(
+            target_dir,
+            env_name,
+            prefix_path,
+            disable_auto_inject,
+            stdout,
+            include_editable,
+        )
 
     @classmethod
     def build(

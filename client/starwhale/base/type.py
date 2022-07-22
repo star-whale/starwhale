@@ -64,12 +64,6 @@ class RuntimeLockFileType:
     CONDA = "conda-sw-lock.yaml"
 
 
-class RuntimeEnvURIType:
-    SHELL = "shell"
-    PATH = "path"
-    NAME = "name"
-
-
 def get_bundle_type_by_uri(uri_type: str) -> str:
     if uri_type == URIType.DATASET:
         return BundleType.DATASET
