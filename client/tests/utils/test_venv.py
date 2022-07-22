@@ -49,7 +49,7 @@ class TestVenv(TestCase):
             enable_pre=True,
             pip_config={
                 "index_url": "https://e1.com",
-                "trusted_host": "e1.com",
+                "trusted_host": ["e1.com"],
             },
         )
         assert m_call.call_args[0][0] == [
@@ -74,7 +74,7 @@ class TestVenv(TestCase):
             req=Path("/tmp/requirements.txt"),
             pip_config={
                 "index_url": "https://e1.com",
-                "trusted_host": "e1.com",
+                "trusted_host": ["e1.com"],
             },
         )
 
@@ -84,11 +84,11 @@ class TestVenv(TestCase):
             "--exists-action",
             "w",
             "--index-url",
-            "https://e1.com https://e2.com",
+            "https://e2.com",
             "--extra-index-url",
-            "https://e3.com https://e4.com",
+            "https://e3.com https://e4.com https://e1.com",
             "--trusted-host",
-            "e1.com e2.com e3.com e4.com",
+            "e2.com e3.com e4.com e1.com",
             "-r",
             "/tmp/requirements.txt",
         ]

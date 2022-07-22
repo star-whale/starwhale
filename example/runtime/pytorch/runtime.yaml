@@ -31,4 +31,6 @@ configs: # optional
   pip:
     index_url: https://pypi.doubanio.com/simple/
     extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple/
-    trusted_host: "mirrors.bfsu.edu.cn pypi.doubanio.com"
+    trusted_host:
+      - mirrors.bfsu.edu.cn
+      - pypi.doubanio.com

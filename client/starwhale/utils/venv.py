@@ -42,7 +42,7 @@ _DUMMY_FIELD = -1
 
 _ConfigsT = t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]]
 _DepsT = t.Optional[t.Dict[str, t.Union[t.List[str], str]]]
-_PipConfigT = t.Optional[t.Dict[str, str]]
+_PipConfigT = t.Optional[t.Dict[str, t.Union[str, t.List[str]]]]
 
 
 class PythonVersionField(t.NamedTuple):
@@ -98,18 +98,27 @@ def _do_pip_install_req(
     pip_config = pip_config or {}
     _env = os.environ
 
-    _index_url = (
-        f"{pip_config.get('index_url', '')} {_env.get('SW_PYPI_INDEX_URL', '')}".strip()
-    )
-    _extra_index_url = f"{pip_config.get('extra_index_url', '')} {_env.get('SW_PYPI_EXTRA_INDEX_URL', '')}".strip()
-    _trusted_host = f"{pip_config.get('trusted_host', '')} {_env.get('SW_PYPI_TRUSTED_HOST', '')}".strip()
+    _extra_index = [_env.get("SW_PYPI_EXTRA_INDEX_URL", "")]
+    _hosts = [_env.get("SW_PYPI_TRUSTED_HOST", "")]
+    _index = _env.get("SW_PYPI_INDEX_URL", "")
 
-    if _index_url:
-        cmd += ["--index-url", _index_url]
-    if _extra_index_url:
-        cmd += ["--extra-index-url", _extra_index_url]
-    if _trusted_host:
-        cmd += ["--trusted-host", _trusted_host]
+    if _index:
+        _extra_index.append(pip_config.get("index_url", ""))
+    else:
+        _index = pip_config.get("index_url", "")
+    _extra_index.extend(pip_config.get("extra_index_url", []))
+    _hosts.extend(pip_config.get("trusted_host", []))
+
+    _s_index = _index.strip()
+    _s_extra_index = " ".join([s for s in _extra_index if s.strip()])
+    _s_hosts = " ".join([s for s in _hosts if s.strip()])
+
+    if _s_index:
+        cmd += ["--index-url", _s_index]
+    if _s_extra_index:
+        cmd += ["--extra-index-url", _s_extra_index]
+    if _s_hosts:
+        cmd += ["--trusted-host", _s_hosts]
 
     if enable_pre:
         cmd += ["--pre"]
