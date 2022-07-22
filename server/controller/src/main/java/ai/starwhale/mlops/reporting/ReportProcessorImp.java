@@ -44,6 +44,24 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import com.google.protobuf.Api;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
+import org.apache.logging.log4j.util.Strings;
+import org.springframework.scheduling.annotation.Scheduled;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import cn.hutool.core.io.resource.ClassPathResource;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
+import ai.starwhale.mlops.domain.task.TaskType;
+import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.deploy.Kubernetes;
 
 /**
  * the processor for every report from Agent
@@ -79,6 +97,133 @@ public class ReportProcessorImp implements ReportProcessor {
         this.taskMapper = taskMapper;
         this.jobHolder = jobHolder;
     }
+
+    @Scheduled(fixedDelayString = "${sw.controller.task.schedule.fixedDelay.in.milliseconds:1000}")
+    public void process() throws IOException, ApiException {
+        Kubernetes client = new Kubernetes("default");
+        V1JobList jobList = new V1JobList();
+        try {
+            jobList = client.get();
+        } catch (ApiException e) {
+            log.error(e.getMessage());
+        }
+
+        // fetch job status
+        List<V1Job> done = new ArrayList<>();
+        List<V1Job> undone = new ArrayList<>();
+        jobList.getItems().forEach(j -> {
+            if (j.getStatus() == null) {
+                undone.add(j);
+            }
+            if (j.getStatus().getActive() == null) {
+                done.add(j);
+            } else {
+                undone.add(j);
+            }
+        });
+
+        // report task
+        List<ReportedTask> reports = done.stream().map(i -> {
+            Long id = Long.parseLong(i.getMetadata().getName());
+            return new ReportedTask(id, TaskStatus.SUCCESS, TaskType.PPL);
+        }).collect(Collectors.toList());
+
+        copyTaskStatusFromAgentReport(reports);
+
+        // only one task run in dev env
+        if (!undone.isEmpty()) {
+            return;
+        }
+
+        Node fakeNode = new Node();
+        Device dev = new Device();
+        dev.setClazz(Device.Clazz.CPU);
+        dev.setStatus(Device.Status.idle);
+        List<Device> devs = new ArrayList<>();
+        devs.add(dev);
+        fakeNode.setDevices(devs);
+
+        List<TaskTrigger> tasks = taskBoConverter.toTaskTrigger(swTaskScheduler.schedule(fakeNode));
+        final String image = "ghcr.io/star-whale/starwhale:latest";
+        tasks.forEach(task -> {
+            log.warn("aha {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
+            Map<String, String> envs = new HashMap<>();
+            List<String> downloads = new ArrayList<>();
+            String prefix = "minio/starwhale/";
+            downloads.add(prefix + task.getSwModelPackage().getPath()+";/opt/starwhale/swmp/");
+            downloads.add(prefix + task.getSwrt().getPath()+";/opt/starwhale/swrt/");
+            envs.put("DOWNLOADS", Strings.join(downloads, ' '));
+            String input = generateConfigFile(task);
+            envs.put("INPUT", input);
+            try {
+                String cmd = "ppl";
+                if (task.getTaskType() == TaskType.CMP) {
+                    cmd = "cmp";
+                }
+                V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), envs);
+                // set result upload path
+                job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+task.getResultPath().resultDir())));
+                client.deploy(job);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    static private String getJobTemplate() throws IOException {
+        String file ="template/job.yaml";
+        ClassPathResource resource = new ClassPathResource(file);
+        InputStream is = resource.getStream();
+        return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+    }
+
+    static private String generateConfigFile(TaskTrigger task) {
+        JSONObject object = JSONUtil.createObj();
+        object.set("backend", "s3");
+        object.set("secret", JSONUtil.createObj().set("access_key", "minioadmin").set("secret_key", "minioadmin"));
+        object.set("service", JSONUtil.createObj()
+            .set("endpoint", "http://192.168.1.26:9000")
+            .set("region", "region")
+        );
+        final String dataFormat = "%s:%s:%s";
+        switch (task.getTaskType()) {
+            case PPL:
+                object.set("kind", "swds");
+                JSONArray swds = JSONUtil.createArray();
+
+                task.getSwdsBlocks().forEach(swdsBlock -> {
+                    JSONObject ds = JSONUtil.createObj();
+                    ds.set("bucket", "starwhale");
+                    ds.set("key", JSONUtil.createObj()
+                        .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getOffset() + swdsBlock.getLocationInput().getSize() - 1))
+                        .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
+                    );
+                    ds.set("ext_attr", JSONUtil.createObj()
+                        .set("swds_name", swdsBlock.getDsName())
+                        .set("swds_version", swdsBlock.getDsVersion())
+                    );
+                    swds.add(ds);
+                });
+                object.set("swds", swds);
+                break;
+            case CMP:
+                object.set("kind", "jsonl");
+                JSONArray cmp = JSONUtil.createArray();
+                task.getCmpInputFilePaths().forEach(inputFilePath -> {
+                    JSONObject ds = JSONUtil.createObj();
+                    ds.set("bucket", "starwhale");
+                    ds.set("key", JSONUtil.createObj()
+                        .set("data", inputFilePath)
+                    );
+                    cmp.add(ds);
+                });
+
+                object.set("swds", cmp);
+        }
+
+        return JSONUtil.toJsonStr(object);
+    }
+
 
     // 0.if node doesn't exists creat one 1. check commanding tasks;  2. change task status; 3. schedule task & cancel task;
     public ReportResponse receive(ReportRequest report) {
