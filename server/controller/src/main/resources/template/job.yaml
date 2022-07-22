@@ -1,0 +1,79 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: 'indexed-job'
+spec:
+  completions: 1
+  parallelism: 1
+  completionMode: Indexed
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      initContainers:
+        - name: data-provider
+          imagePullPolicy: IfNotPresent
+          image: minio/mc:latest
+          volumeMounts:
+            - mountPath: /opt/starwhale
+              name: data
+          command:
+            - sh
+            - -c
+            - >-
+              mc alias set minio http://192.168.1.26:9000 minioadmin minioadmin &&
+              for item in $DOWNLOADS; do SRC=$(cut -d';' -f1 <<<$item) && DST=$(cut -d';' -f2 <<<$item) && echo $SRC,$DST && mkdir -p $DST && mc cp -r $SRC $DST; done
+        - name: untar
+          imagePullPolicy: IfNotPresent
+          image: ghcr.io/star-whale/starwhale:latest
+          volumeMounts:
+            - mountPath: /opt/starwhale
+              name: data
+          command:
+            - sh
+            - -c
+            - >-
+              cd /opt/starwhale && find ./ -type f \( -name \*.swmp -o -name \*.swrt \) -exec tar -C swmp/ -xf {} \; &&
+              mkdir -p config && echo $INPUT > config/input.json &&
+              rm swmp/dep/python/requirements-lock.txt
+        - name: 'worker'
+          image: 'docker.io/library/busybox'
+          imagePullPolicy: IfNotPresent
+          #command:
+          #- sh
+          #- -c
+          #- tail -f /dev/null
+          args:
+            - ppl
+          volumeMounts:
+            - mountPath: /root/.cache
+              name: pip-cache
+            - mountPath: /opt/starwhale
+              name: data
+          env:
+            - name: SW_PYPI_INDEX_URL
+              value: http://pypi.mirrors.ustc.edu.cn/simple/
+            - name: SW_PYPI_TRUSTED_HOST
+              value: pypi.mirrors.ustc.edu.cn
+            - name: SW_PIP_CACHE_DIR
+              value: /root/.cache/pip
+      containers:
+        - name: result-uploader
+          imagePullPolicy: IfNotPresent
+          image: minio/mc:latest
+          volumeMounts:
+            - mountPath: /opt/starwhale
+              name: data
+          command:
+            - sh
+            - -c
+            - >-
+              mc alias set minio http://192.168.1.26:9000 minioadmin minioadmin &&
+              mc cp -r /opt/starwhale/result/current $DST
+      volumes:
+        - name: pip-cache
+          hostPath:
+            path: /data
+            type: DirectoryOrCreate
+        - name: data
+          emptyDir: { }
