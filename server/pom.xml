@@ -12,8 +12,6 @@
     <modules>
         <module>controller</module>
         <module>controller-sdk</module>
-        <module>agent</module>
-        <module>agent-sdk</module>
         <module>storage-access-layer</module>
     </modules>
 
@@ -50,11 +48,6 @@
                 <type>pom</type>
             </dependency>
             <!-- star whale -->
-            <dependency>
-                <groupId>ai.starwhale</groupId>
-                <artifactId>starwhale-agent-sdk</artifactId>
-                <version>${starwhale.version}</version>
-            </dependency>
             <dependency>
                 <groupId>ai.starwhale</groupId>
                 <artifactId>starwhale-controller-sdk</artifactId>
