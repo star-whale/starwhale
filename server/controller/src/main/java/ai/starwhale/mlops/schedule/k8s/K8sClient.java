@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.deploy;
+package ai.starwhale.mlops.schedule.k8s;
 
 import io.kubernetes.client.PodLogs;
 import io.kubernetes.client.openapi.ApiClient;
@@ -31,17 +31,21 @@ import org.bouncycastle.util.Strings;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-public class Kubernetes {
+@Component
+public class K8sClient {
     private ApiClient client;
     private CoreV1Api coreV1Api;
     private final BatchV1Api batchV1Api;
+
     private final String ns;
 
     /**
      * Basic constructor for Kubernetes
      */
-    public Kubernetes(String ns) throws IOException {
+    public K8sClient(@Value("${sw.infra.k8s.nameSpace}") String ns) throws IOException {
         client = Config.defaultClient();
         Configuration.setDefaultApiClient(client);
         coreV1Api = new CoreV1Api();
@@ -57,6 +61,10 @@ public class Kubernetes {
      */
     public V1Job deploy(V1Job job) throws ApiException {
         return batchV1Api.createNamespacedJob(ns, job, null, null, null, null);
+    }
+
+    public void deleteJob(String id) throws ApiException {
+        batchV1Api.deleteNamespacedJobAsync(id,ns,null,null,1,false,null,null,null);
     }
 
     /**
