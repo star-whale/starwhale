@@ -29,6 +29,8 @@ configs: # optional
     image: star-whale/runtime/pytorch
 
   pip:
-    index-url: https://pypi.doubanio.com/simple/
-    extra-index-url: https://mirrors.bfsu.edu.cn/pypi/web/simple/
-    trusted-host: "mirrors.bfsu.edu.cn pypi.doubanio.com"
+    index_url: https://pypi.doubanio.com/simple/
+    extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple/
+    trusted_host:
+      - mirrors.bfsu.edu.cn
+      - pypi.doubanio.com

@@ -188,13 +188,15 @@ class PipConfig:
     def __init__(
         self,
         index_url: str = "",
-        extra_index_url: str = "",
-        trusted_host: str = "",
+        extra_index_url: t.Union[t.List[str], str] = "",
+        trusted_host: t.Union[t.List[str], str] = "",
         **kw: t.Any,
     ) -> None:
         self.index_url = index_url
-        self.extra_index_url = extra_index_url
-        self.trusted_host = trusted_host
+
+        _list = lambda _x: _x if isinstance(_x, (list, tuple)) else [_x]
+        self.extra_index_url = _list(extra_index_url)  # type: ignore
+        self.trusted_host = _list(trusted_host)  # type: ignore
 
 
 class CondaConfig:
@@ -424,9 +426,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),
             (
-                self._render_environment,
+                self._dump_context,
                 5,
-                "dump environment",
+                "dump environment and configs",
                 dict(config=_swrt_config),
             ),
             (
@@ -466,7 +468,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         ]
         run_with_progress_bar("runtime bundle building...", operations)
 
-    def _render_environment(self, config: RuntimeConfig) -> None:
+    def _dump_context(self, config: RuntimeConfig) -> None:
+        self._manifest["configs"] = config.configs.asdict()
+
         # TODO: refactor docker image in environment
         self._manifest["environment"] = {
             "starwhale_version": config._starwhale_version,
