@@ -236,4 +236,4 @@ def _lock(
 
     TARGET_DIR: the runtime.yaml and local file dir, default is "."
     """
-    RuntimeTermView.lock(target_dir, disable_auto_inject, env, stdout, include_editable)
+    RuntimeTermView.lock(target_dir, env, disable_auto_inject, stdout, include_editable)

@@ -71,6 +71,7 @@ from starwhale.utils.error import (
     NotFoundError,
     NoSupportError,
     ConfigFormatError,
+    FieldTypeOrValueError,
     PythonEnvironmentError,
 )
 from starwhale.utils.progress import run_with_progress_bar
@@ -355,14 +356,14 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     @classmethod
     def lock(
         cls,
-        target_dir: str,
-        disable_auto_inject: bool,
+        target_dir: t.Union[str, Path],
         env: str,
-        stdout: bool,
-        include_editable: bool,
+        disable_auto_inject: bool = False,
+        stdout: bool = False,
+        include_editable: bool = False,
     ) -> None:
         StandaloneRuntime.lock(
-            target_dir, disable_auto_inject, env, stdout, include_editable
+            target_dir, env, disable_auto_inject, stdout, include_editable
         )
 
 
@@ -707,11 +708,11 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     @classmethod
     def lock(
         cls,
-        target_dir: str,
-        disable_auto_inject: bool,
+        target_dir: t.Union[str, Path],
         env: str,
-        stdout: bool,
-        include_editable: bool,
+        disable_auto_inject: bool = False,
+        stdout: bool = False,
+        include_editable: bool = False,
     ) -> None:
         runtime_fpath = Path(target_dir) / DefaultYAMLName.RUNTIME
         mode, env_prefix, env_name = cls._fetch_python_env_meta(runtime_fpath, env)
@@ -758,6 +759,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         console.print(f":monkey_face: update {runtime_fpath} dependencies field")
         deps.append(lock_fname)
         content["dependencies"] = deps
+        # TODO: safe_dump will change user's other yaml content format at first time
         ensure_file(runtime_fpath, yaml.safe_dump(content, default_flow_style=False))
 
     @staticmethod
@@ -776,11 +778,19 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             env_prefix = get_base_prefix(mode)
         elif os.path.isdir(env):
             if os.path.exists(os.path.join(env, "pyvenv.cfg")):
-                mode = PythonRunEnv.VENV
+                _dir_mode = PythonRunEnv.VENV
             elif os.path.exists(os.path.join(env, "conda-meta")):
-                mode = PythonRunEnv.CONDA
+                _dir_mode = PythonRunEnv.CONDA
             else:
-                mode = PythonRunEnv.SYSTEM
+                _dir_mode = PythonRunEnv.SYSTEM
+
+            if not mode:
+                mode = _dir_mode
+            elif mode != _dir_mode:
+                raise FieldTypeOrValueError(
+                    f"runtime.yaml mode:{mode}, dir mode:{_dir_mode}"
+                )
+
             env_prefix = env
         else:
             if mode == PythonRunEnv.CONDA:
