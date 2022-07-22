@@ -40,24 +40,6 @@ TOKEN_EXPIRE_MINUTES = "43200"
 # controler storage dir
 CONTROLLER_DATA_DIR = "controller"
 
-# agent variables
-# agent
-AGENT_IMAGE = "server:" + SW_VERSION
-# task storage dir
-AGENT_DATA_DIR = "agent/run"
-IMAGE_PULL_TIMEOUT_MILLIS = 3600000
-# pypi url
-PYPI_INDEX_URL = ""
-# pypi extra url
-PYPI_EXTRA_INDEX_URL = ""
-# pypi trusted host
-PYPI_TRUSTED_HOST = ""
-
-# taskset
-TASKSET_IMAGE = "taskset:" + SW_VERSION
-TASKSET_DOCKER_PORT = "2676"
-TASKSET_DIND_DIR = "agent/dind"
-
 # hosts
 HOST_OF_CONTROLLER = "controller.starwhale.com"
 HOST_OF_STORAGE = "storage.starwhale.com"
