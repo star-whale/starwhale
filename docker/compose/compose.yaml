@@ -45,38 +45,6 @@ services:
       - SW_STORAGE_SECRETKEY=minioadmin
       - SW_STORAGE_ENDPOINT=http://oss:9000
 
-  taskset:
-    image: ghcr.io/star-whale/taskset:0.1.1
-    restart: always
-    privileged: true
-    volumes:
-      - agent_data:/opt/starwhale
-      - taskset_dind_data:/var/lib/docker
-
-  agent:
-    image: ghcr.io/star-whale/server:latest
-    restart: always
-    depends_on:
-      - taskset
-      - oss
-    volumes:
-      - agent_data:/opt/starwhale
-      - taskset_dind_data:/var/lib/docker
-    environment:
-      - JAR=agent
-      - DOCKER_HOST=tcp://taskset:2376
-      - SW_HOST_IP=127.0.0.1
-      - SW_PYPI_INDEX_URL=https://pypi.doubanio.com/simple/
-      - SW_PYPI_EXTRA_INDEX_URL=https://mirrors.bfsu.edu.cn/pypi/web/simple/
-      - SW_PYPI_TRUSTED_HOST=pypi.doubanio.com mirrors.bfsu.edu.cn
-      - SW_CONTROLLER_URL=http://controller:8082
-      - SW_STORAGE_BUCKET=starwhale
-      - SW_STORAGE_ACCESSKEY=minioadmin
-      - SW_STORAGE_SECRETKEY=minioadmin
-      - SW_STORAGE_ENDPOINT=http://oss:9000
-      - SW_TASK_USE_HOST_NETWORK=1
-      - SW_TASK_DISABLE_DEBUG=0
-
 volumes:
   db_data: {}
   oss_data: {}
