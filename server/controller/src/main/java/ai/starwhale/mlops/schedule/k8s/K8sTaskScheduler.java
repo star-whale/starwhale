@@ -22,6 +22,8 @@ import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
+import ai.starwhale.mlops.storage.configuration.StorageProperties;
+import ai.starwhale.mlops.storage.s3.S3Config;
 import cn.hutool.core.io.resource.ClassPathResource;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
@@ -49,18 +51,21 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     final TaskBoConverter taskConvertor;
 
+    final StorageProperties storageProperties;
+
     public K8sTaskScheduler(K8sClient k8sClient,
-        TaskBoConverter taskConvertor) {
+                            TaskBoConverter taskConvertor, StorageProperties storageProperties) {
         this.k8sClient = k8sClient;
         this.taskConvertor = taskConvertor;
+        this.storageProperties = storageProperties;
     }
 
     @Override
     public void adoptTasks(Collection<Task> tasks,
-        Clazz deviceClass) {
-        final String image = "ghcr.io/star-whale/starwhale:latest";
+                           Clazz deviceClass) {
+
         tasks.parallelStream().forEach(task -> {
-            this.deployTaskToK8s(k8sClient,image,taskConvertor.toTaskTrigger(task));//TODO
+            this.deployTaskToK8s(k8sClient,task.getStep().getJob().getJobRuntime().getImage(),taskConvertor.toTaskTrigger(task));
         });
     }
 
@@ -99,13 +104,13 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         }
     }
 
-    static private String generateConfigFile(TaskTrigger task) {
+    private String generateConfigFile(TaskTrigger task) {
         JSONObject object = JSONUtil.createObj();
         object.set("backend", "s3");
-        object.set("secret", JSONUtil.createObj().set("access_key", "minioadmin").set("secret_key", "minioadmin"));
+        object.set("secret", JSONUtil.createObj().set("access_key", storageProperties.getS3Config().getAccessKey()).set("secret_key", storageProperties.getS3Config().getSecretKey()));
         object.set("service", JSONUtil.createObj()
-            .set("endpoint", "http://192.168.1.26:9000")
-            .set("region", "region")
+            .set("endpoint", storageProperties.getS3Config().getEndpoint())
+            .set("region", storageProperties.getS3Config().getRegion())
         );
         final String dataFormat = "%s:%s:%s";
         switch (task.getTaskType()) {
@@ -146,7 +151,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         return JSONUtil.toJsonStr(object);
     }
 
-    static private String getJobTemplate() throws IOException {
+    private String getJobTemplate() throws IOException {
         String file ="template/job.yaml";
         ClassPathResource resource = new ClassPathResource(file);
         InputStream is = resource.getStream();

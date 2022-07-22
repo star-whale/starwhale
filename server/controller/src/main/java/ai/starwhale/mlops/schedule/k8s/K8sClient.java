@@ -45,7 +45,7 @@ public class K8sClient {
     /**
      * Basic constructor for Kubernetes
      */
-    public K8sClient(@Value("${sw.infra.k8s.nameSpace}") String ns) throws IOException {
+    public K8sClient(@Value("${sw.infra.k8s.name-space}") String ns) throws IOException {
         client = Config.defaultClient();
         Configuration.setDefaultApiClient(client);
         coreV1Api = new CoreV1Api();
