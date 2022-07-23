@@ -195,7 +195,7 @@ class RuntimeTermViewRich(RuntimeTermView):
 
 class RuntimeTermViewJson(RuntimeTermView):
     @classmethod
-    def list(
+    def list(  # type: ignore
         cls,
         project_uri: str = "",
         fullname: bool = False,

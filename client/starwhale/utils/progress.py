@@ -10,7 +10,7 @@ def run_with_progress_bar(
     title: str,
     operations: t.Sequence[t.Tuple[t.Any, ...]],
     **kw: t.Any,
-):
+) -> None:
     if os.environ.get("DISABLE_PROGRESS_BAR"):
         for op in operations:
             if len(op) == 4:

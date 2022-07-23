@@ -24,14 +24,16 @@ class CloudInstance(Instance, CloudRequestMixed):
 
     @ignore_error("--")
     def _fetch_version(self) -> str:
-        return self.do_http_request("/system/version", instance_uri=self.uri).json()[
+        return self.do_http_request("/system/version", instance_uri=self.uri).json()[  # type: ignore
             "data"
-        ]["version"]
+        ][
+            "version"
+        ]
 
     @ignore_error([])
     def _fetch_agents(self) -> t.List[t.Dict[str, t.Any]]:
         # TODO: add pageSize to args
-        return self.do_http_request(
+        return self.do_http_request(  # type: ignore
             "/system/agent",
             params={"pageSize": DEFAULT_PAGE_SIZE, "pageNum": DEFAULT_PAGE_IDX},
             instance_uri=self.uri,

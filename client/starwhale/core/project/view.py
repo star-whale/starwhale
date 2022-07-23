@@ -185,7 +185,7 @@ class ProjectTermViewRich(ProjectTermView):
 
 class ProjectTermViewJson(ProjectTermView):
     @classmethod
-    def list(
+    def list(  # type: ignore
         cls,
         instance_uri: str = "",
         page: int = DEFAULT_PAGE_IDX,

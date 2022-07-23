@@ -139,9 +139,9 @@ def get_downloadable_sw_version() -> str:
     return "" if _v == SW_DEV_DUMMY_VERSION else _v
 
 
-def get_field(item: t.Dict, field: str):
+def get_field(item: t.Dict, field: str):  # type:ignore
     for k in field.split("."):
-        item = item.get(k)
+        item = item.get(k)  # type:ignore
     return item
 
 
@@ -156,11 +156,13 @@ class Order:
         self.reverse = reverse
 
 
-def sort_obj_list(data: t.Sequence, orders: t.List[Order]) -> t.Any:
-    def cmp(a: t.Any, b: t.Any) -> int:
+def sort_obj_list(
+    data: t.Sequence, orders: t.List[Order]
+) -> t.List[t.Dict[str, t.Any]]:
+    def cmp(a: t.Any, b: t.Any) -> t.Any:
         return (a > b) - (a < b)
 
-    def compare(lhs, rhs):
+    def compare(lhs: t.Dict, rhs: t.Dict) -> int:
         m = 0
         for o in orders:
             m = cmp(get_field(lhs, o.field), get_field(rhs, o.field))

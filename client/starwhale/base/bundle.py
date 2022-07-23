@@ -73,7 +73,7 @@ class BaseBundle(metaclass=ABCMeta):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         _cls = cls._get_cls(project_uri)
-        return _cls.list(project_uri, page, size)
+        return _cls.list(project_uri, page, size)  # type: ignore
 
     @abstractclassmethod
     def _get_cls(cls, uri: URI) -> t.Any:
@@ -91,7 +91,7 @@ class BaseBundle(metaclass=ABCMeta):
 
         # use a temp dir to build resources
         # and mv results to dst dir to prevent leaving garbage when interrupt
-        def when_exit():
+        def when_exit() -> None:
             src = self.store.snapshot_workdir  # type: ignore
             self.store.building = False  # type: ignore
             dst = self.store.snapshot_workdir  # type: ignore
@@ -205,7 +205,7 @@ class LocalStorageBundleMixin:
         if not _uri.object.version:
             raise MissingFieldError("no version")
 
-        _target = Path(target) if target else _store.snapshot_workdir
+        _target: Path = Path(target) if target else _store.snapshot_workdir
 
         if (
             _target.exists()
@@ -221,9 +221,11 @@ class LocalStorageBundleMixin:
     def _get_src_walker(
         self,
         workdir: Path,
-        include_files: t.List[str] = [],
-        exclude_files: t.List[str] = [],
+        include_files: t.Optional[t.List[str]] = None,
+        exclude_files: t.Optional[t.List[str]] = None,
     ) -> Walker:
+        include_files = include_files or []
+        exclude_files = exclude_files or []
         _filter = ["*.py", "*.sh", "*.yaml"] + SUPPORTED_PIP_REQ + include_files
         _exclude = exclude_files
 
@@ -237,5 +239,5 @@ class LocalStorageBundleMixin:
                 _exclude.append(_l)
 
         # Notice: if pass [] as exclude_dirs value, walker will failed
-        _exclude = _exclude or None
+        _exclude = _exclude or None  # type: ignore
         return Walker(filter=_filter, exclude_dirs=_exclude)

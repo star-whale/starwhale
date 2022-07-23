@@ -176,7 +176,7 @@ class PipelineHandler(metaclass=ABCMeta):
             f"log@{self.config.log_dir}, result@{self.config.result_dir}"
         )
 
-    def __enter__(self):
+    def __enter__(self) -> PipelineHandler:
         return self
 
     def __exit__(
@@ -216,7 +216,7 @@ class PipelineHandler(metaclass=ABCMeta):
         raise NotImplementedError
 
     def _builtin_serialize(self, *data: t.Any) -> bytes:
-        return dill.dumps(data)
+        return dill.dumps(data)  # type: ignore
 
     def ppl_data_serialize(self, *data: t.Any) -> bytes:
         return self._builtin_serialize(*data)
@@ -228,7 +228,7 @@ class PipelineHandler(metaclass=ABCMeta):
         return self._builtin_serialize(data)
 
     def label_data_deserialize(self, data: bytes) -> bytes:
-        return dill.loads(base64.b64decode(data))[0]
+        return dill.loads(base64.b64decode(data))[0]  # type: ignore
 
     def deserialize(self, data: t.Union[str, bytes]) -> t.Any:
         ret = json.loads(data)
@@ -320,7 +320,7 @@ class PipelineHandler(metaclass=ABCMeta):
         data: DataField,
         label: DataField,
         exception: t.Union[None, Exception],
-        *args,
+        *args: t.Any,
     ) -> None:
         self._status_writer.write(
             {

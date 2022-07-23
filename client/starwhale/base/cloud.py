@@ -73,7 +73,7 @@ class CloudRequestMixed:
     ) -> requests.Response:
         # TODO: add progress bar and rich live
 
-        def _progress_bar(monitor: MultipartEncoderMonitor):
+        def _progress_bar(monitor: MultipartEncoderMonitor) -> None:
             if progress:
                 progress.update(task_id, completed=monitor.bytes_read)
 
@@ -191,7 +191,7 @@ class CloudRequestMixed:
             instance_uri=uri,
             params={"versionName": uri.object.version},
         ).json()
-        return r["data"]
+        return r["data"]  # type: ignore
 
     def _fetch_bundle_history(
         self,

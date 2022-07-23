@@ -28,7 +28,7 @@ from starwhale.utils.config import SWCliConfigMixed
 
 class BaseTermView(SWCliConfigMixed):
     @staticmethod
-    def _pager(func):
+    def _pager(func: t.Callable) -> t.Callable:
         @wraps(func)
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
             def _print(_r: t.Dict[str, t.Any]) -> None:
@@ -49,7 +49,7 @@ class BaseTermView(SWCliConfigMixed):
         return _wrapper
 
     @staticmethod
-    def _header(func):
+    def _header(func: t.Callable) -> t.Callable:
         @wraps(func)
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
             sw = SWCliConfigMixed()
@@ -71,9 +71,9 @@ class BaseTermView(SWCliConfigMixed):
         return _wrapper
 
     @staticmethod
-    def _simple_action_print(func):
+    def _simple_action_print(func: t.Callable) -> t.Callable:
         @wraps(func)
-        def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
+        def _wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             rt = func(*args, **kwargs)
 
             if isinstance(rt, tuple) and len(rt) == 2:
@@ -243,11 +243,11 @@ class BaseTermView(SWCliConfigMixed):
     def print_table(
         title: str,
         data: t.List[t.Dict[str, t.Any]],
-        custom_header: t.Dict[int, t.Dict] = None,
-        custom_column: t.Dict[str, t.Callable[[t.Any], str]] = None,
-        custom_row: t.Callable = None,
-        custom_table: t.Dict = None,
-    ):
+        custom_header: t.Optional[t.Dict[int, t.Dict]] = None,
+        custom_column: t.Optional[t.Dict[str, t.Callable[[t.Any], str]]] = None,
+        custom_row: t.Optional[t.Callable] = None,
+        custom_table: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> None:
         default_attr = {
             "title": title,
             "box": box.SIMPLE,

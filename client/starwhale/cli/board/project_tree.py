@@ -80,7 +80,7 @@ class ProjectTree(TreeControl[ProjectEntry]):
             else:
                 await message.node.toggle()
 
-    async def add_projects(self, node: TreeNode[ProjectEntry]):
+    async def add_projects(self, node: TreeNode[ProjectEntry]) -> None:
         ins = node.data.path
         ps, _ = Project.list(ins)
         for i in ps:

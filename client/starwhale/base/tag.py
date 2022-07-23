@@ -45,7 +45,7 @@ class StandaloneTag:
             ensure_file(self._manifest_path, yaml.safe_dump(_dft))
             return _dft
         else:
-            return load_yaml(self._manifest_path)
+            return load_yaml(self._manifest_path)  # type: ignore
 
     def _save_manifest(self, _manifest: t.Dict[str, t.Any]) -> None:
         _manifest["updated_at"] = now_str()  # type: ignore

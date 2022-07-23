@@ -101,7 +101,7 @@ def render_swcli_config(c: t.Dict[str, t.Any], path: str = "") -> None:
 
 # TODO: abstract better common base or mixed class
 class SWCliConfigMixed:
-    def __init__(self, swcli_config: t.Union[t.Dict[str, t.Any], None] = None) -> None:
+    def __init__(self, swcli_config: t.Optional[t.Dict[str, t.Any]] = None) -> None:
         self._config = swcli_config or load_swcli_config()
 
     @property
@@ -139,7 +139,7 @@ class SWCliConfigMixed:
 
     @property
     def _current_instance_obj(self) -> t.Dict[str, t.Any]:
-        return self._config.get("instances", {}).get(self.current_instance, {})
+        return self._config.get("instances", {}).get(self.current_instance) or {}
 
     @property
     def user_role(self) -> str:
@@ -147,11 +147,11 @@ class SWCliConfigMixed:
 
     @property
     def current_instance(self) -> str:
-        return self._config["current_instance"]  # type: ignore
+        return str(self._config["current_instance"])
 
     def get_sw_instance_config(self, instance: str) -> t.Dict[str, t.Any]:
         instance = self._get_instance_alias(instance)
-        return self._config["instances"].get(instance, {})
+        return self._config["instances"].get(instance) or {}
 
     def get_sw_token(self, instance: str) -> str:
         return self.get_sw_instance_config(instance).get("sw_token", "")
@@ -163,7 +163,7 @@ class SWCliConfigMixed:
         if instance not in self._config["instances"]:
             for k, v in self._config["instances"].items():
                 if v["uri"] == instance:
-                    return k
+                    return str(k)
 
         return instance
 

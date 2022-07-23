@@ -71,7 +71,7 @@ class JSONLineDataLoader(DataLoader):
         storage: StorageBackend,
         swds: t.List[t.Dict[str, t.Any]] = [],
         logger: t.Union[loguru.Logger, None] = None,
-        **kwargs,
+        **kwargs: t.Any,
     ) -> None:
         super().__init__(storage, swds, logger, DataLoaderKind.JSONL, **kwargs)
 
@@ -108,7 +108,7 @@ class SWDSDataLoader(DataLoader):
     ) -> None:
         super().__init__(storage, swds, logger, DataLoaderKind.SWDS)
 
-    def __iter__(self):
+    def __iter__(self) -> t.Generator[t.Tuple[DataField, DataField], None, None]:
         for _swds in self.swds:
             for data, label in zip(
                 self._do_iter(
@@ -340,7 +340,7 @@ class S3BufferedFileLike:
 def get_data_loader(
     swds_config: t.Dict[str, t.Any],
     logger: t.Union[loguru.Logger, None] = None,
-    **kwargs,
+    **kwargs: t.Any,
 ) -> DataLoader:
     """s3 or fuse data loader
 
