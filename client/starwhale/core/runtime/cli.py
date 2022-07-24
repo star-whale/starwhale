@@ -9,6 +9,7 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_PYTHON_VERSION,
 )
+from starwhale.base.type import RuntimeLockFileType
 
 from .view import get_term_view, RuntimeTermView
 
@@ -219,6 +220,11 @@ def _activate(workdir: str, runtime_yaml: str) -> None:
     is_flag=True,
     help="Include editable packages, only for venv mode",
 )
+@click.option(
+    "--emit-pip-options",
+    is_flag=True,
+    help=f"Emit pip config options when the command dumps {RuntimeLockFileType.VENV}",
+)
 def _lock(
     target_dir: str,
     disable_auto_inject: bool,
@@ -226,6 +232,7 @@ def _lock(
     prefix: str,
     stdout: bool,
     include_editable: bool,
+    emit_pip_options: bool,
 ) -> None:
     """
     [Only Standalone]Lock Python venv or conda environment
@@ -233,5 +240,11 @@ def _lock(
     TARGET_DIR: the runtime.yaml and local file dir, default is "."
     """
     RuntimeTermView.lock(
-        target_dir, name, prefix, disable_auto_inject, stdout, include_editable
+        target_dir,
+        name,
+        prefix,
+        disable_auto_inject,
+        stdout,
+        include_editable,
+        emit_pip_options,
     )
