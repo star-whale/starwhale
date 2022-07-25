@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
-import { IUserSchema, ILoginUserSchema } from '../schemas/user'
+import { IUserSchema, ILoginUserSchema, IChangePasswordSchema } from '../schemas/user'
 
 export async function loginUser(data: ILoginUserSchema): Promise<IUserSchema> {
     const bodyFormData = new FormData()
@@ -31,5 +31,17 @@ export async function listUsers(query: IListQuerySchema): Promise<IListSchema<IU
     const resp = await axios.get<IListSchema<IUserSchema>>('/api/v1/users', {
         params: query,
     })
+    return resp.data
+}
+
+export async function changePassword(data: IChangePasswordSchema) {
+    // TODO change uri when backend ready
+    const resp = await axios({
+        method: 'put',
+        url: '/api/v1/user/pwd',
+        data: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+    })
+
     return resp.data
 }
