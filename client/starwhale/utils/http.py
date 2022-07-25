@@ -48,10 +48,10 @@ def wrap_sw_error_resp(
             r.raise_for_status()
 
 
-def ignore_error(default_ret: t.Any = ""):
-    def _decorator(func):
+def ignore_error(default_ret: t.Any = "") -> t.Any:
+    def _decorator(func: t.Callable) -> t.Any:
         @wraps(func)
-        def _wrapper(*args, **kwargs):
+        def _wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
             try:
                 return func(*args, **kwargs)
             except Exception as e:

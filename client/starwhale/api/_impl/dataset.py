@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 import struct
 import typing as t
@@ -75,7 +77,7 @@ class BuildExecutor(metaclass=ABCMeta):
             str((self.output_dir / self.INDEX_NAME).resolve()), mode="w"
         )
 
-    def __enter__(self):
+    def __enter__(self) -> BuildExecutor:
         return self
 
     def __exit__(
@@ -216,7 +218,7 @@ class BuildExecutor(metaclass=ABCMeta):
 
 
 class MNISTBuildExecutor(BuildExecutor):
-    def iter_data_slice(self, path: str):
+    def iter_data_slice(self, path: str) -> t.Generator[bytes, None, None]:
         fpath = Path(path)
 
         with fpath.open("rb") as f:
@@ -229,7 +231,7 @@ class MNISTBuildExecutor(BuildExecutor):
                     break
                 yield content
 
-    def iter_label_slice(self, path: str):
+    def iter_label_slice(self, path: str) -> t.Generator[bytes, None, None]:
         fpath = Path(path)
 
         with fpath.open("rb") as f:

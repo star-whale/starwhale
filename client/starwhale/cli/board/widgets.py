@@ -54,7 +54,7 @@ class OrderBy:
             self.current_order.reverse = False
         return True
 
-    def sort(self, data: t.Sequence):
+    def sort(self, data: t.Sequence) -> t.Sequence:
         if not self.current_order.field:
             return data
         return sort_obj_list(data, [self.current_order])
@@ -72,7 +72,7 @@ class OrderBy:
 class TableWidget(Widget):
     """TableWidget makes an interactive rich.Table"""
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.table = Table(expand=True, box=box.SIMPLE)
         self.data: t.Sequence = []
@@ -98,7 +98,7 @@ class TableWidget(Widget):
     def info(self, idx: int) -> RenderableType:
         return console.Pretty(self.data[idx], indent_guides=True)
 
-    def watch_data(self):
+    def watch_data(self) -> None:
         pass
 
     def render(self) -> Table:
@@ -119,7 +119,7 @@ class TableWidget(Widget):
         data = self._orderby.sort(self.data)
         for idx, item in enumerate(data):
 
-            def try_render(col: Column):
+            def try_render(col: Column) -> t.Any:
                 if col.render:
                     return col.render(idx, item)
                 return get_field(item, col.key)
@@ -145,13 +145,13 @@ class TableWidget(Widget):
     async def key_down(self) -> None:
         self.cursor_down()
 
-    async def key_j(self):
+    async def key_j(self) -> None:
         self.cursor_down()
 
     async def key_up(self) -> None:
         self.cursor_up()
 
-    async def key_k(self):
+    async def key_k(self) -> None:
         self.cursor_up()
 
     def cursor_down(self) -> None:
@@ -162,13 +162,13 @@ class TableWidget(Widget):
         if self.cursor_line > 0:
             self.cursor_line -= 1
 
-    async def key_i(self):
+    async def key_i(self) -> None:
         self.show_info = True
 
-    async def key_escape(self):
+    async def key_escape(self) -> None:
         self.show_info = False
 
-    async def key_h(self):
+    async def key_h(self) -> None:
         self.show_info = False
 
 
@@ -176,7 +176,7 @@ class Models(TableWidget):
     """Models represents starwhale model view"""
 
     # TODO use constance
-    def __init__(self, uri: str = default_project, **kwargs) -> None:
+    def __init__(self, uri: str = default_project, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.render_fn = [
             Column("name"),
@@ -195,7 +195,7 @@ class Models(TableWidget):
 class Datasets(TableWidget):
     """Datasets represents starwhale model view"""
 
-    def __init__(self, uri: str = default_project, **kwargs) -> None:
+    def __init__(self, uri: str = default_project, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.render_fn = [
             Column("name"),
@@ -214,7 +214,7 @@ class Datasets(TableWidget):
 class Runtimes(TableWidget):
     """Runtimes represents starwhale model view"""
 
-    def __init__(self, uri: str = default_project, **kwargs) -> None:
+    def __init__(self, uri: str = default_project, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.render_fn = [
             Column("name"),
@@ -233,7 +233,7 @@ class Runtimes(TableWidget):
 class Jobs(TableWidget):
     """Job represents starwhale model view"""
 
-    def __init__(self, uri: str = default_project, **kwargs) -> None:
+    def __init__(self, uri: str = default_project, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.render_fn = [
             Column("manifest.version", "Name"),

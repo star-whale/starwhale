@@ -123,7 +123,7 @@ class InstanceTermView(BaseTermView):
 
 
 class InstanceTermViewRich(InstanceTermView):
-    def list(self) -> None:
+    def list(self) -> None:  # type: ignore
         title = "List Starwhale Instances"
         custom_table = {"caption": f"Current Instance: [blink]{self.current_instance}"}
         custom_column: t.Dict[str, t.Callable[[t.Any], str]] = {
@@ -189,10 +189,10 @@ class InstanceTermViewRich(InstanceTermView):
 
 
 class InstanceTermViewJson(InstanceTermView):
-    def list(self) -> None:
+    def list(self) -> None:  # type: ignore
         self.pretty_json(super().list())
 
-    def info(self, instance: str = "") -> None:
+    def info(self, instance: str = "") -> None:  # type: ignore
         self.pretty_json(super().info(instance))
 
 

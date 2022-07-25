@@ -138,7 +138,7 @@ class ModelTermViewRich(ModelTermView):
 
 class ModelTermViewJson(ModelTermView):
     @classmethod
-    def list(
+    def list(  # type: ignore
         cls,
         project_uri: str = "",
         fullname: bool = False,

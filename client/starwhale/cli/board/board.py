@@ -13,7 +13,7 @@ from .project_tree import ProjectTree, ProjectClick
 
 
 class Dashboard(App):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
         self.main_table: t.Optional[RenderableType] = None
         self.project_uri = ""
@@ -52,7 +52,7 @@ class Dashboard(App):
         if event.key in self.key_mapping:
             await self.update_main_table(self.key_mapping[event.key](self.project_uri))
 
-    async def update_main_table(self, w: Widget):
+    async def update_main_table(self, w: Widget) -> None:
         self.main_table = w
         await self.body.update(self.main_table)
         await self.main_table.focus()

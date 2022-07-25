@@ -19,7 +19,7 @@ class ModelStorage(BaseStorage):
         return URIType.MODEL
 
     @property
-    def src_dir(self):
+    def src_dir(self) -> Path:
         return self.snapshot_workdir / "src"
 
     @property

@@ -58,7 +58,7 @@ class EvalExecutor:
         self.runtime_uri = runtime_uri
 
         if runtime_uri:
-            self.runtime = StandaloneRuntime(
+            self.runtime: t.Optional[StandaloneRuntime] = StandaloneRuntime(
                 URI(runtime_uri, expected_type=URIType.RUNTIME)
             )
             self.baseimage = self.runtime.store.get_docker_base_image()

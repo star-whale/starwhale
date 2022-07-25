@@ -123,7 +123,7 @@ class DatasetTermViewRich(DatasetTermView):
 
 class DatasetTermViewJson(DatasetTermView):
     @classmethod
-    def list(
+    def list(  # type: ignore
         cls,
         project_uri: str = "",
         fullname: bool = False,

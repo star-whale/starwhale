@@ -66,7 +66,7 @@ class Project(metaclass=ABCMeta):
         if _uri.instance_type == InstanceType.STANDALONE:
             return StandaloneProject.list()
         elif _uri.instance_type == InstanceType.CLOUD:
-            return CloudProject.list(instance_uri, page, size)
+            return CloudProject.list(instance_uri, page, size)  # type: ignore
         else:
             raise NoSupportError(f"{instance_uri}")
 
@@ -230,7 +230,7 @@ class CloudProject(Project, CloudRequestMixed):
         r = self.do_http_request(
             f"/project/{self.name}/model/{mid}", instance_uri=self.uri
         )
-        return r.json()["data"]["files"]
+        return r.json()["data"]["files"]  # type: ignore
 
     @ignore_error([])
     def _fetch_project_objects(

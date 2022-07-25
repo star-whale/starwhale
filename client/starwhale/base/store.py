@@ -84,7 +84,7 @@ class BaseStorage(metaclass=ABCMeta):
         if not self.manifest_path.exists():
             return {}
         else:
-            return load_yaml(self.manifest_path)
+            return load_yaml(self.manifest_path)  # type: ignore
 
     def _get_recover_snapshot_workdir_for_bundle(self) -> Path:
         version = self.uri.object.version
@@ -99,7 +99,7 @@ class BaseStorage(metaclass=ABCMeta):
         )
 
     @property
-    def tmp_dir(self):
+    def tmp_dir(self) -> Path:
         if not self._tmp_dir:
             base = self.sw_config.rootdir / SW_TMP_DIR_NAME
             ensure_dir(base)

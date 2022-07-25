@@ -84,7 +84,7 @@ def _get_workdir_path(project_dir: Path, typ: str, bundle_path: Path) -> Path:
         return project_dir / "workdir" / typ / object_prefix
 
 
-def _gc_special_dirs(root: Path, dry_run: bool, yes: bool):
+def _gc_special_dirs(root: Path, dry_run: bool, yes: bool) -> None:
     if os.path.isdir(root / RECOVER_DIRNAME):
         for project_dir in (root / RECOVER_DIRNAME).iterdir():
             if not dry_run and (yes or click.confirm("continue to remove?")):
