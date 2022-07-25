@@ -118,17 +118,21 @@ class EvalExecutor:
             (self._gen_swds_fuse_json, 10, "gen swds fuse json"),
         ]
 
-        _ppl = (self._do_run_ppl, 70, "run ppl")
-        _cmp = (self._do_run_cmp, 70, "run cmp")
+        # _ppl = (self._do_run_ppl, 70, "run ppl")
+        # _cmp = (self._do_run_cmp, 70, "run cmp")
 
-        if phase == EvalTaskType.ALL:
-            operations.extend([_ppl, _cmp])
-        elif phase == EvalTaskType.PPL:
-            operations.append(_ppl)
-        elif phase == EvalTaskType.CMP:
-            operations.append(_cmp)
-
+        # if phase == EvalTaskType.ALL:
+        #     operations.extend([_ppl, _cmp])
+        # elif phase == EvalTaskType.PPL:
+        #     operations.append(_ppl)
+        # elif phase == EvalTaskType.CMP:
+        #     operations.append(_cmp)
+        _job = (self._do_run_eval_job, 70, "run eval job")
+        operations.append(_job)
         run_with_progress_bar("eval run in local...", operations)
+
+    def _do_run_eval_job(self):
+        self._do_run_cmd(EvalTaskType.CUSTOM)
 
     def _gen_version(self) -> None:
         # TODO: abstract base class or mixin class for swmp/swds/
@@ -142,6 +146,11 @@ class EvalExecutor:
     @property
     def _ppl_workdir(self) -> Path:
         return self._workdir / EvalTaskType.PPL
+    
+    
+    @property
+    def _custom_workdir(self) -> Path:
+        return self._workdir / EvalTaskType.CUSTOM
 
     @property
     def _cmp_workdir(self) -> Path:
@@ -263,6 +272,8 @@ class EvalExecutor:
             _base_dir = self._ppl_workdir
         elif typ == EvalTaskType.CMP:
             _base_dir = self._cmp_workdir
+        elif typ == EvalTaskType.CUSTOM:
+            _base_dir = self._custom_workdir
         else:
             raise NoSupportError(typ)
 

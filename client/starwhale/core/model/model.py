@@ -18,10 +18,11 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_COPY_WORKERS,
     DEFAULT_STARWHALE_API_VERSION,
+    DEFAULT_STEPS_FNAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, ensure_dir
+from starwhale.utils.fs import move_dir, ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
@@ -30,6 +31,8 @@ from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.core.job.base.executor import Scheduler
+from starwhale.core.job.base.model import JobDAG
 
 from .store import ModelStorage
 
@@ -174,6 +177,16 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.remove(tags, quiet)
 
+    def _gen_steps(self, ppl: str) -> None:
+        if not ppl:
+            # todo use deafult
+            ppl = None
+        _f = self.store.snapshot_workdir / "src" / DEFAULT_STEPS_FNAME
+        console.print("path:{}", _f)
+        console.print("ppl:{}", ppl)
+        JobDAG.generate_job_yaml(ppl, self.store.snapshot_workdir / "src", _f)
+        ensure_dir(_f)
+
     @classmethod
     def eval_user_handler(
         cls,
@@ -190,15 +203,29 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         _RunConfig.set_env(kw)
         console.print(f"try to import {_handler}@{workdir}...")
-        _cls = import_cls(workdir, _handler)
 
-        with _cls() as _obj:
-            if typ == EvalTaskType.CMP:
-                _obj._starwhale_internal_run_cmp()
-            else:
-                _obj._starwhale_internal_run_ppl()
+        # todo 20220725 replace with job scheduler
+        if typ == EvalTaskType.CUSTOM:
 
-        console.print(f":clap: finish run {typ}: {_obj}")
+            logger.debug("run job from yaml")
+            _f = workdir / DEFAULT_STEPS_FNAME
+            _jobs = JobDAG.parse_job_from_yaml(_f)
+            # steps of job
+            _steps = _jobs['default']
+            
+            scheduler = Scheduler(_handler, workdir, _steps)
+            scheduler.schedule()
+            
+            console.print(":clap: finish run")
+        # _cls = import_cls(workdir, _handler)
+
+        # with _cls() as _obj:
+        #     if typ == EvalTaskType.CMP:
+        #         _obj._starwhale_internal_run_cmp()
+        #     else:
+        #         _obj._starwhale_internal_run_ppl()
+
+        # console.print(f":clap: finish run {typ}: {_obj}")
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
@@ -290,7 +317,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> None:
         _mp = workdir / yaml_name
         _model_config = self._load_model_config(_mp)
-
+        logger.debug("workdir:", workdir)
         operations = [
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),
@@ -305,6 +332,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 5,
                 "render manifest",
                 dict(user_raw_config=_model_config.as_dict()),
+            ),
+            # todo 20220725 add step parse for job
+            (
+                self._gen_steps,
+                5,
+                "generate execute steps",
+                dict(ppl=_model_config.run.ppl),
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
             (self._make_latest_tag, 5, "make latest tag"),

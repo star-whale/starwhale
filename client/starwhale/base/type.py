@@ -24,6 +24,7 @@ class EvalTaskType:
     ALL = "all"
     PPL = "ppl"
     CMP = "cmp"
+    CUSTOM = "custom"
 
 
 class RunSubDirType:

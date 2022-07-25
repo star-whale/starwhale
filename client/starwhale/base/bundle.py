@@ -96,7 +96,7 @@ class BaseBundle(metaclass=ABCMeta):
             self.store.building = False  # type: ignore
             dst = self.store.snapshot_workdir  # type: ignore
             ensure_dir(dst.parent)
-            os.rename(src, dst)
+            #os.rename(src, dst)
             console.print(f"finish gen resource @ {dst}")
 
         with ExitStack() as stack:
