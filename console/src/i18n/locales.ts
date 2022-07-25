@@ -201,11 +201,23 @@ const locales0 = {
     'Password Changed': {
         en: 'Password Changed',
     },
+    'New Password': {
+        en: 'New Password',
+    },
+    'Current Password': {
+        en: 'Current Password',
+    },
+    'Confirm New Password': {
+        en: 'Confirm New Password',
+    },
     'Logout': {
         en: 'Logout',
     },
     'Change Password': {
         en: 'Change Password',
+    },
+    'password not equal': {
+        en: 'password not equal',
     },
     'no data': {
         en: 'no data',

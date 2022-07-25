@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { setToken } from '@/api'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
@@ -12,6 +12,10 @@ import User from '@/domain/user/components/User'
 import { simulationJump } from '@/utils'
 import { BsChevronDown } from 'react-icons/bs'
 import { Link } from 'react-router-dom'
+import PasswordForm from '@user/components/PasswordForm'
+import { IChangePasswordSchema } from '@user/schemas/user'
+import { changePassword } from '@user/services/user'
+import { toaster } from 'baseui/toast'
 import IconFont from '../IconFont'
 
 const useHeaderStyles = createUseStyles({
@@ -173,14 +177,14 @@ export default function Header() {
     const [t] = useTranslation()
 
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
-    // const handleChangePassword = useCallback(
-    //     async (data: IChangePasswordSchema) => {
-    //         await changePassword(data)
-    //         setIsChangePasswordOpen(false)
-    //         toaster.positive(t('Password Changed'), { autoHideDuration: 2000 })
-    //     },
-    //     [t]
-    // )
+    const handleChangePassword = useCallback(
+        async (data: IChangePasswordSchema) => {
+            await changePassword(data)
+            setIsChangePasswordOpen(false)
+            toaster.positive(t('Password Changed'), { autoHideDuration: 2000 })
+        },
+        [t]
+    )
 
     return (
         <header className={headerStyles.headerWrapper}>
@@ -220,7 +224,7 @@ export default function Header() {
                         <BsChevronDown size={14} />
                     </div>
                     <div className={styles.userMenu}>
-                        {/* <div
+                        <div
                             role='button'
                             tabIndex={0}
                             className={styles.userMenuItem}
@@ -228,9 +232,9 @@ export default function Header() {
                                 setIsChangePasswordOpen(true)
                             }}
                         >
-                            <MdPassword size={12} />
-                            <span>{t('password')}</span>
-                        </div> */}
+                            <IconFont type='password' />
+                            <span>{t('Change Password')}</span>
+                        </div>
                         <div
                             role='button'
                             tabIndex={0}
@@ -254,7 +258,10 @@ export default function Header() {
                 autoFocus
             >
                 <ModalHeader>{t('Change Password')}</ModalHeader>
-                <ModalBody>{/* <PasswordForm onSubmit={handleChangePassword} /> */}</ModalBody>
+                <hr />
+                <ModalBody>
+                    <PasswordForm currentUser={currentUser} onSubmit={handleChangePassword} />
+                </ModalBody>
             </Modal>
         </header>
     )

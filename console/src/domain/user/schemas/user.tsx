@@ -24,3 +24,8 @@ export interface ICreateUserSchema {
     userName: string
     userPwd: string
 }
+
+export interface IChangePasswordSchema {
+    originPwd: string
+    userPwd: string
+}
