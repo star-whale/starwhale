@@ -254,7 +254,7 @@ def pip_freeze(
 ) -> None:
     # TODO: add cmd timeout and error log
     _py_bin = get_user_runtime_python_bin(py_env)
-    pip_freeze_by_pybin(_py_bin, lock_fpath, include_editable)
+    pip_freeze_by_pybin(_py_bin, lock_fpath, include_editable, emit_options)
 
 
 def user_pip_install_pkg(py_env: str, pkg_name: str, enable_pre: bool = False) -> None:
