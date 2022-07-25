@@ -8,7 +8,7 @@ config:
   - config/hyperparam.json
 
 run:
-  ppl: mnist.ppl:MNISTInference
+  ppl: mnist.job
 
 desc: mnist by pytorch
 
