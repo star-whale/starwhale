@@ -56,10 +56,10 @@ from starwhale.utils.venv import (
     venv_install_req,
     conda_install_req,
     create_python_env,
-    pip_freeze_by_bin,
     restore_python_env,
     activate_python_env,
     dump_python_dep_env,
+    pip_freeze_by_pybin,
     check_valid_venv_prefix,
     DUMP_USER_PIP_REQ_FNAME,
     check_valid_conda_prefix,
@@ -362,6 +362,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         disable_auto_inject: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
+        emit_pip_options: bool = False,
     ) -> None:
         StandaloneRuntime.lock(
             target_dir,
@@ -370,6 +371,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             disable_auto_inject,
             stdout,
             include_editable,
+            emit_pip_options,
         )
 
 
@@ -722,6 +724,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         disable_auto_inject: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
+        emit_pip_options: bool = False,
     ) -> None:
         runtime_fpath = Path(target_dir) / DefaultYAMLName.RUNTIME
         if not runtime_fpath.exists():
@@ -755,7 +758,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
             _py_bin = os.path.join(prefix_path, "bin", "python3")
             console.print(f":cat_face: use {_py_bin} to freeze requirements...")
-            pip_freeze_by_bin(_py_bin, temp_lock_path, include_editable)
+            pip_freeze_by_pybin(
+                _py_bin, temp_lock_path, include_editable, emit_pip_options
+            )
 
         if stdout:
             console.rule("dependencies lock")

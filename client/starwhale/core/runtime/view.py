@@ -61,6 +61,7 @@ class RuntimeTermView(BaseTermView):
         disable_auto_inject: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
+        emit_pip_options: bool = False,
     ) -> None:
         Runtime.lock(
             target_dir,
@@ -69,6 +70,7 @@ class RuntimeTermView(BaseTermView):
             disable_auto_inject,
             stdout,
             include_editable,
+            emit_pip_options,
         )
 
     @classmethod

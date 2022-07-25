@@ -444,7 +444,7 @@ class StandaloneRuntimeTestCase(TestCase):
                     "freeze",
                     "--require-virtualenv",
                     "--exclude-editable",
-                    ">",
+                    ">>",
                     "/tmp/starwhale-lock-",
                 ]
             )
@@ -465,7 +465,7 @@ class StandaloneRuntimeTestCase(TestCase):
                     "freeze",
                     "--require-virtualenv",
                     "--exclude-editable",
-                    ">",
+                    ">>",
                     "/tmp/starwhale-lock-",
                 ]
             )
