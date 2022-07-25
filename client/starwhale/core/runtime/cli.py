@@ -63,12 +63,24 @@ def _create(workdir: str, name: str, mode: str, python: str, force: bool) -> Non
     "--gen-all-bundles", is_flag=True, help="Generate conda or venv files into runtime"
 )
 @click.option("--include-editable", is_flag=True, help="Include editable packages")
+@click.option(
+    "--enable-lock",
+    is_flag=False,
+    help="Enable virtualenv/conda environment dependencies lock, and the cli supports three methods to lock environment that are shell(auto-detect), prefix_path or env_name",
+)
+@click.option(
+    "--lock-prefix-path", default="", help="[Lock]Conda or virtualenv prefix path"
+)
+@click.option("--lock-env-name", default="", help="[Lock]Conda name")
 def _build(
     workdir: str,
     project: str,
     runtime_yaml: str,
     gen_all_bundles: bool,
     include_editable: bool,
+    enable_lock: bool,
+    lock_prefix_path: str,
+    lock_env_name: str,
 ) -> None:
     RuntimeTermView.build(
         workdir=workdir,
@@ -76,6 +88,9 @@ def _build(
         yaml_name=runtime_yaml,
         gen_all_bundles=gen_all_bundles,
         include_editable=include_editable,
+        enable_lock=enable_lock,
+        lock_prefix_path=lock_prefix_path,
+        lock_env_name=lock_env_name,
     )
 
 
@@ -208,6 +223,11 @@ def _activate(workdir: str, runtime_yaml: str) -> None:
 @runtime_cmd.command("lock")
 @click.argument("target_dir", default=".")
 @click.option(
+    "--yaml-name",
+    default=DefaultYAMLName.RUNTIME,
+    help=f"Runtime YAML file name, default is {DefaultYAMLName.RUNTIME}",
+)
+@click.option(
     "--disable-auto-inject",
     is_flag=True,
     help="Disable auto update runtime.yaml dependencies field with lock file name, only render the lock file",
@@ -227,6 +247,7 @@ def _activate(workdir: str, runtime_yaml: str) -> None:
 )
 def _lock(
     target_dir: str,
+    yaml_name: str,
     disable_auto_inject: bool,
     name: str,
     prefix: str,
@@ -241,6 +262,7 @@ def _lock(
     """
     RuntimeTermView.lock(
         target_dir,
+        yaml_name,
         name,
         prefix,
         disable_auto_inject,

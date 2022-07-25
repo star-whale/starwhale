@@ -56,6 +56,7 @@ class RuntimeTermView(BaseTermView):
     def lock(
         cls,
         target_dir: str,
+        yaml_name: str = DefaultYAMLName.RUNTIME,
         env_name: str = "",
         prefix_path: str = "",
         disable_auto_inject: bool = False,
@@ -65,6 +66,7 @@ class RuntimeTermView(BaseTermView):
     ) -> None:
         Runtime.lock(
             target_dir,
+            yaml_name,
             env_name,
             prefix_path,
             disable_auto_inject,
@@ -81,6 +83,9 @@ class RuntimeTermView(BaseTermView):
         yaml_name: str = DefaultYAMLName.RUNTIME,
         gen_all_bundles: bool = False,
         include_editable: bool = False,
+        enable_lock: bool = False,
+        lock_prefix_path: str = "",
+        lock_env_name: str = "",
     ) -> None:
         _runtime_uri = cls.prepare_build_bundle(
             workdir, project, yaml_name, URIType.RUNTIME
@@ -100,6 +105,9 @@ class RuntimeTermView(BaseTermView):
             yaml_name,
             gen_all_bundles=gen_all_bundles,
             include_editable=include_editable,
+            enable_lock=enable_lock,
+            lock_prefix_path=lock_prefix_path,
+            lock_env_name=lock_env_name,
         )
 
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> None:

@@ -357,6 +357,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     def lock(
         cls,
         target_dir: t.Union[str, Path],
+        yaml_name: str = DefaultYAMLName.RUNTIME,
         env_name: str = "",
         prefix_path: str = "",
         disable_auto_inject: bool = False,
@@ -366,6 +367,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     ) -> None:
         StandaloneRuntime.lock(
             target_dir,
+            yaml_name,
             env_name,
             prefix_path,
             disable_auto_inject,
@@ -463,6 +465,19 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 5,
                 "dump environment and configs",
                 dict(config=_swrt_config),
+            ),
+            (
+                self._lock_environment,
+                10,
+                "lock environment",
+                dict(
+                    workdir=workdir,
+                    yaml_name=yaml_name,
+                    enable_lock=kw.get("enable_lock", False),
+                    lock_prefix_path=kw.get("lock_prefix_path", ""),
+                    lock_env_name=kw.get("lock_env_name", ""),
+                    include_editable=kw.get("include_editable", False),
+                ),
             ),
             (
                 self._dump_dep,
@@ -588,6 +603,31 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             f":rainbow: runtime docker image: [red]{base_image}[/]  :rainbow:"
         )
         self._manifest["base_image"] = base_image
+
+    def _lock_environment(
+        self,
+        workdir: Path,
+        yaml_name: str = DefaultYAMLName.RUNTIME,
+        enable_lock: bool = False,
+        lock_prefix_path: str = "",
+        lock_env_name: str = "",
+        include_editable: bool = False,
+    ) -> None:
+        if not enable_lock:
+            return
+
+        console.print(
+            f":alien: try to lock environment dependencies to {yaml_name}@{workdir} ..."
+        )
+        self.lock(
+            target_dir=workdir,
+            yaml_name=yaml_name,
+            env_name=lock_env_name,
+            prefix_path=lock_prefix_path,
+            disable_auto_inject=False,
+            stdout=False,
+            include_editable=include_editable,
+        )
 
     def _dump_dep(
         self,
@@ -719,6 +759,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
     def lock(
         cls,
         target_dir: t.Union[str, Path],
+        yaml_name=DefaultYAMLName.RUNTIME,
         env_name: str = "",
         prefix_path: str = "",
         disable_auto_inject: bool = False,
@@ -726,7 +767,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         include_editable: bool = False,
         emit_pip_options: bool = False,
     ) -> None:
-        runtime_fpath = Path(target_dir) / DefaultYAMLName.RUNTIME
+        runtime_fpath = Path(target_dir) / yaml_name
         if not runtime_fpath.exists():
             raise NotFoundError(runtime_fpath)
 
