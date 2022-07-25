@@ -20,14 +20,12 @@ def pack(prefix: t.Union[str, Path], output: str, force: bool = False) -> None:
         raise FormatError(f"venv prefix: {prefix}")
 
     # TODO: check editable packages
-    _, temp_dir = tempfile.mkdtemp(
-        prefix="starwhale-venv-", dir=os.path.dirname(output)
-    )
+    temp_dir = tempfile.mkdtemp(prefix="starwhale-venv-", dir=os.path.dirname(output))
 
     try:
         copy_fs(str(prefix), temp_dir)
 
         with tarfile.open(output, "w:gz") as tar:
-            tar.add(str(empty_dir), arcname="")
+            tar.add(str(temp_dir), arcname="")
     finally:
         empty_dir(temp_dir)

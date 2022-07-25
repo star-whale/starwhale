@@ -59,12 +59,12 @@ from starwhale.utils.venv import (
     venv_install_req,
     conda_install_req,
     create_python_env,
-    get_python_run_env,
     package_python_env,
     restore_python_env,
     activate_python_env,
     pip_freeze_by_pybin,
     guess_current_py_env,
+    trunc_python_version,
     check_valid_venv_prefix,
     get_user_python_version,
     check_valid_conda_prefix,
@@ -100,7 +100,7 @@ class Environment:
         self.os = os.lower()
 
         # TODO: use user's swcli python version as the python argument version
-        self.python = self._trunc_python_version(str(python))
+        self.python = trunc_python_version(str(python))
         self.cuda = str(cuda)
 
         self._do_validate()
@@ -114,11 +114,6 @@ class Environment:
 
         if not self.python.startswith("3."):
             raise ConfigFormatError(f"only support Python3, set {self.python}")
-
-    def _trunc_python_version(self, python_version: str) -> str:
-        _tp = python_version.strip().split(".")
-        # TODO: support python full version format: {major}:{minor}:{micro}
-        return ".".join(_tp[:2])
 
     def __str__(self) -> str:
         return f"Starwhale Runtime Environment: {self.os}-{self.arch}-python:{self.python}-cuda:{self.cuda}"
@@ -458,6 +453,25 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         yaml_name: str = DefaultYAMLName.RUNTIME,
         **kw: t.Any,
     ) -> None:
+        enable_lock = kw.get("enable_lock", False)
+        env_name = kw.get("env_name", "")
+        env_prefix_path = kw.get("env_prefix_path", "")
+        include_editable = kw.get("include_editable", False)
+
+        if enable_lock:
+            console.print(
+                f":alien: try to lock environment dependencies to {yaml_name}@{workdir} ..."
+            )
+            self.lock(
+                target_dir=workdir,
+                yaml_name=yaml_name,
+                env_name=env_name,
+                prefix_path=env_prefix_path,
+                disable_auto_inject=False,
+                stdout=False,
+                include_editable=include_editable,
+            )
+
         # TODO: tune for no runtime.yaml file
         _swrt_config = self._load_runtime_config(workdir / yaml_name)
 
@@ -475,13 +489,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 10,
                 "lock environment",
                 dict(
-                    workdir=workdir,
                     swrt_config=_swrt_config,
-                    yaml_name=yaml_name,
-                    enable_lock=kw.get("enable_lock", False),
-                    env_prefix_path=kw.get("env_prefix_path", ""),
-                    env_name=kw.get("env_name", ""),
-                    include_editable=kw.get("include_editable", False),
+                    enable_lock=enable_lock,
+                    env_prefix_path=env_prefix_path,
+                    env_name=env_name,
                 ),
             ),
             (
@@ -492,9 +503,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     gen_all_bundles=kw.get("gen_all_bundles", False),
                     deps=_swrt_config.dependencies,
                     mode=_swrt_config.mode,
-                    include_editable=kw.get("include_editable", False),
-                    env_prefix_path=kw.get("env_prefix_path", ""),
-                    env_name=kw.get("env_name", ""),
+                    include_editable=include_editable,
+                    env_prefix_path=env_prefix_path,
+                    env_name=env_name,
                 ),
             ),
             (
@@ -513,7 +524,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 self._render_manifest,
                 5,
                 "render manifest",
-                dict(user_raw_config=_swrt_config.asdict()),
             ),
             (self._make_tar, 20, "make runtime bundle", dict(ftype=BundleType.RUNTIME)),
             (self._make_latest_tag, 5, "make latest tag"),
@@ -606,13 +616,10 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
     def _lock_environment(
         self,
-        workdir: Path,
         swrt_config: RuntimeConfig,
-        yaml_name: str = DefaultYAMLName.RUNTIME,
         enable_lock: bool = False,
         env_prefix_path: str = "",
         env_name: str = "",
-        include_editable: bool = False,
     ) -> None:
         console.print(":bee: dump environment info...")
         sh_py_env = guess_current_py_env()
@@ -636,6 +643,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     "use_shell_detection": not (env_prefix_path or env_name),
                 },
                 "auto_lock_dependencies": enable_lock,
+                "python": swrt_config.environment.python,
+                "mode": swrt_config.mode,
             }
         )
 
@@ -646,20 +655,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 swrt_config.mode, swrt_config.environment.python, swrt_config.name
             )
             validate_runtime_package_dep(swrt_config.mode)
-
-        if enable_lock:
-            console.print(
-                f":alien: try to lock environment dependencies to {yaml_name}@{workdir} ..."
-            )
-            self.lock(
-                target_dir=workdir,
-                yaml_name=yaml_name,
-                env_name=env_name,
-                prefix_path=env_prefix_path,
-                disable_auto_inject=False,
-                stdout=False,
-                include_editable=include_editable,
-            )
 
     def _dump_dependencies(
         self,
@@ -677,7 +672,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             "conda_pkgs": deps.conda_pkgs,
             "pip_files": deps.pip_files,
             "conda_files": deps.conda_files,
-            "gen_all_bundles": False,
+            "local_packaged_env": False,
         }
 
         logger.info("[step:dep]finish dump dep")
@@ -690,7 +685,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 env_name=env_name,
                 include_editable=include_editable,
             )
-            self._manifest["dependencies"]["gen_all_bundles"] = packaged
+            self._manifest["dependencies"]["local_packaged_env"] = packaged
 
     def _prepare_snapshot(self) -> None:
         logger.info("[step:prepare-snapshot]prepare runtime snapshot dirs...")
@@ -875,20 +870,11 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
     @classmethod
     def restore(cls, workdir: Path) -> None:
-        if not (
-            workdir.exists()
-            and (workdir / DEFAULT_MANIFEST_NAME).exists()
-        ):
+        if not (workdir.exists() and (workdir / DEFAULT_MANIFEST_NAME).exists()):
             raise NoSupportError("only support swrt extract workdir")
 
         _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
-        _environment = _manifest.get("environment", {}) or _manifest.get("dep", {})
-        _pip_req = _manifest.get("user_raw_config", {}).get("pip_req", "")
-        if _pip_req:
-            if "dependencies" not in _manifest:
-                _manifest["dependencies"] = {}
-            # TODO: add deprecated message
-            _manifest["dependencies"]["_pip_req_file"] = _pip_req
+        _env = _manifest["environment"]
 
         operations = [
             (
@@ -897,10 +883,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "restore python env",
                 dict(
                     workdir=workdir,
-                    mode=_environment["env"],
-                    python_version=_environment["python"],
-                    local_gen_env=_environment["local_gen_env"],
-                    deps=_manifest.get("dependencies", {}),
+                    mode=_env["mode"],
+                    python_version=_env["python"],
+                    deps=_manifest["dependencies"],
                     wheels=_manifest.get("artifacts", {}).get(
                         RuntimeArtifactType.WHEELS, []
                     ),
@@ -913,7 +898,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "setup native files",
                 dict(
                     workdir=workdir,
-                    mode=_environment["env"],
+                    mode=_env["mode"],
                     files=_manifest.get("artifacts", {}).get("files", []),
                 ),
             ),
@@ -931,10 +916,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 logger.warning(f"NOTICE! dest dir: {_f['dest']}")
                 _dest = Path(_f["dest"])
             else:
-                if mode == PythonRunEnv.CONDA:
-                    _root = workdir / "dep" / mode / "env"
-                elif mode == PythonRunEnv.VENV:
-                    _root = workdir / "dep" / "python" / mode
+                if mode in (PythonRunEnv.CONDA, PythonRunEnv.VENV):
+                    _root = workdir / "export" / mode
                 else:
                     _root = workdir
                 _dest = _root / _f["dest"].lstrip("/")

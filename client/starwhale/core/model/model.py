@@ -223,9 +223,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     tags=_bf.tags,
                     created_at=_manifest["created_at"],
                     size=_bf.path.stat().st_size,
-                    runtime=_manifest["user_raw_config"]
-                    .get("run", {})
-                    .get("runtime", "--"),
                 )
             )
         return _r, {}
@@ -276,9 +273,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                     "path": str(_bf.path.absolute()),
                     "size": _bf.path.stat().st_size,
                     "is_removed": _bf.is_removed,
-                    "runtime": _manifest["user_raw_config"]
-                    .get("run", {})
-                    .get("runtime", "--"),
                     "created_at": _manifest["created_at"],
                     "tags": _bf.tags,
                 }
@@ -304,7 +298,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._render_manifest,
                 5,
                 "render manifest",
-                dict(user_raw_config=_model_config.as_dict()),
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
             (self._make_latest_tag, 5, "make latest tag"),

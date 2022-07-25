@@ -4,7 +4,7 @@ import typing as t
 import tarfile
 import platform
 import subprocess
-from pathlib import Path, PurePath
+from pathlib import Path, PurePath, PosixPath
 
 import conda_pack
 import virtualenv
@@ -23,20 +23,18 @@ from starwhale.consts import (
     DEFAULT_PYTHON_VERSION,
 )
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
+from starwhale.base.type import RuntimeArtifactType
 from starwhale.utils.error import (
     FormatError,
     ExistedError,
     NotFoundError,
     NoSupportError,
+    ParameterError,
     PythonEnvironmentError,
 )
 from starwhale.utils.process import check_call
 
-CONDA_ENV_TAR = "env.tar.gz"
-DUMP_CONDA_ENV_FNAME = "env-lock.yaml"
-DUMP_PIP_REQ_FNAME = "requirements-lock.txt"
-DUMP_USER_PIP_REQ_FNAME = "requirements.txt"
-SUPPORTED_PIP_REQ = [DUMP_USER_PIP_REQ_FNAME, "pip-req.txt", "pip3-req.txt"]
+SUPPORTED_PIP_REQ = ["requirements.txt", "pip-req.txt", "pip3-req.txt"]
 
 _DUMMY_FIELD = -1
 
@@ -103,9 +101,9 @@ def _do_pip_install_req(
     pip_config = pip_config or {}
     _env = os.environ
 
-    _extra_index = [_env.get("SW_PYPI_EXTRA_INDEX_URL", "")]
-    _hosts = [_env.get("SW_PYPI_TRUSTED_HOST", "")]
-    _index = _env.get("SW_PYPI_INDEX_URL", "")
+    _extra_index: t.List[str] = [_env.get("SW_PYPI_EXTRA_INDEX_URL", "")]
+    _hosts: t.List[str] = [_env.get("SW_PYPI_TRUSTED_HOST", "")]
+    _index: str = _env.get("SW_PYPI_INDEX_URL", "")
 
     if _index:
         _extra_index.append(pip_config.get("index_url", ""))
@@ -324,17 +322,26 @@ def get_user_python_sys_paths(py_env: str) -> t.List[str]:
     return output.decode().strip().split(",")
 
 
-def conda_create(
-    env: str,
-    python_version: str = DEFAULT_PYTHON_VERSION,
+def conda_setup(
+    python_version: str,
+    name: str = "",
+    prefix: t.Union[str, Path] = "",
     quiet: bool = False,
 ) -> None:
-    cmd = ["conda", "create", "--name", env, "--yes"]
+    if not name and not prefix:
+        raise ParameterError("conda setup must set name or prefix")
+
+    cmd = [get_conda_bin(), "create", "--yes"]
+    if name:
+        cmd += ["--name", name]
+
+    if prefix:
+        cmd += ["--prefix", str(prefix)]
 
     if quiet:
         cmd += ["--quiet"]
 
-    cmd += [f"python={python_version}"]
+    cmd += [f"python={trunc_python_version(python_version)}"]
     check_call(cmd)
 
 
@@ -358,16 +365,24 @@ def conda_export(
     check_call(cmd)
 
 
-def conda_restore(
+def conda_env_update(
     env_fpath: t.Union[str, Path], target_env: t.Union[str, Path]
 ) -> None:
-    cmd = f"{get_conda_bin()} env update --file {env_fpath} --prefix {target_env}"
-    check_call(cmd, shell=True)
+    cmd = [
+        get_conda_bin(),
+        "env",
+        "update",
+        "--file",
+        str(env_fpath),
+        "--prefix",
+        str(target_env),
+    ]
+    check_call(cmd)
 
 
 def conda_activate(env: t.Union[str, Path]) -> None:
-    cmd = f"{get_conda_bin()} activate {env}"
-    check_call(cmd, shell=True)
+    cmd = [get_conda_bin(), "activate", str(env)]
+    check_call(cmd)
 
 
 def conda_activate_render(env_dir: Path, workdir: Path) -> None:
@@ -478,7 +493,6 @@ def package_python_env(
             output=str(dest_tar_path),
             ignore_editable_packages=not include_editable,
         )
-        console.print(f":beer_mug: conda pack @ [underline]{dest_tar_path}[/]")
     elif mode == PythonRunEnv.VENV:
         env_prefix_path = env_prefix_path or get_venv_env()
 
@@ -503,20 +517,6 @@ def package_python_env(
     return True
 
 
-def detect_pip_req(workdir: t.Union[str, Path], fname: str = "") -> str:
-    workdir = Path(workdir)
-
-    if fname and (workdir / fname).exists():
-        return str(workdir / fname)
-    else:
-        for p in SUPPORTED_PIP_REQ:
-            if (workdir / p).exists():
-                return str(workdir / p)
-            else:
-                return ""
-    return ""
-
-
 def activate_python_env(
     mode: str,
     identity: str,
@@ -531,7 +531,7 @@ def activate_python_env(
     else:
         raise NoSupportError(mode)
 
-    console.print(f"\t[red][blod]{cmd}")
+    console.print(f"\t[red][bold]{cmd}")
 
 
 def create_python_env(
@@ -552,7 +552,7 @@ def create_python_env(
         return str(venvdir.absolute())
     elif mode == PythonRunEnv.CONDA:
         logger.info(f"create conda {name}:{workdir}, use python {python_version}...")
-        conda_create(name, python_version)
+        conda_setup(python_version, name=name)
         return name
     else:
         raise NoSupportError(mode)
@@ -661,128 +661,138 @@ def restore_python_env(
     workdir: Path,
     mode: str,
     python_version: str,
-    local_gen_env: bool = False,
     wheels: t.Optional[t.List[str]] = None,
     deps: _DepsT = None,
     configs: _ConfigsT = None,
 ) -> None:
+    deps = deps or {}
+    local_packaged_env = bool(deps.get("local_packaged_env", False))
+
     console.print(
-        f":bread: restore python:{python_version} {mode}@{workdir}, use local env data: {local_gen_env}"
+        f":bread: restore python:{python_version} {mode}@{workdir}, local packaged env:{local_packaged_env}"
     )
     _f = _do_restore_conda if mode == PythonRunEnv.CONDA else _do_restore_venv
-    _f(workdir, local_gen_env, python_version, wheels, deps, configs)
+    _f(
+        workdir=workdir,
+        python_version=python_version,
+        wheels=wheels,
+        deps=deps,
+        configs=configs,
+        local_packaged_env=local_packaged_env,
+    )
 
 
 def _do_restore_conda(
-    _workdir: Path,
-    _local_gen_env: bool,
-    _python_version: str,
-    _wheels: t.Optional[t.List[str]],
-    _deps: _DepsT,
-    _configs: _ConfigsT,
+    workdir: Path,
+    python_version: str,
+    wheels: t.Optional[t.List[str]],
+    deps: _DepsT,
+    configs: _ConfigsT,
+    local_packaged_env: bool = False,
 ) -> None:
-    _conda_dir = _workdir / "dep" / "conda"
-    _tar_fpath = _conda_dir / CONDA_ENV_TAR
-    _env_dir = _conda_dir / "env"
+    export_dir = workdir / "export"
+    export_tar_fpath = export_dir / EnvTarType.CONDA
+    conda_dir = export_dir / "conda"
 
-    if _local_gen_env and _tar_fpath.exists():
-        empty_dir(_env_dir)
-        ensure_dir(_env_dir)
-        logger.info(f"extract {_tar_fpath} ...")
-        with tarfile.open(str(_tar_fpath)) as f:
-            f.extractall(str(_env_dir))
+    if local_packaged_env and export_tar_fpath.exists():
+        empty_dir(conda_dir)
+        ensure_dir(conda_dir)
+
+        logger.info(f"extract {export_tar_fpath} ...")
+        with tarfile.open(str(export_tar_fpath)) as f:
+            f.extractall(str(conda_dir))
         # TODO: conda local bundle restore wheel?
-        venv_activate_render(_env_dir, _workdir)
+        venv_activate_render(conda_dir, workdir)
     else:
         logger.info("restore conda env ...")
+        conda_setup(python_version, prefix=conda_dir)
 
-        _env_yaml = _conda_dir / DUMP_CONDA_ENV_FNAME
-        conda_restore(_env_yaml, _env_dir)
+        deps = deps or {}
 
-        _deps = _deps or {}
-        for _r in iter_pip_reqs(_workdir, _wheels, _deps):
+        for _f in deps.get("conda_files", []):
+            conda_env_update(
+                env_fpath=workdir / RuntimeArtifactType.DEPEND / _f,
+                target_env=conda_dir,
+            )
+
+        for _r in iter_pip_reqs(workdir, wheels, deps):
             logger.debug(f"conda run pip install: {_r}")
-            conda_install_req(req=_r, prefix_path=_env_dir, configs=_configs)
+            conda_install_req(req=_r, prefix_path=conda_dir, configs=configs)
 
-        # TODO: config conda channel
-        # TODO: support conda_files to restore that is from _manifest["dependencies"]
-        _conda_pkgs = " ".join([repr(_p) for _p in _deps.get("conda_pkgs", []) if _p])
+        _conda_pkgs = " ".join([repr(_p) for _p in deps.get("conda_pkgs", []) if _p])
         _conda_pkgs = _conda_pkgs.strip()
         if _conda_pkgs:
             logger.debug(f"conda install: {_conda_pkgs}")
             conda_install_req(
                 req=_conda_pkgs,
-                prefix_path=_env_dir,
+                prefix_path=conda_dir,
                 use_pip_install=False,
-                configs=_configs,
+                configs=configs,
             )
 
         # TODO: check local mode conda export the installed wheel pkgs
-        conda_activate_render(_env_dir, _workdir)
+        conda_activate_render(conda_dir, workdir)
 
 
 def iter_pip_reqs(
-    _workdir: Path,
-    _wheels: t.Optional[t.List[str]],
-    _deps: _DepsT,
-) -> t.Generator[t.Union[str, Path], None, None]:
-    _python_dir = _workdir / "dep" / "python"
-    # TODO: use --lock/--unlock feature to refactor fixed, implicit pip lock files
-
-    _deps = _deps or {}
-
-    reqs = [_python_dir / DUMP_PIP_REQ_FNAME]
-    if _deps.get("_pip_req_file"):
-        reqs.append(_python_dir / _deps["_pip_req_file"])  # type: ignore
-
+    workdir: Path,
+    wheels: t.Optional[t.List[str]],
+    deps: _DepsT,
+) -> t.Generator[t.Union[str, Path, PosixPath], None, None]:
     from starwhale.base.type import RuntimeArtifactType
 
-    for _pf in _deps.get("pip_files", []):
-        reqs.append(_workdir / RuntimeArtifactType.DEPEND / _pf)
+    reqs = []
+    deps = deps or {}
+    for _pf in deps.get("pip_files", []):
+        reqs.append(workdir / RuntimeArtifactType.DEPEND / _pf)
 
-    for _p in _deps.get("pip_pkgs", []):
+    for _p in deps.get("pip_pkgs", []):
         _p = _p.strip()
         if not _p:
             continue
-        reqs.append(_p)  # type: ignore
+        reqs.append(_p)
 
-    for _w in _wheels or []:
+    for _w in wheels or []:
         if _w.endswith(WHEEL_FILE_EXTENSION):
-            reqs.append(_workdir / _w)
+            reqs.append(workdir / _w)
 
     for _r in reqs:
-        if isinstance(_r, PurePath) and not _r.exists():
+        if isinstance(_r, (Path, PosixPath)) and not _r.exists():
             logger.warning(f"not found: {_r}")
             continue
         yield _r
 
 
 def _do_restore_venv(
-    _workdir: Path,
-    _local_gen_env: bool,
-    _python_version: str,
-    _wheels: t.Optional[t.List[str]],
-    _deps: _DepsT,
-    _configs: _ConfigsT,
-    _rebuild: bool = False,
+    workdir: Path,
+    python_version: str,
+    wheels: t.Optional[t.List[str]],
+    deps: _DepsT,
+    configs: _ConfigsT,
+    local_packaged_env: bool = False,
+    rebuild: bool = False,
 ) -> None:
-    _python_dir = _workdir / "dep" / "python"
-    _venv_dir = _python_dir / "venv"
+    export_dir = workdir / "export"
+    venv_dir = export_dir / "venv"
+    export_tar_fpath = export_dir / EnvTarType.VENV
 
     _relocate = True
-    if _rebuild or not _local_gen_env or not (_venv_dir / "bin" / "activate").exists():
-        logger.info(f"setup venv and pip install {_venv_dir}")
+    if rebuild or not local_packaged_env or not os.path.exists(export_tar_fpath):
+        logger.info(f"setup venv and pip install {venv_dir}")
         _relocate = False
-        venv_setup(_venv_dir, python_version=_python_version)
+        venv_setup(venv_dir, python_version=python_version)
 
-        for _r in iter_pip_reqs(_workdir, _wheels, _deps):
+        for _r in iter_pip_reqs(workdir, wheels, deps):
             logger.debug(f"pip install {_r} ...")
-            venv_install_req(
-                _venv_dir, _r, pip_config=_configs.get("pip")
-            )  # type:ignore
+            venv_install_req(venv_dir, _r, pip_config=configs.get("pip"))  # type:ignore
+    else:
+        empty_dir(venv_dir)
+        ensure_dir(venv_dir)
 
-    # TODO: local mode venv cannot export the installed wheel pkgs today.
-    venv_activate_render(_venv_dir, _workdir, relocate=_relocate)
+        with tarfile.open(str(export_tar_fpath)) as f:
+            f.extractall(str(venv_dir))
+
+    venv_activate_render(venv_dir, workdir, relocate=_relocate)
 
 
 def validate_runtime_package_dep(py_env: str) -> None:
@@ -827,3 +837,9 @@ def validate_python_environment(mode: str, py_version: str, identity: str = "") 
             raise EnvironmentError(
                 f"expected conda name({identity}), detected current conda name({conda_name})"
             )
+
+
+def trunc_python_version(python_version: str) -> str:
+    _tp = python_version.strip().split(".")
+    # TODO: support python full version format: {major}:{minor}:{micro}
+    return ".".join(_tp[:2])

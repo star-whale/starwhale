@@ -52,3 +52,7 @@ class PythonEnvironmentError(Exception):
 
 class FieldTypeOrValueError(Exception):
     pass
+
+
+class ParameterError(Exception):
+    pass
