@@ -10,7 +10,6 @@ configs:
     - mirrors.bfsu.edu.cn
     - pypi.doubanio.com
 dependencies:
-- requirements.txt
 - pip:
   - numpy >= 1.21.0
   - scikit-learn

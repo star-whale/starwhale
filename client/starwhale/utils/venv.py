@@ -1,6 +1,5 @@
 import os
 import sys
-import shutil
 import typing as t
 import tarfile
 import platform
@@ -12,7 +11,7 @@ import virtualenv
 from loguru import logger
 
 from starwhale import __version__
-from starwhale.utils import console, is_linux, is_darwin, is_windows
+from starwhale.utils import console, is_linux, venv_pack
 from starwhale.consts import (
     ENV_VENV,
     ENV_CONDA,
@@ -44,6 +43,11 @@ _DUMMY_FIELD = -1
 _ConfigsT = t.Optional[t.Dict[str, t.Dict[str, t.Union[str, t.List[str]]]]]
 _DepsT = t.Optional[t.Dict[str, t.Union[t.List[str], str]]]
 _PipConfigT = t.Optional[t.Dict[str, t.Union[str, t.List[str]]]]
+
+
+class EnvTarType:
+    CONDA = "conda_env.tar.gz"
+    VENV = "venv_env.tar.gz"
 
 
 class PythonVersionField(t.NamedTuple):
@@ -435,111 +439,68 @@ def get_conda_bin() -> str:
         return "conda"
 
 
-def dump_python_dep_env(
-    dep_dir: t.Union[str, Path],
-    pip_req_fpath: str,
-    gen_all_bundles: bool = False,
-    expected_runtime: str = "",
-    mode: str = PythonRunEnv.AUTO,
+def package_python_env(
+    export_dir: t.Union[str, Path],
+    mode: str,
+    env_prefix_path: str = "",
+    env_name: str = "",
     include_editable: bool = False,
-    identity: str = "",
-) -> t.Dict[str, t.Any]:
-    # TODO: smart dump python dep by starwhale sdk-api, pip ast analysis?
-    dep_dir = Path(dep_dir)
+) -> bool:
+    export_dir = Path(export_dir)
 
-    pr_env = get_python_run_env(mode)
     sys_name = platform.system()
-    py_ver = get_user_python_version(pr_env)
-
-    validate_python_environment(mode, expected_runtime, identity)
-    validate_runtime_package_dep(mode)
-
-    _manifest = dict(
-        expected_mode=mode,
-        env=pr_env,
-        system=sys_name,
-        python=py_ver,
-        local_gen_env=False,
-        venv=dict(use=is_venv()),
-        conda=dict(use=is_conda()),
-    )
-
-    _conda_dir = dep_dir / "conda"
-    _python_dir = dep_dir / "python"
-    _venv_dir = _python_dir / "venv"
-    _pip_lock_req = _python_dir / DUMP_PIP_REQ_FNAME
-    _conda_lock_env = _conda_dir / DUMP_CONDA_ENV_FNAME
-
-    ensure_dir(_venv_dir)
-    ensure_dir(_conda_dir)
-    ensure_dir(_python_dir)
-
-    console.print(
-        f":dizzy: python{py_ver}@{pr_env}, os({sys_name}), include-editable({include_editable}), try to export environment..."
-    )
-
-    if os.path.exists(pip_req_fpath):
-        shutil.copyfile(pip_req_fpath, str(_python_dir / DUMP_USER_PIP_REQ_FNAME))
-
-    if pr_env == PythonRunEnv.CONDA:
-        if include_editable:
-            raise NoSupportError("conda cannot support export pip editable package")
-
-        logger.info(f"[info:dep]dump conda environment yaml: {_conda_lock_env}")
-        conda_export(_conda_lock_env)
-    elif pr_env == PythonRunEnv.VENV:
-        logger.info(f"[info:dep]dump pip-req with freeze: {_pip_lock_req}")
-        pip_freeze(pr_env, _pip_lock_req, include_editable)
-    else:
-        # TODO: add other env tools
+    if not is_linux():
         logger.warning(
-            "detect use system python, swcli does not pip freeze, only use custom pip-req"
+            f"[info:dep]{sys_name} will skip conda/venv to generate local all bundles env"
+        )
+        return False
+
+    ensure_dir(export_dir)
+    dest_tar_path = export_dir / (
+        EnvTarType.CONDA if mode == PythonRunEnv.CONDA else EnvTarType.VENV
+    )
+
+    if mode == PythonRunEnv.CONDA:
+        env_name = env_name or get_conda_env()
+        if not env_name and not env_prefix_path:
+            raise Exception(
+                "conda package must use env_name/env_prefix_path or be in the conda activated environment"
+            )
+
+        console.print(
+            f":package: try to package conda env_name:{env_name}, env_prefix_path:{env_prefix_path}..."
         )
 
-    if is_windows() or is_darwin() or not gen_all_bundles:
-        # TODO: win/osx will produce env in controller agent with task
-        logger.info(f"[info:dep]{sys_name} will skip conda/venv dump or generate")
-    elif is_linux():
-        # TODO: more design local or remote build venv
-        # TODO: ignore some pkg when dump, like notebook?
-        _manifest["local_gen_env"] = True  # type: ignore
+        conda_pack.pack(
+            name=env_name,
+            prefix=env_prefix_path,
+            force=True,
+            output=str(dest_tar_path),
+            ignore_editable_packages=not include_editable,
+        )
+        console.print(f":beer_mug: conda pack @ [underline]{dest_tar_path}[/]")
+    elif mode == PythonRunEnv.VENV:
+        env_prefix_path = env_prefix_path or get_venv_env()
 
-        if pr_env == PythonRunEnv.CONDA:
-            cenv = get_conda_env()
-            dest = str(_conda_dir / CONDA_ENV_TAR)
-            if not cenv:
-                raise Exception("cannot get conda env value")
+        if include_editable:
+            raise NoSupportError("venv exports editable packages")
 
-            # TODO: add env/env-name into model.yaml, user can set custom vars.
-            logger.info("[info:dep]try to pack conda...")
-            conda_pack.pack(
-                name=cenv,
-                force=True,
-                output=dest,
-                ignore_editable_packages=not include_editable,
+        if not env_prefix_path:
+            raise Exception(
+                "virtualenv package must use env_prefix_path or be in the virtualenv activated environment"
             )
-            logger.info(f"[info:dep]finish conda pack {dest})")
-            console.print(f":beer_mug: conda pack @ [underline]{dest}[/]")
-        else:
-            # TODO: tune venv create performance, use clone?
-            logger.info(f"[info:dep]build venv dir: {_venv_dir}")
-            venv_setup(_venv_dir, python_version=expected_runtime)
-            logger.info(
-                f"[info:dep]install pip freeze({_pip_lock_req}) to venv: {_venv_dir}"
-            )
-            venv_install_req(_venv_dir, _pip_lock_req)
-            if os.path.exists(pip_req_fpath):
-                logger.info(
-                    f"[info:dep]install custom pip({pip_req_fpath}) to venv: {_venv_dir}"
-                )
-                # TODO: support ignore editable package
-                venv_install_req(_venv_dir, pip_req_fpath)
-            console.print(f":beer_mug: venv @ [underline]{_venv_dir}[/]")
 
+        console.print(f":package: try to package virtualenv {env_prefix_path}...")
+        venv_pack.pack(
+            prefix=env_prefix_path,
+            force=True,
+            output=str(dest_tar_path),
+        )
     else:
-        raise NoSupportError(f"no support {sys_name} system")
+        raise NoSupportError(f"package python env in {mode} mode")
 
-    return _manifest
+    console.print(f":beer_mug: pack @ [underline]{dest_tar_path}[/]")
+    return True
 
 
 def detect_pip_req(workdir: t.Union[str, Path], fname: str = "") -> str:

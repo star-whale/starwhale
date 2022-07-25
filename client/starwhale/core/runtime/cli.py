@@ -65,13 +65,13 @@ def _create(workdir: str, name: str, mode: str, python: str, force: bool) -> Non
 @click.option("--include-editable", is_flag=True, help="Include editable packages")
 @click.option(
     "--enable-lock",
-    is_flag=False,
+    is_flag=True,
     help="Enable virtualenv/conda environment dependencies lock, and the cli supports three methods to lock environment that are shell(auto-detect), prefix_path or env_name",
 )
+@click.option("--env-prefix-path", default="", help="Conda or virtualenv prefix path")
 @click.option(
-    "--lock-prefix-path", default="", help="[Lock]Conda or virtualenv prefix path"
+    "--env-name", default="", help="conda name in lock or gen all bundles process"
 )
-@click.option("--lock-env-name", default="", help="[Lock]Conda name")
 def _build(
     workdir: str,
     project: str,
@@ -79,8 +79,8 @@ def _build(
     gen_all_bundles: bool,
     include_editable: bool,
     enable_lock: bool,
-    lock_prefix_path: str,
-    lock_env_name: str,
+    env_prefix_path: str,
+    env_name: str,
 ) -> None:
     RuntimeTermView.build(
         workdir=workdir,
@@ -89,8 +89,8 @@ def _build(
         gen_all_bundles=gen_all_bundles,
         include_editable=include_editable,
         enable_lock=enable_lock,
-        lock_prefix_path=lock_prefix_path,
-        lock_env_name=lock_env_name,
+        env_prefix_path=env_prefix_path,
+        env_name=env_name,
     )
 
 

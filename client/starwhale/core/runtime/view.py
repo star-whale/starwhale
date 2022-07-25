@@ -84,8 +84,8 @@ class RuntimeTermView(BaseTermView):
         gen_all_bundles: bool = False,
         include_editable: bool = False,
         enable_lock: bool = False,
-        lock_prefix_path: str = "",
-        lock_env_name: str = "",
+        env_prefix_path: str = "",
+        env_name: str = "",
     ) -> None:
         _runtime_uri = cls.prepare_build_bundle(
             workdir, project, yaml_name, URIType.RUNTIME
@@ -106,8 +106,8 @@ class RuntimeTermView(BaseTermView):
             gen_all_bundles=gen_all_bundles,
             include_editable=include_editable,
             enable_lock=enable_lock,
-            lock_prefix_path=lock_prefix_path,
-            lock_env_name=lock_env_name,
+            env_prefix_path=env_prefix_path,
+            env_name=env_name,
         )
 
     def extract(self, force: bool = False, target: t.Union[str, Path] = "") -> None:
