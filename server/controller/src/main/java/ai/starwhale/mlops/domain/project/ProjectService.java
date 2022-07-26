@@ -17,13 +17,16 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.api.protocol.user.ProjectRoleVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.project.mapper.ProjectRoleMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
@@ -31,10 +34,13 @@ import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 @Slf4j
 @Service
@@ -50,7 +56,15 @@ public class ProjectService {
     private ProjectConvertor projectConvertor;
 
     @Resource
+    private ProjectRoleMapper projectRoleMapper;
+
+    @Resource
+    private ProjectRoleConvertor projectRoleConvertor;
+
+    @Resource
     private IDConvertor idConvertor;
+
+    private static final String DELETE_SUFFIX = ".deleted";
 
     /**
      * Find a project by parameters.
@@ -86,7 +100,8 @@ public class ProjectService {
      * @return ID of the project was created.
      */
     public Long createProject(Project project) {
-        if (projectManager.existProject(project.getName(), false)) {
+        Assert.notNull(project.getName(), "Project name must not be null");
+        if (projectManager.existProject(project.getName())) {
             //项目存在且未被删除
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                 .tip(String.format("Project %s already exists", project.getName())), HttpStatus.BAD_REQUEST);
@@ -98,6 +113,7 @@ public class ProjectService {
             .isDefault(project.isDefault() ? 1 : 0)
             .build();
         projectMapper.createProject(entity);
+        projectRoleMapper.addProjectRoleByName(entity.getOwnerId(), entity.getId(), "owner");
         log.info("Project has been created. ID={}, NAME={}", entity.getId(), entity.getProjectName());
         return entity.getId();
     }
@@ -107,6 +123,7 @@ public class ProjectService {
      * @param projectUrl Project URL must be set.
      * @return Is the operation successful.
      */
+    @Transactional
     public Boolean deleteProject(String projectUrl) {
         Long projectId = projectManager.getProjectId(projectUrl);
         ProjectEntity entity = projectMapper.findProject(projectId);
@@ -119,12 +136,15 @@ public class ProjectService {
                 new SWValidationException(ValidSubject.PROJECT)
                     .tip("Default project cannot be deleted."), HttpStatus.BAD_REQUEST);
         }
+        entity.setProjectName(entity.getProjectName() + DELETE_SUFFIX + "." + entity.getId());
+        projectMapper.modifyProject(entity);
         int res = projectMapper.deleteProject(entity.getId());
         log.info("Project has been deleted. ID={}", entity.getId());
         return res > 0;
     }
 
-    public Boolean recoverProject(String projectUrl) {
+    @Transactional
+    public Long recoverProject(String projectUrl) {
         String projectName = projectUrl;
         Long id;
         if(idConvertor.isID(projectUrl)) {
@@ -134,10 +154,12 @@ public class ProjectService {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                     .tip("Recover project error. Project can not be found. "), HttpStatus.BAD_REQUEST);
             }
-            projectName = entity.getProjectName();
+            projectName = entity.getProjectName().substring(0,
+                entity.getProjectName().lastIndexOf(DELETE_SUFFIX));
+            entity.setProjectName(projectName);
         } else {
             // To restore projects by name, need to check whether there are duplicate names
-            List<ProjectEntity> deletedProjects = projectMapper.listDeletedProjects(projectName);
+            List<ProjectEntity> deletedProjects = projectMapper.listProjects(projectName + DELETE_SUFFIX, null, 1);
             if(deletedProjects.size() > 1) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                     .tip(StrUtil.format("Recover project error. Duplicate names [%s] of deleted project. ", projectName)),
@@ -151,14 +173,17 @@ public class ProjectService {
         }
 
         // Check for duplicate names
-        if(projectManager.existProject(projectName, false)) {
+        if(projectManager.existProject(projectName)) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                 .tip(String.format("Recover project error. Project %s already exists", projectName)), HttpStatus.BAD_REQUEST);
         }
-
-        int res = projectMapper.recoverProject(id);
+        projectMapper.modifyProject(ProjectEntity.builder()
+            .id(id)
+            .projectName(projectName)
+            .build());
+        projectMapper.recoverProject(id);
         log.info("Project has been recovered. Name={}", projectName);
-        return res > 0;
+        return id;
     }
 
     public Boolean modifyProject(String projectUrl, String projectName) {
@@ -169,6 +194,41 @@ public class ProjectService {
             .build();
         int res = projectMapper.modifyProject(entity);
         log.info("Project has been modified ID={}", entity.getId());
+        return res > 0;
+    }
+
+    public List<ProjectRoleVO> listProjectRoles(String projectUrl) {
+        Long projectId = projectManager.getProjectId(projectUrl);
+        List<ProjectRoleEntity> entities = projectRoleMapper.listProjectRoles(projectId);
+        return entities.stream()
+            .map(projectRoleConvertor::convert)
+            .collect(Collectors.toList());
+    }
+
+    public Boolean addProjectRole(String projectUrl, Long userId, Long roleId) {
+        Long projectId = projectManager.getProjectId(projectUrl);
+        ProjectRoleEntity entity = ProjectRoleEntity.builder()
+            .userId(userId)
+            .roleId(roleId)
+            .projectId(projectId)
+            .build();
+        int res = projectRoleMapper.addProjectRole(entity);
+        log.info("Project Role has been created ID={}", entity.getId());
+        return res > 0;
+    }
+
+    public Boolean modifyProjectRole(String projectUrl, Long projectRoleId, Long roleId) {
+        int res = projectRoleMapper.updateProjectRole(ProjectRoleEntity.builder()
+            .id(projectRoleId)
+            .roleId(roleId)
+            .build());
+        log.info("Project Role has been modified ID={}", projectRoleId);
+        return res > 0;
+    }
+
+    public Boolean deleteProjectRole(String projectUrl, Long projectRoleId) {
+        int res = projectRoleMapper.deleteProjectRole(projectRoleId);
+        log.info("Project Role has been deleted ID={}", projectRoleId);
         return res > 0;
     }
 

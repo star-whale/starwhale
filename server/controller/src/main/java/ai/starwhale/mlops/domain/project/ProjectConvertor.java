@@ -51,7 +51,6 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
             .name(entity.getProjectName())
             .owner(userConvertor.convert(entity.getOwner()))
             .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-            .isDefault(entity.getIsDefault() != 0)
             .build();
     }
 

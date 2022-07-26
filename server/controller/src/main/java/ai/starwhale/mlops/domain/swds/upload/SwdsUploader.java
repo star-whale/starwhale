@@ -313,7 +313,7 @@ public class SwdsUploader {
     }
 
     private SWDatasetEntity from(Manifest manifest,String project) {
-        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project);
+        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project, userService.currentUserDetail().getIdTableKey());
         return SWDatasetEntity.builder()
             .datasetName(manifest.getName())
             .isDeleted(0)
@@ -338,7 +338,7 @@ public class SwdsUploader {
     }
 
     final static String SWDS_MANIFEST="_manifest.yaml";
-    public byte[] pull(String project, String name, String version, String partName, HttpServletResponse httpResponse) {
+    public byte[] pull(String project, String name, String version, String partName) {
         Long projectId = projectManager.getProjectId(project);
         SWDatasetEntity datasetEntity = swdsMapper.findByName(name, projectId);
         if(null == datasetEntity){
@@ -353,9 +353,7 @@ public class SwdsUploader {
             partName = SWDS_MANIFEST;
         }
         try(InputStream inputStream = storageAccessService.get(datasetVersionEntity.getStoragePath() + "/" + partName.trim())){
-            byte[] res = inputStream.readAllBytes();
-            httpResponse.addHeader("Content-Length", String.valueOf(res.length));
-            return res;
+            return inputStream.readAllBytes();
         } catch (IOException e) {
             log.error("pull file from storage failed",e);
             throw new SWProcessException(ErrorType.STORAGE).tip("pull file from storage failed: "+ e.getMessage());
