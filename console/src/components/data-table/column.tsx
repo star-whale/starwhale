@@ -7,6 +7,7 @@ import { useStyletron } from 'baseui'
 
 import type { ColumnT } from './types.js'
 import _ from 'lodash'
+import cn from 'classnames'
 
 function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>): ColumnT<ValueT, FilterParamsT> {
     return {
@@ -29,31 +30,28 @@ function Column<ValueT, FilterParamsT>(options: ColumnT<ValueT, FilterParamsT>):
             } else if (options.cellBlockAlign === 'end') {
                 cellBlockAlign = 'flex-end'
             }
-            //@ts-ignore
-            // if (!Boolean(props.onSelect)) {
-            //     //@ts-ignore
-            //     return <ProvidedCell {...props} />
-            // }
 
             return (
                 <div
                     // @ts-ignore
                     ref={ref}
-                    data-type='column-cell'
-                    className={css({
-                        ...theme.typography.font100,
-                        boxSizing: 'border-box',
-                        color: theme.colors.contentPrimary,
-                        // @ts-ignore
-                        // display: props.isMeasured ? 'inline-block' : undefined,
-                        // @ts-ignore
-                        // width: props.isMeasured ? undefined : '100%',
-                        padding: '0',
-                        height: '100%',
-                        alignItems: 'center',
-                        display: 'flex',
-                        width: '100%',
-                    })}
+                    className={cn(
+                        'column-cell',
+                        css({
+                            ...theme.typography.font200,
+                            boxSizing: 'border-box',
+                            color: theme.colors.contentPrimary,
+                            // @ts-ignore
+                            // display: props.isMeasured ? 'inline-block' : undefined,
+                            // @ts-ignore
+                            // width: props.isMeasured ? undefined : '100%',
+                            padding: '0',
+                            height: '100%',
+                            alignItems: 'center',
+                            display: 'flex',
+                            width: '100%',
+                        })
+                    )}
                 >
                     {/* <div
                         data-type='column-cell-1'

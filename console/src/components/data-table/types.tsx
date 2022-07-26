@@ -113,6 +113,8 @@ export type ConfigT = {
     pinnedIds?: Array<any>
     filters?: Array<any>
     name?: string
+    sortBy?: string
+    sortDirection?: SortDirectionsT
 }
 
 export type StatefulDataTablePropsT = {
@@ -167,22 +169,12 @@ export type DataTablePropsT = {
 
 export type StatefulContainerPropsT = {
     children: {
-        filters: any[]
-        onFilterSet: (filterParams: any[]) => void
-        onFilterAdd: (title: string, filterParams: any[]) => void
-        onFilterRemove: (title: string) => void
         onIncludedRowsChange: (rows: RowT[]) => void
         onRowHighlightChange: (rowIndex: number, row: RowT) => void
-        onSelectMany: (rows: RowT[]) => void
-        onSelectNone: () => void
-        onSelectOne: (row: RowT) => void
-        onSort: (columnIndex: number) => void
         onTextQueryChange: (query: string) => void
         resizableColumnWidths: boolean
         rowHighlightIndex?: number
         selectedRowIds: Set<string | number>
-        sortIndex: number
-        sortDirection: SortDirectionsT
         textQuery: string
     }
 } & StatefulDataTablePropsT

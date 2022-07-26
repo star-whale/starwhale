@@ -31,11 +31,7 @@ function MeasureColumn({ sampleIndexes, column, columnIndex, rows, isSelectable,
                 display: 'flex',
                 flexDirection: 'column',
                 width: 'fit-content',
-                // padding show be equal normal cell，measure witdh
-                paddingLeft: '20px',
                 paddingRight: '20px',
-                // minWidth: '100px',
-                // maxWidth: '200px',
             })}
         >
             <HeaderCell
@@ -77,7 +73,7 @@ type MeasureColumnWidthsPropsT = {
     isSelectable: boolean
     onWidthsChange: (nums: number[]) => void
     rows: RowT[]
-    // widths: number[]
+    widths: number[]
 }
 
 const MAX_SAMPLE_SIZE = 50
@@ -110,6 +106,7 @@ export default function MeasureColumnWidths({
     rows,
     isSelectable,
     onWidthsChange,
+    widths,
 }: MeasureColumnWidthsPropsT) {
     const [css] = useStyletron()
 
@@ -138,25 +135,24 @@ export default function MeasureColumnWidths({
 
     const handleDimensionsChange = React.useCallback(
         (columnIndex, dimensions) => {
-            // console.log(columnIndex, dimensions)
             const nextWidth = Math.min(
                 Math.max(columns[columnIndex].minWidth || 0, widthMap.get(columnIndex) || 0, dimensions.width + 1),
                 columns[columnIndex].maxWidth || Infinity
             )
+            const prevWidth = widthMap.get(columnIndex) ?? 0
 
-            if (nextWidth !== widthMap.get(columnIndex)) {
+            if (nextWidth !== widthMap.get(columnIndex) && Math.abs(nextWidth - prevWidth) > 2) {
+                // console.log(columnIndex, dimensions.width, columns[columnIndex].minWidth, columns[columnIndex].maxWidth)
+
                 widthMap.set(columnIndex, nextWidth)
-            }
 
-            if (
-                // Refresh at 100% of done
-                widthMap.size === columns.length
-                // ...50%
-                // || widthMap.size === Math.floor(columns.length / 2)
-            ) {
-                // console.log('updating', widthMap)
-                setWidthMap(widthMap)
-                onWidthsChange(Array.from(widthMap.values()))
+                // 1.Refresh at 100% of done
+                // 2. Refresh only when there is a width updating ,and the minised of the width is more than 2px
+                if (widthMap.size === columns.length) {
+                    // console.log('updating', widthMap)
+                    setWidthMap(widthMap)
+                    onWidthsChange(Array.from(widthMap.values()))
+                }
             }
         },
         [columns, onWidthsChange, widthMap]
@@ -168,9 +164,14 @@ export default function MeasureColumnWidths({
         height: 0,
     })
 
+    const isEqual = React.useMemo(() => {
+        return _.isEqual(Array.from(widthMap.values()), widths)
+    }, [widthMap, widths])
+
+    // TODO fixme
     // Remove the measurement nodes after we are done updating our column width
-    if (widthMap.size === columns.length) {
-        return null
+    if (isEqual && widthMap.size === columns.length) {
+        // return null
     }
 
     return (
@@ -182,7 +183,7 @@ export default function MeasureColumnWidths({
                         key={column.title + String(i)}
                         column={column}
                         rows={rows}
-                        isSelectable={isSelectable}
+                        isSelectable={isSelectable && i === 0}
                         onLayout={handleDimensionsChange}
                         columnIndex={i}
                         sampleIndexes={sampleIndexes}

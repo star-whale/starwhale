@@ -24,22 +24,38 @@ import { useCallback } from 'react'
 import { useTableConfig, useTableViewConfig } from '@/hooks/useTableConfig'
 import { areEqual } from 'react-window'
 import type { ColumnT, ConfigT, RowT } from '../data-table/types'
-import { useUID, useUIDSeed } from 'react-uid'
 import { IStore } from '../data-table/store'
 import { useEffect } from 'react'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 
 const useStyles = createUseStyles({
     table: {
         '& .baseui-table-cell-content': {},
+        '& .column-cell .string-cell': {
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+        },
+        '& .table-row': {
+            '&:hover': {
+                // backgroundColor: '#EFEEF5 ',
+            },
+        },
+        '& .table-columns-pinned': {
+            backgroundColor: '#FFF',
+        },
+        '& .table-row--hovering': {
+            backgroundColor: '#EFEEF5',
+        },
+        // this rule for override the default style of cell
+        '& .table-row--hovering .column-cell > *': {
+            backgroundColor: '#EFEEF5 !important',
+        },
     },
     tableCompareable: {
-        '& .table-cell--last': {
-            // borderBottom: '1px solid #2B65D9 !important',
-        },
+        '& .table-cell--last': {},
     },
     tablePinnable: {
         '& .table-columns-pinned .table-row .table-cell:last-child': {
@@ -192,12 +208,12 @@ export function TableTyped({
         }
     }, [$columns])
 
-    const styles = useStyles()
+    const [, theme] = useStyletron()
+    const styles = useStyles({ theme })
 
     return (
         <>
             <div
-                // style={{ width: '100%', minHeight: 500, height: `${120 + Math.min($rows.length, 10) * ROW_HEIGHT}px` }}
                 className={cn(styles.table, styles.tablePinnable, compareable ? styles.tableCompareable : undefined)}
                 style={{ width: '100%', minHeight: 500, height: '100%' }}
                 ref={wrapperRef}

@@ -2,8 +2,9 @@ import create, { StateCreator } from 'zustand'
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware'
 import produce from 'immer'
 import { v4 as uuid } from 'uuid'
+import _ from 'lodash'
 // eslint-disable-next-line import/no-cycle
-import { ConfigT } from './types'
+import { ConfigT, SortDirectionsT } from './types'
 // eslint-disable-next-line import/no-cycle
 import { FilterOperateSelectorValueT } from './filter-operate-selector'
 
@@ -13,6 +14,8 @@ const getId = (str: string) => str + '-' + uuid().substring(0, 8)
 export interface ITableStateInitState {
     isInit: boolean
     key: string
+    setRawConfigs: (obj: Record<string, any>) => void
+    getRawConfigs: (state?: ITableState) => typeof rawInitialState
 }
 export interface IViewState {
     views: ConfigT[]
@@ -25,15 +28,16 @@ export interface IViewState {
 }
 export interface ICurrentViewState {
     currentView: ConfigT
+    onCurrentViewSort: (key: string, direction: SortDirectionsT) => void
     onCurrentViewFiltersChange: (filters: FilterOperateSelectorValueT[]) => void
     onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], sortedIds: any[]) => void
+    onCurrentViewColumnsPin: (columnId: string, bool?: boolean) => void
 }
 export interface IViewInteractiveState {
     viewEditing: ConfigT
     viewModelShow: boolean
     onShowViewModel: (viewModelShow: boolean, viewEditing: ConfigT | null) => void
 }
-
 export type ITableState = IViewState &
     ICurrentViewState &
     IViewInteractiveState &
@@ -47,6 +51,17 @@ export type IStateCreator<T> = StateCreator<
     [],
     T
 >
+
+const rawInitialState: Partial<ITableState> = {
+    isInit: false,
+    key: 'table',
+    views: [],
+    defaultView: {},
+    currentView: {},
+    viewEditing: {},
+    viewModelShow: false,
+    rowSelectedIds: [],
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createViewSlice: IStateCreator<IViewState> = (set, get, store) => ({
@@ -115,6 +130,30 @@ const createCurrentViewSlice: IStateCreator<ICurrentViewState> = (set, get, stor
     onCurrentViewFiltersChange: (filters) => set({ currentView: { ...get().currentView, filters } }),
     onCurrentViewColumnsChange: (selectedIds: any[], pinnedIds: any[], sortedIds: any[]) =>
         set({ currentView: { ...get().currentView, selectedIds, pinnedIds, sortedIds } }),
+    onCurrentViewColumnsPin: (columnId: string, pined = false) => {
+        const { pinnedIds = [], selectedIds = [] } = get().currentView
+        const $pinnedIds = new Set(pinnedIds)
+        if (pined) {
+            $pinnedIds.add(columnId)
+        } else {
+            $pinnedIds.delete(columnId)
+        }
+        const sortedMergeSelectedIds = Array.from(selectedIds).sort((v1, v2) => {
+            const index1 = $pinnedIds.has(v1) ? 1 : -1
+            const index2 = $pinnedIds.has(v2) ? 1 : -1
+            return index2 - index1
+        })
+
+        set({
+            currentView: {
+                ...get().currentView,
+                pinnedIds: Array.from($pinnedIds),
+                selectedIds: sortedMergeSelectedIds,
+            },
+        })
+    },
+    onCurrentViewSort: (key, direction) =>
+        set({ currentView: { ...get().currentView, sortBy: key, sortDirection: direction } }),
 })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -136,6 +175,11 @@ const createViewInteractiveSlice: IStateCreator<IViewInteractiveState> = (set, g
 const createTableStateInitSlice: IStateCreator<ITableStateInitState> = (set, get, store) => ({
     isInit: false,
     key: 'table',
+    setRawConfigs: (obj: Record<string, any>) =>
+        set({
+            ..._.pick(obj, Object.keys(rawInitialState)),
+        }),
+    getRawConfigs: (state) => _.pick(state ?? get(), Object.keys(rawInitialState)),
 })
 
 export interface IRowState {
@@ -222,15 +266,13 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
         )
     )
     // eslint-disable-next-line
-    useStore.subscribe(console.log)
+    // useStore.subscribe(console.log)
     // TODO type define
     // @ts-ignore
     initialized = useStore
     return useStore
 }
 export type IStore = ReturnType<typeof createCustomStore>
-
-// eslint-disable-next-line
 
 export default createCustomStore
 

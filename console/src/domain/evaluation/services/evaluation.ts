@@ -38,12 +38,17 @@ export async function fetchEvaluationResult(projectId: string, evaluationId: str
     return resp.data
 }
 
-export async function getEvaluationViewConfig(projectId: string): Promise<any> {
-    const resp = await axios.get<IEvaluationViewSchema>(`/api/v1/project/${projectId}/evaluation/view/config`)
+export async function getEvaluationViewConfig(projectId: string, name = 'evaluation'): Promise<any> {
+    const resp = await axios.get<IEvaluationViewSchema>(`/api/v1/project/${projectId}/evaluation/view/config`, {
+        params: {
+            name,
+        },
+    })
     return resp.data
 }
 
 export async function setEvaluationViewConfig(projectId: string, data: any): Promise<IEvaluationViewSchema> {
     const resp = await axios.post<IEvaluationViewSchema>(`/api/v1/project/${projectId}/evaluation/view/config`, data)
+
     return resp.data
 }

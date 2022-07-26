@@ -1,10 +1,6 @@
-// @flow
-
-import React, { useCallback } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { VariableSizeGrid } from 'react-window'
 import AutoSizer from 'react-virtualized-auto-sizer'
-
-import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
 import { useStyletron } from 'baseui'
 import { Tooltip, PLACEMENT } from 'baseui/tooltip'
 import cn from 'classnames'
@@ -67,7 +63,7 @@ type CellPlacementPropsT = {
         columnHighlightIndex: number
         isSelectable: boolean
         isRowSelected: (v: string | number) => boolean
-        onRowMouseEnter: (num: number, row: RowT) => void
+        onRowMouseEnter: (num: number) => void
         onSelectOne: (row: RowT) => void
         rowHighlightIndex: number
         rows: RowT[]
@@ -89,6 +85,7 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
     // eslint-disable-next-line
     const value = React.useMemo(() => column.mapDataToValue(row?.data), [column, row])
 
+    // console.log('CellPlacement', columnIndex, rowIndex, value)
     return (
         <div
             data-column-index={columnIndex}
@@ -102,30 +99,24 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
 
                 css({
                     ...theme.borders.border200,
-                    'borderTop': 'none',
-                    'borderBottom': 'none',
-                    'borderRight': 'none',
-                    'borderLeft': 'none',
-                    'boxSizing': 'border-box',
-                    'paddingTop': '0',
-                    'paddingBottom': '0',
-                    'display': 'flex',
-                    'alignItems': 'center',
-                    'paddingLeft': columnIndex === 0 ? '20px' : '12px',
-                    'paddingRight': '12px',
-                    'textOverflow': 'ellipsis',
-                    'overflow': 'hidden',
-                    'position': 'relative',
-                    'breakinside': 'avoid',
-                    '& > div': {
-                        textOverflow: 'ellipsis',
-                    },
+                    borderTop: 'none',
+                    borderBottom: 'none',
+                    borderRight: 'none',
+                    borderLeft: 'none',
+                    boxSizing: 'border-box',
+                    paddingTop: '0',
+                    paddingBottom: '0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    paddingLeft: columnIndex === 0 ? '20px' : '12px',
+                    paddingRight: '12px',
+                    textOverflow: 'ellipsis',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    breakinside: 'avoid',
                 })
             )}
             style={style}
-            onMouseEnter={() => {
-                data.onRowMouseEnter(rowIndex, data.rows[rowIndex])
-            }}
         >
             <Cell
                 value={value}
@@ -144,11 +135,6 @@ function CellPlacement({ columnIndex, rowIndex, data, style }: any) {
 }
 
 function compareCellPlacement(prevProps: any, nextProps: any) {
-    // header cells are not rendered through this component
-    // if (prevProps.rowIndex === 0) {
-    //     return true
-    // }
-
     if (prevProps.normalizedWidths !== nextProps.normalizedWidths) {
         return false
     }
@@ -201,11 +187,14 @@ function compareCellPlacement(prevProps: any, nextProps: any) {
 const RowPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPropsT, unknown>(
     // @ts-ignore
     ({ pinned, rowIndex, style = {}, data }) => {
-        const columns = data.columns.map((v, columnIndex) => ({
-            ...v,
-            index: columnIndex,
-        }))
-        const { normalizedWidths } = data
+        const columns = useMemo(
+            () =>
+                data.columns.map((v, columnIndex) => ({
+                    ...v,
+                    index: columnIndex,
+                })),
+            [data.columns]
+        )
 
         const renderer = useCallback(
             (column: ColumnT & { index: number }) => {
@@ -217,8 +206,7 @@ const RowPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPr
                         <div
                             key={`${columnIndex}:${rowIndex}`}
                             style={{
-                                width: normalizedWidths[columnIndex],
-                                background: '#FFF',
+                                width: data.normalizedWidths[columnIndex],
                                 borderBottom: '1px solid #EEF1F6',
                             }}
                         />
@@ -233,15 +221,17 @@ const RowPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPr
                         data={data}
                         // @ts-ignore
                         style={{
-                            width: normalizedWidths[columnIndex],
-                            background: '#FFF',
+                            width: data.normalizedWidths[columnIndex],
                             borderBottom: '1px solid #EEF1F6',
                         }}
                     />
                 )
             },
-            [data, normalizedWidths, rowIndex, pinned]
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            [data.columns, data.isRowSelected, data.rows, data.isSelectable, rowIndex, pinned]
         )
+
+        // useWhatChanged([columns, renderer, pinned, ''])
 
         const cells = React.useMemo(() => {
             return columns.filter((v) => (pinned ? v.pin === 'LEFT' : true)).map(renderer)
@@ -249,9 +239,8 @@ const RowPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPr
 
         return (
             <div
-                data-type='table-row'
                 key={rowIndex}
-                className='table-row'
+                className={cn('table-row', rowIndex === data.rowHighlightIndex ? 'table-row--hovering' : undefined)}
                 // @ts-ignore
                 style={{
                     ...style,
@@ -260,6 +249,12 @@ const RowPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPr
                     width: '100%',
                 }}
                 data-row-index={rowIndex}
+                onMouseEnter={() => {
+                    data.onRowMouseEnter(rowIndex)
+                }}
+                onMouseLeave={() => {
+                    data.onRowMouseEnter(-1)
+                }}
             >
                 <div
                     style={{
@@ -327,8 +322,10 @@ type HeaderProps = {
     onSelectMany: () => void
     onSelectNone: () => void
     onNoSelect: (id: any) => void
-    onSort: () => void
+    onPin: (id: any, bool: boolean) => void
+    onSort: (index: number, sortBy: SortDirectionsT) => void
     isFocus: boolean
+    isPin: boolean
     onFocus: (arg: boolean) => void
     resizableColumnWidths: boolean
     compareable: boolean
@@ -444,7 +441,9 @@ function Header(props: HeaderProps) {
                 onSelectNone={props.onSelectNone}
                 onNoSelect={props.onNoSelect}
                 onSort={props.onSort}
+                onPin={props.onPin}
                 isFocus={props.isFocus}
+                isPin={props.isPin}
                 onFocus={props.onFocus}
                 sortDirection={props.sortIndex === props.index ? props.sortDirection : null}
                 title={props.columnTitle}
@@ -525,8 +524,17 @@ function Headers({ width }: { width: number }) {
                     comparePinnedKey: column.key as string,
                 })
             }
+            const handlePin = (index: number, bool: boolean) => {
+                store.onCurrentViewColumnsPin(column.key as string, bool)
+            }
+
+            // @ts-ignore
+            const handleSort = (index: number, direction: SortDirectionsT) => {
+                store.onCurrentViewSort(column.key as string, direction)
+            }
 
             const isFoucs = column.key === store.compare?.comparePinnedKey
+            const isPin = !!column.pin
 
             return (
                 <Tooltip
@@ -577,9 +585,11 @@ function Headers({ width }: { width: number }) {
                             onSelectMany={ctx.onSelectMany}
                             onSelectNone={ctx.onSelectNone}
                             onNoSelect={handleNoSelect}
+                            onPin={handlePin}
                             isFocus={isFoucs}
+                            isPin={isPin}
                             onFocus={handleFocus}
-                            onSort={() => ctx.onSort(columnIndex)}
+                            onSort={handleSort}
                             resizableColumnWidths={ctx.resizableColumnWidths}
                             compareable={ctx.compareable}
                             resizeIndex={resizeIndex}
@@ -694,7 +704,6 @@ function LoadingOrEmptyMessage(props) {
 // we are prepending a table header row before the table rows (children to the fn).
 const InnerTableElement = React.forwardRef<{ children: React.ReactNode; style: Record<string, any> }, HTMLDivElement>(
     (props, ref) => {
-        const [, theme] = useStyletron()
         const ctx = React.useContext(HeaderContext)
 
         // no need to render the cells until the columns have been measured
@@ -712,7 +721,7 @@ const InnerTableElement = React.forwardRef<{ children: React.ReactNode; style: R
             viewState = EMPTY
         }
 
-        const highlightedRow = ctx.rows[ctx.rowHighlightIndex]
+        // const highlightedRow = ctx.rows[ctx.rowHighlightIndex]
 
         // @ts-ignore
         const $children = props.children.map((o) => {
@@ -767,77 +776,9 @@ const InnerTableElement = React.forwardRef<{ children: React.ReactNode; style: R
                     }}
                 >
                     {/* <Headers /> */}
-
                     {viewState === LOADING && <LoadingOrEmptyMessage>{ctx.loadingMessage}</LoadingOrEmptyMessage>}
-
                     {viewState === EMPTY && <LoadingOrEmptyMessage>{ctx.emptyMessage}</LoadingOrEmptyMessage>}
-
                     {viewState === RENDERING && props.children}
-
-                    {ctx.rowActions &&
-                        Boolean(ctx.rowActions.length) &&
-                        ctx.rowHighlightIndex > 0 &&
-                        Boolean(highlightedRow) &&
-                        !ctx.isScrollingX && (
-                            <div
-                                style={{
-                                    alignItems: 'center',
-                                    backgroundColor: theme.colors.backgroundTertiary,
-                                    display: 'flex',
-                                    height: `${ctx.rowHeight}px`,
-                                    padding: '0 16px',
-                                    paddingLeft: theme.sizing.scale300,
-                                    paddingRight: theme.sizing.scale300,
-                                    position: 'absolute',
-                                    right: theme.direction !== 'rtl' ? 0 - ctx.scrollLeft : 'initial',
-                                    left: theme.direction === 'rtl' ? 0 : 'initial',
-                                    top: ctx.rowHighlightIndex * ctx.rowHeight + HEADER_ROW_HEIGHT,
-                                }}
-                            >
-                                {(typeof ctx.rowActions === 'function'
-                                    ? ctx.rowActions(highlightedRow)
-                                    : ctx.rowActions
-                                ).map((rowAction) => {
-                                    if (rowAction.renderButton) {
-                                        const RowActionButton = rowAction.renderButton
-                                        // @ts-ignore
-                                        return <RowActionButton />
-                                    }
-
-                                    const RowActionIcon = rowAction.renderIcon
-                                    return (
-                                        <Button
-                                            // @ts-ignore
-                                            alt={rowAction.label}
-                                            key={rowAction.label}
-                                            onClick={(event) =>
-                                                rowAction.onClick({
-                                                    event,
-                                                    row: ctx.rows[ctx.rowHighlightIndex],
-                                                })
-                                            }
-                                            size={BUTTON_SIZES.compact}
-                                            kind={BUTTON_KINDS.tertiary}
-                                            shape={BUTTON_SHAPES.round}
-                                            overrides={{
-                                                BaseButton: {
-                                                    style: {
-                                                        marginLeft: theme.sizing.scale300,
-                                                        paddingTop: theme.sizing.scale100,
-                                                        paddingRight: theme.sizing.scale100,
-                                                        paddingBottom: theme.sizing.scale100,
-                                                        paddingLeft: theme.sizing.scale100,
-                                                    },
-                                                },
-                                            }}
-                                        >
-                                            {/* @ts-ignore */}
-                                            <RowActionIcon size={24} />
-                                        </Button>
-                                    )
-                                })}
-                            </div>
-                        )}
                 </div>
             </>
         )
@@ -1188,10 +1129,10 @@ export function DataTable({
         (nextIndex) => {
             setColumnHighlightIndex(-1)
             if (nextIndex !== rowHighlightIndex) {
-                // handleRowHighlightIndexChange(nextIndex)
+                handleRowHighlightIndexChange(nextIndex)
             }
         },
-        [rowHighlightIndex]
+        [rowHighlightIndex, handleRowHighlightIndexChange]
     )
     // @ts-ignore
     function handleColumnHeaderMouseEnter(columnIndex) {
@@ -1210,9 +1151,9 @@ export function DataTable({
 
     const itemData = React.useMemo(() => {
         return {
-            columnHighlightIndex,
+            // columnHighlightIndex,
             // warning: this can cause performance problem, and inline edit will have wrong behaviour so use row own behaviour
-            // rowHighlightIndex,
+            rowHighlightIndex,
             isRowSelected,
             isSelectable,
             onRowMouseEnter: handleRowMouseEnter,
@@ -1224,10 +1165,10 @@ export function DataTable({
         }
     }, [
         handleRowMouseEnter,
-        columnHighlightIndex,
+        // columnHighlightIndex,
         isRowSelected,
         isSelectable,
-        // rowHighlightIndex,
+        rowHighlightIndex,
         rows,
         columns,
         handleSelectOne,
@@ -1240,7 +1181,7 @@ export function DataTable({
             <MeasureColumnWidths
                 columns={columns}
                 rows={rows}
-                // widths={measuredWidths}
+                widths={measuredWidths}
                 isSelectable={isSelectable}
                 onWidthsChange={handleWidthsChange}
             />
@@ -1276,7 +1217,7 @@ export function DataTable({
                             compareable,
                             rowActions,
                             rowHeight,
-                            rowHighlightIndex,
+                            rowHighlightIndex: -1,
                             rows,
                             scrollLeft,
                             sortDirection: sortDirection || null,

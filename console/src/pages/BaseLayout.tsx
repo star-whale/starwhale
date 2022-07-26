@@ -20,6 +20,8 @@ const useMainStyles = createUseStyles({
         height: '100%',
         flexGrow: 1,
         position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
     },
     mainContent: {
         padding: '28px',
@@ -28,7 +30,8 @@ const useMainStyles = createUseStyles({
         minWidth: '792px',
         display: 'flex',
         flexDirection: 'column',
-        paddingBottom: '30px',
+        flexGrow: 1,
+        // paddingBottom: '30px',
     },
 })
 

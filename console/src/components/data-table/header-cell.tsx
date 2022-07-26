@@ -4,12 +4,14 @@ import { Checkbox } from 'baseui/checkbox'
 import { useStyletron } from 'baseui'
 import { ChevronDown, ChevronUp } from 'baseui/icon'
 import { isFocusVisible } from '@/utils/focusVisible'
-
+import { StatefulPopover, PLACEMENT } from 'baseui/popover'
+import { StatefulMenu } from 'baseui/menu'
 import IconFont from '@/components/IconFont'
 import cn from 'classnames'
-import type { SortDirectionsT } from './types'
+import { SortDirectionsT } from './types'
 import { SORT_DIRECTIONS } from './constants'
 import Button from '../Button'
+import { LocaleContext } from './locales'
 
 type HeaderCellPropsT = {
     index: number
@@ -24,8 +26,10 @@ type HeaderCellPropsT = {
     onSelectNone: () => void
     onNoSelect?: (id: any) => void
     isFocus?: boolean
+    isPin?: boolean
     onFocus?: (arg: boolean) => void
-    onSort: (num: number) => void
+    onSort: (num: number, direction: SortDirectionsT) => void
+    onPin?: (num: number, bool: boolean) => void
     sortable: boolean
     sortDirection: SortDirectionsT
     title: string
@@ -33,6 +37,7 @@ type HeaderCellPropsT = {
 }
 
 const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, ref) => {
+    const locale = React.useContext(LocaleContext)
     const [css, theme] = useStyletron()
     const [focusVisible, setFocusVisible] = React.useState(false)
     const checkboxRef = React.useRef(null)
@@ -49,7 +54,21 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
         }
     }
 
-    // const backgroundColor = props?.isHovered ? theme.colors.backgroundSecondary : theme.colors.backgroundPrimary
+    const COLUMN_OPTIONS = [
+        { label: props.isPin ? locale.datatable.columnUnPinColumn : locale.datatable.columnPinColumn, type: 'pin' },
+        { label: locale.datatable.columnSortAsc, type: 'sortAsc' },
+        { label: locale.datatable.columnSortDesc, type: 'sortDesc' },
+    ]
+
+    const handleColumnOptionSelect = (option: any) => {
+        if (option.type === 'pin') {
+            props.onPin?.(props.index, !props.isPin)
+        } else if (option.type === 'sortAsc') {
+            props.onSort(props.index, SORT_DIRECTIONS.ASC)
+        } else if (option.type === 'sortDesc') {
+            props.onSort(props.index, SORT_DIRECTIONS.DESC)
+        }
+    }
 
     return (
         <div
@@ -94,20 +113,20 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
             // @ts-ignore
             onMouseLeave={props.onMouseLeave}
             onKeyUp={(event) => {
-                if (event.key === 'Enter') {
-                    props.onSort(props.index)
+                if (event.key === 'Enter' && props.sortable) {
+                    props.onSort(
+                        props.index,
+                        props.sortDirection === SORT_DIRECTIONS.ASC ? SORT_DIRECTIONS.DESC : SORT_DIRECTIONS.ASC
+                    )
                 }
             }}
-            onClick={(event) => {
-                // Avoid column sort if select-all checkbox click.
-                // @ts-ignore
-                if (checkboxRef.current && checkboxRef.current.contains(event.target)) {
-                    return
-                }
-                if (props.sortable) {
-                    props.onSort(props.index)
-                }
-            }}
+            // onClick={(event) => {
+            // Avoid column sort if select-all checkbox click.
+            // @ts-ignore
+            // if (checkboxRef.current && checkboxRef.current.contains(event.target)) {
+            //     return
+            // }
+            // }}
             onFocus={handleFocus}
             onBlur={handleBlur}
         >
@@ -158,9 +177,10 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                 {(props.isHovered || props.sortDirection) && props.sortable && (
                     <div
                         style={{
-                            display: 'flex',
+                            // display: 'flex',
                             alignItems: 'center',
                             position: 'absolute',
+                            display: 'none',
                             right: -3,
                         }}
                     >
@@ -200,6 +220,58 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                         <IconFont type='close' />
                     </Button>
                 )}
+                <StatefulPopover
+                    focusLock
+                    placement={PLACEMENT.bottom}
+                    content={({ close }) => (
+                        <StatefulMenu
+                            items={COLUMN_OPTIONS}
+                            onItemSelect={({ item }) => {
+                                handleColumnOptionSelect(item)
+                                close()
+                            }}
+                            overrides={{
+                                List: { style: { height: '130px', width: '150px' } },
+                                Option: {
+                                    props: {
+                                        getItemLabel: (item: { label: string; type: string }) => {
+                                            const icon = {
+                                                pin: <IconFont type='pin' />,
+                                                sortAsc: <IconFont type='a-sortasc' />,
+                                                sortDesc: <IconFont type='a-sortdesc' />,
+                                            }
+
+                                            return (
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                    {item.label} {icon?.[item.type as keyof typeof icon]}
+                                                </div>
+                                            )
+                                        },
+                                    },
+                                },
+                            }}
+                        />
+                    )}
+                >
+                    {/* usesd for popover postion ref  */}
+                    <div
+                        style={{
+                            marginLeft: '10px',
+                            alignItems: 'center',
+                            position: 'absolute',
+                            right: 0,
+                            top: -6,
+                            display: 'flex',
+                        }}
+                    >
+                        <IconFont
+                            type='more'
+                            style={{
+                                display: props.isHovered && !props.compareable ? 'block' : 'none',
+                            }}
+                        />
+                    </div>
+                </StatefulPopover>
             </div>
         </div>
     )
@@ -209,8 +281,10 @@ HeaderCell.defaultProps = {
     isMeasured: false,
     compareable: false,
     isFocus: false,
+    isPin: false,
     onNoSelect: () => {},
     onFocus: () => {},
+    onPin: () => {},
 }
 
 export default HeaderCell
