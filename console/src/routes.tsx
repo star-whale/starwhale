@@ -1,3 +1,5 @@
+import AdminLayout from '@/pages/Admin/AdminLayout'
+import UserManagement from '@/pages/Admin/UserManagement'
 import React from 'react'
 import { BrowserRouter, Switch, Route, Redirect } from 'react-router-dom'
 import ProjectLayout from '@/pages/Project/ProjectLayout'
@@ -196,6 +198,15 @@ const Routes = () => {
                                 <Route exact path='/projects/:projectId/models/:modelId' component={ModelOverview} />
                             </Switch>
                         </ModelLayout>
+                    </Route>
+                    {/* admin */}
+                    <Route exact path='/admin/:path?'>
+                        <AdminLayout>
+                            <Switch>
+                                <Route exact path='/admin/users' component={UserManagement} />
+                                <Redirect exact from='/admin' to='/admin/users' />
+                            </Switch>
+                        </AdminLayout>
                     </Route>
                     {/* other */}
                     <Route exact path='/login' component={Login} />

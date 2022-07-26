@@ -28,7 +28,7 @@ export async function fetchCurrentUser(): Promise<IUserSchema> {
 }
 
 export async function listUsers(query: IListQuerySchema): Promise<IListSchema<IUserSchema>> {
-    const resp = await axios.get<IListSchema<IUserSchema>>('/api/v1/users', {
+    const resp = await axios.get<IListSchema<IUserSchema>>('/api/v1/user', {
         params: query,
     })
     return resp.data
@@ -40,6 +40,17 @@ export async function changePassword(data: IChangePasswordSchema) {
         method: 'put',
         url: '/api/v1/user/pwd',
         data: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' },
+    })
+
+    return resp.data
+}
+
+export async function changeUserState(userId: string, enable: boolean) {
+    const resp = await axios({
+        method: 'put',
+        url: `/api/v1/user/${userId}/state`,
+        data: JSON.stringify({ isEnabled: enable }),
         headers: { 'Content-Type': 'application/json' },
     })
 

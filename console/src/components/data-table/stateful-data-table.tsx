@@ -31,7 +31,7 @@ function useResizeObserver(
     }, [ref, callback])
 }
 
-function QueryInput(props: any) {
+export function QueryInput(props: any) {
     const [css, theme] = useStyletron()
     const locale = React.useContext(LocaleContext)
     const [value, setValue] = React.useState('')

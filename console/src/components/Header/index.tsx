@@ -11,11 +11,12 @@ import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
 import User from '@/domain/user/components/User'
 import { simulationJump } from '@/utils'
 import { BsChevronDown } from 'react-icons/bs'
-import { Link } from 'react-router-dom'
+import { Link, useHistory } from 'react-router-dom'
 import PasswordForm from '@user/components/PasswordForm'
 import { IChangePasswordSchema } from '@user/schemas/user'
 import { changePassword } from '@user/services/user'
 import { toaster } from 'baseui/toast'
+import { AiOutlineSetting, AiOutlineSecurityScan } from 'react-icons/ai'
 import IconFont from '../IconFont'
 
 const useHeaderStyles = createUseStyles({
@@ -148,10 +149,11 @@ const useStyles = createUseStyles({
     userMenuItem: (props: IThemedStyleProps) => ({
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'left',
         alignSelf: 'normal',
         gap: '10px',
         height: '32px',
+        paddingLeft: '10px',
         color: props.theme.colors.contentPrimary,
         backgroundColor: 'var(--color-brandMenuItemBackground)',
     }),
@@ -175,6 +177,7 @@ export default function Header() {
     const { currentUser } = useCurrentUser()
 
     const [t] = useTranslation()
+    const history = useHistory()
 
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
     const handleChangePassword = useCallback(
@@ -229,10 +232,21 @@ export default function Header() {
                             tabIndex={0}
                             className={styles.userMenuItem}
                             onClick={() => {
+                                history.push('/admin')
+                            }}
+                        >
+                            <AiOutlineSetting size={18} />
+                            <span>{t('Admin Settings')}</span>
+                        </div>
+                        <div
+                            role='button'
+                            tabIndex={0}
+                            className={styles.userMenuItem}
+                            onClick={() => {
                                 setIsChangePasswordOpen(true)
                             }}
                         >
-                            <IconFont type='password' />
+                            <AiOutlineSecurityScan size={18} />
                             <span>{t('Change Password')}</span>
                         </div>
                         <div

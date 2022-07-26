@@ -93,11 +93,35 @@ const locales0 = {
     'User': {
         en: 'User',
     },
-    'Create User': {
-        en: 'Create User',
+    'Admin Settings': {
+        en: 'Admin Settings',
+    },
+    'Manage Users': {
+        en: 'Manage Users',
+    },
+    'Add User': {
+        en: 'Add User',
     },
     'User List': {
         en: 'User List',
+    },
+    'Disable User': {
+        en: 'Disable',
+    },
+    'Enable User': {
+        en: 'Enable',
+    },
+    'Disable User Success': {
+        en: 'Disable User Success',
+    },
+    'Enable User Success': {
+        en: 'Enable User Success',
+    },
+    'Disabled User': {
+        en: 'Disabled',
+    },
+    'Enabled User': {
+        en: 'Enabled',
     },
     'Username': {
         en: 'Username',
