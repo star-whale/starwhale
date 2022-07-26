@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.user.bo;
 
+import ai.starwhale.mlops.configuration.security.JwtLoginToken;
+import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import java.io.Serializable;
 import java.util.Collection;
@@ -24,8 +26,15 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.security.authentication.AccountExpiredException;
+import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Data
 @Builder
@@ -39,7 +48,7 @@ public class User implements UserDetails, Serializable {
     private String password;
     private String salt;
     private boolean active;
-    private Set<Role> roles;
+    private Set<? extends GrantedAuthority> roles;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -80,9 +89,41 @@ public class User implements UserDetails, Serializable {
         setPassword(entity.getUserPwd());
         setSalt(entity.getUserPwdSalt());
         setActive(entity.getUserEnabled() == 1);
-        setRoles(Set.of(new Role().fromEntity(entity.getRole())));
         setIdTableKey(entity.getId());
         return this;
     }
 
+    /**
+     * Check for some default information
+     */
+    public void defaultChecks() throws AccountStatusException {
+        if (!isAccountNonLocked()) {
+            throw new LockedException("User account is locked");
+        }
+
+        if (!isEnabled()) {
+            throw new DisabledException("User is disabled");
+        }
+
+        if (!isAccountNonExpired()) {
+            throw new AccountExpiredException("User account has expired");
+        }
+    }
+
+    /**
+     * Check if the password is correct
+     *
+     * @param authentication
+     * @throws AuthenticationException
+     */
+    public void additionalAuthenticationChecks(JwtLoginToken authentication) throws AuthenticationException {
+        if (authentication.getCredentials() == null) {
+            throw new BadCredentialsException("Bad credentials");
+        }
+        String presentedPassword = authentication.getCredentials().toString();
+        PasswordEncoder passwordEncoder = SWPasswordEncoder.getEncoder(getSalt());
+        if (!passwordEncoder.matches(presentedPassword, getPassword())) {
+            throw new BadCredentialsException("Bad credentials");
+        }
+    }
 }
