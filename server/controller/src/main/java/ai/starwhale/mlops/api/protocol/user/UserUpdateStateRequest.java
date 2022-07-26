@@ -26,6 +26,10 @@ import org.springframework.validation.annotation.Validated;
 public class UserUpdateStateRequest {
 
     @NotNull
+    @JsonProperty("currentUserPwd")
+    private String currentUserPwd;
+
+    @NotNull
     @JsonProperty("isEnabled")
     private Boolean isEnabled;
 }

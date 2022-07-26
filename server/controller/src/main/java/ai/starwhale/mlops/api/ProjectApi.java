@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.project.ProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.api.protocol.user.ProjectRoleVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,8 +29,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,8 +52,9 @@ public interface ProjectApi {
             description = "ok",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
     @GetMapping(value = "/project")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(
-        @Valid @RequestParam(value = "projectName", required = false) String projectName,
+        @RequestParam(value = "projectName", required = false) String projectName,
         @Valid @RequestParam(value = "isDeleted", required = false, defaultValue = "false") Boolean isDeleted,
         @Parameter(in = ParameterIn.QUERY, description = "Id of the project owner", schema = @Schema())
         @Valid @RequestParam(value = "ownerId", required = false) String ownerId,
@@ -62,10 +66,11 @@ public interface ProjectApi {
         @Valid @RequestParam(value = "order", required = false, defaultValue = "1") Integer order);
 
 
-    @Operation(summary = "Create a new project")
+    @Operation(summary = "Create or Recover a new project")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> createProject(
         @Valid @RequestBody ProjectRequest projectRequest);
 
@@ -74,6 +79,7 @@ public interface ProjectApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/project/{projectUrl}")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteProjectByUrl(
         @Valid @PathVariable("projectUrl") String projectUrl);
 
@@ -81,6 +87,7 @@ public interface ProjectApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/recover")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverProject(
         @Valid @PathVariable("projectUrl") String projectUrl);
 
@@ -91,6 +98,7 @@ public interface ProjectApi {
             description = "ok.",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = ProjectVO.class)))})
     @GetMapping(value = "/project/{projectUrl}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ProjectVO>> getProjectByUrl(
         @PathVariable("projectUrl") String projectUrl);
 
@@ -99,9 +107,50 @@ public interface ProjectApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> updateProject(
         @PathVariable("projectUrl") String projectId,
         @Valid @RequestBody ProjectRequest projectRequest);
 
 
+    @Operation(summary = "List project roles")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(value = "/project/{projectUrl}/role")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<List<ProjectRoleVO>>> listProjectRole(
+        @PathVariable("projectUrl") String projectUrl
+    );
+
+    @Operation(summary = "Grant project role to a user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(value = "/project/{projectUrl}/role")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> addProjectRole(
+        @PathVariable("projectUrl") String projectUrl,
+        @RequestParam("userId") String userId,
+        @RequestParam("roleId") String roleId
+    );
+
+    @Operation(summary = "Delete a project role")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "ok")})
+    @DeleteMapping(value = "/project/{projectUrl}/role/{projectRoleId}")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> deleteProjectRole(
+        @PathVariable("projectUrl") String projectUrl,
+        @PathVariable("projectRoleId") String projectRoleId
+    );
+
+    @Operation(summary = "Modify a project role")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/project/{projectUrl}/role/{projectRoleId}")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> modifyProjectRole(
+        @PathVariable("projectUrl") String projectUrl,
+        @PathVariable("projectRoleId") String projectRoleId,
+        @RequestParam("roleId") String roleId
+    );
 }
