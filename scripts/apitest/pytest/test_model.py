@@ -146,10 +146,12 @@ class TestModel:
         if swmp_name is None or swmp_version_name is None:
             print('Test Model head cancel.')
             return
-        swmp = swmp_name + ':' + swmp_version_name
         res = requests.head(url=hu.url(host, port) + '/project'
-                                                     '/model',
-                            params='project=1&swmp=' + swmp,
+                                                     '/1'
+                                                     '/model'
+                                                     '/' + swmp_name +
+                                                     '/version'
+                                                     '/' + swmp_version_name,
                             headers=hu.header())
         assert res.status_code == 200
 

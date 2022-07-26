@@ -146,10 +146,12 @@ class TestRuntime:
         if swrt_name is None or swrt_version_name is None:
             print('Test Runtime head cancel.')
             return
-        swrt = swrt_name + ':' + swrt_version_name
         res = requests.head(url=hu.url(host, port) + '/project'
-                                                     '/runtime',
-                            params='project=1&runtime=' + swrt,
+                                                     '/1'
+                                                     '/runtime'
+                                                     '/' + swrt_name +
+                                                     '/version'
+                                                     '/' + swrt_version_name,
                             headers=hu.header())
         assert res.status_code == 200
 

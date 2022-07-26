@@ -75,10 +75,10 @@ class TestProject:
                                                  '/' + data,
                         headers=hu.header())
 
-        res = requests.put(url=hu.url(host, port) + '/project'
-                                                    '/' + data +
-                                                    '/recover',
-                           headers=hu.header())
+        res = requests.post(url=hu.url(host, port) + '/project',
+                            json={'projectId': data,
+                                  'recover': 'true'},
+                            headers=hu.header())
         response = res.json()
 
         assert res.status_code == 200
