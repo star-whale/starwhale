@@ -19,6 +19,8 @@ package ai.starwhale.mlops.common.util;
 import ai.starwhale.mlops.api.protocol.Code;
 import cn.hutool.json.JSONUtil;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 
@@ -35,5 +37,34 @@ public class HttpUtil {
                 .append("message", message)
                 .toStringPretty());
         response.flushBuffer();
+    }
+
+    public enum Resources {
+        PROJECT, MODEL, DATASET, RUNTIME;
+        public String getUrlTypeName() {
+            return this.name().toLowerCase();
+        }
+    }
+    public static String getResourceUrlFromPath(String path, Resources resourceType) {
+        return getResourceUrlFromPath(path, resourceType.getUrlTypeName());
+    }
+    public static String getResourceUrlFromPath(String path, String resourceName) {
+        String prefix = "/" + resourceName + "/";
+        String regex = "(" + prefix + ")([^/?]+)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(path);
+        if(matcher.find()) {
+            return matcher.group().substring(prefix.length());
+        } else {
+            return null;
+        }
+    }
+
+    public static void main(String[] args) {
+        System.out.println(getResourceUrlFromPath("/api/v1/project/project_test_1", Resources.PROJECT));
+        System.out.println(getResourceUrlFromPath("/api/v1/project/project_test_1/model/1", Resources.PROJECT));
+        System.out.println(getResourceUrlFromPath("/project/project_test_1?pageSize=1", Resources.PROJECT));
+        System.out.println(getResourceUrlFromPath("/project/project_test_1?pageSize=1", Resources.RUNTIME));
+        System.out.println(getResourceUrlFromPath("/api/v1/project/project_test_1/model/1", Resources.MODEL));
     }
 }
