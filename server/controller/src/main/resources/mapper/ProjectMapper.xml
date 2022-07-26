@@ -25,12 +25,6 @@
         where id = #{id}
     </update>
 
-    <update id="recoverProjectByName" parameterType="java.lang.String">
-        update project_info
-        set is_deleted = 0
-        where project_name = #{projectName}
-    </update>
-
     <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.po.ProjectEntity">
         update project_info
         set project_name = #{project.projectName}
@@ -48,15 +42,10 @@
                u.id as user_id,
                u.user_name,
                u.created_time as user_created_time,
-               u.user_enabled,
-               r.id as role_id,
-               r.role_name,
-               r.role_name_en
+               u.user_enabled
         from project_info as p,
-             user_info as u,
-             user_role as r
+             user_info as u
         where u.id = p.owner_id
-          and r.id = u.role_id
     </sql>
 
     <select id="listProjects" parameterType="java.lang.String" resultMap="projectResultMap" >
@@ -68,15 +57,6 @@
         <if test="order != null and order != ''">
             order by ${order}
         </if>
-    </select>
-
-    <select id="listDeletedProjects" parameterType="java.lang.String" resultMap="projectResultMap">
-        <include refid="select_project"/>
-        and p.is_deleted = 1
-        <if test="projectName != null and projectName != ''">
-            and p.project_name = #{projectName}
-        </if>
-        order by p.modified_time desc
     </select>
 
     <select id="listProjectsByOwner" parameterType="java.lang.Long" resultMap="projectResultMap">
