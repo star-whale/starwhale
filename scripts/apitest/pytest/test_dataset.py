@@ -146,10 +146,12 @@ class TestDataset:
         if swds_name is None or swds_version_name is None:
             print('Test Dataset head cancel.')
             return
-        swds = swds_name + ':' + swds_version_name
         res = requests.head(url=hu.url(host, port) + '/project'
-                                                     '/dataset',
-                            params='project=1&swds=' + swds,
+                                                     '/1'
+                                                     '/dataset'
+                                                     '/' + swds_name +
+                                                     '/version'
+                                                     '/' + swds_version_name,
                             headers=hu.header())
         assert res.status_code == 200
 
