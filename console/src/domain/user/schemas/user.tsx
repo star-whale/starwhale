@@ -1,8 +1,16 @@
 import { IResourceSchema } from '@/domain/base/schemas/resource'
 
+export interface IUserRoleSchema {
+    id: string
+    name: string
+    nameEn: string
+}
+
 export interface IUserSchema extends IResourceSchema {
+    id: string
     name: string
     isEnabled: string
+    role: IUserRoleSchema
 }
 
 export interface IRegisterUserSchema {
