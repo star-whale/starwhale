@@ -19,15 +19,9 @@ package ai.starwhale.mlops.configuration.security;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AccountExpiredException;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 /**
  * User role verification specific implementation
@@ -44,14 +38,14 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     @Override
     public Authentication authenticate(Authentication authentication)
         throws AuthenticationException {
-        UserDetails userDetails = userService.loadUserByUsername(authentication.getName());
+        User user = userService.loadUserByUsername(authentication.getName());
+        user.defaultChecks();
 
         JwtLoginToken jwtLoginToken = (JwtLoginToken) authentication;
-        defaultCheck(userDetails);
         // Username and password verification
-        additionalAuthenticationChecks(userDetails, jwtLoginToken);
+        user.additionalAuthenticationChecks(jwtLoginToken);
         // Create authenticated authentication
-        JwtLoginToken authenticatedToken = new JwtLoginToken(userDetails, jwtLoginToken.getCredentials(), userDetails.getAuthorities());
+        JwtLoginToken authenticatedToken = new JwtLoginToken(user, jwtLoginToken.getCredentials(), user.getAuthorities());
         authenticatedToken.setDetails(jwtLoginToken.getDetails());
         return authenticatedToken;
     }
@@ -60,43 +54,6 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     public boolean supports(Class<?> authentication) {
         return (JwtLoginToken.class
             .isAssignableFrom(authentication));
-    }
-
-    /**
-     * Check for some default information
-     *
-     * @param user
-     */
-    private void defaultCheck(UserDetails user) {
-        if (!user.isAccountNonLocked()) {
-            throw new LockedException("User account is locked");
-        }
-
-        if (!user.isEnabled()) {
-            throw new DisabledException("User is disabled");
-        }
-
-        if (!user.isAccountNonExpired()) {
-            throw new AccountExpiredException("User account has expired");
-        }
-    }
-
-    /**
-     * Check if the password is correct
-     *
-     * @param userDetails
-     * @param authentication
-     * @throws AuthenticationException
-     */
-    private void additionalAuthenticationChecks(UserDetails userDetails, JwtLoginToken authentication) throws AuthenticationException {
-        if (authentication.getCredentials() == null) {
-            throw new BadCredentialsException("Bad credentials");
-        }
-        String presentedPassword = authentication.getCredentials().toString();
-        PasswordEncoder passwordEncoder = SWPasswordEncoder.getEncoder(((User)userDetails).getSalt());
-        if (!passwordEncoder.matches(presentedPassword, userDetails.getPassword())) {
-            throw new BadCredentialsException("Bad credentials");
-        }
     }
 
 }
