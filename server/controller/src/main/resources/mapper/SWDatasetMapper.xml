@@ -18,17 +18,12 @@
                s.modified_time as swds_modified_time,
                u.id as user_id,
                u.user_name,
-               u.role_id,
                u.created_time as user_created_time,
-               u.user_enabled,
-               r.role_name,
-               r.role_name_en
+               u.user_enabled
         from dataset_info as s,
-             user_info as u,
-             user_role as r
+             user_info as u
         where s.is_deleted = 0
           and u.id = s.owner_id
-          and r.id = u.role_id
     </sql>
 
     <select id="listDatasets" resultMap="swdsResultMap">

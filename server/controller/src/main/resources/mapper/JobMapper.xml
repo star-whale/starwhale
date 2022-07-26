@@ -30,7 +30,6 @@
                               u.id as user_id,
                               u.user_name,
                               u.user_enabled,
-                              u.role_id,
                               u.created_time as user_created_time,
                               u.modified_time as user_modified_time,
                               mv.id as mv_id,
@@ -41,18 +40,14 @@
                               mv.created_time as mv_created_time,
                               mv.modified_time as mv_modified_time,
                               mv.storage_path as mv_storage_path,
-                              r.role_name,
-                              r.role_name_en,
                               m.swmp_name as swmp_name
                        from job_info as j,
                             user_info as u,
                             project_info as p,
                             swmp_version as mv,
-                            swmp_info as m,
-                            user_role as r
+                            swmp_info as m
                        where u.id = j.owner_id
                          and p.id = j.project_id
-                         and r.id = u.role_id
                          and mv.id = j.swmp_version_id
                          and m.id = mv.swmp_id) as j2
     </sql>
