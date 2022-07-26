@@ -222,7 +222,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                         style: {},
                     },
                 }}
-                activeItemId={activeItemId ?? (baseuiNavItems[0]?.itemId as string)}
+                activeItemId={activeItemId ?? ''}
                 items={baseuiNavItems}
                 onChange={({ event, item }) => {
                     event.preventDefault()

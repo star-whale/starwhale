@@ -8,6 +8,7 @@ import { IThemedStyleProps } from '@/theme'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import Login from '@/pages/Home/Login'
+import ProjectMembers from '@/pages/Project/ProjectMembers'
 import ProjectListCard from './pages/Project/ProjectListCard'
 import ModelLayout from './pages/Model/ModelLayout'
 import ModelOverview from './pages/Model/Overview'
@@ -90,6 +91,7 @@ const Routes = () => {
                                 <Route exact path='/projects/:projectId/evaluations' component={ProjectEvaluations} />
                                 <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
                                 <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
+                                <Route exact path='/projects/:projectId/members' component={ProjectMembers} />
                                 <Redirect from='/projects/:projectId' to='/projects/:projectId/models' />
                             </Switch>
                         </ProjectLayout>

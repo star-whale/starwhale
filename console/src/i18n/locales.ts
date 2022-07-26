@@ -87,6 +87,12 @@ const locales0 = {
     'project created': {
         en: 'project created',
     },
+    'Manage Project Member': {
+        en: 'Manage Member',
+    },
+    'Project Role': {
+        en: 'Project Role',
+    },
     'USER': {
         en: 'USER',
     },
@@ -98,6 +104,24 @@ const locales0 = {
     },
     'Manage Users': {
         en: 'Manage Users',
+    },
+    'Manage Project Members': {
+        en: 'Manage Member',
+    },
+    'Add Project Member': {
+        en: 'Add Member',
+    },
+    'Remove Project Member': {
+        en: 'Remove',
+    },
+    'Change project role success': {
+        en: 'Change project role success',
+    },
+    'Add project role success': {
+        en: 'Add project role success',
+    },
+    'Remove Project role success': {
+        en: 'Remove project role success',
     },
     'Add User': {
         en: 'Add User',
