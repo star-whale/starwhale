@@ -51,6 +51,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -143,7 +144,10 @@ public class DatasetController implements DatasetApi{
 
     @Override
     public ResponseEntity<ResponseMessage<UploadResult>> uploadDS(String uploadId,
+        String projectUrl, String datasetUrl, String versionUrl,
         MultipartFile dsFile, UploadRequest uploadRequest) {
+        uploadRequest.setProject(projectUrl);
+        uploadRequest.setSwds(datasetUrl + ":" + versionUrl);
         switch (uploadRequest.getPhase()){
             case MANIFEST:
                 String text;
@@ -173,23 +177,25 @@ public class DatasetController implements DatasetApi{
     }
 
     @Override
-    public byte[] pullDS(String project, String name, String version,
+    public void pullDS(String projectUrl, String datasetUrl, String versionUrl,
         String partName, HttpServletResponse httpResponse) {
-        if(!StringUtils.hasText(name) || !StringUtils.hasText(version) ){
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("please provide name and version for the DS "),HttpStatus.BAD_REQUEST);
+        if(!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl) ){
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
         }
-        return swdsUploader.pull(project, name,version,partName, httpResponse);
+        byte[] res = swdsUploader.pull(projectUrl, datasetUrl, versionUrl, partName);
+        httpResponse.addHeader("Content-Length", String.valueOf(res.length));
+        try (ServletOutputStream outputStream = httpResponse.getOutputStream()){
+            outputStream.write(res);
+            outputStream.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<SWDatasetInfoVO>>> listDS(String project,
-        String name) {
-        return ResponseEntity.ok(Code.success.asResponse(swDatasetService.listDS(project,name)));
-    }
-
-    @Override
-    public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(String projectUrl, String datasetUrl,
-        String versionUrl, SWDSTagRequest swdsTagRequest) {
+    public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(
+        String projectUrl, String datasetUrl, String versionUrl, SWDSTagRequest swdsTagRequest) {
         Boolean res = swDatasetService.modifySWDSVersion(projectUrl, datasetUrl, versionUrl,
             SWDSVersion.builder().tag(swdsTagRequest.getTag()).build());
         Assert.isTrue(Optional.of(res).orElseThrow(ApiOperationException::new));
@@ -237,7 +243,7 @@ public class DatasetController implements DatasetApi{
     }
 
     @Override
-    public ResponseEntity<String> headDataset(UploadRequest uploadRequest) {
-        return ResponseEntity.ok(swDatasetService.query(uploadRequest));
+    public void headDataset(String projectUrl, String datasetUrl, String versionUrl) {
+        swDatasetService.query(projectUrl, datasetUrl, versionUrl);
     }
 }

@@ -24,7 +24,7 @@ import ai.starwhale.mlops.api.protocol.swds.SWDSTagRequest;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadResult;
-import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
+import ai.starwhale.mlops.common.RegExps;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,9 +37,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -64,6 +65,7 @@ public interface DatasetApi {
             "Select a historical version of the dataset and revert the latest version of the current dataset to this version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/revert")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> revertDatasetVersion(
         @Parameter(
             in = ParameterIn.PATH,
@@ -83,6 +85,7 @@ public interface DatasetApi {
     @Operation(summary = "Delete a dataset")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteDataset(
         @Parameter(
             in = ParameterIn.PATH,
@@ -98,6 +101,7 @@ public interface DatasetApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/recover",
         produces = {"application/json"})
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverDataset(
         @Parameter(
             in = ParameterIn.PATH,
@@ -122,6 +126,7 @@ public interface DatasetApi {
                     schema = @Schema(implementation = SWDatasetInfoVO.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<SWDatasetInfoVO>> getDatasetInfo(
         @Parameter(
             in = ParameterIn.PATH,
@@ -149,6 +154,7 @@ public interface DatasetApi {
                     schema = @Schema(implementation = PageInfo.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVersionVO>>> listDatasetVersion(
         @Parameter(
             in = ParameterIn.PATH,
@@ -189,10 +195,15 @@ public interface DatasetApi {
             + "The data resources can be selected by uploading the file package or entering the server path.")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-        value = "/project/dataset/push",
+        value = "/project/{projectUrl}/dataset/{datasetName}/version/{versionName}/file",
         produces = {"application/json"})
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<UploadResult>> uploadDS(
-        @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) String uploadHeader,
+        @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) String uploadId,
+        @PathVariable(name = "projectUrl") String projectUrl,
+        @Pattern(regexp = RegExps.BUNDLE_NAME_REGEX, message = "Dataset name is invalid")
+        @PathVariable(name = "datasetName") String datasetName,
+        @PathVariable(name = "versionName") String versionName,
         @Parameter(description = "file detail") @RequestPart(value = "file",required = false) MultipartFile dsFile,
         UploadRequest uploadRequest);
 
@@ -200,28 +211,22 @@ public interface DatasetApi {
         description = "Pull SWDS files part by part. ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
-        value = "/project/dataset/pull",
+        value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/file",
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    byte[] pullDS(
-        @Parameter(name = "project", description = "the name of the project attempt to pull", required = true) String project,
-        @Parameter(name = "name", description = "the name of the SWDS attempt to pull", required = true) String name,
-        @Parameter(name = "version", description = "the version of the SWDS attempt to pull", required = true) String version,
-        @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified") @RequestParam(name = "part_name",required = false) String partName,
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    void pullDS(
+        @PathVariable(name = "projectUrl") String projectUrl,
+        @PathVariable(name = "datasetUrl") String datasetUrl,
+        @PathVariable(name = "versionUrl") String versionUrl,
+        @Parameter(name = "part_name", description = "optional, _manifest.yaml is used if not specified")
+        @RequestParam(name = "part_name",required = false) String partName,
         HttpServletResponse httpResponse);
 
-    @Operation(summary = "List SWDS versions",
-        description = "List SWDS versions. ")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-        value = "/project/dataset/list",
-        produces = {"application/json"})
-    ResponseEntity<ResponseMessage<List<SWDatasetInfoVO>>> listDS(
-        @Parameter(name = "project", description = "the project name") @RequestParam(name = "project",required = false) String project,
-        @Parameter(name = "name", description = "the name of SWDS") @RequestParam(name = "name",required = false) String name);
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(
         @Parameter(
             in = ParameterIn.PATH,
@@ -243,6 +248,7 @@ public interface DatasetApi {
     )
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> manageDatasetTag(
         @Parameter(
             in = ParameterIn.PATH,
@@ -270,6 +276,7 @@ public interface DatasetApi {
                     schema = @Schema(implementation = PageInfo.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/dataset")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<DatasetVO>>> listDataset(
         @Parameter(
             in = ParameterIn.PATH,
@@ -294,9 +301,18 @@ public interface DatasetApi {
         description = "head for swds info")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @RequestMapping(
-        value = "/project/dataset",
+        value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}",
         produces = {"application/json"},
         method = RequestMethod.HEAD)
-    ResponseEntity<String> headDataset(UploadRequest uploadRequest);
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    void headDataset(@Parameter(
+            in = ParameterIn.PATH,
+            description = "Project url",
+            schema = @Schema())
+        @PathVariable("projectUrl") String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("datasetUrl") String datasetUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionUrl") String versionUrl);
 
 }

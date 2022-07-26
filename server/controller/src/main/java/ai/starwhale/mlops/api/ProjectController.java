@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.project.ProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.api.protocol.user.ProjectRoleVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
@@ -29,8 +30,11 @@ import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
+import java.util.List;
 import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -75,13 +79,22 @@ public class ProjectController implements ProjectApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> createProject(ProjectRequest projectRequest) {
         User user = userService.currentUserDetail();
+        Long projectId;
+        if(Boolean.TRUE.equals(projectRequest.getRecover())) {
+            String projectUrl = projectRequest.getProjectId();
+            if(projectUrl == null) {
+                projectUrl = projectRequest.getProjectName();
+            }
+            projectId = projectService.recoverProject(projectUrl);
+        } else {
+            projectId = projectService
+                .createProject(Project.builder()
+                    .name(projectRequest.getProjectName())
+                    .owner(User.builder().id(user.getId()).build())
+                    .isDefault(false)
+                    .build());
+        }
 
-        Long projectId = projectService
-            .createProject(Project.builder()
-                .name(projectRequest.getProjectName())
-                .owner(User.builder().id(user.getId()).build())
-                .isDefault(false)
-                .build());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(projectId)));
 
@@ -99,11 +112,7 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> recoverProject(String projectUrl) {
-        Boolean res = projectService.recoverProject(projectUrl);
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover project failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        projectService.recoverProject(projectUrl);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
@@ -123,4 +132,47 @@ public class ProjectController implements ProjectApi{
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<ProjectRoleVO>>> listProjectRole(String projectUrl) {
+        List<ProjectRoleVO> vos = projectService.listProjectRoles(projectUrl);
+        return ResponseEntity.ok(Code.success.asResponse(vos));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> addProjectRole(String projectUrl, String userId,
+        String roleId) {
+        Boolean res = projectService.addProjectRole(projectUrl, idConvertor.revert(userId),
+            idConvertor.revert(roleId));
+        if(!res) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT).tip("Add project role failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> deleteProjectRole(String projectUrl,
+        String projectRoleId) {
+        Boolean res = projectService.deleteProjectRole(projectUrl, idConvertor.revert(projectRoleId));
+        if(!res) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT).tip("Delete project role failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> modifyProjectRole(String projectUrl,
+        String projectRoleId, String roleId) {
+        Boolean res = projectService.modifyProjectRole(projectUrl, idConvertor.revert(projectRoleId),
+            idConvertor.revert(roleId));
+        if(!res) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT).tip("Modify project role failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+
 }

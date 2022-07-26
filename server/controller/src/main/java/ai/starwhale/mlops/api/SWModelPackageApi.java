@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.swmp.SWMPTagRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
+import ai.starwhale.mlops.common.RegExps;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,8 +36,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.validation.constraints.Pattern;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -66,6 +69,7 @@ public interface SWModelPackageApi {
                     schema = @Schema(implementation = PageInfo.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/model")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVO>>> listModel(
         @Parameter(
             in = ParameterIn.PATH,
@@ -99,6 +103,7 @@ public interface SWModelPackageApi {
             "Select a historical version of the model and revert the latest version of the current model to this version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project/{projectUrl}/model/{modelUrl}/revert")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> revertModelVersion(
         @Parameter(
             in = ParameterIn.PATH,
@@ -119,6 +124,7 @@ public interface SWModelPackageApi {
     @Operation(summary = "Delete a model")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/project/{projectUrl}/model/{modelUrl}")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteModel(
         @Parameter(
             in = ParameterIn.PATH,
@@ -134,6 +140,7 @@ public interface SWModelPackageApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/recover",
         produces = {"application/json"})
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverModel(
         @Parameter(
             in = ParameterIn.PATH,
@@ -158,6 +165,7 @@ public interface SWModelPackageApi {
                     schema = @Schema(implementation = SWModelPackageInfoVO.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<SWModelPackageInfoVO>> getModelInfo(
         @Parameter(
             in = ParameterIn.PATH,
@@ -185,6 +193,7 @@ public interface SWModelPackageApi {
                     schema = @Schema(implementation = PageInfo.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/model/{modelUrl}/version")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<SWModelPackageVersionVO>>> listModelVersion(
         @Parameter(
             in = ParameterIn.PATH,
@@ -217,6 +226,7 @@ public interface SWModelPackageApi {
     @Operation(summary = "Set tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyModel(
         @Parameter(
             in = ParameterIn.PATH,
@@ -235,6 +245,7 @@ public interface SWModelPackageApi {
     @Operation(summary = "Manage tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/tag")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> manageModelTag(
         @Parameter(
             in = ParameterIn.PATH,
@@ -255,61 +266,60 @@ public interface SWModelPackageApi {
             + "The data resources can be selected by uploading the file package or entering the server path.")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-        value = "/project/model/push",
+        value = "/project/{projectUrl}/model/{modelName}/version/{versionName}/file",
         produces = {"application/json"},
         consumes = {"multipart/form-data"})
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> upload(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project url",
+            schema = @Schema())
+        @PathVariable("projectUrl")
+        String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @Pattern(regexp = RegExps.BUNDLE_NAME_REGEX, message = "Model name is invalid.")
+        @PathVariable("modelName") String modelName,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionName") String versionName,
         @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile file,
         ClientSWMPRequest uploadRequest);
 
-    @Operation(summary = "Create a new swmp version",
-        description = "Create a new version of the swmp. "
-            + "The data resources can be selected by uploading the file package or entering the server path.")
+    @Operation(summary = "Pull file of a model version",
+        description = "Create a new version of the swmp. ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
-        value = "/project/model/pull",
+        value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/file",
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     void pull(
-        ClientSWMPRequest uploadRequest, HttpServletResponse httpResponse);
+        @PathVariable("projectUrl") String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @Pattern(regexp = RegExps.BUNDLE_NAME_REGEX, message = "Model name is not invalid.")
+        @PathVariable("modelUrl") String modelUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionUrl") String versionUrl,
+        HttpServletResponse httpResponse);
 
-    @Operation(summary = "Create a new swmp version",
-        description = "Create a new version of the swmp. "
-            + "The data resources can be selected by uploading the file package or entering the server path.")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @PostMapping(
-        value = "/project/model",
-        produces = {"application/json"},
-        consumes = {"multipart/form-data"})
-    ResponseEntity<ResponseMessage<String>> uploadModel(
-        @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile file,
-        ClientSWMPRequest uploadRequest);
-
-    @Operation(summary = "Pull SWMP binary ",
-        description = "Pull SWMP binary")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-        value = "/project/model",
-        produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-    void pullModel(ClientSWMPRequest uploadRequest, HttpServletResponse httpResponse);
-
-    @Operation(summary = "List SWMP versions",
-        description = "List SWMP versions. ")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-        value = "/project/model/list",
-        produces = {"application/json"})
-    ResponseEntity<ResponseMessage<List<SWModelPackageInfoVO>>> listModel(
-        @Parameter(name = "project", description = "the project name") @RequestParam(name = "project",required = false) String project,
-        @Parameter(name = "name", description = "the name of SWMP") @RequestParam(name = "name",required = false) String name);
 
     @Operation(summary = "head for swmp info ",
         description = "head for swmp info")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @RequestMapping(
-        value = "/project/model",
+        value = "/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}",
         produces = {"application/json"},
         method = RequestMethod.HEAD)
-    ResponseEntity<String> headModel(ClientSWMPRequest uploadRequest);
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    void headModel(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project url",
+            schema = @Schema())
+        @PathVariable("projectUrl") String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("modelUrl") String modelUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionUrl") String versionUrl);
 
 
 }

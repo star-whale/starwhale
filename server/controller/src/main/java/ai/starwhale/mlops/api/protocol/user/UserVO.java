@@ -33,11 +33,9 @@ public class UserVO {
 
     private Long createdTime;
 
-    private RoleVO role;
-
     private Boolean isEnabled;
 
     public static UserVO empty() {
-        return new UserVO("", "", -1L, RoleVO.empty(), false);
+        return new UserVO("", "", -1L, false);
     }
 }

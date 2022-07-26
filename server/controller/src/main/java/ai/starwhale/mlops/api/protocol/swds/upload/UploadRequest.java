@@ -26,7 +26,6 @@ public class UploadRequest {
 
     static final String SEPARATOR = ":";
 
-    @NotNull
     String swds;
     @NotNull
     UploadPhase phase;

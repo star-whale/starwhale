@@ -31,9 +31,7 @@ public class RoleVO {
 
     private String name;
 
-    private String nameEn;
+    private String code;
 
-    public static RoleVO empty() {
-        return new RoleVO("", "", "");
-    }
+    private String description;
 }

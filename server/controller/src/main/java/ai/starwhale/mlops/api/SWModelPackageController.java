@@ -177,37 +177,21 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> upload(MultipartFile dsFile,
-        ClientSWMPRequest uploadRequest) {
+    public ResponseEntity<ResponseMessage<String>> upload(String projectUrl, String modelUrl, String versionUrl,
+        MultipartFile dsFile, ClientSWMPRequest uploadRequest) {
+        uploadRequest.setProject(projectUrl);
+        uploadRequest.setSwmp(modelUrl + ":" + versionUrl);
         swmpService.upload(dsFile,uploadRequest);
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
     @Override
-    public void pull(ClientSWMPRequest pullRequest, HttpServletResponse httpResponse) {
-        swmpService.pull(pullRequest,httpResponse);
+    public void pull(String projectUrl, String modelUrl, String versionUrl, HttpServletResponse httpResponse) {
+        swmpService.pull(projectUrl, modelUrl, versionUrl, httpResponse);
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<SWModelPackageInfoVO>>> listModel(String project,
-        String name) {
-        List<SWModelPackageInfoVO> swModelPackageInfoVOS = swmpService.listSWMPInfo(project, name);
-        return ResponseEntity.ok(Code.success.asResponse(swModelPackageInfoVOS));
-    }
-
-    @Override
-    public ResponseEntity<ResponseMessage<String>> uploadModel(MultipartFile file,
-        ClientSWMPRequest uploadRequest) {
-        return upload(file,uploadRequest);
-    }
-
-    @Override
-    public void pullModel(ClientSWMPRequest pullRequest, HttpServletResponse httpResponse) {
-        pull(pullRequest,httpResponse);
-    }
-
-    @Override
-    public ResponseEntity<String> headModel(ClientSWMPRequest queryRequest) {
-        return ResponseEntity.ok(swmpService.query(queryRequest));
+    public void headModel(String projectUrl, String modelUrl, String versionUrl) {
+        swmpService.query(projectUrl, modelUrl, versionUrl);
     }
 }

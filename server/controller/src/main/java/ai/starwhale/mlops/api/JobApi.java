@@ -33,6 +33,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -55,6 +56,7 @@ public interface JobApi {
             description = "ok",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
     @GetMapping(value = "/project/{projectUrl}/job")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<JobVO>>> listJobs(
         @Parameter(
             in = ParameterIn.PATH,
@@ -79,6 +81,7 @@ public interface JobApi {
                     schema = @Schema(implementation = JobVO.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<JobVO>> findJob( @Parameter(
         in = ParameterIn.PATH,
         description = "Project url",
@@ -96,6 +99,7 @@ public interface JobApi {
             description = "ok",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/task")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<TaskVO>>> listTasks(
         @Parameter(
             in = ParameterIn.PATH,
@@ -116,6 +120,7 @@ public interface JobApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project/{projectUrl}/job")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> createJob(
         @Parameter(
             in = ParameterIn.PATH,
@@ -129,6 +134,7 @@ public interface JobApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/{action}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> action(
         @Parameter(
             in = ParameterIn.PATH,
@@ -161,6 +167,7 @@ public interface JobApi {
                     schema = @Schema(implementation = Object.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/result")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<Object>> getJobResult(@Parameter(
         in = ParameterIn.PATH,
         description = "Project url",
@@ -183,6 +190,7 @@ public interface JobApi {
                     schema = @Schema(implementation = String.class)))
         })
     @PutMapping(value = "/project/{projectUrl}/job/{jobUrl}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyJobComment(
         @Parameter(
             in = ParameterIn.PATH,
@@ -211,6 +219,7 @@ public interface JobApi {
                     schema = @Schema(implementation = Graph.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/dag")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<Graph>> getJobDAG(@Parameter(
         in = ParameterIn.PATH,
         description = "Project Url",
@@ -233,6 +242,7 @@ public interface JobApi {
                     schema = @Schema(implementation = String.class)))
         })
     @DeleteMapping (value = "/project/{projectUrl}/job/{jobUrl}")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> removeJob(
         @Valid @PathVariable("projectUrl") String projectUrl,
         @Valid @PathVariable("jobUrl") String jobUrl);
@@ -249,6 +259,7 @@ public interface JobApi {
                     schema = @Schema(implementation = String.class)))
         })
     @PostMapping  (value = "/project/{projectUrl}/job/{jobUrl}/recover")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverJob(
         @Valid @PathVariable("projectUrl") String projectUrl,
         @Valid @PathVariable("jobUrl") String jobUrl);
