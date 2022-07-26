@@ -40,7 +40,6 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
-import ai.starwhale.mlops.domain.runtime.bo.Runtime;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
@@ -256,7 +255,7 @@ public class RuntimeService {
             return runtimeInfoOfRuntime(rt);
         }
 
-        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project);
+        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project, userService.currentUserDetail().getIdTableKey());
         List<RuntimeEntity> runtimeEntities = runtimeMapper.listRuntimes(projectEntity.getId(), null);
         if(runtimeEntities == null || runtimeEntities.isEmpty()) {
             return List.of();
@@ -282,8 +281,7 @@ public class RuntimeService {
 
     static final String FORMATTER_STORAGE_PATH = "%s/%s";
     @Transactional
-    public void upload(MultipartFile dsFile,
-        ClientRuntimeRequest uploadRequest){
+    public void upload(MultipartFile dsFile, ClientRuntimeRequest uploadRequest){
 
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}", startTime);
@@ -291,7 +289,7 @@ public class RuntimeService {
         RuntimeEntity entity = runtimeMapper.findByNameForUpdate(uploadRequest.name(), projectId);
         if (null == entity) {
             //create
-            ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject());
+            ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(), userService.currentUserDetail().getIdTableKey());
             entity = RuntimeEntity.builder().isDeleted(0)
                 .ownerId(userService.currentUserDetail().getId())
                 .projectId(null == projectEntity ? null : projectEntity.getId())
@@ -345,13 +343,13 @@ public class RuntimeService {
         }
     }
 
-    public void pull(ClientRuntimeRequest pullRequest, HttpServletResponse httpResponse) {
-        Long projectId = projectManager.getProjectId(pullRequest.getProject());
-        RuntimeEntity runtimeEntity = runtimeMapper.findByName(pullRequest.name(), projectId);
+    public void pull(String projectUrl, String runtimeUrl, String versionUrl, HttpServletResponse httpResponse) {
+        Long projectId = projectManager.getProjectId(projectUrl);
+        RuntimeEntity runtimeEntity = runtimeMapper.findByName(runtimeUrl, projectId);
         if(null == runtimeEntity){
             throw new SWValidationException(ValidSubject.RUNTIME).tip("Runtime not found");
         }
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(pullRequest.version(), runtimeEntity.getId());
+        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, runtimeEntity.getId());
         if(null == runtimeVersionEntity){
             throw new SWValidationException(ValidSubject.RUNTIME).tip("Runtime version not found");
         }
@@ -380,17 +378,18 @@ public class RuntimeService {
 
     }
 
-    public String query(ClientRuntimeRequest queryRequest) {
-        Long projectId = projectManager.getProjectId(queryRequest.getProject());
-        RuntimeEntity entity = runtimeMapper.findByName(queryRequest.name(), projectId);
+    public String query(String projectUrl, String runtimeUrl, String versionUrl) {
+        Long projectId = projectManager.getProjectId(projectUrl);
+        RuntimeEntity entity = runtimeMapper.findByName(runtimeUrl, projectId);
         if(null == entity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME),HttpStatus.NOT_FOUND);
         }
-        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(queryRequest.version(),entity.getId());
+        RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findByNameAndRuntimeId(
+            versionUrl, entity.getId());
         if(null == runtimeVersionEntity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME),HttpStatus.NOT_FOUND);
         }
-        return "";
+        return runtimeVersionEntity.getName();
     }
 
     public Boolean recoverRuntime(String projectUrl, String runtimeUrl) {
