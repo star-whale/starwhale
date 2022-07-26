@@ -23,11 +23,15 @@ import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.StarWhaleException;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import java.util.stream.Collectors;
+import javax.validation.ConstraintViolationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -38,6 +42,27 @@ import javax.validation.ValidationException;
 public class CommonExceptionHandler {
 
     private final Logger logger = LogManager.getLogger();
+
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ResponseMessage<String>> handleMethodArgumentNotValidException(HttpServletRequest request, ConstraintViolationException ex) {
+        logger.error("ConstraintViolationException {}\n", request.getRequestURI(), ex);
+        return ResponseEntity
+            .badRequest()
+            .body(new ResponseMessage<>(Code.validationException.name(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ResponseMessage<String>> handleMethodArgumentNotValidException(HttpServletRequest request, MethodArgumentNotValidException ex) {
+        logger.error("MethodArgumentNotValidException {}\n", request.getRequestURI(), ex);
+        return ResponseEntity
+            .badRequest()
+            .body(new ResponseMessage<>(Code.validationException.name(),
+                ex.getAllErrors()
+                    .stream()
+                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                    .collect(Collectors.joining())));
+    }
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ResponseMessage<String>> handleValidationException(HttpServletRequest request, ValidationException ex) {
