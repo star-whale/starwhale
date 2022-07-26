@@ -23,7 +23,6 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import ai.starwhale.mlops.storage.s3.S3Config;
 import cn.hutool.core.io.resource.ClassPathResource;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
@@ -90,6 +89,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         envs.put("DOWNLOADS", Strings.join(downloads, ' '));
         String input = generateConfigFile(task);
         envs.put("INPUT", input);
+        envs.put("MINIO_SERVICE",storageProperties.getS3Config().getEndpoint());
+        envs.put("MINIO_ACCESS_KEY",storageProperties.getS3Config().getAccessKey());
+        envs.put("MINIO_SECRET_KEY",storageProperties.getS3Config().getSecretKey());
         try {
             String cmd = "ppl";
             if (task.getTaskType() == TaskType.CMP) {
@@ -97,7 +99,12 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             }
             V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), envs);
             // set result upload path
-            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+ task.getResultPath().resultDir())));
+            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+ task.getResultPath().resultDir())
+                ,new V1EnvVar().name("MINIO_SERVICE").value(storageProperties.getS3Config().getEndpoint())
+                ,new V1EnvVar().name("MINIO_ACCESS_KEY").value(storageProperties.getS3Config().getAccessKey())
+                ,new V1EnvVar().name("MINIO_SECRET_KEY").value(storageProperties.getS3Config().getAccessKey())
+                )
+            );
             client.deploy(job);
         } catch (Exception e) {
             throw new RuntimeException(e);

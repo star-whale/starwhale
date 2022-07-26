@@ -23,9 +23,12 @@ import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
+import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Config;
+import io.kubernetes.client.util.KubeConfig;
 import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.labels.LabelSelector;
+import java.io.FileReader;
 import org.bouncycastle.util.Strings;
 
 import java.io.IOException;
@@ -46,7 +49,11 @@ public class K8sClient {
      * Basic constructor for Kubernetes
      */
     public K8sClient(@Value("${sw.infra.k8s.name-space}") String ns) throws IOException {
-        client = Config.defaultClient();
+        String kubeConfigPath = System.getenv("HOME") + "/.kube/config";
+
+        // loading the out-of-cluster config, a kubeconfig from file-system
+        client =
+            ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
         Configuration.setDefaultApiClient(client);
         coreV1Api = new CoreV1Api();
         batchV1Api = new BatchV1Api();
