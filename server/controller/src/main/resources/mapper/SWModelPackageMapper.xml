@@ -18,19 +18,14 @@
                s.modified_time as swmp_modified_time,
                u.id as user_id,
                u.user_name,
-               u.role_id,
                u.created_time as user_created_time,
                u.user_enabled,
-               r.role_name,
-               r.role_name_en,
                p.project_name
         from swmp_info as s,
              user_info as u,
-             user_role as r,
              project_info as p
         where s.is_deleted = 0
         and u.id = s.owner_id
-        and r.id = u.role_id
         and p.id = s.project_id
     </sql>
 
