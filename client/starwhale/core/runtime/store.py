@@ -31,16 +31,8 @@ class RuntimeStorage(BaseStorage):
         return self._get_recover_snapshot_workdir_for_bundle()
 
     @property
-    def conda_dir(self) -> Path:
-        return self.snapshot_workdir / "dep" / "conda"
-
-    @property
-    def python_dir(self) -> Path:
-        return self.snapshot_workdir / "dep" / "python"
-
-    @property
-    def venv_dir(self) -> Path:
-        return self.python_dir / "venv"
+    def export_dir(self) -> Path:
+        return self.snapshot_workdir / "export"
 
     @property
     def runtime_dir(self) -> Path:

@@ -19,7 +19,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType, RuntimeLockFileType
-from starwhale.utils.venv import CONDA_ENV_TAR
+from starwhale.utils.venv import EnvTarType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.runtime.view import RuntimeTermView
 from starwhale.core.runtime.model import Runtime, StandaloneRuntime
@@ -107,9 +107,9 @@ class StandaloneRuntimeTestCase(TestCase):
         assert m_call.call_args_list[0][0][0] == [
             "conda",
             "create",
+            "--yes",
             "--name",
             name,
-            "--yes",
             "python=3.7",
         ]
         assert " ".join(m_call.call_args_list[1][0][0]).startswith(
@@ -181,17 +181,13 @@ class StandaloneRuntimeTestCase(TestCase):
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
 
         assert (
-            _manifest["user_raw_config"]["environment"]["python"]
-            == runtime_config["environment"]["python"]
-        )
-        assert (
             _manifest["environment"]["python"]
             == runtime_config["environment"]["python"]
         )
         assert _manifest["version"] == sr.uri.object.version
-        assert _manifest["environment"]["env"] == "venv"
-        assert _manifest["environment"]["venv"]["use"]
-        assert not _manifest["environment"]["local_gen_env"]
+        assert _manifest["environment"]["mode"] == "venv"
+        assert _manifest["environment"]["lock"]["shell"]["use_venv"]
+        assert not _manifest["dependencies"]["local_packaged_env"]
 
         uri = URI(name, expected_type=URIType.RUNTIME)
         sr = StandaloneRuntime(uri)
@@ -327,24 +323,32 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.check_call")
     def test_restore_venv(self, m_call: MagicMock, m_venv: MagicMock):
         workdir = "/home/starwhale/myproject"
-        python_dir = os.path.join(workdir, "dep", "python")
+        export_dir = os.path.join(workdir, "export")
+        venv_dir = os.path.join(export_dir, "venv")
+        dep_dir = os.path.join(workdir, "dependencies")
+
         ensure_dir(workdir)
         self.fs.create_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
             contents=yaml.safe_dump(
                 {
-                    "dep": {"env": "venv", "local_gen_env": False, "python": "3.7"},
-                    "user_raw_config": {"pip_req": "requirements-test.txt"},
+                    "environment": {"mode": "venv", "python": "3.7"},
+                    "dependencies": {
+                        "local_packaged_env": False,
+                        "pip_files": [
+                            "requirements-sw-lock.txt",
+                            "requirements-test.txt",
+                        ],
+                    },
                 }
             ),
         )
-        ensure_dir(python_dir)
-        self.fs.create_file(
-            os.path.join(python_dir, "requirements-test.txt"), contents="test1==0.0.1"
-        )
-        self.fs.create_file(
-            os.path.join(python_dir, "requirements-lock.txt"), contents="test2==0.0.1"
-        )
+        ensure_dir(export_dir)
+
+        req_fpath = os.path.join(dep_dir, "requirements-test.txt")
+        req_lock_fpath = os.path.join(dep_dir, "requirements-sw-lock.txt")
+        self.fs.create_file(req_fpath, contents="test1==0.0.1")
+        self.fs.create_file(req_lock_fpath, contents="test2==0.0.1")
 
         Runtime.restore(Path(workdir))
         assert m_call.call_count == 2
@@ -353,12 +357,12 @@ class StandaloneRuntimeTestCase(TestCase):
             m_call.call_args_list[1][0][0][-1],
         ]
         assert m_venv.call_args[0][0] == [
-            os.path.join(python_dir, "venv"),
+            venv_dir,
             "--python",
             "3.7",
         ]
-        assert os.path.join(python_dir, "requirements-lock.txt") in pip_cmds
-        assert os.path.join(python_dir, "requirements-test.txt") in pip_cmds
+        assert req_fpath in pip_cmds
+        assert req_lock_fpath in pip_cmds
 
         RuntimeTermView.restore(workdir)
 
@@ -366,8 +370,7 @@ class StandaloneRuntimeTestCase(TestCase):
     @patch("starwhale.utils.venv.check_call")
     def test_restore_conda(self, m_call: MagicMock, m_tar: MagicMock):
         workdir = "/home/starwhale/myproject"
-        conda_dir = os.path.join(workdir, "dep", "conda")
-        lock_file_path = os.path.join(conda_dir, "env-lock.yaml")
+        export_dir = os.path.join(workdir, "export")
         ensure_dir(workdir)
 
         self.fs.create_file(
@@ -375,39 +378,39 @@ class StandaloneRuntimeTestCase(TestCase):
             contents=yaml.safe_dump(
                 {
                     "environment": {
-                        "env": "conda",
-                        "local_gen_env": False,
                         "python": "3.7",
-                    }
+                        "mode": "conda",
+                    },
+                    "dependencies": {
+                        "local_packaged_env": False,
+                    },
                 }
             ),
         )
-        ensure_dir(conda_dir)
-
-        self.fs.create_file(lock_file_path, contents="test1==0.0.1")
+        ensure_dir(export_dir)
 
         Runtime.restore(Path(workdir))
 
-        assert m_call.call_args_list[0][0][0] == " ".join(
-            [
-                "conda",
-                "env",
-                "update",
-                "--file",
-                lock_file_path,
-                "--prefix",
-                os.path.join(conda_dir, "env"),
-            ]
-        )
+        assert m_call.call_args_list[0][0][0] == [
+            "conda",
+            "create",
+            "--yes",
+            "--prefix",
+            os.path.join(export_dir, "conda"),
+            "python=3.7",
+        ]
         RuntimeTermView.restore(workdir)
 
         ensure_file(
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
             yaml.safe_dump(
-                {"dep": {"env": "conda", "local_gen_env": True, "python": "3.7"}}
+                {
+                    "environment": {"mode": "conda", "python": "3.7"},
+                    "dependencies": {"local_packaged_env": True},
+                }
             ),
         )
-        tar_path = os.path.join(conda_dir, CONDA_ENV_TAR)
+        tar_path = os.path.join(export_dir, EnvTarType.CONDA)
         ensure_file(tar_path, "test")
 
         Runtime.restore(Path(workdir))

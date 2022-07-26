@@ -113,15 +113,12 @@ class LocalStorageBundleMixin:
     def __init__(self) -> None:
         self._manifest: t.Dict[str, t.Any] = {}
 
-    def _render_manifest(self, user_raw_config: t.Dict[str, t.Any] = {}) -> None:
+    def _render_manifest(self) -> None:
         self._manifest["name"] = self.name  # type: ignore
         self._manifest["build"] = dict(
             os=platform.system(),
             sw_version=__version__,
         )
-
-        # TODO: remove object type
-        self._manifest["user_raw_config"] = user_raw_config
 
         # TODO: add signature for import files: model, config
         _f = self.store.snapshot_workdir / DEFAULT_MANIFEST_NAME  # type: ignore

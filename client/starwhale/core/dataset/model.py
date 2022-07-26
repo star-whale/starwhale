@@ -246,7 +246,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 self._render_manifest,
                 5,
                 "render manifest",
-                dict(user_raw_config=_dataset_config.as_dict()),
             ),
             (self._make_swds_meta_tar, 15, "make meta tar"),
             (self._make_latest_tag, 5, "make latest tag"),

@@ -227,7 +227,6 @@ class BaseTermView(SWCliConfigMixed):
                         "version": _version,
                         "tags": _v.get("tags", []),
                         "size": _v.get("size", 0),
-                        "runtime": _v.get("runtime", ""),
                         "created_at": _v.get("created_at"),
                     }
                 )
