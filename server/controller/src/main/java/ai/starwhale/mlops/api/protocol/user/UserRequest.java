@@ -16,9 +16,11 @@
 
 package ai.starwhale.mlops.api.protocol.user;
 
+import ai.starwhale.mlops.common.RegExps;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
@@ -28,6 +30,7 @@ public class UserRequest implements Serializable {
 
     @NotNull
     @JsonProperty("userName")
+    @Pattern(regexp = RegExps.USER_NAME_REGEX, message = "User name is invalid.")
     private String userName;
 
     @NotNull

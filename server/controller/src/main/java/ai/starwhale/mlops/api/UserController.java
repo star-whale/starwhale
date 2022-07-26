@@ -18,18 +18,31 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.user.ProjectRoleVO;
+import ai.starwhale.mlops.api.protocol.user.RoleVO;
+import ai.starwhale.mlops.api.protocol.user.SystemRoleVO;
+import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
+import ai.starwhale.mlops.api.protocol.user.UserRoleDeleteRequest;
+import ai.starwhale.mlops.api.protocol.user.UserRoleUpdateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
+import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.ProjectService;
-import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.domain.user.bo.User;
+import ai.starwhale.mlops.exception.SWAuthException;
+import ai.starwhale.mlops.exception.SWAuthException.AuthType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
+import java.util.List;
 import javax.annotation.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -65,11 +78,11 @@ public class UserController implements UserApi{
             request.getUserPwd());
 
         //create default project
-        projectService.createProject(Project.builder()
-                .name(request.getUserName())
-                .owner(User.builder().id(userId).build())
-                .isDefault(true)
-                .build());
+//        projectService.createProject(Project.builder()
+//                .name(request.getUserName())
+//                .owner(User.builder().id(userId).build())
+//                .isDefault(true)
+//                .build());
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(userId)));
     }
 
@@ -87,15 +100,104 @@ public class UserController implements UserApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> updateUserPwd(String userId, UserUpdatePasswordRequest userUpdatePasswordRequest) {
-        Boolean res = userService.changePassword(User.builder().id(idConvertor.revert(userId)).build(), userUpdatePasswordRequest.getUserPwd());
+        if(!userService.checkCurrentUserPassword(userUpdatePasswordRequest.getCurrentUserPwd())) {
+            throw new StarWhaleApiException(new SWAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
+                HttpStatus.FORBIDDEN);
+        }
+
+        Boolean res = userService.changePassword(User.builder().id(idConvertor.revert(userId)).build(), userUpdatePasswordRequest.getNewPwd());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(res)));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> updateUserState(String userId,
         UserUpdateStateRequest userUpdateStateRequest) {
+        if(!userService.checkCurrentUserPassword(userUpdateStateRequest.getCurrentUserPwd())) {
+            throw new StarWhaleApiException(new SWAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
+                HttpStatus.FORBIDDEN);
+        }
         Boolean res = userService.updateUserState(User.builder().id(idConvertor.revert(userId)).build(),
             userUpdateStateRequest.getIsEnabled());
+        return ResponseEntity.ok(Code.success.asResponse(String.valueOf(res)));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> addUserSystemRole(
+        UserRoleAddRequest userRoleAddRequest) {
+        if(!userService.checkCurrentUserPassword(userRoleAddRequest.getCurrentUserPwd())) {
+            throw new StarWhaleApiException(new SWAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
+                HttpStatus.FORBIDDEN);
+        }
+        Boolean res = projectService.addProjectRole("0", idConvertor.revert(userRoleAddRequest.getUserId()),
+            idConvertor.revert(userRoleAddRequest.getRoleId()));
+        if(!res) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.USER).tip("Add user role failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> updateUserSystemRole(String systemRoleId,
+        UserRoleUpdateRequest userRoleUpdateRequest) {
+        if(!userService.checkCurrentUserPassword(userRoleUpdateRequest.getCurrentUserPwd())) {
+            throw new StarWhaleApiException(new SWAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
+                HttpStatus.FORBIDDEN);
+        }
+        Boolean res = projectService.modifyProjectRole("0", idConvertor.revert(systemRoleId),
+            idConvertor.revert(
+                userRoleUpdateRequest.getRoleId()));
+        if(!res) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.USER).tip("Update user role failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> deleteUserSystemRole(String systemRoleId,
+        UserRoleDeleteRequest userRoleDeleteRequest) {
+        if(!userService.checkCurrentUserPassword(userRoleDeleteRequest.getCurrentUserPwd())) {
+            throw new StarWhaleApiException(new SWAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
+                HttpStatus.FORBIDDEN);
+        }
+        Boolean res = projectService.deleteProjectRole("0", idConvertor.revert(systemRoleId));
+        if(!res) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.USER).tip("Delete user role failed."),
+                HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return ResponseEntity.ok(Code.success.asResponse("success"));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<RoleVO>>> listRoles() {
+        return ResponseEntity.ok(Code.success.asResponse(userService.listRoles()));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<SystemRoleVO>>> listSystemRoles() {
+        return ResponseEntity.ok(Code.success.asResponse(userService.listSystemRoles()));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> checkCurrentUserPassword(UserCheckPasswordRequest userCheckPasswordRequest) {
+        if(userService.checkCurrentUserPassword(userCheckPasswordRequest.getCurrentUserPwd())) {
+            return ResponseEntity.ok(Code.success.asResponse("success"));
+        } else {
+            return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(Code.accessDenied.asResponse("Incorrect password."));
+        }
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> updateCurrentUserPassword(UserUpdatePasswordRequest userUpdatePasswordRequest) {
+        if(!userService.checkCurrentUserPassword(userUpdatePasswordRequest.getCurrentUserPwd())) {
+            throw new StarWhaleApiException(new SWAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
+                HttpStatus.FORBIDDEN);
+        }
+        Boolean res = userService.changePassword(userService.currentUserDetail(),
+            userUpdatePasswordRequest.getNewPwd());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(res)));
     }
 }

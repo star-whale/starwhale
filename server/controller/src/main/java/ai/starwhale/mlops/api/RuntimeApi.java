@@ -23,6 +23,7 @@ import ai.starwhale.mlops.api.protocol.runtime.RuntimeRevertRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeTagRequest;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
 import ai.starwhale.mlops.api.protocol.runtime.RuntimeVersionVO;
+import ai.starwhale.mlops.common.RegExps;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,8 +36,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import javax.validation.constraints.Pattern;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -66,6 +69,7 @@ public interface RuntimeApi {
                     schema = @Schema(implementation = PageInfo.class)))
         })
     @GetMapping(value = "/project/{projectUrl}/runtime")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<RuntimeVO>>> listRuntime(
         @Parameter(
             in = ParameterIn.PATH,
@@ -97,6 +101,7 @@ public interface RuntimeApi {
     @PostMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/revert",
         produces = {"application/json"},
         consumes = {"application/json"})
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> revertRuntimeVersion(
         @Parameter(
             in = ParameterIn.PATH,
@@ -117,6 +122,7 @@ public interface RuntimeApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @DeleteMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}",
         produces = {"application/json"})
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> deleteRuntime(
         @Parameter(
             in = ParameterIn.PATH,
@@ -132,83 +138,68 @@ public interface RuntimeApi {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/recover",
         produces = {"application/json"})
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverRuntime(
         @Parameter(
             in = ParameterIn.PATH,
             description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectUrl")
-        String projectUrl,
+        @PathVariable("projectUrl") String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("runtimeUrl")
-        String runtimeUrl);
+        @PathVariable("runtimeUrl") String runtimeUrl);
 
     @Operation(summary = "Get the information of a runtime",
         description = "Return the information of the latest version of the current runtime")
     @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}",
         produces = {"application/json"})
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<RuntimeInfoVO>> getRuntimeInfo(
         @Parameter(
             in = ParameterIn.PATH,
             description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectUrl")
-        String projectUrl,
+        @PathVariable("projectUrl") String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("runtimeUrl")
-        String runtimeUrl,
-        @RequestParam(value = "runtimeVersionUrl", required = false)
-        String runtimeVersionUrl);
+        @PathVariable("runtimeUrl") String runtimeUrl,
+        @RequestParam(value = "runtimeVersionUrl", required = false) String runtimeVersionUrl);
 
     @Operation(summary = "Set tag of the model version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{runtimeVersionUrl}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyRuntime(
         @Parameter(
             in = ParameterIn.PATH,
             description = "Project Url",
             schema = @Schema())
-        @PathVariable("projectUrl")
-        String projectUrl,
+        @PathVariable("projectUrl") String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("runtimeUrl")
-        String runtimeUrl,
+        @PathVariable("runtimeUrl") String runtimeUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("runtimeVersionUrl")
-        String runtimeVersionUrl,
+        @PathVariable("runtimeVersionUrl") String runtimeVersionUrl,
         @Valid @RequestBody RuntimeTagRequest tagRequest);
 
     @Operation(summary = "Manage tag of the runtime version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/tag")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> manageRuntimeTag(
         @Parameter(
             in = ParameterIn.PATH,
             description = "Project url",
             schema = @Schema())
-        @PathVariable("projectUrl")
-        String projectUrl,
+        @PathVariable("projectUrl") String projectUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("runtimeUrl")
-        String runtimeUrl,
+        @PathVariable("runtimeUrl") String runtimeUrl,
         @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("versionUrl")
-        String versionUrl,
+        @PathVariable("versionUrl") String versionUrl,
         @Valid @RequestBody RuntimeTagRequest tagRequest);
 
-    @Operation(summary = "List Runtime versions info",
-        description = "List Runtime versions info. ")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
-    @GetMapping(
-        value = "/project/runtime/list",
-        consumes = {"application/json"})
-    ResponseEntity<ResponseMessage<List<RuntimeInfoVO>>> listRuntimeInfo(
-        @Parameter(name = "project", description = "the project name") @RequestParam(name = "project",required = false) String project,
-        @Parameter(name = "name", description = "the name of runtime") @RequestParam(name = "name",required = false) String name);
 
     @Operation(summary = "Get the list of the runtime versions")
     @GetMapping(value = "/project/{projectUrl}/runtime/{runtimeUrl}/version",
         produces = {"application/json"})
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<RuntimeVersionVO>>> listRuntimeVersion(
         @Parameter(
             in = ParameterIn.PATH,
@@ -250,31 +241,62 @@ public interface RuntimeApi {
             + "The data resources can be selected by uploading the file package or entering the server path.")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(
-        value = "/project/runtime/push",
+        value = "/project/{projectUrl}/runtime/{runtimeName}/version/{versionName}/file",
         produces = {"application/json"},
         consumes = {"multipart/form-data"})
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> upload(
-        @Parameter(description = "file detail") @RequestPart(value = "file") MultipartFile file,
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project url",
+            schema = @Schema())
+        @PathVariable("projectUrl") String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @Pattern(regexp = RegExps.BUNDLE_NAME_REGEX, message = "Runtime name is invalid.")
+        @PathVariable("runtimeName") String runtimeName,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionName") String versionName,
+        @Parameter(description = "file detail")
+        @RequestPart(value = "file") MultipartFile file,
         ClientRuntimeRequest uploadRequest);
 
-    @Operation(summary = "Create a new runtime version",
-        description = "Create a new version of the runtime. "
-            + "The data resources can be selected by uploading the file package or entering the server path.")
+    @Operation(summary = "Pull file of a runtime version",
+        description = "Pull file of a runtime version. ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
-        value = "/project/runtime/pull",
+        value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/file",
         produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     void pull(
-        ClientRuntimeRequest uploadRequest, HttpServletResponse httpResponse);
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project url",
+            schema = @Schema())
+        @PathVariable("projectUrl") String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("runtimeUrl") String runtimeUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionUrl") String versionUrl,
+        HttpServletResponse httpResponse);
 
 
     @Operation(summary = "head for runtime info ",
         description = "head for runtime info")
     @RequestMapping(
-        value = "/project/runtime",
+        value = "/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}",
         produces = {"application/json"},
         method = RequestMethod.HEAD)
-    ResponseEntity<String> headRuntime(ClientRuntimeRequest uploadRequest);
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    void headRuntime(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "Project url",
+            schema = @Schema())
+        @PathVariable("projectUrl") String projectUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("runtimeUrl") String runtimeUrl,
+        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+        @PathVariable("versionUrl") String versionUrl);
 
 
 

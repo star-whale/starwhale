@@ -25,10 +25,11 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class UserUpdatePasswordRequest {
 
-    @JsonProperty("originPwd")
-    private String originPwd;
+    @NotNull
+    @JsonProperty("currentUserPwd")
+    private String currentUserPwd;
 
     @NotNull
-    @JsonProperty("userPwd")
-    private String userPwd;
+    @JsonProperty("newPwd")
+    private String newPwd;
 }

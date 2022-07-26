@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,6 +45,7 @@ public interface EvaluationApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(value = "/project/{projectUrl}/evaluation/view/attribute")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<AttributeVO>>> listAttributes(
         @Valid @PathVariable("projectUrl") String projectUrl
     );
@@ -53,6 +55,7 @@ public interface EvaluationApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(value = "/project/{projectUrl}/evaluation/view/config")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<ConfigVO>> getViewConfig(
         @Valid @PathVariable(value = "projectUrl") String projectUrl,
         @Valid @RequestParam(value = "name") String name
@@ -62,6 +65,7 @@ public interface EvaluationApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project/{projectUrl}/evaluation/view/config")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<String>> createViewConfig(
         @Valid @PathVariable("projectUrl") String projectUrl,
         @Valid @RequestBody ConfigRequest configRequest
@@ -71,6 +75,7 @@ public interface EvaluationApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(value = "/project/{projectUrl}/evaluation")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<SummaryVO>>> listEvaluationSummary(
         @Valid @PathVariable("projectUrl") String projectUrl,
         @Valid @RequestParam(value = "filter") String filter,
