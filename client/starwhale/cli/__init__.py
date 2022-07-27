@@ -5,7 +5,7 @@ import click
 
 from starwhale import __version__
 from starwhale.utils.debug import init_logger
-from starwhale.core.job.cli import job_cmd
+from starwhale.core.job.eval.cli import eval_job_cmd
 from starwhale.utils.config import load_swcli_config
 from starwhale.core.model.cli import model_cmd
 from starwhale.cli.board.board import open_board
@@ -39,7 +39,7 @@ def create_sw_cli() -> click.core.Group:
 
     cli.add_command(instance_cmd)
     cli.add_command(project_cmd)
-    cli.add_command(job_cmd)
+    cli.add_command(eval_job_cmd)
     cli.add_command(runtime_cmd)
     cli.add_command(model_cmd)
     cli.add_command(dataset_cmd)

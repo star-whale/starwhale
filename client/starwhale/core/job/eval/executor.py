@@ -115,24 +115,13 @@ class EvalExecutor:
             (self._prepare_workdir, 5, "prepare workdir"),
             (self._extract_swmp, 15, "extract model"),
             (self._extract_swrt, 15, "extract runtime"),
-            (self._gen_swds_fuse_json, 10, "gen swds fuse json"),
+            (self._do_run_eval_job, 70, "run eval job")
         ]
 
-        # _ppl = (self._do_run_ppl, 70, "run ppl")
-        # _cmp = (self._do_run_cmp, 70, "run cmp")
-
-        # if phase == EvalTaskType.ALL:
-        #     operations.extend([_ppl, _cmp])
-        # elif phase == EvalTaskType.PPL:
-        #     operations.append(_ppl)
-        # elif phase == EvalTaskType.CMP:
-        #     operations.append(_cmp)
-        _job = (self._do_run_eval_job, 70, "run eval job")
-        operations.append(_job)
         run_with_progress_bar("eval run in local...", operations)
 
     def _do_run_eval_job(self):
-        self._do_run_cmd(EvalTaskType.CUSTOM)
+        self._do_run_cmd(EvalTaskType.ALL)
 
     def _gen_version(self) -> None:
         # TODO: abstract base class or mixin class for swmp/swds/
@@ -142,17 +131,8 @@ class EvalExecutor:
         logger.info(f"[step:version]eval job version is {self._version}")
 
     @property
-    def _ppl_workdir(self) -> Path:
-        return self._workdir / EvalTaskType.PPL
-    
-    
-    @property
-    def _custom_workdir(self) -> Path:
-        return self._workdir / EvalTaskType.CUSTOM
-
-    @property
-    def _cmp_workdir(self) -> Path:
-        return self._workdir / EvalTaskType.CMP
+    def _job_workdir(self) -> Path:
+        return self._workdir
 
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
@@ -165,15 +145,15 @@ class EvalExecutor:
         )
 
         ensure_dir(self._workdir)
-        for _w in (self._ppl_workdir, self._cmp_workdir):
+        for _w in (self._job_workdir,):
             for _n in (
-                RunSubDirType.RESULT,
+                # RunSubDirType.RESULT,
                 RunSubDirType.DATASET,
-                RunSubDirType.PPL_RESULT,
-                RunSubDirType.STATUS,
+                # RunSubDirType.PPL_RESULT,
+                # RunSubDirType.STATUS,
                 RunSubDirType.LOG,
                 RunSubDirType.SWMP,
-                RunSubDirType.CONFIG,
+                # RunSubDirType.CONFIG,
             ):
                 ensure_dir(_w / _n)
 
@@ -196,69 +176,9 @@ class EvalExecutor:
         else:
             self._runtime_dir = Path()
 
-    def _gen_swds_fuse_json(self) -> Path:
-        _fuse_jsons = []
-        for _uri in self.dataset_uris:
-            _store = DatasetStorage(_uri)
-            fname = Dataset.render_fuse_json(_store.loc, force=False)
-            _fuse_jsons.append(fname)
-            logger.debug(f"[gen fuse input.json]{fname}")
-
-        _base = json.load(open(_fuse_jsons[0], "r"))
-        for _f in _fuse_jsons[1:]:
-            _config = json.load(open(_f, "r"))
-            _base["swds"].extend(_config["swds"])
-
-        if self.use_docker:
-            _bucket = f"{_CNTR_WORKDIR}/{RunSubDirType.DATASET}"
-            for i in range(len(_base["swds"])):
-                _base["swds"][i]["bucket"] = _bucket
-
-        _json_f: Path = (
-            self._workdir
-            / EvalTaskType.PPL
-            / RunSubDirType.CONFIG
-            / DEFAULT_INPUT_JSON_FNAME
-        )
-        ensure_file(_json_f, json.dumps(_base, indent=JSON_INDENT))
-        return _json_f
-
-    def _gen_jsonl_fuse_json(self) -> Path:
-        if self.use_docker:
-            _base_dir = f"{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}"
-        else:
-            _base_dir = str(self._ppl_workdir / RunSubDirType.RESULT)
-
-        _fuse = dict(
-            backend=SWDSBackendType.FUSE,
-            kind=DataLoaderKind.JSONL,
-            swds=[
-                dict(
-                    bucket=_base_dir,
-                    key=dict(
-                        data=CURRENT_FNAME,
-                    ),
-                )
-            ],
-        )
-        _f = (
-            self._workdir
-            / EvalTaskType.CMP
-            / RunSubDirType.CONFIG
-            / DEFAULT_INPUT_JSON_FNAME
-        )
-        ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
-        return _f
-
-    def _do_run_cmp(self) -> None:
-        self._gen_jsonl_fuse_json()
-        self._do_run_cmd(EvalTaskType.CMP)
-
-    def _do_run_ppl(self) -> None:
-        self._do_run_cmd(EvalTaskType.PPL)
-
     def _do_run_cmd(self, typ: str) -> None:
         if self.use_docker:
+            # todo
             self._do_run_cmd_in_container(typ)
         else:
             self._do_run_cmd_in_host(typ)
@@ -266,25 +186,22 @@ class EvalExecutor:
     def _do_run_cmd_in_host(self, typ: str) -> None:
         from starwhale.core.model.model import StandaloneModel
 
-        if typ == EvalTaskType.PPL:
-            _base_dir = self._ppl_workdir
-        elif typ == EvalTaskType.CMP:
-            _base_dir = self._cmp_workdir
-        elif typ == EvalTaskType.CUSTOM:
-            _base_dir = self._custom_workdir
+        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE_TASK):
+            _base_dir = self._job_workdir
         else:
             raise NoSupportError(typ)
 
         StandaloneModel.eval_user_handler(
             typ=typ,
             workdir=self._model_dir,
+            job_name="default",
             kw={
                 "status_dir": _base_dir / RunSubDirType.STATUS,
                 "log_dir": _base_dir / RunSubDirType.LOG,
                 "result_dir": _base_dir / RunSubDirType.RESULT,
                 "input_config": _base_dir
-                / RunSubDirType.CONFIG
-                / DEFAULT_INPUT_JSON_FNAME,
+                                / RunSubDirType.CONFIG
+                                / DEFAULT_INPUT_JSON_FNAME,
             },
         )
 
@@ -299,8 +216,9 @@ class EvalExecutor:
             check_call(f"docker pull {self.baseimage}", shell=True)
             check_call(cmd, shell=True)
 
+    # todo
     def _gen_run_container_cmd(self, typ: str) -> str:
-        if typ not in (EvalTaskType.PPL, EvalTaskType.CMP):
+        if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE_TASK):
             raise Exception(f"no support {typ} to gen docker cmd")
 
         rundir = self._workdir / typ
@@ -328,15 +246,15 @@ class EvalExecutor:
             f"{self._runtime_dir}/{DEFAULT_MANIFEST_NAME}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DEFAULT_MANIFEST_NAME}",
         ]
 
-        if typ == EvalTaskType.PPL:
+        if typ == EvalTaskType.ALL:
             cmd += [
                 "-v",
                 f"{self.project_dir / URIType.DATASET}:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
             ]
-        elif typ == EvalTaskType.CMP:
+        elif typ == EvalTaskType.SINGLE_TASK:
             cmd += [
                 "-v",
-                f"{self._ppl_workdir / RunSubDirType.RESULT}:{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
+                f"{self.project_dir / RunSubDirType.RESULT}:{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
             ]
 
         cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
@@ -358,7 +276,7 @@ class EvalExecutor:
 
     def _render_manifest(self) -> None:
         _status = True
-        for _d in (self._ppl_workdir, self._cmp_workdir):
+        for _d in (self._job_workdir,):
             _f = _d / RunSubDirType.STATUS / CURRENT_FNAME
             if not _f.exists():
                 continue

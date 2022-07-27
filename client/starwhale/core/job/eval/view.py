@@ -17,7 +17,7 @@ from starwhale.base.uri import URI
 from starwhale.base.type import URIType, EvalTaskType, InstanceType, JobOperationType
 from starwhale.base.view import BaseTermView
 
-from .model import Job
+from .model import EvaluationJob
 
 
 class JobTermView(BaseTermView):
@@ -25,7 +25,7 @@ class JobTermView(BaseTermView):
         super().__init__()
         self.raw_uri = job_uri
         self.uri = URI(job_uri, expected_type=URIType.JOB)
-        self.job = Job.get_job(self.uri)
+        self.job = EvaluationJob.get_job(self.uri)
         self._action_run_map = {
             JobOperationType.CANCEL: self.job.cancel,
             JobOperationType.RESUME: self.job.resume,
@@ -64,7 +64,7 @@ class JobTermView(BaseTermView):
         jobs = []
         for _u in job_uris:
             _uri = URI(_u, expected_type=URIType.JOB)
-            jobs.append(Job.get_job(_uri))
+            jobs.append(EvaluationJob.get_job(_uri))
 
         rt = self.job.compare(jobs)
         table = Table(
@@ -233,7 +233,7 @@ class JobTermView(BaseTermView):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
-        name: str = "",
+        name: str = "default",
         desc: str = "",
         resource: str = "",
         gencmd: bool = False,
@@ -242,7 +242,7 @@ class JobTermView(BaseTermView):
         runtime_restore: bool = False,
     ) -> None:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
-        ok, reason = Job.create(
+        ok, reason = EvaluationJob.create(
             _project_uri,
             model_uri,
             dataset_uris,
@@ -282,7 +282,7 @@ class JobTermView(BaseTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        jobs, pager = Job.list(
+        jobs, pager = EvaluationJob.list(
             URI(project_uri, expected_type=URIType.PROJECT), page, size
         )
         jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])

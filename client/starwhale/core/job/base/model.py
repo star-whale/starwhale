@@ -1,7 +1,10 @@
+from pathlib import Path
+
 import yaml
 from loguru import logger
 
 from starwhale.core.job.base.loader import load_module
+from starwhale.utils.fs import ensure_file
 
 
 class Step:
@@ -28,18 +31,19 @@ class Step:
             self.step_name, self.dependency, self.status
         )
 
-    def gen_task(self, index: int, module: str, workdir: str):
+    def gen_task(self, index: int, module: str, workdir: Path):
         self.tasks.append(
             Task(
-                Context(
-                    module = module,
-                    workdir = workdir,
+                context=Context(
                     step=self.step_name,
                     total=self.task_num,
                     index=index,
+                    # todo send by param
                     dataset_uri="",
                 ),
-                STATUS.INIT,
+                status=STATUS.INIT,
+                module=module,
+                workdir=workdir,
             )
         )
 
@@ -75,7 +79,7 @@ class Parser:
         parse_config = {"parse_stage": False, "jobs": {}}
 
     @staticmethod
-    def parse_job_from_module(module: str, path: str):
+    def parse_job_from_module(module: str, path: Path):
         """
         parse @step from module
         :param module: module name
@@ -91,10 +95,10 @@ class Parser:
         return _jobs
 
     @staticmethod
-    def generate_job_yaml(module: str, path: str, target_file: str) -> None:
+    def generate_job_yaml(module: str, path: Path, target_file: Path) -> None:
         """
         generate job yaml
-        :param target_dir: yaml target path
+        :param target_file: yaml target path
         :param module: module name
         :param path: abs path
         :return: None
@@ -104,8 +108,7 @@ class Parser:
         logger.debug("generate DAG")
         if Parser.check(_jobs):
             # dump to target
-            with open(target_file, "w") as file:
-                yaml.dump(_jobs, file)
+            ensure_file(target_file, yaml.safe_dump(_jobs, default_flow_style=False))
             logger.debug("generator DAG success!")
         else:
             logger.error("generator DAG error! reason:{}", "check is failed.")
@@ -143,14 +146,12 @@ class Parser:
 # Runtime concept
 class Context:
     def __init__(
-        self, module: str, workdir: str, step: str = "", total: int = 0, index: int = 0, dataset_uri: str = "", 
+        self, step: str = "", total: int = 0, index: int = 0, dataset_uri: str = "",
     ):
         self.step = step
         self.total = total
         self.index = index
         self.dataset_uri = dataset_uri
-        self.module = module
-        self.workdir = workdir
 
     def __repr__(self):
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
@@ -164,27 +165,26 @@ class STATUS:
 
 
 class Task:
-    def __init__(self, context: Context, status: str):
+    def __init__(self, context: Context, status: str, module: str, workdir: Path):
         self.context = context
         self.status = status
-        # todo
+        self.module = module
+        self.workdir = workdir
 
-    def execute(self, module: str, path: str) -> bool:
+    def execute(self) -> bool:
         """
         call function from module
-        :param module: module name
-        :param path: abs path
         :return: function results
         """
         logger.debug("execute step:{} start.", self.context)
 
-        _module = load_module(module, path)
+        _module = load_module(self.module, self.workdir)
 
         # instance method
         if "." in self.context.step:
             _cls_name, _func_name = self.context.step.split(".")
             _cls = getattr(_module, _cls_name, None)
-            # need an instance
+            # need an instance(todo whether it's a staticmethod?)
             cls = _cls()
             func = getattr(cls, _func_name, None)
         else:
