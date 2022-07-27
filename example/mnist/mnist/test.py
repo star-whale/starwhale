@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 
-from model import Net
+from .model import Net
 
 
 def test(model, device, data_loader):
