@@ -55,4 +55,6 @@ public class JobRuntime {
      * the storagePath for the runtime
      */
     String storagePath;
+
+    String image;
 }

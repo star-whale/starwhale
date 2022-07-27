@@ -16,19 +16,16 @@
 
 package ai.starwhale.mlops.reporting;
 
-import ai.starwhale.mlops.api.protocol.report.req.ReportRequest;
-import ai.starwhale.mlops.api.protocol.report.resp.ReportResponse;
+import java.util.List;
 
 /**
- * the processor for every report from Agent
+ * receive task status from agents
  */
-public interface ReportProcessor {
+public interface TaskStatusReceiver {
 
      /**
       * process the report from Agent
-      * @param report request protocol between Agent and Controller
-      * @return response protocol between Agent and Controller
       */
-     ReportResponse receive(ReportRequest report);
+     void receive(List<ReportedTask> tasks);
 
 }

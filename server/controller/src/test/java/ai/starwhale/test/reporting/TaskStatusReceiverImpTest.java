@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package ai.starwhale.test.schedule;
+package ai.starwhale.test.reporting;
 
-import ai.starwhale.mlops.schedule.k8s.K8sTaskScheduler;
+import ai.starwhale.mlops.reporting.TaskStatusReceiverFromK8S;
 
 /**
- * Test for {@link K8sTaskScheduler}
+ * test for {@link TaskStatusReceiverFromK8S}
  */
-public class SimpleSWTaskSchedulerTest {
-}
+public class TaskStatusReceiverImpTest {}

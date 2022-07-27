@@ -35,7 +35,6 @@ import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.CommandingTasksAssurance;
-import ai.starwhale.mlops.schedule.SimpleSWTaskScheduler;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -49,10 +48,6 @@ public class ObjectMockHolder {
 
     public static StepMapper stepMapper = mock(StepMapper.class);
 
-    public static SimpleSWTaskScheduler simpleSWTaskScheduler(){
-        return new SimpleSWTaskScheduler();
-    }
-
     public static TaskStatusMachine taskStatusMachine(){
         return new TaskStatusMachine();
     }
@@ -63,10 +58,6 @@ public class ObjectMockHolder {
 
     public static StepStatusMachine stepStatusMachine(){
         return new StepStatusMachine();
-    }
-
-    public static CommandingTasksAssurance commandingTasksAssurance(){
-        return new CommandingTasksAssurance(new SimpleSWTaskScheduler());
     }
 
     public static StoragePathCoordinator storagePathCoordinator(){
@@ -117,10 +108,6 @@ public class ObjectMockHolder {
 
     public static JobStatusCalculator jobStatusCalculator(){
         return new JobStatusCalculator();
-    }
-
-    public static JobUpdateHelper jobUpdateHelper(){
-        return new JobUpdateHelper(hotJobHolder(),jobStatusCalculator(),jobMapper,jobStatusMachine(),simpleSWTaskScheduler(),localDateTimeConvertor());
     }
 
 

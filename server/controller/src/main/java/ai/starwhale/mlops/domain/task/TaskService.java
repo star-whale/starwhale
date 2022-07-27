@@ -20,7 +20,7 @@ import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.task.TaskVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
-import ai.starwhale.mlops.deploy.Kubernetes;
+import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -31,7 +31,6 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -53,6 +52,9 @@ public class TaskService {
 
     @Resource
     private JobManager jobManager;
+
+    @Resource
+    K8sClient k8sClient;
 
 
     public PageInfo<TaskVO> listTasks(String jobUrl, PageParams pageParams) {
@@ -80,8 +82,7 @@ public class TaskService {
 
     public String logContent(Long taskId,String logFileName) {
         try {
-            Kubernetes kubernetes = new Kubernetes("default");
-            return kubernetes.log(taskId.toString());
+            return k8sClient.log(taskId.toString());
         } catch (Exception e) {
             log.error(e.getMessage());
             return "";
