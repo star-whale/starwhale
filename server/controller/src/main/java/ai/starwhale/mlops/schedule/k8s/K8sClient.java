@@ -17,26 +17,40 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import io.kubernetes.client.PodLogs;
+import io.kubernetes.client.informer.ResourceEventHandler;
+import io.kubernetes.client.informer.SharedIndexInformer;
+import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.*;
-import io.kubernetes.client.util.ClientBuilder;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.Config;
-import io.kubernetes.client.util.KubeConfig;
 import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.labels.LabelSelector;
-import java.io.FileReader;
-import org.bouncycastle.util.Strings;
-
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class K8sClient {
     private ApiClient client;
@@ -45,15 +59,23 @@ public class K8sClient {
 
     private final String ns;
 
+    private final SharedInformerFactory informerFactory;
+
+    private final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");
+
     /**
      * Basic constructor for Kubernetes
      */
-    public K8sClient(@Value("${sw.infra.k8s.name-space}") String ns) throws IOException {
+    public K8sClient(@Value("${sw.infra.k8s.name-space}") String ns,ResourceEventHandler<V1Job> eventH)
+        throws IOException {
         client =Config.defaultClient();
         Configuration.setDefaultApiClient(client);
         coreV1Api = new CoreV1Api();
         batchV1Api = new BatchV1Api();
         this.ns = ns;
+        informerFactory = new SharedInformerFactory(client);
+        watchJob(eventH);
+        informerFactory.startAllRegisteredInformers();
     }
 
     /**
@@ -81,6 +103,10 @@ public class K8sClient {
     public V1Job renderJob(String template, String name, String containerName, String image, List<String> cmd, Map<String, String> env) {
         V1Job job = Yaml.loadAs(template, V1Job.class);
         job.getMetadata().name(name);
+        HashMap<String, String> labels = new HashMap<>();
+        labels.putAll(starwhaleJobLabel);
+        labels.put("job-name",name);
+        job.getMetadata().labels(labels);
         V1JobSpec jobSpec = job.getSpec();
         Objects.requireNonNull(jobSpec, "can not get job spec");
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
@@ -115,15 +141,22 @@ public class K8sClient {
      * @return job list
      */
     public V1JobList get() throws ApiException {
-        return batchV1Api.listNamespacedJob(ns, null, null, null, null, null, null, null, null, 30, null);
+        return batchV1Api.listNamespacedJob(ns, null, null, null, null, toV1LabelSelector(starwhaleJobLabel), null, null, null, 30, null);
+    }
+
+    void watchJob(ResourceEventHandler<V1Job> eventH)  {
+        SharedIndexInformer<V1Job> jobInformer = informerFactory.sharedIndexInformerFor(
+            (CallGeneratorParams params) -> batchV1Api.listNamespacedJobCall(ns, null, null, null, null,
+                toV1LabelSelector(starwhaleJobLabel),
+                null, params.resourceVersion, null, params.timeoutSeconds, params.watch,
+                null),
+            V1Job.class,
+            V1JobList.class);
+        jobInformer.addEventHandler(eventH);
     }
 
     public String log(String jobName) throws ApiException, IOException {
-        V1LabelSelector labelSelector = new V1LabelSelector();
-        Map<String, String> labels = new HashMap<>();
-        labels.put("job-name", jobName);
-        labelSelector.matchLabels(labels);
-        V1PodList podList = coreV1Api.listNamespacedPod(ns, null, null, null, null, LabelSelector.parse(labelSelector).toString(), null, null, null, 30, null);
+        V1PodList podList = coreV1Api.listNamespacedPod(ns, null, null, null, null, toV1LabelSelector(Map.of("job-name",jobName)), null, null, null, 30, null);
 
         if (podList.getItems().isEmpty()) {
             return "";
@@ -136,5 +169,9 @@ public class K8sClient {
         PodLogs logs = new PodLogs();
         InputStream is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), "worker");
         return Strings.fromUTF8ByteArray(is.readAllBytes());
+    }
+
+    private String toV1LabelSelector(Map<String, String> labels){
+        return LabelSelector.parse(new V1LabelSelector().matchLabels(labels)).toString();
     }
 }

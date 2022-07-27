@@ -16,9 +16,9 @@
 
 package ai.starwhale.test.reporting;
 
-import ai.starwhale.mlops.reporting.TaskStatusReceiverFromK8S;
+import ai.starwhale.mlops.reporting.SimpleTaskStatusReceiver;
 
 /**
- * test for {@link TaskStatusReceiverFromK8S}
+ * test for {@link SimpleTaskStatusReceiver}
  */
 public class TaskStatusReceiverImpTest {}
