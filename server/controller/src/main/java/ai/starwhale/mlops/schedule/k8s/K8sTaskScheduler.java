@@ -80,7 +80,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
     }
 
     private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task) {//TODO TaskTrigger to Task
-        log.warn("aha {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
+        log.debug("deploying task to k8s {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
         Map<String, String> envs = new HashMap<>();
         List<String> downloads = new ArrayList<>();
         String prefix = "minio/starwhale/";

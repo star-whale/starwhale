@@ -49,11 +49,7 @@ public class K8sClient {
      * Basic constructor for Kubernetes
      */
     public K8sClient(@Value("${sw.infra.k8s.name-space}") String ns) throws IOException {
-        String kubeConfigPath = System.getenv("HOME") + "/.kube/config";
-
-        // loading the out-of-cluster config, a kubeconfig from file-system
-        client =
-            ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
+        client =Config.defaultClient();
         Configuration.setDefaultApiClient(client);
         coreV1Api = new CoreV1Api();
         batchV1Api = new BatchV1Api();
