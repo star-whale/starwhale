@@ -1,34 +1,49 @@
 FROM ubuntu:20.04
 
-COPY external/sources.list /etc/apt/sources.list
+ARG TARGETARCH=amd64
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ENV TZ=Etc/UTC
 
+COPY external/render_sources_list.sh /tmp/render_sources_list.sh
+RUN bash /tmp/render_sources_list.sh ${TARGETARCH}
+
 #os dependence
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     wget locales make cmake build-essential software-properties-common curl sudo ca-certificates apt-transport-https iputils-ping net-tools openssh-server net-tools gcc-aarch64-linux-gnu \
     zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils gpg-agent \
-    && locale-gen en_US.UTF-8 \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
-#python: python3.7/3.8/3.9, virtualenv, conda
-RUN add-apt-repository -y ppa:deadsnakes/ppa \
+RUN locale-gen en_US.UTF-8
+#TODO: build a seperated image by the different python version
+#python: python3.7-3.10, virtualenv, conda
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+RUN export http_proxy=${HTTP_PROXY} https_proxy=${HTTPS_PROXY} HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
     && apt-get update \
-    && apt-get install -y python3.7 python3.8 python3.9 python3-pip python3-venv python3.8-venv python3.7-venv python3.9-venv \
-    && python3.7 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
-    && python3.8 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
-    && python3.9 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
+    && apt-get install -y python3.7 python3.8 python3.9 python3.10 python3-pip python3-venv python3.8-venv python3.7-venv python3.9-venv python3.10-venv \
     && apt-get clean all \
     && rm -rf /var/lib/apt/lists/* /tmp/*
 
-RUN curl -s -o /tmp/conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+    export arch_alias="x86_64" ; \
+    else \
+    export arch_alias="aarch64" ; \
+    fi; \
+    curl -s -o /tmp/conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-${arch_alias}.sh \
     && bash /tmp/conda.sh -b -p /opt/miniconda3 \
     && /opt/miniconda3/bin/conda clean -a -y -f \
     && rm -rf /tmp/conda.sh
 
-#TODO: gpu/cuda
+RUN python3.7 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
+    && python3.8 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
+    && python3.9 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 \
+    && python3.10 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0

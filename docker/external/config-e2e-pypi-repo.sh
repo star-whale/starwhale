@@ -6,9 +6,9 @@ if [[ ! -z ${DEBUG} ]]; then
     set -x
 fi
 
-if [ -z $1 ] ; then
-    echo "PYPI overwrite is false"
-else
+if [ "$1" = "1" ] ; then
+    echo "overwrite pip config..."
+    mkdir /root/.pip
     echo "[global]
 index-url = http://$2:$3/repository/pypi-hosted/simple
 extra-index-url=https://pypi.org/simple

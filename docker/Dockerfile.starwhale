@@ -1,14 +1,16 @@
 ARG BASE_IMAGE=starwhaleai/base:latest
 FROM ${BASE_IMAGE}
 
+ARG TARGETARCH=amd64
+
 ARG SW_VERSION=0.1.0
 ENV SW_VERSION ${SW_VERSION}
 
 ARG LOCAL_PYPI_HOSTNAME=host.nexus
 ARG PORT_NEXUS=8081
-ARG PIPY_REPO_E2E=
+ARG ENABLE_E2E_TEST_PYPI_REPO=0
 COPY external/config-e2e-pypi-repo.sh /tmp/
-RUN chmod u+x /tmp/config-e2e-pypi-repo.sh && /tmp/config-e2e-pypi-repo.sh ${PIPY_REPO_E2E} ${LOCAL_PYPI_HOSTNAME} ${PORT_NEXUS}
+RUN chmod u+x /tmp/config-e2e-pypi-repo.sh && /tmp/config-e2e-pypi-repo.sh ${ENABLE_E2E_TEST_PYPI_REPO}} ${LOCAL_PYPI_HOSTNAME} ${PORT_NEXUS}
 
 RUN rm -rf /opt/starwhale.venv \
     && virtualenv /opt/starwhale.venv \
@@ -17,9 +19,7 @@ RUN rm -rf /opt/starwhale.venv \
     && ln -s /opt/starwhale.venv/bin/swcli /usr/local/bin/swcli \
     && ln -s /opt/starwhale.venv/bin/sw-docker-entrypoint /usr/local/bin/sw-docker-entrypoint
 
-#TODO: add conda channel switch
 COPY external/condarc /root/.condarc
-WORKDIR /opt/starwhale/swmp
 
 ENV SW_SWMP_WORKDIR=/opt/starwhale/swmp
 ENV SW_TASK_INPUT_CONFIG=/opt/starwhale/config/input.json
@@ -28,5 +28,7 @@ ENV SW_TASK_LOG_DIR=/opt/starwhale/log
 ENV SW_TASK_RESULT_DIR=/opt/starwhale/result
 
 ENV SW_CONTAINER=1
+ENV TARGETARCH=${TARGETARCH}
 
+WORKDIR /opt/starwhale/swmp
 ENTRYPOINT ["/usr/local/bin/sw-docker-entrypoint"]
