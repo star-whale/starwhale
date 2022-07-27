@@ -1,6 +1,7 @@
 /* eslint-disable react/no-unused-prop-types */
 import React from 'react'
 import { Checkbox, STYLE_TYPE, CheckboxOverrides } from 'baseui/checkbox'
+import { mergeOverrides } from '@/utils/baseui'
 
 export interface IToggleProps {
     value?: boolean
@@ -10,7 +11,23 @@ export interface IToggleProps {
     style?: React.CSSProperties
 }
 
-export default function Toggle({ value, onChange, overrides, disabled }: IToggleProps) {
+export default function Toggle({ value, onChange, disabled, ...props }: IToggleProps) {
+    const overrides = mergeOverrides(
+        {
+            Toggle: {
+                style: {
+                    backgroundColor: '#FFF',
+                },
+            },
+            ToggleTrack: {
+                style: {
+                    backgroundColor: value ? '#2B65D9' : 'rgba(2,16,43,0.20)',
+                },
+            },
+        },
+        props.overrides
+    )
+
     return (
         <Checkbox
             disabled={disabled}
@@ -21,6 +38,8 @@ export default function Toggle({ value, onChange, overrides, disabled }: IToggle
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onChange?.((e.target as any).checked)
             }}
+            // eslint-disable-next-line  react/jsx-props-no-spreading
+            {...props}
         />
     )
 }

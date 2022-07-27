@@ -13,12 +13,6 @@ import type { ColumnT } from './types'
 import { LocaleContext } from './locales'
 import FilterShell from './filter-shell'
 
-// type FilterParametersT = {
-//     description: string
-//     exclude: boolean
-//     selection: OperatorT[]
-// }
-
 // type CategoricalColumnT = ColumnT<string, FilterParametersT>
 
 type CategoricalFilterProps = {
@@ -179,7 +173,7 @@ export const CategoricalFilter = React.forwardRef<
                                 value={category}
                                 onChange={(v) => handleChange(v, i)}
                             />
-                            <Button as='link' type='button' onClick={handleDeleteOne}>
+                            <Button as='link' type='button' onClick={() => handleDeleteOne(i)}>
                                 <MdRemoveCircle size='20' style={{ color: 'rgba(2,16,43,0.40)' }} />
                             </Button>
                         </div>
@@ -191,17 +185,17 @@ export const CategoricalFilter = React.forwardRef<
                 type='button'
                 className={css({
                     alignSelf: 'flex-start',
-                    marginTop: '16px',
-                    marginLeft: '28px',
+                    marginTop: '4px',
+                    marginLeft: '26px',
                     color: ' rgba(2,16,43,0.60)',
                     display: 'flex',
                     cursor: 'pointer',
                     alignItems: 'center',
                 })}
                 onClick={handleAddFilter}
+                startEnhancer={() => <MdAddCircle size='20' />}
             >
-                <MdAddCircle size='20' />
-                &nbsp;Add filter
+                Add filter
             </Button>
         </div>
     )
@@ -225,7 +219,7 @@ type PropsT = {
 }
 
 function FilterOperateMenu(props: PropsT) {
-    const [, theme] = useStyletron()
+    // const [, theme] = useStyletron()
     const locale = React.useContext(LocaleContext)
     const [isOpen, setIsOpen] = React.useState(false)
     const [, setQuery] = React.useState('')
@@ -272,6 +266,14 @@ function FilterOperateMenu(props: PropsT) {
         }
     }, [controlRef, handleClose, props])
 
+    const handleSelectNone = useCallback(
+        (e) => {
+            e.preventDefault()
+            props.onFilterSet?.([])
+        },
+        [props]
+    )
+
     const enableFitlers = useMemo(() => {
         return Array.from(filters.filter((v) => !v.disable))
     }, [filters])
@@ -313,19 +315,58 @@ function FilterOperateMenu(props: PropsT) {
                     shape={SHAPE.default}
                     size={SIZE.compact}
                     kind={KIND.tertiary}
-                    as='link'
                     overrides={{
                         BaseButton: {
                             style: {
-                                marginLeft: theme.sizing.scale500,
                                 background: '',
+                                borderTop: '1px solid #CFD7E6',
+                                borderBottom: '1px solid #CFD7E6',
+                                borderLeft: '1px solid #CFD7E6',
+                                borderRight: '1px solid #CFD7E6',
+                                paddingTop: '6px',
+                                paddingBottom: '6px',
+                                lineHeight: '20px',
                             },
                         },
                     }}
                     startEnhancer={() => <FiFilter />}
                     endEnhancer={() =>
                         enableFitlers.length > 0 ? (
-                            <Tag color='#EEF1F6' size='small'>
+                            <Tag
+                                color='#EEF1F6'
+                                size='small'
+                                overrides={{
+                                    Root: {
+                                        style: {
+                                            marginTop: 0,
+                                            marginBottom: 0,
+                                            marginLeft: 0,
+                                            marginRight: 0,
+                                            height: '20px',
+                                            background: ' #EEF1F6',
+                                            color: '#2B65D9',
+                                            borderTop: 0,
+                                            borderBottom: 0,
+                                            borderLeft: 0,
+                                            borderRight: 0,
+                                        },
+                                    },
+                                    // Action: {
+                                    //     style: {
+                                    //         background: 'rgba(2,16,43,0.20)',
+                                    //         borderRadius: '50%',
+                                    //         color: '#fff',
+                                    //     },
+                                    // },
+                                    // ActionIcon: {
+                                    //     style: {
+                                    //         width: 8,
+                                    //         height: 8,
+                                    //     },
+                                    // },
+                                }}
+                                onActionClick={handleSelectNone}
+                            >
                                 {enableFitlers.length}
                             </Tag>
                         ) : null

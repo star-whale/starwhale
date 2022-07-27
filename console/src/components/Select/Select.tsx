@@ -1,16 +1,16 @@
-import { Input as BaseInput, InputProps, SIZE } from 'baseui/input'
+import { Select as BaseSelect, SelectProps, SIZE } from 'baseui/select'
 import React from 'react'
 import { mergeOverrides } from '@/utils/baseui'
 
-export interface IInputProps extends InputProps {
-    overrides?: InputProps['overrides']
+export interface ISelectProps extends SelectProps {
+    overrides?: SelectProps['overrides']
     size?: SIZE[keyof SIZE]
 }
 
-export default function Input({ size = 'compact', ...props }: IInputProps) {
+export default function Select({ size = 'compact', ...props }: ISelectProps) {
     const overrides = mergeOverrides(
         {
-            Root: {
+            ControlContainer: {
                 style: {
                     'borderTopWidth': '1px',
                     'borderBottomWidth': '1px',
@@ -26,5 +26,5 @@ export default function Input({ size = 'compact', ...props }: IInputProps) {
     )
 
     // eslint-disable-next-line  react/jsx-props-no-spreading
-    return <BaseInput size={size} {...props} overrides={overrides} />
+    return <BaseSelect size={size} {...props} overrides={overrides} />
 }

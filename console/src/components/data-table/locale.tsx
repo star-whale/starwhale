@@ -1,40 +1,3 @@
-export type DataTableLocaleT = {
-    emptyState: string
-    loadingState: string
-    searchAriaLabel: string
-    filterAdd: string
-    filterExclude: string
-    filterExcludeRange: string
-    filterExcludeValue: string
-    filterApply: string
-    filterAppliedTo: string
-    optionsLabel: string
-    optionsSearch: string
-    optionsEmpty: string
-    categoricalFilterSelectAll: string
-    categoricalFilterSelectClear: string
-    categoricalFilterEmpty: string
-    categoricalTagSelectOrCreate: string
-    datetimeFilterRange: string
-    datetimeFilterRangeDatetime: string
-    datetimeFilterRangeDate: string
-    datetimeFilterRangeTime: string
-    datetimeFilterCategorical: string
-    datetimeFilterCategoricalWeekday: string
-    datetimeFilterCategoricalMonth: string
-    datetimeFilterCategoricalQuarter: string
-    datetimeFilterCategoricalHalf: string
-    datetimeFilterCategoricalFirstHalf: string
-    datetimeFilterCategoricalSecondHalf: string
-    datetimeFilterCategoricalYear: string
-    numericalFilterRange: string
-    numericalFilterSingleValue: string
-    booleanFilterTrue: string
-    booleanFilterFalse: string
-    booleanColumnTrueShort: string
-    booleanColumnFalseShort: string
-}
-
 const locale = {
     emptyState: 'No rows match the filter criteria defined. Please remove one or more filters to view more data.',
     loadingState: 'Loading rows.',
@@ -70,6 +33,11 @@ const locale = {
     booleanFilterFalse: 'false',
     booleanColumnTrueShort: 'T',
     booleanColumnFalseShort: 'F',
+    columnPinColumn: 'Pin Column',
+    columnUnPinColumn: 'Unpin Column',
+    columnSortAsc: 'Sort asc',
+    columnSortDesc: 'Sort desc',
 }
 
+export type DataTableLocaleT = typeof locale
 export default locale

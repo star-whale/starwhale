@@ -5,7 +5,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { useDeepEffect } from '@/hooks/useDeepEffects'
 import { useStyletron } from 'baseui'
 import { ConfigT } from './types'
-import Toggle from '../Selector/Toggle'
+import Toggle from '../Select/Toggle'
 
 type ViewListPropsT = {
     views: ConfigT[]
@@ -116,10 +116,28 @@ function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
                 // ...overrides,
             }}
         >
-            <TableBuilderColumn header='Default'>
+            <TableBuilderColumn
+                header='Default'
+                overrides={{
+                    TableBodyCell: {
+                        style: {
+                            verticalAlign: 'middle',
+                        },
+                    },
+                }}
+            >
                 {(row, rowIndex) => <Toggle value={row.def} onChange={(v) => handleDefault(row, rowIndex, v)} />}
             </TableBuilderColumn>
-            <TableBuilderColumn header='Visibility'>
+            <TableBuilderColumn
+                header='Visibility'
+                overrides={{
+                    TableBodyCell: {
+                        style: {
+                            verticalAlign: 'middle',
+                        },
+                    },
+                }}
+            >
                 {(row, rowIndex) => <Toggle value={row.isShow} onChange={(v) => handleShow(row, rowIndex, v)} />}
             </TableBuilderColumn>
             <TableBuilderColumn header='Views'>{(row) => row.name}</TableBuilderColumn>

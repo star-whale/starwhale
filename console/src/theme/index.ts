@@ -42,7 +42,7 @@ const customPrimiaryColors = {
 }
 
 const primitives = {
-    primaryFontFamily: 'Cousine',
+    primaryFontFamily: 'Source Sans Pro',
 }
 
 const overrides = {
@@ -72,6 +72,7 @@ const overrides = {
             tickFillSelected: customPrimiaryColors.primary,
             tickFillSelectedHover: customPrimiaryColors.primary,
             inputBorder: customPrimiaryColors.dividerSecondary,
+            inputFill: '#FFF',
             borderFocus: customPrimiaryColors.primary,
             // ----------- custom -----------
             brandPrimary: customPrimiaryColors.primary,

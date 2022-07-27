@@ -1,5 +1,6 @@
 import React, { useMemo, useCallback, useRef, useEffect } from 'react'
-import { Select, StyledDropdownListItem } from 'baseui/select'
+import { StyledDropdownListItem } from 'baseui/select'
+import Select from '@/components/Select'
 import { StyledList, StyledEmptyState, OptionListProps } from 'baseui/menu'
 import { Modal, ModalBody, ModalFooter, ModalHeader } from 'baseui/modal'
 import useTranslation from '@/hooks/useTranslation'
@@ -51,12 +52,12 @@ function ConfigViews(props: PropsT) {
     )
 
     return (
-        <div style={{ minWidth: '280px' }}>
+        <div style={{ maxWidth: '280px' }}>
             <Select
                 size='compact'
                 options={$options}
                 placeholder='Select a view'
-                clearable
+                clearable={false}
                 overrides={{
                     DropdownContainer: {
                         style: {
@@ -124,7 +125,22 @@ function ConfigViews(props: PropsT) {
                 </ModalFooter>
             </Modal>
 
-            <Modal isOpen={isManageViewOpen} onClose={() => setIsManageViewOpen(false)} closeable animate autoFocus>
+            <Modal
+                isOpen={isManageViewOpen}
+                onClose={() => setIsManageViewOpen(false)}
+                closeable
+                animate
+                autoFocus
+                overrides={{
+                    Dialog: {
+                        style: {
+                            width: 'fit-content',
+                            display: 'flex',
+                            flexDirection: 'column',
+                        },
+                    },
+                }}
+            >
                 <ModalHeader>{t('Manage Views')}</ModalHeader>
                 <ModalBody>
                     <ViewList ref={viewListRef} views={store.views} onEdit={handleEdit} />
@@ -135,7 +151,6 @@ function ConfigViews(props: PropsT) {
                         onClick={() => {
                             store.setViews?.((viewListRef.current as any).getViews())
                             setIsManageViewOpen(false)
-                            // store.onViewUpdate((viewRef.current as any).getView())
                         }}
                     >
                         Apply
@@ -180,6 +195,8 @@ const ConfigViewDropdown = React.forwardRef((props: any, ref) => {
 
         return (
             <StyledDropdownListItem
+                className='text-ellipsis'
+                title={item.label}
                 style={{
                     boxSizing: 'border-box',
                     ...style,

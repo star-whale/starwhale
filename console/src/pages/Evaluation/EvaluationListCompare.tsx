@@ -226,6 +226,7 @@ export default function EvaluationListCompare({
                 key: 'attrs',
                 title: '',
                 pin: 'LEFT',
+                minWidth: 200,
                 mapDataToValue: (item: any) => item.title,
             }),
             ...rows.map((row: any, index) =>
@@ -309,7 +310,7 @@ export default function EvaluationListCompare({
 
     return (
         <>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', height: '36px', gap: 20 }}>
                 <Checkbox
                     checked={store.compare?.compareShowCellChanges}
                     onChange={(e) => {

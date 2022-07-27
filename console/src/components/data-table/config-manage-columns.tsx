@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useRef, useEffect, useImperativeHandle } from 'react'
 import { SHAPE, SIZE, KIND } from 'baseui/button'
-import { Search, Icon } from 'baseui/icon'
+import { Search } from 'baseui/icon'
 import { useStyletron } from 'baseui'
 import { useHover } from 'react-use'
 import { Drawer } from 'baseui/drawer'
@@ -12,6 +12,7 @@ import useSelection from '@/hooks/useSelection'
 import { AiOutlinePushpin } from 'react-icons/ai'
 import { RiDeleteBin6Line } from 'react-icons/ri'
 import { useDrawer } from '@/hooks/useDrawer'
+import IconFont from '@/components/IconFont'
 import { DnDContainer } from '../DnD/DnDContainer'
 import { matchesQuery } from './text-search'
 import type { ColumnT, ConfigT } from './types'
@@ -94,7 +95,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                         }}
                         title={column.title}
                     >
-                        <LabelSmall $style={{ flex: 1, overflow: 'hidden' }} className='line-clamp'>
+                        <LabelSmall $style={{ flex: 1, overflow: 'hidden', lineHeight: '1.2' }} className='line-clamp'>
                             {column.title}
                         </LabelSmall>
                         <div>
@@ -244,10 +245,19 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                     shape={SHAPE.pill}
                     size={SIZE.compact}
                     as='link'
-                    startEnhancer={() => <Icon />}
+                    startEnhancer={() => (
+                        <IconFont
+                            type='setting'
+                            style={{
+                                marginRight: '-5px',
+                                marginTop: 'px',
+                            }}
+                        />
+                    )}
                     overrides={{
                         BaseButton: {
                             style: {
+                                height: '32px',
                                 marginLeft: theme.sizing.scale500,
                             },
                         },
@@ -300,7 +310,21 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                             })}
                         >
                             <Input
-                                startEnhancer={<Search size='18px' />}
+                                overrides={{
+                                    Before: function Before() {
+                                        return (
+                                            <div
+                                                className={css({
+                                                    alignItems: 'center',
+                                                    display: 'flex',
+                                                    paddingLeft: theme.sizing.scale500,
+                                                })}
+                                            >
+                                                <Search size='18px' />
+                                            </div>
+                                        )
+                                    },
+                                }}
                                 value={query}
                                 // @ts-ignore
                                 onChange={(event) => setQuery(event.target.value)}
@@ -385,7 +409,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                                                     onChange={() => handleSelectOne(id)}
                                                 />
                                                 <LabelSmall
-                                                    $style={{ flex: 1, overflow: 'hidden' }}
+                                                    $style={{ flex: 1, overflow: 'hidden', lineHeight: '1.1' }}
                                                     className='line-clamp'
                                                 >
                                                     {column.title}
@@ -409,17 +433,19 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                                         alignItems: 'center',
                                     })}
                                 >
-                                    Visible columns
-                                    <span
-                                        style={{
-                                            marginLeft: '-5px',
-                                            color: 'rgba(2,16,43,0.40)',
-                                        }}
-                                    >
-                                        ({selectedIds.length})
-                                    </span>
+                                    <p>
+                                        Visible columns
+                                        <span
+                                            style={{
+                                                marginLeft: '5px',
+                                                color: 'rgba(2,16,43,0.40)',
+                                            }}
+                                        >
+                                            ({selectedIds.length})
+                                        </span>
+                                    </p>
                                     <Button as='link' onClick={handleEmpty}>
-                                        empty
+                                        Clear
                                     </Button>
                                 </div>
                                 {dndData.length === 0 && (
@@ -475,7 +501,7 @@ const ConfigManageColumns = React.forwardRef<{ getConfig: () => any }, PropsT>((
                                     size={SIZE.mini}
                                     onClick={handleApply}
                                 >
-                                    OK
+                                    Apply
                                 </Button>
                             </div>
                         )}

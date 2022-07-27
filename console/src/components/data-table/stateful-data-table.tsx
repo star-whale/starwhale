@@ -3,7 +3,8 @@ import ResizeObserver from 'resize-observer-polyfill'
 
 import { Button, SHAPE as BUTTON_SHAPES, SIZE as BUTTON_SIZES, KIND as BUTTON_KINDS } from 'baseui/button'
 import { Search } from 'baseui/icon'
-import { Input, SIZE as INPUT_SIZES } from 'baseui/input'
+import { SIZE as INPUT_SIZES } from 'baseui/input'
+import Input from '@/components/Input'
 import { useStyletron } from 'baseui'
 import _ from 'lodash'
 import { DataTable } from './data-custom-table'
@@ -43,30 +44,28 @@ export function QueryInput(props: any) {
     }, [onChange, value])
 
     return (
-        <div className={css({ width: '360px' })}>
-            <Input
-                aria-label={locale.datatable.searchAriaLabel}
-                overrides={{
-                    Before: function Before() {
-                        return (
-                            <div
-                                className={css({
-                                    alignItems: 'center',
-                                    display: 'flex',
-                                    paddingLeft: theme.sizing.scale500,
-                                })}
-                            >
-                                <Search size='18px' />
-                            </div>
-                        )
-                    },
-                }}
-                size={INPUT_SIZES.compact}
-                onChange={(event) => setValue((event.target as HTMLInputElement).value)}
-                value={value}
-                clearable
-            />
-        </div>
+        <Input
+            aria-label={locale.datatable.searchAriaLabel}
+            overrides={{
+                Before: function Before() {
+                    return (
+                        <div
+                            className={css({
+                                alignItems: 'center',
+                                display: 'flex',
+                                paddingLeft: theme.sizing.scale500,
+                            })}
+                        >
+                            <Search size='18px' />
+                        </div>
+                    )
+                },
+            }}
+            size={INPUT_SIZES.compact}
+            onChange={(event) => setValue((event.target as HTMLInputElement).value)}
+            value={value}
+            clearable
+        />
     )
 }
 
@@ -170,6 +169,11 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
 
     const { rowSelectedIds, onSelectMany, onSelectNone, onSelectOne } = store
     const $rowSelectedIds = useMemo(() => new Set(Array.from(rowSelectedIds)), [rowSelectedIds])
+    const [$sortIndex, $sortDirection] = useMemo(() => {
+        const { sortBy, sortDirection } = store.currentView || {}
+        const sortIndex = $columns.findIndex((c) => c.key === sortBy)
+        return [sortIndex, sortDirection]
+    }, [store, $columns])
 
     return (
         <StatefulContainer
@@ -190,12 +194,9 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
             {({
                 onIncludedRowsChange,
                 onRowHighlightChange,
-                onSort,
                 onTextQueryChange,
                 resizableColumnWidths,
                 rowHighlightIndex,
-                sortIndex,
-                sortDirection,
                 textQuery,
             }: StatefulContainerPropsT['children']) => (
                 <>
@@ -209,7 +210,10 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                         >
                             <div
                                 className='flex-row-center mb-20 g-20'
-                                style={{ flexWrap: 'wrap', justifyContent: 'start' }}
+                                style={{
+                                    gridTemplateColumns: '1fr auto 1fr',
+                                    display: 'grid',
+                                }}
                             >
                                 {viewable && (
                                     <ConfigViews
@@ -317,7 +321,6 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 onSelectMany={onSelectMany}
                                 onSelectNone={onSelectNone}
                                 onSelectOne={onSelectOne}
-                                onSort={onSort}
                                 resizableColumnWidths={resizableColumnWidths}
                                 compareable={compareable}
                                 rowHighlightIndex={rowHighlightIndex}
@@ -325,8 +328,8 @@ export function StatefulDataTable(props: StatefulDataTablePropsT) {
                                 rowActions={props.rowActions}
                                 rowHeight={props.rowHeight}
                                 selectedRowIds={$rowSelectedIds}
-                                sortDirection={sortDirection}
-                                sortIndex={sortIndex}
+                                sortDirection={$sortDirection}
+                                sortIndex={$sortIndex}
                                 textQuery={textQuery}
                                 controlRef={props.controlRef}
                             />

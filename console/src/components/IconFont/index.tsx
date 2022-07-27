@@ -44,6 +44,10 @@ interface IIconFontProps {
         | 'decline'
         | 'rise'
         | 'pin'
+        | 'setting'
+        | 'more'
+        | 'a-sortasc'
+        | 'a-sortdesc'
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {

@@ -19,8 +19,9 @@ import { ColumnT } from '@/components/data-table/types'
 import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
 import _ from 'lodash'
 import { useStyletron } from 'baseui'
-import { useEvaluationCompareStore, useEvaluationStore } from '@/components/data-table/store'
-import { headerHeight } from '@/consts'
+import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@/components/data-table/store'
+import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
+import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import EvaluationListCompare from './EvaluationListCompare'
 
 export default function EvaluationListCard() {
@@ -32,6 +33,7 @@ export default function EvaluationListCard() {
     const { projectId } = useParams<{ projectId: string }>()
     const evaluationsInfo = useFetchEvaluations(projectId, { pageNum: 1, pageSize: 1000 })
     const evaluationAttrsInfo = useFetchEvaluationAttrs(projectId, page)
+    const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
 
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
@@ -93,10 +95,25 @@ export default function EvaluationListCard() {
                 title: t('Owner'),
                 mapDataToValue: (item: any) => item.owner,
             }),
-            StringColumn({
+            CustomColumn({
                 key: 'duration',
                 title: t('Runtime'),
-                mapDataToValue: (data: any) => (typeof data.duration === 'string' ? '-' : durationToStr(data.duration)),
+                sortable: true,
+                filterType: 'number',
+                sortFn: (a: any, b: any) => {
+                    // eslint-disable-next-line
+                    const aNum = Number(a)
+                    const bNum = Number(b)
+                    if (Number.isNaN(aNum)) {
+                        return -1
+                    }
+                    return aNum - bNum
+                },
+                // @ts-ignore
+                renderCell: (props: any) => {
+                    return <p title={props?.value}>{durationToStr(props?.value)}</p>
+                },
+                mapDataToValue: (data: any): string => data.duration,
             }),
             StringColumn({
                 key: 'createTime',
@@ -152,7 +169,8 @@ export default function EvaluationListCard() {
                             },
                             // @ts-ignore
                             renderCell: (props: any) => {
-                                return <p title={props?.value}>{props?.value.slice(0, 6)}</p>
+                                // .slice(0, 6)
+                                return <p title={props?.value}>{props?.value}</p>
                             },
                             mapDataToValue: (data: any): string =>
                                 data.attributes?.find((v: IEvaluationAttributeValue) => v.name === attr.name)?.value ??
@@ -167,14 +185,7 @@ export default function EvaluationListCard() {
     }, [evaluationAttrsInfo, columns])
 
     const [compareRows, setCompareRows] = useState<any[]>([])
-    // const handleSelectChange = useCallback(
-    //     (selection: RowT[]) => {
-    //         console.log(selection)
-    //         const rows = selection.map((item: any) => item.data)
-    //         setCompareRows(rows)
-    //     },
-    //     [setCompareRows]
-    // )
+
     const batchAction = useMemo(
         () => [
             {
@@ -280,11 +291,49 @@ export default function EvaluationListCard() {
 
     React.useEffect(() => {
         const unsub = useEvaluationCompareStore.subscribe(
-            (state: any) => state.rowSelectedIds,
+            (state: ITableState) => state.rowSelectedIds,
             (state: any[]) => store.onSelectMany(state)
         )
         return unsub
     }, [store, $data])
+
+    // sync local to api
+    React.useEffect(() => {
+        const unsub = useEvaluationStore.subscribe(
+            (state: ITableState) => state,
+            async (state: ITableState, prevState: ITableState) => {
+                if (
+                    !_.isEqual(store.getRawConfigs(state), store.getRawConfigs(prevState)) &&
+                    evaluationViewConfig.isSuccess
+                ) {
+                    // console.log('changed state', store.getRawConfigs(state), store.getRawConfigs(prevState))
+                    await setEvaluationViewConfig(projectId, {
+                        name: 'evaluation',
+                        content: JSON.stringify(store.getRawConfigs()),
+                    })
+                }
+            }
+        )
+        return unsub
+    }, [store, $data, projectId, evaluationViewConfig])
+
+    // sync api to local
+    React.useEffect(() => {
+        if (evaluationViewConfig.isSuccess && evaluationViewConfig.data) {
+            let apiState
+            try {
+                apiState = JSON.parse(evaluationViewConfig.data?.content, undefined)
+                if (!_.isEqual(apiState, store.getRawConfigs())) {
+                    // console.log('upcoming state', apiState, evaluationViewConfig.data)
+                    store.setRawConfigs(apiState)
+                }
+            } catch (e) {
+                // console.log(e)
+            }
+        }
+        // store should not be used as a deps, it's will trigger cycle render
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [evaluationViewConfig.isSuccess, evaluationViewConfig.data])
 
     return (
         <div
@@ -294,7 +343,7 @@ export default function EvaluationListCard() {
                 gridTemplateColumns: compareRows.length === 0 ? '1fr' : gridLayout[gridMode],
                 overflow: 'hidden',
                 width: '100%',
-                height: `calc(100vh - ${2 * headerHeight}px)`,
+                flex: 1,
             }}
         >
             <Card
@@ -328,11 +377,9 @@ export default function EvaluationListCard() {
                     filterable
                     columnable
                     viewable
-                    id='evaluations'
                     batchActions={batchAction}
                     isLoading={evaluationsInfo.isLoading}
                     columns={$columnsWithAttrs}
-                    // onSelectionChange={handleSelectChange}
                     data={$data}
                 />
                 <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>

@@ -84,7 +84,7 @@ function Options(props: OptionsPropsT) {
         >
             <p
                 className={css({
-                    ...theme.typography.font100,
+                    ...theme.typography.font200,
                     marginTop: 'unset',
                     paddingRight: theme.sizing.scale600,
                     paddingLeft: theme.sizing.scale600,
@@ -116,7 +116,7 @@ function Options(props: OptionsPropsT) {
             {!props.columns.length && (
                 <div
                     className={css({
-                        ...theme.typography.font100,
+                        ...theme.typography.font200,
                         paddingRight: theme.sizing.scale600,
                         paddingLeft: theme.sizing.scale600,
                     })}
@@ -158,7 +158,7 @@ function Options(props: OptionsPropsT) {
                             onClick={() => props.onClick(column)}
                             key={column.title}
                             className={css({
-                                ...theme.typography.font100,
+                                ...theme.typography.font200,
                                 alignItems: 'center',
                                 // @ts-ignore
                                 backgroundColor: isHighlighted ? theme.colors.menuFillHover : null,
