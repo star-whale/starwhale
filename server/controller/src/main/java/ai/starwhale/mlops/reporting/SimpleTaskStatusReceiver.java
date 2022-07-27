@@ -17,20 +17,11 @@
 package ai.starwhale.mlops.reporting;
 
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
-import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.schedule.k8s.K8sClient;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobList;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
@@ -38,52 +29,15 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-public class TaskStatusReceiverFromK8S implements TaskStatusReceiver {
-
-    final K8sClient k8sClient;
+public class SimpleTaskStatusReceiver implements TaskStatusReceiver {
 
     final HotJobHolder jobHolder;
 
     final TaskMapper taskMapper;
 
-    public TaskStatusReceiverFromK8S(K8sClient k8sClient,
-        HotJobHolder jobHolder, TaskMapper taskMapper) {
-        this.k8sClient = k8sClient;
+    public SimpleTaskStatusReceiver(HotJobHolder jobHolder, TaskMapper taskMapper) {
         this.jobHolder = jobHolder;
         this.taskMapper = taskMapper;
-    }
-
-    @Scheduled(fixedDelayString = "${sw.controller.task.schedule.fixedDelay.in.milliseconds:1000}")
-    public void watchK8S()  {
-        V1JobList jobList = new V1JobList();
-        try {
-            jobList = k8sClient.get();
-        } catch (ApiException e) {
-            log.error(e.getMessage());
-        }
-
-        // fetch job status
-        List<V1Job> done = new ArrayList<>();
-        List<V1Job> undone = new ArrayList<>();
-        jobList.getItems().forEach(j -> {
-            if (j.getStatus() == null) {
-                undone.add(j);
-            }
-            if (j.getStatus().getActive() == null) {
-                done.add(j);
-            } else {
-                undone.add(j);
-            }
-        });
-
-        // report task
-        List<ReportedTask> reports = done.stream().map(i -> {
-            Long id = Long.parseLong(i.getMetadata().getName());
-            return new ReportedTask(id, TaskStatus.SUCCESS, TaskType.PPL);
-        }).collect(Collectors.toList());
-
-        receive(reports);
-
     }
 
     @Override
