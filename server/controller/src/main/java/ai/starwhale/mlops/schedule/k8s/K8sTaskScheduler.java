@@ -102,7 +102,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+ task.getResultPath().resultDir())
                 ,new V1EnvVar().name("MINIO_SERVICE").value(storageProperties.getS3Config().getEndpoint())
                 ,new V1EnvVar().name("MINIO_ACCESS_KEY").value(storageProperties.getS3Config().getAccessKey())
-                ,new V1EnvVar().name("MINIO_SECRET_KEY").value(storageProperties.getS3Config().getAccessKey())
+                ,new V1EnvVar().name("MINIO_SECRET_KEY").value(storageProperties.getS3Config().getSecretKey())
                 )
             );
             client.deploy(job);
