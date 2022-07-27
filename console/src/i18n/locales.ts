@@ -126,6 +126,18 @@ const locales0 = {
     'Add User': {
         en: 'Add User',
     },
+    'Add User Success': {
+        en: 'Add User Success',
+    },
+    'Random Password Tips': {
+        en: 'The user has been added successfully. You can copy the random password below and send it to the user',
+    },
+    'Copy To Clipboard': {
+        en: 'copy',
+    },
+    'Copied': {
+        en: 'Copied !',
+    },
     'User List': {
         en: 'User List',
     },
@@ -257,6 +269,12 @@ const locales0 = {
     },
     'Confirm New Password': {
         en: 'Confirm New Password',
+    },
+    'Enter your password': {
+        en: 'Enter your password',
+    },
+    'Use random password': {
+        en: 'Use random password',
     },
     'Logout': {
         en: 'Logout',

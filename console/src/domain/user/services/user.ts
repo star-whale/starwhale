@@ -56,3 +56,13 @@ export async function changeUserState(userId: string, enable: boolean) {
 
     return resp.data
 }
+
+export async function createUser(userName: string, userPwd: string): Promise<IUserSchema> {
+    const { data } = await axios({
+        method: 'post',
+        url: '/api/v1/user',
+        data: JSON.stringify({ userName, userPwd }),
+        headers: { 'Content-Type': 'application/json' },
+    })
+    return data
+}
