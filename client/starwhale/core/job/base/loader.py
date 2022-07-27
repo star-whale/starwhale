@@ -6,15 +6,14 @@ import pkg_resources
 from loguru import logger
 
 
-def load_module(module: str, path: str):
+def load_module(module: str, path: Path):
     """
     load module from path
     :param module: module name
     :param path: abs path
     :return: module
     """
-    workdir = Path(path)
-    workdir_path = str(workdir.absolute())
+    workdir_path = str(path.absolute())
     # add module path to sys path
     external_paths = [workdir_path]
     for _path in external_paths[::-1]:

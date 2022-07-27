@@ -11,9 +11,9 @@ from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.config import load_swcli_config
-from starwhale.core.job.view import JobTermView, JobTermViewRich
-from starwhale.core.job.model import CloudJob, StandaloneJob
-from starwhale.core.job.store import JobStorage
+from starwhale.core.job.eval.view import JobTermView, JobTermViewRich
+from starwhale.core.job import CloudJob, StandaloneJob
+from starwhale.core.job import JobStorage
 
 from .. import ROOT_DIR
 

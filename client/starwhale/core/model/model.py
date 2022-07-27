@@ -18,20 +18,19 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_COPY_WORKERS,
     DEFAULT_STARWHALE_API_VERSION,
-    DEFAULT_STEPS_FNAME,
+    DEFAULT_JOBS_FNAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, ensure_dir, ensure_file
+from starwhale.utils.fs import move_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
-from starwhale.utils.load import import_cls
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
-from starwhale.core.job.base.executor import Scheduler
+from starwhale.core.job.base.scheduler import Scheduler
 from starwhale.core.job.base.model import Parser
 
 from .store import ModelStorage
@@ -181,11 +180,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if not ppl:
             # todo use deafult
             ppl = None
-        _f = self.store.snapshot_workdir / "src" / DEFAULT_STEPS_FNAME
+        _f = self.store.snapshot_workdir / "src" / DEFAULT_JOBS_FNAME
         console.print("path:{}", _f)
         console.print("ppl:{}", ppl)
         Parser.generate_job_yaml(ppl, self.store.snapshot_workdir / "src", _f)
-        ensure_dir(_f)
 
     @classmethod
     def eval_user_handler(
@@ -193,40 +191,32 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         typ: str,
         workdir: Path,
         yaml_name: str = DefaultYAMLName.MODEL,
+        job_name: str = "default",
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
         from starwhale.api._impl.model import _RunConfig
 
         _mp = workdir / yaml_name
         _model_config = cls._load_model_config(_mp)
-        _handler = _model_config.run.ppl
+        _module = _model_config.run.ppl
 
         _RunConfig.set_env(kw)
-        console.print(f"try to import {_handler}@{workdir}...")
 
+        logger.debug("run job from yaml")
+        _jobs = Parser.parse_job_from_yaml(workdir / DEFAULT_JOBS_FNAME)
+        # steps of job
+        _steps = _jobs[job_name]
+
+        scheduler = Scheduler(_module, workdir, _steps)
         # todo 20220725 replace with job scheduler
-        if typ == EvalTaskType.CUSTOM:
-
-            logger.debug("run job from yaml")
-            _f = workdir / DEFAULT_STEPS_FNAME
-            _jobs = Parser.parse_job_from_yaml(_f)
-            # steps of job
-            _steps = _jobs['default']
-            
-            scheduler = Scheduler(_handler, workdir, _steps)
+        if typ == EvalTaskType.ALL:
             scheduler.schedule()
-            # save job info
-            console.print(f"job info:{_jobs}")
-            console.print(":clap: finish run")
-        # _cls = import_cls(workdir, _handler)
-
-        # with _cls() as _obj:
-        #     if typ == EvalTaskType.CMP:
-        #         _obj._starwhale_internal_run_cmp()
-        #     else:
-        #         _obj._starwhale_internal_run_ppl()
-
-        # console.print(f":clap: finish run {typ}: {_obj}")
+        elif typ == EvalTaskType.SINGLE_TASK:
+            # todo by param
+            scheduler.schedule_single_task("", 0)
+        # save job info
+        console.print(f"job info:{_jobs}")
+        console.print(":clap: finish run")
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()

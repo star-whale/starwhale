@@ -22,9 +22,10 @@ class JobType:
 
 class EvalTaskType:
     ALL = "all"
-    PPL = "ppl"
-    CMP = "cmp"
-    CUSTOM = "custom"
+    # PPL = "ppl"
+    # CMP = "cmp"
+    # CUSTOM = "custom"
+    SINGLE_TASK = "single_task"
 
 
 class RunSubDirType:

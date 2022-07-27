@@ -62,7 +62,7 @@ class ModelTermView(BaseTermView):
             store = ModelStorage(uri)
             workdir = store.loc
 
-        if typ in (EvalTaskType.CMP, EvalTaskType.PPL):
+        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE_TASK):
             console.print(f":golfer: try to eval {typ} @ {workdir}...")
             StandaloneModel.eval_user_handler(
                 typ,
