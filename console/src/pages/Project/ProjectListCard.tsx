@@ -44,7 +44,7 @@ export default function ProjectListCard() {
         >
             <Table
                 isLoading={projectsInfo.isLoading}
-                columns={[t('Project Name'), t('Owner'), t('Created')]}
+                columns={[t('Project Name'), t('Owner'), t('Created'), t('Action')]}
                 data={
                     projectsInfo.data?.list?.map((project) => {
                         return [
@@ -61,6 +61,9 @@ export default function ProjectListCard() {
                             </Link>,
                             project.owner && <User user={project.owner} />,
                             project.createdTime && formatTimestampDateTime(project.createdTime),
+                            <Link key={project.id} to={`/projects/${project.id}/members`}>
+                                {t('Manage Project Member')}
+                            </Link>,
                         ]
                     }) ?? []
                 }

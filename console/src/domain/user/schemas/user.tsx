@@ -3,7 +3,8 @@ import { IResourceSchema } from '@/domain/base/schemas/resource'
 export interface IUserRoleSchema {
     id: string
     name: string
-    nameEn: string
+    code: string
+    description: string
 }
 
 export interface IUserSchema extends IResourceSchema {
