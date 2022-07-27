@@ -84,14 +84,12 @@ class Parser:
         """
         Parser.set_parse_stage(True)
         # parse DAG
-        logger.info("parse @step for module:{}", module)
+        logger.debug("parse @step for module:{}", module)
         load_module(module, path)
         _jobs = Parser.get_jobs().copy()
         Parser.clear_config()
         return _jobs
 
-
-class JobDAG:
     @staticmethod
     def generate_job_yaml(module: str, path: str, target_file: str) -> None:
         """
@@ -104,7 +102,7 @@ class JobDAG:
         _jobs = Parser.parse_job_from_module(module, path)
         # generate DAG
         logger.debug("generate DAG")
-        if JobDAG.check(_jobs):
+        if Parser.check(_jobs):
             # dump to target
             with open(target_file, "w") as file:
                 yaml.dump(_jobs, file)

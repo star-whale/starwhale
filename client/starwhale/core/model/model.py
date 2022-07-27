@@ -32,7 +32,7 @@ from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
 from starwhale.core.job.base.executor import Scheduler
-from starwhale.core.job.base.model import JobDAG
+from starwhale.core.job.base.model import Parser
 
 from .store import ModelStorage
 
@@ -184,7 +184,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _f = self.store.snapshot_workdir / "src" / DEFAULT_STEPS_FNAME
         console.print("path:{}", _f)
         console.print("ppl:{}", ppl)
-        JobDAG.generate_job_yaml(ppl, self.store.snapshot_workdir / "src", _f)
+        Parser.generate_job_yaml(ppl, self.store.snapshot_workdir / "src", _f)
         ensure_dir(_f)
 
     @classmethod
@@ -209,13 +209,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             logger.debug("run job from yaml")
             _f = workdir / DEFAULT_STEPS_FNAME
-            _jobs = JobDAG.parse_job_from_yaml(_f)
+            _jobs = Parser.parse_job_from_yaml(_f)
             # steps of job
             _steps = _jobs['default']
             
             scheduler = Scheduler(_handler, workdir, _steps)
             scheduler.schedule()
-            
+            # save job info
+            console.print(f"job info:{_jobs}")
             console.print(":clap: finish run")
         # _cls = import_cls(workdir, _handler)
 

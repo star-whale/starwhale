@@ -5,7 +5,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 
-from model import Net
+from .model import Net
 
 
 def train(model, device, data_loader, optimizer, epoch, log_interval=10):

@@ -40,10 +40,10 @@ class Scheduler:
             # judge whether a step's dependency all in finished
             for _wait in _wait_steps:
                 if all(d in _finished_step_names for d in _wait.dependency if d):
-                    executor = Executor(self, _wait)
-                    executor.start()
+                    _executor = Executor(self, _wait)
+                    _executor.start()
                     # executor.setDaemon()
-                    _threads.append(executor)
+                    _threads.append(_executor)
 
         for t in _threads:
             t.join()
