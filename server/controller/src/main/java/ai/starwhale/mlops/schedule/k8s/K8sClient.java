@@ -170,17 +170,19 @@ public class K8sClient {
 
         V1Pod pod = podList.getItems().get(0);
         PodLogs logs = new PodLogs();
-        StringBuilder  logBuilder = new StringBuilder ();
-        InputStream is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), "data-provider");
-        logBuilder.append(Strings.fromUTF8ByteArray(is.readAllBytes()));
-        is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), "untar");
-        logBuilder.append(Strings.fromUTF8ByteArray(is.readAllBytes()));
-        is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), "worker");
-        logBuilder.append(Strings.fromUTF8ByteArray(is.readAllBytes()));
-        is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), "result-uploader");
-        logBuilder.append(Strings.fromUTF8ByteArray(is.readAllBytes()));
-
+        StringBuilder  logBuilder = new StringBuilder();
+        appendLog(pod, logs, logBuilder,"data-provider");
+        appendLog(pod, logs, logBuilder,"untar");
+        appendLog(pod, logs, logBuilder,"worker");
+        appendLog(pod, logs, logBuilder,"result-uploader");
         return logBuilder.toString();
+    }
+
+    private void appendLog(V1Pod pod, PodLogs logs, StringBuilder logBuilder,String containerName)
+        throws IOException, ApiException {
+        try(InputStream is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), containerName);){
+            logBuilder.append(Strings.fromUTF8ByteArray(is.readAllBytes()));
+        }
     }
 
     private String toV1LabelSelector(Map<String, String> labels){
