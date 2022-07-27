@@ -66,7 +66,7 @@ class ModelTermView(BaseTermView):
             _store = ModelStorage(_uri)
             workdir = _store.loc
 
-        if typ in (EvalTaskType.CMP, EvalTaskType.PPL):
+        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE_TASK):
             console.print(f":golfer: try to eval {typ} @ {workdir}...")
 
             if not in_production() and runtime_uri:

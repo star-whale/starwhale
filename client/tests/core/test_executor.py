@@ -15,7 +15,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.core.job.executor import EvalExecutor
+from starwhale.core.job.eval.executor import EvalExecutor
 
 from .. import ROOT_DIR
 

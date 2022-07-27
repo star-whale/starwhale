@@ -26,7 +26,7 @@ from .executor import EvalExecutor
 _device_id_map = {"cpu": 1, "gpu": 2}
 
 
-class Job(metaclass=ABCMeta):
+class EvaluationJob(metaclass=ABCMeta):
     def __init__(self, uri: URI) -> None:
         self.uri = uri
         self.name = uri.object.name
@@ -82,7 +82,7 @@ class Job(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def compare(self, jobs: t.List[Job]) -> t.Dict[str, t.Any]:
+    def compare(self, jobs: t.List[EvaluationJob]) -> t.Dict[str, t.Any]:
         raise NotImplementedError
 
     @abstractmethod
@@ -90,11 +90,11 @@ class Job(metaclass=ABCMeta):
         raise NotImplementedError
 
     @classmethod
-    def _get_job_cls(cls, uri: URI) -> t.Union[t.Type[StandaloneJob], t.Type[CloudJob]]:
+    def _get_job_cls(cls, uri: URI) -> t.Union[t.Type[StandaloneEvaluationJob], t.Type[CloudEvaluationJob]]:
         if uri.instance_type == InstanceType.STANDALONE:
-            return StandaloneJob
+            return StandaloneEvaluationJob
         elif uri.instance_type == InstanceType.CLOUD:
-            return CloudJob
+            return CloudEvaluationJob
         else:
             raise NoSupportError(f"job uri:{uri}")
 
@@ -109,13 +109,13 @@ class Job(metaclass=ABCMeta):
         return _cls.list(project_uri)
 
     @classmethod
-    def get_job(cls, job_uri: URI) -> Job:
+    def get_job(cls, job_uri: URI) -> EvaluationJob:
         _cls = cls._get_job_cls(job_uri)
         return _cls(job_uri)
 
 
 # TODO: Storage Class Mixed
-class StandaloneJob(Job):
+class StandaloneEvaluationJob(EvaluationJob):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
         self.store = JobStorage(uri)
@@ -182,7 +182,7 @@ class StandaloneJob(Job):
         _f(summary)
         return rt
 
-    def compare(self, jobs: t.List[Job]) -> t.Dict[str, t.Any]:
+    def compare(self, jobs: t.List[EvaluationJob]) -> t.Dict[str, t.Any]:
         rt = {}
         base_report = self._get_report()
         compare_reports = [j._get_report() for j in jobs]
@@ -299,7 +299,7 @@ class StandaloneJob(Job):
         return _rt, {}
 
 
-class CloudJob(Job, CloudRequestMixed):
+class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
 
@@ -451,6 +451,6 @@ class CloudJob(Job, CloudRequestMixed):
         # TODO: need to implement it
         return {}
 
-    def compare(self, jobs: t.List[Job]) -> t.Dict[str, t.Any]:
+    def compare(self, jobs: t.List[EvaluationJob]) -> t.Dict[str, t.Any]:
         # TODO: need to implement it
         return {}
