@@ -36,7 +36,7 @@ public class LogController implements LogApi{
 
     @Override
     public ResponseEntity<ResponseMessage<List<String>>> offlineLogs(Long taskId) {
-        return ResponseEntity.ok(Code.success.asResponse(List.of("job")));
+        return ResponseEntity.ok(Code.success.asResponse(taskService.offLineLogFiles(taskId)));
     }
 
     @Override

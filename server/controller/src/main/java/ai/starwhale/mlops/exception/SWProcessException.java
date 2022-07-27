@@ -51,7 +51,8 @@ public class SWProcessException extends StarWhaleException {
         STORAGE("001","STORAGE"),
         DB("002","DB"),
         NETWORK("003","NETWORK"),
-        SYSTEM("004","SYSTEM");
+        SYSTEM("004","SYSTEM"),
+        INFRA("005","INFRA");
         final String code;
         final String tipSubject;
         ErrorType(String code,String tipSubject){
