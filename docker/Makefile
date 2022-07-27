@@ -12,7 +12,7 @@ FIXED_VERSION_NODEJS_IMAGE := 0.1.1
 FIXED_VERSION_TASKSET_IMAGE := 0.1.1
 FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.1
 
-DH_BASE_IMAGE := ${DOCKER_HUB_REPO}/base:${FIXED_VERSION_BASE_IMAGE}
+GHCR_BASE_IMAGE := ${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE}
 DH_BASE_SERVER_IMAGE := ${DOCKER_HUB_REPO}/base_server:${FIXED_VERSION_BASE_SERVER_IMAGE}
 DH_NODEJS_IMAGE := ${DOCKER_HUB_REPO}/nodejs:${FIXED_VERSION_NODEJS_IMAGE}
 
@@ -33,7 +33,7 @@ endif
 define build-image
 	docker pull ${GHCR_IO_REPO}/$(1):latest || true
 	docker build \
-		--build-arg BASE_IMAGE=$(DH_BASE_IMAGE) \
+		--build-arg BASE_IMAGE=$(GHCR_BASE_IMAGE) \
 		--build-arg BASE_SERVER_IMAGE=$(DH_BASE_SERVER_IMAGE) \
 		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
 		-t ${DOCKER_HUB_REPO}/$(1):$(2) \
@@ -53,10 +53,16 @@ endef
 
 prepare-buildx:
 	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-	docker buildx create --name starwhale-multiarch --driver docker-container --driver-opt env.http_proxy=$(HTTP_PROXY) --driver-opt env.https_proxy=$(HTTPS_PROXY)  --use --bootstrap --driver-opt network=host
+	docker buildx create --name starwhale-multiarch2 --driver docker-container \
+		--driver-opt env.all_proxy=$(HTTP_PROXY) --driver-opt env.http_proxy=$(HTTP_PROXY) --driver-opt env.https_proxy=$(HTTPS_PROXY) \
+		--driver-opt env.ALL_PROXY=$(HTTP_PROXY) --driver-opt env.HTTP_PROXY=$(HTTP_PROXY) --driver-opt env.HTTPS_PROXY=$(HTTPS_PROXY) \
+		--use --bootstrap --driver-opt network=host
 
 build-release-base:
 	docker buildx build --platform linux/arm64,linux/amd64 \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
+		--network=host \
 		-t $(DOCKER_HUB_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) \
 		-t $(DOCKER_HUB_REPO)/base:latest \
 		-t $(GHCR_IO_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) \
@@ -65,8 +71,11 @@ build-release-base:
 
 build-release-starwhale:
 	docker buildx build --platform linux/arm64,linux/amd64 \
-		--build-arg BASE_IMAGE=$(DH_BASE_IMAGE) \
+		--build-arg BASE_IMAGE=$(GHCR_BASE_IMAGE) \
 		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
+		--network=host \
 		-t $(DOCKER_HUB_REPO)/starwhale:$(RELEASE_VERSION) \
 		-t $(DOCKER_HUB_REPO)/starwhale:$(PYPI_FMT_RELEASE_VERSION) \
 		-t $(DOCKER_HUB_REPO)/starwhale:latest \
