@@ -86,10 +86,14 @@ export const passwordFormat =
 
 export const shouldBeEqual =
     (val: any, msg: string): Validator =>
-    (_, value) =>
-        value === val ? Promise.resolve() : Promise.reject(msg)
+    (_, value) => {
+        const expect = typeof val === 'function' ? val() : val
+        return value === expect ? Promise.resolve() : Promise.reject(msg)
+    }
 
 export const shouldNotBeEqual =
     (val: any, msg: string): Validator =>
-    (_, value) =>
-        value !== val ? Promise.resolve() : Promise.reject(msg)
+    (_, value) => {
+        const expect = typeof val === 'function' ? val() : val
+        return value !== expect ? Promise.resolve() : Promise.reject(msg)
+    }
