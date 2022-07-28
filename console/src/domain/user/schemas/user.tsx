@@ -38,3 +38,8 @@ export interface IChangePasswordSchema {
     originPwd: string
     userPwd: string
 }
+
+export interface INewUserSchema {
+    userName: string
+    userPwd: string
+}
