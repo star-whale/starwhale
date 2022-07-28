@@ -46,6 +46,9 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
         if(entity == null) {
             return ProjectVO.empty();
         }
+        if(entity.getId() == 0) {
+            return ProjectVO.system();
+        }
         return ProjectVO.builder()
             .id(idConvertor.convert(entity.getId()))
             .name(entity.getProjectName())

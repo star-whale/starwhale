@@ -14,9 +14,7 @@ public class ProjectRoleConvertor implements Convertor<ProjectRoleEntity, Projec
 
     private final IDConvertor idConvertor;
     private final ProjectConvertor projectConvertor;
-
     private final RoleConvertor roleConvertor;
-
     private final UserConvertor userConvertor;
 
     public ProjectRoleConvertor(IDConvertor idConvertor,

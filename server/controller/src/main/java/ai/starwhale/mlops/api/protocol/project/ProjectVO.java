@@ -42,4 +42,8 @@ public class ProjectVO implements Serializable {
     public static ProjectVO empty() {
         return new ProjectVO("", "", -1L, UserVO.empty(), false);
     }
+
+    public static ProjectVO system() {
+        return new ProjectVO("0", "SYSTEM", -1L, UserVO.empty(), false);
+    }
 }
