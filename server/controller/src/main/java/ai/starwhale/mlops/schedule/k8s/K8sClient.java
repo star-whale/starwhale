@@ -63,6 +63,8 @@ public class K8sClient {
 
     private final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");
 
+    static final String jobIdentityLabel = "job-name";
+
     /**
      * Basic constructor for Kubernetes
      */
@@ -105,7 +107,7 @@ public class K8sClient {
         job.getMetadata().name(name);
         HashMap<String, String> labels = new HashMap<>();
         labels.putAll(starwhaleJobLabel);
-        labels.put("job-name",name);
+        labels.put(jobIdentityLabel,name);
         job.getMetadata().labels(labels);
         V1JobSpec jobSpec = job.getSpec();
         Objects.requireNonNull(jobSpec, "can not get job spec");
@@ -155,8 +157,9 @@ public class K8sClient {
         jobInformer.addEventHandler(eventH);
     }
 
-    public String log(String jobName) throws ApiException, IOException {
-        V1PodList podList = coreV1Api.listNamespacedPod(ns, null, null, null, null, toV1LabelSelector(Map.of("job-name",jobName)), null, null, null, 30, null);
+    public String logOfJob(String jobName) throws ApiException, IOException {
+        V1PodList podList = coreV1Api.listNamespacedPod(ns, null, null, null, null, toV1LabelSelector(Map.of(
+            jobIdentityLabel,jobName)), null, null, null, 30, null);
 
         if (podList.getItems().isEmpty()) {
             return "";
@@ -167,8 +170,19 @@ public class K8sClient {
 
         V1Pod pod = podList.getItems().get(0);
         PodLogs logs = new PodLogs();
-        InputStream is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), "worker");
-        return Strings.fromUTF8ByteArray(is.readAllBytes());
+        StringBuilder  logBuilder = new StringBuilder();
+        appendLog(pod, logs, logBuilder,"data-provider");
+        appendLog(pod, logs, logBuilder,"untar");
+        appendLog(pod, logs, logBuilder,"worker");
+        appendLog(pod, logs, logBuilder,"result-uploader");
+        return logBuilder.toString();
+    }
+
+    private void appendLog(V1Pod pod, PodLogs logs, StringBuilder logBuilder,String containerName)
+        throws IOException, ApiException {
+        try(InputStream is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), containerName);){
+            logBuilder.append(Strings.fromUTF8ByteArray(is.readAllBytes()));
+        }
     }
 
     private String toV1LabelSelector(Map<String, String> labels){

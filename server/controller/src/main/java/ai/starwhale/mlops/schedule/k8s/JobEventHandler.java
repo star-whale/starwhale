@@ -40,7 +40,7 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
     public void onAdd(V1Job obj) {
         log.info("job added for {} {}", jobName(obj),
             obj.getStatus());
-        taskStatusReceiver.receive(List.of(new ReportedTask(Long.parseLong(jobName(obj)),
+        taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(obj),
             TaskStatus.PREPARING)));
     }
 
@@ -76,8 +76,11 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
                 status);
         }
 
-        taskStatusReceiver.receive(
-            List.of(new ReportedTask(Long.parseLong(jobName(newObj)), taskStatus)));
+        taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(newObj), taskStatus)));
+    }
+
+    private long taskIdOf(V1Job newObj) {
+        return Long.parseLong(jobName(newObj));
     }
 
     @Override
