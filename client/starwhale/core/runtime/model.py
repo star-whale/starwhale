@@ -59,6 +59,7 @@ from starwhale.utils.venv import (
     venv_install_req,
     conda_install_req,
     create_python_env,
+    install_starwhale,
     package_python_env,
     restore_python_env,
     activate_python_env,
@@ -68,6 +69,7 @@ from starwhale.utils.venv import (
     check_valid_venv_prefix,
     get_user_python_version,
     check_valid_conda_prefix,
+    render_python_env_activate,
     validate_python_environment,
     validate_runtime_package_dep,
 )
@@ -880,6 +882,11 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         _manifest = load_yaml(workdir / DEFAULT_MANIFEST_NAME)
         _env = _manifest["environment"]
+        _starwhale_version = (
+            _manifest.get("environment", {})
+            .get("lock", {})
+            .get("starwhale_version", "")
+        )
 
         operations = [
             (
@@ -906,6 +913,18 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 ),
             ),
             (
+                install_starwhale,
+                10,
+                "install starwhale",
+                dict(
+                    prefix_path=workdir / "export" / _env["mode"],
+                    mode=_env["mode"],
+                    version=_starwhale_version,
+                    force=False,
+                    configs=_manifest.get("configs", {}),
+                ),
+            ),
+            (
                 cls._setup_native_files,
                 10,
                 "setup native files",
@@ -913,6 +932,19 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     workdir=workdir,
                     mode=_env["mode"],
                     files=_manifest.get("artifacts", {}).get("files", []),
+                ),
+            ),
+            (
+                render_python_env_activate,
+                5,
+                "render python env activate scripts",
+                dict(
+                    mode=_env["mode"],
+                    prefix_path=workdir / "export" / _env["mode"],
+                    workdir=workdir,
+                    local_packaged_env=_manifest["dependencies"].get(
+                        "local_packaged_env", False
+                    ),
                 ),
             ),
         ]

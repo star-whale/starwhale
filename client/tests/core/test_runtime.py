@@ -321,9 +321,12 @@ class StandaloneRuntimeTestCase(TestCase):
             ],
         }
 
+    @patch("starwhale.utils.venv.check_user_python_pkg_exists")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
     @patch("starwhale.utils.venv.check_call")
-    def test_restore_venv(self, m_call: MagicMock, m_venv: MagicMock):
+    def test_restore_venv(
+        self, m_call: MagicMock, m_venv: MagicMock, m_exists: MagicMock
+    ):
         workdir = "/home/starwhale/myproject"
         export_dir = os.path.join(workdir, "export")
         venv_dir = os.path.join(export_dir, "venv")
@@ -356,8 +359,9 @@ class StandaloneRuntimeTestCase(TestCase):
         self.fs.create_file(req_fpath, contents="test1==0.0.1")
         self.fs.create_file(req_lock_fpath, contents="test2==0.0.1")
 
+        m_exists.return_value = False
         Runtime.restore(Path(workdir))
-        assert m_call.call_count == 2
+        assert m_call.call_count == 3
         pip_cmds = [
             m_call.call_args_list[0][0][0][-1],
             m_call.call_args_list[1][0][0][-1],
@@ -369,6 +373,19 @@ class StandaloneRuntimeTestCase(TestCase):
         ]
         assert req_fpath in pip_cmds
         assert req_lock_fpath in pip_cmds
+        assert m_call.call_args_list[2][0][0] == [
+            "/home/starwhale/myproject/export/venv/bin/pip",
+            "install",
+            "--exists-action",
+            "w",
+            "--pre",
+            "starwhale",
+        ]
+
+        m_call.reset_mock()
+        m_exists.return_value = True
+        Runtime.restore(Path(workdir))
+        assert m_call.call_count == 2
 
         RuntimeTermView.restore(workdir)
 

@@ -11,13 +11,14 @@ import virtualenv
 from loguru import logger
 
 from starwhale import __version__
-from starwhale.utils import console, is_linux, venv_pack
+from starwhale.utils import console, is_linux, venv_pack, get_downloadable_sw_version
 from starwhale.consts import (
     ENV_VENV,
     ENV_CONDA,
     PythonRunEnv,
     ENV_CONDA_PREFIX,
     SW_PYPI_PKG_NAME,
+    SW_DEV_DUMMY_VERSION,
     WHEEL_FILE_EXTENSION,
     DEFAULT_CONDA_CHANNEL,
     DEFAULT_PYTHON_VERSION,
@@ -159,6 +160,22 @@ def venv_activate(venvdir: t.Union[str, Path]) -> None:
     _fpath = Path(venvdir) / "bin" / "activate"
     cmd = f"source {_fpath.absolute()}"
     check_call(cmd, shell=True, executable="/bin/bash")
+
+
+def render_python_env_activate(
+    mode: str, prefix_path: Path, workdir: Path, local_packaged_env: bool = False
+) -> None:
+    if mode not in (PythonRunEnv.CONDA, PythonRunEnv.VENV):
+        raise NoSupportError(f"mode({mode}) render python env activate scripts")
+
+    if local_packaged_env:
+        # conda local mode(conda-pack) should be activated by the source command.
+        venv_activate_render(prefix_path, workdir, relocate=mode == PythonRunEnv.VENV)
+    else:
+        if mode == PythonRunEnv.CONDA:
+            conda_activate_render(prefix_path, workdir)
+        else:
+            venv_activate_render(prefix_path, workdir, relocate=False)
 
 
 def parse_python_version(s: str) -> PythonVersionField:
@@ -657,6 +674,40 @@ def get_conda_env_prefix() -> str:
     return os.environ.get(ENV_CONDA_PREFIX, "")
 
 
+def install_starwhale(
+    prefix_path: Path,
+    mode: str,
+    version: str = "",
+    force: bool = False,
+    configs: _ConfigsT = None,
+) -> None:
+    if version == "" or version == SW_DEV_DUMMY_VERSION:
+        version = get_downloadable_sw_version()
+
+    req = SW_PYPI_PKG_NAME
+    if version:
+        req = f"{req}=={version}"
+
+    _existed = check_user_python_pkg_exists(
+        str(prefix_path / "bin" / "python3"), SW_PYPI_PKG_NAME
+    )
+    if _existed and not force:
+        logger.info(f"{SW_PYPI_PKG_NAME} has already be installed at {prefix_path}")
+        return
+
+    configs = configs or {}
+    if mode == PythonRunEnv.CONDA:
+        conda_install_req(
+            req=req, prefix_path=prefix_path, use_pip_install=True, configs=configs
+        )
+    elif mode == PythonRunEnv.VENV:
+        venv_install_req(
+            venvdir=prefix_path, req=req, enable_pre=True, pip_config=configs.get("pip")
+        )
+    else:
+        raise NoSupportError(f"mode({mode}) install {SW_PYPI_PKG_NAME}")
+
+
 def restore_python_env(
     workdir: Path,
     mode: str,
@@ -702,7 +753,6 @@ def _do_restore_conda(
         with tarfile.open(str(export_tar_fpath)) as f:
             f.extractall(str(conda_dir))
         # TODO: conda local bundle restore wheel?
-        venv_activate_render(conda_dir, workdir)
     else:
         logger.info("restore conda env ...")
         conda_setup(python_version, prefix=conda_dir)
@@ -729,9 +779,7 @@ def _do_restore_conda(
                 use_pip_install=False,
                 configs=configs,
             )
-
         # TODO: check local mode conda export the installed wheel pkgs
-        conda_activate_render(conda_dir, workdir)
 
 
 def iter_pip_reqs(
@@ -770,16 +818,13 @@ def _do_restore_venv(
     deps: _DepsT,
     configs: _ConfigsT,
     local_packaged_env: bool = False,
-    rebuild: bool = False,
 ) -> None:
     export_dir = workdir / "export"
     venv_dir = export_dir / "venv"
     export_tar_fpath = export_dir / EnvTarType.VENV
 
-    _relocate = True
-    if rebuild or not local_packaged_env or not os.path.exists(export_tar_fpath):
+    if not local_packaged_env or not os.path.exists(export_tar_fpath):
         logger.info(f"setup venv and pip install {venv_dir}")
-        _relocate = False
         venv_setup(venv_dir, python_version=python_version)
 
         for _r in iter_pip_reqs(workdir, wheels, deps):
@@ -792,27 +837,33 @@ def _do_restore_venv(
         with tarfile.open(str(export_tar_fpath)) as f:
             f.extractall(str(venv_dir))
 
-    venv_activate_render(venv_dir, workdir, relocate=_relocate)
-
 
 def validate_runtime_package_dep(py_env: str) -> None:
-    _py_bin = get_user_runtime_python_bin(py_env)
-    logger.info(f"{_py_bin}: check {SW_PYPI_PKG_NAME} install")
-    cmd = [
-        _py_bin,
-        "-c",
-        f"import pkg_resources; pkg_resources.get_distribution('{SW_PYPI_PKG_NAME}')",
-    ]
-    try:
-        check_call(cmd)
-    except subprocess.CalledProcessError:
+    py_bin = get_user_runtime_python_bin(py_env)
+    logger.info(f"{py_bin}: check {SW_PYPI_PKG_NAME} install")
+    _existed = check_user_python_pkg_exists(py_bin, SW_PYPI_PKG_NAME)
+    if not _existed:
         console.print(
             f":confused_face: Please install {SW_PYPI_PKG_NAME} in {py_env}, cmd:"
         )
         console.print(
             f"\t :cookie: python3 -m pip install --pre {SW_PYPI_PKG_NAME} :cookie:"
         )
-        raise
+        raise NotFoundError(SW_PYPI_PKG_NAME)
+
+
+def check_user_python_pkg_exists(py_bin: str, pkg_name: str) -> bool:
+    cmd = [
+        py_bin,
+        "-c",
+        f"import pkg_resources; pkg_resources.get_distribution('{pkg_name}')",
+    ]
+    try:
+        check_call(cmd)
+    except subprocess.CalledProcessError:
+        return False
+    else:
+        return True
 
 
 def validate_python_environment(mode: str, py_version: str, identity: str = "") -> None:
