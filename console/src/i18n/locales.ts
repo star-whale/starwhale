@@ -132,8 +132,11 @@ const locales0 = {
     'Update User Success': {
         en: 'Update User Success',
     },
-    'Random Password Tips': {
+    'Random Password Tips For Add': {
         en: 'The user has been added successfully. You can copy the random password below and send it to the user',
+    },
+    'Random Password Tips For Update': {
+        en: 'The user password has been updated successfully. You can copy the random password below and send it to the user',
     },
     'Copy To Clipboard': {
         en: 'copy',

@@ -26,6 +26,12 @@ interface IActionProps {
     onClick: () => Promise<void>
 }
 
+interface IPasswordResultProps {
+    title: string
+    longTips: string
+    password: string
+}
+
 const ActionButton: React.FC<IActionProps> = ({ title, marginRight = false, onClick }: IActionProps) => {
     const style = {
         textDecoration: 'none',
@@ -47,7 +53,7 @@ export default function UserManagement() {
     const [data, updateData] = useState<IUserSchema[]>([])
     const [filter, updateFilter] = useState('')
     const [showAddUser, setShowAddUser] = useState(false)
-    const [password, setPassword] = useState('')
+    const [passwordResult, setPasswordResult] = useState<IPasswordResultProps | undefined>()
     const [currentUser, setCurrentUser] = useState<IUserSchema | undefined>(undefined)
 
     useEffect(() => {
@@ -80,7 +86,11 @@ export default function UserManagement() {
         if (useRandom) {
             // show generated password after a while
             await setTimeout(() => {
-                setPassword(pass)
+                setPasswordResult({
+                    title: create ? t('Add User Success') : t('Update User Success'),
+                    longTips: create ? t('Random Password Tips For Add') : t('Random Password Tips For Update'),
+                    password: pass,
+                })
             }, 500)
         } else {
             const tip = create ? t('Add User Success') : t('Update User Success')
@@ -146,14 +156,14 @@ export default function UserManagement() {
                     />
                 </ModalBody>
             </Modal>
-            <Modal animate closeable onClose={() => setPassword('')} isOpen={!!password}>
-                <ModalHeader>{t('Add User Success')}</ModalHeader>
+            <Modal animate closeable onClose={() => setPasswordResult(undefined)} isOpen={!!passwordResult}>
+                <ModalHeader>{passwordResult?.title}</ModalHeader>
                 <ModalBody>
-                    <p>{t('Random Password Tips')}</p>
+                    <p>{passwordResult?.longTips}</p>
                     <div className={css({ display: 'flex', marginTop: '10px' })}>
-                        <Input value={password} />
+                        <Input value={passwordResult?.password} />
                         <CopyToClipboard
-                            text={password}
+                            text={passwordResult?.password ?? ''}
                             onCopy={() => {
                                 toaster.positive(t('Copied'), { autoHideDuration: 1000 })
                             }}
