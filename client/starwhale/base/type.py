@@ -25,7 +25,7 @@ class EvalTaskType:
     # PPL = "ppl"
     # CMP = "cmp"
     # CUSTOM = "custom"
-    SINGLE_TASK = "single_task"
+    SINGLE = "single"
 
 
 class RunSubDirType:
