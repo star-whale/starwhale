@@ -18,7 +18,7 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_COPY_WORKERS,
     DEFAULT_STARWHALE_API_VERSION,
-    DEFAULT_JOBS_FNAME,
+    DEFAULT_EVALUATION_JOBS_FNAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
@@ -178,9 +178,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
     def _gen_steps(self, ppl: str) -> None:
         if not ppl:
-            # todo use deafult
+            # todo use default
             ppl = None
-        _f = self.store.snapshot_workdir / "src" / DEFAULT_JOBS_FNAME
+        _f = self.store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
         console.print("path:{}", _f)
         console.print("ppl:{}", ppl)
         Parser.generate_job_yaml(ppl, self.store.snapshot_workdir / "src", _f)
@@ -203,7 +203,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _RunConfig.set_env(kw)
 
         logger.debug("run job from yaml")
-        _jobs = Parser.parse_job_from_yaml(workdir / DEFAULT_JOBS_FNAME)
+        _jobs = Parser.parse_job_from_yaml(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
         # steps of job
         _steps = _jobs[job_name]
 
@@ -318,18 +318,18 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "copy src",
                 dict(workdir=workdir, yaml_name=yaml_name, model_config=_model_config),
             ),
-            (
-                self._render_manifest,
-                5,
-                "render manifest",
-                dict(user_raw_config=_model_config.as_dict()),
-            ),
             # todo 20220725 add step parse for job
             (
                 self._gen_steps,
                 5,
                 "generate execute steps",
                 dict(ppl=_model_config.run.ppl),
+            ),
+            (
+                self._render_manifest,
+                5,
+                "render manifest",
+                dict(user_raw_config=_model_config.as_dict()),
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
             (self._make_latest_tag, 5, "make latest tag"),
