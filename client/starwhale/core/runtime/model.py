@@ -78,6 +78,7 @@ from starwhale.utils.error import (
     NotFoundError,
     NoSupportError,
     ConfigFormatError,
+    UnExpectedConfigFieldError,
 )
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
@@ -86,17 +87,22 @@ from .store import RuntimeStorage
 
 RUNTIME_API_VERSION = "1.1"
 
+_t_mixed_str_list = t.Union[t.List[str], str]
+_list: t.Callable[[_t_mixed_str_list], t.List[str]] = (
+    lambda _x: _x if isinstance(_x, (list, tuple)) else [_x]
+)
+
 
 class Environment:
     def __init__(
         self,
-        arch: str = SupportArch.X86_64,
+        arch: _t_mixed_str_list = "",
         os: str = SupportOS.UBUNTU,
         python: str = DEFAULT_PYTHON_VERSION,
         cuda: str = DEFAULT_CUDA_VERSION,
         **kw: t.Any,
     ) -> None:
-        self.arch = arch.lower()
+        self.arch = _list(arch)
         self.os = os.lower()
 
         # TODO: use user's swcli python version as the python argument version
@@ -202,15 +208,13 @@ class PipConfig:
     def __init__(
         self,
         index_url: str = "",
-        extra_index_url: t.Union[t.List[str], str] = "",
-        trusted_host: t.Union[t.List[str], str] = "",
+        extra_index_url: _t_mixed_str_list = "",
+        trusted_host: _t_mixed_str_list = "",
         **kw: t.Any,
     ) -> None:
         self.index_url = index_url
-
-        _list = lambda _x: _x if isinstance(_x, (list, tuple)) else [_x]
-        self.extra_index_url = _list(extra_index_url)  # type: ignore
-        self.trusted_host = _list(trusted_host)  # type: ignore
+        self.extra_index_url = _list(extra_index_url)
+        self.trusted_host = _list(trusted_host)
 
 
 class CondaConfig:
@@ -644,6 +648,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 },
                 "auto_lock_dependencies": enable_lock,
                 "python": swrt_config.environment.python,
+                "arch": swrt_config.environment.arch,
                 "mode": swrt_config.mode,
             }
         )
@@ -878,6 +883,14 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
         operations = [
             (
+                cls._validate_environment,
+                5,
+                "validate environment condition",
+                dict(
+                    expected_arch=_env.get("arch", []),
+                ),
+            ),
+            (
                 restore_python_env,
                 20,
                 "restore python env",
@@ -905,6 +918,34 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         ]
 
         run_with_progress_bar("runtime restore...", operations)
+
+    @staticmethod
+    def _validate_environment(expected_arch: t.List[str]) -> None:
+        # TODO: add os, cuda version, python version validator
+        def _validate_arch() -> None:
+            machine_map = {
+                "aarch64": SupportArch.ARM64,
+                "arm64": SupportArch.ARM64,
+                "x86_64": SupportArch.AMD64,
+                "amd64": SupportArch.AMD64,
+            }
+
+            machine = platform.machine()
+            machine_arch = [
+                machine,
+                machine_map.get(machine) or machine,
+                SupportArch.NOARCH,
+            ]
+            _section = set([a.lower() for a in machine_arch]) & set(
+                [a.lower() for a in expected_arch]
+            )
+            if not _section:
+                raise UnExpectedConfigFieldError(
+                    f"machine arch: {machine}, expected arch: {expected_arch}"
+                )
+
+        if expected_arch:
+            _validate_arch()
 
     @staticmethod
     def _setup_native_files(

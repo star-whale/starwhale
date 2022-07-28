@@ -1,5 +1,8 @@
 api_version: 1.1
 configs:
+  conda:
+    channels:
+      - conda-forge
   docker:
     image: star-whale/runtime/pytorch
     registry: ghcr.io
@@ -23,7 +26,7 @@ dependencies:
     src: scripts/prepare.sh
 - requirements-sw-lock.txt
 environment:
-  arch: x86_64
+  arch: noarch
   cuda: 11.4.0
   os: ubuntu:20.04
   python: 3.8
