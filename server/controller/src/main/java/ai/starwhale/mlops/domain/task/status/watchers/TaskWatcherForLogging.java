@@ -20,6 +20,7 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.log.TaskLogCollector;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.exception.StarWhaleException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
@@ -32,17 +33,23 @@ public class TaskWatcherForLogging implements TaskStatusChangeWatcher {
 
     final TaskLogCollector taskLogCollector;
 
+    final TaskStatusMachine taskStatusMachine;
+
     public TaskWatcherForLogging(
-        TaskLogCollector taskLogCollector) {
+        TaskLogCollector taskLogCollector,
+        TaskStatusMachine taskStatusMachine) {
         this.taskLogCollector = taskLogCollector;
+        this.taskStatusMachine = taskStatusMachine;
     }
 
     @Override
     public void onTaskStatusChange(Task task,
         TaskStatus oldStatus) {
-        if(task.getStatus() != TaskStatus.SUCCESS && task.getStatus() != TaskStatus.FAIL){
+        if(!taskStatusMachine.isFinal(task.getStatus()) || task.getStatus() == TaskStatus.CANCELED){
+            log.debug("{} task {} will not collect log",task.getStatus(),task.getId());
             return;
         }
+        log.debug("collection log for task {}",task.getId());
         try{
             taskLogCollector.collect(task);
         }catch (StarWhaleException e){

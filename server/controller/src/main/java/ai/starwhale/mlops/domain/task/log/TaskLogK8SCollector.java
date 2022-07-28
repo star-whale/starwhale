@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
@@ -50,7 +51,7 @@ public class TaskLogK8SCollector implements TaskLogCollector{
         log.debug("logging for task {} begins...",task.getId());
         try {
             taskLog = k8sClient.logOfJob(task.getId().toString());
-            log.debug("logs for task {} is {}...",task.getId(),taskLog.substring(0,100));
+            log.debug("logs for task {} is {}...",task.getId(), StringUtils.hasText(taskLog)?taskLog.substring(0,Math.min(taskLog.length()-1,100)):"");
         } catch (ApiException e) {
             log.error("k8s api error ",e);
             throw new SWProcessException(ErrorType.INFRA).tip("k8s api exception"+e.getMessage());

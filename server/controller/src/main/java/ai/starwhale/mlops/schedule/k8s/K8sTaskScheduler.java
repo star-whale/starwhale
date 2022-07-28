@@ -60,7 +60,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
     }
 
     @Override
-    public void adoptTasks(Collection<Task> tasks,
+    public void adopt(Collection<Task> tasks,
                            Clazz deviceClass) {
 
         tasks.parallelStream().forEach(task -> {
@@ -69,17 +69,17 @@ public class K8sTaskScheduler implements SWTaskScheduler {
     }
 
     @Override
-    public void stopSchedule(Collection<Long> taskIds) {
+    public void remove(Collection<Long> taskIds) {
         taskIds.parallelStream().forEach(id->{
             try {
                 k8sClient.deleteJob(id.toString());
             } catch (ApiException e) {
-                e.printStackTrace();
+                log.warn("delete k8s job failed {}",id,e);
             }
         });
     }
 
-    private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task) {//TODO TaskTrigger to Task
+    private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task) {
         log.debug("deploying task to k8s {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
         Map<String, String> envs = new HashMap<>();
         List<String> downloads = new ArrayList<>();

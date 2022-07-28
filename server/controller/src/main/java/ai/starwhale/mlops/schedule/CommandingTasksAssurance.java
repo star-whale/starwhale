@@ -121,7 +121,7 @@ public class CommandingTasksAssurance implements AgentStatusWatcher {
         Map<Clazz, List<Task>> deviceGroup = taskCommands.parallelStream().map(TaskCommand::getTask)
             .collect(Collectors.groupingBy(task -> task.getStep().getJob().getJobRuntime().getDeviceClass()));
         deviceGroup.forEach((deviceClass,tasks)->{
-            swTaskScheduler.adoptTasks(tasks,deviceClass);
+            swTaskScheduler.adopt(tasks,deviceClass);
         });
     }
 }

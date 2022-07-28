@@ -59,6 +59,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Resource;
@@ -66,7 +67,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
@@ -253,7 +253,7 @@ public class JobService {
                 .flatMap(Collection::stream)
                 .filter(t -> t.getStatus() == TaskStatus.READY)
                 .collect(Collectors.toList());
-            swTaskScheduler.adoptTasks(readyToScheduleTasks,job.getJobRuntime().getDeviceClass());
+            swTaskScheduler.adopt(readyToScheduleTasks,job.getJobRuntime().getDeviceClass());
         });
 
     }
@@ -267,7 +267,6 @@ public class JobService {
      * transactional
      * jobStatus->TO_CANCEL; RUNNING/PREPARING/ASSIGNING->TO_CANCEL;CREATED/PAUSED/UNKNOWN->CANCELED
      */
-    @Transactional
     public void cancelJob(String jobUrl){
         Long jobId = jobManager.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
@@ -281,25 +280,13 @@ public class JobService {
             throw new SWValidationException(ValidSubject.JOB).tip("not RUNNING/PAUSED job can't be canceled ");
         }
 
-        tasksOfJob(job).filter(task ->
-                task.getStatus() == TaskStatus.RUNNING
-                    || task.getStatus() == TaskStatus.PREPARING
-                    || task.getStatus() == TaskStatus.ASSIGNING)
-            .forEach(task -> task.updateStatus(TaskStatus.TO_CANCEL));
         List<Task> directlyCanceledTasks = tasksOfJob(job)
-            .filter(task -> task.getStatus() == TaskStatus.CREATED
-                || task.getStatus() == TaskStatus.READY
-                || task.getStatus() == TaskStatus.PAUSED
-                || task.getStatus() == TaskStatus.UNKNOWN)
+            .filter(task -> task.getStatus() != TaskStatus.SUCCESS
+                && task.getStatus() != TaskStatus.FAIL
+                && task.getStatus() != TaskStatus.CREATED)
             .collect(Collectors.toList());
-        updateJobStatus(job, JobStatus.TO_CANCEL);
         batchPersistTaskStatus(directlyCanceledTasks,TaskStatus.CANCELED);
         updateWithoutPersistWatcher(directlyCanceledTasks, TaskStatus.CANCELED);
-    }
-
-    private void updateJobStatus(Job job, JobStatus jobStatus) {
-        job.setStatus(jobStatus);
-        jobMapper.updateJobStatus(List.of(job.getId()), jobStatus);
     }
 
     private Stream<Task> tasksOfJob(Job job) {
@@ -312,7 +299,6 @@ public class JobService {
      * transactional
      * jobStatus RUNNING->PAUSED; taskStatus CREATED->PAUSED
      */
-    @Transactional
     public void pauseJob(String jobUrl){
         Long jobId = jobManager.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
@@ -320,24 +306,27 @@ public class JobService {
             throw new SWValidationException(ValidSubject.JOB).tip("frozen job can't be paused ");
         }
         Job job = jobs.stream().findAny().get();
-        List<Task> readyToScheduleTasks = tasksOfJob(job)
-            .filter(task -> task.getStatus() == TaskStatus.READY ).collect(
-                Collectors.toList());
-        if(null == readyToScheduleTasks || readyToScheduleTasks.isEmpty()){
-            throw new SWValidationException(ValidSubject.JOB).tip("all tasks are assigned to agent, this job can't be paused now");
+        List<Task> notRunningTasks = tasksOfJob(job)
+            .filter(task -> task.getStatus() != TaskStatus.SUCCESS
+                && task.getStatus() != TaskStatus.FAIL
+                && task.getStatus() != TaskStatus.CREATED)
+            .collect(Collectors.toList());
+        if(null == notRunningTasks || notRunningTasks.isEmpty()){
+            return;
         }
-        updateJobStatus(job, JobStatus.PAUSED);
-        batchPersistTaskStatus(readyToScheduleTasks,TaskStatus.PAUSED);
-        updateWithoutPersistWatcher(readyToScheduleTasks, TaskStatus.PAUSED);
-        hotJobHolder.remove(jobId);
-        log.info("job removed from hotJobHolder because of paused");
+        batchPersistTaskStatus(notRunningTasks,TaskStatus.PAUSED);
+        updateWithoutPersistWatcher(notRunningTasks, TaskStatus.PAUSED);
 
     }
 
     private void updateWithoutPersistWatcher(List<Task> tasks, TaskStatus taskStatus) {
-        TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForPersist.class));
-        tasks.forEach(task -> task.updateStatus(taskStatus));
-        TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
+        CompletableFuture.runAsync(()->{
+            TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForPersist.class));
+            tasks.forEach(task -> {
+                task.updateStatus(taskStatus);
+            });
+            TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
+        });
     }
 
     /**
@@ -370,8 +359,10 @@ public class JobService {
         if(null == jobEntity ){
             throw new SWValidationException(ValidSubject.JOB).tip("job not exists");
         }
-        if(jobEntity.getJobStatus() != JobStatus.PAUSED || jobEntity.getJobStatus() != JobStatus.FAIL){
-            throw new SWValidationException(ValidSubject.JOB).tip("only failed and paused job can be resumed ");
+        if(jobEntity.getJobStatus() != JobStatus.PAUSED
+            && jobEntity.getJobStatus() != JobStatus.FAIL
+            && jobEntity.getJobStatus() != JobStatus.CANCELED){
+            throw new SWValidationException(ValidSubject.JOB).tip("only failed/paused/canceled job can be resumed ");
         }
         jobLoader.loadEntities(List.of(jobEntity),true,true);
     }

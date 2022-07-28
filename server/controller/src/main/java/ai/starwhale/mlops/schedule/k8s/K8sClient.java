@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import io.kubernetes.client.PodLogs;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
@@ -34,6 +35,7 @@ import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.Yaml;
@@ -61,6 +63,8 @@ public class K8sClient {
 
     private final SharedInformerFactory informerFactory;
 
+    private final PodLogs podLogs;
+
     private final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");
 
     static final String jobIdentityLabel = "job-name";
@@ -74,6 +78,7 @@ public class K8sClient {
         Configuration.setDefaultApiClient(client);
         coreV1Api = new CoreV1Api();
         batchV1Api = new BatchV1Api();
+        podLogs = new PodLogs();
         this.ns = ns;
         informerFactory = new SharedInformerFactory(client);
         watchJob(eventH);
@@ -91,7 +96,8 @@ public class K8sClient {
     }
 
     public void deleteJob(String id) throws ApiException {
-        batchV1Api.deleteNamespacedJobAsync(id,ns,null,null,1,false,null,null,null);
+        batchV1Api.deleteNamespacedJob(id,ns,null,null,1,false,null,null);
+//        batchV1Api.deleteNamespacedJobAsync(id,ns,null,null,1,false,null,null,null);
     }
 
     /**
@@ -123,6 +129,8 @@ public class K8sClient {
         if (!cmd.isEmpty()) {
             container.args(cmd);
         }
+        V1ResourceRequirements resources= new V1ResourceRequirements().limits(Map.of("cpu",new Quantity("1")));//todo: from request
+        container.resources(resources);
         if (!env.isEmpty()) {
             List<V1EnvVar> ee = new ArrayList<>();
             env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
@@ -169,20 +177,25 @@ public class K8sClient {
         }
 
         V1Pod pod = podList.getItems().get(0);
-        PodLogs logs = new PodLogs();
+
         StringBuilder  logBuilder = new StringBuilder();
-        appendLog(pod, logs, logBuilder,"data-provider");
-        appendLog(pod, logs, logBuilder,"untar");
-        appendLog(pod, logs, logBuilder,"worker");
-        appendLog(pod, logs, logBuilder,"result-uploader");
+        appendLog(pod, podLogs, logBuilder,"data-provider");
+        appendLog(pod, podLogs, logBuilder,"untar");
+        appendLog(pod, podLogs, logBuilder,"worker");
+        appendLog(pod, podLogs, logBuilder,"result-uploader");
         return logBuilder.toString();
     }
 
-    private void appendLog(V1Pod pod, PodLogs logs, StringBuilder logBuilder,String containerName)
-        throws IOException, ApiException {
-        try(InputStream is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), containerName);){
+    private void appendLog(V1Pod pod, PodLogs logs, StringBuilder logBuilder,String containerName) {
+        log.debug("collecting log for container {}",containerName);
+        try(InputStream is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), containerName)){
             logBuilder.append(Strings.fromUTF8ByteArray(is.readAllBytes()));
+        }catch (ApiException e){
+            log.warn("k8s api exception",e);
+        }catch (IOException e){
+            log.error("connection to k8s error",e);
         }
+        log.debug("log for container {} collected",containerName);
     }
 
     private String toV1LabelSelector(Map<String, String> labels){
