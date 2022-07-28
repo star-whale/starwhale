@@ -489,7 +489,7 @@ class StandaloneRuntimeTestCase(TestCase):
         del os.environ[ENV_VENV]
 
         os.unlink(lock_fname)
-        StandaloneRuntime.lock(target_dir, prefix_path=venv_dir)
+        StandaloneRuntime.lock(target_dir, env_prefix_path=venv_dir)
         assert m_call.call_args[0][0].startswith(
             " ".join(
                 [
@@ -522,7 +522,7 @@ class StandaloneRuntimeTestCase(TestCase):
 
         content = load_yaml(runtime_fname)
         assert RuntimeLockFileType.CONDA not in content.get("dependencies", [])
-        StandaloneRuntime.lock(target_dir, prefix_path=conda_dir)
+        StandaloneRuntime.lock(target_dir, env_prefix_path=conda_dir)
 
         assert m_call.call_args[0][0][:6] == [
             "conda",

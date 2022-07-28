@@ -31,6 +31,7 @@ from starwhale.utils.error import (
     NotFoundError,
     NoSupportError,
     ParameterError,
+    MissingFieldError,
     PythonEnvironmentError,
 )
 from starwhale.utils.process import check_call
@@ -575,17 +576,34 @@ def create_python_env(
         raise NoSupportError(mode)
 
 
-def get_user_python_version(py_env: str) -> str:
-    _py_bin = get_user_runtime_python_bin(py_env)
-    logger.info(f"{_py_bin}: python version")
+def get_python_version_by_bin(py_bin: str) -> str:
+    logger.info(f"{py_bin}: python version")
     output = subprocess.check_output(
         [
-            _py_bin,
+            py_bin,
             "-c",
             "import sys; _v=sys.version_info;print(f'{_v.major}.{_v.minor}.{_v.micro}')",
         ]
     )
     return output.decode().strip()
+
+
+def get_conda_pybin(prefix: t.Union[str, Path] = "", name: str = "") -> str:
+    if prefix:
+        return str(Path(prefix) / "bin" / "python3")
+
+    if name:
+        output = subprocess.check_output(
+            [get_conda_bin(), "run", "-n", name, "which", "python3"]
+        )
+        return output.decode().strip()
+
+    raise MissingFieldError("set prefix or name parameter")
+
+
+def get_user_python_version(py_env: str) -> str:
+    _py_bin = get_user_runtime_python_bin(py_env)
+    return get_python_version_by_bin(_py_bin)
 
 
 def get_user_runtime_python_bin(py_env: str) -> str:
@@ -838,20 +856,6 @@ def _do_restore_venv(
             f.extractall(str(venv_dir))
 
 
-def validate_runtime_package_dep(py_env: str) -> None:
-    py_bin = get_user_runtime_python_bin(py_env)
-    logger.info(f"{py_bin}: check {SW_PYPI_PKG_NAME} install")
-    _existed = check_user_python_pkg_exists(py_bin, SW_PYPI_PKG_NAME)
-    if not _existed:
-        console.print(
-            f":confused_face: Please install {SW_PYPI_PKG_NAME} in {py_env}, cmd:"
-        )
-        console.print(
-            f"\t :cookie: python3 -m pip install --pre {SW_PYPI_PKG_NAME} :cookie:"
-        )
-        raise NotFoundError(SW_PYPI_PKG_NAME)
-
-
 def check_user_python_pkg_exists(py_bin: str, pkg_name: str) -> bool:
     cmd = [
         py_bin,
@@ -864,30 +868,6 @@ def check_user_python_pkg_exists(py_bin: str, pkg_name: str) -> bool:
         return False
     else:
         return True
-
-
-def validate_python_environment(mode: str, py_version: str, identity: str = "") -> None:
-    # TODO: add os platform check
-    current_py_env = get_python_run_env(mode)
-    current_py_version = get_user_python_version(current_py_env)
-
-    if py_version and not current_py_version.startswith(py_version):
-        raise EnvironmentError(
-            f"expected python({py_version}) is not equal to detected python({current_py_version})"
-        )
-
-    if current_py_env != mode:
-        raise EnvironmentError(
-            f"expected mode({mode}), detected mode({current_py_env})"
-        )
-
-    # TODO: add venv identity check
-    if mode == PythonRunEnv.CONDA and not identity:
-        conda_name = os.environ.get(ENV_CONDA, "")
-        if conda_name != identity:
-            raise EnvironmentError(
-                f"expected conda name({identity}), detected current conda name({conda_name})"
-            )
 
 
 def trunc_python_version(python_version: str) -> str:

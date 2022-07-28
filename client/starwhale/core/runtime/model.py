@@ -56,6 +56,7 @@ from starwhale.utils.venv import (
     is_conda,
     conda_export,
     get_base_prefix,
+    get_conda_pybin,
     venv_install_req,
     conda_install_req,
     create_python_env,
@@ -69,9 +70,8 @@ from starwhale.utils.venv import (
     check_valid_venv_prefix,
     get_user_python_version,
     check_valid_conda_prefix,
+    get_python_version_by_bin,
     render_python_env_activate,
-    validate_python_environment,
-    validate_runtime_package_dep,
 )
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import (
@@ -80,6 +80,7 @@ from starwhale.utils.error import (
     NotFoundError,
     NoSupportError,
     ConfigFormatError,
+    MissingFieldError,
     UnExpectedConfigFieldError,
 )
 from starwhale.utils.progress import run_with_progress_bar
@@ -367,7 +368,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         target_dir: t.Union[str, Path],
         yaml_name: str = DefaultYAMLName.RUNTIME,
         env_name: str = "",
-        prefix_path: str = "",
+        env_prefix_path: str = "",
         disable_auto_inject: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
@@ -377,7 +378,7 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             target_dir,
             yaml_name,
             env_name,
-            prefix_path,
+            env_prefix_path,
             disable_auto_inject,
             stdout,
             include_editable,
@@ -472,7 +473,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 target_dir=workdir,
                 yaml_name=yaml_name,
                 env_name=env_name,
-                prefix_path=env_prefix_path,
+                env_prefix_path=env_prefix_path,
                 disable_auto_inject=False,
                 stdout=False,
                 include_editable=include_editable,
@@ -655,14 +656,6 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             }
         )
 
-        # TODO: add more validators for env_prefix_path and env_name
-        if not env_prefix_path and not env_name:
-            logger.info("validate the current shell environment...")
-            validate_python_environment(
-                swrt_config.mode, swrt_config.environment.python, swrt_config.name
-            )
-            validate_runtime_package_dep(swrt_config.mode)
-
     def _dump_dependencies(
         self,
         mode: str = PythonRunEnv.AUTO,
@@ -791,7 +784,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         target_dir: t.Union[str, Path],
         yaml_name: str = DefaultYAMLName.RUNTIME,
         env_name: str = "",
-        prefix_path: str = "",
+        env_prefix_path: str = "",
         disable_auto_inject: bool = False,
         stdout: bool = False,
         include_editable: bool = False,
@@ -800,21 +793,32 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         runtime_fpath = Path(target_dir) / yaml_name
         if not runtime_fpath.exists():
             raise NotFoundError(runtime_fpath)
-
-        mode = load_yaml(runtime_fpath).get("mode", PythonRunEnv.VENV)
+        runtime_yaml = load_yaml(runtime_fpath)
+        mode = runtime_yaml.get("mode", PythonRunEnv.VENV)
+        expected_pyver = str(runtime_yaml.get("environment", {}).get("python", ""))
         console.print(f":butterfly: lock dependencies at mode {mode}")
 
         _, temp_lock_path = tempfile.mkstemp(prefix="starwhale-lock-")
         if mode == PythonRunEnv.CONDA:
-            if not env_name and not prefix_path:
-                prefix_path = get_base_prefix(PythonRunEnv.CONDA)
+            if not env_name and not env_prefix_path:
+                env_prefix_path = get_base_prefix(PythonRunEnv.CONDA)
 
-            if prefix_path and not check_valid_conda_prefix(prefix_path):
-                raise FormatError(f"conda prefix: {prefix_path}")
+            if env_prefix_path and not check_valid_conda_prefix(env_prefix_path):
+                raise FormatError(f"conda prefix: {env_prefix_path}")
 
-            _kw = {"prefix": prefix_path, "name": env_name}
+            if not env_prefix_path and not env_name:
+                raise MissingFieldError("conda lock need name or prefix_path")
+
+            _kw = {"prefix": env_prefix_path, "name": env_name}
+            _pybin = get_conda_pybin(**_kw)
+            _detected_pyver = get_python_version_by_bin(_pybin)
+            if expected_pyver and not _detected_pyver.startswith(expected_pyver):
+                raise EnvironmentError(
+                    f"conda: expected python({expected_pyver}) is not equal to detected python({_detected_pyver})"
+                )
+
             console.print(
-                f":cat_face: use conda env name({env_name})/prefix({prefix_path}) to export environment..."
+                f":cat_face: use conda env name({env_name})/prefix({env_prefix_path}) to export environment..."
             )
             conda_export(temp_lock_path, **_kw)
         else:
@@ -823,14 +827,20 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     f"lock environment by the env name({env_name}) in venv mode"
                 )
 
-            prefix_path = prefix_path or get_base_prefix(PythonRunEnv.VENV)
+            prefix_path = env_prefix_path or get_base_prefix(PythonRunEnv.VENV)
             if not check_valid_venv_prefix(prefix_path):
                 raise FormatError(f"venv prefix: {prefix_path}")
 
-            _py_bin = os.path.join(prefix_path, "bin", "python3")
-            console.print(f":cat_face: use {_py_bin} to freeze requirements...")
+            _pybin = os.path.join(prefix_path, "bin", "python3")
+            _detected_pyver = get_python_version_by_bin(_pybin)
+            if expected_pyver and not _detected_pyver.startswith(expected_pyver):
+                raise EnvironmentError(
+                    f"venv: expected python({expected_pyver}) is not equal to detected python({_detected_pyver})"
+                )
+
+            console.print(f":cat_face: use {_pybin} to freeze requirements...")
             pip_freeze_by_pybin(
-                _py_bin, temp_lock_path, include_editable, emit_pip_options
+                _pybin, temp_lock_path, include_editable, emit_pip_options
             )
 
         if stdout:
