@@ -59,8 +59,9 @@ class UserRoleType:
 
 
 class SupportArch:
-    X86_64 = "x86_64"
-    AARCH64 = "aarch64"
+    AMD64 = "amd64"
+    ARM64 = "arm64"
+    NOARCH = "noarch"
 
 
 class SupportOS:

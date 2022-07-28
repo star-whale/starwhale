@@ -10,6 +10,7 @@ from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
     ENV_VENV,
+    SupportArch,
     PythonRunEnv,
     DefaultYAMLName,
     ENV_CONDA_PREFIX,
@@ -20,6 +21,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType, RuntimeLockFileType
 from starwhale.utils.venv import EnvTarType
+from starwhale.utils.error import UnExpectedConfigFieldError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.runtime.view import RuntimeTermView
 from starwhale.core.runtime.model import Runtime, StandaloneRuntime
@@ -332,7 +334,11 @@ class StandaloneRuntimeTestCase(TestCase):
             os.path.join(workdir, DEFAULT_MANIFEST_NAME),
             contents=yaml.safe_dump(
                 {
-                    "environment": {"mode": "venv", "python": "3.7"},
+                    "environment": {
+                        "mode": "venv",
+                        "python": "3.7",
+                        "arch": [SupportArch.AMD64],
+                    },
                     "dependencies": {
                         "local_packaged_env": False,
                         "pip_files": [
@@ -366,9 +372,12 @@ class StandaloneRuntimeTestCase(TestCase):
 
         RuntimeTermView.restore(workdir)
 
+    @patch("starwhale.core.runtime.model.platform.machine")
     @patch("starwhale.utils.venv.tarfile.open")
     @patch("starwhale.utils.venv.check_call")
-    def test_restore_conda(self, m_call: MagicMock, m_tar: MagicMock):
+    def test_restore_conda(
+        self, m_call: MagicMock, m_tar: MagicMock, m_machine: MagicMock
+    ):
         workdir = "/home/starwhale/myproject"
         export_dir = os.path.join(workdir, "export")
         ensure_dir(workdir)
@@ -380,6 +389,7 @@ class StandaloneRuntimeTestCase(TestCase):
                     "environment": {
                         "python": "3.7",
                         "mode": "conda",
+                        "arch": [SupportArch.ARM64],
                     },
                     "dependencies": {
                         "local_packaged_env": False,
@@ -389,6 +399,10 @@ class StandaloneRuntimeTestCase(TestCase):
         )
         ensure_dir(export_dir)
 
+        with self.assertRaises(UnExpectedConfigFieldError):
+            Runtime.restore(Path(workdir))
+
+        m_machine.return_value = "arm64"
         Runtime.restore(Path(workdir))
 
         assert m_call.call_args_list[0][0][0] == [
