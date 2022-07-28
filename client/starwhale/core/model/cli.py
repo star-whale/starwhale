@@ -156,6 +156,6 @@ def _eval(
         desc=desc,
         use_docker=False,
         gencmd=False,
-        phase=EvalTaskType.ALL,
+        typ=EvalTaskType.ALL,
         runtime_restore=runtime_restore,
     )

@@ -40,18 +40,20 @@ class EvaluationJob(metaclass=ABCMeta):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
+        version: str = "",
         name: str = "",
         desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         _cls = cls._get_job_cls(project_uri)
         return _cls.create(
-            project_uri,
-            model_uri,
-            dataset_uris,
-            runtime_uri,
-            name,
-            desc,
+            project_uri=project_uri,
+            model_uri=model_uri,
+            dataset_uris=dataset_uris,
+            runtime_uri=runtime_uri,
+            version=version,
+            name=name,
+            desc=desc,
             **kw,
         )
 
@@ -127,18 +129,23 @@ class StandaloneEvaluationJob(EvaluationJob):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
+        version: str = "",
         name: str = "",
         desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         use_docker = kw.get("use_docker", False)
         phase = kw.get("phase", EvalTaskType.ALL)
+        typ = kw.get("typ", EvalTaskType.ALL)
+        step = kw.get("step", "")
+        task_index = kw.get("task_index", 0)
 
         ee = EvalExecutor(
             model_uri=model_uri,
             dataset_uris=dataset_uris,
             project_uri=project_uri,
             runtime_uri=runtime_uri,
+            version=version,
             name=name,
             desc=desc,
             gencmd=kw.get("gencmd", False),
@@ -152,7 +159,7 @@ class StandaloneEvaluationJob(EvaluationJob):
                 runtime_restore=kw.get("runtime_restore", False),
             ).run()
         else:
-            ee.run(phase)
+            ee.run(typ, step, task_index)
 
         return True, ee._version
 
