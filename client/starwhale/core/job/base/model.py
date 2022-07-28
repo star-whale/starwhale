@@ -4,7 +4,6 @@ import yaml
 from loguru import logger
 
 from starwhale.core.job.base.loader import load_module
-from starwhale.utils.fs import ensure_file
 
 
 class Step:
@@ -108,7 +107,9 @@ class Parser:
         logger.debug("generate DAG")
         if Parser.check(_jobs):
             # dump to target
-            ensure_file(target_file, yaml.safe_dump(_jobs, default_flow_style=False))
+            # ensure_file(target_file, yaml.safe_dump(_jobs, default_flow_style=False))
+            with open(target_file, "w") as file:
+                yaml.dump(_jobs, file)
             logger.debug("generator DAG success!")
         else:
             logger.error("generator DAG error! reason:{}", "check is failed.")
