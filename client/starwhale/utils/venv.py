@@ -304,7 +304,7 @@ def check_python_interpreter_consistency(mode: str) -> t.Tuple[bool, str, str]:
     )
     _ok = ep_base_prefix == sys.base_prefix
     if not _ok:
-        cur_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+        cur_version = get_python_version()
         user_version = get_user_python_version(mode)
         if not user_version.startswith(cur_version):
             logger.error(
@@ -561,7 +561,7 @@ def create_python_env(
 ) -> str:
 
     if mode == PythonRunEnv.VENV:
-        venvdir = workdir / "venv"
+        venvdir = workdir / ".venv"
         if venvdir.exists() and not force:
             raise ExistedError(str(venvdir))
 
@@ -574,6 +574,10 @@ def create_python_env(
         return name
     else:
         raise NoSupportError(mode)
+
+
+def get_python_version() -> str:
+    return f"{sys.version_info.major}.{sys.version_info.minor}"
 
 
 def get_python_version_by_bin(py_bin: str) -> str:

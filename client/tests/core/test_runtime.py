@@ -20,11 +20,11 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType, RuntimeLockFileType
-from starwhale.utils.venv import EnvTarType
+from starwhale.utils.venv import EnvTarType, get_python_version
 from starwhale.utils.error import UnExpectedConfigFieldError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.runtime.view import RuntimeTermView
-from starwhale.core.runtime.model import Runtime, StandaloneRuntime
+from starwhale.core.runtime.model import Runtime, RuntimeConfig, StandaloneRuntime
 
 
 class StandaloneRuntimeTestCase(TestCase):
@@ -34,17 +34,19 @@ class StandaloneRuntimeTestCase(TestCase):
 
     @patch("starwhale.utils.venv.check_call")
     @patch("starwhale.utils.venv.virtualenv.cli_run")
-    def test_create_venv(self, m_venv: MagicMock, m_call: MagicMock) -> None:
+    def test_quickstart_from_ishell_venv(
+        self, m_venv: MagicMock, m_call: MagicMock
+    ) -> None:
         workdir = "/home/starwhale/myproject"
-        venv_dir = os.path.join(workdir, "venv")
+        venv_dir = os.path.join(workdir, ".venv")
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         name = "test-venv"
 
-        StandaloneRuntime.create(
+        StandaloneRuntime.quickstart_from_ishell(
             workdir=workdir,
             name=name,
-            python_version="3.9",
             mode=PythonRunEnv.VENV,
+            create_env=True,
         )
 
         assert os.path.exists(os.path.join(workdir, runtime_path))
@@ -54,7 +56,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "--prompt",
             name,
             "--python",
-            "3.9",
+            get_python_version(),
         ]
 
         assert " ".join(m_call.call_args[0][0]).startswith(
@@ -70,38 +72,41 @@ class StandaloneRuntimeTestCase(TestCase):
 
         assert _rt_config["name"] == name
         assert _rt_config["mode"] == "venv"
-        assert _rt_config["environment"]["python"] == "3.9"
+        assert _rt_config["environment"]["python"] == get_python_version()
         assert "_starwhale_version" not in _rt_config
         assert "base_image" not in _rt_config
 
         empty_dir(workdir)
         assert not os.path.exists(os.path.join(workdir, runtime_path))
 
-        StandaloneRuntime.create(
+        m_venv.reset_mock()
+
+        StandaloneRuntime.quickstart_from_ishell(
             workdir=workdir,
             name=name,
+            mode=PythonRunEnv.VENV,
+            create_env=False,
         )
-        assert m_venv.call_args[0][0] == [
-            venv_dir,
-            "--prompt",
-            name,
-            "--python",
-            "3.8",
-        ]
-        _rt_config = load_yaml(runtime_path)
-        assert _rt_config["environment"]["python"] == "3.8"
+        assert m_venv.call_count == 0
+
+        _rt_config = RuntimeConfig.create_by_yaml(Path(workdir) / runtime_path)
+        assert _rt_config.name == name
+        assert _rt_config.mode == PythonRunEnv.VENV
+        assert _rt_config.environment.arch == [SupportArch.NOARCH]
+        assert _rt_config.dependencies.pip_pkgs[0] == "starwhale"
+        assert _rt_config.dependencies.pip_files[0] == RuntimeLockFileType.VENV
 
     @patch("starwhale.utils.venv.check_call")
-    def test_create_conda(self, m_call: MagicMock) -> None:
+    def test_quickstart_from_ishell_conda(self, m_call: MagicMock) -> None:
         workdir = "/home/starwhale/myproject"
         runtime_path = os.path.join(workdir, DefaultYAMLName.RUNTIME)
         name = "test-conda"
 
-        StandaloneRuntime.create(
+        StandaloneRuntime.quickstart_from_ishell(
             workdir=workdir,
             name=name,
-            python_version="3.7",
             mode=PythonRunEnv.CONDA,
+            create_env=True,
         )
         assert os.path.exists(os.path.join(workdir, runtime_path))
         _rt_config = load_yaml(runtime_path)
@@ -112,7 +117,7 @@ class StandaloneRuntimeTestCase(TestCase):
             "--yes",
             "--name",
             name,
-            "python=3.7",
+            f"python={get_python_version()}",
         ]
         assert " ".join(m_call.call_args_list[1][0][0]).startswith(
             " ".join(
