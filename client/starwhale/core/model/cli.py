@@ -146,5 +146,5 @@ def _eval(model: str, dataset: t.List[str], name: str, desc: str, project: str) 
         desc=desc,
         use_docker=False,
         gencmd=False,
-        phase=EvalTaskType.ALL,
+        typ=EvalTaskType.ALL,
     )

@@ -186,37 +186,47 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         Parser.generate_job_yaml(ppl, self.store.snapshot_workdir / "src", _f)
 
     @classmethod
-    def eval_user_handler(
+    def get_pipeline_handler(
         cls,
         typ: str,
         workdir: Path,
         yaml_name: str = DefaultYAMLName.MODEL,
-        job_name: str = "default",
-        kw: t.Dict[str, t.Any] = {},
-    ) -> None:
-        from starwhale.api._impl.model import _RunConfig
-
+    ) -> str:
         _mp = workdir / yaml_name
         _model_config = cls._load_model_config(_mp)
-        _module = _model_config.run.ppl
+        return _model_config.run.ppl
 
-        _RunConfig.set_env(kw)
-
-        logger.debug("run job from yaml")
-        _jobs = Parser.parse_job_from_yaml(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
-        # steps of job
-        _steps = _jobs[job_name]
-
-        scheduler = Scheduler(_module, workdir, _steps)
-        # todo 20220725 replace with job scheduler
-        if typ == EvalTaskType.ALL:
-            scheduler.schedule()
-        elif typ == EvalTaskType.SINGLE_TASK:
-            # todo by param
-            scheduler.schedule_single_task("", 0)
-        # save job info
-        console.print(f"job info:{_jobs}")
-        console.print(":clap: finish run")
+    # @classmethod
+    # def eval_user_handler(
+    #     cls,
+    #     typ: str,
+    #     workdir: Path,
+    #     yaml_name: str = DefaultYAMLName.MODEL,
+    #     job_name: str = "default",
+    #     kw: t.Dict[str, t.Any] = {},
+    # ) -> None:
+    #     from starwhale.api._impl.model import _RunConfig
+    #
+    #     _mp = workdir / yaml_name
+    #     _model_config = cls._load_model_config(_mp)
+    #     _module = _model_config.run.ppl
+    #
+    #     _RunConfig.set_env(kw)
+    #
+    #     logger.debug("run job from yaml")
+    #     _jobs = Parser.parse_job_from_yaml(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
+    #     # steps of job
+    #     _steps = _jobs[job_name]
+    #
+    #     scheduler = Scheduler(_module, workdir, _steps)
+    #     if typ == EvalTaskType.ALL:
+    #         scheduler.schedule()
+    #     elif typ == EvalTaskType.SINGLE_TASK:
+    #         # todo by param
+    #         scheduler.schedule_single_task("", 0)
+    #     # save job info
+    #     console.print(f"job info:{_jobs}")
+    #     console.print(":clap: finish run")
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()

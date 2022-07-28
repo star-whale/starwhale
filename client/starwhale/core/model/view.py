@@ -47,31 +47,31 @@ class ModelTermView(BaseTermView):
         path = self.model.extract(force, target_dir)
         console.print(f":clap: extracted @ {path.resolve()} :tada:")
 
-    @classmethod
-    def eval(
-        cls,
-        target: str,
-        yaml_name: str = DefaultYAMLName.MODEL,
-        typ: str = "",
-        kw: t.Dict[str, t.Any] = {},
-    ) -> None:
-        if in_production() or (os.path.exists(target) and os.path.isdir(target)):
-            workdir = Path(target)
-        else:
-            uri = URI(target, URIType.MODEL)
-            store = ModelStorage(uri)
-            workdir = store.loc
-
-        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE_TASK):
-            console.print(f":golfer: try to eval {typ} @ {workdir}...")
-            StandaloneModel.eval_user_handler(
-                typ,
-                workdir,
-                yaml_name=yaml_name,
-                kw=kw,
-            )
-        else:
-            pass
+    # @classmethod
+    # def eval(
+    #     cls,
+    #     target: str,
+    #     yaml_name: str = DefaultYAMLName.MODEL,
+    #     typ: str = "",
+    #     kw: t.Dict[str, t.Any] = {},
+    # ) -> None:
+    #     if in_production() or (os.path.exists(target) and os.path.isdir(target)):
+    #         workdir = Path(target)
+    #     else:
+    #         uri = URI(target, URIType.MODEL)
+    #         store = ModelStorage(uri)
+    #         workdir = store.loc
+    #
+    #     if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE_TASK):
+    #         console.print(f":golfer: try to eval {typ} @ {workdir}...")
+    #         StandaloneModel.eval_user_handler(
+    #             typ,
+    #             workdir,
+    #             yaml_name=yaml_name,
+    #             kw=kw,
+    #         )
+    #     else:
+    #         pass
 
     @classmethod
     def list(

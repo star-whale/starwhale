@@ -39,18 +39,20 @@ class EvaluationJob(metaclass=ABCMeta):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
+        version: str = "",
         name: str = "",
         desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         _cls = cls._get_job_cls(project_uri)
         return _cls.create(
-            project_uri,
-            model_uri,
-            dataset_uris,
-            runtime_uri,
-            name,
-            desc,
+            project_uri=project_uri,
+            model_uri=model_uri,
+            dataset_uris=dataset_uris,
+            runtime_uri=runtime_uri,
+            version=version,
+            name=name,
+            desc=desc,
             **kw,
         )
 
@@ -126,6 +128,7 @@ class StandaloneEvaluationJob(EvaluationJob):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
+        version: str = "",
         name: str = "",
         desc: str = "",
         **kw: t.Any,
@@ -136,11 +139,12 @@ class StandaloneEvaluationJob(EvaluationJob):
             dataset_uris=dataset_uris,
             project_uri=project_uri,
             runtime_uri=runtime_uri,
+            version=version,
             name=name,
             desc=desc,
             gencmd=kw.get("gencmd", False),
             use_docker=kw.get("use_docker", False),
-        ).run(kw.get("phase", EvalTaskType.ALL))
+        ).run(kw.get("typ", EvalTaskType.ALL), kw.get("step", ""), kw.get("task_index", 0))
         return True, _version
 
     def _get_report(self) -> t.Dict[str, t.Any]:

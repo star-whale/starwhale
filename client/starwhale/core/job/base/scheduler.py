@@ -53,8 +53,8 @@ class Scheduler:
 
     def schedule_single_task(self, step_name: str, task_index: int):
         _step = self.steps[step_name]
-        _task = _step.tasks[task_index].execute()
-        _executor = Executor(1, _task, SingleTaskCallback(self, _task))
+        _task = _step.tasks[task_index]
+        _executor = Executor(1, [_task], SingleTaskCallback(self, _task))
         _executor.start()
         _executor.join()
 

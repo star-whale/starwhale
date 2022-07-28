@@ -233,12 +233,15 @@ class JobTermView(BaseTermView):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
-        name: str = "default",
+        version: str = "",
+        name: str = "",
         desc: str = "",
         resource: str = "",
         gencmd: bool = False,
         use_docker: bool = False,
-        phase: str = EvalTaskType.ALL,
+        typ: str = EvalTaskType.ALL,
+        step: str = "",
+        task_index: int = 0,
     ) -> None:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
         ok, reason = EvaluationJob.create(
@@ -246,12 +249,15 @@ class JobTermView(BaseTermView):
             model_uri,
             dataset_uris,
             runtime_uri,
+            version=version,
             name=name,
             desc=desc,
-            phase=phase,
+            typ=typ,
             resource=resource,
             gencmd=gencmd,
             use_docker=use_docker,
+            step=step,
+            task_index=task_index,
         )
 
         # TODO: show report in standalone mode directly

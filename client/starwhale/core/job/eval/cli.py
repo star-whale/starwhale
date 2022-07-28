@@ -37,8 +37,9 @@ def _list(
     )
 
 
-@eval_job_cmd.command("create", help="Create job")
+@eval_job_cmd.command("run", help="Run job")
 @click.argument("project", default="")
+@click.option("--version", default=None, help="Evaluation job version")
 @click.option("--model", required=True, help="model uri or model.yaml dir path")
 @click.option(
     "--dataset",
@@ -62,13 +63,16 @@ def _list(
 )
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
 @click.option(
-    "--phase",
-    type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE_TASK]),
+    "--type",
+    # type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE_TASK]),
     default=EvalTaskType.ALL,
-    help="[ONLY Standalone]evaluation run phase",
+    help="Evaluation run type",
 )
+@click.option("--step", default="", help="Evaluation run step")
+@click.option("--task-index", default=0, help="Index of tasks in the current step")
 def _create(
     project: str,
+    version:str,
     model: str,
     dataset: t.List[str],
     runtime: str,
@@ -77,10 +81,13 @@ def _create(
     resource: str,
     use_docker: bool,
     gencmd: bool,
-    phase: str,
+    type: str,
+    step: str,
+    task_index: int,
 ) -> None:
     JobTermView.create(
         project_uri=project,
+        version=version,
         model_uri=model,
         dataset_uris=dataset,
         runtime_uri=runtime,
@@ -88,8 +95,10 @@ def _create(
         desc=desc,
         resource=resource,
         gencmd=gencmd,
-        phase=phase,
+        typ=type,
         use_docker=use_docker,
+        step=step,
+        task_index=task_index,
     )
 
 

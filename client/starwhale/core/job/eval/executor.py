@@ -6,6 +6,8 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
+from starwhale.core.job.base.model import Parser
+from starwhale.core.job.base.scheduler import Scheduler
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import (
     JSON_INDENT,
@@ -16,7 +18,7 @@ from starwhale.consts import (
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_INPUT_JSON_FNAME,
-    CNTR_DEFAULT_PIP_CACHE_DIR,
+    CNTR_DEFAULT_PIP_CACHE_DIR, DEFAULT_EVALUATION_JOBS_FNAME,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -42,12 +44,15 @@ class EvalExecutor:
         dataset_uris: t.List[str],
         runtime_uri: str,
         project_uri: URI,
+        version: str = "",
         name: str = "",
+        job_name: str = "default",
         desc: str = "",
         gencmd: bool = False,
         use_docker: bool = False,
     ) -> None:
         self.name = name
+        self.job_name = job_name
         self.desc = desc
         self.model_uri = model_uri
         self.project_uri = project_uri
@@ -71,7 +76,7 @@ class EvalExecutor:
         self.gencmd = gencmd
         self.use_docker = use_docker
 
-        self._version = ""
+        self._version = version
         self._manifest: t.Dict[str, t.Any] = {"status": _STATUS.START}
         self._workdir = Path()
         self._model_dir = Path()
@@ -94,9 +99,9 @@ class EvalExecutor:
     def __repr__(self) -> str:
         return f"Evaluation Executor: name -> {self.name}, version -> {self._version}"
 
-    def run(self, phase: str = EvalTaskType.ALL) -> str:
+    def run(self, typ: str = EvalTaskType.ALL, step: str = "", task_index: int = 0) -> str:
         try:
-            self._do_run(phase)
+            self._do_run(typ, step, task_index)
         except Exception as e:
             self._manifest["status"] = _STATUS.FAILED
             self._manifest["error_message"] = str(e)
@@ -106,22 +111,43 @@ class EvalExecutor:
 
         return self._version
 
-    def _do_run(self, phase: str = EvalTaskType.ALL) -> None:
-        self._manifest["phase"] = phase
+    def _do_run(self, typ: str, step: str, task_index: int) -> None:
+        self._manifest["type"] = typ
         self._manifest["status"] = _STATUS.RUNNING
+        if typ is not EvalTaskType.ALL:
+            if not step:
+                raise FieldTypeOrValueError("step is none")
+            self._manifest["step"] = step
+            self._manifest["task_index"] = task_index
 
         operations = [
             (self._gen_version, 5, "gen version"),
             (self._prepare_workdir, 5, "prepare workdir"),
             (self._extract_swmp, 15, "extract model"),
             (self._extract_swrt, 15, "extract runtime"),
-            (self._do_run_eval_job, 70, "run eval job")
+            (self._init_storage, 20, "init storage"),
+            (self._do_run_eval_job, 70, "run eval job"),
+            (self._finally, 95, "do finally")
         ]
 
         run_with_progress_bar("eval run in local...", operations)
 
+    def _init_storage(self):
+        # TODO: init storageAPI by job version 2022/07/28
+        pass
+
+    def _finally(self):
+        # TODO
+        pass
+
     def _do_run_eval_job(self):
-        self._do_run_cmd(EvalTaskType.ALL)
+        _type = self._manifest['type']
+        if _type is not EvalTaskType.ALL:
+            _step = self._manifest['step']
+            _task_index = self._manifest['task_index']
+            self._do_run_cmd(_type, _step, _task_index)
+        else:
+            self._do_run_cmd(_type, "", 0)
 
     def _gen_version(self) -> None:
         # TODO: abstract base class or mixin class for swmp/swds/
@@ -163,6 +189,7 @@ class EvalExecutor:
 
     def _extract_swmp(self) -> None:
         _workdir = Path(self.model_uri)
+        console.print("prepare swmp:", self.model_uri, _workdir)
         _model_yaml_path = _workdir / DefaultYAMLName.MODEL
 
         if _workdir.exists() and _model_yaml_path.exists() and not self.use_docker:
@@ -171,6 +198,7 @@ class EvalExecutor:
             model_uri = URI(self.model_uri, expected_type=URIType.MODEL)
             _m = StandaloneModel(model_uri)
             self._model_dir = _m.extract() / "src"
+        console.print("model dir:", self._model_dir)
 
     def _extract_swrt(self) -> None:
         if self.runtime and self.use_docker:
@@ -178,34 +206,53 @@ class EvalExecutor:
         else:
             self._runtime_dir = Path()
 
-    def _do_run_cmd(self, typ: str) -> None:
+    def _do_run_cmd(self, typ: str, step: str, task_index: int) -> None:
         if self.use_docker:
             # todo
             self._do_run_cmd_in_container(typ)
         else:
-            self._do_run_cmd_in_host(typ)
+            self._do_run_cmd_in_host(typ, step, task_index)
 
-    def _do_run_cmd_in_host(self, typ: str) -> None:
+    def _do_run_cmd_in_host(self, typ: str, step: str, task_index: int) -> None:
         from starwhale.core.model.model import StandaloneModel
 
-        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE_TASK):
+        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             _base_dir = self._job_workdir
         else:
             raise NoSupportError(typ)
 
-        StandaloneModel.eval_user_handler(
-            typ=typ,
-            workdir=self._model_dir,
-            job_name="default",
-            kw={
-                "status_dir": _base_dir / RunSubDirType.STATUS,
-                "log_dir": _base_dir / RunSubDirType.LOG,
-                "result_dir": _base_dir / RunSubDirType.RESULT,
-                "input_config": _base_dir
-                                / RunSubDirType.CONFIG
-                                / DEFAULT_INPUT_JSON_FNAME,
-            },
-        )
+        # StandaloneModel.eval_user_handler(
+        #     typ=typ,
+        #     workdir=self._model_dir,
+        #     job_name="default",
+        #     kw={
+        #         "status_dir": _base_dir / RunSubDirType.STATUS,
+        #         "log_dir": _base_dir / RunSubDirType.LOG,
+        #         "result_dir": _base_dir / RunSubDirType.RESULT,
+        #         "input_config": _base_dir
+        #                         / RunSubDirType.CONFIG
+        #                         / DEFAULT_INPUT_JSON_FNAME,
+        #     },
+        # )
+
+        _run_dir = self._model_dir
+
+        logger.debug("run job from yaml")
+        _jobs = Parser.parse_job_from_yaml(_run_dir / DEFAULT_EVALUATION_JOBS_FNAME)
+        # steps of job
+        _steps = _jobs[self.job_name]
+        _module = StandaloneModel.get_pipeline_handler(typ, workdir=_run_dir)
+
+        _scheduler = Scheduler(_module, _run_dir, _steps)
+        # todo 20220725 replace with job scheduler
+        if typ == EvalTaskType.ALL:
+            _scheduler.schedule()
+        elif typ == EvalTaskType.SINGLE:
+            # by param
+            _scheduler.schedule_single_task(step, task_index)
+        # todo save job info
+        console.print(f"job info:{_jobs}")
+        console.print(":clap: finish run")
 
     def _do_run_cmd_in_container(self, typ: str) -> None:
         cmd = self._gen_run_container_cmd(typ)
@@ -220,7 +267,7 @@ class EvalExecutor:
 
     # todo
     def _gen_run_container_cmd(self, typ: str) -> str:
-        if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE_TASK):
+        if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             raise Exception(f"no support {typ} to gen docker cmd")
 
         rundir = self._workdir / typ
@@ -253,7 +300,7 @@ class EvalExecutor:
                 "-v",
                 f"{self.project_dir / URIType.DATASET}:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
             ]
-        elif typ == EvalTaskType.SINGLE_TASK:
+        elif typ == EvalTaskType.SINGLE:
             cmd += [
                 "-v",
                 f"{self.project_dir / RunSubDirType.RESULT}:{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
