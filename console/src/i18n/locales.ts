@@ -129,8 +129,14 @@ const locales0 = {
     'Add User Success': {
         en: 'Add User Success',
     },
-    'Random Password Tips': {
+    'Update User Success': {
+        en: 'Update User Success',
+    },
+    'Random Password Tips For Add': {
         en: 'The user has been added successfully. You can copy the random password below and send it to the user',
+    },
+    'Random Password Tips For Update': {
+        en: 'The user password has been updated successfully. You can copy the random password below and send it to the user',
     },
     'Copy To Clipboard': {
         en: 'copy',
@@ -267,6 +273,12 @@ const locales0 = {
     'Current Password': {
         en: 'Current Password',
     },
+    'Your Password': {
+        en: 'Your Password',
+    },
+    'Validate Password': {
+        en: 'validate',
+    },
     'Confirm New Password': {
         en: 'Confirm New Password',
     },
@@ -282,8 +294,8 @@ const locales0 = {
     'Change Password': {
         en: 'Change Password',
     },
-    'password not equal': {
-        en: 'password not equal',
+    'Password Not Equal': {
+        en: 'The passwords you entered do not match',
     },
     'no data': {
         en: 'no data',

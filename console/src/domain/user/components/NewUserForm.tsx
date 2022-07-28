@@ -5,6 +5,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
 import { INewUserSchema } from '@user/schemas/user'
 import { RadioGroup, Radio } from 'baseui/radio'
+import { shouldBeEqual } from '@/components/Form/validators'
 
 export interface INewUserFormProps {
     onSubmit: (data: INewUserSchema) => Promise<void>
@@ -23,14 +24,6 @@ export default function NewUserForm({ onSubmit }: INewUserFormProps) {
     const [form] = useForm()
     const [useRandom, setUseRandom] = useState(false)
     const [useRandomRadioVal, setUseRandomRadioVal] = useState('no')
-
-    // check if the two passwords are the same
-    const validatePassword = (rule: any, value: any) => {
-        if (form.getFieldValue('userPwd') !== value) {
-            return Promise.reject(t('password not equal'))
-        }
-        return Promise.resolve()
-    }
 
     return (
         <Form form={form} onFinish={onSubmit}>
@@ -56,7 +49,7 @@ export default function NewUserForm({ onSubmit }: INewUserFormProps) {
                     <FormItem
                         label={t('Confirm New Password')}
                         name='confirmPassword'
-                        validators={[validatePassword]}
+                        validators={[shouldBeEqual(() => form.getFieldValue('userPwd'), t('Password Not Equal'))]}
                         required
                     >
                         <Input type='password' size='compact' />

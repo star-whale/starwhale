@@ -11,18 +11,25 @@ import { useFetchUsers } from '@user/hooks/useUser'
 import { QueryInput } from '@/components/data-table/stateful-data-table'
 import { useStyletron } from 'baseui'
 import { IUserSchema } from '@user/schemas/user'
-import { changeUserState, createUser } from '@user/services/user'
+import { changeUserState, createUser, changeUserPasswd } from '@user/services/user'
 import { toaster } from 'baseui/toast'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import NewUserForm from '@user/components/NewUserForm'
 import generatePassword from '@/utils/passwordGenerator'
 import Input from '@/components/Input'
 import CopyToClipboard from 'react-copy-to-clipboard'
+import PasswordForm from '@user/components/PasswordForm'
 
 interface IActionProps {
     title: string
     marginRight?: boolean
     onClick: () => Promise<void>
+}
+
+interface IPasswordResultProps {
+    title: string
+    longTips: string
+    password: string
 }
 
 const ActionButton: React.FC<IActionProps> = ({ title, marginRight = false, onClick }: IActionProps) => {
@@ -46,16 +53,50 @@ export default function UserManagement() {
     const [data, updateData] = useState<IUserSchema[]>([])
     const [filter, updateFilter] = useState('')
     const [showAddUser, setShowAddUser] = useState(false)
-    const [password, setPassword] = useState('')
+    const [passwordResult, setPasswordResult] = useState<IPasswordResultProps | undefined>()
+    const [currentUser, setCurrentUser] = useState<IUserSchema | undefined>(undefined)
 
     useEffect(() => {
         const items = users.data?.list ?? []
         updateData(items.filter((i) => (filter && i.name.includes(filter)) || filter === ''))
     }, [filter, users.data])
 
-    const changUserState = async (userId: string, enable: boolean): Promise<void> => {
+    const changUserState = async (userId: string, enable: boolean) => {
         await changeUserState(userId, enable)
         toaster.positive(enable ? t('Enable User Success') : t('Disable User Success'), { autoHideDuration: 1000 })
+        await users.refetch()
+        return Promise.resolve()
+    }
+
+    const submitPasswd = async (create: boolean, userName: string, userPwd: string, originPwd: string) => {
+        let pass = userPwd
+        const useRandom = !pass
+        if (useRandom) {
+            // we generate password for the user
+            pass = generatePassword()
+        }
+        if (create) {
+            await createUser(userName, pass)
+            setShowAddUser(false)
+        } else {
+            await changeUserPasswd(userName, originPwd, pass)
+            setCurrentUser(undefined)
+        }
+
+        if (useRandom) {
+            // show generated password after a while
+            await setTimeout(() => {
+                setPasswordResult({
+                    title: create ? t('Add User Success') : t('Update User Success'),
+                    longTips: create ? t('Random Password Tips For Add') : t('Random Password Tips For Update'),
+                    password: pass,
+                })
+            }, 500)
+        } else {
+            const tip = create ? t('Add User Success') : t('Update User Success')
+            toaster.positive(tip, { autoHideDuration: 1000 })
+        }
+
         await users.refetch()
         return Promise.resolve()
     }
@@ -95,7 +136,12 @@ export default function UserManagement() {
                                 onClick={() => changUserState(user.id, !user.isEnabled)}
                             />
                             &nbsp; {/* make segmenter works well when double click */}
-                            <ActionButton title={t('Change Password')} onClick={async (): Promise<void> => {}} />
+                            <ActionButton
+                                title={t('Change Password')}
+                                onClick={async () => {
+                                    setCurrentUser(user)
+                                }}
+                            />
                         </div>,
                     ]) ?? []
                 }
@@ -105,38 +151,19 @@ export default function UserManagement() {
                 <ModalBody>
                     <NewUserForm
                         onSubmit={async ({ userName, userPwd }) => {
-                            let pass = userPwd
-                            const useRandom = !pass
-                            if (useRandom) {
-                                // we generate password for the user
-                                pass = generatePassword()
-                            }
-                            await createUser(userName, pass)
-                            setShowAddUser(false)
-
-                            if (useRandom) {
-                                // show generated password after a while
-                                await setTimeout(() => {
-                                    setPassword(pass)
-                                }, 500)
-                            } else {
-                                toaster.positive(t('Add User Success'), { autoHideDuration: 1000 })
-                            }
-
-                            await users.refetch()
-                            return Promise.resolve()
+                            await submitPasswd(true, userName, userPwd, '')
                         }}
                     />
                 </ModalBody>
             </Modal>
-            <Modal animate closeable onClose={() => setPassword('')} isOpen={!!password}>
-                <ModalHeader>{t('Add User Success')}</ModalHeader>
+            <Modal animate closeable onClose={() => setPasswordResult(undefined)} isOpen={!!passwordResult}>
+                <ModalHeader>{passwordResult?.title}</ModalHeader>
                 <ModalBody>
-                    <p>{t('Random Password Tips')}</p>
+                    <p>{passwordResult?.longTips}</p>
                     <div className={css({ display: 'flex', marginTop: '10px' })}>
-                        <Input value={password} />
+                        <Input value={passwordResult?.password} />
                         <CopyToClipboard
-                            text={password}
+                            text={passwordResult?.password ?? ''}
                             onCopy={() => {
                                 toaster.positive(t('Copied'), { autoHideDuration: 1000 })
                             }}
@@ -144,6 +171,23 @@ export default function UserManagement() {
                             <Button size={SIZE.compact}>copy</Button>
                         </CopyToClipboard>
                     </div>
+                </ModalBody>
+            </Modal>
+            <Modal isOpen={!!currentUser} onClose={() => setCurrentUser(undefined)} closeable animate autoFocus>
+                <ModalHeader>{t('Change Password')}</ModalHeader>
+                <hr />
+                <ModalBody>
+                    <PasswordForm
+                        admin
+                        currentUser={currentUser}
+                        onSubmit={async ({ userPwd, originPwd }) => {
+                            if (!currentUser) {
+                                // unreachable, make eslint happy
+                                return
+                            }
+                            await submitPasswd(false, currentUser.id, userPwd, originPwd)
+                        }}
+                    />
                 </ModalBody>
             </Modal>
         </Card>

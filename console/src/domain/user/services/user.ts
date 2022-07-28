@@ -66,3 +66,25 @@ export async function createUser(userName: string, userPwd: string): Promise<IUs
     })
     return data
 }
+
+export async function checkUserPasswd(passwd: string) {
+    const resp = await axios({
+        method: 'post',
+        url: '/api/v1/user/current/pwd',
+        data: JSON.stringify({ currentUserPwd: passwd }),
+        headers: { 'Content-Type': 'application/json' },
+    })
+
+    return resp.data
+}
+
+export async function changeUserPasswd(user: string, currentUserPwd: string, newPwd: string) {
+    const resp = await axios({
+        method: 'put',
+        url: `/api/v1/user/${user}/pwd`,
+        data: JSON.stringify({ currentUserPwd, newPwd }),
+        headers: { 'Content-Type': 'application/json' },
+    })
+
+    return resp.data
+}
