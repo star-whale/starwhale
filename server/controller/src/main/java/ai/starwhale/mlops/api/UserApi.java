@@ -24,6 +24,7 @@ import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleDeleteRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleUpdateRequest;
+import ai.starwhale.mlops.api.protocol.user.UserRoleVO;
 import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
@@ -103,6 +104,14 @@ public interface UserApi {
     @GetMapping(value = "/user/current")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<UserVO>> getCurrentUser();
+
+    @Operation(summary = "Get the current user roles.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(value = "/user/current/role")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<UserRoleVO>>> getCurrentUserRoles(
+        @RequestParam(value = "projectUrl", required = false) String projectUrl
+    );
 
 
     @Operation(summary = "Check Current User password")

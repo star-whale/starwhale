@@ -29,6 +29,7 @@ import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -92,7 +93,7 @@ public class ProjectManager implements ProjectAccessor{
     }
 
     @Override
-    public Long getProjectId(String projectUrl) {
+    public Long getProjectId(@NotNull String projectUrl) {
         if(idConvertor.isID(projectUrl)) {
             return idConvertor.revert(projectUrl);
         }

@@ -25,6 +25,7 @@ import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleDeleteRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleUpdateRequest;
+import ai.starwhale.mlops.api.protocol.user.UserRoleVO;
 import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
@@ -90,6 +91,12 @@ public class UserController implements UserApi{
     public ResponseEntity<ResponseMessage<UserVO>> getCurrentUser() {
         UserVO userVO = userService.currentUser();
         return ResponseEntity.ok(Code.success.asResponse(userVO));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<UserRoleVO>>> getCurrentUserRoles(String projectUrl) {
+        List<UserRoleVO> vos = userService.listCurrentUserRoles(projectUrl);
+        return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 
     @Override

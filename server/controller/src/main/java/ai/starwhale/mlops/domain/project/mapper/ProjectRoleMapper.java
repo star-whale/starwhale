@@ -9,6 +9,9 @@ import org.apache.ibatis.annotations.Param;
 public interface ProjectRoleMapper {
 
     List<ProjectRoleEntity> listSystemRoles();
+
+    List<ProjectRoleEntity> listUserRoles(@NotNull @Param("userId")Long userId, @Param("projectId")Long projectId);
+
     List<ProjectRoleEntity> listProjectRoles(@NotNull @Param("projectId") Long projectId);
 
     int addProjectRole(@NotNull @Param("projectRole")ProjectRoleEntity projectRole);

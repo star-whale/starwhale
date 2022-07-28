@@ -18,6 +18,7 @@ package ai.starwhale.mlops.domain.user;
 
 import ai.starwhale.mlops.api.protocol.user.RoleVO;
 import ai.starwhale.mlops.api.protocol.user.SystemRoleVO;
+import ai.starwhale.mlops.api.protocol.user.UserRoleVO;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
@@ -36,6 +37,7 @@ import ai.starwhale.mlops.exception.SWAuthException.AuthType;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
@@ -78,6 +80,9 @@ public class UserService implements UserDetailsService {
 
     @Resource
     private SystemRoleConvertor systemRoleConvertor;
+
+    @Resource
+    private UserRoleConvertor userRoleConvertor;
 
 
     @Override
@@ -201,6 +206,30 @@ public class UserService implements UserDetailsService {
         return roleMapper.listRoles()
             .stream()
             .map(roleConvertor::convert)
+            .collect(Collectors.toList());
+    }
+
+    public List<UserRoleVO> listCurrentUserRoles(String projectUrl) {
+        User user = currentUserDetail();
+        UserEntity userEntity = userMapper.findUserByName(user.getName());
+        if(userEntity == null) {
+            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB)
+                .tip(String.format("Unable to find user by name %s", user.getName())), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return listUserRoles(userEntity.getId(), projectUrl);
+    }
+
+    public List<UserRoleVO> listUserRoles(Long userId, String projectUrl) {
+        Long projectId = null;
+        if(!StrUtil.isEmpty(projectUrl)) {
+            projectId = projectManager.getProjectId(projectUrl);
+        }
+
+        List<ProjectRoleEntity> entities = projectRoleMapper.listUserRoles(userId,
+            projectId);
+
+        return entities.stream()
+            .map(entity -> userRoleConvertor.convert(entity))
             .collect(Collectors.toList());
     }
 
