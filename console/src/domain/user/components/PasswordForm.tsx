@@ -5,10 +5,11 @@ import { Block } from 'baseui/block'
 import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
 import { IChangePasswordSchema, IUserSchema } from '@user/schemas/user'
-import { shouldBeEqual } from '@/components/Form/validators'
+import { shouldBeEqual, minLength } from '@/components/Form/validators'
 import { RadioGroup, Radio } from 'baseui/radio'
 import { useStyletron } from 'baseui'
 import { checkUserPasswd } from '@user/services/user'
+import { passwordMinLength } from '@/consts'
 
 export interface IPasswordFormProps {
     currentUser?: IUserSchema
@@ -83,7 +84,12 @@ export default function PasswordForm({ currentUser, admin, onSubmit }: IPassword
             )}
             {!useRandom && (
                 <>
-                    <FormItem label={t('New Password')} name='userPwd' required={passwdValid}>
+                    <FormItem
+                        label={t('New Password')}
+                        name='userPwd'
+                        required={passwdValid}
+                        validators={[minLength(passwordMinLength, t('Password Too Short'))]}
+                    >
                         <Input type='password' size='compact' disabled={!passwdValid} />
                     </FormItem>
                     <FormItem

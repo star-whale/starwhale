@@ -5,7 +5,8 @@ import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
 import { INewUserSchema } from '@user/schemas/user'
 import { RadioGroup, Radio } from 'baseui/radio'
-import { shouldBeEqual } from '@/components/Form/validators'
+import { shouldBeEqual, minLength } from '@/components/Form/validators'
+import { passwordMinLength } from '@/consts'
 
 export interface INewUserFormProps {
     onSubmit: (data: INewUserSchema) => Promise<void>
@@ -43,7 +44,12 @@ export default function NewUserForm({ onSubmit }: INewUserFormProps) {
             </RadioGroup>
             {!useRandom && (
                 <>
-                    <FormItem label={t('New Password')} name='userPwd' required>
+                    <FormItem
+                        label={t('New Password')}
+                        name='userPwd'
+                        required
+                        validators={[minLength(passwordMinLength, t('Password Too Short'))]}
+                    >
                         <Input type='password' size='compact' />
                     </FormItem>
                     <FormItem

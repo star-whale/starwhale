@@ -270,6 +270,9 @@ const locales0 = {
     'New Password': {
         en: 'New Password',
     },
+    'Password Too Short': {
+        en: 'Password too short',
+    },
     'Current Password': {
         en: 'Current Password',
     },
