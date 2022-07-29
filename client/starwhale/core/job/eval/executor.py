@@ -208,7 +208,7 @@ class EvalExecutor:
 
     def _do_run_cmd(self, typ: str, step: str, task_index: int) -> None:
         if self.use_docker:
-            # todo
+            # TODO
             self._do_run_cmd_in_container(typ)
         else:
             self._do_run_cmd_in_host(typ, step, task_index)
@@ -243,7 +243,7 @@ class EvalExecutor:
         _steps = _jobs[self.job_name]
         _module = StandaloneModel.get_pipeline_handler(typ, workdir=_run_dir)
 
-        _scheduler = Scheduler(_module, _run_dir, _steps)
+        _scheduler = Scheduler(_module, _run_dir, self.dataset_uris, _steps)
         # todo 20220725 replace with job scheduler
         if typ == EvalTaskType.ALL:
             _scheduler.schedule()

@@ -3,6 +3,7 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
+from starwhale.base.uri import URI
 from starwhale.core.job.base.loader import load_module
 
 
@@ -30,15 +31,14 @@ class Step:
             self.step_name, self.dependency, self.status
         )
 
-    def gen_task(self, index: int, module: str, workdir: Path):
+    def gen_task(self, index: int, module: str, workdir: Path, dataset_uris: list[URI]):
         self.tasks.append(
             Task(
                 context=Context(
                     step=self.step_name,
                     total=self.task_num,
                     index=index,
-                    # todo send by param
-                    dataset_uri="",
+                    dataset_uris=dataset_uris,
                 ),
                 status=STATUS.INIT,
                 module=module,
@@ -147,12 +147,12 @@ class Parser:
 # Runtime concept
 class Context:
     def __init__(
-        self, step: str = "", total: int = 0, index: int = 0, dataset_uri: str = "",
+        self, step: str = "", total: int = 0, index: int = 0, dataset_uris: list[URI] = None,
     ):
         self.step = step
         self.total = total
         self.index = index
-        self.dataset_uri = dataset_uri
+        self.dataset_uris = dataset_uris
 
     def __repr__(self):
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)

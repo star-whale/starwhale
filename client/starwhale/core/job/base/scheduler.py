@@ -6,12 +6,14 @@ from pathlib import Path
 
 from loguru import logger
 
+from starwhale.base.uri import URI
 from starwhale.core.job.base.model import Step, STATUS, Task
 
 
 class Scheduler:
-    def __init__(self, module: str, workdir: Path, steps: dict[Step]):
+    def __init__(self, module: str, workdir: Path, dataset_uris: list[URI], steps: dict[Step]):
         self.steps = steps
+        self.dataset_uris = dataset_uris
         self.module = module
         self.workdir = workdir
         self.__split_tasks()
@@ -23,7 +25,7 @@ class Scheduler:
             # update step status = init
             _step.status = STATUS.INIT
             for index in range(_step.task_num):
-                _step.gen_task(index, self.module, self.workdir)
+                _step.gen_task(index, self.module, self.workdir, self.dataset_uris)
 
     def schedule(self) -> None:
         _threads = []
@@ -52,7 +54,11 @@ class Scheduler:
             t.join()
 
     def schedule_single_task(self, step_name: str, task_index: int):
+        if step_name not in self.steps:
+            raise RuntimeError(f"step:{step_name} not found")
         _step = self.steps[step_name]
+        if task_index >= _step.task_num:
+            raise RuntimeError(f"task_index:{task_index} out of bounds, total:{_step.task_num}")
         _task = _step.tasks[task_index]
         _executor = Executor(1, [_task], SingleTaskCallback(self, _task))
         _executor.start()
@@ -74,14 +80,15 @@ class StepCallback(Callback):
         self.step = step
 
     def callback(self, res: bool, exec_time: float):
-        logger.debug("step:{} finished, status:{}, run time:{}", self.step, res, exec_time)
         if res:
             self.step.status = STATUS.SUCCESS
+            logger.debug("step:{} success, run time:{}", self.step, exec_time)
             # trigger next schedule
             self.scheduler.schedule()
         else:
             self.step.status = STATUS.FAILED
-            # todo whether break process?
+            logger.debug("step:{} failed, run time:{}", self.step, exec_time)
+            # TODO: whether break process?
 
 
 class SingleTaskCallback(Callback):
@@ -106,7 +113,6 @@ class Executor(threading.Thread):
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=self.concurrency
         ) as executor:
-            # todo custom module and path
             futures = [
                 executor.submit(task.execute)
                 for task in self.tasks
