@@ -15,7 +15,7 @@
                rel.modified_time as project_role_modified_time,
                r.role_code,
                r.role_name,
-               r.role_description,
+               r.role_description  ,
                u.user_name,
                u.user_enabled,
                u.created_time as user_created_time,
@@ -55,7 +55,7 @@
         left join
              project_info as p
              on p.id = view.project_id
-        where p.is_deleted = 0
+        where p.is_deleted = 0 or p.is_deleted is null
     </select>
     <select id="listProjectRoles" resultMap="projectRoleResultMap">
         select

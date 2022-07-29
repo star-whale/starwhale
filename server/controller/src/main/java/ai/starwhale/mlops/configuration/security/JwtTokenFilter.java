@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ai.starwhale.mlops.configuration.security;
 
 import static ai.starwhale.mlops.common.util.HttpUtil.error;
@@ -22,22 +21,21 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.common.util.HttpUtil;
 import ai.starwhale.mlops.common.util.HttpUtil.Resources;
 import ai.starwhale.mlops.common.util.JwtTokenUtil;
+import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetails;
@@ -59,8 +57,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest,
-                                    HttpServletResponse httpServletResponse,
-                                    FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull HttpServletResponse httpServletResponse,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
         String header = httpServletRequest.getHeader(AUTH_HEADER);
 
         if (!checkHeader(header)) {
@@ -99,6 +97,9 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
         if(projectUrl == null) {
             projectUrl = HttpUtil.getResourceUrlFromPath(httpServletRequest.getRequestURI(), Resources.PROJECT);
+        }
+        if(projectUrl == null) {
+            projectUrl = "0";
         }
         try {
             List<Role> rolesOfUser = userService.getProjectRolesOfUser(user,
