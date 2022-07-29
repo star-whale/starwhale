@@ -48,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.Call;
+import okhttp3.Response;
 import org.bouncycastle.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -55,8 +57,8 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 public class K8sClient {
-    private ApiClient client;
-    private CoreV1Api coreV1Api;
+    private final ApiClient client;
+    private final CoreV1Api coreV1Api;
     private final BatchV1Api batchV1Api;
 
     private final String ns;
@@ -104,11 +106,11 @@ public class K8sClient {
      * renderJob parses from job yaml template
      *
      * @param template
-     * @param containerName
+     * @param coreContainerName
      * @param cmd
      * @return
      */
-    public V1Job renderJob(String template, String name, String containerName, String image, List<String> cmd, Map<String, String> env) {
+    public V1Job renderJob(String template, String name, String coreContainerName, String image, List<String> cmd, Map<String, String> env,V1ResourceRequirements resources) {
         V1Job job = Yaml.loadAs(template, V1Job.class);
         job.getMetadata().name(name);
         HashMap<String, String> labels = new HashMap<>();
@@ -120,22 +122,23 @@ public class K8sClient {
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec, "can not get pod spec");
 
-        V1Container container = podSpec.getInitContainers().stream().filter(c -> c.getName().equals(containerName)).findFirst().orElse(null);
-        Objects.requireNonNull(container, "can not get container by name " + containerName);
+        V1Container coreContainer = podSpec.getInitContainers().stream().filter(c -> c.getName().equals(coreContainerName)).findFirst().orElse(null);
+        Objects.requireNonNull(coreContainer, "can not get coreContainer by name " + coreContainerName);
 
         if (!image.isEmpty()) {
-            container.image(image);
+            coreContainer.image(image);
         }
         if (!cmd.isEmpty()) {
-            container.args(cmd);
+            coreContainer.args(cmd);
         }
-        V1ResourceRequirements resources= new V1ResourceRequirements().limits(Map.of("cpu",new Quantity("1")));//todo: from request
-        container.resources(resources);
+        if(null != resources){
+            coreContainer.resources(resources);
+        }
         if (!env.isEmpty()) {
             List<V1EnvVar> ee = new ArrayList<>();
             env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
             podSpec.getInitContainers().forEach(c -> {
-                if (c.getName().equals(containerName)) {
+                if (c.getName().equals(coreContainerName)) {
                     return;
                 }
                 c.env(ee);
@@ -179,21 +182,53 @@ public class K8sClient {
         V1Pod pod = podList.getItems().get(0);
 
         StringBuilder  logBuilder = new StringBuilder();
-        appendLog(pod, podLogs, logBuilder,"data-provider");
-        appendLog(pod, podLogs, logBuilder,"untar");
-        appendLog(pod, podLogs, logBuilder,"worker");
-        appendLog(pod, podLogs, logBuilder,"result-uploader");
+        appendLog(pod, logBuilder,"data-provider");
+        appendLog(pod, logBuilder,"untar");
+        appendLog(pod, logBuilder,"worker");
+        appendLog(pod, logBuilder,"result-uploader");
         return logBuilder.toString();
     }
 
-    private void appendLog(V1Pod pod, PodLogs logs, StringBuilder logBuilder,String containerName) {
+    private void appendLog(V1Pod pod, StringBuilder logBuilder,String containerName) {
         log.debug("collecting log for container {}",containerName);
-        try(InputStream is = logs.streamNamespacedPodLog(ns, pod.getMetadata().getName(), containerName)){
+        InputStream is=null;
+        Response response=null;
+        try{
+            Call call =
+                coreV1Api.readNamespacedPodLogCall(
+                    pod.getMetadata().getName(),
+                    ns,
+                    containerName,
+                    true,
+                    null,
+                    null,
+                    "false",
+                    false,
+                    null,
+                    null,
+                    null,
+                    null);
+            response = call.execute();
+            if (!response.isSuccessful()) {
+                throw new ApiException(response.code(), "Logs request failed: " + response.code());
+            }
+            is = response.body().byteStream();
             logBuilder.append(Strings.fromUTF8ByteArray(is.readAllBytes()));
         }catch (ApiException e){
             log.warn("k8s api exception",e);
         }catch (IOException e){
             log.error("connection to k8s error",e);
+        }finally {
+            if(null != is){
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    log.warn("closing log fetching error",e);
+                }
+            }
+            if(null != response){
+                response.body().close();
+            }
         }
         log.debug("log for container {} collected",containerName);
     }
