@@ -67,6 +67,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 @Slf4j
@@ -267,6 +268,7 @@ public class JobService {
      * transactional
      * jobStatus->TO_CANCEL; RUNNING/PREPARING/ASSIGNING->TO_CANCEL;CREATED/PAUSED/UNKNOWN->CANCELED
      */
+    @Transactional
     public void cancelJob(String jobUrl){
         Long jobId = jobManager.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
@@ -299,6 +301,7 @@ public class JobService {
      * transactional
      * jobStatus RUNNING->PAUSED; taskStatus CREATED->PAUSED
      */
+    @Transactional
     public void pauseJob(String jobUrl){
         Long jobId = jobManager.getJobId(jobUrl);
         Collection<Job> jobs = hotJobHolder.ofIds(List.of(jobId));
