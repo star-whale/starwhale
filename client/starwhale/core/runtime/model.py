@@ -8,6 +8,7 @@ import tempfile
 from abc import ABCMeta
 from copy import deepcopy
 from pathlib import Path
+from xml.dom import NotFoundErr
 from collections import defaultdict
 
 import yaml
@@ -21,6 +22,7 @@ from starwhale.utils import (
     load_yaml,
     in_container,
     validate_obj_name,
+    make_dir_gitignore,
     get_downloadable_sw_version,
 )
 from starwhale.consts import (
@@ -28,12 +30,14 @@ from starwhale.consts import (
     SupportArch,
     PythonRunEnv,
     SW_IMAGE_FMT,
+    DEFAULT_PROJECT,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     SW_PYPI_PKG_NAME,
     DEFAULT_PAGE_SIZE,
     ENV_SW_IMAGE_REPO,
     DEFAULT_IMAGE_REPO,
+    STANDALONE_INSTANCE,
     DEFAULT_CUDA_VERSION,
     SW_DEV_DUMMY_VERSION,
     DEFAULT_CONDA_CHANNEL,
@@ -315,8 +319,8 @@ class RuntimeConfig:
 
 class Runtime(BaseBundle, metaclass=ABCMeta):
     @classmethod
-    def restore(cls, workdir: Path) -> None:
-        StandaloneRuntime.restore(workdir)
+    def restore(cls, workdir: Path, isolated_env_dir: t.Optional[Path] = None) -> None:
+        StandaloneRuntime.restore(workdir, isolated_env_dir)
 
     @classmethod
     def get_runtime(cls, uri: URI) -> Runtime:
@@ -717,6 +721,81 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         return rs, {}
 
     @classmethod
+    def quickstart_from_uri(
+        cls,
+        workdir: Path,
+        name: str,
+        uri: URI,
+        force: bool = False,
+        restore: bool = False,
+    ) -> None:
+        if uri.instance_type == InstanceType.CLOUD:
+            console.print(f":cloud: copy runtime from {uri} to local")
+            _dest_project_uri = f"{STANDALONE_INSTANCE}/project/{DEFAULT_PROJECT}"
+            cls.copy(uri.full_uri, _dest_project_uri, force=force)
+            uri = URI(
+                f"{_dest_project_uri}/runtime/{uri.object.name}/version/{uri.object.version}",
+                expected_type=URIType.RUNTIME,
+            )
+
+        extract_d = workdir / ".extract"
+        console.print(f":package: extract swrt into {extract_d}...")
+        _sr = StandaloneRuntime(uri)
+        _sr.extract(force, extract_d)
+        make_dir_gitignore(extract_d)
+
+        console.print(":printer: fork runtime files...")
+        cls._do_fork_runtime_bundles(workdir, extract_d, name, force)
+
+        if restore:
+            console.print(f":safety_vest: start to restore to {extract_d}...")
+            _manifest = load_yaml(extract_d / DEFAULT_MANIFEST_NAME)
+            isolated_env_dir = workdir / f".{_manifest['environment']['mode']}"
+            if not isolated_env_dir.exists() or force:
+                cls.restore(extract_d, isolated_env_dir)
+                make_dir_gitignore(isolated_env_dir)
+            else:
+                console.print(f":sake: {isolated_env_dir} existed, skip restore")
+
+    @staticmethod
+    def _do_fork_runtime_bundles(
+        workdir: Path, extract_dir: Path, name: str, force: bool = False
+    ) -> None:
+        # TODO: support user define runtime.yaml name
+        runtime_fpath = workdir / DefaultYAMLName.RUNTIME
+        if (runtime_fpath).exists() and not force:
+            raise ExistedError(runtime_fpath)
+
+        def _copy_file(src: Path, dest: Path) -> None:
+            if not src.exists():
+                raise NotFoundErr(src)
+
+            if dest.exists() and not force:
+                logger.warning(f"{dest} existed, skip copy")
+
+            ensure_dir(dest.parent)
+            shutil.copy(str(src), str(dest))
+
+        rt_config = RuntimeConfig.create_by_yaml(extract_dir / DefaultYAMLName.RUNTIME)
+        wheel_dir = extract_dir / RuntimeArtifactType.WHEELS
+        for _w in rt_config.dependencies.wheels:
+            _copy_file(wheel_dir / _w, workdir / _w)
+
+        dep_dir = extract_dir / RuntimeArtifactType.DEPEND
+        for _d in rt_config.dependencies.pip_files + rt_config.dependencies.conda_files:
+            _copy_file(dep_dir / _d, workdir / _d)
+
+        files_dir = extract_dir / RuntimeArtifactType.FILES
+        for _f in rt_config.dependencies.files:
+            _copy_file(files_dir / _f["dest"], files_dir / _f["src"])
+
+        runtime_yaml = load_yaml(extract_dir / DefaultYAMLName.RUNTIME)
+        runtime_yaml["name"] = name
+        ensure_file(
+            runtime_fpath, yaml.safe_dump(runtime_yaml, default_flow_style=False)
+        )
+
+    @classmethod
     def quickstart_from_ishell(
         cls,
         workdir: t.Union[Path, str],
@@ -763,11 +842,8 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             raise NotFoundError(_rf)
 
         _run_config = RuntimeConfig.create_by_yaml(_rf)
-        if _run_config.mode == PythonRunEnv.VENV:
-            _id = os.path.join(workdir, "venv")
-        else:
-            _id = _run_config.name
-        activate_python_env(mode=_run_config.mode, identity=_id)
+        _prefix_path = os.path.join(workdir, f".{_run_config.mode}")
+        activate_python_env(mode=_run_config.mode, identity=_prefix_path)
 
     @classmethod
     def lock(
@@ -898,7 +974,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         ensure_file(_rm, yaml.safe_dump(config, default_flow_style=False))
 
     @classmethod
-    def restore(cls, workdir: Path) -> None:
+    def restore(cls, workdir: Path, isolated_env_dir: t.Optional[Path] = None) -> None:
         if not (workdir.exists() and (workdir / DEFAULT_MANIFEST_NAME).exists()):
             raise NoSupportError("only support swrt extract workdir")
 
@@ -909,6 +985,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             .get("lock", {})
             .get("starwhale_version", "")
         )
+        isolated_env_dir = isolated_env_dir or workdir / "export" / _env["mode"]
 
         operations = [
             (
@@ -932,6 +1009,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                         RuntimeArtifactType.WHEELS, []
                     ),
                     configs=_manifest.get("configs", {}),
+                    isolated_env_dir=isolated_env_dir,
                 ),
             ),
             (
@@ -939,7 +1017,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 10,
                 "install starwhale",
                 dict(
-                    prefix_path=workdir / "export" / _env["mode"],
+                    prefix_path=isolated_env_dir,
                     mode=_env["mode"],
                     version=_starwhale_version,
                     force=False,
@@ -962,7 +1040,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                 "render python env activate scripts",
                 dict(
                     mode=_env["mode"],
-                    prefix_path=workdir / "export" / _env["mode"],
+                    prefix_path=isolated_env_dir,
                     workdir=workdir,
                     local_packaged_env=_manifest["dependencies"].get(
                         "local_packaged_env", False

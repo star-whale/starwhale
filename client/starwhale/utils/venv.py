@@ -737,6 +737,7 @@ def restore_python_env(
     wheels: t.Optional[t.List[str]] = None,
     deps: _DepsT = None,
     configs: _ConfigsT = None,
+    isolated_env_dir: t.Optional[Path] = None,
 ) -> None:
     deps = deps or {}
     local_packaged_env = bool(deps.get("local_packaged_env", False))
@@ -752,6 +753,7 @@ def restore_python_env(
         deps=deps,
         configs=configs,
         local_packaged_env=local_packaged_env,
+        isolated_env_dir=isolated_env_dir,
     )
 
 
@@ -762,10 +764,11 @@ def _do_restore_conda(
     deps: _DepsT,
     configs: _ConfigsT,
     local_packaged_env: bool = False,
+    isolated_env_dir: t.Optional[Path] = None,
 ) -> None:
     export_dir = workdir / "export"
     export_tar_fpath = export_dir / EnvTarType.CONDA
-    conda_dir = export_dir / "conda"
+    conda_dir = isolated_env_dir or export_dir / "conda"
 
     if local_packaged_env and export_tar_fpath.exists():
         empty_dir(conda_dir)
@@ -840,9 +843,10 @@ def _do_restore_venv(
     deps: _DepsT,
     configs: _ConfigsT,
     local_packaged_env: bool = False,
+    isolated_env_dir: t.Optional[Path] = None,
 ) -> None:
     export_dir = workdir / "export"
-    venv_dir = export_dir / "venv"
+    venv_dir = isolated_env_dir or export_dir / "venv"
     export_tar_fpath = export_dir / EnvTarType.VENV
 
     if not local_packaged_env or not os.path.exists(export_tar_fpath):
