@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { fetchCurrentUser } from '@user/services/user'
+import { fetchCurrentUser, fetchCurrentUserRoles } from '@user/services/user'
 import { useQuery } from 'react-query'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import axios from 'axios'
@@ -8,6 +8,7 @@ import { getErrMsg, setToken } from '@/api'
 import qs from 'qs'
 import { useLocation } from 'react-router-dom'
 import useTranslation from '@/hooks/useTranslation'
+import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 
 export default function ApiHeader() {
     const location = useLocation()
@@ -16,7 +17,10 @@ export default function ApiHeader() {
     const lastLocationPathRef = useRef(location.pathname)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser, setCurrentUser } = useCurrentUser()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const [, setCurrentUserRoles] = useCurrentUserRoles()
     const userInfo = useQuery('currentUser', fetchCurrentUser, { enabled: false })
+    const userRoles = useQuery('currentUserRoles', () => fetchCurrentUserRoles(), { enabled: false })
     const [t] = useTranslation()
 
     useEffect(() => {
@@ -84,8 +88,9 @@ export default function ApiHeader() {
     useEffect(() => {
         if (location.pathname !== '/login' && location.pathname !== '/login/' && !currentUser) {
             userInfo.refetch()
+            userRoles.refetch()
         }
-    }, [userInfo, location.pathname, currentUser])
+    }, [userInfo, location.pathname, currentUser, userRoles])
 
     useEffect(() => {
         if (lastLocationPathRef.current !== location.pathname) {
@@ -93,6 +98,10 @@ export default function ApiHeader() {
         }
         lastLocationPathRef.current = location.pathname
     }, [location.pathname])
+
+    useEffect(() => {
+        setCurrentUserRoles(userRoles.data)
+    }, [userRoles.data, setCurrentUserRoles])
 
     return <></>
 }

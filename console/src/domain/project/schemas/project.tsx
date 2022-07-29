@@ -18,6 +18,6 @@ export interface ICreateProjectSchema {
 export interface IProjectRoleSchema {
     id: string
     user: IUserSchema
-    project: IProjectRoleSchema
+    project: IProjectSchema
     role: IUserRoleSchema
 }

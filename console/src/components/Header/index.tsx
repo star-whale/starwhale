@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { setToken } from '@/api'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
@@ -17,6 +17,7 @@ import { IChangePasswordSchema } from '@user/schemas/user'
 import { changePassword } from '@user/services/user'
 import { toaster } from 'baseui/toast'
 import { AiOutlineSetting, AiOutlineSecurityScan } from 'react-icons/ai'
+import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import IconFont from '../IconFont'
 
 const useHeaderStyles = createUseStyles({
@@ -175,6 +176,9 @@ export default function Header() {
     const headerStyles = useHeaderStyles({ theme })
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const [currentUserRole] = useCurrentUserRoles()
+    const [sysRole, setSysRole] = useState('GUEST')
 
     const [t] = useTranslation()
     const history = useHistory()
@@ -188,6 +192,18 @@ export default function Header() {
         },
         [t]
     )
+
+    useEffect(() => {
+        if (!currentUserRole) {
+            return
+        }
+        // '0' means the system
+        const role = currentUserRole.find((i) => i.project.id === '0')
+        if (!role) {
+            return
+        }
+        setSysRole(role.role.code)
+    }, [currentUserRole, setSysRole])
 
     return (
         <header className={headerStyles.headerWrapper}>
@@ -227,17 +243,19 @@ export default function Header() {
                         <BsChevronDown size={14} />
                     </div>
                     <div className={styles.userMenu}>
-                        <div
-                            role='button'
-                            tabIndex={0}
-                            className={styles.userMenuItem}
-                            onClick={() => {
-                                history.push('/admin')
-                            }}
-                        >
-                            <AiOutlineSetting size={18} />
-                            <span>{t('Admin Settings')}</span>
-                        </div>
+                        {sysRole === 'OWNER' && (
+                            <div
+                                role='button'
+                                tabIndex={0}
+                                className={styles.userMenuItem}
+                                onClick={() => {
+                                    history.push('/admin')
+                                }}
+                            >
+                                <AiOutlineSetting size={18} />
+                                <span>{t('Admin Settings')}</span>
+                            </div>
+                        )}
                         <div
                             role='button'
                             tabIndex={0}
