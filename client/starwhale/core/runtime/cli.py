@@ -26,24 +26,46 @@ def runtime_cmd(ctx: click.Context) -> None:
 @runtime_cmd.command("quickstart")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
 @click.option("-f", "--force", is_flag=True, help="Force to quickstart")
-def _quickstart(workdir: str, force: bool) -> None:
+@click.option(
+    "-p",
+    "--python-env",
+    prompt="Choose your python env",
+    type=click.Choice([PythonRunEnv.VENV, PythonRunEnv.CONDA]),
+    default=PythonRunEnv.VENV,
+    show_choices=True,
+    show_default=True,
+)
+@click.option(
+    "-n",
+    "--name",
+    default="",
+    prompt="Please enter Starwhale Runtime name",
+)
+@click.option(
+    "-c",
+    "--create-env",
+    prompt="Do you want to create isolated python environment",
+    is_flag=True,
+    default=False,
+    show_default=True,
+)
+def _quickstart(
+    workdir: str, force: bool, python_env: str, name: str, create_env: bool
+) -> None:
     """[Only Standalone]Quickstart Starwhale Runtime
 
     Args:
         workdir (Path): runtime workdir
     """
     p_workdir = Path(workdir).absolute()
-    name = click.prompt("Please enter Starwhale Runtime name", default=p_workdir.name)
-    mode = click.prompt("Use venv or conda?", default=PythonRunEnv.VENV)
-    create_env = click.confirm(
-        f"Do you want to create {mode} isolated python environment?", default=False
-    )
-
     if not p_workdir.exists():
         raise NotFoundError(workdir)
 
+    name = name or p_workdir.name
     # TODO: support quickstart runtime from the existed runtime uri (local or remote)
-    RuntimeTermView.quickstart_from_ishell(p_workdir, name, mode, create_env, force)
+    RuntimeTermView.quickstart_from_ishell(
+        p_workdir, name, python_env, create_env, force
+    )
 
 
 @runtime_cmd.command(
