@@ -178,3 +178,9 @@ def load_yaml(path: t.Union[str, Path]) -> t.Any:
     """load_yaml loads yaml from path, it may raise exception such as yaml.YAMLError"""
     with open(path) as f:
         return yaml.safe_load(f)
+
+
+def get_current_shell() -> str:
+    import shellingham
+
+    return str(shellingham.detect_shell()[0])
