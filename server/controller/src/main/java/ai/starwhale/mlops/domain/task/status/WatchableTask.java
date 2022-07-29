@@ -109,8 +109,7 @@ public class WatchableTask extends Task implements TaskWrapper {
             return;
         }
         if(!taskStatusMachine.couldTransfer(oldStatus, status)){
-            log.warn("task status changed unexpectedly from {} to {}  of id {} forbidden",oldStatus,status,oTask.getId());
-            return;
+            log.warn("task status changed unexpectedly from {} to {}  of id {} ",oldStatus,status,oTask.getId());
         }
         oTask.updateStatus(status);
         log.debug("task status changed from {} to {}  of id {}",oldStatus,status,oTask.getId());

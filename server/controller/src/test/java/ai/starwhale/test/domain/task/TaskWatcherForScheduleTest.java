@@ -27,6 +27,7 @@ import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import java.util.List;
@@ -38,11 +39,14 @@ import org.junit.jupiter.api.Test;
  */
 public class TaskWatcherForScheduleTest {
 
+    final TaskStatusMachine taskStatusMachine=new TaskStatusMachine();
+
     @Test
     public void testChangeAdopt() {
         SWTaskScheduler taskScheduler = mock(
             SWTaskScheduler.class);
-        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler);
+        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
+            taskStatusMachine);
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
@@ -52,15 +56,16 @@ public class TaskWatcherForScheduleTest {
                 Clazz.CPU).build()).build()).build())
             .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.CREATED);
-        verify(taskScheduler).adoptTasks(List.of(task), Clazz.CPU);
-        verify(taskScheduler, times(0)).stopSchedule(List.of(task.getId()));
+        verify(taskScheduler).adopt(List.of(task), Clazz.CPU);
+        verify(taskScheduler, times(0)).remove(List.of(task.getId()));
     }
 
     @Test
     public void testChangeStopSchedule() {
         SWTaskScheduler taskScheduler = mock(
             SWTaskScheduler.class);
-        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler);
+        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
+            taskStatusMachine);
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
@@ -72,15 +77,16 @@ public class TaskWatcherForScheduleTest {
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
         task.updateStatus(TaskStatus.CANCELED);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
-        verify(taskScheduler, times(0)).adoptTasks(List.of(task), Clazz.CPU);
-        verify(taskScheduler,times(2)).stopSchedule(List.of(task.getId()));
+        verify(taskScheduler, times(0)).adopt(List.of(task), Clazz.CPU);
+        verify(taskScheduler,times(2)).remove(List.of(task.getId()));
     }
 
     @Test
     public void testChangeIgnore() {
         SWTaskScheduler taskScheduler = mock(
             SWTaskScheduler.class);
-        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler);
+        TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
+            taskStatusMachine);
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
@@ -92,7 +98,7 @@ public class TaskWatcherForScheduleTest {
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.SUCCESS);
 
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.FAIL);
-        verify(taskScheduler, times(0)).adoptTasks(List.of(task), Clazz.CPU);
-        verify(taskScheduler,times(0)).stopSchedule(List.of(task.getId()));
+        verify(taskScheduler, times(0)).adopt(List.of(task), Clazz.CPU);
+        verify(taskScheduler,times(0)).remove(List.of(task.getId()));
     }
 }

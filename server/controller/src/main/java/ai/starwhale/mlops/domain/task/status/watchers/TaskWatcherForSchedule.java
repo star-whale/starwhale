@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.task.status.watchers;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -27,29 +28,30 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@Order(4)
+@Order(6)
 public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
 
     final SWTaskScheduler taskScheduler;
 
-    public TaskWatcherForSchedule(SWTaskScheduler taskScheduler) {
+    final TaskStatusMachine taskStatusMachine;
+
+    public TaskWatcherForSchedule(SWTaskScheduler taskScheduler,
+        TaskStatusMachine taskStatusMachine) {
         this.taskScheduler = taskScheduler;
+        this.taskStatusMachine = taskStatusMachine;
     }
 
     @Override
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
-        if(task.getStatus() != TaskStatus.READY && oldStatus != TaskStatus.READY){
-            log.debug("status not ready skipped {} {}",task.getId(),task.getStatus());
-            return;
-        }
         if(task.getStatus() == TaskStatus.READY){
             log.debug("task status changed to ready id: {} oldStatus: {}, scheduled",task.getId(),oldStatus);
-            taskScheduler.adoptTasks(List.of(task),task.getStep().getJob().getJobRuntime().getDeviceClass());
-        }else {//oldStatus == READY
-            if(task.getStatus() == TaskStatus.PAUSED || task.getStatus() == TaskStatus.CANCELED){
-                log.debug("task status changed to paused or cancel from ready id: {} newStatus: {}, stop scheduled",task.getId(),task.getStatus());
-                taskScheduler.stopSchedule(List.of(task.getId()));
-            }
+            taskScheduler.adopt(List.of(task),task.getStep().getJob().getJobRuntime().getDeviceClass());
+        }else if(task.getStatus() == TaskStatus.PAUSED || taskStatusMachine.isFinal(task.getStatus())){
+            log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled",task.getStatus(),task.getId(),task.getStatus());
+            taskScheduler.remove(List.of(task.getId()));
+        }else {
+            //do nothing
+            log.debug("task {} of status {} do nothing with scheduler ",task.getId(),task.getStatus());
         }
 
     }

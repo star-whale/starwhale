@@ -52,6 +52,7 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
 
     @Override
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
+        log.debug("persisting task for {} ",task.getId());
         TaskStatus status = task.getStatus();
         long now = System.currentTimeMillis();
         if(taskStatusMachine.isFinal(status)){
@@ -63,6 +64,7 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
             taskMapper.updateTaskStartedTime(task.getId(),localDateTimeConvertor.revert(now));
         }
         taskMapper.updateTaskStatus(List.of(task.getId()), status);
+        log.debug("task {} status persisted to {} ",task.getId(),status);
     }
 
 }

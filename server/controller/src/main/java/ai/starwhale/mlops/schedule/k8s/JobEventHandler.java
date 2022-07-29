@@ -71,9 +71,9 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             log.debug("job status changed for {} is success  {}", jobName(newObj),
                 status);
         }else {
-            taskStatus = TaskStatus.UNKNOWN;
             log.warn("job status changed for {} is unknown {}", jobName(newObj),
                 status);
+            return;
         }
 
         taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(newObj), taskStatus)));

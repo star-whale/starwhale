@@ -17,10 +17,8 @@
 package ai.starwhale.mlops.schedule;
 
 import ai.starwhale.mlops.domain.node.Device;
-import ai.starwhale.mlops.domain.node.Node;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
-import java.util.List;
 import java.util.Collection;
 
 /**
@@ -34,11 +32,11 @@ public interface SWTaskScheduler {
      * @param tasks tasks to be scheduled
      * @param deviceClass the device type should be scheduled on
      */
-    void adoptTasks(Collection<Task> tasks, Device.Clazz deviceClass);
+    void adopt(Collection<Task> tasks, Device.Clazz deviceClass);
 
     /**
      * @param taskIds tasks to be stop scheduled
      */
-    void stopSchedule(Collection<Long> taskIds);
+    void remove(Collection<Long> taskIds);
 
 }

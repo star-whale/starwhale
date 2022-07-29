@@ -55,7 +55,7 @@ do
         echo "job FAIL"
         break
   else
-    echo "job status is" "$job_status"
+    echo "job status for " "$job_id" "is" "$job_status"
     sleep 1
   fi
 done

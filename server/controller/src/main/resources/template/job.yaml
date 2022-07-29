@@ -18,9 +18,11 @@ spec:
             - mountPath: /opt/starwhale
               name: data
           command:
+            #https://github.com/minio/mc/issues/3599
             - sh
             - -c
             - >-
+              sleep 10;
               mc alias set minio $MINIO_SERVICE $MINIO_ACCESS_KEY $MINIO_SECRET_KEY &&
               for item in $DOWNLOADS; do SRC=$(cut -d';' -f1 <<<$item) && DST=$(cut -d';' -f2 <<<$item) && echo $SRC,$DST && mkdir -p $DST && mc cp -r $SRC $DST; done
         - name: untar
