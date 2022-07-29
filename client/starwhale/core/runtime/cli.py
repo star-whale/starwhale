@@ -1,4 +1,5 @@
 import typing as t
+from pathlib import Path
 
 import click
 
@@ -7,9 +8,9 @@ from starwhale.consts import (
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
-    DEFAULT_PYTHON_VERSION,
 )
 from starwhale.base.type import RuntimeLockFileType
+from starwhale.utils.error import NotFoundError
 
 from .view import get_term_view, RuntimeTermView
 
@@ -22,28 +23,48 @@ def runtime_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@runtime_cmd.command(
-    "create",
-    help="[ONLY Standalone]Create a python runtime, which help user create a easy-to-use and unambiguous environment with venv or conda",
-)
-@click.argument("workdir")
-@click.option("-n", "--name", required=True, help="Runtime name")
+@runtime_cmd.command("quickstart")
+@click.argument("workdir", type=click.Path(exists=True, file_okay=False))
+@click.option("-f", "--force", is_flag=True, help="Force to quickstart")
 @click.option(
-    "-m",
-    "--mode",
-    type=click.Choice([PythonRunEnv.CONDA, PythonRunEnv.VENV]),
+    "-p",
+    "--python-env",
+    prompt="Choose your python env",
+    type=click.Choice([PythonRunEnv.VENV, PythonRunEnv.CONDA]),
     default=PythonRunEnv.VENV,
-    help="Runtime mode",
+    show_choices=True,
+    show_default=True,
 )
-@click.option("--python", default=DEFAULT_PYTHON_VERSION, help="Python Version")
-@click.option("-f", "--force", is_flag=True, help="Force to create runtime")
-def _create(workdir: str, name: str, mode: str, python: str, force: bool) -> None:
-    RuntimeTermView.create(
-        workdir=workdir,
-        name=name,
-        mode=mode,
-        python_version=python,
-        force=force,
+@click.option(
+    "-n",
+    "--name",
+    default="",
+    prompt="Please enter Starwhale Runtime name",
+)
+@click.option(
+    "-c",
+    "--create-env",
+    prompt="Do you want to create isolated python environment",
+    is_flag=True,
+    default=False,
+    show_default=True,
+)
+def _quickstart(
+    workdir: str, force: bool, python_env: str, name: str, create_env: bool
+) -> None:
+    """[Only Standalone]Quickstart Starwhale Runtime
+
+    Args:
+        workdir (Path): runtime workdir
+    """
+    p_workdir = Path(workdir).absolute()
+    if not p_workdir.exists():
+        raise NotFoundError(workdir)
+
+    name = name or p_workdir.name
+    # TODO: support quickstart runtime from the existed runtime uri (local or remote)
+    RuntimeTermView.quickstart_from_ishell(
+        p_workdir, name, python_env, create_env, force
     )
 
 

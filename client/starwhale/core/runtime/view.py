@@ -3,19 +3,13 @@ import typing as t
 from pathlib import Path
 
 from starwhale.utils import console, pretty_bytes, in_production
-from starwhale.consts import (
-    PythonRunEnv,
-    DefaultYAMLName,
-    DEFAULT_PAGE_IDX,
-    DEFAULT_PAGE_SIZE,
-    DEFAULT_PYTHON_VERSION,
-)
+from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
 from starwhale.core.runtime.store import RuntimeStorage
 
-from .model import Runtime
+from .model import Runtime, StandaloneRuntime
 
 
 class RuntimeTermView(BaseTermView):
@@ -131,23 +125,19 @@ class RuntimeTermView(BaseTermView):
         return _data, _pager
 
     @classmethod
-    def create(
+    def quickstart_from_ishell(
         cls,
-        workdir: str,
+        workdir: t.Union[Path, str],
         name: str,
-        python_version: str = DEFAULT_PYTHON_VERSION,
-        mode: str = PythonRunEnv.VENV,
+        mode: str,
+        create_env: bool = False,
         force: bool = False,
     ) -> None:
-        console.print(f":construction: start to create runtime[{name}] environment...")
-        Runtime.create(
-            workdir,
-            name,
-            python_version=python_version,
-            mode=mode,
-            force=force,
+        console.print(
+            f":construction: quickstart Starwhale Runtime[{name}] environment..."
         )
-        console.print(":clap: python runtime environment is ready to use :tada:")
+        StandaloneRuntime.quickstart_from_ishell(workdir, name, mode, create_env, force)
+        console.print(":clap: Starwhale Runtime environment is ready to use :tada:")
 
     @classmethod
     def restore(cls, target: str) -> None:

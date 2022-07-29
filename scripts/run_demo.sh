@@ -33,8 +33,8 @@ if ! in_github_action; then
   cp -rf ./client "$WORK_DIR"
   cp -rf ./example "$WORK_DIR"
   cp -rf ./README.md "$WORK_DIR"
-  rm -rf "$WORK_DIR/venv"
-  rm -rf "$WORK_DIR/example/mnist/venv"
+  rm -rf "$WORK_DIR/.venv"
+  rm -rf "$WORK_DIR/example/mnist/.venv"
   rm -f "$WORK_DIR/example/mnist/runtime.yaml"
 
   # use a separate data & config dir
@@ -47,16 +47,16 @@ fi
 echo "start test in $WORK_DIR"
 cd "$WORK_DIR" || exit
 # shellcheck source=/dev/null
-python3 -m venv venv && . venv/bin/activate && pip install --upgrade pip
+python3 -m venv .venv && . .venv/bin/activate && pip install --upgrade pip
 cd "$WORK_DIR/client" || exit
 
 echo "install swcli"
 make install-sw
 
 cd "$WORK_DIR/example/mnist" || exit
-swcli runtime create -n pytorch-mnist -m venv --python $PYTHON_VERSION .
+swcli runtime quickstart . --python-env=venv --create-env --name pytorch-mnist
 # shellcheck source=/dev/null
-. venv/bin/activate
+. .venv/bin/activate
 
 python3 -m pip install -r requirements.txt
 

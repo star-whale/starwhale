@@ -35,6 +35,7 @@ from starwhale.consts import (
     ENV_SW_IMAGE_REPO,
     DEFAULT_IMAGE_REPO,
     DEFAULT_CUDA_VERSION,
+    SW_DEV_DUMMY_VERSION,
     DEFAULT_CONDA_CHANNEL,
     DEFAULT_MANIFEST_NAME,
     DEFAULT_PYTHON_VERSION,
@@ -61,6 +62,7 @@ from starwhale.utils.venv import (
     conda_install_req,
     create_python_env,
     install_starwhale,
+    get_python_version,
     package_python_env,
     restore_python_env,
     activate_python_env,
@@ -315,23 +317,6 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
     @classmethod
     def restore(cls, workdir: Path) -> None:
         StandaloneRuntime.restore(workdir)
-
-    @classmethod
-    def create(
-        cls,
-        workdir: t.Union[str, Path],
-        name: str,
-        python_version: str = DEFAULT_PYTHON_VERSION,
-        mode: str = PythonRunEnv.VENV,
-        force: bool = False,
-    ) -> None:
-        StandaloneRuntime.create(
-            workdir=workdir,
-            name=name,
-            python_version=python_version,
-            mode=mode,
-            force=force,
-        )
 
     @classmethod
     def get_runtime(cls, uri: URI) -> Runtime:
@@ -732,38 +717,44 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         return rs, {}
 
     @classmethod
-    def create(
+    def quickstart_from_ishell(
         cls,
-        workdir: t.Union[str, Path],
+        workdir: t.Union[Path, str],
         name: str,
-        python_version: str = DEFAULT_PYTHON_VERSION,
-        mode: str = PythonRunEnv.VENV,
+        mode: str,
+        create_env: bool = False,
         force: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
-        config = RuntimeConfig(name=name, mode=mode, python_version=python_version)
+        console.print(f":printer: render runtime.yaml @ {workdir}")
+        python_version = get_python_version()
 
-        ensure_dir(workdir)
-        _id = create_python_env(
-            mode=mode,
-            name=name,
-            workdir=workdir,
-            python_version=python_version,
-            force=force,
-        )
+        sw_pkg = SW_PYPI_PKG_NAME
+        _swcli_version = __version__
+        if _swcli_version and _swcli_version != SW_DEV_DUMMY_VERSION:
+            sw_pkg = f"{sw_pkg}=={_swcli_version}"
 
-        _pkg_name = SW_PYPI_PKG_NAME
-        if config._starwhale_version:
-            _pkg_name = f"{_pkg_name}=={config._starwhale_version}"
+        cls.render_runtime_yaml(workdir, name, mode, python_version, [sw_pkg], force)
 
-        console.print(f":dog: install {_pkg_name} {mode}@{_id}...")
-        if mode == PythonRunEnv.VENV:
-            venv_install_req(_id, req=_pkg_name, enable_pre=True)
-        elif mode == PythonRunEnv.CONDA:
-            conda_install_req(env_name=_id, req=_pkg_name, enable_pre=True)
+        if create_env:
+            console.print(
+                f":construction_worker: create {mode} isolated python environment..."
+            )
+            ensure_dir(workdir)
+            _id = create_python_env(
+                mode=mode,
+                name=name,
+                workdir=workdir,
+                python_version=python_version,
+                force=force,
+            )
+            console.print(f":dog: install {sw_pkg} {mode}@{_id}...")
+            if mode == PythonRunEnv.VENV:
+                venv_install_req(_id, req=sw_pkg, enable_pre=True)
+            elif mode == PythonRunEnv.CONDA:
+                conda_install_req(env_name=_id, req=sw_pkg, enable_pre=True)
 
-        cls.render_runtime_yaml(config, workdir, force)
-        activate_python_env(mode=mode, identity=_id)
+            activate_python_env(mode=mode, identity=_id)
 
     @classmethod
     def activate(cls, workdir: str, yaml_name: str) -> None:
@@ -875,7 +866,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
     @staticmethod
     def render_runtime_yaml(
-        config: RuntimeConfig, workdir: Path, force: bool = False
+        workdir: Path,
+        name: str,
+        mode: str,
+        python_version: str,
+        pkgs: t.List[str],
+        force: bool = False,
     ) -> None:
         _rm = workdir / DefaultYAMLName.RUNTIME
 
@@ -883,7 +879,23 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             raise ExistedError(f"{_rm} was already existed")
 
         ensure_dir(workdir)
-        ensure_file(_rm, yaml.safe_dump(config.asdict(), default_flow_style=False))
+        config = dict(
+            name=name,
+            mode=mode,
+            environment={
+                "python": python_version,
+                "arch": SupportArch.NOARCH,
+                "os": SupportOS.UBUNTU,
+            },
+            dependencies=[
+                RuntimeLockFileType.CONDA
+                if mode == PythonRunEnv.CONDA
+                else RuntimeLockFileType.VENV,
+                {"pip": pkgs},
+            ],
+            api_version=RUNTIME_API_VERSION,
+        )
+        ensure_file(_rm, yaml.safe_dump(config, default_flow_style=False))
 
     @classmethod
     def restore(cls, workdir: Path) -> None:
