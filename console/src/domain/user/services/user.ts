@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { IListQuerySchema, IListSchema } from '@/domain/base/schemas/list'
+import { IProjectRoleSchema } from '@project/schemas/project'
 import { IUserSchema, ILoginUserSchema, IChangePasswordSchema } from '../schemas/user'
 
 export async function loginUser(data: ILoginUserSchema): Promise<IUserSchema> {
@@ -24,6 +25,12 @@ export async function fetchUser(userName: string): Promise<IUserSchema> {
 
 export async function fetchCurrentUser(): Promise<IUserSchema> {
     const resp = await axios.get<IUserSchema>('/api/v1/user/current')
+    return resp.data
+}
+
+export async function fetchCurrentUserRoles(projectId?: string): Promise<IProjectRoleSchema[]> {
+    const config = { params: { projectUrl: projectId ?? '0' } }
+    const resp = await axios.get<IProjectRoleSchema[]>('/api/v1/user/current/role', config)
     return resp.data
 }
 
