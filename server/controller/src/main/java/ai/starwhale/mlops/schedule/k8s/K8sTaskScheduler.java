@@ -30,6 +30,7 @@ import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +80,12 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         });
     }
 
+    /**
+     * todo hard code in this piece of code will be refactored after other core concepts being refactored
+     * @param client
+     * @param image
+     * @param task
+     */
     private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task) {
         log.debug("deploying task to k8s {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
         Map<String, String> envs = new HashMap<>();
@@ -97,7 +104,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             if (task.getTaskType() == TaskType.CMP) {
                 cmd = "cmp";
             }
-            V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), envs);
+            V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(task.getDeviceClass(),
+                task.getDeviceAmount().toString()).getResourceSelector();
+            V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), envs,resourceRequirements);
             // set result upload path
             job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+ task.getResultPath().resultDir())
                 ,new V1EnvVar().name("MINIO_SERVICE").value(storageProperties.getS3Config().getEndpoint())
