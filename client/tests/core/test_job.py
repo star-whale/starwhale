@@ -9,11 +9,10 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.utils import config as sw_config
 from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
+from starwhale.core.job import CloudJob, JobStorage, StandaloneJob
 from starwhale.base.type import URIType
-from starwhale.utils.config import load_swcli_config
 from starwhale.core.eval import JobTermView, JobTermViewRich
-from starwhale.core.job import CloudJob, StandaloneJob
-from starwhale.core.job import JobStorage
+from starwhale.utils.config import load_swcli_config
 
 from .. import ROOT_DIR
 
