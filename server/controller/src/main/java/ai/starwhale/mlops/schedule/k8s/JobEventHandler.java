@@ -38,10 +38,9 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
     @Override
     public void onAdd(V1Job obj) {
-        log.info("job added for {} {}", jobName(obj),
+        log.info("job added for {} with status {}", jobName(obj),
             obj.getStatus());
-        taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(obj),
-            TaskStatus.PREPARING)));
+        updateToSW(obj);
     }
 
     private String jobName(V1Job obj) {
@@ -50,6 +49,18 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
 
     @Override
     public void onUpdate(V1Job oldObj, V1Job newObj) {
+        updateToSW(newObj);
+    }
+
+    private void updateToSW(V1Job newObj) {
+        TaskStatus taskStatus = statusOf(newObj);
+        if(taskStatus == TaskStatus.UNKNOWN){
+            return;
+        }
+        taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(newObj), taskStatus)));
+    }
+
+    private TaskStatus statusOf(V1Job newObj) {
         V1JobStatus status = newObj.getStatus();
 
         TaskStatus taskStatus;
@@ -71,12 +82,11 @@ public class JobEventHandler implements ResourceEventHandler<V1Job> {
             log.debug("job status changed for {} is success  {}", jobName(newObj),
                 status);
         }else {
+            taskStatus = TaskStatus.UNKNOWN;
             log.warn("job status changed for {} is unknown {}", jobName(newObj),
                 status);
-            return;
         }
-
-        taskStatusReceiver.receive(List.of(new ReportedTask(taskIdOf(newObj), taskStatus)));
+        return taskStatus;
     }
 
     private long taskIdOf(V1Job newObj) {
