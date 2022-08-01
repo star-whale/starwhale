@@ -4,7 +4,6 @@ Chart Version: {{ .Chart.Version }}
 App Version: {{ .Chart.AppVersion }}
 Starwhale Image:
   - server: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.server.repo }}:{{ .Chart.AppVersion }}
-  - taskset: {{ .Values.image.registry }}/{{ .Values.image.org }}/{{ .Values.image.taskset.repo }}:{{ .Values.image.taskset.tag }}
 
 ******************************************
 {{- if .Values.ingress.enabled }}

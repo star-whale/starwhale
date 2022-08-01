@@ -1,6 +1,6 @@
 nameOverride: ""
 fullnameOverride: ""
-commonLables: {}
+commonLabels: {}
 commonAnnotations: {}
 
 image:
@@ -12,9 +12,6 @@ image:
     repo: "starwhale"
   server:
     repo: "server"
-  taskset:
-    repo: "taskset"
-    tag: 0.1.1
   pullPolicy: IfNotPresent
 
 mysql:
@@ -127,20 +124,11 @@ controller:
     password: abcd1234
   containerPort: 8082
 
-agent:
-  containerPort: 8088
-  task:
-    pullImageTimeoutMillis: "3600000"
-
 storage:
   agentHostPathRoot: "/mnt/data/starwhale"
 
 nodeSelector:
   controller: {}
-  agentCPU:
-    starwhale.ai/node-domain: cpu
-  agentGPU:
-    starwhale.ai/node-domain: gpu
 
 minikube:
   enabled: false
@@ -153,23 +141,18 @@ minikube:
     controller: console.minikube.local
 
 resources:
-  agentCPU:
-    limits:
-      memory: 20G
-    requests:
-      memory: 6G
-  agentGPU:
-    limits:
-      memory: 40G
-      nvidia.com/gpu: 2
-    requests:
-      memory: 6G
-      nvidia.com/gpu: 2
   controller:
     limits:
       memory: 8G
     requests:
       memory: 6G
+
+rbac:
+  create: true
+  # Specifies whether cluster-admin ClusterRole will be used for starwhale controller
+  clusterAdminRole: true
+  # use custom cluster role when clusterAdminRole disabled
+  customClusterRole: foobar
 
 serviceAccount:
   create: true
