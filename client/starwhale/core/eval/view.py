@@ -227,7 +227,7 @@ class JobTermView(BaseTermView):
         _print_confusion_matrix()
 
     @classmethod
-    def create(
+    def run(
         cls,
         project_uri: str,
         model_uri: str,
@@ -245,7 +245,7 @@ class JobTermView(BaseTermView):
         runtime_restore: bool = False,
     ) -> None:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
-        ok, reason = EvaluationJob.create(
+        ok, reason = EvaluationJob.run(
             _project_uri,
             model_uri,
             dataset_uris,

@@ -1,24 +1,19 @@
 import os
-import json
 import typing as t
 from pathlib import Path
 
 import yaml
 from loguru import logger
 
-from starwhale.core.job.base.model import Parser
-from starwhale.core.job.base.scheduler import Scheduler
+from starwhale.core.job.model import Parser
+from starwhale.core.job.scheduler import Scheduler
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import (
-    JSON_INDENT,
     CURRENT_FNAME,
-    DataLoaderKind,
     DefaultYAMLName,
-    SWDSBackendType,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    DEFAULT_INPUT_JSON_FNAME,
-    CNTR_DEFAULT_PIP_CACHE_DIR, DEFAULT_EVALUATION_JOBS_FNAME,
+    CNTR_DEFAULT_PIP_CACHE_DIR, DEFAULT_EVALUATION_JOBS_FNAME, DEFAULT_INPUT_JSON_FNAME,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -28,8 +23,6 @@ from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
 from starwhale.core.model.model import StandaloneModel
-from starwhale.core.dataset.model import Dataset
-from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.runtime.model import StandaloneRuntime
 
 _CNTR_WORKDIR = "/opt/starwhale"
@@ -207,53 +200,37 @@ class EvalExecutor:
     def _do_run_cmd(self, typ: str, step: str, task_index: int) -> None:
         if self.use_docker:
             # TODO
-            self._do_run_cmd_in_container(typ)
+            self._do_run_cmd_in_container(typ, step, task_index)
         else:
             self._do_run_cmd_in_host(typ, step, task_index)
 
     def _do_run_cmd_in_host(self, typ: str, step: str, task_index: int) -> None:
         from starwhale.core.model.model import StandaloneModel
 
-        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE):
-            _base_dir = self._job_workdir
-        else:
+        if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             raise NoSupportError(typ)
-
-        # StandaloneModel.eval_user_handler(
-        #     typ=typ,
-        #     workdir=self._model_dir,
-        #     job_name="default",
-        #     kw={
-        #         "status_dir": _base_dir / RunSubDirType.STATUS,
-        #         "log_dir": _base_dir / RunSubDirType.LOG,
-        #         "result_dir": _base_dir / RunSubDirType.RESULT,
-        #         "input_config": _base_dir
-        #                         / RunSubDirType.CONFIG
-        #                         / DEFAULT_INPUT_JSON_FNAME,
-        #     },
-        # )
 
         _run_dir = self._model_dir
 
-        logger.debug("run job from yaml")
         _jobs = Parser.parse_job_from_yaml(_run_dir / DEFAULT_EVALUATION_JOBS_FNAME)
         # steps of job
+        if self.job_name not in _jobs:
+            raise RuntimeError(f"job:{self.job_name} not found")
         _steps = _jobs[self.job_name]
         _module = StandaloneModel.get_pipeline_handler(typ, workdir=_run_dir)
 
-        _scheduler = Scheduler(_module, _run_dir, self.dataset_uris, _steps)
-        # todo 20220725 replace with job scheduler
+        _scheduler = Scheduler(module=_module, workdir=_run_dir, dataset_uris=self.dataset_uris, steps=_steps)
         if typ == EvalTaskType.ALL:
             _scheduler.schedule()
         elif typ == EvalTaskType.SINGLE:
             # by param
             _scheduler.schedule_single_task(step, task_index)
-        # todo save job info
+        # TODO: save job info
         console.print(f"job info:{_jobs}")
         console.print(":clap: finish run")
 
-    def _do_run_cmd_in_container(self, typ: str) -> None:
-        cmd = self._gen_run_container_cmd(typ)
+    def _do_run_cmd_in_container(self, typ: str, step: str, task_index: int) -> None:
+        cmd = self._gen_run_container_cmd(typ, step, task_index)
         console.rule(f":elephant: {typ} docker cmd", align="left")
         console.print(f"{cmd}\n")
         console.print(
@@ -264,7 +241,7 @@ class EvalExecutor:
             check_call(cmd, shell=True)
 
     # todo
-    def _gen_run_container_cmd(self, typ: str) -> str:
+    def _gen_run_container_cmd(self, typ: str, step: str, task_index: int) -> str:
         if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             raise Exception(f"no support {typ} to gen docker cmd")
 
@@ -293,16 +270,12 @@ class EvalExecutor:
             f"{self._runtime_dir}/{DEFAULT_MANIFEST_NAME}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DEFAULT_MANIFEST_NAME}",
         ]
 
-        if typ == EvalTaskType.ALL:
-            cmd += [
-                "-v",
-                f"{self.project_dir / URIType.DATASET}:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
-            ]
-        elif typ == EvalTaskType.SINGLE:
-            cmd += [
-                "-v",
-                f"{self.project_dir / RunSubDirType.RESULT}:{_CNTR_WORKDIR}/{RunSubDirType.PPL_RESULT}",
-            ]
+        cmd.extend(["-e", f"SW_EVAL_VERSION={self._version}"])
+        cmd.extend(["-e", f"SW_DATASETS={[u.full_uri for u in self.dataset_uris]}"])
+
+        if typ == EvalTaskType.SINGLE:
+            cmd.extend(["-e", f"SW_TASK_STEP={step}"])
+            cmd.extend(["-e", f"SW_TASK_INDEX={task_index}"])
 
         cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
         host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")

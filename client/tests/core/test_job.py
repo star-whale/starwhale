@@ -11,7 +11,7 @@ from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType
 from starwhale.utils.config import load_swcli_config
-from starwhale.core.job.eval.view import JobTermView, JobTermViewRich
+from starwhale.core.eval import JobTermView, JobTermViewRich
 from starwhale.core.job import CloudJob, StandaloneJob
 from starwhale.core.job import JobStorage
 
@@ -154,7 +154,7 @@ class CloudJobTestCase(unittest.TestCase):
             json={"code": 1, "message": "ok", "data": "11"},
         )
 
-        ok, reason = CloudJob.create(
+        ok, reason = CloudJob.run(
             project_uri=URI(self.project_uri),
             model_uri="1",
             dataset_uris=["1", "2"],
@@ -165,7 +165,7 @@ class CloudJobTestCase(unittest.TestCase):
         assert ok
         assert reason == "11"
 
-        JobTermView.create(
+        JobTermView.run(
             self.project_uri,
             model_uri="1",
             dataset_uris=["1", "2"],

@@ -23,17 +23,17 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir
-from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
+from starwhale.base.type import URIType, BundleType, InstanceType, EvalTaskType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
-from starwhale.core.job.base.scheduler import Scheduler
-from starwhale.core.job.base.model import Parser
+from starwhale.core.job.model import Parser
 
 from .store import ModelStorage
+from ..job.scheduler import Scheduler
 
 
 class ModelRunConfig:
@@ -201,30 +201,39 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     #     cls,
     #     typ: str,
     #     workdir: Path,
+    #     dataset_uris: list[URI],
     #     yaml_name: str = DefaultYAMLName.MODEL,
     #     job_name: str = "default",
+    #     step: str = "",
+    #     task_index: int = 0,
     #     kw: t.Dict[str, t.Any] = {},
     # ) -> None:
     #     from starwhale.api._impl.model import _RunConfig
     #
+    #     if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
+    #         raise NoSupportError(typ)
+    #
     #     _mp = workdir / yaml_name
     #     _model_config = cls._load_model_config(_mp)
     #     _module = _model_config.run.ppl
-    #
+    #     # TODO:
     #     _RunConfig.set_env(kw)
     #
     #     logger.debug("run job from yaml")
     #     _jobs = Parser.parse_job_from_yaml(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
     #     # steps of job
+    #     if job_name not in _jobs:
+    #         raise RuntimeError(f"job:{job_name} not found")
     #     _steps = _jobs[job_name]
     #
-    #     scheduler = Scheduler(_module, workdir, _steps)
+    #     _scheduler = Scheduler(_module, workdir, dataset_uris, _steps)
+    #
     #     if typ == EvalTaskType.ALL:
-    #         scheduler.schedule()
-    #     elif typ == EvalTaskType.SINGLE_TASK:
-    #         # todo by param
-    #         scheduler.schedule_single_task("", 0)
-    #     # save job info
+    #         _scheduler.schedule()
+    #     elif typ == EvalTaskType.SINGLE:
+    #         # by param
+    #         _scheduler.schedule_single_task(step, task_index)
+    #     # TODO: save job info
     #     console.print(f"job info:{_jobs}")
     #     console.print(":clap: finish run")
 

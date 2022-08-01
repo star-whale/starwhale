@@ -5,7 +5,7 @@ import click
 
 from starwhale import __version__
 from starwhale.utils.debug import init_logger
-from starwhale.core.job.eval.cli import eval_job_cmd
+from starwhale.core.eval.cli import eval_job_cmd
 from starwhale.utils.config import load_swcli_config
 from starwhale.core.model.cli import model_cmd
 from starwhale.cli.board.board import open_board

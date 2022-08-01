@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from starwhale.core.job.base.model import Step, Parser
+from starwhale.core.job.model import Step, Parser
 
 
 def step(
