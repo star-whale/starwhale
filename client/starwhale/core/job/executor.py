@@ -71,7 +71,7 @@ class EvalExecutor:
         self.gencmd = gencmd
         self.use_docker = use_docker
 
-        self._version = ""
+        self._version = gen_uniq_version(self.name)
         self._manifest: t.Dict[str, t.Any] = {"status": _STATUS.START}
         self._workdir = Path()
         self._model_dir = Path()
@@ -133,8 +133,6 @@ class EvalExecutor:
     def _gen_version(self) -> None:
         # TODO: abstract base class or mixin class for swmp/swds/
         logger.info("[step:version]create eval job version...")
-        if not self._version:
-            self._version = gen_uniq_version(self.name)
         self._manifest["version"] = self._version
         self._manifest["created_at"] = now_str()  # type: ignore
         logger.info(f"[step:version]eval job version is {self._version}")

@@ -627,6 +627,15 @@ def check_valid_conda_prefix(prefix: t.Union[str, Path]) -> bool:
     return (Path(prefix) / "conda-meta").exists()
 
 
+def guess_python_env_mode(prefix: t.Union[str, Path]) -> str:
+    if check_valid_venv_prefix(prefix):
+        return PythonRunEnv.VENV
+    elif check_valid_conda_prefix(prefix):
+        return PythonRunEnv.CONDA
+    else:
+        raise NoSupportError(f"guess python env from paht: {prefix}")
+
+
 def get_base_prefix(py_env: str) -> str:
     if py_env == PythonRunEnv.VENV:
         _path = os.environ.get(ENV_VENV, "")
