@@ -131,6 +131,15 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--name", help="Job name")
 @click.option("--desc", help="Job description")
 @click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "--type",
+    # type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE_TASK]),
+    default=EvalTaskType.ALL,
+    help="Evaluation run type",
+)
+@click.option("--step", default="", help="Evaluation run step")
+@click.option("--task-index", default=0, help="Index of tasks in the current step")
+def _eval(model: str, dataset: t.List[str], name: str, desc: str, project: str) -> None:
 @click.option("--runtime", default="", help="runtime uri")
 @click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 def _eval(
@@ -147,7 +156,7 @@ def _eval(
 
     MODEL: model uri or model workdir path
     """
-    JobTermView.create(
+    JobTermView.run(
         project_uri=project,
         model_uri=model,
         dataset_uris=dataset,

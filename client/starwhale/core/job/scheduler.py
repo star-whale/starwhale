@@ -7,7 +7,7 @@ from pathlib import Path
 from loguru import logger
 
 from starwhale.base.uri import URI
-from starwhale.core.job.base.model import Step, STATUS, Task
+from starwhale.core.job.model import Step, STATUS, Task
 
 
 class Scheduler:

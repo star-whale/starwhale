@@ -2,7 +2,7 @@ from loguru import logger
 
 import inspect
 
-from starwhale.core.job.base.model import Context
+from starwhale.core.job.model import Context
 from starwhale.api.job import step
 import torch
 
