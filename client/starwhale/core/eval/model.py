@@ -92,7 +92,9 @@ class EvaluationJob(metaclass=ABCMeta):
         raise NotImplementedError
 
     @classmethod
-    def _get_job_cls(cls, uri: URI) -> t.Union[t.Type[StandaloneEvaluationJob], t.Type[CloudEvaluationJob]]:
+    def _get_job_cls(
+        cls, uri: URI
+    ) -> t.Union[t.Type[StandaloneEvaluationJob], t.Type[CloudEvaluationJob]]:
         if uri.instance_type == InstanceType.STANDALONE:
             return StandaloneEvaluationJob
         elif uri.instance_type == InstanceType.CLOUD:

@@ -7,7 +7,9 @@ from starwhale.base.type import EvalTaskType
 from .view import JobTermView, get_term_view, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
-@click.group("eval", help="Evaluation management, create/list/info/compare evaluation job")
+@click.group(
+    "eval", help="Evaluation management, create/list/info/compare evaluation job"
+)
 @click.pass_context
 def eval_job_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
@@ -72,7 +74,7 @@ def _list(
 @click.option("--task-index", default=0, help="Index of tasks in the current step")
 def _run(
     project: str,
-    version:str,
+    version: str,
     model: str,
     dataset: t.List[str],
     runtime: str,
