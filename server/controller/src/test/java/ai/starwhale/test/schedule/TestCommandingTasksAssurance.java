@@ -16,25 +16,6 @@
 
 package ai.starwhale.test.schedule;
 
-import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
-import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
-import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.system.agent.bo.Agent;
-import ai.starwhale.mlops.domain.system.agent.bo.Agent.AgentUnModifiable;
-import ai.starwhale.mlops.domain.system.agent.AgentStatus;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskCommand;
-import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
-import ai.starwhale.mlops.reporting.ReportedTask;
-import ai.starwhale.mlops.schedule.CommandingTasksAssurance;
-import ai.starwhale.test.ObjectMockHolder;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 /**
  * test for {@link ai.starwhale.mlops.schedule.CommandingTasksAssurance}
  */

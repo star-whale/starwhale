@@ -32,6 +32,8 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1Node;
+import io.kubernetes.client.openapi.models.V1NodeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -74,7 +76,7 @@ public class K8sClient {
     /**
      * Basic constructor for Kubernetes
      */
-    public K8sClient(@Value("${sw.infra.k8s.name-space}") String ns,ResourceEventHandler<V1Job> eventH)
+    public K8sClient(@Value("${sw.infra.k8s.name-space}") String ns,ResourceEventHandler<V1Job> eventH,ResourceEventHandler<V1Node> eventHandlerNode)
         throws IOException {
         client =Config.defaultClient();
         Configuration.setDefaultApiClient(client);
@@ -84,6 +86,7 @@ public class K8sClient {
         this.ns = ns;
         informerFactory = new SharedInformerFactory(client);
         watchJob(eventH);
+        watchNode(eventHandlerNode);
         informerFactory.startAllRegisteredInformers();
     }
 
@@ -235,5 +238,15 @@ public class K8sClient {
 
     private String toV1LabelSelector(Map<String, String> labels){
         return LabelSelector.parse(new V1LabelSelector().matchLabels(labels)).toString();
+    }
+
+    private void watchNode(ResourceEventHandler<V1Node> eventHandlerNode){
+        SharedIndexInformer<V1Node> nodeInformer = informerFactory.sharedIndexInformerFor(
+            (CallGeneratorParams params) -> coreV1Api.listNodeCall(null, null, null, null, null,
+                null,
+                params.resourceVersion, null, params.timeoutSeconds, params.watch,null),
+            V1Node.class,
+            V1NodeList.class);
+        nodeInformer.addEventHandler(eventHandlerNode);
     }
 }

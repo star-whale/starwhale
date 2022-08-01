@@ -68,24 +68,6 @@ public interface SystemApi {
         @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
 
-    @Operation(summary = "remove offline agent")
-    @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ok",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = String.class)))
-        })
-    @DeleteMapping(value = "/system/agent")
-    ResponseEntity<ResponseMessage<String>> deleteAgent(
-        @Parameter(in = ParameterIn.QUERY, description = "the serialNumber of the agent to be deleted", schema = @Schema())
-        @Valid
-        @RequestParam(value = "serialNumber", required = true)
-            String serialNumber);
-
     @Operation(summary = "Upgrade system version or cancel upgrade")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/system/version/{action}")

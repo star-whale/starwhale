@@ -56,8 +56,4 @@ public class SystemService {
         return controllerVersion;
     }
 
-    public String deleteOfflineAgent(String agentSerialNumber) {
-        agentCache.removeOfflineAgent(agentSerialNumber);
-        return "";
-    }
 }
