@@ -8,7 +8,7 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
 )
 from starwhale.base.type import EvalTaskType
-from starwhale.core.job.eval.view import JobTermView
+from starwhale.core.eval.view import JobTermView
 
 from .view import get_term_view, ModelTermView
 
@@ -131,13 +131,21 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--name", help="Job name")
 @click.option("--desc", help="Job description")
 @click.option("-p", "--project", default="", help="Project URI")
+@click.option(
+    "--type",
+    # type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE_TASK]),
+    default=EvalTaskType.ALL,
+    help="Evaluation run type",
+)
+@click.option("--step", default="", help="Evaluation run step")
+@click.option("--task-index", default=0, help="Index of tasks in the current step")
 def _eval(model: str, dataset: t.List[str], name: str, desc: str, project: str) -> None:
     """
     [ONLY Standalone]Create as new job for model evaluation
 
     MODEL: model uri or model workdir path
     """
-    JobTermView.create(
+    JobTermView.run(
         project_uri=project,
         model_uri=model,
         dataset_uris=dataset,

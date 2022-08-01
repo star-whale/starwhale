@@ -4,7 +4,7 @@ import yaml
 from loguru import logger
 
 from starwhale.base.uri import URI
-from starwhale.core.job.base.loader import load_module
+from starwhale.core.job.loader import load_module
 
 
 class Step:
@@ -196,9 +196,13 @@ class Task:
             self.status = STATUS.RUNNING
             # The standard implementation does not return results
             func(self.context)
-        except RuntimeError:
+        # except RuntimeError as e:
+        #     self.status = STATUS.FAILED
+        #     logger.error("execute step:{} error, {}", self.context, e)
+        #     return False
+        except Exception as e:
             self.status = STATUS.FAILED
-            logger.error("execute step:{} error", self.context)
+            logger.error("execute step:{} error, {}", self.context, e)
             return False
         else:
             self.status = STATUS.SUCCESS

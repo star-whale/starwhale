@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 install_requires = [
     "click>=8.0.4",
     # flake8 require importlib-metadata < 4.3.0
-    "importlib-metadata>=4.0.0, <=4.2.0",
+    "importlib-metadata>=4.0.0, <=4.11.4",
     "attrs==21.4.0",
     "pyyaml==6.0",
     "cattrs==1.7.1",

@@ -64,13 +64,13 @@ def _list(
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
 @click.option(
     "--type",
-    # type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE_TASK]),
+    type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE]),
     default=EvalTaskType.ALL,
     help="Evaluation run type",
 )
 @click.option("--step", default="", help="Evaluation run step")
 @click.option("--task-index", default=0, help="Index of tasks in the current step")
-def _create(
+def _run(
     project: str,
     version:str,
     model: str,
@@ -85,7 +85,7 @@ def _create(
     step: str,
     task_index: int,
 ) -> None:
-    JobTermView.create(
+    JobTermView.run(
         project_uri=project,
         version=version,
         model_uri=model,

@@ -33,7 +33,7 @@ class EvaluationJob(metaclass=ABCMeta):
         self.sw_config = SWCliConfigMixed()
 
     @classmethod
-    def create(
+    def run(
         cls,
         project_uri: URI,
         model_uri: str,
@@ -45,7 +45,7 @@ class EvaluationJob(metaclass=ABCMeta):
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         _cls = cls._get_job_cls(project_uri)
-        return _cls.create(
+        return _cls.run(
             project_uri=project_uri,
             model_uri=model_uri,
             dataset_uris=dataset_uris,
@@ -122,7 +122,7 @@ class StandaloneEvaluationJob(EvaluationJob):
         self.store = JobStorage(uri)
 
     @classmethod
-    def create(
+    def run(
         cls,
         project_uri: URI,
         model_uri: str,
@@ -295,7 +295,7 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
         super().__init__(uri)
 
     @classmethod
-    def create(
+    def run(
         cls,
         project_uri: URI,
         model_uri: str,
