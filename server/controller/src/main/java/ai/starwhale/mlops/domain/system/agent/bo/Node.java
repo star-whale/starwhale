@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.node;
+package ai.starwhale.mlops.domain.system.agent.bo;
 
+import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -50,12 +52,14 @@ public class Node {
     /**
      * memory size in GB unit
      */
-    Integer memorySizeGB;
+    Float memorySizeGB;
 
     /**
      * the device holding information
      */
     List<Device> devices;
+
+    AgentStatus status;
 
     public boolean equals(Object obj){
         if(!(obj instanceof Node)){
