@@ -17,6 +17,7 @@ from rich.console import Console
 
 from starwhale import __version__
 from starwhale.consts import FMT_DATETIME, SW_DEV_DUMMY_VERSION
+from starwhale.utils.error import NoSupportError
 
 console = Console(soft_wrap=True)
 now_str = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
@@ -184,3 +185,13 @@ def get_current_shell() -> str:
     import shellingham
 
     return str(shellingham.detect_shell()[0])
+
+
+def make_dir_gitignore(d: Path) -> None:
+    from starwhale.utils.fs import ensure_dir, ensure_file
+
+    if not d.is_dir():
+        raise NoSupportError(f"{d} is not dir")
+
+    ensure_dir(d)
+    ensure_file(d / ".gitignore", "*")

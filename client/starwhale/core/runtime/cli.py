@@ -9,21 +9,58 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
-from starwhale.base.type import RuntimeLockFileType
-from starwhale.utils.error import NotFoundError
+from starwhale.base.uri import URI
+from starwhale.base.type import URIType, RuntimeLockFileType
 
 from .view import get_term_view, RuntimeTermView
 
 
 @click.group(
-    "runtime", help="Runtime management, create/build/copy/activate/restore..."
+    "runtime", help="Runtime management, quickstart/build/copy/activate/restore..."
 )
 @click.pass_context
 def runtime_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@runtime_cmd.command("quickstart")
+@click.group("quickstart", help="[Standalone]Quickstart your Starwhale Runtime")
+def quickstart() -> None:
+    pass
+
+
+runtime_cmd.add_command(quickstart)
+
+
+@quickstart.command("uri")
+@click.argument("uri", required=True)
+@click.argument("workdir", required=True, type=click.Path(exists=True, file_okay=False))
+@click.option("-f", "--force", is_flag=True, help="Force to quickstart")
+@click.option("-n", "--name", default="", help="Runtime name")
+@click.option(
+    "--restore",
+    is_flag=True,
+    default=False,
+    help="Create isolated python environment and restore the runtime",
+)
+def _quickstart_from_uri(
+    uri: str, workdir: str, force: bool, name: str, restore: bool
+) -> None:
+    """Quickstart from Starwhale Runtime URI
+
+    Args:
+
+        uri (str): Starwhale Dataset URI
+        workdir (str): Runtime workdir
+    """
+    p_workdir = Path(workdir).absolute()
+    name = name or p_workdir.name
+    _uri = URI(uri, expected_type=URIType.RUNTIME)
+    RuntimeTermView.quickstart_from_uri(
+        workdir=p_workdir, name=name, uri=_uri, force=force, restore=restore
+    )
+
+
+@quickstart.command("shell", help="Quickstart from interactive shell")
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
 @click.option("-f", "--force", is_flag=True, help="Force to quickstart")
 @click.option(
@@ -55,14 +92,11 @@ def _quickstart(
     """[Only Standalone]Quickstart Starwhale Runtime
 
     Args:
-        workdir (Path): runtime workdir
+
+        workdir (Path): Runtime workdir
     """
     p_workdir = Path(workdir).absolute()
-    if not p_workdir.exists():
-        raise NotFoundError(workdir)
-
     name = name or p_workdir.name
-    # TODO: support quickstart runtime from the existed runtime uri (local or remote)
     RuntimeTermView.quickstart_from_ishell(
         p_workdir, name, python_env, create_env, force
     )

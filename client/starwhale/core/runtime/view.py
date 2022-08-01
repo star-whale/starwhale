@@ -3,10 +3,17 @@ import typing as t
 from pathlib import Path
 
 from starwhale.utils import console, pretty_bytes, in_production
-from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.consts import (
+    DefaultYAMLName,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+    STANDALONE_INSTANCE,
+)
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
+from starwhale.utils.error import NoSupportError
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.runtime.store import RuntimeStorage
 
 from .model import Runtime, StandaloneRuntime
@@ -123,6 +130,24 @@ class RuntimeTermView(BaseTermView):
         _runtimes, _pager = Runtime.list(_uri, page, size)
         _data = BaseTermView.list_data(_runtimes, show_removed, fullname)
         return _data, _pager
+
+    @classmethod
+    def quickstart_from_uri(
+        cls,
+        workdir: Path,
+        name: str,
+        uri: URI,
+        force: bool = False,
+        restore: bool = False,
+    ) -> None:
+        console.print(
+            f":construction: quickstart Starwhale Runtime[{name}] environment from runtime URI({uri})..."
+        )
+        _sw_config = SWCliConfigMixed()
+        if _sw_config.current_instance != STANDALONE_INSTANCE:
+            raise NoSupportError(f"{_sw_config.current_instance} quickstart")
+        StandaloneRuntime.quickstart_from_uri(workdir, name, uri, force, restore)
+        console.print(":clap: Starwhale Runtime environment is ready to use :tada:")
 
     @classmethod
     def quickstart_from_ishell(

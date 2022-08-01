@@ -54,7 +54,7 @@ echo "install swcli"
 make install-sw
 
 cd "$WORK_DIR/example/mnist" || exit
-swcli runtime quickstart . --python-env=venv --create-env --name pytorch-mnist
+swcli runtime quickstart shell . --python-env=venv --create-env --name pytorch-mnist
 # shellcheck source=/dev/null
 . .venv/bin/activate
 
