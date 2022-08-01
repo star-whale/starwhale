@@ -7,11 +7,13 @@ from pathlib import Path
 from loguru import logger
 
 from starwhale.base.uri import URI
-from starwhale.core.job.model import Step, STATUS, Task
+from starwhale.core.job.model import Step, Task, STATUS
 
 
 class Scheduler:
-    def __init__(self, module: str, workdir: Path, dataset_uris: list[URI], steps: dict[Step]):
+    def __init__(
+        self, module: str, workdir: Path, dataset_uris: list[URI], steps: dict[Step]
+    ):
         self.steps = steps
         self.dataset_uris = dataset_uris
         self.module = module
@@ -45,7 +47,9 @@ class Scheduler:
             for _wait in _wait_steps:
                 if all(d in _finished_step_names for d in _wait.dependency if d):
                     _wait.status = STATUS.RUNNING
-                    _executor = Executor(_wait.concurrency, _wait.tasks, StepCallback(self, _wait))
+                    _executor = Executor(
+                        _wait.concurrency, _wait.tasks, StepCallback(self, _wait)
+                    )
                     _executor.start()
                     # executor.setDaemon()
                     _threads.append(_executor)
@@ -58,7 +62,9 @@ class Scheduler:
             raise RuntimeError(f"step:{step_name} not found")
         _step = self.steps[step_name]
         if task_index >= _step.task_num:
-            raise RuntimeError(f"task_index:{task_index} out of bounds, total:{_step.task_num}")
+            raise RuntimeError(
+                f"task_index:{task_index} out of bounds, total:{_step.task_num}"
+            )
         _task = _step.tasks[task_index]
         _executor = Executor(1, [_task], SingleTaskCallback(self, _task))
         _executor.start()
@@ -97,7 +103,9 @@ class SingleTaskCallback(Callback):
         self.task = task
 
     def callback(self, res: bool, exec_time: float):
-        logger.debug("task:{} finished, status:{}, run time:{}", self.task, res, exec_time)
+        logger.debug(
+            "task:{} finished, status:{}, run time:{}", self.task, res, exec_time
+        )
 
 
 class Executor(threading.Thread):
@@ -113,9 +121,11 @@ class Executor(threading.Thread):
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=self.concurrency
         ) as executor:
-            futures = [
-                executor.submit(task.execute)
-                for task in self.tasks
-            ]
+            futures = [executor.submit(task.execute) for task in self.tasks]
             self.callback.callback(
-                all(future.result() for future in concurrent.futures.as_completed(futures)), time.time() - start_time)
+                all(
+                    future.result()
+                    for future in concurrent.futures.as_completed(futures)
+                ),
+                time.time() - start_time,
+            )

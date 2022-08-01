@@ -91,7 +91,9 @@ class EvaluationJob(metaclass=ABCMeta):
         raise NotImplementedError
 
     @classmethod
-    def _get_job_cls(cls, uri: URI) -> t.Union[t.Type[StandaloneEvaluationJob], t.Type[CloudEvaluationJob]]:
+    def _get_job_cls(
+        cls, uri: URI
+    ) -> t.Union[t.Type[StandaloneEvaluationJob], t.Type[CloudEvaluationJob]]:
         if uri.instance_type == InstanceType.STANDALONE:
             return StandaloneEvaluationJob
         elif uri.instance_type == InstanceType.CLOUD:
@@ -144,7 +146,9 @@ class StandaloneEvaluationJob(EvaluationJob):
             desc=desc,
             gencmd=kw.get("gencmd", False),
             use_docker=kw.get("use_docker", False),
-        ).run(kw.get("typ", EvalTaskType.ALL), kw.get("step", ""), kw.get("task_index", 0))
+        ).run(
+            kw.get("typ", EvalTaskType.ALL), kw.get("step", ""), kw.get("task_index", 0)
+        )
         return True, _version
 
     def _get_report(self) -> t.Dict[str, t.Any]:

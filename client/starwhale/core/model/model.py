@@ -17,20 +17,20 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     DEFAULT_COPY_WORKERS,
-    DEFAULT_STARWHALE_API_VERSION,
     DEFAULT_EVALUATION_JOBS_FNAME,
+    DEFAULT_STARWHALE_API_VERSION,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir
-from starwhale.base.type import URIType, BundleType, InstanceType, EvalTaskType
+from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
+from starwhale.core.job.model import Parser
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
-from starwhale.core.job.model import Parser
 
 from .store import ModelStorage
 from ..job.scheduler import Scheduler

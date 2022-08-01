@@ -147,7 +147,11 @@ class Parser:
 # Runtime concept
 class Context:
     def __init__(
-        self, step: str = "", total: int = 0, index: int = 0, dataset_uris: list[URI] = None,
+        self,
+        step: str = "",
+        total: int = 0,
+        index: int = 0,
+        dataset_uris: list[URI] = None,
     ):
         self.step = step
         self.total = total

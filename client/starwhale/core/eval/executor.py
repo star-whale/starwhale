@@ -5,24 +5,26 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
-from starwhale.core.job.model import Parser
-from starwhale.core.job.scheduler import Scheduler
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import (
     CURRENT_FNAME,
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    CNTR_DEFAULT_PIP_CACHE_DIR, DEFAULT_EVALUATION_JOBS_FNAME, DEFAULT_INPUT_JSON_FNAME,
+    DEFAULT_INPUT_JSON_FNAME,
+    CNTR_DEFAULT_PIP_CACHE_DIR,
+    DEFAULT_EVALUATION_JOBS_FNAME,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.process import check_call
+from starwhale.core.job.model import Parser
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
 from starwhale.core.model.model import StandaloneModel
+from starwhale.core.job.scheduler import Scheduler
 from starwhale.core.runtime.model import StandaloneRuntime
 
 _CNTR_WORKDIR = "/opt/starwhale"
@@ -92,7 +94,9 @@ class EvalExecutor:
     def __repr__(self) -> str:
         return f"Evaluation Executor: name -> {self.name}, version -> {self._version}"
 
-    def run(self, typ: str = EvalTaskType.ALL, step: str = "", task_index: int = 0) -> str:
+    def run(
+        self, typ: str = EvalTaskType.ALL, step: str = "", task_index: int = 0
+    ) -> str:
         try:
             self._do_run(typ, step, task_index)
         except Exception as e:
@@ -120,7 +124,7 @@ class EvalExecutor:
             (self._extract_swrt, 15, "extract runtime"),
             (self._init_storage, 20, "init storage"),
             (self._do_run_eval_job, 70, "run eval job"),
-            (self._finally, 95, "do finally")
+            (self._finally, 95, "do finally"),
         ]
 
         run_with_progress_bar("eval run in local...", operations)
@@ -134,10 +138,10 @@ class EvalExecutor:
         pass
 
     def _do_run_eval_job(self):
-        _type = self._manifest['type']
+        _type = self._manifest["type"]
         if _type is not EvalTaskType.ALL:
-            _step = self._manifest['step']
-            _task_index = self._manifest['task_index']
+            _step = self._manifest["step"]
+            _task_index = self._manifest["task_index"]
             self._do_run_cmd(_type, _step, _task_index)
         else:
             self._do_run_cmd(_type, "", 0)
@@ -221,7 +225,12 @@ class EvalExecutor:
         _steps = _jobs[self.job_name]
         _module = StandaloneModel.get_pipeline_handler(typ, workdir=_run_dir)
 
-        _scheduler = Scheduler(module=_module, workdir=_run_dir, dataset_uris=self.dataset_uris, steps=_steps)
+        _scheduler = Scheduler(
+            module=_module,
+            workdir=_run_dir,
+            dataset_uris=self.dataset_uris,
+            steps=_steps,
+        )
         if typ == EvalTaskType.ALL:
             _scheduler.schedule()
         elif typ == EvalTaskType.SINGLE:
