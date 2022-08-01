@@ -23,7 +23,6 @@ import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
-import cn.hutool.core.io.resource.ClassPathResource;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -169,8 +168,8 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     private String getJobTemplate() throws IOException {
         String file ="template/job.yaml";
-        ClassPathResource resource = new ClassPathResource(file);
-        InputStream is = resource.getStream();
+        InputStream is = this.getClass().getClassLoader()
+            .getResourceAsStream(file);
         return new String(is.readAllBytes(), StandardCharsets.UTF_8);
     }
 }
