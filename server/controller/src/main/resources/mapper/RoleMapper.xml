@@ -11,13 +11,28 @@
     <select id="listRoles" resultMap="roleResultMap">
         select id as role_id,
                role_name,
-               role_name_en
-        from user_role
-        order by role_name
+               role_code,
+               role_description
+        from user_role_info
     </select>
+
+    <select id="getRolesOfProject" resultMap="roleResultMap">
+        select r.id as role_id,
+               r.role_name,
+               r.role_code,
+               r.role_description
+        from user_role_rel as rel
+                 left join user_role_info as r
+                           on r.id = rel.role_id
+        where rel.user_id = #{userId}
+          and rel.project_id = #{projectId}
+    </select>
+
+
     <resultMap id="roleResultMap" type="ai.starwhale.mlops.domain.user.po.RoleEntity" >
         <id property="id" column="role_id" />
         <result property="roleName" column="role_name"/>
-        <result property="roleNameEn" column="role_name_en"/>
+        <result property="roleCode" column="role_code"/>
+        <result property="roleDescription" column="role_description"/>
     </resultMap>
 </mapper>

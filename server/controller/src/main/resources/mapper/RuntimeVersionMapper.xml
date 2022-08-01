@@ -31,15 +31,10 @@
                u.id as user_id,
                u.user_name,
                u.created_time as user_created_time,
-               u.user_enabled,
-               r.id as role_id,
-               r.role_name,
-               r.role_name_en
+               u.user_enabled
         from runtime_version as rv,
-             user_info as u,
-             user_role as r
+             user_info as u
         where owner_id = u.id
-          and r.id = u.role_id
     </sql>
 
     <select id="listVersions" resultMap="runtimeVersionResultMap" >

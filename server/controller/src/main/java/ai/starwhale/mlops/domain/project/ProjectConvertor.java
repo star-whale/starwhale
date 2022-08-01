@@ -46,12 +46,14 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
         if(entity == null) {
             return ProjectVO.empty();
         }
+        if(entity.getId() == 0) {
+            return ProjectVO.system();
+        }
         return ProjectVO.builder()
             .id(idConvertor.convert(entity.getId()))
             .name(entity.getProjectName())
             .owner(userConvertor.convert(entity.getOwner()))
             .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-            .isDefault(entity.getIsDefault() != 0)
             .build();
     }
 

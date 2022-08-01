@@ -22,7 +22,6 @@ import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
@@ -30,6 +29,7 @@ import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -39,11 +39,10 @@ import org.springframework.util.StringUtils;
 @Service
 public class ProjectManager implements ProjectAccessor{
 
-    @Resource
-    private ProjectMapper projectMapper;
+
 
     @Resource
-    private UserService userService;
+    private ProjectMapper projectMapper;
 
     @Resource
     private IDConvertor idConvertor;
@@ -65,8 +64,7 @@ public class ProjectManager implements ProjectAccessor{
 
     }
 
-    public ProjectEntity findDefaultProject() {
-        Long userId = userService.currentUserDetail().getIdTableKey();
+    public ProjectEntity findDefaultProject(Long userId) {
         ProjectEntity defaultProject = projectMapper.findDefaultProject(userId);
         if(defaultProject == null) {
             List<ProjectEntity> entities = projectMapper.listProjectsByOwner(userId, null, 0);
@@ -79,32 +77,29 @@ public class ProjectManager implements ProjectAccessor{
         return defaultProject;
     }
 
-    public ProjectEntity findByNameOrDefault(String projectName){
+    public ProjectEntity findByNameOrDefault(String projectName, Long userId){
         if(!StrUtil.isEmpty(projectName)) {
             ProjectEntity entity = projectMapper.findProjectByName(projectName);
             if(entity != null) {
                 return entity;
             }
         }
-        return findDefaultProject();
+        return findDefaultProject(userId);
     }
 
-    public Boolean existProject(String projectName, Boolean isDeleted) {
+    public Boolean existProject(String projectName) {
         ProjectEntity existProject = projectMapper.findProjectByName(projectName);
-        if(existProject == null) {
-            return false;
-        }
-        return isDeleted ? existProject.getIsDeleted() == 1 : existProject.getIsDeleted() == 0;
+        return existProject != null;
     }
 
     @Override
-    public Long getProjectId(String projectUrl) {
+    public Long getProjectId(@NotNull String projectUrl) {
         if(idConvertor.isID(projectUrl)) {
             return idConvertor.revert(projectUrl);
         }
         ProjectEntity projectEntity = projectMapper.findProjectByName(projectUrl);
         if(projectEntity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                 .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
         }
         return projectEntity.getId();

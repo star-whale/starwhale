@@ -20,7 +20,6 @@ import ai.starwhale.mlops.api.protocol.StorageFileVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.api.protocol.swds.DatasetVersionVO;
 import ai.starwhale.mlops.api.protocol.swds.SWDatasetInfoVO;
-import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
@@ -38,7 +37,6 @@ import ai.starwhale.mlops.domain.bundle.tag.TagManager;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StorageService;
-import ai.starwhale.mlops.domain.swds.bo.SWDSObject;
 import ai.starwhale.mlops.domain.swds.bo.SWDSQuery;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersionQuery;
@@ -46,6 +44,7 @@ import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -94,6 +93,9 @@ public class SWDatasetService {
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
+
+    @Resource
+    private UserService userService;
 
     private BundleManager bundleManager() {
         return new BundleManager(idConvertor, projectManager, swdsManager, swdsManager, ValidSubject.SWDS);
@@ -239,7 +241,7 @@ public class SWDatasetService {
             }
             return swDatasetInfoOfDs(ds);
         }
-        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project);
+        ProjectEntity projectEntity = projectManager.findByNameOrDefault(project, userService.currentUserDetail().getIdTableKey());
 
         List<SWDatasetEntity> swDatasetEntities = swdsMapper.listDatasets(projectEntity.getId(), null);
         if(null == swDatasetEntities || swDatasetEntities.isEmpty()){
@@ -261,16 +263,16 @@ public class SWDatasetService {
             .map(entity -> toSWDatasetInfoVO(ds, entity)).collect(Collectors.toList());
     }
 
-    public String query(UploadRequest uploadRequest) {
-        Long projectId = projectManager.getProjectId(uploadRequest.getProject());
-        SWDatasetEntity entity = swdsMapper.findByName(uploadRequest.name(), projectId);
+    public String query(String projectUrl, String datasetUrl, String versionUrl) {
+        Long projectId = projectManager.getProjectId(projectUrl);
+        SWDatasetEntity entity = swdsMapper.findByName(datasetUrl, projectId);
         if(null == entity) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS), HttpStatus.NOT_FOUND);
         }
-        SWDatasetVersionEntity versionEntity = swdsVersionMapper.findByDSIdAndVersionName(entity.getId(), uploadRequest.version());
+        SWDatasetVersionEntity versionEntity = swdsVersionMapper.findByDSIdAndVersionName(entity.getId(), versionUrl);
         if(null == versionEntity) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS), HttpStatus.NOT_FOUND);
         }
-        return "";
+        return versionEntity.getName();
     }
 }

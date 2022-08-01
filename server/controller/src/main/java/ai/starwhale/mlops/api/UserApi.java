@@ -17,7 +17,14 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.user.RoleVO;
+import ai.starwhale.mlops.api.protocol.user.SystemRoleVO;
+import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserRequest;
+import ai.starwhale.mlops.api.protocol.user.UserRoleAddRequest;
+import ai.starwhale.mlops.api.protocol.user.UserRoleDeleteRequest;
+import ai.starwhale.mlops.api.protocol.user.UserRoleUpdateRequest;
+import ai.starwhale.mlops.api.protocol.user.UserRoleVO;
 import ai.starwhale.mlops.api.protocol.user.UserUpdatePasswordRequest;
 import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
@@ -30,10 +37,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,6 +66,7 @@ public interface UserApi {
                     schema = @Schema(implementation = PageInfo.class)))
         })
     @GetMapping(value = "/user")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<PageInfo<UserVO>>> listUser(
         @Parameter(
             in = ParameterIn.QUERY,
@@ -77,6 +87,7 @@ public interface UserApi {
     @Operation(summary = "Create a new user")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/user")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> createUser(@Valid @RequestBody UserRequest request);
 
     @Operation(summary = "Get the current logged in user.")
@@ -91,7 +102,30 @@ public interface UserApi {
                     schema = @Schema(implementation = UserVO.class)))
         })
     @GetMapping(value = "/user/current")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<UserVO>> getCurrentUser();
+
+    @Operation(summary = "Get the current user roles.")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(value = "/user/current/role")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<UserRoleVO>>> getCurrentUserRoles(
+        @RequestParam(value = "projectUrl", required = false) String projectUrl
+    );
+
+
+    @Operation(summary = "Check Current User password")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(value = "/user/current/pwd")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<String>> checkCurrentUserPassword(@RequestBody UserCheckPasswordRequest userCheckPasswordRequest);
+
+
+    @Operation(summary = "Update Current User password")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/user/current/pwd")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<String>> updateCurrentUserPassword(@RequestBody UserUpdatePasswordRequest userUpdatePasswordRequest);
 
 
     @Operation(summary = "Get a user by user ID")
@@ -106,6 +140,7 @@ public interface UserApi {
                     schema = @Schema(implementation = UserVO.class)))
         })
     @GetMapping(value = "/user/{userId}")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<UserVO>> getUserById(
         @Parameter(
             in = ParameterIn.PATH,
@@ -118,6 +153,7 @@ public interface UserApi {
     @Operation(summary = "Change user password")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/user/{userId}/pwd")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> updateUserPwd(
         @Parameter(
             in = ParameterIn.PATH,
@@ -131,6 +167,7 @@ public interface UserApi {
     @Operation(summary = "Enable or disable a user")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @PutMapping(value = "/user/{userId}/state")
+    @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> updateUserState(
         @Parameter(
             in = ParameterIn.PATH,
@@ -140,4 +177,51 @@ public interface UserApi {
         @PathVariable("userId")
             String userId,
         @Valid @RequestBody UserUpdateStateRequest userUpdateStateRequest);
+
+    @Operation(summary = "Add user role of system")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PostMapping(value = "/role")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> addUserSystemRole(
+        @Valid @RequestBody UserRoleAddRequest userRoleAddRequest);
+
+    @Operation(summary = "Update user role of system")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @PutMapping(value = "/role/{systemRoleId}")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> updateUserSystemRole(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "System Role ID to update",
+            required = true,
+            schema = @Schema())
+        @PathVariable("systemRoleId")
+        String systemRoleId,
+        @Valid @RequestBody UserRoleUpdateRequest userRoleUpdateRequest);
+
+    @Operation(summary = "Delete user role of system")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @DeleteMapping(value = "/role/{systemRoleId}")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> deleteUserSystemRole(
+        @Parameter(
+            in = ParameterIn.PATH,
+            description = "System Role ID to delete",
+            required = true,
+            schema = @Schema())
+        @PathVariable("systemRoleId")
+        String systemRoleId,
+        @Valid @RequestBody UserRoleDeleteRequest userRoleDeleteRequest);
+
+    @Operation(summary = "List system role of users")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(value = "/role")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<SystemRoleVO>>> listSystemRoles();
+
+    @Operation(summary = "List role enums")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(value = "/role/enums")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
+    ResponseEntity<ResponseMessage<List<RoleVO>>> listRoles();
 }

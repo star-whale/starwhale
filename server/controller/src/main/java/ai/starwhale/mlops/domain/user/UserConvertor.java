@@ -33,8 +33,6 @@ public class UserConvertor implements Convertor<UserEntity, UserVO> {
 
     @Resource private IDConvertor idConvertor;
 
-    @Resource private RoleConvertor roleConvertor;
-
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
 
@@ -47,7 +45,6 @@ public class UserConvertor implements Convertor<UserEntity, UserVO> {
           .id(idConvertor.convert(entity.getId()))
           .name(entity.getUserName())
           .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-          .role(roleConvertor.convert(entity.getRole()))
           .isEnabled(entity.getUserEnabled() == 1)
           .build();
     }
@@ -59,7 +56,6 @@ public class UserConvertor implements Convertor<UserEntity, UserVO> {
             .id(idConvertor.revert(vo.getId()))
             .userName(vo.getName())
             .userEnabled(vo.getIsEnabled() ? 1 : 0)
-            .role(roleConvertor.revert(vo.getRole()))
             .build();
     }
 }

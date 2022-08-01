@@ -135,8 +135,7 @@ public class SwdsUploaderTest {
         when(swdsVersionMapper.findByDSIdAndVersionNameForUpdate(1L,dsVersionId)).thenReturn(mockedEntity);
         when(swdsVersionMapper.findByDSIdAndVersionName(1L,dsVersionId)).thenReturn(mockedEntity);
         when(storageAccessService.get(anyString())).thenReturn(new ByteArrayInputStream(index_file_content.getBytes()));
-        byte[] indexbytes = swdsUploader.pull("project",dsName, dsVersionId, "index.jsonl",
-            mock(HttpServletResponse.class));
+        byte[] indexbytes = swdsUploader.pull("project",dsName, dsVersionId, "index.jsonl");
 
         Assertions.assertEquals(index_file_content,new String(indexbytes));;
 

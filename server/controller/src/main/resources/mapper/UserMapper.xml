@@ -9,8 +9,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.user.mapper.UserMapper">
     <insert id="createUser" parameterType="ai.starwhale.mlops.domain.user.po.UserEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into user_info (user_name, user_pwd, user_pwd_salt, role_id, user_enabled)
-        values (#{user.userName}, #{user.userPwd}, #{user.userPwdSalt}, #{user.roleId}, #{user.userEnabled})
+        insert into user_info (user_name, user_pwd, user_pwd_salt, user_enabled)
+        values (#{user.userName}, #{user.userPwd}, #{user.userPwdSalt}, #{user.userEnabled})
     </insert>
 
     <select id="findUser" resultMap="userResultMap">
@@ -18,16 +18,11 @@
                u.user_name,
                u.user_pwd,
                u.user_pwd_salt,
-               u.role_id,
                u.user_enabled,
                u.created_time as user_created_time,
-               u.modified_time as user_modified_time,
-               r.role_name,
-               r.role_name_en
-        from user_info as u,
-             user_role as r
+               u.modified_time as user_modified_time
+        from user_info as u
         where u.id = #{id}
-          and u.role_id = r.id
     </select>
 
     <select id="findUserByName" resultMap="userResultMap">
@@ -35,16 +30,11 @@
                u.user_name,
                u.user_pwd,
                u.user_pwd_salt,
-               u.role_id,
                u.user_enabled,
                u.created_time as user_created_time,
-               u.modified_time as user_modified_time,
-               r.role_name,
-               r.role_name_en
-        from user_info as u,
-             user_role as r
+               u.modified_time as user_modified_time
+        from user_info as u
         where u.user_name = #{userName}
-          and u.role_id = r.id
     </select>
 
     <select id="listUsers" resultMap="userResultMap">
@@ -52,15 +42,10 @@
                u.user_name,
                u.user_pwd,
                u.user_pwd_salt,
-               u.role_id,
                u.user_enabled,
                u.created_time as user_created_time,
-               u.modified_time as user_modified_time,
-               r.role_name,
-               r.role_name_en
-        from user_info as u,
-             user_role as r
-        where u.role_id = r.id
+               u.modified_time as user_modified_time
+        from user_info as u
         <if test = "userNamePrefix != null and userNamePrefix != ''">
             and u.user_name like concat(#{userNamePrefix}, '%')
         </if>
@@ -88,7 +73,5 @@
         <result property="userEnabled" column="user_enabled"/>
         <result property="createdTime" column="user_created_time"/>
         <result property="modifiedTime" column="user_modified_time"/>
-        <result property="roleId" column="role_id"/>
-        <association property="role" resultMap="ai.starwhale.mlops.domain.user.mapper.RoleMapper.roleResultMap" />
     </resultMap>
 </mapper>

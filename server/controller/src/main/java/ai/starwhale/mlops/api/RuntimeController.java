@@ -154,13 +154,6 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<List<RuntimeInfoVO>>> listRuntimeInfo(String project,
-        String name) {
-        List<RuntimeInfoVO> runtimeInfoVOS = runtimeService.listRuntimeInfo(project, name);
-        return ResponseEntity.ok(Code.success.asResponse(runtimeInfoVOS));
-    }
-
-    @Override
     public ResponseEntity<ResponseMessage<PageInfo<RuntimeVersionVO>>> listRuntimeVersion(
         String projectUrl, String runtimeUrl, String vName, String vTag,
         Integer pageNum, Integer pageSize) {
@@ -179,18 +172,22 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> upload(MultipartFile file, ClientRuntimeRequest uploadRequest) {
+    public ResponseEntity<ResponseMessage<String>> upload(String projectUrl, String runtimeUrl, String versionUrl,
+        MultipartFile file, ClientRuntimeRequest uploadRequest) {
+        uploadRequest.setProject(projectUrl);
+        uploadRequest.setRuntime(runtimeUrl + ":" + versionUrl);
         runtimeService.upload(file, uploadRequest);
         return ResponseEntity.ok(Code.success.asResponse(""));
     }
 
     @Override
-    public void pull(ClientRuntimeRequest pullRequest, HttpServletResponse httpResponse) {
-        runtimeService.pull(pullRequest, httpResponse);
+    public void pull(String projectUrl, String runtimeUrl, String versionUrl,
+        HttpServletResponse httpResponse) {
+        runtimeService.pull(projectUrl, runtimeUrl, versionUrl, httpResponse);
     }
 
     @Override
-    public ResponseEntity<String> headRuntime(ClientRuntimeRequest queryRequest) {
-        return ResponseEntity.ok(runtimeService.query(queryRequest));
+    public void headRuntime(String projectUrl, String runtimeUrl, String versionUrl) {
+        runtimeService.query(projectUrl, runtimeUrl, versionUrl);
     }
 }

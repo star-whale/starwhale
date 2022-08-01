@@ -16,9 +16,11 @@
 
 package ai.starwhale.mlops.api.protocol.project;
 
+import ai.starwhale.mlops.common.RegExps;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Data;
 import org.springframework.validation.annotation.Validated;
 
@@ -26,7 +28,14 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class ProjectRequest implements Serializable {
 
-    @NotNull
+
     @JsonProperty("projectName")
+    @Pattern(regexp = RegExps.PROJECT_NAME_REGEX, message = "Project name is invalid.")
     private String projectName;
+
+    @JsonProperty("projectId")
+    private String projectId;
+
+    @JsonProperty(value = "recover", defaultValue = "false", required = true)
+    private Boolean recover;
 }
