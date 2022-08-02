@@ -974,7 +974,12 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         ensure_file(_rm, yaml.safe_dump(config, default_flow_style=False))
 
     @classmethod
-    def restore(cls, workdir: Path, isolated_env_dir: t.Optional[Path] = None) -> None:
+    def restore(
+        cls,
+        workdir: Path,
+        isolated_env_dir: t.Optional[Path] = None,
+        quiet: bool = False,
+    ) -> None:
         if not (workdir.exists() and (workdir / DEFAULT_MANIFEST_NAME).exists()):
             raise NoSupportError("only support swrt extract workdir")
 
@@ -1045,6 +1050,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     local_packaged_env=_manifest["dependencies"].get(
                         "local_packaged_env", False
                     ),
+                    quiet=quiet,
                 ),
             ),
         ]

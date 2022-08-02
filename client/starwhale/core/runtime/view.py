@@ -14,7 +14,6 @@ from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.core.runtime.store import RuntimeStorage
 
 from .model import Runtime, StandaloneRuntime
 

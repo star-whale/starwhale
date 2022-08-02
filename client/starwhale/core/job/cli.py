@@ -67,6 +67,11 @@ def _list(
     default=EvalTaskType.ALL,
     help="[ONLY Standalone]evaluation run phase",
 )
+@click.option(
+    "--runtime-restore",
+    is_flag=True,
+    help="[ONLY Standalone]force to restore runtime in the non-docker environment",
+)
 def _create(
     project: str,
     model: str,
@@ -78,6 +83,7 @@ def _create(
     use_docker: bool,
     gencmd: bool,
     phase: str,
+    runtime_restore: bool,
 ) -> None:
     JobTermView.create(
         project_uri=project,
@@ -90,6 +96,7 @@ def _create(
         gencmd=gencmd,
         phase=phase,
         use_docker=use_docker,
+        runtime_restore=runtime_restore,
     )
 
 

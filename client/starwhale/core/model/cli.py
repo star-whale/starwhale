@@ -267,8 +267,15 @@ def _cmp(
 @click.option("--desc", help="Job description")
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("--runtime", default="", help="runtime uri")
+@click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 def _eval(
-    model: str, dataset: t.List[str], name: str, desc: str, project: str, runtime: str
+    model: str,
+    dataset: t.List[str],
+    name: str,
+    desc: str,
+    project: str,
+    runtime: str,
+    runtime_restore: bool,
 ) -> None:
     """
     [ONLY Standalone]Create as new job for model evaluation
@@ -285,4 +292,5 @@ def _eval(
         use_docker=False,
         gencmd=False,
         phase=EvalTaskType.ALL,
+        runtime_restore=runtime_restore,
     )
