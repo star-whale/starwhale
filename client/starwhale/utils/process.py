@@ -21,9 +21,9 @@ def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
     while True:
         fds, _, _ = select([p.stdout], [], [], 30)  # timeout 30s
         for fd in fds:
-            line = fd.readline()
-            log(line.rstrip())
-            output.append(line)
+            for line in fd.readlines():
+                log(line.rstrip())
+                output.append(line)
         else:
             if p.poll() is not None:
                 break

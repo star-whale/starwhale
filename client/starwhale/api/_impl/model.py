@@ -16,7 +16,7 @@ import dill
 import loguru
 import jsonlines
 
-from starwhale.utils import now_str, pretty_bytes, in_production
+from starwhale.utils import now_str, in_production
 from starwhale.consts import CURRENT_FNAME, DEFAULT_INPUT_JSON_FNAME
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.log import StreamWrapper
@@ -273,11 +273,6 @@ class PipelineHandler(metaclass=ABCMeta):
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
         for data, label in self._data_loader:
-            self._sw_logger.info(
-                f"[{data.idx}]data-label loaded, data size:{pretty_bytes(data.data_size)}, "
-                f"label size:{pretty_bytes(label.data_size)} ,batch:{data.batch_size}"
-            )
-
             if data.idx != label.idx:
                 msg = (
                     f"data index[{data.idx}] is not equal label index [{label.idx}], "
@@ -311,7 +306,6 @@ class PipelineHandler(metaclass=ABCMeta):
                     raise
             else:
                 exception = None
-                self._sw_logger.info(f"[{data.idx}] data handle -> success")
 
             self._do_record(data, label, exception, *pred)
 

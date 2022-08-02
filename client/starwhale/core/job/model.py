@@ -18,6 +18,7 @@ from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
+from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .store import JobStorage
 from .executor import EvalExecutor
@@ -130,8 +131,10 @@ class StandaloneJob(Job):
         desc: str = "",
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
-        # TODO: support another job type
-        _version = EvalExecutor(
+        use_docker = kw.get("use_docker", False)
+        phase = kw.get("phase", EvalTaskType.ALL)
+
+        ee = EvalExecutor(
             model_uri=model_uri,
             dataset_uris=dataset_uris,
             project_uri=project_uri,
@@ -139,9 +142,18 @@ class StandaloneJob(Job):
             name=name,
             desc=desc,
             gencmd=kw.get("gencmd", False),
-            use_docker=kw.get("use_docker", False),
-        ).run(kw.get("phase", EvalTaskType.ALL))
-        return True, _version
+            use_docker=use_docker,
+        )
+        if runtime_uri and not use_docker:
+            RuntimeProcess.from_runtime_uri(
+                uri=runtime_uri,
+                target=ee.run,
+                args=(phase,),
+            ).run()
+        else:
+            ee.run(phase)
+
+        return True, ee._version
 
     def _get_report(self) -> t.Dict[str, t.Any]:
         report = {}
