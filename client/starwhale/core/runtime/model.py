@@ -978,7 +978,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         cls,
         workdir: Path,
         isolated_env_dir: t.Optional[Path] = None,
-        quiet: bool = False,
+        verbose: bool = True,
     ) -> None:
         if not (workdir.exists() and (workdir / DEFAULT_MANIFEST_NAME).exists()):
             raise NoSupportError("only support swrt extract workdir")
@@ -1050,7 +1050,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
                     local_packaged_env=_manifest["dependencies"].get(
                         "local_packaged_env", False
                     ),
-                    quiet=quiet,
+                    verbose=verbose,
                 ),
             ),
         ]

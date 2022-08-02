@@ -104,7 +104,7 @@ class Process:
             if not runtime.store.manifest_path.exists():
                 runtime.extract(force=True)
 
-            StandaloneRuntime.restore(runtime.store.snapshot_workdir, quiet=True)
+            StandaloneRuntime.restore(runtime.store.snapshot_workdir, verbose=False)
 
         venv_prefix = runtime.store.export_dir / PythonRunEnv.VENV
         conda_prefix = runtime.store.export_dir / PythonRunEnv.CONDA
