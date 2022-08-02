@@ -14,7 +14,6 @@ from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
-from starwhale.core.runtime.store import RuntimeStorage
 
 from .model import Runtime, StandaloneRuntime
 
@@ -169,9 +168,11 @@ class RuntimeTermView(BaseTermView):
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
             workdir = Path(target)
         else:
-            uri = URI(target, URIType.RUNTIME)
-            store = RuntimeStorage(uri)
-            workdir = store.snapshot_workdir
+            _uri = URI(target, URIType.RUNTIME)
+            _runtime = StandaloneRuntime(_uri)
+            workdir = _runtime.store.snapshot_workdir
+            if not workdir.exists():
+                _runtime.extract(force=True, target=workdir)
 
         console.print(
             f":golfer: try to restore python runtime environment: {workdir} ..."

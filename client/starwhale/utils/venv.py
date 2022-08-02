@@ -164,7 +164,11 @@ def venv_activate(venvdir: t.Union[str, Path]) -> None:
 
 
 def render_python_env_activate(
-    mode: str, prefix_path: Path, workdir: Path, local_packaged_env: bool = False
+    mode: str,
+    prefix_path: Path,
+    workdir: Path,
+    local_packaged_env: bool = False,
+    verbose: bool = True,
 ) -> None:
     if mode not in (PythonRunEnv.CONDA, PythonRunEnv.VENV):
         raise NoSupportError(f"mode({mode}) render python env activate scripts")
@@ -174,9 +178,9 @@ def render_python_env_activate(
         venv_activate_render(prefix_path, workdir, relocate=mode == PythonRunEnv.VENV)
     else:
         if mode == PythonRunEnv.CONDA:
-            conda_activate_render(prefix_path, workdir)
+            conda_activate_render(prefix_path, workdir, verbose=verbose)
         else:
-            venv_activate_render(prefix_path, workdir, relocate=False)
+            venv_activate_render(prefix_path, workdir, relocate=False, verbose=verbose)
 
 
 def parse_python_version(s: str) -> PythonVersionField:
@@ -403,7 +407,7 @@ def conda_activate(env: t.Union[str, Path]) -> None:
     check_call(cmd)
 
 
-def conda_activate_render(env_dir: Path, workdir: Path) -> None:
+def conda_activate_render(env_dir: Path, workdir: Path, verbose: bool = True) -> None:
     sw_cntr_content = """
 _conda_hook="$(/opt/miniconda3/bin/conda shell.bash hook)"
 cat >> /dev/stdout << EOF
@@ -415,11 +419,14 @@ EOF
     host_content = f"""
 echo 'conda activate {env_dir.absolute()}'
 """
-    _render_sw_activate(sw_cntr_content, host_content, workdir)
+    _render_sw_activate(sw_cntr_content, host_content, workdir, verbose)
 
 
 def venv_activate_render(
-    venvdir: t.Union[str, Path], workdir: Path, relocate: bool = False
+    venvdir: t.Union[str, Path],
+    workdir: Path,
+    relocate: bool = False,
+    verbose: bool = True,
 ) -> None:
     bin = f"{venvdir}/bin"
     host_content = f"""
@@ -440,22 +447,25 @@ echo 'source {bin}/activate'
     else:
         sw_cntr_content = host_content
 
-    _render_sw_activate(sw_cntr_content, host_content, workdir)
+    _render_sw_activate(sw_cntr_content, host_content, workdir, verbose)
 
 
-def _render_sw_activate(sw_cntr_content: str, host_content: str, workdir: Path) -> None:
+def _render_sw_activate(
+    sw_cntr_content: str, host_content: str, workdir: Path, verbose: bool = True
+) -> None:
     _sw_path = workdir / "activate.sw"
     _host_path = workdir / "activate.host"
 
     ensure_file(_sw_path, sw_cntr_content, mode=0o755)
     ensure_file(_host_path, host_content, mode=0o755)
 
-    console.print(
-        f" :clap: {_sw_path.name} and {_host_path.name} is generated at {workdir}"
-    )
-    console.print(" :compass: run cmd:  ")
-    console.print(f" \t Docker Container: [bold red] $(sh {_sw_path}) [/]")
-    console.print(f" \t Host: [bold red] $(sh {_host_path}) [/]")
+    if verbose:
+        console.print(
+            f" :clap: {_sw_path.name} and {_host_path.name} is generated at {workdir}"
+        )
+        console.print(" :compass: run cmd:  ")
+        console.print(f" \t Docker Container: [bold red] $(sh {_sw_path}) [/]")
+        console.print(f" \t Host: [bold red] $(sh {_host_path}) [/]")
 
 
 def get_conda_bin() -> str:

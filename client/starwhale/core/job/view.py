@@ -239,6 +239,7 @@ class JobTermView(BaseTermView):
         gencmd: bool = False,
         use_docker: bool = False,
         phase: str = EvalTaskType.ALL,
+        runtime_restore: bool = False,
     ) -> None:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
         ok, reason = Job.create(
@@ -252,6 +253,7 @@ class JobTermView(BaseTermView):
             resource=resource,
             gencmd=gencmd,
             use_docker=use_docker,
+            runtime_restore=runtime_restore,
         )
 
         # TODO: show report in standalone mode directly

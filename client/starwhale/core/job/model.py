@@ -149,6 +149,7 @@ class StandaloneJob(Job):
                 uri=runtime_uri,
                 target=ee.run,
                 args=(phase,),
+                runtime_restore=kw.get("runtime_restore", False),
             ).run()
         else:
             ee.run(phase)

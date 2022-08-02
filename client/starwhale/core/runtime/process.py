@@ -87,6 +87,7 @@ class Process:
         target: t.Callable,
         args: t.Tuple = (),
         kwargs: t.Dict[str, t.Any] = {},
+        runtime_restore: bool = False,
     ) -> Process:
         _uri: URI
         if isinstance(uri, str):
@@ -94,14 +95,19 @@ class Process:
         else:
             _uri = uri
         # TODO: support cloud runtime uri
-        # TODO: auto extract and restore runtime uri
         if _uri.instance_type != InstanceType.STANDALONE:
             raise NoSupportError("run process with cloud instance uri")
 
         runtime = StandaloneRuntime(_uri)
+        if runtime_restore:
+            console.print(f":snail: start to restore runtime: {uri}")
+            if not runtime.store.manifest_path.exists():
+                runtime.extract(force=True)
+
+            StandaloneRuntime.restore(runtime.store.snapshot_workdir, verbose=False)
+
         venv_prefix = runtime.store.export_dir / PythonRunEnv.VENV
         conda_prefix = runtime.store.export_dir / PythonRunEnv.CONDA
-
         prefix = Path()
         if venv_prefix.exists():
             prefix = venv_prefix
