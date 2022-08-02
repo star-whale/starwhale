@@ -348,7 +348,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._render_manifest,
                 5,
                 "render manifest",
-                dict(user_raw_config=_model_config.as_dict()),
+                #dict(user_raw_config=_model_config.as_dict()),
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
             (self._make_latest_tag, 5, "make latest tag"),

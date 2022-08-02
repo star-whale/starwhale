@@ -31,7 +31,7 @@ class Step:
             self.step_name, self.dependency, self.status
         )
 
-    def gen_task(self, index: int, module: str, workdir: Path, dataset_uris: list[URI]):
+    def gen_task(self, index: int, module: str, workdir: Path, src_dir: Path, dataset_uris: list[URI]):
         self.tasks.append(
             Task(
                 context=Context(
@@ -40,10 +40,11 @@ class Step:
                     index=index,
                     dataset_uris=dataset_uris,
                     workdir=workdir,
+                    src_dir=src_dir,
                 ),
                 status=STATUS.INIT,
                 module=module,
-                workdir=workdir,
+                src_dir=src_dir,
             )
         )
 
@@ -151,6 +152,7 @@ class Context:
     def __init__(
         self,
         workdir: Path,
+        src_dir: Path,
         step: str = "",
         total: int = 0,
         index: int = 0,
@@ -161,6 +163,7 @@ class Context:
         self.index = index
         self.dataset_uris = dataset_uris
         self.workdir = workdir
+        self.src_dir = src_dir
 
     def __repr__(self):
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
@@ -174,11 +177,11 @@ class STATUS:
 
 
 class Task:
-    def __init__(self, context: Context, status: str, module: str, workdir: Path):
+    def __init__(self, context: Context, status: str, module: str, src_dir: Path):
         self.context = context
         self.status = status
         self.module = module
-        self.workdir = workdir
+        self.src_dir = src_dir
 
     def execute(self) -> bool:
         """
@@ -187,7 +190,7 @@ class Task:
         """
         logger.debug("execute step:{} start.", self.context)
 
-        _module = load_module(self.module, self.workdir)
+        _module = load_module(self.module, self.src_dir)
 
         # instance method
         if "." in self.context.step:

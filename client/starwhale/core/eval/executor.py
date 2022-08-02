@@ -214,19 +214,20 @@ class EvalExecutor:
         if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             raise NoSupportError(typ)
 
-        _run_dir = self._model_dir
+        _src_dir = self._model_dir
 
-        _jobs = Parser.parse_job_from_yaml(_run_dir / DEFAULT_EVALUATION_JOBS_FNAME)
+        _jobs = Parser.parse_job_from_yaml(_src_dir / DEFAULT_EVALUATION_JOBS_FNAME)
         # steps of job
         if self.job_name not in _jobs:
             raise RuntimeError(f"job:{self.job_name} not found")
         _steps = _jobs[self.job_name]
         # TODO
-        _module = StandaloneModel.get_pipeline_handler(workdir=_run_dir)
+        _module = StandaloneModel.get_pipeline_handler(workdir=_src_dir)
 
         _scheduler = Scheduler(
             module=_module,
-            workdir=_run_dir,
+            workdir=self._job_workdir,
+            src_dir=_src_dir,
             dataset_uris=self.dataset_uris,
             steps=_steps,
         )
