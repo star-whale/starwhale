@@ -88,6 +88,7 @@ export default function ProjectMembers() {
                 <ModalHeader>{t('Add Project Member')}</ModalHeader>
                 <ModalBody>
                     <MemberAddForm
+                        users={data.map(({ user }: IProjectRoleSchema) => user)}
                         onSubmit={async (info) => {
                             await addProjectRole(projectId, info.userId, info.roleId)
                             toaster.positive(t('Add project role success'), { autoHideDuration: 1000 })
