@@ -99,3 +99,4 @@ docker/charts/starwhale-*.tgz
 
 # ansible
 bootstrap/inventory
+/client/.idea/
