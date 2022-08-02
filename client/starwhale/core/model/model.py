@@ -10,6 +10,7 @@ from collections import defaultdict
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
+from starwhale.api._impl.job import step
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
@@ -28,12 +29,13 @@ from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
-from starwhale.core.job.model import Parser
+from starwhale.core.job.model import Parser, Context
+from starwhale.utils.load import import_cls
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
 
 from .store import ModelStorage
-from ..job.scheduler import Scheduler
+from starwhale.consts import EvalHandlerType, DEFAULT_EVALUATION_PIPELINE
 
 
 class ModelRunConfig:
@@ -42,6 +44,7 @@ class ModelRunConfig:
     def __init__(
         self,
         ppl: str,
+        type: str = EvalHandlerType.DEFAULT,
         runtime: str = "",
         pkg_data: t.Union[t.List[str], None] = None,
         exclude_pkg_data: t.Union[t.List[str], None] = None,
@@ -49,6 +52,7 @@ class ModelRunConfig:
         **kw: t.Any,
     ):
         self.ppl = ppl.strip()
+        self.typ = type
         self.runtime = runtime.strip()
         self.pkg_data = pkg_data or []
         self.exclude_pkg_data = exclude_pkg_data or []
@@ -176,10 +180,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.remove(tags, quiet)
 
-    def _gen_steps(self, ppl: str) -> None:
-        if not ppl:
-            # todo use default
-            ppl = None
+    def _gen_steps(self, typ: str, ppl: str) -> None:
+        if typ is EvalHandlerType.DEFAULT:
+            # use default
+            ppl = DEFAULT_EVALUATION_PIPELINE
         _f = self.store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
         console.print("path:{}", _f)
         console.print("ppl:{}", ppl)
@@ -188,12 +192,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     @classmethod
     def get_pipeline_handler(
         cls,
-        typ: str,
         workdir: Path,
         yaml_name: str = DefaultYAMLName.MODEL,
     ) -> str:
         _mp = workdir / yaml_name
-        _model_config = cls._load_model_config(_mp)
+        _model_config = cls.load_model_config(_mp)
+        if _model_config.run.typ is EvalHandlerType.DEFAULT:
+            # use default
+            return DEFAULT_EVALUATION_PIPELINE
         return _model_config.run.ppl
 
     # @classmethod
@@ -326,7 +332,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self, workdir: Path, yaml_name: str = DefaultYAMLName.MODEL, **kw: t.Any
     ) -> None:
         _mp = workdir / yaml_name
-        _model_config = self._load_model_config(_mp)
+        _model_config = self.load_model_config(_mp)
         logger.debug("workdir:", workdir)
         operations = [
             (self._gen_version, 5, "gen version"),
@@ -342,7 +348,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._gen_steps,
                 5,
                 "generate execute steps",
-                dict(ppl=_model_config.run.ppl),
+                dict(typ=_model_config.run.typ, ppl=_model_config.run.ppl),
             ),
             (
                 self._render_manifest,
@@ -356,7 +362,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         run_with_progress_bar("model bundle building...", operations)
 
     @classmethod
-    def _load_model_config(cls, yaml_path: Path) -> ModelConfig:
+    def load_model_config(cls, yaml_path: Path) -> ModelConfig:
         cls._do_validate_yaml(yaml_path)
         _config = ModelConfig.create_by_yaml(yaml_path)
 
