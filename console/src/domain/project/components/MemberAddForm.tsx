@@ -4,6 +4,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
 import RoleSelector from '@project/components/RoleSelector'
 import UserSelector from '@project/components/UserSelector'
+import { IUserSchema } from '@user/schemas/user'
 
 export interface IMemberAddSchema {
     userId: string
@@ -11,21 +12,22 @@ export interface IMemberAddSchema {
 }
 
 export interface IMemberAddFromProps {
+    users: IUserSchema[]
     onSubmit: (data: IMemberAddSchema) => Promise<void>
 }
 
 const { Form, FormItem, useForm } = createForm<IMemberAddSchema>()
 
-export default function MemberAddForm({ onSubmit }: IMemberAddFromProps) {
+export default function MemberAddForm({ users, onSubmit }: IMemberAddFromProps) {
     const [t] = useTranslation()
     const [form] = useForm()
 
     return (
         <Form form={form} onFinish={onSubmit}>
-            <FormItem label={t('Username')} name='userId'>
-                <UserSelector />
+            <FormItem label={t('Username')} name='userId' required>
+                <UserSelector ignoreIds={users.map(({ id }: IUserSchema) => id)} />
             </FormItem>
-            <FormItem label={t('Project Role')} name='roleId'>
+            <FormItem label={t('Project Role')} name='roleId' required>
                 <RoleSelector />
             </FormItem>
             <FormItem>

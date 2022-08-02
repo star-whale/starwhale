@@ -6,9 +6,11 @@ import { usePage } from '@/hooks/usePage'
 export interface IUserSelectorProps {
     value?: string
     onChange?: (newValue: string) => void
+    ignoreIds?: string[]
 }
 
-export default function UserSelector({ value, onChange }: IUserSelectorProps) {
+export default function UserSelector({ value, onChange, ignoreIds }: IUserSelectorProps) {
+    const ignores = ignoreIds ?? []
     // TODO make user searchable by backend
     const [page] = usePage()
     const users = useFetchUsers(page)
@@ -19,9 +21,11 @@ export default function UserSelector({ value, onChange }: IUserSelectorProps) {
             clearable={false}
             required
             isLoading={users.isFetching}
-            options={(users.data?.list ?? []).map((user) => {
-                return { id: user.id, label: user.name }
-            })}
+            options={(users.data?.list ?? [])
+                .map((user) => {
+                    return { id: user.id, label: user.name }
+                })
+                .filter((opt) => !ignores.includes(opt.id))}
             onChange={({ option }) => {
                 if (!option) {
                     return
