@@ -56,6 +56,7 @@ class ModelTermView(BaseTermView):
         yaml_name: str = DefaultYAMLName.MODEL,
         typ: str = "",
         runtime_uri: str = "",
+        runtime_restore: bool = False,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
@@ -74,6 +75,7 @@ class ModelTermView(BaseTermView):
                     target=StandaloneModel.eval_user_handler,
                     args=(typ, workdir),
                     kwargs={"yaml_name": yaml_name, "kw": kw},
+                    runtime_restore=runtime_restore,
                 ).run()
             else:
                 StandaloneModel.eval_user_handler(
