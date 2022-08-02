@@ -119,10 +119,6 @@ public class UserController implements UserApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> updateUserState(String userId,
         UserUpdateStateRequest userUpdateStateRequest) {
-        if(!userService.checkCurrentUserPassword(userUpdateStateRequest.getCurrentUserPwd())) {
-            throw new StarWhaleApiException(new SWAuthException(AuthType.CURRENT_USER).tip("Incorrect current user password."),
-                HttpStatus.FORBIDDEN);
-        }
         Boolean res = userService.updateUserState(User.builder().id(idConvertor.revert(userId)).build(),
             userUpdateStateRequest.getIsEnabled());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(res)));
