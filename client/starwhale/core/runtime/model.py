@@ -348,8 +348,8 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
         bc.do()
 
     @classmethod
-    def activate(cls, workdir: str, yaml_name: str) -> None:
-        StandaloneRuntime.activate(workdir, yaml_name)
+    def activate(cls, path: str = "", uri: str = "") -> None:
+        StandaloneRuntime.activate(path, uri)
 
     @classmethod
     def lock(
@@ -836,14 +836,25 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             activate_python_env(mode=mode, identity=_id)
 
     @classmethod
-    def activate(cls, workdir: str, yaml_name: str) -> None:
-        _rf = Path(workdir) / yaml_name
-        if not _rf.exists():
-            raise NotFoundError(_rf)
+    def activate(cls, path: str = "", uri: str = "") -> None:
+        if uri:
+            _uri = URI(uri, expected_type=URIType.RUNTIME)
+            if _uri.instance_type != InstanceType.STANDALONE:
+                raise NoSupportError(f"{uri} is not the standalone instance")
 
-        _run_config = RuntimeConfig.create_by_yaml(_rf)
-        _prefix_path = os.path.join(workdir, f".{_run_config.mode}")
-        activate_python_env(mode=_run_config.mode, identity=_prefix_path)
+            _rt = StandaloneRuntime(_uri)
+            mode = load_yaml(_rt.store.manifest_path)["environment"]["mode"]
+            prefix_path = _rt.store.export_dir / mode
+        elif path:
+            # TODO: support non-standard runtime.yaml name
+            _rf = Path(path) / DefaultYAMLName.RUNTIME
+            _config = RuntimeConfig.create_by_yaml(_rf)
+            mode = _config.mode
+            prefix_path = Path(path) / f".{mode}"
+        else:
+            raise Exception("No uri or path to activate")
+
+        activate_python_env(mode=mode, identity=str(prefix_path.resolve()))
 
     @classmethod
     def lock(
