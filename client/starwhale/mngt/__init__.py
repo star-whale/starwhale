@@ -1,9 +1,12 @@
+import os
 import sys
-import os.path
+import typing as t
+import subprocess
 import webbrowser
 from pathlib import Path
 
 import click
+from packaging.version import parse as version_parse
 
 from starwhale.utils import console
 from starwhale.consts import (
@@ -15,6 +18,7 @@ from starwhale.consts import (
 )
 from starwhale.utils.fs import empty_dir
 from starwhale.base.type import URIType, get_bundle_type_by_uri
+from starwhale.utils.venv import get_conda_bin
 from starwhale.utils.config import SWCliConfigMixed
 
 
@@ -115,3 +119,80 @@ def open_web(instance_uri: str = "") -> None:
         else:
             console.print(f":clap: try to open {_uri}")
             webbrowser.open(_uri)
+
+
+class _CheckLevel:
+    WARN = "warn"
+    CRITICAL = "critical"
+
+
+class _Dependency(t.NamedTuple):
+    title: str
+    min_version: str
+    level: str
+    help: str
+    checker: t.Callable[..., str]
+
+
+def check() -> None:
+    def _check_docker() -> str:
+        out = subprocess.check_output(
+            ["docker", "version", "--format", "{{.Client.Version}}"],
+            stderr=subprocess.STDOUT,
+        )
+        return out.decode().strip()
+
+    def _check_conda() -> str:
+        out = subprocess.check_output(
+            [get_conda_bin(), "--version"], stderr=subprocess.STDOUT
+        )
+        return out.decode().strip().split()[-1]
+
+    dependencies: t.List[_Dependency] = [
+        _Dependency(
+            title="Docker",
+            min_version="19.03",
+            level=_CheckLevel.WARN,
+            help=(
+                "Docker is an open platform for developing, shipping, and running applications."
+                "Starwhale uses Docker to run jobs. You can visit https://docs.docker.com/get-docker/ for more details."
+            ),
+            checker=_check_docker,
+        ),
+        _Dependency(
+            title="Conda",
+            min_version="4.0.0",
+            level=_CheckLevel.WARN,
+            help=(
+                "Conda is an open-source package management system and environment management system."
+                "Starwhale uses Conda to build runtime. You can download it from https://docs.conda.io/en/latest/miniconda.html."
+            ),
+            checker=_check_conda,
+        ),
+    ]
+
+    for d in dependencies:
+        ok, reason = True, ""
+        _check_version = ""
+        try:
+            _check_version = d.checker()
+        except subprocess.CalledProcessError as e:
+            ok, reason = False, f"exit code:{e.returncode}, command:{e.output}"
+        except Exception as e:
+            ok, reason = False, str(e)
+
+        if _check_version and version_parse(_check_version) < version_parse(
+            d.min_version
+        ):
+            ok, reason = (
+                False,
+                f"version: {_check_version}, expected min version: {d.min_version}",
+            )
+
+        if ok:
+            console.print(f":white_check_mark: {d.title} {_check_version}")
+        else:
+            console.print(f":x: {d.title} [{d.level}]")
+            console.print(f"\t * :point_right: Reason: [red]{reason}[/]")
+            console.print(f"\t * :blue_book: Min version: {d.min_version}")
+            console.print(f"\t * :information_desk_person: Advice: {d.help} \n")
