@@ -7,7 +7,9 @@ from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZ
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, EvalTaskType, InstanceType
 from starwhale.base.view import BaseTermView
+from starwhale.utils.error import NoSupportError
 from starwhale.core.model.store import ModelStorage
+from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .model import Model, StandaloneModel
 
@@ -53,25 +55,35 @@ class ModelTermView(BaseTermView):
         target: str,
         yaml_name: str = DefaultYAMLName.MODEL,
         typ: str = "",
+        runtime_uri: str = "",
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
             workdir = Path(target)
         else:
-            uri = URI(target, URIType.MODEL)
-            store = ModelStorage(uri)
-            workdir = store.loc
+            _uri = URI(target, URIType.MODEL)
+            _store = ModelStorage(_uri)
+            workdir = _store.loc
 
         if typ in (EvalTaskType.CMP, EvalTaskType.PPL):
             console.print(f":golfer: try to eval {typ} @ {workdir}...")
-            StandaloneModel.eval_user_handler(
-                typ,
-                workdir,
-                yaml_name=yaml_name,
-                kw=kw,
-            )
+
+            if not in_production() and runtime_uri:
+                RuntimeProcess.from_runtime_uri(
+                    uri=runtime_uri,
+                    target=StandaloneModel.eval_user_handler,
+                    args=(typ, workdir),
+                    kwargs={"yaml_name": yaml_name, "kw": kw},
+                ).run()
+            else:
+                StandaloneModel.eval_user_handler(
+                    typ,
+                    workdir,
+                    yaml_name=yaml_name,
+                    kw=kw,
+                )
         else:
-            pass
+            raise NoSupportError(f"eval {typ}")
 
     @classmethod
     def list(
