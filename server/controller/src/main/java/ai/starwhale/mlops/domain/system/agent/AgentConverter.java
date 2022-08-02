@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.system.agent;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
-import ai.starwhale.mlops.domain.node.Node;
+import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.system.agent.bo.NodeInfo;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
@@ -48,7 +48,7 @@ public class AgentConverter {
             .serialNumber(node.getSerialNumber())
             .nodeInfo(new NodeInfo(node.getMemorySizeGB(),node.getDevices()))
             .agentVersion(node.getAgentVersion())
-            .status(AgentStatus.ONLINE)
+            .status(node.getStatus())
             .connectTime(Instant.now().toEpochMilli())
             .build();
     }

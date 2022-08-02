@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
-import ai.starwhale.mlops.domain.node.Node;
+import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.system.agent.AgentStatus;
@@ -69,42 +69,32 @@ public class AgentCacheTest {
         ));
         AgentConverter agentConverter = new AgentConverter(new ObjectMapper(),
             new LocalDateTimeConvertor());
-        AgentStatusWatcher agentStatusWatcher1 = mock(AgentStatusWatcher.class);
-        AgentStatusWatcher agentStatusWatcher2 = mock(AgentStatusWatcher.class);
-        List<AgentStatusWatcher> agentStatusWatchers = List.of(agentStatusWatcher1,agentStatusWatcher2);
-        AgentCache agentCache = new AgentCache(agentMapper, agentConverter, agentStatusWatchers);
-        Field bareTimeMilliField = agentCache.getClass().getDeclaredField("bareTimeMilli");
-        bareTimeMilliField.setAccessible(true);
-        bareTimeMilliField.set(agentCache,3000L);
+        AgentCache agentCache = new AgentCache(agentMapper, agentConverter);
 
         agentCache.run();
 
+        agentCache.nodeReport(Node.builder().status(AgentStatus.ONLINE).devices(List.of()).serialNumber("serialNumber1").build());
+        agentCache.nodeReport(Node.builder().status(AgentStatus.OFFLINE).devices(List.of()).serialNumber("serialNumber2").build());
+        agentCache.flushDb();
         List<Agent> agents = agentCache.agents();
         Assertions.assertEquals(2,agents.size());
         Agent agent1 = findAgent(agentCache, "serialNumber1");
         Agent agent2 = findAgent(agentCache, "serialNumber2");
         Assertions.assertNotNull(agent1);
         Assertions.assertNotNull(agent2);
-        Thread.sleep(1500L);
-        agentCache.nodeReport(Node.builder().devices(List.of()).serialNumber("serialNumber2").build());
-        Thread.sleep(1500L);
-        agentCache.flushDb();
-        Assertions.assertEquals(AgentStatus.OFFLINE, agent1.getStatus());
-        Assertions.assertEquals(AgentStatus.ONLINE, agent2.getStatus());
-        verify(agentStatusWatcher1).onAgentStatusChange(agent1,AgentStatus.OFFLINE);
-        verify(agentStatusWatcher2).onAgentStatusChange(agent1,AgentStatus.OFFLINE);
+        Assertions.assertEquals(AgentStatus.ONLINE, agent1.getStatus());
+        Assertions.assertEquals(AgentStatus.OFFLINE, agent2.getStatus());
         verify(agentMapper).updateAgents(anyList());
 
-        agentCache.nodeReport(Node.builder().devices(List.of()).serialNumber("serialNumber1").build());
-        agentCache.flushDb();
+        agentCache.nodeReport(Node.builder().status(AgentStatus.OFFLINE).devices(List.of()).serialNumber("serialNumber1").build());
         agents = agentCache.agents();
         Assertions.assertEquals(2,agents.size());
         Set<AgentStatus> agentStatuses = agents.stream().map(Agent::getStatus)
             .collect(Collectors.toSet());
         Assertions.assertEquals(1,agentStatuses.size());
-        Assertions.assertTrue(agentStatuses.contains(AgentStatus.ONLINE));
+        Assertions.assertTrue(agentStatuses.contains(AgentStatus.OFFLINE));
 
-        agentCache.nodeReport(Node.builder().devices(List.of()).serialNumber("serialNumber3").build());
+        agentCache.nodeReport(Node.builder().status(AgentStatus.ONLINE).devices(List.of()).serialNumber("serialNumber3").build());
 
         agents = agentCache.agents();
         Assertions.assertEquals(3,agents.size());
@@ -140,19 +130,11 @@ public class AgentCacheTest {
         ));
         AgentConverter agentConverter = new AgentConverter(new ObjectMapper(),
             new LocalDateTimeConvertor());
-        AgentStatusWatcher agentStatusWatcher1 = mock(AgentStatusWatcher.class);
-        AgentStatusWatcher agentStatusWatcher2 = mock(AgentStatusWatcher.class);
-        List<AgentStatusWatcher> agentStatusWatchers = List.of(agentStatusWatcher1,agentStatusWatcher2);
-        AgentCache agentCache = new AgentCache(agentMapper, agentConverter, agentStatusWatchers);
-        Field bareTimeMilliField = agentCache.getClass().getDeclaredField("bareTimeMilli");
-        bareTimeMilliField.setAccessible(true);
-        bareTimeMilliField.set(agentCache,3000L);
+        AgentCache agentCache = new AgentCache(agentMapper, agentConverter);
 
         agentCache.run();
 
-        Thread.sleep(1500L);
-        agentCache.nodeReport(Node.builder().devices(List.of()).serialNumber("serialNumber2").build());
-        Thread.sleep(1500L);
+        agentCache.nodeReport(Node.builder().status(AgentStatus.OFFLINE).devices(List.of()).serialNumber("serialNumber1").build());
         agentCache.flushDb();
         agentCache.removeOfflineAgent("serialNumber1");
         List<Agent> agents = agentCache.agents();

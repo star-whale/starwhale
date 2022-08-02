@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.task.status.watchers;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
@@ -27,7 +28,6 @@ import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
-import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -73,7 +73,10 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
     @Override
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
         Step step = task.getStep();
-        synchronized (step){
+        Job job = step.getJob();
+        log.debug("updating job {} status for task {}",job.getId(),task.getId());
+        synchronized (job){
+            log.debug("lock got for job {} and task {}",job.getId(),task.getId());
             Collection<TaskStatus> taskStatuses = step.getTasks().parallelStream().map(Task::getStatus).collect(
                 Collectors.toSet());
             StepStatus stepNewStatus = stepHelper.desiredStepStatus(taskStatuses);
@@ -86,7 +89,7 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
                 return;
             }
             updateStepStatus(step, stepNewStatus);
-            jobUpdateHelper.updateJob(step.getJob());
+            jobUpdateHelper.updateJob(job);
             if(step.getStatus() == StepStatus.SUCCESS){
                 stepTriggerContext.triggerNextStep(step);
             }

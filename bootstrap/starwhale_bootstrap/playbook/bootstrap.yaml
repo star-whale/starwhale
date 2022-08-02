@@ -12,11 +12,6 @@
   roles:
     - controller
 
-- hosts: agent
-  become: true
-  roles:
-    - agent
-
 - hosts: nexus
   become: true
   roles:

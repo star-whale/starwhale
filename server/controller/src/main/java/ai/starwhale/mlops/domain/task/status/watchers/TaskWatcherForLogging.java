@@ -17,42 +17,45 @@
 package ai.starwhale.mlops.domain.task.status.watchers;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.domain.task.log.TaskLogCollector;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.schedule.SWTaskScheduler;
-import java.util.List;
+import ai.starwhale.mlops.exception.StarWhaleException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+@Order(5)
 @Slf4j
 @Component
-@Order(6)
-public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
+public class TaskWatcherForLogging implements TaskStatusChangeWatcher {
 
-    final SWTaskScheduler taskScheduler;
+    final TaskLogCollector taskLogCollector;
 
     final TaskStatusMachine taskStatusMachine;
 
-    public TaskWatcherForSchedule(SWTaskScheduler taskScheduler,
+    public TaskWatcherForLogging(
+        TaskLogCollector taskLogCollector,
         TaskStatusMachine taskStatusMachine) {
-        this.taskScheduler = taskScheduler;
+        this.taskLogCollector = taskLogCollector;
         this.taskStatusMachine = taskStatusMachine;
     }
 
     @Override
-    public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
-        if(task.getStatus() == TaskStatus.READY){
-            log.debug("task status changed to ready id: {} oldStatus: {}, scheduled",task.getId(),oldStatus);
-            taskScheduler.adopt(List.of(task),task.getStep().getJob().getJobRuntime().getDeviceClass());
-        }else if(task.getStatus() == TaskStatus.PAUSED || taskStatusMachine.isFinal(task.getStatus())){
-            log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled",task.getStatus(),task.getId(),task.getStatus());
-            taskScheduler.remove(List.of(task.getId()));
-        }else {
-            //do nothing
-            log.debug("task {} of status {} do nothing with scheduler ",task.getId(),task.getStatus());
+    public void onTaskStatusChange(Task task,
+        TaskStatus oldStatus) {
+        if(!taskStatusMachine.isFinal(task.getStatus()) || task.getStatus() == TaskStatus.CANCELED){
+            log.debug("{} task {} will not collect log",task.getStatus(),task.getId());
+            return;
         }
+        log.debug("collection log for task {}",task.getId());
+        try{
+            taskLogCollector.collect(task);
+        }catch (StarWhaleException e){
+            log.error("collecting log for task {} error",task.getId(),e);
+        }
+
 
     }
 }

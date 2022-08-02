@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.system.agent.bo;
+package ai.starwhale.mlops.reporting;
 
-import ai.starwhale.mlops.domain.node.Device;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
- * node info
+ * receive task status from agents
  */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class NodeInfo {
-    Float memoryGB;
-    List<Device> devices;
+public interface TaskStatusReceiver {
+
+     /**
+      * process the report from Agent
+      */
+     void receive(List<ReportedTask> tasks);
+
 }

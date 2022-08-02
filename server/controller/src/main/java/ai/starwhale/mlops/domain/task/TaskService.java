@@ -53,7 +53,6 @@ public class TaskService {
     @Resource
     private JobManager jobManager;
 
-
     public PageInfo<TaskVO> listTasks(String jobUrl, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long jobId = jobManager.getJobId(jobUrl);
@@ -77,7 +76,7 @@ public class TaskService {
 
     }
 
-    public String logContent(Long taskId,String logFileName){
+    public String logContent(Long taskId,String logFileName) {
         ResultPath resultPath = resultPathOfTask(taskId);
         String logDir = resultPath.logDir();
         try(InputStream inputStream = storageAccessService.get(

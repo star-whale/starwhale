@@ -49,10 +49,12 @@ public class JobBoConverter {
 
     final RuntimeVersionMapper runtimeVersionMapper;
 
+    final String image = "ghcr.io/star-whale/starwhale:latest";//todo(renyanda): replace with runtime meta
+
     public JobBoConverter(JobSWDSVersionMapper jobSWDSVersionMapper,
-        SWModelPackageMapper swModelPackageMapper,
-        RuntimeMapper runtimeMapper,
-        RuntimeVersionMapper runtimeVersionMapper) {
+                          SWModelPackageMapper swModelPackageMapper,
+                          RuntimeMapper runtimeMapper,
+                          RuntimeVersionMapper runtimeVersionMapper) {
         this.jobSWDSVersionMapper = jobSWDSVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
         this.runtimeMapper = runtimeMapper;
@@ -83,6 +85,7 @@ public class JobBoConverter {
                 .storagePath(runtimeVersionEntity.getStoragePath())
                 .deviceAmount(jobEntity.getDeviceAmount())
                 .deviceClass(Device.Clazz.from(jobEntity.getDeviceType()))
+                .image(image)
                 .build())
             .status(jobEntity.getJobStatus())
             .type(jobEntity.getType())

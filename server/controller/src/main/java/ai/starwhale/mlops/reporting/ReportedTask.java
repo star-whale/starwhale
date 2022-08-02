@@ -31,20 +31,8 @@ import lombok.Data;
 @AllArgsConstructor
 public class ReportedTask {
 
-    final static Map<TaskStatusInterface, TaskStatus> transferMapIn = Map.ofEntries(
-        new SimpleEntry<>(TaskStatusInterface.CANCELED, TaskStatus.CANCELED)
-        , new SimpleEntry<>(TaskStatusInterface.CANCELING, TaskStatus.CANCELLING)
-        , new SimpleEntry<>(TaskStatusInterface.PREPARING, TaskStatus.PREPARING)
-        , new SimpleEntry<>(TaskStatusInterface.RUNNING, TaskStatus.RUNNING)
-        , new SimpleEntry<>(TaskStatusInterface.FAIL, TaskStatus.FAIL)
-        , new SimpleEntry<>(TaskStatusInterface.SUCCESS, TaskStatus.SUCCESS));
-
     final Long id;
     final TaskStatus status;
-    final TaskType taskType;
-    public static ReportedTask from(TaskReport taskReport){
-        return new ReportedTask(taskReport.getId(),transferMapIn.get(taskReport.getStatus()),taskReport.getTaskType());
-    }
 
     public Long getId() {
         return id;
@@ -54,7 +42,4 @@ public class ReportedTask {
         return status;
     }
 
-    public TaskType getTaskType() {
-        return taskType;
-    }
 }

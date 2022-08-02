@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.system.agent.bo;
+package ai.starwhale.mlops.domain.task.log;
 
-import ai.starwhale.mlops.domain.node.Device;
-import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import ai.starwhale.mlops.domain.task.bo.Task;
+import ai.starwhale.mlops.exception.StarWhaleException;
 
-/**
- * node info
- */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class NodeInfo {
-    Float memoryGB;
-    List<Device> devices;
+public interface TaskLogCollector {
+
+    void collect(Task task) throws StarWhaleException;
+
 }

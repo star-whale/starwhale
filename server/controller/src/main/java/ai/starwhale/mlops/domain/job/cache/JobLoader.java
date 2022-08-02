@@ -35,7 +35,6 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.schedule.CommandingTasksAssurance;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import java.util.ArrayList;
@@ -163,7 +162,10 @@ public class JobLoader {
     }
 
     private void resumeFrozenTasks(List<Task> tasks) {
-        tasks.parallelStream().filter(t->t.getStatus() == TaskStatus.PAUSED || t.getStatus() ==TaskStatus.FAIL).forEach(t->t.updateStatus(TaskStatus.READY));
+        tasks.parallelStream().filter(t->t.getStatus() == TaskStatus.PAUSED
+            || t.getStatus() ==TaskStatus.FAIL
+            || t.getStatus() ==TaskStatus.CANCELED)
+            .forEach(t->t.updateStatus(TaskStatus.READY));
     }
 
     private void linkSteps(List<Step> steps, List<StepEntity> stepEntities) {
@@ -191,7 +193,7 @@ public class JobLoader {
         tasks.parallelStream()
             .collect(Collectors.groupingBy(task -> task.getStep().getJob().getJobRuntime().getDeviceClass()))
             .forEach((deviceClass, taskList) ->
-                swTaskScheduler.adoptTasks(taskList, deviceClass));
+                swTaskScheduler.adopt(taskList, deviceClass));
     }
 
     /**

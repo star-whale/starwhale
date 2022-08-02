@@ -43,7 +43,7 @@ public class AgentConvertor implements Convertor<AgentEntity, AgentVO> {
         return AgentVO.builder()
             .id(idConvertor.convert(agentEntity.getId()))
             .ip(agentEntity.getAgentIp())
-            .connectedTime(localDateTimeConvertor.convert(agentEntity.getCreatedTime()))
+            .connectedTime(localDateTimeConvertor.convert(agentEntity.getConnectTime()))
             .status(agentEntity.getStatus())
             .version(agentEntity.getAgentVersion())
             .serialNumber(agentEntity.getSerialNumber())

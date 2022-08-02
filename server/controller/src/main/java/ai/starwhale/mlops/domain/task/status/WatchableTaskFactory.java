@@ -43,7 +43,7 @@ public class WatchableTaskFactory {
             if(null == o2){
                 return 1;
             }
-            return o2.value() - o1.value();
+            return o1.value() - o2.value();
         }).collect(Collectors.toList());
         this.taskStatusMachine = taskStatusMachine;
     }

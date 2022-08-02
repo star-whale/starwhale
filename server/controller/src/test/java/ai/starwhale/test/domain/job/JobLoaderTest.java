@@ -129,7 +129,7 @@ public class JobLoaderTest {
         Assertions.assertNotNull(loadedJob.getCurrentStep().getNextStep());
 
         verify(jobHolder, times(1)).adopt(mockJob);
-        verify(swTaskScheduler, times(0)).adoptTasks(anyCollection(), any(Clazz.class));
+        verify(swTaskScheduler, times(0)).adopt(anyCollection(), any(Clazz.class));
         verify(commandingTasksAssurance, times(0)).onTaskCommanding(anyList(), any(Agent.class));
         verify(watchableTaskFactory, times(2)).wrapTasks(anyCollection());
         loadedJob.getSteps().parallelStream().map(Step::getTasks).flatMap(Collection::stream)
@@ -202,7 +202,7 @@ public class JobLoaderTest {
 
         verify(jobUpdateHelper).updateJob(mockJob);
         verify(jobHolder, times(1)).adopt(mockJob);
-        verify(swTaskScheduler, times(1)).adoptTasks(anyCollection(), any(Clazz.class));
+        verify(swTaskScheduler, times(1)).adopt(anyCollection(), any(Clazz.class));
         verify(commandingTasksAssurance, times(1)).onTaskCommanding(anyList(), any(Agent.class));
         Set<Task> tasks = loadedJob.getSteps().parallelStream().map(Step::getTasks)
             .flatMap(Collection::stream).collect(
@@ -277,7 +277,7 @@ public class JobLoaderTest {
 
         verify(jobUpdateHelper).updateJob(mockJob);
         verify(jobHolder, times(0)).adopt(mockJob);
-        verify(swTaskScheduler, times(0)).adoptTasks(anyCollection(), any(Clazz.class));
+        verify(swTaskScheduler, times(0)).adopt(anyCollection(), any(Clazz.class));
         verify(commandingTasksAssurance, times(0)).onTaskCommanding(anyList(), any(Agent.class));
         Set<Task> tasks = loadedJob.getSteps().parallelStream().map(Step::getTasks)
             .flatMap(Collection::stream).collect(

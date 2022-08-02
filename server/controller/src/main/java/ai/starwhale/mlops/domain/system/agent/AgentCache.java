@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.system.agent;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
-import ai.starwhale.mlops.domain.node.Node;
+import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent.AgentUnModifiable;
@@ -46,16 +46,9 @@ public class AgentCache implements CommandLineRunner {
 
     final AgentConverter agentConverter;
 
-    final List<AgentStatusWatcher> agentStatusWatchers;
-
-    Long bareTimeMilli;
-
-    public AgentCache(AgentMapper agentMapper, AgentConverter agentConverter,
-        List<AgentStatusWatcher> agentStatusWatchers) {
+    public AgentCache(AgentMapper agentMapper, AgentConverter agentConverter) {
         this.agentMapper = agentMapper;
         this.agentConverter = agentConverter;
-        this.agentStatusWatchers = agentStatusWatchers;
-        this.bareTimeMilli = 30000L;
         agents = new ConcurrentHashMap<>();
     }
 
@@ -86,7 +79,7 @@ public class AgentCache implements CommandLineRunner {
             return new AgentUnModifiable(agentReported);
         }else {
             residentAgent.setAgentVersion(agentReported.getAgentVersion());
-            residentAgent.setStatus(AgentStatus.ONLINE);
+            residentAgent.setStatus(agentReported.getStatus());
             residentAgent.setNodeInfo(agentReported.getNodeInfo());
             residentAgent.setConnectTime(agentReported.getConnectTime());
             return new AgentUnModifiable(residentAgent);
@@ -95,14 +88,7 @@ public class AgentCache implements CommandLineRunner {
 
     @Scheduled(initialDelay = 10000,fixedDelay = 30000)
     public void flushDb(){
-        long now = System.currentTimeMillis();
         List<AgentEntity> agentEntities = agents.values().stream()
-            .peek(agent -> {
-                if( (now - agent.getConnectTime())> bareTimeMilli && AgentStatus.ONLINE == agent.getStatus()){
-                    agent.setStatus(AgentStatus.OFFLINE);
-                    agentStatusWatchers.parallelStream().forEach(watcher->watcher.onAgentStatusChange(agent,AgentStatus.OFFLINE));
-                }
-            })
             .map(agent -> agentConverter.toEntity(agent))
             .collect(Collectors.toList());
         if(null == agentEntities || agentEntities.isEmpty()){
@@ -130,7 +116,6 @@ public class AgentCache implements CommandLineRunner {
         agentEntities.parallelStream().forEach(entity -> {
             Agent agent = agentConverter.fromEntity(entity);
             agents.put(entity.getSerialNumber(), agent);
-            agentStatusWatchers.forEach(agentStatusWatcher -> agentStatusWatcher.onAgentStatusChange(agent,agent.getStatus()));
         });
     }
 }

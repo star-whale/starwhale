@@ -16,7 +16,10 @@ sw:
     secret: ${SW_JWT_SECRET:wdxlG3UK66m6uTUgxXFjizli}
     issuer: ${SW_JWT_ISSUER:starWhale}
     expireMinutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
-  taskSize: ${SW_TASK_SPLIT_SIZE:256}
+  taskSize: ${SW_TASK_SPLIT_SIZE:3}
+  infra:
+    k8s:
+      name-space: ${SW_K8S_NAME_SPACE:default}
   storage:
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
     s3-config:

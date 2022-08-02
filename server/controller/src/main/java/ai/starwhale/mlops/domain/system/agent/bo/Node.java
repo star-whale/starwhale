@@ -17,18 +17,56 @@
 package ai.starwhale.mlops.domain.system.agent.bo;
 
 import ai.starwhale.mlops.domain.node.Device;
-import java.util.List;
+import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+
+import java.util.List;
 import lombok.NoArgsConstructor;
 
 /**
- * node info
+ * Node is a machine/ a virtual machine or even a K8S pod in the cluster
  */
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public class NodeInfo {
-    Float memoryGB;
+@AllArgsConstructor
+public class Node {
+
+    /**
+     * the version of the agent that is deployed on this node
+     */
+    String agentVersion;
+
+    /**
+     * the unique number to identify this node
+     */
+    String serialNumber;
+
+    /**
+     * the ip address of this node
+     */
+    String ipAddr;
+
+    /**
+     * memory size in GB unit
+     */
+    Float memorySizeGB;
+
+    /**
+     * the device holding information
+     */
     List<Device> devices;
+
+    AgentStatus status;
+
+    public boolean equals(Object obj){
+        if(!(obj instanceof Node)){
+            return false;
+        }
+        Node node = (Node)obj;
+        return this.serialNumber.equals(node.getSerialNumber());
+    }
+
 }

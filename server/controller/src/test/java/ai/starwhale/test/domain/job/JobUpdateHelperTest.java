@@ -35,6 +35,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import ai.starwhale.test.JobMockHolder;
 import java.time.LocalDateTime;
@@ -47,8 +48,10 @@ import org.junit.jupiter.api.Test;
  */
 public class JobUpdateHelperTest {
 
+    TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
+
     @Test
-    public void testJobUpdateHelper(){
+    public void testSuccess(){
         HotJobHolder  hotJobHolder = mock(HotJobHolder.class);
         JobStatusCalculator jobStatusCalculator = mock(JobStatusCalculator.class);
 
@@ -59,8 +62,14 @@ public class JobUpdateHelperTest {
         LocalDateTime now = LocalDateTime.now();
         when(localDateTimeConvertor.revert(anyLong())).thenReturn(now);
 
-        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder,jobStatusCalculator,jobMapper,jobStatusMachine,swTaskScheduler,localDateTimeConvertor);
+        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder,jobStatusCalculator,jobMapper,jobStatusMachine,swTaskScheduler,localDateTimeConvertor,
+            taskStatusMachine);
         Job mockJob = new JobMockHolder().mockJob();
+        mockJob.getSteps().parallelStream().forEach(step->{
+            step.getTasks().parallelStream().forEach(t->{
+                t.updateStatus(TaskStatus.SUCCESS);
+            });
+        });
 
         JobStatus desiredStatus = JobStatus.SUCCESS;
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
@@ -74,7 +83,7 @@ public class JobUpdateHelperTest {
     }
 
     @Test
-    public void testFAIL(){
+    public void testFAIL() throws InterruptedException {
         HotJobHolder  hotJobHolder = mock(HotJobHolder.class);
         JobStatusCalculator jobStatusCalculator = mock(JobStatusCalculator.class);
 
@@ -85,12 +94,13 @@ public class JobUpdateHelperTest {
         LocalDateTime now = LocalDateTime.now();
         when(localDateTimeConvertor.revert(anyLong())).thenReturn(now);
 
-        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder,jobStatusCalculator,jobMapper,jobStatusMachine,swTaskScheduler,localDateTimeConvertor);
+        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder,jobStatusCalculator,jobMapper,jobStatusMachine,swTaskScheduler,localDateTimeConvertor,
+            taskStatusMachine);
         Job mockJob = new JobMockHolder().mockJob();
 
 
         Task luckTask = mockJob.getSteps().get(0).getTasks().get(0);
-        luckTask.updateStatus(TaskStatus.READY);
+        luckTask.updateStatus(TaskStatus.RUNNING);
         JobStatus desiredStatus = JobStatus.FAIL;
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
@@ -98,7 +108,8 @@ public class JobUpdateHelperTest {
         verify(jobMapper,times(1)).updateJobStatus(List.of(mockJob.getId()),desiredStatus);
         verify(hotJobHolder).remove(mockJob.getId());
         verify(jobMapper).updateJobFinishedTime(List.of(mockJob.getId()),now);
-        verify(swTaskScheduler).stopSchedule(List.of(luckTask.getId()));
+        Thread.sleep(100);//wait for async status update
+        Assertions.assertEquals(TaskStatus.CANCELED,luckTask.getStatus());
 
     }
 
@@ -115,10 +126,11 @@ public class JobUpdateHelperTest {
         LocalDateTime now = LocalDateTime.now();
         when(localDateTimeConvertor.revert(anyLong())).thenReturn(now);
 
-        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder,jobStatusCalculator,jobMapper,jobStatusMachine,swTaskScheduler,localDateTimeConvertor);
+        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder,jobStatusCalculator,jobMapper,jobStatusMachine,swTaskScheduler,localDateTimeConvertor,
+            taskStatusMachine);
         Job mockJob = new JobMockHolder().mockJob();
 
-        mockJob.setStatus(JobStatus.TO_CANCEL);
+        mockJob.setStatus(JobStatus.RUNNING);
         JobStatus desiredStatus = JobStatus.CANCELED;
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
@@ -129,7 +141,7 @@ public class JobUpdateHelperTest {
     }
 
     @Test
-    public void testUnPass(){
+    public void testRunning(){
         HotJobHolder  hotJobHolder = mock(HotJobHolder.class);
         JobStatusCalculator jobStatusCalculator = mock(JobStatusCalculator.class);
 
@@ -138,14 +150,15 @@ public class JobUpdateHelperTest {
         SWTaskScheduler swTaskScheduler = mock(SWTaskScheduler.class);
         LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class) ;
 
-        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder,jobStatusCalculator,jobMapper,jobStatusMachine,swTaskScheduler,localDateTimeConvertor);
+        JobUpdateHelper jobUpdateHelper = new JobUpdateHelper(hotJobHolder,jobStatusCalculator,jobMapper,jobStatusMachine,swTaskScheduler,localDateTimeConvertor,
+            taskStatusMachine);
         Job mockJob = new JobMockHolder().mockJob();
 
-        mockJob.setStatus(JobStatus.TO_CANCEL);
+        mockJob.setStatus(JobStatus.READY);
         JobStatus desiredStatus = JobStatus.RUNNING;
         when(jobStatusCalculator.desiredJobStatus(anyCollection())).thenReturn(desiredStatus);
         jobUpdateHelper.updateJob(mockJob);
-        Assertions.assertEquals(JobStatus.TO_CANCEL,mockJob.getStatus());
-        verify(jobMapper,times(0)).updateJobStatus(List.of(mockJob.getId()),desiredStatus);
+        Assertions.assertEquals(JobStatus.RUNNING,mockJob.getStatus());
+        verify(jobMapper,times(1)).updateJobStatus(List.of(mockJob.getId()),desiredStatus);
     }
 }
