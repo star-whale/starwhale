@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import io.kubernetes.client.PodLogs;
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
@@ -54,6 +53,8 @@ import okhttp3.Call;
 import okhttp3.Response;
 import org.bouncycastle.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -87,7 +88,6 @@ public class K8sClient {
         informerFactory = new SharedInformerFactory(client);
         watchJob(eventH);
         watchNode(eventHandlerNode);
-        informerFactory.startAllRegisteredInformers();
     }
 
     /**
@@ -248,5 +248,11 @@ public class K8sClient {
             V1Node.class,
             V1NodeList.class);
         nodeInformer.addEventHandler(eventHandlerNode);
+    }
+
+    @EventListener
+    public void handleContextRefreshEvent(ApplicationReadyEvent ctxReadyEvt) {
+        log.info("spring context ready now");
+        informerFactory.startAllRegisteredInformers();
     }
 }
