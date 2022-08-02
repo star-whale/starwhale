@@ -56,3 +56,7 @@ class FieldTypeOrValueError(Exception):
 
 class ParameterError(Exception):
     pass
+
+
+class ExclusiveArgsError(Exception):
+    pass

@@ -49,8 +49,8 @@ class RuntimeTermView(BaseTermView):
         self._print_info(self.runtime.info(), fullname=fullname)
 
     @classmethod
-    def activate(cls, workdir: str, yaml_name: str = DefaultYAMLName.RUNTIME) -> None:
-        Runtime.activate(workdir, yaml_name)
+    def activate(cls, path: str = "", uri: str = "") -> None:
+        Runtime.activate(path, uri)
 
     @classmethod
     def lock(
