@@ -11,6 +11,7 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, RuntimeLockFileType
+from starwhale.utils.error import MissingFieldError, ExclusiveArgsError
 
 from .view import get_term_view, RuntimeTermView
 
@@ -264,15 +265,16 @@ def _tag(runtime: str, tags: t.List[str], remove: bool, quiet: bool) -> None:
     "activate",
     help="[Only Standalone]Activate python runtime environment for development",
 )
-@click.option(
-    "-f",
-    "--runtime-yaml",
-    default=DefaultYAMLName.RUNTIME,
-    help="Runtime yaml filename, default use ${WORKDIR}/runtime.yaml file",
-)
-@click.argument("workdir")
-def _activate(workdir: str, runtime_yaml: str) -> None:
-    RuntimeTermView.activate(workdir, runtime_yaml)
+@click.option("-u", "--uri", help="Runtime uri which has already been restored")
+@click.option("-p", "--path", help="User's runtime workdir")
+def _activate(uri: str, path: str) -> None:
+    if uri and path:
+        raise ExclusiveArgsError(f"only uri({uri}) or path({path}) can take effect")
+
+    if not uri and not path:
+        raise MissingFieldError("uri or path is required.")
+
+    RuntimeTermView.activate(path, uri)
 
 
 @runtime_cmd.command("lock")
