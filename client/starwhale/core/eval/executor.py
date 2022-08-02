@@ -221,7 +221,8 @@ class EvalExecutor:
         if self.job_name not in _jobs:
             raise RuntimeError(f"job:{self.job_name} not found")
         _steps = _jobs[self.job_name]
-        _module = StandaloneModel.get_pipeline_handler(typ, workdir=_run_dir)
+        # TODO
+        _module = StandaloneModel.get_pipeline_handler(workdir=_run_dir)
 
         _scheduler = Scheduler(
             module=_module,
