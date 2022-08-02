@@ -39,6 +39,7 @@ class Step:
                     total=self.task_num,
                     index=index,
                     dataset_uris=dataset_uris,
+                    workdir=workdir,
                 ),
                 status=STATUS.INIT,
                 module=module,
@@ -127,6 +128,7 @@ class Parser:
                 for d in step.dependency:
                     if d:
                         dependencies.append(d)
+            logger.debug("all steps:{},{}", all_steps[0], len(all_steps))
             _check = all(item in all_steps for item in dependencies)
             if not _check:
                 logger.error("job:{} check error!", job[0])
@@ -148,6 +150,7 @@ class Parser:
 class Context:
     def __init__(
         self,
+        workdir: Path,
         step: str = "",
         total: int = 0,
         index: int = 0,
@@ -157,6 +160,7 @@ class Context:
         self.total = total
         self.index = index
         self.dataset_uris = dataset_uris
+        self.workdir = workdir
 
     def __repr__(self):
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
