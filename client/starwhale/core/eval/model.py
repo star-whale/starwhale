@@ -157,7 +157,7 @@ class StandaloneEvaluationJob(EvaluationJob):
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
                 target=ee.run,
-                args=(phase,),
+                args=(typ, step, task_index),
                 runtime_restore=kw.get("runtime_restore", False),
             ).run()
         else:

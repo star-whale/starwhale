@@ -12,12 +12,13 @@ from starwhale.core.job.model import Step, Task, STATUS
 
 class Scheduler:
     def __init__(
-        self, module: str, workdir: Path, dataset_uris: list[URI], steps: dict[Step]
+        self, module: str, workdir: Path, src_dir: Path, dataset_uris: list[URI], steps: dict[Step]
     ):
         self.steps = steps
         self.dataset_uris = dataset_uris
         self.module = module
         self.workdir = workdir
+        self.src_dir = src_dir
         self.__split_tasks()
         self._lock = threading.RLock()
 
@@ -27,7 +28,7 @@ class Scheduler:
             # update step status = init
             _step.status = STATUS.INIT
             for index in range(_step.task_num):
-                _step.gen_task(index, self.module, self.workdir, self.dataset_uris)
+                _step.gen_task(index, self.module, self.workdir, self.src_dir, self.dataset_uris)
 
     def schedule(self) -> None:
         _threads = []

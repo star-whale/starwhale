@@ -115,6 +115,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self.merge_label = merge_label
         self.output_type = output_type
         self.ignore_error = ignore_error
+        # TODO: remove it(local fs) when datastore complete
         self.config = _RunConfig.create_by_env()
 
         self.logger, self._sw_logger = self._init_logger()
