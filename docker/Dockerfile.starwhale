@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=starwhaleai/base:latest
+ARG BASE_IMAGE=ghcr.io/star-whale/base:latest
 FROM ${BASE_IMAGE}
 
 ARG TARGETARCH=amd64
