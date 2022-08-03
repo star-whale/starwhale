@@ -64,10 +64,10 @@ class Parser:
 
     @staticmethod
     def add_job(job_name: str, step: Step) -> None:
-        parse_config["jobs"].setdefault(job_name, {})
+        parse_config["jobs"].setdefault(job_name, [])
 
         logger.debug(step)
-        parse_config["jobs"][job_name][step.step_name] = step
+        parse_config["jobs"][job_name].append(step)
 
     @staticmethod
     def get_jobs():
@@ -117,14 +117,13 @@ class Parser:
             logger.error("generator DAG error! reason:{}", "check is failed.")
 
     @staticmethod
-    def check(jobs: dict[str, dict[str, Step]]) -> bool:
+    def check(jobs: dict[str, list[Step]]) -> bool:
         # check
         checks = []
         for job in jobs.items():
             all_steps = []
             dependencies = []
-            for item in job[1].items():
-                step = item[1]
+            for step in job[1]:
                 all_steps.append(step.step_name)
                 for d in step.dependency:
                     if d:

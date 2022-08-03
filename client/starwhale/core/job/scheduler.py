@@ -12,7 +12,7 @@ from starwhale.core.job.model import Step, Task, STATUS
 
 class Scheduler:
     def __init__(
-        self, module: str, workdir: Path, src_dir: Path, dataset_uris: list[URI], steps: dict[Step]
+        self, module: str, workdir: Path, src_dir: Path, dataset_uris: list[URI], steps: list[Step]
     ):
         self.steps = steps
         self.dataset_uris = dataset_uris
@@ -23,8 +23,7 @@ class Scheduler:
         self._lock = threading.RLock()
 
     def __split_tasks(self):
-        for item in self.steps.items():
-            _step = item[1]
+        for _step in self.steps:
             # update step status = init
             _step.status = STATUS.INIT
             for index in range(_step.task_num):
@@ -35,8 +34,7 @@ class Scheduler:
         with self._lock:
             _wait_steps = []
             _finished_step_names = []
-            for item in self.steps.items():
-                _step = item[1]
+            for _step in self.steps:
                 if _step.status is STATUS.FAILED:
                     # todo break processing
                     pass
