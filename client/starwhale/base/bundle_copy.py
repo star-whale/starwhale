@@ -1,3 +1,4 @@
+import os.path
 from http import HTTPStatus
 from pathlib import Path
 
@@ -82,7 +83,7 @@ class BundleCopy(CloudRequestMixed):
         # TODO: add more params for project
         # TODO: tune controller api, use unified params name
         ok, _ = self.do_http_request_simple_ret(
-            path=f"/project/{self.typ}",
+            path=self._get_remote_instance_rc_url(),
             method=HTTPMethod.HEAD,
             instance_uri=uri,
             params={
@@ -112,6 +113,13 @@ class BundleCopy(CloudRequestMixed):
         else:
             return self._get_target_path(uri).exists()
 
+    def _get_remote_instance_rc_url(self) -> str:
+        _obj = self.src_uri.object
+        if self.src_uri.instance_type == InstanceType.CLOUD:
+            return f"/project/{self.src_uri.project}/{self.typ}/{_obj.name}/version/{_obj.version}/file"
+        else:
+            return f"/project/{self.dest_uri.project}/{self.typ}/{_obj.name}/version/{_obj.version}/file"
+
     def _do_upload_bundle_tar(self, progress: Progress) -> None:
         file_path = self._get_target_path(self.src_uri)
         task_id = progress.add_task(
@@ -120,7 +128,7 @@ class BundleCopy(CloudRequestMixed):
         )
 
         self.do_multipart_upload_file(
-            url_path=f"/project/{self.typ}/push",
+            url_path=self._get_remote_instance_rc_url(),
             file_path=file_path,
             instance_uri=self.dest_uri,
             fields={
@@ -135,11 +143,12 @@ class BundleCopy(CloudRequestMixed):
 
     def _do_download_bundle_tar(self, progress: Progress) -> None:
         file_path = self._get_target_path(self.dest_uri)
+        ensure_dir(os.path.dirname(file_path))
         task_id = progress.add_task(f":bowling: download to {file_path}...")
 
         self.do_download_file(
-            url_path=f"/project/{self.typ}/pull",
-            dest_path=self._get_target_path(self.dest_uri),
+            url_path=self._get_remote_instance_rc_url(),
+            dest_path=file_path,
             instance_uri=self.src_uri,
             params={
                 _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}",
@@ -191,7 +200,7 @@ class BundleCopy(CloudRequestMixed):
         _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
         _key = _query_param_map[self.typ]
         _name = f"{self.bundle_name}:{self.bundle_version}"
-        _url_path = f"/project/{self.typ}/push"
+        _url_path = self._get_remote_instance_rc_url()
 
         task_id = progress.add_task(
             f":arrow_up: {_manifest_path.name}",
@@ -294,7 +303,7 @@ class BundleCopy(CloudRequestMixed):
         def _download(_target: Path, _part: str, _tid: TaskID) -> None:
             self.do_download_file(
                 # TODO: use /project/{self.typ}/pull api
-                url_path=f"/project/{self.typ}/pull",
+                url_path=self._get_remote_instance_rc_url(),
                 dest_path=_target,
                 instance_uri=self.src_uri,
                 params={
