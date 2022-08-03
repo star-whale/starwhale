@@ -6,6 +6,34 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "30871637",
+      "name": "check",
+      "font_class": "check",
+      "unicode": "e623",
+      "unicode_decimal": 58915
+    },
+    {
+      "icon_id": "30772933",
+      "name": "password resets",
+      "font_class": "a-passwordresets",
+      "unicode": "e63c",
+      "unicode_decimal": 58940
+    },
+    {
+      "icon_id": "30772934",
+      "name": "manage user",
+      "font_class": "a-manageuser",
+      "unicode": "e63d",
+      "unicode_decimal": 58941
+    },
+    {
+      "icon_id": "30772935",
+      "name": "user2",
+      "font_class": "user2",
+      "unicode": "e63e",
+      "unicode_decimal": 58942
+    },
+    {
       "icon_id": "30435150",
       "name": "setting2",
       "font_class": "setting2",
@@ -144,13 +172,6 @@
       "font_class": "success",
       "unicode": "e629",
       "unicode_decimal": 58921
-    },
-    {
-      "icon_id": "30022319",
-      "name": "line",
-      "font_class": "line",
-      "unicode": "e623",
-      "unicode_decimal": 58915
     },
     {
       "icon_id": "30000202",

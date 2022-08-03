@@ -15,13 +15,10 @@ import { COLUMNS } from './constants'
 import type { ColumnT, SharedColumnOptionsT } from './types'
 import { LocaleContext } from './locales'
 import FilterShell from './filter-shell'
-import { matchesQuery, splitByQuery, HighlightCellText } from './text-search'
+import { matchesQuery, splitByQuery } from './text-search'
 import { Tag, KIND as TAG_KIND, VARIANT as TAG_VARIANT } from 'baseui/tag'
-import { Select, Value } from 'baseui/select'
-import { AiOutlineMore } from 'react-icons/ai'
 import { Popover, PLACEMENT } from 'baseui/popover'
-import theme from '@/theme'
-import { areEqual } from 'react-window'
+import IconFont from "@/components/IconFont";
 
 type OptionsT = SharedColumnOptionsT<string>
 
@@ -500,8 +497,9 @@ function CategoricalCell(props: any) {
                     </div>
 
                     {props.isHoverd && (
-                        <AiOutlineMore
+                        <IconFont
                             size={25}
+                            type='more'
                             style={{
                                 position: 'absolute',
                                 cursor: 'pointer',
