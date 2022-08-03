@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO;
 import ai.starwhale.mlops.api.protocol.user.RoleVO;
 import ai.starwhale.mlops.api.protocol.user.SystemRoleVO;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
@@ -224,4 +225,28 @@ public interface UserApi {
     @GetMapping(value = "/role/enums")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<RoleVO>>> listRoles();
+
+
+    @Operation(
+        summary = "Get arbitrary user token",
+        description =
+            "Get token of any user for third party system integration, only super admin is allowed to do this")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = String.class)))
+        })
+    @GetMapping(value = "/user/token/{userName}")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> userToken(@Parameter(
+        in = ParameterIn.PATH,
+        description = "account name of a user",
+        schema = @Schema())
+    @PathVariable("userName")
+        String userName);
 }

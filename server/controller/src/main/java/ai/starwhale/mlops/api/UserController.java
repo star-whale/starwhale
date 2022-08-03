@@ -32,6 +32,7 @@ import ai.starwhale.mlops.api.protocol.user.UserUpdateStateRequest;
 import ai.starwhale.mlops.api.protocol.user.UserVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.project.ProjectService;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -60,6 +61,9 @@ public class UserController implements UserApi{
 
     @Resource
     private IDConvertor idConvertor;
+
+    @Resource
+    JwtTokenUtil jwtTokenUtil;
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<UserVO>>> listUser(String userName,
@@ -202,5 +206,11 @@ public class UserController implements UserApi{
         Boolean res = userService.changePassword(userService.currentUserDetail(),
             userUpdatePasswordRequest.getNewPwd());
         return ResponseEntity.ok(Code.success.asResponse(String.valueOf(res)));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<String>> userToken(String userName) {
+        User user = userService.loadUserByUsername(userName);
+        return ResponseEntity.ok(Code.success.asResponse(jwtTokenUtil.generateAccessToken(user)));
     }
 }
