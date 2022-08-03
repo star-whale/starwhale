@@ -1,6 +1,6 @@
 import click
 
-from starwhale.mngt import gc, open_web
+from starwhale.mngt import gc, check, open_web
 
 
 def add_mngt_command(cli: click.core.Group) -> None:
@@ -14,3 +14,7 @@ def add_mngt_command(cli: click.core.Group) -> None:
     @click.argument("instance", default="")
     def _ui(instance: str) -> None:
         open_web(instance)
+
+    @cli.command("check", help="Check external dependency software")
+    def _check() -> None:
+        check()
