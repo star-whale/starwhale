@@ -120,7 +120,10 @@ const locales0 = {
     'Add project role success': {
         en: 'Add project role success',
     },
-    'Remove Project role success': {
+    'Remove Project Role Confirm': {
+        en: 'Are you sure to remove the user?',
+    },
+    'Remove Project Role Success': {
         en: 'Remove project role success',
     },
     'Add User': {
@@ -156,8 +159,14 @@ const locales0 = {
     'Disable User Success': {
         en: 'Disable User Success',
     },
+    'Disable User Confirm': {
+        en: 'Are you sure to disable the user?',
+    },
     'Enable User Success': {
         en: 'Enable User Success',
+    },
+    'Enable User Confirm': {
+        en: 'Are you sure to enable the user?',
     },
     'Disabled User': {
         en: 'Disabled',
