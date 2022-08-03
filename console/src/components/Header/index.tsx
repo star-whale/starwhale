@@ -16,7 +16,6 @@ import PasswordForm from '@user/components/PasswordForm'
 import { IChangePasswordSchema } from '@user/schemas/user'
 import { changePassword } from '@user/services/user'
 import { toaster } from 'baseui/toast'
-import { AiOutlineSetting, AiOutlineSecurityScan } from 'react-icons/ai'
 import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import IconFont from '../IconFont'
 
@@ -252,7 +251,7 @@ export default function Header() {
                                     history.push('/admin')
                                 }}
                             >
-                                <AiOutlineSetting size={18} />
+                                <IconFont type='setting' />
                                 <span>{t('Admin Settings')}</span>
                             </div>
                         )}
@@ -264,7 +263,7 @@ export default function Header() {
                                 setIsChangePasswordOpen(true)
                             }}
                         >
-                            <AiOutlineSecurityScan size={18} />
+                            <IconFont type='a-passwordresets' />
                             <span>{t('Change Password')}</span>
                         </div>
                         <div

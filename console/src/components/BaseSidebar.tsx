@@ -8,11 +8,11 @@ import useSidebarWidth from '@/hooks/useSidebarWidth'
 import { useStyletron } from 'baseui'
 import type { IconBaseProps } from 'react-icons/lib'
 import { SidebarContext } from '@/contexts/SidebarContext'
-import { AiOutlineDoubleLeft, AiOutlineDoubleRight } from 'react-icons/ai'
 import Text from '@/components/Text'
 import { createUseStyles } from 'react-jss'
 import Logo from '@/components/Header/Logo'
 import { headerHeight, sidebarExpandedWidth, sidebarFoldedWidth } from '@/consts'
+import IconFont from '@/components/IconFont'
 
 const useBaseSideBarStyles = createUseStyles({
     sidebarWrapper: {
@@ -270,7 +270,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                             justifyContent: 'center',
                         }}
                     >
-                        {ctx.expanded ? <AiOutlineDoubleLeft /> : <AiOutlineDoubleRight />}
+                        {ctx.expanded ? <IconFont type='fold' /> : <IconFont type='unfold' />}
                     </div>
                 </div>
             </div>
