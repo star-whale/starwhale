@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconfont"; /* Project id 3410006 */
-  src: url('iconfont.woff2?t=1657709729103') format('woff2'),
-       url('iconfont.woff?t=1657709729103') format('woff'),
-       url('iconfont.ttf?t=1657709729103') format('truetype');
+  src: url('iconfont.woff2?t=1659497008422') format('woff2'),
+       url('iconfont.woff?t=1659497008422') format('woff'),
+       url('iconfont.ttf?t=1659497008422') format('truetype');
 }
 
 .iconfont {
@@ -11,6 +11,22 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-check:before {
+  content: "\e623";
+}
+
+.icon-a-passwordresets:before {
+  content: "\e63c";
+}
+
+.icon-a-manageuser:before {
+  content: "\e63d";
+}
+
+.icon-user2:before {
+  content: "\e63e";
 }
 
 .icon-setting2:before {
@@ -91,10 +107,6 @@
 
 .icon-success:before {
   content: "\e629";
-}
-
-.icon-line:before {
-  content: "\e623";
 }
 
 .icon-Twitter:before {

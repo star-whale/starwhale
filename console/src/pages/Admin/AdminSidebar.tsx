@@ -1,7 +1,7 @@
 import useTranslation from '@/hooks/useTranslation'
 import React, { useMemo } from 'react'
 import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
-import { AiOutlineSetting, AiOutlineUser } from 'react-icons/ai'
+import IconFont from '@/components/IconFont'
 
 export default function AdminSidebar({ style }: IComposedSidebarProps) {
     const [t] = useTranslation()
@@ -11,7 +11,7 @@ export default function AdminSidebar({ style }: IComposedSidebarProps) {
             {
                 title: t('Manage Users'),
                 path: '/admin/users',
-                icon: <AiOutlineUser size={20} />,
+                icon: <IconFont type='user' />,
             },
         ]
     }, [t])
@@ -22,7 +22,7 @@ export default function AdminSidebar({ style }: IComposedSidebarProps) {
             style={style}
             title={t('Admin Settings')}
             titleLink='/admin'
-            icon={<AiOutlineSetting style={{ color: '#fff' }} size={20} />}
+            icon={<IconFont type='setting' style={{ color: 'white' }} />}
         />
     )
 }

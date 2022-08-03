@@ -3,51 +3,53 @@ import React from 'react'
 import projectSvg from '@/assets/fonts/project.svg'
 import settingSvg from '@/assets/fonts/setting.svg'
 
+const iconTypes = [
+    'arrow2_down',
+    'arrow2_right',
+    'clear2',
+    'arrow_left',
+    'arrow_down',
+    'arrow_top',
+    'arrow_right',
+    'eye_off',
+    'eye',
+    'clear',
+    'fold',
+    'fold2',
+    'unfold',
+    'unfold2',
+    'job',
+    'logout',
+    'password',
+    'passwordresets',
+    'dataset',
+    'close',
+    'results',
+    'model',
+    'project',
+    'show',
+    'revert',
+    'user',
+    'search',
+    'tasks',
+    'add',
+    'setting2',
+    'success',
+    'runtime',
+    'decline',
+    'rise',
+    'pin',
+    'setting',
+    'more',
+    'a-sortasc',
+    'a-sortdesc',
+]
+
 interface IIconFontProps {
     style?: React.CSSProperties
     size?: number
     kind?: 'inherit' | 'white' | 'gray' | 'white2' | 'primary'
-    type:
-        | 'arrow2_down'
-        | 'arrow2_right'
-        | 'clear2'
-        | 'arrow_left'
-        | 'arrow_down'
-        | 'arrow_top'
-        | 'arrow_right'
-        | 'eye_off'
-        | 'eye'
-        | 'clear'
-        | 'fold'
-        | 'fold2'
-        | 'unfold'
-        | 'unfold2'
-        | 'job'
-        | 'logout'
-        | 'password'
-        | 'dataset'
-        | 'close'
-        | 'results'
-        | 'model'
-        | 'project'
-        | 'show'
-        | 'revert'
-        | 'user'
-        | 'search'
-        | 'tasks'
-        | 'add'
-        | 'setting2'
-        | 'success'
-        | 'runtime'
-        | 'fold2'
-        | 'unfold2'
-        | 'decline'
-        | 'rise'
-        | 'pin'
-        | 'setting'
-        | 'more'
-        | 'a-sortasc'
-        | 'a-sortdesc'
+    type: typeof iconTypes[number]
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {
