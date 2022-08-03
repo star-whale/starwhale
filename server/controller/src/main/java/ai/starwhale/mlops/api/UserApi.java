@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO;
 import ai.starwhale.mlops.api.protocol.user.RoleVO;
 import ai.starwhale.mlops.api.protocol.user.SystemRoleVO;
 import ai.starwhale.mlops.api.protocol.user.UserCheckPasswordRequest;
