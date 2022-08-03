@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from 'react-query'
 import themes from '@/theme'
 import { apiInit } from '@/api'
 import { ToasterContainer } from 'baseui/toast'
+import { ConfirmCtxProvider } from '@/components/Modal/confirm'
 
 apiInit()
 const engine = new Styletron()
@@ -26,9 +27,11 @@ export default function App(): any {
             <StyletronProvider value={engine}>
                 <BaseProvider theme={theme}>
                     <ToasterContainer autoHideDuration={3000} />
-                    <SidebarContext.Provider value={sidebarData}>
-                        <Routes />
-                    </SidebarContext.Provider>
+                    <ConfirmCtxProvider>
+                        <SidebarContext.Provider value={sidebarData}>
+                            <Routes />
+                        </SidebarContext.Provider>
+                    </ConfirmCtxProvider>
                 </BaseProvider>
             </StyletronProvider>
         </QueryClientProvider>
