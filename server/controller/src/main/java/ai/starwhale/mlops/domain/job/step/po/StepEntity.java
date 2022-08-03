@@ -19,6 +19,7 @@ package ai.starwhale.mlops.domain.job.step.po;
 import ai.starwhale.mlops.common.BaseEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -43,6 +44,12 @@ public class StepEntity  extends BaseEntity {
     StepStatus status;
 
     String uuid;
+
+    Integer concurrency = 1;
+
+    // private List<Resource> resources;
+
+    Integer taskNum = 1;
 
     LocalDateTime startedTime;
 

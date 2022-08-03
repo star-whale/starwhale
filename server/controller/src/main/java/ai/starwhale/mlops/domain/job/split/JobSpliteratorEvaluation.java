@@ -20,6 +20,8 @@ import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
+import ai.starwhale.mlops.domain.job.parser.JobParser;
+import ai.starwhale.mlops.domain.job.parser.StepMetaData;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
@@ -41,15 +43,13 @@ import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -115,52 +115,65 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
      */
     @Override
     @Transactional
-    public List<Step> split(Job job) {
-        StepEntity stepEntityPPL = StepEntity.builder().jobId(job.getId()).name(STEP_NAMES[0]).status(
-            StepStatus.READY).uuid(UUID.randomUUID().toString()).build();
-        stepMapper.save(stepEntityPPL);
-        Step stepPPL = stepConverter.fromEntity(stepEntityPPL);
-        stepPPL.setJob(job);
-        final List<SWDataSet> swDataSets = job.getSwDataSets();
-        final Map<Integer,List<SWDSBlockVO>> swdsBlocks = swDataSets.parallelStream()
-            .map(this::extractSWDS)
-            .flatMap(Collection::stream)
-            .collect(Collectors.groupingBy(blk-> ThreadLocalRandom.current().nextInt(amountOfTasks)));//one block on task
-        List<TaskEntity> pplTaskEntities;
-        try {
-            pplTaskEntities = buildPPLTaskEntities(job, stepEntityPPL,swdsBlocks);
-        } catch (JsonProcessingException e) {
-            log.error("error swds index  ",e);
-            throw new SWValidationException(ValidSubject.SWDS);
+    public List<StepEntity> split(Job job) {
+        // TODO: read swmp yaml
+        List<StepMetaData> stepMetaDatas = JobParser.parseStepFromYaml("");
+        List<StepEntity> stepEntities = new ArrayList<>();
+        Map<String, List<String>> allDependencies = new HashMap<>();
+        Map<String, StepEntity> nameMapping = new HashMap<>();
+
+        for (StepMetaData stepMetaData : stepMetaDatas) {
+            boolean isReady = CollectionUtils.isEmpty(stepMetaData.getDependency());
+
+            StepEntity stepEntity = StepEntity.builder()
+                .uuid(UUID.randomUUID().toString())
+                .jobId(job.getId())
+                .name(stepMetaData.getStepName())
+                .taskNum(stepMetaData.getTaskNum())
+                .concurrency(stepMetaData.getConcurrency())
+                .status(isReady ? StepStatus.READY : StepStatus.CREATED)
+                .build();
+            stepEntities.add(stepEntity);
+            allDependencies.put(stepMetaData.getStepName(), stepMetaData.getDependency());
+            nameMapping.put(stepMetaData.getStepName(), stepEntity);
         }
-        BatchOperateHelper.doBatch(pplTaskEntities,ts->taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())),MAX_MYSQL_INSERTION_SIZE);
+
+        for (StepEntity stepEntity : stepEntities) {
+            List<String> dependencies = allDependencies.get(stepEntity.getName());
+            for (String dependency : dependencies) {
+                // the current implementation is serial, so dependency only one
+                stepEntity.setLastStepId(nameMapping.get(dependency).getId());
+            }
+            // TODO: replace this implement with only send ds uri and task index to container
+            final List<SWDataSet> swDataSets = job.getSwDataSets();
+            final Map<Integer,List<SWDSBlockVO>> swdsBlocks = swDataSets.parallelStream()
+                .map(this::extractSWDS)
+                .flatMap(Collection::stream)
+                .collect(Collectors.groupingBy(blk-> ThreadLocalRandom.current().nextInt(stepEntity.getTaskNum())));//one block on task
+            List<TaskEntity> taskEntities = new LinkedList<>();
+            try {
+                for(Entry<Integer, List<SWDSBlockVO>> entry:swdsBlocks.entrySet()) {
+                    final String taskUuid = UUID.randomUUID().toString();
+                    taskEntities.add(TaskEntity.builder()
+                        .stepId(stepEntity.getId())
+                        .resultPath(storagePath(job.getUuid(), taskUuid))
+                        .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
+                        .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
+                        .taskUuid(taskUuid)
+                        //.taskType(TaskType.PPL)
+                        .build());
+                }
+            } catch (JsonProcessingException e) {
+                log.error("error swds index  ",e);
+                throw new SWValidationException(ValidSubject.SWDS);
+            }
+            // save step and tasks
+            stepMapper.save(stepEntity);
+            BatchOperateHelper.doBatch(taskEntities,ts->taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())),MAX_MYSQL_INSERTION_SIZE);
+        }
+        // update job status
         jobMapper.updateJobStatus(List.of(job.getId()), JobStatus.READY);
-
-        List<Task> pplTasks = taskBoConverter.fromTaskEntity(pplTaskEntities, stepPPL);
-        stepPPL.setTasks(pplTasks.parallelStream().map(t->watchableTaskFactory.wrapTask(t)).collect(
-            Collectors.toList()));
-
-        StepEntity stepEntityCMP = StepEntity.builder().jobId(job.getId()).name(STEP_NAMES[1]).status(
-            StepStatus.CREATED).lastStepId(stepEntityPPL.getId()).uuid(UUID.randomUUID().toString()).build();
-        stepMapper.save(stepEntityCMP);
-        Step stepCMP = stepConverter.fromEntity(stepEntityCMP);
-        stepCMP.setJob(job);
-        TaskEntity cmpTaskEntity = TaskEntity.builder()
-            .stepId(stepEntityCMP.getId())
-            .taskType(TaskType.CMP)
-            .resultPath(job.getResultDir())
-            .taskStatus(TaskStatus.CREATED)
-            .taskUuid(UUID.randomUUID().toString())
-            .build();
-        taskMapper.addTask(cmpTaskEntity);
-        Task cmpTask = taskBoConverter.transformTask(stepCMP,cmpTaskEntity);
-        stepCMP.setTasks(List.of(watchableTaskFactory.wrapTask(cmpTask)));
-
-        stepPPL.setNextStep(stepCMP);
-        job.setSteps(List.of(stepPPL,stepCMP));
-        job.setCurrentStep(stepPPL);
-        job.setStatus(JobStatus.READY);
-        return job.getSteps();
+        return stepEntities;
     }
 
     private List<SWDSBlockVO>  extractSWDS(SWDataSet swDataSet){
@@ -175,7 +188,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         }).collect(Collectors.toList());
     }
 
-    private List<TaskEntity> buildPPLTaskEntities(Job job, StepEntity stepEntityPPL,Map<Integer, List<SWDSBlockVO>> swdsBlocks)
+    private List<TaskEntity> buildTaskEntities(Job job, StepEntity stepEntityPPL, Map<Integer, List<SWDSBlockVO>> swdsBlocks)
         throws JsonProcessingException {
         List<TaskEntity> taskEntities = new LinkedList<>();
         for(Entry<Integer, List<SWDSBlockVO>> entry:swdsBlocks.entrySet()) {
@@ -186,7 +199,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
                 .taskStatus(TaskStatus.READY)
                 .taskUuid(taskUuid)
-                .taskType(TaskType.PPL)
+                //.taskType(TaskType.PPL)
                 .build());
         }
         return taskEntities;
