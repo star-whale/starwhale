@@ -5,14 +5,13 @@ LATEST_R_VERSION = 0.1.1
 DOCKER_HUB_REPO := starwhaleai
 GHCR_IO_REPO := ghcr.io/star-whale
 
-# Please update base/nodejs/taskset/base_server image version by manual, DOT NOT USE RELEASE TAG.
+# Please update base/nodejs/base_server image version by manual, DOT NOT USE RELEASE TAG.
 # These images versions are slow to release.
-FIXED_VERSION_BASE_IMAGE := 0.2.0
+FIXED_VERSION_BASE_IMAGE := 0.2.1
 FIXED_VERSION_NODEJS_IMAGE := 0.1.1
-FIXED_VERSION_TASKSET_IMAGE := 0.1.1
 FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.1
 
-DH_BASE_IMAGE := ${DOCKER_HUB_REPO}/base:${FIXED_VERSION_BASE_IMAGE}
+GHCR_BASE_IMAGE := ${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE}
 DH_BASE_SERVER_IMAGE := ${DOCKER_HUB_REPO}/base_server:${FIXED_VERSION_BASE_SERVER_IMAGE}
 DH_NODEJS_IMAGE := ${DOCKER_HUB_REPO}/nodejs:${FIXED_VERSION_NODEJS_IMAGE}
 
@@ -32,12 +31,15 @@ endif
 
 define build-image
 	docker pull ${GHCR_IO_REPO}/$(1):latest || true
-	docker build --build-arg BASE_IMAGE=$(DH_BASE_IMAGE) --build-arg BASE_SERVER_IMAGE=$(DH_BASE_SERVER_IMAGE) --build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) -f Dockerfile.$(1) -t ${DOCKER_HUB_REPO}/$(1):$(2) .
-	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${DOCKER_HUB_REPO}/$(1):latest
-	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${GHCR_IO_REPO}/$(1):$(2)
-	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${GHCR_IO_REPO}/$(1):latest
-	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${DOCKER_HUB_REPO}/$(1):$(3) || true
-	docker tag ${DOCKER_HUB_REPO}/$(1):$(2) ${GHCR_IO_REPO}/$(1):$(3) || true
+	docker build \
+		--build-arg BASE_IMAGE=$(GHCR_BASE_IMAGE) \
+		--build-arg BASE_SERVER_IMAGE=$(DH_BASE_SERVER_IMAGE) \
+		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
+		-t ${DOCKER_HUB_REPO}/$(1):$(2) \
+		-t ${DOCKER_HUB_REPO}/$(1):latest \
+		-t ${GHCR_IO_REPO}/$(1):$(2) \
+		-t ${GHCR_IO_REPO}/$(1):latest \
+		-f Dockerfile.$(1) .
 endef
 
 define push-image
@@ -45,33 +47,47 @@ define push-image
 	docker push ${DOCKER_HUB_REPO}/$(1):latest
 	docker push ${GHCR_IO_REPO}/$(1):latest
 	docker push ${GHCR_IO_REPO}/$(1):$(2)
-	docker push ${DOCKER_HUB_REPO}/$(1):$(3) || true
-	docker push ${GHCR_IO_REPO}/$(1):$(3) || true
 endef
 
-build-base:
-	$(call build-image,base,${FIXED_VERSION_BASE_IMAGE})
 
-release-base:
-	$(call push-image,base,${FIXED_VERSION_BASE_IMAGE})
+prepare-buildx:
+	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+	docker buildx create --name starwhale-multiarch2 --driver docker-container \
+		--driver-opt env.all_proxy=$(HTTP_PROXY) --driver-opt env.http_proxy=$(HTTP_PROXY) --driver-opt env.https_proxy=$(HTTPS_PROXY) \
+		--driver-opt env.ALL_PROXY=$(HTTP_PROXY) --driver-opt env.HTTP_PROXY=$(HTTP_PROXY) --driver-opt env.HTTPS_PROXY=$(HTTPS_PROXY) \
+		--use --bootstrap --driver-opt network=host
+
+build-release-base:
+	docker buildx build --platform linux/arm64,linux/amd64 \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
+		--network=host \
+		-t $(DOCKER_HUB_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) \
+		-t $(DOCKER_HUB_REPO)/base:latest \
+		-t $(GHCR_IO_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) \
+		-t $(GHCR_IO_REPO)/base:latest \
+		--push -f Dockerfile.base .
+
+build-release-starwhale:
+	docker buildx build --platform linux/arm64,linux/amd64 \
+		--build-arg BASE_IMAGE=$(GHCR_BASE_IMAGE) \
+		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
+		--network=host \
+		-t $(DOCKER_HUB_REPO)/starwhale:$(RELEASE_VERSION) \
+		-t $(DOCKER_HUB_REPO)/starwhale:$(PYPI_FMT_RELEASE_VERSION) \
+		-t $(DOCKER_HUB_REPO)/starwhale:latest \
+		-t $(GHCR_IO_REPO)/starwhale:$(RELEASE_VERSION) \
+		-t $(GHCR_IO_REPO)/starwhale:$(PYPI_FMT_RELEASE_VERSION) \
+		-t $(GHCR_IO_REPO)/starwhale:latest \
+		--push -f Dockerfile.starwhale .
 
 build-base-server:
 	$(call build-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
 
 release-base-server:
 	$(call push-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
-
-build-starwhale:
-	$(call build-image,starwhale,${RELEASE_VERSION},${PYPI_FMT_RELEASE_VERSION})
-
-release-starwhale:
-	$(call push-image,starwhale,${RELEASE_VERSION},${PYPI_FMT_RELEASE_VERSION})
-
-build-taskset:
-	$(call build-image,taskset,${FIXED_VERSION_TASKSET_IMAGE})
-
-release-taskset:
-	$(call push-image,taskset,${FIXED_VERSION_TASKSET_IMAGE})
 
 build-server:
 	$(call build-image,server,${RELEASE_VERSION})
