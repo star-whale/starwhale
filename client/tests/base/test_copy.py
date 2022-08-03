@@ -30,13 +30,13 @@ class TestBundleCopy(TestCase):
     def test_upload_bundle_file(self, rm: Mocker) -> None:
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1:8182/api/v1/project/model",
+            "http://1.1.1.1:8182/api/v1/project/project/model/mnist/version/abcdefg1234/file",
             json={"message": "not found"},
             status_code=HTTPStatus.NOT_FOUND,
         )
         rm.request(
             HTTPMethod.POST,
-            "http://1.1.1.1:8182/api/v1/project/model/push",
+            "http://1.1.1.1:8182/api/v1/project/project/model/mnist/version/abcdefg1234/file",
         )
 
         model_dir = self._sw_config.rootdir / "self" / "model" / "mnist" / "ab"
@@ -58,13 +58,13 @@ class TestBundleCopy(TestCase):
     def test_download_bundle_file(self, rm: Mocker) -> None:
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1:8182/api/v1/project/model",
+            "http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/latest/file",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/model/pull",
+            "http://1.1.1.1:8182/api/v1/project/1/model/mnist/version/latest/file",
             content=b"test",
         )
 
@@ -86,13 +86,13 @@ class TestBundleCopy(TestCase):
     def test_upload_bundle_dir(self, rm: Mocker) -> None:
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1:8182/api/v1/project/dataset",
+            "http://1.1.1.1:8182/api/v1/project/project/dataset/mnist/version/abcde/file",
             json={"message": "already existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.POST,
-            "http://1.1.1.1:8182/api/v1/project/dataset/push",
+            "http://1.1.1.1:8182/api/v1/project/project/dataset/mnist/version/abcde/file",
             json={"data": {"upload_id": 1}},
         )
 
@@ -121,13 +121,13 @@ class TestBundleCopy(TestCase):
     def test_download_bundle_dir(self, rm: Mocker) -> None:
         rm.request(
             HTTPMethod.HEAD,
-            "http://1.1.1.1:8182/api/v1/project/dataset",
+            "http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/latest/file",
             json={"message": "existed"},
             status_code=HTTPStatus.OK,
         )
         rm.request(
             HTTPMethod.GET,
-            "http://1.1.1.1:8182/api/v1/project/dataset/pull",
+            "http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/latest/file",
             json={"signature": ["1", "2"]},
         )
         bc = BundleCopy(
