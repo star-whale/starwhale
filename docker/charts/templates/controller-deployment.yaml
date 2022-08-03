@@ -88,6 +88,8 @@ spec:
                   fieldPath: status.hostIP
             - name: SW_K8S_NAME_SPACE
               value: {{ .Release.Namespace }}
+            - name: SW_K8S_HOST_PATH_FOR_CACHE
+              value: {{ .Values.storage.agentHostPathRoot }}/job
             {{- if .Values.minio.enabled }}
             - name: SW_STORAGE_ENDPOINT
               value: "http://{{ .Release.Name }}-minio:{{ .Values.minio.containerPorts.api }}"
