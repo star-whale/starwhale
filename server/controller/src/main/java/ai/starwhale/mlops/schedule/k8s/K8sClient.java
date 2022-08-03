@@ -25,22 +25,12 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobList;
-import io.kubernetes.client.openapi.models.V1JobSpec;
-import io.kubernetes.client.openapi.models.V1LabelSelector;
-import io.kubernetes.client.openapi.models.V1Node;
-import io.kubernetes.client.openapi.models.V1NodeList;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.labels.LabelSelector;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -48,6 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;
@@ -73,6 +64,10 @@ public class K8sClient {
     private final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");
 
     static final String jobIdentityLabel = "job-name";
+
+    public static final String pipCacheVolumeName = "pip-cache";
+    @Value("${sw.infra.k8s.host-path-for-cache}")
+    private String pipCacheHostPath;
 
     /**
      * Basic constructor for Kubernetes
@@ -147,6 +142,11 @@ public class K8sClient {
                 c.env(ee);
             });
         }
+
+        // replace host path
+        List<V1Volume> volumes = job.getSpec().getTemplate().getSpec().getVolumes();
+        volumes.stream().filter(v -> v.getName().equals(pipCacheVolumeName))
+            .findFirst().ifPresent(volume -> volume.getHostPath().path(pipCacheHostPath));
 
         return job;
     }
