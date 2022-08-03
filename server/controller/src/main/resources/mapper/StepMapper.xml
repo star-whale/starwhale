@@ -15,6 +15,8 @@
                t.job_id,
                t.last_step_id,
                t.step_status,
+               t.concurrency,
+               t.task_num,
                t.started_time as step_started_time,
                t.finished_time as step_finished_time,
                t.created_time as step_created_time,
@@ -58,6 +60,8 @@
         <result property="jobId" column="job_id" />
         <result property="status" column="step_status" />
         <result property="uuid" column="step_uuid" />
+        <result property="concurrency" column="concurrency" />
+        <result property="taskNum" column="task_num" />
         <result property="startedTime" column="step_started_time" />
         <result property="finishedTime" column="step_finished_time" />
         <result property="createdTime" column="step_created_time" />
