@@ -20,6 +20,7 @@ sw:
   infra:
     k8s:
       name-space: ${SW_K8S_NAME_SPACE:default}
+      host-path-for-cache: ${SW_K8S_HOST_PATH_FOR_CACHE:/mnt/data}
   storage:
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
     s3-config:
