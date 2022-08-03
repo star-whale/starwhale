@@ -1,0 +1,82 @@
+ARG BASE_IMAGE=ghcr.io/star-whale/base:latest
+FROM ${BASE_IMAGE} as base
+
+FROM base as base-amd64
+ENV NVARCH x86_64
+ENV NVIDIA_REQUIRE_CUDA "{{require_amd64}}"
+ENV NV_CUDA_COMPAT_PACKAGE "cuda-compat-{{strike_version}}"
+
+FROM base as base-arm64
+ENV NVARCH sbsa
+ENV NVIDIA_REQUIRE_CUDA "{{require_arm64}}"
+
+ARG TARGETARCH=amd64
+FROM base-${TARGETARCH}
+
+ENV STARWHALE_CUDA_TAG_VERSION {{tag_version}}
+
+ENV CUDA_VERSION {{full_version}}
+
+ENV NV_CUDA_CUDART_VERSION  {{cuart_version}}
+ENV NV_CUDA_CUDART_PACKAGE cuda-cudart-{{strike_version}}={{cuart_version}}
+
+ENV NV_CUDA_LIB_VERSION {{full_version}}-1
+ENV NV_CUDA_LIB_PACKAGE cuda-libraries-{{strike_version}}={{full_version}}-1
+
+ENV NV_NVTX_VERSION {{nvtx_version}}
+ENV NV_NVTX_PACKAGE cuda-nvtx-{{strike_version}}={{nvtx_version}}
+
+ENV NV_LIBNPP_VERSION {{libnpp_version}}
+ENV NV_LIBNPP_PACKAGE libnpp-{{strike_version}}={{libnpp_version}}
+
+ENV NV_LIBCUSPARSE_VERSION {{libcusparse_version}}
+ENV NV_LIBCUBLAS_VERSION {{libcublas_version}}
+
+ENV NV_LIBCUSPARSE_PACKAGE libcusparse-{{strike_version}}={{libcusparse_version}}
+ENV NV_LIBCUBLAS_PACKAGE_NAME libcublas-{{strike_version}}
+
+ENV NV_LIBCUBLAS_PACKAGE ${NV_LIBCUBLAS_PACKAGE_NAME}={{libcublas_version}}
+
+ENV NV_LIBNCCL_PACKAGE_NAME libnccl2
+ENV NV_LIBNCCL_PACKAGE_VERSION {{nccl_version}}
+ENV NCCL_VERSION {{nccl_version}}
+ENV NV_LIBNCCL_PACKAGE ${NV_LIBNCCL_PACKAGE_NAME}=${NV_LIBNCCL_PACKAGE_VERSION}+cuda{{short_version}}
+
+RUN apt-get update \
+    && apt install -y --no-install-recommends dirmngr \
+    && wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH}/cuda-keyring_1.0-1_all.deb \
+    && dpkg -i cuda-keyring_1.0-1_all.deb \
+    && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/${NVARCH}/3bf863cc.pub \
+    && apt-get update \
+    && apt-get clean all \
+    && rm -rf cuda-keyring_1.0-1_all.deb /var/lib/apt/lists/* /tmp/*
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+    ${NV_CUDA_CUDART_PACKAGE} \
+    ${NV_CUDA_COMPAT_PACKAGE} \
+    ${NV_CUDA_LIB_PACKAGE} \
+    ${NV_LIBNPP_PACKAGE} \
+    ${NV_NVTX_PACKAGE} \
+    ${NV_LIBCUSPARSE_PACKAGE} \
+    ${NV_LIBCUBLAS_PACKAGE} \
+    && apt-get clean all \
+    && rm -rf /var/lib/apt/lists/* /tmp/*
+
+RUN ln -s cuda-{{short_version}} /usr/local/cuda
+
+{% if cudnn_version %}
+ENV NV_CUDNN_VERSION {{cudnn_version}}
+ENV NV_CUDNN_PACKAGE_NAME libcudnn8
+ENV NV_CUDNN_PACKAGE ${NV_CUDNN_PACKAGE_NAME}=${NV_CUDNN_VERSION}-1+cuda{{short_version}}
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ${NV_CUDNN_PACKAGE} \
+    && apt-get clean all \
+    && rm -rf /var/lib/apt/lists/* /tmp/*
+{% endif %}
+
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/nvidia/lib:/usr/local/nvidia/lib64
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility

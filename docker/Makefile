@@ -49,6 +49,26 @@ define push-image
 	docker push ${GHCR_IO_REPO}/$(1):$(2)
 endef
 
+define build-starwhale
+	docker buildx build --platform linux/arm64,linux/amd64 \
+		--build-arg BASE_IMAGE=$(1) \
+		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
+		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
+		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
+		--network=host \
+		-t $(DOCKER_HUB_REPO)/starwhale:$(RELEASE_VERSION)$(2) \
+		-t $(DOCKER_HUB_REPO)/starwhale:$(PYPI_FMT_RELEASE_VERSION)$(2) \
+		-t $(DOCKER_HUB_REPO)/starwhale:latest$(2) \
+		-t $(GHCR_IO_REPO)/starwhale:$(RELEASE_VERSION)$(2) \
+		-t $(GHCR_IO_REPO)/starwhale:$(PYPI_FMT_RELEASE_VERSION)$(2) \
+		-t $(GHCR_IO_REPO)/starwhale:latest$(2) \
+		--push -f Dockerfile.starwhale .
+endef
+
+define build-starwhale-cuda
+	$(call build-starwhale,${GHCR_IO_REPO}/cuda:$(1)-base${FIXED_VERSION_BASE_IMAGE},-cuda$(1))
+endef
+
 
 prepare-buildx:
 	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
@@ -68,20 +88,23 @@ build-release-base:
 		-t $(GHCR_IO_REPO)/base:latest \
 		--push -f Dockerfile.base .
 
+#Parallel to build starwhale image
 build-release-starwhale:
-	docker buildx build --platform linux/arm64,linux/amd64 \
-		--build-arg BASE_IMAGE=$(GHCR_BASE_IMAGE) \
-		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
-		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
-		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
-		--network=host \
-		-t $(DOCKER_HUB_REPO)/starwhale:$(RELEASE_VERSION) \
-		-t $(DOCKER_HUB_REPO)/starwhale:$(PYPI_FMT_RELEASE_VERSION) \
-		-t $(DOCKER_HUB_REPO)/starwhale:latest \
-		-t $(GHCR_IO_REPO)/starwhale:$(RELEASE_VERSION) \
-		-t $(GHCR_IO_REPO)/starwhale:$(PYPI_FMT_RELEASE_VERSION) \
-		-t $(GHCR_IO_REPO)/starwhale:latest \
-		--push -f Dockerfile.starwhale .
+	$(call build-starwhale,${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE},)
+
+	$(call build-starwhale-cuda,11.3)
+	$(call build-starwhale-cuda,11.3-cudnn8)
+	$(call build-starwhale-cuda,11.4)
+	$(call build-starwhale-cuda,11.4-cudnn8)
+	$(call build-starwhale-cuda,11.5)
+	$(call build-starwhale-cuda,11.5-cudnn8)
+	$(call build-starwhale-cuda,11.6)
+	$(call build-starwhale-cuda,11.6-cudnn8)
+	$(call build-starwhale-cuda,11.7)
+
+build-cuda:
+	cd cuda; python3 render.py --all --push --base-image $(GHCR_BASE_IMAGE)
+	bash cuda/.dfs/docker-build.sh
 
 build-base-server:
 	$(call build-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
