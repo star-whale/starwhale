@@ -224,4 +224,28 @@ public interface UserApi {
     @GetMapping(value = "/role/enums")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<RoleVO>>> listRoles();
+
+
+    @Operation(
+        summary = "Get arbitrary user token",
+        description =
+            "Get token of any user for third party system integration, only super admin is allowed to do this")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = String.class)))
+        })
+    @GetMapping(value = "/user/token/{userName}")
+    @PreAuthorize("hasAnyRole('OWNER')")
+    ResponseEntity<ResponseMessage<String>> userToken(@Parameter(
+        in = ParameterIn.PATH,
+        description = "account name of a user",
+        schema = @Schema())
+    @PathVariable("userName")
+        String userName);
 }
