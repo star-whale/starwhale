@@ -5,11 +5,10 @@ LATEST_R_VERSION = 0.1.1
 DOCKER_HUB_REPO := starwhaleai
 GHCR_IO_REPO := ghcr.io/star-whale
 
-# Please update base/nodejs/taskset/base_server image version by manual, DOT NOT USE RELEASE TAG.
+# Please update base/nodejs/base_server image version by manual, DOT NOT USE RELEASE TAG.
 # These images versions are slow to release.
 FIXED_VERSION_BASE_IMAGE := 0.2.1
 FIXED_VERSION_NODEJS_IMAGE := 0.1.1
-FIXED_VERSION_TASKSET_IMAGE := 0.1.1
 FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.1
 
 GHCR_BASE_IMAGE := ${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE}
@@ -89,12 +88,6 @@ build-base-server:
 
 release-base-server:
 	$(call push-image,base_server,${FIXED_VERSION_BASE_SERVER_IMAGE})
-
-build-taskset:
-	$(call build-image,taskset,${FIXED_VERSION_TASKSET_IMAGE})
-
-release-taskset:
-	$(call push-image,taskset,${FIXED_VERSION_TASKSET_IMAGE})
 
 build-server:
 	$(call build-image,server,${RELEASE_VERSION})
