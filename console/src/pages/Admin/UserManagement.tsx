@@ -19,6 +19,7 @@ import Input from '@/components/Input'
 import CopyToClipboard from 'react-copy-to-clipboard'
 import PasswordForm from '@user/components/PasswordForm'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
+import { ConfirmButton } from '@/components/Modal/confirm'
 
 interface IPasswordResultProps {
     title: string
@@ -109,13 +110,14 @@ export default function UserManagement() {
                         user.isEnabled ? t('Enabled User') : t('Disabled User'),
                         user.createdTime && formatTimestampDateTime(user.createdTime),
                         <div key={user.id}>
-                            <Button
+                            <ConfirmButton
                                 as='link'
+                                title={user.isEnabled ? t('Disable User Confirm') : t('Enable User Confirm')}
                                 onClick={() => changUserState(user.id, !user.isEnabled)}
                                 disabled={user.id === currentUser?.id}
                             >
                                 {user.isEnabled ? t('Disable User') : t('Enable User')}
-                            </Button>
+                            </ConfirmButton>
                             &nbsp; &nbsp;
                             <Button as='link' onClick={() => setModifyingUser(user)}>
                                 {t('Change Password')}

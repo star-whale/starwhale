@@ -16,6 +16,7 @@ import { changeProjectRole, addProjectRole, removeProjectRole } from '@project/s
 import { toaster } from 'baseui/toast'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import MemberAddForm from '@project/components/MemberAddForm'
+import { ConfirmButton } from '@/components/Modal/confirm'
 
 export default function ProjectMembers() {
     const { projectId } = useParams<{ projectId: string }>()
@@ -70,17 +71,18 @@ export default function ProjectMembers() {
                             />
                         </div>,
                         user.createdTime && formatTimestampDateTime(user.createdTime),
-                        <Button
+                        <ConfirmButton
                             as='link'
                             key={id}
+                            title={t('Remove Project Role Confirm')}
                             onClick={async () => {
                                 await removeProjectRole(projectId, id)
-                                toaster.positive(t('Remove Project role success'), { autoHideDuration: 1000 })
+                                toaster.positive(t('Remove Project Role Success'), { autoHideDuration: 1000 })
                                 await members.refetch()
                             }}
                         >
                             {t('Remove Project Member')}
-                        </Button>,
+                        </ConfirmButton>,
                     ]) ?? []
                 }
             />
