@@ -23,6 +23,7 @@ install_requires = [
     "boto3==1.21.0",
     "scikit-learn>=0.20.0",
     "dill==0.3.5.1",
+    "packaging>=21.3",
 ]
 
 
