@@ -1,6 +1,6 @@
 GIT_REVISION = $(shell git rev-parse --short HEAD)
 DATE = $(shell date "+%Y%m%d")
-LATEST_R_VERSION = 0.1.1
+LATEST_R_VERSION = $(patsubst v%,%,$(shell git describe --tags --abbrev=0))
 
 DOCKER_HUB_REPO := starwhaleai
 GHCR_IO_REPO := ghcr.io/star-whale
