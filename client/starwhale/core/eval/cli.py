@@ -50,6 +50,7 @@ def _list(
     help="dataset uri, one or more",
 )
 @click.option("--runtime", default="", help="runtime uri")
+@click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 @click.option("--name", default="default", help="job name")
 @click.option("--desc", help="job description")
 @click.option(
@@ -78,6 +79,7 @@ def _run(
     model: str,
     dataset: t.List[str],
     runtime: str,
+    runtime_restore: bool,
     name: str,
     desc: str,
     resource: str,
@@ -101,6 +103,7 @@ def _run(
         use_docker=use_docker,
         step=step,
         task_index=task_index,
+        runtime_restore=runtime_restore,
     )
 
 

@@ -127,9 +127,10 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--name", help="Job name")
 @click.option("--desc", help="Job description")
 @click.option("-p", "--project", default="", help="Project URI")
+@click.option("--version", default=None, help="Evaluation job version")
 @click.option(
     "--type",
-    # type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE_TASK]),
+    type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE]),
     default=EvalTaskType.ALL,
     help="Evaluation run type",
 )
@@ -139,10 +140,14 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 def _eval(
     model: str,
+    version: str,
     dataset: t.List[str],
     name: str,
     desc: str,
     project: str,
+    type: str,
+    step: str,
+    task_index: int,
     runtime: str,
     runtime_restore: bool,
 ) -> None:
@@ -153,6 +158,7 @@ def _eval(
     """
     JobTermView.run(
         project_uri=project,
+        version=version,
         model_uri=model,
         dataset_uris=dataset,
         runtime_uri=runtime,
@@ -160,6 +166,8 @@ def _eval(
         desc=desc,
         use_docker=False,
         gencmd=False,
-        typ=EvalTaskType.ALL,
+        typ=type,
+        step=step,
+        task_index=task_index,
         runtime_restore=runtime_restore,
     )
