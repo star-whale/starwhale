@@ -31,7 +31,14 @@ class Step:
             self.step_name, self.dependency, self.status
         )
 
-    def gen_task(self, index: int, module: str, workdir: Path, src_dir: Path, dataset_uris: list[URI]):
+    def gen_task(
+        self,
+        index: int,
+        module: str,
+        workdir: Path,
+        src_dir: Path,
+        dataset_uris: list[URI],
+    ):
         self.tasks.append(
             Task(
                 context=Context(

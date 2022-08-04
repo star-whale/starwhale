@@ -12,7 +12,12 @@ from starwhale.core.job.model import Step, Task, STATUS
 
 class Scheduler:
     def __init__(
-        self, module: str, workdir: Path, src_dir: Path, dataset_uris: list[URI], steps: list[Step]
+        self,
+        module: str,
+        workdir: Path,
+        src_dir: Path,
+        dataset_uris: list[URI],
+        steps: list[Step],
     ):
         self.steps = steps
         self.dataset_uris = dataset_uris
@@ -27,7 +32,9 @@ class Scheduler:
             # update step status = init
             _step.status = STATUS.INIT
             for index in range(_step.task_num):
-                _step.gen_task(index, self.module, self.workdir, self.src_dir, self.dataset_uris)
+                _step.gen_task(
+                    index, self.module, self.workdir, self.src_dir, self.dataset_uris
+                )
 
     def schedule(self) -> None:
         _threads = []
@@ -57,9 +64,10 @@ class Scheduler:
             t.join()
 
     def schedule_single_task(self, step_name: str, task_index: int):
-        if step_name not in self.steps:
+        _steps = [step for step in self.steps if step_name == step.step_name]
+        if len(_steps) is 0:
             raise RuntimeError(f"step:{step_name} not found")
-        _step = self.steps[step_name]
+        _step = _steps[0]
         if task_index >= _step.task_num:
             raise RuntimeError(
                 f"task_index:{task_index} out of bounds, total:{_step.task_num}"

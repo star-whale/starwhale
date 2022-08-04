@@ -137,7 +137,6 @@ class StandaloneEvaluationJob(EvaluationJob):
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         use_docker = kw.get("use_docker", False)
-        phase = kw.get("phase", EvalTaskType.ALL)
         typ = kw.get("typ", EvalTaskType.ALL)
         step = kw.get("step", "")
         task_index = kw.get("task_index", 0)
@@ -153,15 +152,7 @@ class StandaloneEvaluationJob(EvaluationJob):
             gencmd=kw.get("gencmd", False),
             use_docker=use_docker,
         )
-        if runtime_uri and not use_docker:
-            RuntimeProcess.from_runtime_uri(
-                uri=runtime_uri,
-                target=ee.run,
-                args=(typ, step, task_index),
-                runtime_restore=kw.get("runtime_restore", False),
-            ).run()
-        else:
-            ee.run(typ, step, task_index)
+        ee.run(typ, step, task_index)
 
         return True, ee._version
 

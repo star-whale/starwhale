@@ -11,20 +11,16 @@ from starwhale.consts import (
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    DEFAULT_INPUT_JSON_FNAME,
     CNTR_DEFAULT_PIP_CACHE_DIR,
-    DEFAULT_EVALUATION_JOBS_FNAME,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.process import check_call
-from starwhale.core.job.model import Parser
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
 from starwhale.core.model.model import StandaloneModel
-from starwhale.core.job.scheduler import Scheduler
 from starwhale.core.runtime.model import StandaloneRuntime
 
 _CNTR_WORKDIR = "/opt/starwhale"
@@ -210,35 +206,33 @@ class EvalExecutor:
 
     def _do_run_cmd_in_host(self, typ: str, step: str, task_index: int) -> None:
         from starwhale.core.model.model import StandaloneModel
+        from starwhale.core.runtime.process import Process as RuntimeProcess
 
-        if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
-            raise NoSupportError(typ)
-
-        _src_dir = self._model_dir
-
-        _jobs = Parser.parse_job_from_yaml(_src_dir / DEFAULT_EVALUATION_JOBS_FNAME)
-        # steps of job
-        if self.job_name not in _jobs:
-            raise RuntimeError(f"job:{self.job_name} not found")
-        _steps = _jobs[self.job_name]
-        # TODO
-        _module = StandaloneModel.get_pipeline_handler(workdir=_src_dir)
-
-        _scheduler = Scheduler(
-            module=_module,
-            workdir=self._job_workdir,
-            src_dir=_src_dir,
-            dataset_uris=self.dataset_uris,
-            steps=_steps,
-        )
-        if typ == EvalTaskType.ALL:
-            _scheduler.schedule()
-        elif typ == EvalTaskType.SINGLE:
-            # by param
-            _scheduler.schedule_single_task(step, task_index)
-        # TODO: save job info
-        console.print(f"job info:{_jobs}")
-        console.print(":clap: finish run")
+        if self.runtime_uri:
+            RuntimeProcess.from_runtime_uri(
+                uri=self.runtime_uri,
+                target=StandaloneModel.eval_user_handler,
+                args=(
+                    typ,
+                    self._model_dir,
+                    self._job_workdir,
+                    self.dataset_uris,
+                    DefaultYAMLName.MODEL,
+                    "default",
+                    step,
+                    task_index,
+                ),
+                runtime_restore=kw.get("runtime_restore", False),
+            ).run()
+        else:
+            StandaloneModel.eval_user_handler(
+                typ=typ,
+                src_dir=self._model_dir,
+                workdir=self._job_workdir,
+                dataset_uris=self.dataset_uris,
+                step=step,
+                task_index=task_index,
+            )
 
     def _do_run_cmd_in_container(self, typ: str, step: str, task_index: int) -> None:
         cmd = self._gen_run_container_cmd(typ, step, task_index)

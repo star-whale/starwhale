@@ -66,7 +66,7 @@ class ModelTermView(BaseTermView):
             _store = ModelStorage(_uri)
             workdir = _store.loc
 
-        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE_TASK):
+        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             console.print(f":golfer: try to eval {typ} @ {workdir}...")
 
             if not in_production() and runtime_uri:
@@ -79,9 +79,13 @@ class ModelTermView(BaseTermView):
                 ).run()
             else:
                 StandaloneModel.eval_user_handler(
-                    typ,
-                    workdir,
-                    yaml_name=yaml_name,
+                    typ=typ,
+                    src_dir=workdir / "src",
+                    workdir=workdir,
+                    dataset_uris=dataset_uris,
+                    step=step,
+                    task_index=task_index,
+                    model_yaml_name=yaml_name,
                     kw=kw,
                 )
         else:

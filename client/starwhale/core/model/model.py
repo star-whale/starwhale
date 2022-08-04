@@ -10,14 +10,15 @@ from collections import defaultdict
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
-from starwhale.api._impl.job import step
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     DefaultYAMLName,
+    EvalHandlerType,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     DEFAULT_COPY_WORKERS,
+    DEFAULT_EVALUATION_PIPELINE,
     DEFAULT_EVALUATION_JOBS_FNAME,
     DEFAULT_STARWHALE_API_VERSION,
 )
@@ -27,15 +28,15 @@ from starwhale.utils.fs import move_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
+from starwhale.utils.load import import_cls
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.core.job.model import Parser, Context
-from starwhale.utils.load import import_cls
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.core.job.scheduler import Scheduler
 
 from .store import ModelStorage
-from starwhale.consts import EvalHandlerType, DEFAULT_EVALUATION_PIPELINE
 
 
 class ModelRunConfig:
@@ -202,46 +203,53 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             return DEFAULT_EVALUATION_PIPELINE
         return _model_config.run.ppl
 
-    # @classmethod
-    # def eval_user_handler(
-    #     cls,
-    #     typ: str,
-    #     workdir: Path,
-    #     dataset_uris: list[URI],
-    #     yaml_name: str = DefaultYAMLName.MODEL,
-    #     job_name: str = "default",
-    #     step: str = "",
-    #     task_index: int = 0,
-    #     kw: t.Dict[str, t.Any] = {},
-    # ) -> None:
-    #     from starwhale.api._impl.model import _RunConfig
-    #
-    #     if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
-    #         raise NoSupportError(typ)
-    #
-    #     _mp = workdir / yaml_name
-    #     _model_config = cls._load_model_config(_mp)
-    #     _module = _model_config.run.ppl
-    #     # TODO:
-    #     _RunConfig.set_env(kw)
-    #
-    #     logger.debug("run job from yaml")
-    #     _jobs = Parser.parse_job_from_yaml(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
-    #     # steps of job
-    #     if job_name not in _jobs:
-    #         raise RuntimeError(f"job:{job_name} not found")
-    #     _steps = _jobs[job_name]
-    #
-    #     _scheduler = Scheduler(_module, workdir, dataset_uris, _steps)
-    #
-    #     if typ == EvalTaskType.ALL:
-    #         _scheduler.schedule()
-    #     elif typ == EvalTaskType.SINGLE:
-    #         # by param
-    #         _scheduler.schedule_single_task(step, task_index)
-    #     # TODO: save job info
-    #     console.print(f"job info:{_jobs}")
-    #     console.print(":clap: finish run")
+    @classmethod
+    def eval_user_handler(
+        cls,
+        typ: str,
+        src_dir: Path,
+        workdir: Path,
+        dataset_uris: list[URI],
+        model_yaml_name: str = DefaultYAMLName.MODEL,
+        job_name: str = "default",
+        step: str = "",
+        task_index: int = 0,
+        kw: t.Dict[str, t.Any] = {},
+    ) -> None:
+        from starwhale.api._impl.model import _RunConfig
+
+        if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
+            raise NoSupportError(typ)
+
+        _module = StandaloneModel.get_pipeline_handler(
+            workdir=src_dir, yaml_name=model_yaml_name
+        )
+        # TODO:
+        _RunConfig.set_env(kw)
+
+        logger.debug("run job from yaml")
+        _jobs = Parser.parse_job_from_yaml(src_dir / DEFAULT_EVALUATION_JOBS_FNAME)
+        # steps of job
+        if job_name not in _jobs:
+            raise RuntimeError(f"job:{job_name} not found")
+        _steps = _jobs[job_name]
+
+        _scheduler = Scheduler(
+            module=_module,
+            workdir=workdir,
+            src_dir=src_dir,
+            dataset_uris=dataset_uris,
+            steps=_steps,
+        )
+
+        if typ == EvalTaskType.ALL:
+            _scheduler.schedule()
+        elif typ == EvalTaskType.SINGLE:
+            # by param
+            _scheduler.schedule_single_task(step, task_index)
+        # TODO: save job info
+        console.print(f"job info:{_jobs}")
+        console.print(":clap: finish run")
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
@@ -348,7 +356,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._render_manifest,
                 5,
                 "render manifest",
-                #dict(user_raw_config=_model_config.as_dict()),
+                # dict(user_raw_config=_model_config.as_dict()),
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
             (self._make_latest_tag, 5, "make latest tag"),

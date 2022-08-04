@@ -1,21 +1,26 @@
 import json
-from pathlib import Path
 from typing import Any
-import typing as t
+from pathlib import Path
 
 from loguru import logger
-from starwhale.api._impl.job import step
+
+from starwhale.utils import console
+from starwhale.consts import (
+    JSON_INDENT,
+    CURRENT_FNAME,
+    DataLoaderKind,
+    DefaultYAMLName,
+    SWDSBackendType,
+    DEFAULT_INPUT_JSON_FNAME,
+)
+from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import RunSubDirType
-from starwhale.base.uri import URI
-from starwhale.consts import DefaultYAMLName, DEFAULT_INPUT_JSON_FNAME, JSON_INDENT, SWDSBackendType, DataLoaderKind, \
-    CURRENT_FNAME
-from starwhale.core.dataset.model import Dataset
-from starwhale.core.dataset.store import DatasetStorage
+from starwhale.utils.load import import_cls
+from starwhale.api._impl.job import step
 from starwhale.core.job.model import Context
 from starwhale.core.model.model import StandaloneModel
-from starwhale.utils import console
-from starwhale.utils.fs import ensure_file, ensure_dir
-from starwhale.utils.load import import_cls
+from starwhale.core.dataset.model import Dataset
+from starwhale.core.dataset.store import DatasetStorage
 
 _CNTR_WORKDIR = "/opt/starwhale"
 
@@ -41,10 +46,7 @@ def _gen_swds_fuse_json(_context: Context) -> Path:
     #         _base["swds"][i]["bucket"] = _bucket
 
     _json_f: Path = (
-        _context.workdir
-        / "ppl"
-        / RunSubDirType.CONFIG
-        / DEFAULT_INPUT_JSON_FNAME
+        _context.workdir / "ppl" / RunSubDirType.CONFIG / DEFAULT_INPUT_JSON_FNAME
     )
     ensure_file(_json_f, json.dumps(_base, indent=JSON_INDENT))
     return _json_f
@@ -67,26 +69,22 @@ def _gen_jsonl_fuse_json(_context: Context) -> Path:
             )
         ],
     )
-    _f = (
-        _context.workdir
-        / "cmp"
-        / RunSubDirType.CONFIG
-        / DEFAULT_INPUT_JSON_FNAME
-    )
+    _f = _context.workdir / "cmp" / RunSubDirType.CONFIG / DEFAULT_INPUT_JSON_FNAME
     ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
     return _f
 
 
 def _set_env(dir: Path):
     from starwhale.api._impl.model import _RunConfig
-    _RunConfig.set_env({
-        "status_dir": dir / RunSubDirType.STATUS,
-        "log_dir": dir / RunSubDirType.LOG,
-        "result_dir": dir / RunSubDirType.RESULT,
-        "input_config": dir
-                        / RunSubDirType.CONFIG
-                        / DEFAULT_INPUT_JSON_FNAME,
-    })
+
+    _RunConfig.set_env(
+        {
+            "status_dir": dir / RunSubDirType.STATUS,
+            "log_dir": dir / RunSubDirType.LOG,
+            "result_dir": dir / RunSubDirType.RESULT,
+            "input_config": dir / RunSubDirType.CONFIG / DEFAULT_INPUT_JSON_FNAME,
+        }
+    )
 
 
 def gen_run_dir(workdir: Path):
@@ -124,7 +122,7 @@ class DefaultPipeline:
 
         gen_run_dir(_context.workdir / "ppl")
 
-        # TODO: generate input json for the time being, to be replaced by new dataset
+        # TODO: generate input json for the time being, to be replaced by new dataset uri
         _gen_swds_fuse_json(_context)
 
         _cls = self._get_cls(_context.src_dir)
