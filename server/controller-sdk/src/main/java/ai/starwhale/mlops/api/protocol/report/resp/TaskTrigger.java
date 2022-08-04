@@ -39,7 +39,7 @@ public class TaskTrigger {
      * unique id for the task
      */
     Long id;
-
+    @Deprecated
     TaskType taskType;
 
     /**

@@ -16,6 +16,7 @@
                mv.version_meta as mv_version_meta,
                mv.storage_path as mv_storage_path,
                mv.manifest as mv_manifest,
+               mv.eval_jobs as mv_eval_jobs,
                mv.created_time as mv_created_time,
                mv.modified_time as mv_modified_time,
                m.swmp_name as swmp_name,
@@ -70,21 +71,22 @@
     </select>
 
     <insert id="revertTo">
-        replace into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
-        select swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest
+        replace into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest, eval_jobs)
+        select swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest, eval_jobs
         from swmp_version
         where id = #{swmpVersionId}
     </insert>
 
     <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
+        insert into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest, eval_jobs)
         values(#{version.swmpId},
                #{version.ownerId},
                #{version.versionName},
                #{version.versionTag},
                #{version.versionMeta},
                #{version.storagePath},
-               #{version.manifest})
+               #{version.manifest},
+               #{version.eval_jobs})
     </insert>
 
     <update id="update" parameterType="ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity">
@@ -104,6 +106,7 @@
         <result property="versionMeta" column="mv_version_meta" />
         <result property="storagePath" column="mv_storage_path" />
         <result property="manifest" column="mv_manifest" />
+        <result property="evalJobs" column="mv_eval_jobs" />
         <result property="createdTime" column="mv_created_time"/>
         <result property="modifiedTime" column="mv_modified_time"/>
         <result property="ownerId" column="owner_id" />

@@ -30,6 +30,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -38,6 +39,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
@@ -61,56 +63,58 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     @Override
     public void adopt(Collection<Task> tasks,
-                           Clazz deviceClass) {
+                      Clazz deviceClass) {
 
         tasks.parallelStream().forEach(task -> {
-            this.deployTaskToK8s(k8sClient,task.getStep().getJob().getJobRuntime().getImage(),taskConvertor.toTaskTrigger(task));
+            this.deployTaskToK8s(k8sClient, task.getStep().getJob().getJobRuntime().getImage(), taskConvertor.toTaskTrigger(task));
         });
     }
 
     @Override
     public void remove(Collection<Long> taskIds) {
-        taskIds.parallelStream().forEach(id->{
+        taskIds.parallelStream().forEach(id -> {
             try {
                 k8sClient.deleteJob(id.toString());
             } catch (ApiException e) {
-                log.warn("delete k8s job failed {}",id,e);
+                log.warn("delete k8s job failed {}", id, e);
             }
         });
     }
 
     /**
      * todo hard code in this piece of code will be refactored after other core concepts being refactored
+     *
      * @param client
      * @param image
      * @param task
      */
     private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task) {
         log.debug("deploying task to k8s {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
-        Map<String, String> envs = new HashMap<>();
+        Map<String, String> initContainerEnvs = new HashMap<>();
         List<String> downloads = new ArrayList<>();
         String prefix = "minio/starwhale/";
-        downloads.add(prefix + task.getSwModelPackage().getPath()+";/opt/starwhale/swmp/");
-        downloads.add(prefix + task.getSwrt().getPath()+";/opt/starwhale/swrt/");
-        envs.put("DOWNLOADS", Strings.join(downloads, ' '));
+        downloads.add(prefix + task.getSwModelPackage().getPath() + ";/opt/starwhale/swmp/");
+        downloads.add(prefix + task.getSwrt().getPath() + ";/opt/starwhale/swrt/");
+        initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
         String input = generateConfigFile(task);
-        envs.put("INPUT", input);
-        envs.put("MINIO_SERVICE",storageProperties.getS3Config().getEndpoint());
-        envs.put("MINIO_ACCESS_KEY",storageProperties.getS3Config().getAccessKey());
-        envs.put("MINIO_SECRET_KEY",storageProperties.getS3Config().getSecretKey());
+        initContainerEnvs.put("INPUT", input);
+        initContainerEnvs.put("MINIO_SERVICE", storageProperties.getS3Config().getEndpoint());
+        initContainerEnvs.put("MINIO_ACCESS_KEY", storageProperties.getS3Config().getAccessKey());
+        initContainerEnvs.put("MINIO_SECRET_KEY", storageProperties.getS3Config().getSecretKey());
+        // TODO
+        Map<String, String> coreContainerEnvs = new HashMap<>();
         try {
-            String cmd = "ppl";
-            if (task.getTaskType() == TaskType.CMP) {
-                cmd = "cmp";
-            }
+            // cmd（all、single[step、taskIndex]）
+            String cmd = "single";
+            // TODO: use task's resource needs
             V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(task.getDeviceClass(),
                 task.getDeviceAmount().toString()).getResourceSelector();
-            V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), envs,resourceRequirements);
+            V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), initContainerEnvs, resourceRequirements);
             // set result upload path
-            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+ task.getResultPath().resultDir())
-                ,new V1EnvVar().name("MINIO_SERVICE").value(storageProperties.getS3Config().getEndpoint())
-                ,new V1EnvVar().name("MINIO_ACCESS_KEY").value(storageProperties.getS3Config().getAccessKey())
-                ,new V1EnvVar().name("MINIO_SECRET_KEY").value(storageProperties.getS3Config().getSecretKey())
+            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + task.getResultPath().resultDir())
+                    , new V1EnvVar().name("MINIO_SERVICE").value(storageProperties.getS3Config().getEndpoint())
+                    , new V1EnvVar().name("MINIO_ACCESS_KEY").value(storageProperties.getS3Config().getAccessKey())
+                    , new V1EnvVar().name("MINIO_SECRET_KEY").value(storageProperties.getS3Config().getSecretKey())
                 )
             );
             client.deploy(job);
@@ -119,6 +123,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         }
     }
 
+    @Deprecated // TODO
     private String generateConfigFile(TaskTrigger task) {
         JSONObject object = JSONUtil.createObj();
         object.set("backend", "s3");
@@ -167,7 +172,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
     }
 
     private String getJobTemplate() throws IOException {
-        String file ="template/job.yaml";
+        String file = "template/job.yaml";
         InputStream is = this.getClass().getClassLoader()
             .getResourceAsStream(file);
         return new String(is.readAllBytes(), StandardCharsets.UTF_8);

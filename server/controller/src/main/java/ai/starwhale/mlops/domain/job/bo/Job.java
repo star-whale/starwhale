@@ -42,6 +42,8 @@ public class Job extends TimeConcern {
 
     String uuid;
 
+    String evalJobContent;
+
     Step currentStep;
 
     /**

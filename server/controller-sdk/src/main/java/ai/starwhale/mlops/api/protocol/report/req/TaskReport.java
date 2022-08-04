@@ -38,7 +38,7 @@ public class TaskReport {
      * status of the task
      */
     TaskStatusInterface status;
-
+    @Deprecated
     TaskType taskType;
 
     List<TaskLog> readerLogs;
