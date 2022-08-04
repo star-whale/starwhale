@@ -48,6 +48,7 @@ public class StepMetaData {
 @Data
 @Builder
 class Resource {
+    // TODO：replaced by ai.starwhale.mlops.domain.node.Device.Clazz
     private String type;
     private Integer num;
 }

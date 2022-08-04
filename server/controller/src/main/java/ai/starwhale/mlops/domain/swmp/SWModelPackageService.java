@@ -21,10 +21,7 @@ import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
-import ai.starwhale.mlops.common.IDConvertor;
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
-import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.common.TagAction;
+import ai.starwhale.mlops.common.*;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleURL;
@@ -65,12 +62,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -341,20 +340,30 @@ public class SWModelPackageService {
         //upload to storage
         final String swmpPath = entityExists ? swModelPackageVersionEntity.getStoragePath()
             : storagePathCoordinator.generateSwmpPath(uploadRequest.name(), uploadRequest.version());
-
+        String jobContent = "";
         try(final InputStream inputStream = dsFile.getInputStream()){
             InputStream is = inputStream;
             if(dsFile.getSize() >= Integer.MAX_VALUE){
                 is = new LargeFileInputStream(inputStream,dsFile.getSize());
             }
+            CloseShieldInputStream csis = CloseShieldInputStream.wrap(is);
+
+            // only extract the eval job file content
+            jobContent = new String(
+                Objects.requireNonNull(TarFileUtil.getContentFromTarFile(csis, "src", "eval_jobs.yaml")));
             storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),is);
         } catch (IOException e) {
             log.error("upload swmp failed {}",uploadRequest.getSwmp(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),
                 HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        //create new entity
-        if(!entityExists){
+
+        if(entityExists){
+            // update job content
+            swModelPackageVersionEntity.setEvalJobs(jobContent);
+            swmpVersionMapper.update(swModelPackageVersionEntity);
+        } else {
+            // create new entity
             swModelPackageVersionEntity = SWModelPackageVersionEntity.builder()
                 .ownerId(getOwner())
                 .storagePath(swmpPath)
@@ -362,6 +371,7 @@ public class SWModelPackageService {
                 .versionName(uploadRequest.version())
                 .versionMeta(uploadRequest.getSwmp())
                 .manifest(uploadRequest.getManifest())
+                .evalJobs(jobContent)
                 .build();
             swmpVersionMapper.addNewVersion(swModelPackageVersionEntity);
         }

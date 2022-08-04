@@ -36,6 +36,8 @@ public class TaskEntity extends BaseEntity {
 
     private Long id;
 
+    private Integer taskIndex;
+
     private String taskUuid;
 
     private Long stepId;

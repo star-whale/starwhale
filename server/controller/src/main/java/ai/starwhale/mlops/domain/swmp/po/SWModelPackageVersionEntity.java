@@ -52,6 +52,8 @@ public class SWModelPackageVersionEntity extends BaseEntity implements BundleVer
 
     private String manifest;
 
+    private String evalJobs;
+
     @Override
     public String getName() {
         return versionName;
