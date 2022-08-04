@@ -35,7 +35,7 @@ export default function ApiHeader() {
             },
             (error) => {
                 const errMsg = getErrMsg(error)
-                if (error.response?.status === 403 && error.config.method === 'get') {
+                if (error.response?.status === 401 && error.config.method === 'get') {
                     const search = qs.parse(location.search, { ignoreQueryPrefix: true })
                     let { redirect } = search
                     if (redirect && typeof redirect === 'string') {
