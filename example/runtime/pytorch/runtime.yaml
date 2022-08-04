@@ -27,8 +27,8 @@ dependencies:
 - requirements-sw-lock.txt
 environment:
   arch: noarch
-  cuda: 11.4.0
   os: ubuntu:20.04
+  cuda: 11.4
   python: 3.8
 mode: venv
 name: pytorch
