@@ -24,6 +24,7 @@ install_requires = [
     "scikit-learn>=0.20.0",
     "dill==0.3.5.1",
     "packaging>=21.3",
+    "pyarrow>=8.0.0",
 ]
 
 
@@ -44,7 +45,7 @@ setup(
     author_email="developer@starwhale.ai",
     version=_format_version(),
     description="An MLOps Platform for Model Evaluation",
-    long_description=open("../README.md").read(),
+    long_description=open("../README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     keywords="MLOps, AI, Starwhale, Model Evaluation",
     url="https://github.com/star-whale/starwhale",
