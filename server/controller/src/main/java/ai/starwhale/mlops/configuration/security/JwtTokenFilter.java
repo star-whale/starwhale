@@ -64,7 +64,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         if (!checkHeader(header)) {
             header = httpServletRequest.getParameter(AUTH_HEADER);
             if(!checkHeader(header)) {
-                error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied,
+                error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
                     "Not logged in.");
                 return;
             }
@@ -72,7 +72,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
         String token = header.split(" ")[1].trim();
         if(!jwtTokenUtil.validate(token)) {
-            error(httpServletResponse, HttpStatus.FORBIDDEN.value(), Code.accessDenied, "JWT token is expired or invalid.");
+            error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied, "JWT token is expired or invalid.");
             return;
         }
 
