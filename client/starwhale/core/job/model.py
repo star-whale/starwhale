@@ -1,10 +1,12 @@
+import os
 from pathlib import Path
 
 import yaml
 from loguru import logger
 import typing as t
-from starwhale.base.uri import URI
 from starwhale.core.job.loader import load_module
+from starwhale.api._impl import wrapper
+from starwhale.utils.config import SWCliConfigMixed
 
 
 class Step:
@@ -39,10 +41,12 @@ class Step:
         src_dir: Path,
         dataset_uris: t.List[str],
         version: str,
+        project: str,
     ):
         self.tasks.append(
             Task(
                 context=Context(
+                    project=project,
                     # todo id or version
                     version=version,
                     step=self.step_name,
@@ -163,11 +167,13 @@ class Context:
         workdir: Path,
         src_dir: Path,
         step: str = "",
-        total: int = 0,
+        total: int = 1,
         index: int = 0,
         dataset_uris: t.List[str] = None,
         version: str = "",
+        project: str = "",
     ):
+        self.project = project
         self.version = version
         self.step = step
         self.total = total
@@ -193,8 +199,17 @@ class Task:
         self.status = status
         self.module = module
         self.src_dir = src_dir
+        self._sw_config = SWCliConfigMixed()
+        # self._init()
+
+    def _init(self):
+        os.environ['SW_ROOT_PATH'] = str(self._sw_config.datastore_dir)
+        os.environ['SW_PROJECT'] = self.context.project
+        self.datastore = wrapper.Evaluation(self.context.version)
 
     def execute(self) -> bool:
+        # must execute at this scope!!
+        self._init()
         """
         call function from module
         :return: function results

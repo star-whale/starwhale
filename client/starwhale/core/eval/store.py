@@ -19,7 +19,7 @@ class JobStorage(BaseStorage):
     def recover_loc(self) -> Path:
         return (
             self.project_dir
-            / URIType.JOB
+            / URIType.EVALUATION
             / RECOVER_DIRNAME
             / self.id[:VERSION_PREFIX_CNT]
             / self.id
@@ -28,13 +28,13 @@ class JobStorage(BaseStorage):
     def _guess(self) -> t.Tuple[Path, str]:
         name = self.uri.object.name
         _p, _v, _ok = guess_real_path(
-            self.project_dir / URIType.JOB / name[:VERSION_PREFIX_CNT], name
+            self.project_dir / URIType.EVALUATION / name[:VERSION_PREFIX_CNT], name
         )
         return _p, _v
 
     @property
     def uri_type(self) -> str:
-        return URIType.JOB
+        return URIType.EVALUATION
 
     @property
     def manifest_path(self) -> Path:
@@ -56,6 +56,6 @@ class JobStorage(BaseStorage):
     def iter_all_jobs(project_uri: URI) -> t.Generator[t.Tuple[Path, bool], None, None]:
         # TODO: tune SWCliConfigMixed
         sw = SWCliConfigMixed()
-        _job_dir = sw.rootdir / project_uri.project / URIType.JOB
+        _job_dir = sw.rootdir / project_uri.project / URIType.EVALUATION
         for _path in _job_dir.glob(f"**/**/{DEFAULT_MANIFEST_NAME}"):
             yield _path, RECOVER_DIRNAME in _path.parts

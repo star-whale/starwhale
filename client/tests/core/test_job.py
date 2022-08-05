@@ -41,7 +41,7 @@ class StandaloneJobTestCase(TestCase):
         )
 
     def test_store(self):
-        uri = URI(self.job_name[:7], expected_type=URIType.JOB)
+        uri = URI(self.job_name[:7], expected_type=URIType.EVALUATION)
         store = JobStorage(uri)
 
         assert store.project_dir == Path(self.root) / "self"
@@ -52,7 +52,7 @@ class StandaloneJobTestCase(TestCase):
             == (
                 Path(self.root)
                 / "self"
-                / URIType.JOB
+                / URIType.EVALUATION
                 / RECOVER_DIRNAME
                 / self.job_name[:2]
                 / self.job_name
@@ -80,7 +80,7 @@ class StandaloneJobTestCase(TestCase):
         assert jobs[0]["manifest"]["model"] == "mnist:meydczbrmi2g"
 
     def test_standalone_info(self):
-        uri = URI(self.job_name[:5], expected_type=URIType.JOB)
+        uri = URI(self.job_name[:5], expected_type=URIType.EVALUATION)
         job = StandaloneJob(uri)
         info = job.info()
 
@@ -99,7 +99,7 @@ class StandaloneJobTestCase(TestCase):
         assert (
             Path(self.root)
             / "self"
-            / URIType.JOB
+            / URIType.EVALUATION
             / RECOVER_DIRNAME
             / self.job_name[:2]
             / self.job_name
@@ -112,7 +112,7 @@ class StandaloneJobTestCase(TestCase):
             Path(self.root)
             / "self"
             / RECOVER_DIRNAME
-            / URIType.JOB
+            / URIType.EVALUATION
             / self.job_name[:2]
             / self.job_name
         ).exists()

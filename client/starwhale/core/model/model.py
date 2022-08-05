@@ -10,6 +10,7 @@ from collections import defaultdict
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
+from starwhale.api._impl.loader import DataLoader
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
@@ -90,7 +91,6 @@ class ModelConfig:
         version: str = DEFAULT_STARWHALE_API_VERSION,
         **kw: t.Any,
     ):
-
         # TODO: format model name
         self.name = name
         self.model = model or []
@@ -206,6 +206,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     @classmethod
     def eval_user_handler(
         cls,
+        project: str,
         version: str,
         typ: str,
         src_dir: Path,
@@ -225,31 +226,29 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _module = StandaloneModel.get_pipeline_handler(
             workdir=src_dir, yaml_name=model_yaml_name
         )
-        # TODO:
-        _RunConfig.set_env(kw)
 
-        logger.debug("run job from yaml")
+        logger.debug("parse job from yaml")
         _jobs = Parser.parse_job_from_yaml(src_dir / DEFAULT_EVALUATION_JOBS_FNAME)
         # steps of job
         if job_name not in _jobs:
             raise RuntimeError(f"job:{job_name} not found")
-        _steps = _jobs[job_name]
 
         _scheduler = Scheduler(
+            project=project,
             version=version,
             module=_module,
             workdir=workdir,
             src_dir=src_dir,
             dataset_uris=dataset_uris,
-            steps=_steps,
+            steps=_jobs[job_name],
         )
 
         if typ == EvalTaskType.ALL:
             _scheduler.schedule()
         elif typ == EvalTaskType.SINGLE:
-            # by param
             _scheduler.schedule_single_task(step, task_index)
-        # TODO: save job info
+
+        # TODO: save job info - use datastore
         console.print(f"job info:{_jobs}")
         console.print(":clap: finish run")
 

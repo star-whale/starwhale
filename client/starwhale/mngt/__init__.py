@@ -32,8 +32,8 @@ def gc(dry_run: bool = False, yes: bool = False) -> None:
             continue
 
         _removed_paths = []
-        for typ in (URIType.DATASET, URIType.JOB, URIType.RUNTIME, URIType.MODEL):
-            _bundle_type = get_bundle_type_by_uri(typ) if typ != URIType.JOB else ""
+        for typ in (URIType.DATASET, URIType.EVALUATION, URIType.RUNTIME, URIType.MODEL):
+            _bundle_type = get_bundle_type_by_uri(typ) if typ != URIType.EVALUATION else ""
             _recover_dir = project_dir / typ / RECOVER_DIRNAME
 
             if typ in (URIType.RUNTIME, URIType.MODEL):
@@ -44,7 +44,7 @@ def gc(dry_run: bool = False, yes: bool = False) -> None:
                     _workdir_path = _get_workdir_path(project_dir, typ, _path)
                     if _workdir_path.exists():
                         _removed_paths.append(_workdir_path)
-            elif typ in (URIType.DATASET, URIType.JOB):
+            elif typ in (URIType.DATASET, URIType.EVALUATION):
                 for _path in _recover_dir.glob(f"**/{DEFAULT_MANIFEST_NAME}"):
                     if not _path.is_file():
                         continue
@@ -74,7 +74,7 @@ def _get_workdir_path(project_dir: Path, typ: str, bundle_path: Path) -> Path:
     version = bundle_path.name.split(".")[0]
     object_prefix = f"{version[:VERSION_PREFIX_CNT]}/{version}"
 
-    if typ != URIType.JOB:
+    if typ != URIType.EVALUATION:
         object_name = bundle_path.parent.parent.name
         object_prefix = f"{object_name}/{object_prefix}"
     _rpath = project_dir / "workdir" / typ / RECOVER_DIRNAME / object_prefix
