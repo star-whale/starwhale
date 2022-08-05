@@ -41,6 +41,7 @@ class EvalExecutor:
         desc: str = "",
         gencmd: bool = False,
         use_docker: bool = False,
+        runtime_restore: bool = False,
     ) -> None:
         self.name = name
         self.job_name = job_name
@@ -66,6 +67,7 @@ class EvalExecutor:
 
         self.gencmd = gencmd
         self.use_docker = use_docker
+        self.runtime_restore = runtime_restore
 
         self._version = version
         self._manifest: t.Dict[str, t.Any] = {"status": _STATUS.START}
@@ -205,7 +207,6 @@ class EvalExecutor:
             self._do_run_cmd_in_host(typ, step, task_index)
 
     def _do_run_cmd_in_host(self, typ: str, step: str, task_index: int) -> None:
-        from starwhale.core.model.model import StandaloneModel
         from starwhale.core.runtime.process import Process as RuntimeProcess
 
         if self.runtime_uri:
@@ -213,6 +214,7 @@ class EvalExecutor:
                 uri=self.runtime_uri,
                 target=StandaloneModel.eval_user_handler,
                 args=(
+                    self._version,
                     typ,
                     self._model_dir,
                     self._job_workdir,
@@ -222,10 +224,11 @@ class EvalExecutor:
                     step,
                     task_index,
                 ),
-                runtime_restore=kw.get("runtime_restore", False),
+                runtime_restore=self.runtime_restore,
             ).run()
         else:
             StandaloneModel.eval_user_handler(
+                version=self._version,
                 typ=typ,
                 src_dir=self._model_dir,
                 workdir=self._job_workdir,
@@ -242,7 +245,7 @@ class EvalExecutor:
             f":fish: eval run:{typ} dir @ [green blink]{self._workdir}/{typ}[/]"
         )
         if not self.gencmd:
-            check_call(f"docker pull {self.baseimage}", shell=True)
+            #check_call(f"docker pull {self.baseimage}", shell=True)
             check_call(cmd, shell=True)
 
     # todo
@@ -276,7 +279,7 @@ class EvalExecutor:
         ]
 
         cmd.extend(["-e", f"SW_EVAL_VERSION={self._version}"])
-        cmd.extend(["-e", f"SW_DATASETS={[u.full_uri for u in self.dataset_uris]}"])
+        # cmd.extend(["-e", f"SW_DATASETS={[u.full_uri for u in self.dataset_uris]}"])
 
         if typ == EvalTaskType.SINGLE:
             cmd.extend(["-e", f"SW_TASK_STEP={step}"])

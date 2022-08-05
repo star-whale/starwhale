@@ -3,6 +3,7 @@ from typing import Any
 from pathlib import Path
 
 from loguru import logger
+from starwhale.base.uri import URI
 
 from starwhale.utils import console
 from starwhale.consts import (
@@ -14,7 +15,7 @@ from starwhale.consts import (
     DEFAULT_INPUT_JSON_FNAME,
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import RunSubDirType
+from starwhale.base.type import RunSubDirType, URIType
 from starwhale.utils.load import import_cls
 from starwhale.api._impl.job import step
 from starwhale.core.job.model import Context
@@ -27,7 +28,11 @@ _CNTR_WORKDIR = "/opt/starwhale"
 
 def _gen_swds_fuse_json(_context: Context) -> Path:
     _fuse_jsons = []
-    for _uri in _context.dataset_uris:
+
+    dataset_uris = [
+        URI(u, expected_type=URIType.DATASET) for u in _context.dataset_uris
+    ]
+    for _uri in dataset_uris:
         _store = DatasetStorage(_uri)
         fname = Dataset.render_fuse_json(_store.loc, force=False)
         _fuse_jsons.append(fname)
@@ -123,6 +128,7 @@ class DefaultPipeline:
         gen_run_dir(_context.workdir / "ppl")
 
         # TODO: generate input json for the time being, to be replaced by new dataset uri
+        # TODO: use docker this will be error because it can't parse local dataset uri
         _gen_swds_fuse_json(_context)
 
         _cls = self._get_cls(_context.src_dir)

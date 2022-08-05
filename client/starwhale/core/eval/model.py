@@ -151,6 +151,7 @@ class StandaloneEvaluationJob(EvaluationJob):
             desc=desc,
             gencmd=kw.get("gencmd", False),
             use_docker=use_docker,
+            runtime_restore=kw.get("runtime_restore", False),
         )
         ee.run(typ, step, task_index)
 

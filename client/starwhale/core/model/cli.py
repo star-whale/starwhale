@@ -117,7 +117,13 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 
 
 @model_cmd.command("eval")
-@click.argument("model")
+@click.argument("target")
+@click.option(
+    "-f",
+    "--model-yaml",
+    default=DefaultYAMLName.MODEL,
+    help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
+)
 @click.option(
     "--dataset",
     required=True,
@@ -125,8 +131,6 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     help="Dataset URI, one or more",
 )
 @click.option("--name", help="Job name")
-@click.option("--desc", help="Job description")
-@click.option("-p", "--project", default="", help="Project URI")
 @click.option("--version", default=None, help="Evaluation job version")
 @click.option(
     "--type",
@@ -139,12 +143,11 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--runtime", default="", help="runtime uri")
 @click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 def _eval(
-    model: str,
+    target: str,
+    model_yaml: str,
+    name: str,
     version: str,
     dataset: t.List[str],
-    name: str,
-    desc: str,
-    project: str,
     type: str,
     step: str,
     task_index: int,
@@ -152,22 +155,38 @@ def _eval(
     runtime_restore: bool,
 ) -> None:
     """
-    [ONLY Standalone]Create as new job for model evaluation
+        [ONLY Standalone]Run evaluation processing with root dir of {target}.
 
-    MODEL: model uri or model workdir path
-    """
-    JobTermView.run(
-        project_uri=project,
+        TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
+        """
+    ModelTermView.eval(
+        target=target,
         version=version,
-        model_uri=model,
-        dataset_uris=dataset,
-        runtime_uri=runtime,
-        name=name,
-        desc=desc,
-        use_docker=False,
-        gencmd=False,
+        yaml_name=model_yaml,
         typ=type,
+        runtime_uri=runtime,
+        runtime_restore=runtime_restore,
         step=step,
         task_index=task_index,
-        runtime_restore=runtime_restore,
+        dataset_uris=dataset,
     )
+    # """
+    # [ONLY Standalone]Create as new job for model evaluation
+    #
+    # MODEL: model uri or model workdir path
+    # """
+    # JobTermView.run(
+    #     project_uri=project,
+    #     version=version,
+    #     model_uri=model,
+    #     dataset_uris=dataset,
+    #     runtime_uri=runtime,
+    #     name=name,
+    #     desc=desc,
+    #     use_docker=False,
+    #     gencmd=False,
+    #     typ=type,
+    #     step=step,
+    #     task_index=task_index,
+    #     runtime_restore=runtime_restore,
+    # )

@@ -53,8 +53,12 @@ class ModelTermView(BaseTermView):
     def eval(
         cls,
         target: str,
+        dataset_uris: t.List[str],
+        version: str = "",
         yaml_name: str = DefaultYAMLName.MODEL,
         typ: str = "",
+        step: str = "",
+        task_index: int = 0,
         runtime_uri: str = "",
         runtime_restore: bool = False,
         kw: t.Dict[str, t.Any] = {},
@@ -73,12 +77,21 @@ class ModelTermView(BaseTermView):
                 RuntimeProcess.from_runtime_uri(
                     uri=runtime_uri,
                     target=StandaloneModel.eval_user_handler,
-                    args=(typ, workdir),
+                    args=(typ,
+                        version,
+                        workdir / "src",
+                        workdir,
+                        dataset_uris,
+                        DefaultYAMLName.MODEL,
+                        "default",
+                        step,
+                        task_index,),
                     kwargs={"yaml_name": yaml_name, "kw": kw},
                     runtime_restore=runtime_restore,
                 ).run()
             else:
                 StandaloneModel.eval_user_handler(
+                    version=version,
                     typ=typ,
                     src_dir=workdir / "src",
                     workdir=workdir,
