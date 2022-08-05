@@ -87,8 +87,20 @@ def _quickstart_from_uri(
     default=False,
     show_default=True,
 )
+@click.option(
+    "-i",
+    "--interactive",
+    is_flag=True,
+    default=False,
+    help="Try entering the interactive shell at the end",
+)
 def _quickstart(
-    workdir: str, force: bool, python_env: str, name: str, create_env: bool
+    workdir: str,
+    force: bool,
+    python_env: str,
+    name: str,
+    create_env: bool,
+    interactive: bool,
 ) -> None:
     """[Only Standalone]Quickstart Starwhale Runtime
 
@@ -99,7 +111,7 @@ def _quickstart(
     p_workdir = Path(workdir).absolute()
     name = name or p_workdir.name
     RuntimeTermView.quickstart_from_ishell(
-        p_workdir, name, python_env, create_env, force
+        p_workdir, name, python_env, create_env, force, interactive
     )
 
 

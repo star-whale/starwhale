@@ -156,11 +156,14 @@ class RuntimeTermView(BaseTermView):
         mode: str,
         create_env: bool = False,
         force: bool = False,
+        interactive: bool = False,
     ) -> None:
         console.print(
             f":construction: quickstart Starwhale Runtime[{name}] environment..."
         )
-        StandaloneRuntime.quickstart_from_ishell(workdir, name, mode, create_env, force)
+        StandaloneRuntime.quickstart_from_ishell(
+            workdir, name, mode, create_env, force, interactive
+        )
         console.print(":clap: Starwhale Runtime environment is ready to use :tada:")
 
     @classmethod
