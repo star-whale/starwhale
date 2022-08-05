@@ -25,6 +25,7 @@ install_requires = [
     "dill==0.3.5.1",
     "packaging>=21.3",
     "pyarrow>=8.0.0",
+    "Jinja2>=3.1.2",
 ]
 
 

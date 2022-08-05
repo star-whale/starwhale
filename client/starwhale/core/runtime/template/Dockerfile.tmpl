@@ -1,0 +1,41 @@
+ARG BASE_IMAGE={{base_image}}
+FROM ${BASE_IMAGE}
+
+ARG TARGETARCH
+
+ENTRYPOINT []
+WORKDIR /opt/starwhale.user/runtime
+
+LABEL starwhale_runtime_dockerize=1
+LABEL starwhale_runtime_name={{runtime_name}}
+LABEL starwhale_runtime_version={{runtime_version}}
+
+ENV SW_USER_RUNTIME_WORKDIR=/opt/starwhale.user/runtime
+COPY . /opt/starwhale.user/runtime
+
+ENV SW_PYPI_INDEX_URL "{{pypi_index_url}}"
+ENV SW_PYPI_EXTRA_INDEX_URL "{{pypi_extra_index_url}}"
+ENV SW_PYPI_TRUSTED_HOST "{{pypi_trusted_host}}"
+RUN sw-docker-entrypoint pre_config || true
+
+ENV SW_USER_RUNTIME_PYTHON_VERSION={{python_version}}
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${SW_USER_RUNTIME_PYTHON_VERSION} 10 \
+    && update-alternatives --install /usr/bin/python python /usr/bin/python${SW_USER_RUNTIME_PYTHON_VERSION} 10
+
+ENV SW_PIP_CACHE_DIR=/root/.cache/pip
+RUN python3 -m pip config set global.cache-dir ${SW_PIP_CACHE_DIR}
+
+RUN swcli -vvv runtime restore /opt/starwhale.user/runtime \
+    && bash /opt/starwhale.user/runtime/activate.sw
+
+ENV SW_USER_RUNTIME_NAME={{runtime_name}}
+ENV SW_USER_RUNTIME_VERSION={{runtime_version}}
+ENV SW_USER_RUNTIME_RESTORED=1
+ENV SW_USER_RUNTIME_FROM_DOCKERIZE=1
+
+{% if mode=="venv" or local_packaged_env %}
+RUN echo 'source ${SW_USER_RUNTIME_WORKDIR}/export/{{mode}}/bin/activate' >> /root/.bashrc
+{% elif mode=="conda" %}
+RUN /opt/miniconda3/bin/conda init bash
+RUN echo 'conda activate ${SW_USER_RUNTIME_WORKDIR}/export/{{mode}}' >> /root/.bashrc
+{% endif %}

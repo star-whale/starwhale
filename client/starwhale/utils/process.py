@@ -10,7 +10,8 @@ def log_check_call(*args: t.Any, **kwargs: t.Any) -> int:
     log = kwargs.pop("log", logger.debug)
     kwargs["stdout"] = PIPE
     kwargs["stderr"] = STDOUT
-    env = kwargs.get("env", os.environ.copy())
+    env = os.environ.copy()
+    env.update(kwargs.get("env", {}))
     kwargs["env"] = env
     kwargs["universal_newlines"] = True
     env["PYTHONUNBUFFERED"] = "1"

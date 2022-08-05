@@ -12,12 +12,14 @@ from xml.dom import NotFoundErr
 from collections import defaultdict
 
 import yaml
+import jinja2
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
 from starwhale import __version__
 from starwhale.utils import (
+    docker,
     console,
     load_yaml,
     in_container,
@@ -94,6 +96,7 @@ from starwhale.base.bundle_copy import BundleCopy
 from .store import RuntimeStorage
 
 RUNTIME_API_VERSION = "1.1"
+_TEMPLATE_DIR = Path(__file__).parent / "template"
 
 _t_mixed_str_list = t.Union[t.List[str], str]
 _list: t.Callable[[_t_mixed_str_list], t.List[str]] = (
@@ -229,11 +232,9 @@ class Hooks:
 class DockerConfig:
     def __init__(
         self,
-        registry: str = "docker.io",
-        image: str = "runtime_dummy:latest",
+        image: str = "",
         **kw: t.Any,
     ) -> None:
-        self.registry = registry
         self.image = image
 
 
@@ -397,6 +398,17 @@ class Runtime(BaseBundle, metaclass=ABCMeta):
             include_editable,
             emit_pip_options,
         )
+
+    def dockerize(
+        self,
+        tags: t.Optional[t.List[str]] = None,
+        platforms: t.Optional[t.List[str]] = None,
+        push: bool = True,
+        dry_run: bool = False,
+        use_starwhale_builder: bool = False,
+        reset_qemu_static: bool = False,
+    ) -> None:
+        raise NotImplementedError
 
 
 class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
@@ -1021,6 +1033,82 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             api_version=RUNTIME_API_VERSION,
         )
         ensure_file(_rm, yaml.safe_dump(config, default_flow_style=False))
+
+    def dockerize(
+        self,
+        tags: t.Optional[t.List[str]] = None,
+        platforms: t.Optional[t.List[str]] = None,
+        push: bool = True,
+        dry_run: bool = False,
+        use_starwhale_builder: bool = False,
+        reset_qemu_static: bool = False,
+    ) -> None:
+        docker_dir = self.store.export_dir / "docker"
+        ensure_dir(docker_dir)
+        dockerfile_path = docker_dir / "Dockerfile"
+
+        def _extract() -> None:
+            if (
+                not self.store.snapshot_workdir.exists()
+                or not self.store.manifest_path.exists()
+            ):
+                console.print(":unicorn_face: extract runtime swrt file")
+                self.extract(force=True)
+
+        def _render_dockerfile(_manifest: t.Dict[str, t.Any]) -> None:
+            console.print(f":wolf_face: render Dockerfile @{dockerfile_path}")
+            _env = jinja2.Environment(
+                loader=jinja2.FileSystemLoader(searchpath=_TEMPLATE_DIR)
+            )
+            _template = _env.get_template("Dockerfile.tmpl")
+            _pip = _manifest["configs"].get("pip", {})
+            _out = _template.render(
+                base_image=_manifest["base_image"],
+                runtime_name=self.uri.object.name,
+                runtime_version=_manifest["version"],
+                pypi_index_url=_pip.get("index_url", ""),
+                pypi_extra_index_url=" ".join(_pip.get("extra_index_url", [])),
+                pypi_trusted_host=" ".join(_pip.get("trusted_host", [])),
+                python_version=_manifest["environment"]["python"],
+                mode=_manifest["environment"]["mode"],
+                local_packaged_env=_manifest["dependencies"].get(
+                    "local_packaged_env", False
+                ),
+            )
+            ensure_file(dockerfile_path, _out)
+
+        def _render_dockerignore() -> None:
+            _ignores = ["export/venv", "export/conda", ".git"]
+            ensure_file(
+                self.store.snapshot_workdir / ".dockerignore",
+                content="\n".join(_ignores),
+            )
+
+        def _build(_manifest: t.Dict[str, t.Any]) -> None:
+            _tags = tags or []
+            _platforms = platforms or []
+            _dc_image = _manifest["configs"].get("docker", {}).get("image")
+            if _dc_image:
+                _tags.append(f"{_dc_image.split(':', 1)[0]}:{_manifest['version']}")
+
+            if not dry_run and reset_qemu_static:
+                docker.reset_qemu_static()
+
+            docker.buildx(
+                dockerfile_path,
+                self.store.snapshot_workdir,
+                push=push,
+                dry_run=dry_run,
+                platforms=_platforms,
+                tags=_tags,
+                use_starwhale_builder=use_starwhale_builder,
+            )
+
+        _extract()
+        _manifest = load_yaml(self.store.manifest_path)
+        _render_dockerfile(_manifest)
+        _render_dockerignore()
+        _build(_manifest)
 
     @classmethod
     def restore(

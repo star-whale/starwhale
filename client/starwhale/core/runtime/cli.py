@@ -4,6 +4,7 @@ from pathlib import Path
 import click
 
 from starwhale.consts import (
+    SupportArch,
     PythonRunEnv,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
@@ -117,7 +118,7 @@ def _quickstart(
 
 @runtime_cmd.command(
     "build",
-    help="[ONLY Standalone]Create and build a relocated, shareable, packaged runtime bundle. Support python and native libs.",
+    help="[Only Standalone]Create and build a relocated, shareable, packaged runtime bundle. Support python and native libs.",
 )
 @click.argument("workdir", type=click.Path(exists=True, file_okay=False))
 @click.option("-p", "--project", default="", help="Project URI")
@@ -208,7 +209,7 @@ def _history(runtime: str, fullname: bool) -> None:
 @click.argument("target")
 def _restore(target: str) -> None:
     """
-    [ONLY Standalone]Prepare dirs, restore python environment with virtualenv or conda and show activate command.
+    [Only Standalone]Prepare dirs, restore python environment with virtualenv or conda and show activate command.
 
     TARGET: runtime uri or runtime workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
@@ -238,7 +239,7 @@ def _list(
 
 
 @runtime_cmd.command(
-    "extract", help="[ONLY Standalone]Extract local runtime tar file into workdir"
+    "extract", help="[Only Standalone]Extract local runtime tar file into workdir"
 )
 @click.argument("runtime")
 @click.option("-f", "--force", is_flag=True, help="Force to extract runtime")
@@ -338,4 +339,48 @@ def _lock(
         stdout,
         include_editable,
         emit_pip_options,
+    )
+
+
+@runtime_cmd.command("dockerize")
+@click.argument("uri", required=True)
+@click.option("-t", "--tag", multiple=True, help="Image tag")
+@click.option("--push", is_flag=True, help="Push image to the registry")
+@click.option(
+    "--platform",
+    multiple=True,
+    default=[SupportArch.AMD64],
+    type=click.Choice([SupportArch.AMD64, SupportArch.ARM64]),
+    help="Target platform for docker build",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Only render Dockerfile and build command",
+)
+@click.option(
+    "--use-starwhale-builder",
+    is_flag=True,
+    help="Starwhale will create buildx builder for multi-arch",
+)
+@click.option(
+    "--reset-qemu-static",
+    is_flag=True,
+    help="Reset qemu static, then fix multiarch build issue",
+)
+def _dockerize(
+    uri: str,
+    tag: t.List[str],
+    push: bool,
+    platform: t.List[str],
+    dry_run: bool,
+    use_starwhale_builder: bool,
+    reset_qemu_static: bool,
+) -> None:
+    """[Only Standalone]Starwhale runtime dockerize, only for standalone instance
+
+    URI (str): Starwhale Runtime URI in the standalone instance
+    """
+    RuntimeTermView(uri).dockerize(
+        tag, push, platform, dry_run, use_starwhale_builder, reset_qemu_static
     )
