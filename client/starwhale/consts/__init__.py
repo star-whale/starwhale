@@ -19,8 +19,9 @@ LOCAL_FUSE_JSON_NAME = "local_fuse.json"
 DEFAULT_INPUT_JSON_FNAME = "input.json"
 LOCAL_CONFIG_VERSION = "2.0"
 
-# TODO: use ~/.starwhale or ~/.cache/starwhale?
-SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
+# used by the versions before 2.0
+# SW_LOCAL_STORAGE = HOMEDIR / ".cache/starwhale"
+DEFAULT_SW_LOCAL_STORAGE = HOMEDIR / ".starwhale"
 # SW_TMP_DIR_NAME dir is used for storing the processing files
 SW_TMP_DIR_NAME = ".tmp"
 
