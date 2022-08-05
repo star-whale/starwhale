@@ -24,7 +24,7 @@ class JobTermView(BaseTermView):
     def __init__(self, job_uri: str) -> None:
         super().__init__()
         self.raw_uri = job_uri
-        self.uri = URI(job_uri, expected_type=URIType.JOB)
+        self.uri = URI(job_uri, expected_type=URIType.EVALUATION)
         self.job = EvaluationJob.get_job(self.uri)
         self._action_run_map = {
             JobOperationType.CANCEL: self.job.cancel,
@@ -63,7 +63,7 @@ class JobTermView(BaseTermView):
 
         jobs = []
         for _u in job_uris:
-            _uri = URI(_u, expected_type=URIType.JOB)
+            _uri = URI(_u, expected_type=URIType.EVALUATION)
             jobs.append(EvaluationJob.get_job(_uri))
 
         rt = self.job.compare(jobs)

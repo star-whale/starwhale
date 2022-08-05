@@ -237,8 +237,8 @@ class StandaloneEvaluationJob(EvaluationJob):
             "manifest": self.store.manifest,
             "report": self._get_report(),
             "location": {
-                "ppl": str(self.store.ppl_dir.absolute()),
-                "cmp": str(self.store.cmp_dir.absolute()),
+                # "ppl": str(self.store.ppl_dir.absolute()),
+                # "cmp": str(self.store.cmp_dir.absolute()),
             },
         }
 

@@ -94,7 +94,7 @@ class StandaloneEvalExecutor(TestCase):
 
         job_dir = (
             project_dir
-            / URIType.JOB
+            / URIType.EVALUATION
             / build_version[:VERSION_PREFIX_CNT]
             / build_version
         )

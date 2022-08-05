@@ -1,3 +1,4 @@
+import os
 import time
 import threading
 import concurrent.futures
@@ -13,6 +14,7 @@ from starwhale.core.job.model import Step, Task, STATUS
 class Scheduler:
     def __init__(
         self,
+        project: str,
         version: str,
         module: str,
         workdir: Path,
@@ -20,6 +22,7 @@ class Scheduler:
         dataset_uris: t.List[str],
         steps: t.List[Step],
     ):
+        self.project = project
         self.steps = steps
         self.dataset_uris = dataset_uris
         self.module = module
@@ -35,7 +38,7 @@ class Scheduler:
             _step.status = STATUS.INIT
             for index in range(_step.task_num):
                 _step.gen_task(
-                    index, self.module, self.workdir, self.src_dir, self.dataset_uris, self.version
+                    index, self.module, self.workdir, self.src_dir, self.dataset_uris, self.version, self.project
                 )
 
     def schedule(self) -> None:
