@@ -38,7 +38,6 @@ from starwhale.consts import (
     ENV_SW_IMAGE_REPO,
     DEFAULT_IMAGE_REPO,
     STANDALONE_INSTANCE,
-    DEFAULT_CUDA_VERSION,
     SW_DEV_DUMMY_VERSION,
     DEFAULT_CONDA_CHANNEL,
     DEFAULT_MANIFEST_NAME,
@@ -101,6 +100,9 @@ _list: t.Callable[[_t_mixed_str_list], t.List[str]] = (
     lambda _x: _x if isinstance(_x, (list, tuple)) else [_x]
 )
 
+_SUPPORT_CUDA = ["11.3", "11.4", "11.5", "11.6", "11.7"]
+_SUPPORT_CUDNN = {"8": {"support_cuda_versions": ["11.3", "11.4", "11.5", "11.6"]}}
+
 
 class Environment:
     def __init__(
@@ -108,7 +110,8 @@ class Environment:
         arch: _t_mixed_str_list = "",
         os: str = SupportOS.UBUNTU,
         python: str = DEFAULT_PYTHON_VERSION,
-        cuda: str = DEFAULT_CUDA_VERSION,
+        cuda: str = "",
+        cudnn: str = "",
         **kw: t.Any,
     ) -> None:
         self.arch = _list(arch)
@@ -116,7 +119,8 @@ class Environment:
 
         # TODO: use user's swcli python version as the python argument version
         self.python = trunc_python_version(str(python))
-        self.cuda = str(cuda)
+        self.cuda = str(cuda).strip()
+        self.cudnn = str(cudnn).strip()
 
         self._do_validate()
 
@@ -130,8 +134,28 @@ class Environment:
         if not self.python.startswith("3."):
             raise ConfigFormatError(f"only support Python3, set {self.python}")
 
+        if self.cuda and self.cuda not in _SUPPORT_CUDA:
+            raise NoSupportError(
+                f"cuda {self.cuda} no support[supported list: {_SUPPORT_CUDA}]"
+            )
+
+        if self.cudnn and self.cudnn not in _SUPPORT_CUDNN:
+            raise NoSupportError(
+                f"cudnn {self.cudnn} no support[supported list: {_SUPPORT_CUDNN}]"
+            )
+
+        if self.cudnn and not self.cuda:
+            raise MissingFieldError("cuda is the precondition for cudnn")
+
+        if (
+            self.cuda
+            and self.cudnn
+            and self.cuda not in _SUPPORT_CUDNN[self.cudnn]["support_cuda_versions"]
+        ):
+            raise NoSupportError(f"cuda:{self.cuda} no support cudnn:{self.cudnn}")
+
     def __str__(self) -> str:
-        return f"Starwhale Runtime Environment: {self.os}-{self.arch}-python:{self.python}-cuda:{self.cuda}"
+        return f"Starwhale Runtime Environment: {self.os}-{self.arch}-python:{self.python}-cuda:{self.cuda}-cudnn:{self.cudnn}"
 
     __repr__ = __str__
 
@@ -604,6 +628,17 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         _repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
         _tag = config._starwhale_version or "latest"
         base_image = SW_IMAGE_FMT.format(repo=_repo, tag=_tag)
+
+        _cuda = config.environment.cuda
+        _cudnn = config.environment.cudnn
+        _suffix = []
+        if _cuda:
+            _suffix.append(f"-cuda{_cuda}")
+
+            if _cudnn:
+                _suffix.append(f"-cudnn{_cudnn}")
+
+        base_image += "".join(_suffix)
 
         console.print(
             f":rainbow: runtime docker image: [red]{base_image}[/]  :rainbow:"
