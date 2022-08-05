@@ -62,7 +62,7 @@ class SWCliConfigTestCase(TestCase):
         assert oct(os.stat(path).st_mode & 0o777) == "0o600"
 
         assert "instances" in _config
-        assert _config["storage"]["root"].endswith(".cache/starwhale") is True
+        assert _config["storage"]["root"].endswith(".starwhale") is True
         assert "local" == _config["current_instance"]
         assert len(_config["instances"]) == 1
         assert "local" == _config["instances"]["local"]["uri"]
