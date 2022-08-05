@@ -124,6 +124,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self._orig_stdout = sys.stdout
         self._orig_stderr = sys.stderr
 
+        # TODO: use datastore
         self._data_loader = get_data_loader(
             self.config.swds_config, self._sw_logger, deserializer=self.deserialize
         )

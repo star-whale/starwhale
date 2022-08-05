@@ -12,7 +12,7 @@ class URIType:
     MODEL = "model"
     DATASET = "dataset"
     RUNTIME = "runtime"
-    JOB = "job"
+    EVALUATION = "evaluation"
     UNKNOWN = "unknown"
 
 

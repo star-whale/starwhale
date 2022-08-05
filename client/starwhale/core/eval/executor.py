@@ -1,9 +1,12 @@
+import json
 import os
 import typing as t
 from pathlib import Path
 
 import yaml
 from loguru import logger
+from starwhale.core.dataset.model import Dataset
+from starwhale.core.dataset.store import DatasetStorage
 
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import (
@@ -11,7 +14,7 @@ from starwhale.consts import (
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    CNTR_DEFAULT_PIP_CACHE_DIR,
+    CNTR_DEFAULT_PIP_CACHE_DIR, JSON_INDENT, DEFAULT_INPUT_JSON_FNAME,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -106,6 +109,7 @@ class EvalExecutor:
 
         return self._version
 
+    # TODO: is it necessary to support single task at local mode??
     def _do_run(self, typ: str, step: str, task_index: int) -> None:
         self._manifest["type"] = typ
         self._manifest["status"] = _STATUS.RUNNING
@@ -120,6 +124,7 @@ class EvalExecutor:
             (self._prepare_workdir, 5, "prepare workdir"),
             (self._extract_swmp, 15, "extract model"),
             (self._extract_swrt, 15, "extract runtime"),
+            (self._gen_swds_fuse_json, 10, "gen swds fuse json"),
             (self._init_storage, 20, "init storage"),
             (self._do_run_eval_job, 70, "run eval job"),
             (self._finally, 95, "do finally"),
@@ -153,30 +158,26 @@ class EvalExecutor:
         self._manifest["created_at"] = now_str()  # type: ignore
         logger.info(f"[step:version]eval job version is {self._version}")
 
-    @property
-    def _job_workdir(self) -> Path:
-        return self._workdir
-
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
         # TODO: fix _workdir sequence-dependency issue
         self._workdir = (
             self.project_dir
-            / URIType.JOB
+            / URIType.EVALUATION
             / self._version[:VERSION_PREFIX_CNT]
             / self._version
         )
 
         ensure_dir(self._workdir)
-        for _w in (self._job_workdir,):
+        for _w in (self._workdir,):
             for _n in (
                 # RunSubDirType.RESULT,
-                RunSubDirType.DATASET,
+                # RunSubDirType.DATASET,
                 # RunSubDirType.PPL_RESULT,
                 # RunSubDirType.STATUS,
-                RunSubDirType.LOG,
+                # RunSubDirType.LOG,
                 RunSubDirType.SWMP,
-                # RunSubDirType.CONFIG,
+                RunSubDirType.CONFIG,
             ):
                 ensure_dir(_w / _n)
 
@@ -189,6 +190,7 @@ class EvalExecutor:
         if _workdir.exists() and _model_yaml_path.exists() and not self.use_docker:
             self._model_dir = _workdir
         else:
+            console.print("进入解压")
             model_uri = URI(self.model_uri, expected_type=URIType.MODEL)
             _m = StandaloneModel(model_uri)
             self._model_dir = _m.extract() / "src"
@@ -199,6 +201,34 @@ class EvalExecutor:
         else:
             self._runtime_dir = Path()
 
+    # TODO: this file and dir must exist because current ds implementation, wait replaced by datastore
+    def _gen_swds_fuse_json(self) -> Path:
+        _fuse_jsons = []
+        for _uri in self.dataset_uris:
+            _store = DatasetStorage(_uri)
+            _file_name = Dataset.render_fuse_json(_store.loc, force=False)
+            _fuse_jsons.append(_file_name)
+            logger.debug(f"[gen fuse input.json]{_file_name}")
+
+        _base = json.load(open(_fuse_jsons[0], "r"))
+        for _f in _fuse_jsons[1:]:
+            _config = json.load(open(_f, "r"))
+            _base["swds"].extend(_config["swds"])
+
+        if self.use_docker:
+            _bucket = f"{_CNTR_WORKDIR}/{RunSubDirType.DATASET}"
+            for i in range(len(_base["swds"])):
+                _base["swds"][i]["bucket"] = _bucket
+
+        _json_f: Path = (
+            self._workdir
+            # / EvalTaskType.PPL
+            / RunSubDirType.CONFIG
+            / DEFAULT_INPUT_JSON_FNAME
+        )
+        ensure_file(_json_f, json.dumps(_base, indent=JSON_INDENT))
+        return _json_f
+
     def _do_run_cmd(self, typ: str, step: str, task_index: int) -> None:
         if self.use_docker:
             # TODO
@@ -208,34 +238,36 @@ class EvalExecutor:
 
     def _do_run_cmd_in_host(self, typ: str, step: str, task_index: int) -> None:
         from starwhale.core.runtime.process import Process as RuntimeProcess
-
-        if self.runtime_uri:
-            RuntimeProcess.from_runtime_uri(
-                uri=self.runtime_uri,
-                target=StandaloneModel.eval_user_handler,
-                args=(
-                    self._version,
-                    typ,
-                    self._model_dir,
-                    self._job_workdir,
-                    self.dataset_uris,
-                    DefaultYAMLName.MODEL,
-                    "default",
-                    step,
-                    task_index,
-                ),
-                runtime_restore=self.runtime_restore,
-            ).run()
-        else:
-            StandaloneModel.eval_user_handler(
-                version=self._version,
-                typ=typ,
-                src_dir=self._model_dir,
-                workdir=self._job_workdir,
-                dataset_uris=self.dataset_uris,
-                step=step,
-                task_index=task_index,
-            )
+        # TODO:
+        # if self.runtime_uri:
+        #     RuntimeProcess.from_runtime_uri(
+        #         uri=self.runtime_uri,
+        #         target=StandaloneModel.eval_user_handler,
+        #         args=(
+        #             self.project_uri.project,
+        #             self._version,
+        #             typ,
+        #             self._model_dir,
+        #             self._workdir,
+        #             self.dataset_uris,
+        #             DefaultYAMLName.MODEL,
+        #             "default",
+        #             step,
+        #             task_index,
+        #         ),
+        #         runtime_restore=self.runtime_restore,
+        #     ).run()
+        # else:
+        StandaloneModel.eval_user_handler(
+            project=self.project_uri.project,
+            version=self._version,
+            typ=typ,
+            src_dir=self._model_dir,
+            workdir=self._workdir,
+            dataset_uris=[u.full_uri for u in self.dataset_uris],
+            step=step,
+            task_index=task_index,
+        )
 
     def _do_run_cmd_in_container(self, typ: str, step: str, task_index: int) -> None:
         cmd = self._gen_run_container_cmd(typ, step, task_index)
@@ -245,7 +277,7 @@ class EvalExecutor:
             f":fish: eval run:{typ} dir @ [green blink]{self._workdir}/{typ}[/]"
         )
         if not self.gencmd:
-            #check_call(f"docker pull {self.baseimage}", shell=True)
+            # check_call(f"docker pull {self.baseimage}", shell=True)
             check_call(cmd, shell=True)
 
     # todo
@@ -253,7 +285,7 @@ class EvalExecutor:
         if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             raise Exception(f"no support {typ} to gen docker cmd")
 
-        rundir = self._workdir / typ
+        _run_dir = self._workdir
 
         cmd = [
             "docker",
@@ -261,13 +293,16 @@ class EvalExecutor:
             "--net=host",
             "--rm",
             "--name",
-            f"{self._version}-{typ}",
+            f"{self._version}-{step}-{task_index}",
             "-e",
             "DEBUG=1",
         ]
+
         cmd += [
             "-v",
-            f"{rundir}:{_CNTR_WORKDIR}",
+            f"{_run_dir}:{_CNTR_WORKDIR}",
+            "-v",
+            f"{self.project_dir / URIType.DATASET}:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
             "-v",
             f"{self._model_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/src",
             "-v",
@@ -278,12 +313,13 @@ class EvalExecutor:
             f"{self._runtime_dir}/{DEFAULT_MANIFEST_NAME}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DEFAULT_MANIFEST_NAME}",
         ]
 
-        cmd.extend(["-e", f"SW_EVAL_VERSION={self._version}"])
-        # cmd.extend(["-e", f"SW_DATASETS={[u.full_uri for u in self.dataset_uris]}"])
-
         if typ == EvalTaskType.SINGLE:
             cmd.extend(["-e", f"SW_TASK_STEP={step}"])
             cmd.extend(["-e", f"SW_TASK_INDEX={task_index}"])
+
+        cmd.extend(["-e", f"SW_PROJECT={self.project_uri.project}"])
+        cmd.extend(["-e", f"SW_EVAL_VERSION={self._version}"])
+        # cmd.extend(["-e", f"SW_DATASETS={[u.full_uri for u in self.dataset_uris]}"])
 
         cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
         host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
@@ -304,7 +340,7 @@ class EvalExecutor:
 
     def _render_manifest(self) -> None:
         _status = True
-        for _d in (self._job_workdir,):
+        for _d in (self._workdir,):
             _f = _d / RunSubDirType.STATUS / CURRENT_FNAME
             if not _f.exists():
                 continue

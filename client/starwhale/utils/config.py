@@ -121,6 +121,10 @@ class SWCliConfigMixed:
         return self.rootdir / "dataset"
 
     @property
+    def datastore_dir(self) -> Path:
+        return self.rootdir / "datastore"
+
+    @property
     def eval_run_dir(self) -> Path:
         return self.rootdir / "run" / "eval"
 
