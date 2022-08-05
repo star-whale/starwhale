@@ -5,7 +5,7 @@ from abc import abstractmethod
 from pathlib import Path
 
 from loguru import logger
-
+import typing as t
 from starwhale.base.uri import URI
 from starwhale.core.job.model import Step, Task, STATUS
 
@@ -13,17 +13,19 @@ from starwhale.core.job.model import Step, Task, STATUS
 class Scheduler:
     def __init__(
         self,
+        version: str,
         module: str,
         workdir: Path,
         src_dir: Path,
-        dataset_uris: list[URI],
-        steps: list[Step],
+        dataset_uris: t.List[str],
+        steps: t.List[Step],
     ):
         self.steps = steps
         self.dataset_uris = dataset_uris
         self.module = module
         self.workdir = workdir
         self.src_dir = src_dir
+        self.version = version
         self.__split_tasks()
         self._lock = threading.RLock()
 
@@ -33,7 +35,7 @@ class Scheduler:
             _step.status = STATUS.INIT
             for index in range(_step.task_num):
                 _step.gen_task(
-                    index, self.module, self.workdir, self.src_dir, self.dataset_uris
+                    index, self.module, self.workdir, self.src_dir, self.dataset_uris, self.version
                 )
 
     def schedule(self) -> None:
@@ -60,8 +62,8 @@ class Scheduler:
                     # executor.setDaemon()
                     _threads.append(_executor)
 
-        for t in _threads:
-            t.join()
+        for _t in _threads:
+            _t.join()
 
     def schedule_single_task(self, step_name: str, task_index: int):
         _steps = [step for step in self.steps if step_name == step.step_name]
@@ -116,7 +118,7 @@ class SingleTaskCallback(Callback):
 
 
 class Executor(threading.Thread):
-    def __init__(self, concurrency: int, tasks: list[Task], callback: Callback):
+    def __init__(self, concurrency: int, tasks: t.List[Task], callback: Callback):
         super().__init__()
         self.concurrency = concurrency
         self.tasks = tasks

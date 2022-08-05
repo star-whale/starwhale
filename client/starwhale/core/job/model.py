@@ -2,7 +2,7 @@ from pathlib import Path
 
 import yaml
 from loguru import logger
-
+import typing as t
 from starwhale.base.uri import URI
 from starwhale.core.job.loader import load_module
 
@@ -37,11 +37,14 @@ class Step:
         module: str,
         workdir: Path,
         src_dir: Path,
-        dataset_uris: list[URI],
+        dataset_uris: t.List[str],
+        version: str,
     ):
         self.tasks.append(
             Task(
                 context=Context(
+                    # todo id or version
+                    version=version,
                     step=self.step_name,
                     total=self.task_num,
                     index=index,
@@ -124,7 +127,7 @@ class Parser:
             logger.error("generator DAG error! reason:{}", "check is failed.")
 
     @staticmethod
-    def check(jobs: dict[str, list[Step]]) -> bool:
+    def check(jobs: t.Dict[str, t.List[Step]]) -> bool:
         # check
         checks = []
         for job in jobs.items():
@@ -162,8 +165,10 @@ class Context:
         step: str = "",
         total: int = 0,
         index: int = 0,
-        dataset_uris: list[URI] = None,
+        dataset_uris: t.List[str] = None,
+        version: str = "",
     ):
+        self.version = version
         self.step = step
         self.total = total
         self.index = index

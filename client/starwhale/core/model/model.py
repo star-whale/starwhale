@@ -206,10 +206,11 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     @classmethod
     def eval_user_handler(
         cls,
+        version: str,
         typ: str,
         src_dir: Path,
         workdir: Path,
-        dataset_uris: list[URI],
+        dataset_uris: t.List[str],
         model_yaml_name: str = DefaultYAMLName.MODEL,
         job_name: str = "default",
         step: str = "",
@@ -235,6 +236,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _steps = _jobs[job_name]
 
         _scheduler = Scheduler(
+            version=version,
             module=_module,
             workdir=workdir,
             src_dir=src_dir,
