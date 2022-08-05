@@ -545,13 +545,7 @@ def package_python_env(
     return True
 
 
-def activate_python_env(
-    mode: str,
-    identity: str,
-) -> None:
-    # TODO: switch shell python environment directly
-    console.print(":cake: run command in shell :cake:")
-
+def activate_python_env(mode: str, identity: str, interactive: bool) -> None:
     if mode == PythonRunEnv.VENV:
         cmd = f"source {identity}/bin/activate"
     elif mode == PythonRunEnv.CONDA:
@@ -559,6 +553,35 @@ def activate_python_env(
     else:
         raise NoSupportError(mode)
 
+    if interactive:
+        import shellingham
+
+        try:
+            _name, _bin = shellingham.detect_shell()
+        except shellingham.ShellDetectionFailure:
+            _name, _bin = "", ""
+
+        if _name == "zsh":
+            # https://zsh.sourceforge.io/Intro/intro_3.html
+            os.execl(
+                _bin,
+                _bin,
+                "-c",
+                f"""temp_dir={identity} && \
+                echo ". $HOME/.zshrc && {cmd}" > $temp_dir/.zshrc && \
+                ZDOTDIR=$temp_dir zsh -i""",
+            )
+        elif _name == "bash":
+            # https://www.gnu.org/software/bash/manual/html_node/Bash-Startup-Files.html
+            os.execl(
+                _bin, _bin, "-c", f'bash --rcfile <(echo ". "$HOME/.bashrc" && {cmd}")'
+            )
+        elif _name == "fish":
+            # https://fishshell.com/docs/current/language.html#configuration
+            os.execl(_bin, _bin, "-C", cmd)
+
+    # user executes the command manually
+    console.print(":cake: run command in shell :cake:")
     console.print(f"\t[red][bold]{cmd}")
 
 
@@ -569,7 +592,6 @@ def create_python_env(
     python_version: str = DEFAULT_PYTHON_VERSION,
     force: bool = False,
 ) -> str:
-
     if mode == PythonRunEnv.VENV:
         venvdir = workdir / ".venv"
         if venvdir.exists() and not force:
@@ -666,7 +688,8 @@ def is_venv() -> bool:
         [
             "python3",
             "-c",
-            "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))",  # noqa: E501
+            "import sys; print(sys.prefix != (getattr(sys, 'base_prefix', None) or (getattr(sys, 'real_prefix', None) or sys.prefix)))",
+            # noqa: E501
         ],
     )
     return "True" in output.decode() or get_venv_env() != ""

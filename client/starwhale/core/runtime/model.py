@@ -803,6 +803,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         mode: str,
         create_env: bool = False,
         force: bool = False,
+        interactive: bool = False,
     ) -> None:
         workdir = Path(workdir).absolute()
         console.print(f":printer: render runtime.yaml @ {workdir}")
@@ -833,7 +834,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
             elif mode == PythonRunEnv.CONDA:
                 conda_install_req(env_name=_id, req=sw_pkg, enable_pre=True)
 
-            activate_python_env(mode=mode, identity=_id)
+            activate_python_env(mode=mode, identity=_id, interactive=interactive)
 
     @classmethod
     def activate(cls, path: str = "", uri: str = "") -> None:
@@ -854,7 +855,9 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
         else:
             raise Exception("No uri or path to activate")
 
-        activate_python_env(mode=mode, identity=str(prefix_path.resolve()))
+        activate_python_env(
+            mode=mode, identity=str(prefix_path.resolve()), interactive=True
+        )
 
     @classmethod
     def lock(
