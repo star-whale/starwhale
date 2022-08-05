@@ -74,7 +74,7 @@ set_python() {
 
     echo "**** DETECT RUNTIME: ${_RUNTIME}"
 
-    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] ; then
+    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] || [ "$_RUNTIME" = "python3.10"] ; then
         _update_python_alter "$_RUNTIME"
     else
         _update_python_alter "python3.8"
@@ -111,19 +111,26 @@ welcome() {
     echo "===================================="
 }
 
-main() {
+eval_task_prepare(){
     welcome $1
     pre_config
     pre_check
     set_python
     set_pip_cache
     restore_activate_runtime
-
-    if [ "$1" = "cmp" ]; then
-        run_cmp
-    else
-        run_ppl
-    fi
 }
 
-main $1
+case "$1" in
+    pre_config)
+        pre_config
+        ;;
+    cmp)
+        eval_task_prepare $1 && run_cmp
+        ;;
+    ppl)
+        eval_task_prepare $1 && run_ppl
+        ;;
+    *)
+        exec "$@"
+        ;;
+esac
