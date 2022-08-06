@@ -20,6 +20,10 @@
     <img src="https://img.shields.io/github/license/star-whale/starwhale?style=flat">
 </a>
 
+<a href="https://pypi.org/project/starwhale/">
+    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/starwhale">
+</a>
+
 <a href="https://github.com/star-whale/starwhale/actions/workflows/client.yaml">
     <img src="https://github.com/star-whale/starwhale/actions/workflows/client.yaml/badge.svg">
 </a>
@@ -38,6 +42,10 @@
 
 <a href='https://artifacthub.io/packages/helm/starwhale/starwhale'>
     <img src='https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/starwhale' alt='Artifact Hub'/>
+</a>
+
+<a href="https://github.com/star-whale/starwhale/actions/workflows/e2e-test.yml">
+    <img src='https://github.com/star-whale/starwhale/actions/workflows/e2e-test.yml/badge.svg' alt='Starwhale E2E Test'>
 </a>
 
 </p>
