@@ -49,7 +49,7 @@ ci-lint:
 .POHNY: ci-mypy
 ci-mypy:
 	echo "run mypy"
-	mypy --python-version=3.7 .
+	mypy .
 
 .POHNY: ci-isort
 ci-isort:
