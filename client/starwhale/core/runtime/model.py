@@ -102,6 +102,7 @@ _list: t.Callable[[_t_mixed_str_list], t.List[str]] = (
 
 _SUPPORT_CUDA = ["11.3", "11.4", "11.5", "11.6", "11.7"]
 _SUPPORT_CUDNN = {"8": {"support_cuda_versions": ["11.3", "11.4", "11.5", "11.6"]}}
+_SUPPORT_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
 
 
 class Environment:
@@ -131,8 +132,10 @@ class Environment:
         if self.os not in (SupportOS.UBUNTU,):
             raise NoSupportError(f"environment.os {self.os}")
 
-        if not self.python.startswith("3."):
-            raise ConfigFormatError(f"only support Python3, set {self.python}")
+        if self.python not in _SUPPORT_PYTHON_VERSIONS:
+            raise ConfigFormatError(
+                f"only support Python[{_SUPPORT_PYTHON_VERSIONS}], set {self.python}"
+            )
 
         if self.cuda and self.cuda not in _SUPPORT_CUDA:
             raise NoSupportError(
