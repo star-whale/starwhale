@@ -25,7 +25,7 @@ class StreamWrapper:
         # TODO: splitlines?
         self.logger.opt(depth=1).log(self.level, s.rstrip())
 
-    def __getatt__(self, name: str) -> t.Any:
+    def __getattr__(self, name: str) -> t.Any:
         return getattr(self.stream, name)
 
     def flush(self) -> None:
