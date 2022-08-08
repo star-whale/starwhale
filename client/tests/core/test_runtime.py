@@ -149,6 +149,8 @@ class StandaloneRuntimeTestCase(TestCase):
         sw = SWCliConfigMixed()
         workdir = "/home/starwhale/myproject"
         runtime_config = self.get_runtime_config()
+        runtime_config["environment"]["cuda"] = "11.5"
+        runtime_config["environment"]["cudnn"] = "8"
         self.fs.create_file(
             os.path.join(workdir, DefaultYAMLName.RUNTIME),
             contents=yaml.safe_dump(runtime_config),
@@ -186,6 +188,11 @@ class StandaloneRuntimeTestCase(TestCase):
         assert "latest" in sr.tag.list()
 
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
+
+        assert (
+            _manifest["base_image"]
+            == "ghcr.io/star-whale/starwhale:latest-cuda11.5-cudnn8"
+        )
 
         assert (
             _manifest["environment"]["python"]

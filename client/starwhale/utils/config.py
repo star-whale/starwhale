@@ -11,11 +11,11 @@ from starwhale.consts import (
     SW_CLI_CONFIG,
     DEFAULT_PROJECT,
     DEFAULT_INSTANCE,
-    SW_LOCAL_STORAGE,
     ENV_SW_CLI_CONFIG,
     STANDALONE_INSTANCE,
     ENV_SW_LOCAL_STORAGE,
     LOCAL_CONFIG_VERSION,
+    DEFAULT_SW_LOCAL_STORAGE,
 )
 from starwhale.utils.error import NotFoundError
 
@@ -75,7 +75,7 @@ def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
             )
         },
         current_instance=DEFAULT_INSTANCE,
-        storage=dict(root=env_root or str(SW_LOCAL_STORAGE.resolve())),
+        storage=dict(root=env_root or str(DEFAULT_SW_LOCAL_STORAGE.resolve())),
     )
     render_swcli_config(c, fpath)
     return c

@@ -42,14 +42,14 @@ class ProjectTestCase(TestCase):
         ok, reason = sp.create()
         assert ok
         assert "created" in reason
-        assert ".cache/starwhale/test" in reason
+        assert ".starwhale/test" in reason
         assert (
             sp.loc.absolute() == (Path(_config["storage"]["root"]) / "test").absolute()
         )
 
         info = sp.info()
         assert "test" == info["name"]
-        assert ".cache/starwhale/test" in info["location"]
+        assert ".starwhale/test" in info["location"]
 
         projects, _ = StandaloneProject.list()
         assert len(projects) == 2

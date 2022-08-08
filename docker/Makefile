@@ -50,7 +50,7 @@ define push-image
 endef
 
 define build-starwhale
-	docker buildx build --platform linux/arm64,linux/amd64 \
+	docker buildx build --platform $(3) \
 		--build-arg BASE_IMAGE=$(1) \
 		--build-arg SW_VERSION=$(PYPI_RELEASE_VERSION) \
 		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
@@ -66,7 +66,7 @@ define build-starwhale
 endef
 
 define build-starwhale-cuda
-	$(call build-starwhale,${GHCR_IO_REPO}/cuda:$(1)-base${FIXED_VERSION_BASE_IMAGE},-cuda$(1))
+	$(call build-starwhale,${GHCR_IO_REPO}/cuda:$(1)-base${FIXED_VERSION_BASE_IMAGE},-cuda$(1),$(2))
 endef
 
 
@@ -88,19 +88,11 @@ build-release-base:
 		-t $(GHCR_IO_REPO)/base:latest \
 		--push -f Dockerfile.base .
 
-#Parallel to build starwhale image
 build-release-starwhale:
-	$(call build-starwhale,${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE},)
+	$(call build-starwhale,${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE},,$(arch))
 
-	$(call build-starwhale-cuda,11.3)
-	$(call build-starwhale-cuda,11.3-cudnn8)
-	$(call build-starwhale-cuda,11.4)
-	$(call build-starwhale-cuda,11.4-cudnn8)
-	$(call build-starwhale-cuda,11.5)
-	$(call build-starwhale-cuda,11.5-cudnn8)
-	$(call build-starwhale-cuda,11.6)
-	$(call build-starwhale-cuda,11.6-cudnn8)
-	$(call build-starwhale-cuda,11.7)
+build-release-starwhale-cuda:
+	$(call build-starwhale-cuda,$(version),$(arch))
 
 build-cuda:
 	cd cuda; python3 render.py --all --push --base-image $(GHCR_BASE_IMAGE)

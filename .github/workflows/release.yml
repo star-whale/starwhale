@@ -63,6 +63,11 @@ jobs:
     needs:
       - pypi-release
 
+    strategy:
+      matrix:
+        cuda_version: ["", "11.3", "11.3-cudnn8", "11.4", "11.4-cudnn8", "11.5", "11.5-cudnn8", "11.6", "11.6-cudnn8", "11.7"]
+        arch: ["linux/arm64", "linux/amd64"]
+
     steps:
       - uses: actions/checkout@v3
 
@@ -97,7 +102,11 @@ jobs:
           RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
           PYPI_RELEASE_VERSION: ${{ steps.tag.outputs.tag }}
         run: |
-          make build-release-starwhale
+          if [ "${{matrix.cuda_version}}" = "" ]; then
+            make build-release-starwhale arch=${{matrix.arch}}
+          else
+            make build-release-starwhale-cuda arch=${{matrix.arch}} version=${{matrix.cuda_version}}
+          fi
 
   server-image-release:
     runs-on: ubuntu-latest
