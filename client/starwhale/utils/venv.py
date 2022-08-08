@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import typing as t
 import tarfile
 import platform
@@ -560,6 +561,9 @@ def activate_python_env(mode: str, identity: str, interactive: bool) -> None:
             _name, _bin = shellingham.detect_shell()
         except shellingham.ShellDetectionFailure:
             _name, _bin = "", ""
+
+        if not _bin.startswith("/") or _name == _bin:
+            _bin = shutil.which(_name) or _bin
 
         if _name == "zsh":
             # https://zsh.sourceforge.io/Intro/intro_3.html
