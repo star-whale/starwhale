@@ -22,8 +22,12 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NotFoundError
+from . import wrapper
 
-from .loader import DataField, DataLoader, get_data_loader
+from .loader import DataField, DataLoader, get_data_loader, JSONLineDataLoader, SimpleDataLoader
+from .wrapper import Evaluation
+from ...core.job.model import Context
+from ...utils.config import SWCliConfigMixed
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
@@ -50,16 +54,16 @@ class _RunConfig:
         self.status_dir = _p(status_dir, "status")  # type: ignore
         self.log_dir = _p(log_dir, "log")  # type: ignore
         self.result_dir = _p(result_dir, "result")  # type: ignore
-        self.swds_config = self.load_swds_config(swds_config_path)
+        self.swds_config_path = swds_config_path # self.load_swds_config(swds_config_path)
 
         # TODO: graceful method
         self._prepare()
 
-    def load_swds_config(self, path: _ptype) -> t.Any:
-        if not path:
+    def load_swds_config(self) -> t.Any:
+        if not self.swds_config_path:
             path = Path(_TASK_ROOT_DIR) / "config" / DEFAULT_INPUT_JSON_FNAME
 
-        path = Path(path) if isinstance(path, str) else path
+        path = Path(self.swds_config_path) if isinstance(self.swds_config_path, str) else self.swds_config_path
         if path.exists():
             # TODO: validate swds config
             return json.load(path.open("r"))
@@ -107,15 +111,17 @@ class PipelineHandler(metaclass=ABCMeta):
 
     def __init__(
         self,
+        context: Context,
         merge_label: bool = True,
         output_type: str = ResultOutputType.JSONL,
         ignore_error: bool = False,
     ) -> None:
+        self.context = context
         # TODO: add args for compare result and label directly
         self.merge_label = merge_label
         self.output_type = output_type
         self.ignore_error = ignore_error
-        # TODO: remove it(local fs) when datastore complete
+        # TODO: use datastore when dataset complete
         self.config = _RunConfig.create_by_env()
 
         self.logger, self._sw_logger = self._init_logger()
@@ -124,19 +130,24 @@ class PipelineHandler(metaclass=ABCMeta):
         self._orig_stdout = sys.stdout
         self._orig_stderr = sys.stderr
 
-        # TODO: use datastore
-        self._data_loader = get_data_loader(
-            self.config.swds_config, self._sw_logger, deserializer=self.deserialize
-        )
         # TODO: split status/result files
-        self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)  # type: ignore
-        self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
+        # self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)  # type: ignore
+        # self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
 
         self._ppl_data_field = "ppl"
         self._label_field = "label"
-
+        self._sw_config = SWCliConfigMixed()
+        self._sw_logger.debug(f"init Pipeline ...")
+        self._datastore = self._init_datastore()
+        self._simple_step_name = ""
         self._monkey_patch()
-        self._update_status(self.STATUS.START)
+
+    def _init_datastore(self) -> Evaluation:
+        os.environ['SW_ROOT_PATH'] = str(self._sw_config.datastore_dir)
+        os.environ['SW_PROJECT'] = self.context.project
+        os.environ['SW_EVAL_ID'] = self.context.version
+        self._sw_logger.debug(f"datastore path:{str(self._sw_config.datastore_dir)}")
+        return wrapper.Evaluation()
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
         # TODO: remove logger first?
@@ -195,16 +206,17 @@ class PipelineHandler(metaclass=ABCMeta):
         if self._stderr_changed:
             sys.stderr = self._orig_stderr
 
-        try:
-            self._result_writer.close()
-        except Exception as e:
-            self._sw_logger.exception(f"result writer close exception: {e}")
-
-        try:
-            self._status_writer.close()
-        except Exception as e:
-            self._sw_logger.exception(f"status writer close exception: {e}")
-
+        # try:
+        #     self._result_writer.close()
+        # except Exception as e:
+        #     self._sw_logger.exception(f"result writer close exception: {e}")
+        #
+        # try:
+        #     self._status_writer.close()
+        # except Exception as e:
+        #     self._sw_logger.exception(f"status writer close exception: {e}")
+        self._sw_logger.debug(f"datastore close:{self._datastore.eval_id}")
+        self._datastore.close()
         self.logger.remove()
         self._sw_logger.remove()
 
@@ -261,20 +273,46 @@ class PipelineHandler(metaclass=ABCMeta):
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_cmp(self) -> None:
+        self._simple_step_name = "cmp"
+        self._update_status(self.STATUS.START)
         now = now_str()  # type: ignore
         try:
-            output = self.cmp(self._data_loader)
+            _ppl_results = [result
+                            for result in self._datastore.get_results()
+                            if result["id"].startswith("ppl_result")]
+            _data_loader = SimpleDataLoader(_ppl_results, self._sw_logger, deserializer=self.deserialize)
+            output = self.cmp(_data_loader)
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
-            self._status_writer.write({"time": now, "status": False, "exception": e})
+            # self._status_writer.write({"time": now, "status": False, "exception": e})
+            self._datastore.log_result(
+                data_id=f"cmp_log_task_{self.context.index}",
+                result={"time": now, "status": False, "exception": e}
+            )
             raise
         else:
-            self._status_writer.write({"time": now, "status": True, "exception": ""})
-            self._result_writer.write(output)
+            # self._status_writer.write({"time": now, "status": True, "exception": ""})
+            self._datastore.log_result(
+                data_id=f"cmp_log_task_{self.context.index}",
+                result=json.dumps({"time": now, "status": True, "exception": ""})
+            )
+            # self._result_writer.write(output)
+            self._datastore.log_result(
+                data_id=f"cmp_result_task_{self.context.index}",
+                result=output
+            )
+            self._sw_logger.debug("cmp result:{}", output)
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
-        for data, label in self._data_loader:
+        self._simple_step_name = "ppl"
+        self._update_status(self.STATUS.START)
+
+        # TODO: use datastore when dataset complete
+        _data_loader = get_data_loader(
+            self.config.load_swds_config(), self._sw_logger, deserializer=self.deserialize
+        )
+        for data, label in _data_loader:
             if data.idx != label.idx:
                 msg = (
                     f"data index[{data.idx}] is not equal label index [{label.idx}], "
@@ -310,6 +348,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 exception = None
 
             self._do_record(data, label, exception, *pred)
+        self._sw_logger.debug(f"ppl result:{len([item for item in self._datastore.get_results()])}")
 
     def _do_record(
         self,
@@ -318,14 +357,17 @@ class PipelineHandler(metaclass=ABCMeta):
         exception: t.Union[None, Exception],
         *args: t.Any,
     ) -> None:
-        self._status_writer.write(
-            {
-                "time": now_str(),  # type: ignore
-                "status": exception is None,
-                "exception": str(exception),
-                "index": data.idx,
-                "output_tuple_len": len(args),
-            }
+        _timeline = {
+            "time": now_str(),  # type: ignore
+            "status": exception is None,
+            "exception": str(exception),
+            "index": data.idx,
+            "output_tuple_len": len(args),
+        }
+        # self._status_writer.write(_timeline)
+        self._datastore.log_result(
+            data_id=f"ppl_log_task_{self.context.index}_data_{data.idx}",
+            result=json.dumps(_timeline)
         )
 
         # TODO: output maybe cannot be jsonized
@@ -355,9 +397,17 @@ class PipelineHandler(metaclass=ABCMeta):
                 else:
                     result["label"] = ""
 
-        self._result_writer.write(result)
+        # self._result_writer.write(result)
+        self._datastore.log_result(
+            data_id=f"ppl_result_task_{self.context.index}_data_{data.idx}",
+            index=data.idx,
+            result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),
+            batch=data.batch_size,
+        )
+        # self._sw_logger.debug(f"ppl data:{data.idx} result:{result}")
         self._update_status(self.STATUS.RUNNING)
 
     def _update_status(self, status: str) -> None:
-        fpath = self.config.status_dir / CURRENT_FNAME
-        ensure_file(fpath, status)
+        # fpath = self.config.status_dir / CURRENT_FNAME
+        # ensure_file(fpath, status)
+        self._datastore.log_result(data_id=f"{self._simple_step_name}_status", result=status)

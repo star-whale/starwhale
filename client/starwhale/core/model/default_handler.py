@@ -2,6 +2,8 @@ import json
 from typing import Any
 from pathlib import Path
 
+from loguru import logger
+
 from starwhale.utils import console
 from starwhale.consts import (
     JSON_INDENT,
@@ -67,7 +69,8 @@ class DefaultPipeline:
             }
         )
         _cls = self._get_cls(_context.src_dir)
-        with _cls() as _obj:
+        logger.debug(f"cls path:{_context.src_dir}")
+        with _cls(context=_context) as _obj:
             _obj._starwhale_internal_run_ppl()
 
         console.print(f":clap: finish run {_context.step}-{_context.index}: {_obj}")
@@ -75,21 +78,21 @@ class DefaultPipeline:
     @step(dependency="DefaultPipeline.ppl")
     def cmp(self, _context: Context):
         # ensure cmp dir
-        from starwhale.api._impl.model import _RunConfig
+        # from starwhale.api._impl.model import _RunConfig
 
         # todo
-        _RunConfig.set_env(
-            {
-                "input_config": _context.workdir / "cmp" / RunSubDirType.CONFIG / DEFAULT_INPUT_JSON_FNAME,
-            }
-        )
+        # _RunConfig.set_env(
+        #     {
+        #         "input_config": _context.workdir / "cmp" / RunSubDirType.CONFIG / DEFAULT_INPUT_JSON_FNAME,
+        #     }
+        # )
 
         # TODO: generate input json for the time being, to be replaced by new dataset
-        _gen_jsonl_fuse_json(_context)
+        # _gen_jsonl_fuse_json(_context)
 
         _cls = self._get_cls(_context.src_dir)
 
-        with _cls() as _obj:
+        with _cls(context=_context) as _obj:
             _obj._starwhale_internal_run_cmp()
 
         console.print(f":clap: finish run {_context.step}: {_obj}")

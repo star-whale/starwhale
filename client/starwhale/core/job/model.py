@@ -199,17 +199,8 @@ class Task:
         self.status = status
         self.module = module
         self.src_dir = src_dir
-        self._sw_config = SWCliConfigMixed()
-        # self._init()
-
-    def _init(self):
-        os.environ['SW_ROOT_PATH'] = str(self._sw_config.datastore_dir)
-        os.environ['SW_PROJECT'] = self.context.project
-        self.datastore = wrapper.Evaluation(self.context.version)
 
     def execute(self) -> bool:
-        # must execute at this scope!!
-        self._init()
         """
         call function from module
         :return: function results
