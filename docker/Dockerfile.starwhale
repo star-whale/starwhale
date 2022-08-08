@@ -10,7 +10,7 @@ ARG LOCAL_PYPI_HOSTNAME=host.nexus
 ARG PORT_NEXUS=8081
 ARG ENABLE_E2E_TEST_PYPI_REPO=0
 COPY external/config-e2e-pypi-repo.sh /tmp/
-RUN chmod u+x /tmp/config-e2e-pypi-repo.sh && /tmp/config-e2e-pypi-repo.sh ${ENABLE_E2E_TEST_PYPI_REPO}} ${LOCAL_PYPI_HOSTNAME} ${PORT_NEXUS}
+RUN chmod u+x /tmp/config-e2e-pypi-repo.sh && /tmp/config-e2e-pypi-repo.sh ${ENABLE_E2E_TEST_PYPI_REPO} ${LOCAL_PYPI_HOSTNAME} ${PORT_NEXUS}
 
 RUN rm -rf /opt/starwhale.venv \
     && virtualenv /opt/starwhale.venv --python 3.8 \
