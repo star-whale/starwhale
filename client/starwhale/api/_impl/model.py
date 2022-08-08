@@ -146,7 +146,7 @@ class PipelineHandler(metaclass=ABCMeta):
         os.environ['SW_ROOT_PATH'] = str(self._sw_config.datastore_dir)
         os.environ['SW_PROJECT'] = self.context.project
         os.environ['SW_EVAL_ID'] = self.context.version
-        self._sw_logger.debug(f"datastore path:{str(self._sw_config.datastore_dir)}")
+        self._sw_logger.debug(f"datastore path:{str(self._sw_config.datastore_dir)}, eval_id:{self.context.version}")
         return wrapper.Evaluation()
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
@@ -277,9 +277,12 @@ class PipelineHandler(metaclass=ABCMeta):
         self._update_status(self.STATUS.START)
         now = now_str()  # type: ignore
         try:
+            _all_results = [result
+                            for result in self._datastore.get_results()]
             _ppl_results = [result
                             for result in self._datastore.get_results()
                             if result["id"].startswith("ppl_result")]
+            self._sw_logger.debug("cmp data size:{}, all size:{}", len(_ppl_results), len(_all_results))
             _data_loader = SimpleDataLoader(_ppl_results, self._sw_logger, deserializer=self.deserialize)
             output = self.cmp(_data_loader)
         except Exception as e:
@@ -287,7 +290,7 @@ class PipelineHandler(metaclass=ABCMeta):
             # self._status_writer.write({"time": now, "status": False, "exception": e})
             self._datastore.log_result(
                 data_id=f"cmp_log_task_{self.context.index}",
-                result={"time": now, "status": False, "exception": e}
+                result=json.dumps({"time": now, "status": False, "exception": str(e)})
             )
             raise
         else:
@@ -301,6 +304,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 data_id=f"cmp_result_task_{self.context.index}",
                 result=output
             )
+            self._datastore.dump()
             self._sw_logger.debug("cmp result:{}", output)
 
     @_record_status  # type: ignore
@@ -349,6 +353,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
             self._do_record(data, label, exception, *pred)
         self._sw_logger.debug(f"ppl result:{len([item for item in self._datastore.get_results()])}")
+        self._datastore.dump()
 
     def _do_record(
         self,

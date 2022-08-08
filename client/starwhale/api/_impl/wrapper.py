@@ -72,6 +72,9 @@ class Evaluation(Logger):
             [(self._results_table_name, "result", False)]
         )
 
+    def dump(self):
+        self._data_store.dump()
+
 
 class Dataset(Logger):
     def __init__(self, dataset_id: str) -> None:

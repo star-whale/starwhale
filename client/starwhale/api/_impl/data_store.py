@@ -10,7 +10,10 @@ from typing import Any, Set, cast, Dict, List, Tuple, Iterator, Optional
 import numpy as np
 import pyarrow as pa  # type: ignore
 import pyarrow.parquet as pq  # type: ignore
+from loguru import logger
 from typing_extensions import Protocol
+
+from starwhale.utils.fs import ensure_dir
 
 
 class Type:
@@ -526,7 +529,7 @@ class MemoryTable:
     def dump(self, root_path: str) -> None:
         path = _get_table_path(root_path, self.table_name)
         if not os.path.exists(path):
-            os.mkdir(path)
+            ensure_dir(path)
         if not os.path.isdir(path):
             raise RuntimeError(f"{path} is not a directory")
         max_index = -1
@@ -688,6 +691,7 @@ class LocalDataStore:
 
     def dump(self) -> None:
         for table in self.tables.values():
+            logger.debug(f"dump {table.table_name} to {self.root_path}")
             table.dump(self.root_path)
 
 
@@ -706,6 +710,9 @@ class RemoteDataStore:
     ) -> Iterator[Dict[str, Any]]:
         ...
 
+    def dump(self) -> None:
+        ...
+
 
 class DataStore(Protocol):
     def put(
@@ -720,6 +727,9 @@ class DataStore(Protocol):
         start: Optional[Any] = None,
         end: Optional[Any] = None,
     ) -> Iterator[Dict[str, Any]]:
+        ...
+
+    def dump(self):
         ...
 
 
