@@ -242,35 +242,35 @@ class EvalExecutor:
         from starwhale.core.runtime.process import Process as RuntimeProcess
 
         # TODO:
-        # if self.runtime_uri:
-        #     RuntimeProcess.from_runtime_uri(
-        #         uri=self.runtime_uri,
-        #         target=StandaloneModel.eval_user_handler,
-        #         args=(
-        #             self.project_uri.project,
-        #             self._version,
-        #             typ,
-        #             self._model_dir,
-        #             self._workdir,
-        #             self.dataset_uris,
-        #             DefaultYAMLName.MODEL,
-        #             "default",
-        #             step,
-        #             task_index,
-        #         ),
-        #         runtime_restore=self.runtime_restore,
-        #     ).run()
-        # else:
-        StandaloneModel.eval_user_handler(
-            project=self.project_uri.project,
-            version=self._version,
-            typ=typ,
-            src_dir=self._model_dir,
-            workdir=self._workdir,
-            dataset_uris=[u.full_uri for u in self.dataset_uris],
-            step=step,
-            task_index=task_index,
-        )
+        if self.runtime_uri and not self.use_docker:
+            RuntimeProcess.from_runtime_uri(
+                uri=self.runtime_uri,
+                target=StandaloneModel.eval_user_handler,
+                args=(
+                    self.project_uri.project,
+                    self._version,
+                    typ,
+                    self._model_dir,
+                    self._workdir,
+                    self.dataset_uris,
+                    DefaultYAMLName.MODEL,
+                    "default",
+                    step,
+                    task_index,
+                ),
+                runtime_restore=self.runtime_restore,
+            ).run()
+        else:
+            StandaloneModel.eval_user_handler(
+                project=self.project_uri.project,
+                version=self._version,
+                typ=typ,
+                src_dir=self._model_dir,
+                workdir=self._workdir,
+                dataset_uris=[u.full_uri for u in self.dataset_uris],
+                step=step,
+                task_index=task_index,
+            )
 
     def _do_run_cmd_in_container(self, typ: str, step: str, task_index: int) -> None:
         cmd = self._gen_run_container_cmd(typ, step, task_index)

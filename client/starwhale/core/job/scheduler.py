@@ -1,4 +1,3 @@
-import os
 import time
 import typing as t
 import threading
@@ -8,7 +7,6 @@ from pathlib import Path
 
 from loguru import logger
 
-from starwhale.base.uri import URI
 from starwhale.core.job.model import Step, Task, STATUS
 
 
@@ -77,7 +75,7 @@ class Scheduler:
 
     def schedule_single_task(self, step_name: str, task_index: int):
         _steps = [step for step in self.steps if step_name == step.step_name]
-        if len(_steps) is 0:
+        if len(_steps) == 0:
             raise RuntimeError(f"step:{step_name} not found")
         _step = _steps[0]
         if task_index >= _step.task_num:

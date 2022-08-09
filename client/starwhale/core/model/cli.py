@@ -4,7 +4,6 @@ import click
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.type import EvalTaskType
-from starwhale.core.eval.view import JobTermView
 
 from .view import get_term_view, ModelTermView
 

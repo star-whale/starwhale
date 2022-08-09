@@ -17,8 +17,8 @@ import loguru
 import jsonlines
 
 from starwhale.utils import now_str, in_production
-from starwhale.consts import CURRENT_FNAME, DEFAULT_INPUT_JSON_FNAME
-from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.consts import DEFAULT_INPUT_JSON_FNAME
+from starwhale.utils.fs import ensure_dir
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NotFoundError
@@ -29,7 +29,6 @@ from .loader import (
     DataLoader,
     get_data_loader,
     SimpleDataLoader,
-    JSONLineDataLoader,
 )
 from .wrapper import Evaluation
 from ...utils.config import SWCliConfigMixed
@@ -149,7 +148,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self._ppl_data_field = "result"
         self._label_field = "label"
         self._sw_config = SWCliConfigMixed()
-        self._sw_logger.debug(f"init Pipeline ...")
+        self._sw_logger.debug("init Pipeline ...")
         self._datastore = self._init_datastore()
         self._simple_step_name = ""
         self._monkey_patch()

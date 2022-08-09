@@ -28,12 +28,10 @@ from starwhale.utils.fs import move_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
-from starwhale.utils.load import import_cls
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
-from starwhale.core.job.model import Parser, Context
+from starwhale.core.job.model import Parser
 from starwhale.utils.progress import run_with_progress_bar
-from starwhale.api._impl.loader import DataLoader
 from starwhale.base.bundle_copy import BundleCopy
 from starwhale.core.job.scheduler import Scheduler
 
@@ -218,7 +216,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         task_index: int = 0,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
-        from starwhale.api._impl.model import _RunConfig
+        # from starwhale.api._impl.model import _RunConfig
 
         if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             raise NoSupportError(typ)

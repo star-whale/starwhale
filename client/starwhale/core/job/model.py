@@ -1,12 +1,9 @@
-import os
 import typing as t
 from pathlib import Path
 
 import yaml
 from loguru import logger
 
-from starwhale.api._impl import wrapper
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.job.loader import load_module
 
 

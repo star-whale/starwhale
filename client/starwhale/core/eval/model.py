@@ -18,7 +18,6 @@ from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
-from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .store import JobStorage
 from .executor import EvalExecutor
