@@ -48,11 +48,12 @@ start_minikube() {
 }
 
 create_daemon_json() {
-  cat /etc/docker/daemon.json
+  docker info
   sudo chmod 666 /etc/docker/daemon.json
   sudo echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /etc/docker/daemon.json
   cat /etc/docker/daemon.json
   sudo kill -1 `pidof dockerd`
+  docker info
 #  sudo systemctl daemon-reload
 #  sudo systemctl restart docker
 #  while true
@@ -70,8 +71,6 @@ create_daemon_json() {
 
 start_nexus() {
   docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
-  sudo cp /etc/hosts /etc/hosts.bak_e2e
-  sudo echo "$IP_MINIKUBE_BRIDGE $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
 }
 
 build_swcli() {
@@ -241,7 +240,7 @@ main() {
   declare_env
 #  create_daemon_json_for_taskset
   create_daemon_json
-#  start_minikube
+  start_minikube
   start_nexus
 #  overwrite_pip_config
 #  overwrite_pypirc
@@ -250,6 +249,7 @@ main() {
   create_service_check_file
   check_nexus_service
   create_repository_in_nexus
+  sleep 3
   docker login http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   echo "docker login success"
 #  upload_pypi_to_nexus
