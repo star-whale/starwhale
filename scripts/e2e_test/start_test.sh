@@ -42,7 +42,7 @@ declare_env() {
 start_minikube() {
   if in_github_action; then
       minikube delete --all
-      minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+      minikube start --insecure-registry "$NEXUS_HOSTNAME"
       ifconfig
   fi
 }
@@ -216,22 +216,20 @@ main() {
   declare_env
   start_nexus
   start_minikube
-#  overwrite_pip_config
-#  overwrite_pypirc
-#  build_swcli
-#  build_server_image
+  overwrite_pip_config
+  overwrite_pypirc
+  build_swcli
+  build_server_image
   create_service_check_file
   check_nexus_service
   create_repository_in_nexus
-  docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
-  echo "docker login success"
-#  upload_pypi_to_nexus
-#  buid_runtime_image
-#  push_images_to_nexus
-#  start_docker_compose
-#  check_controller_service
-#  standalone_test
-#  api_test
+  upload_pypi_to_nexus
+  buid_runtime_image
+  push_images_to_nexus
+  start_docker_compose
+  check_controller_service
+  standalone_test
+  api_test
 }
 
 main
