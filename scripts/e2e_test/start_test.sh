@@ -250,7 +250,7 @@ main() {
   create_service_check_file
   check_nexus_service
   create_repository_in_nexus
-  docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
+  docker login http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   echo "docker login success"
 #  upload_pypi_to_nexus
 #  buid_runtime_image
