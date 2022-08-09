@@ -1,6 +1,8 @@
 name: End to End test for starwhale
 
 on:
+  push:
+    branches: [ e2e_fix ]
   schedule:
     - cron: "34 10,13 * * *"
 
