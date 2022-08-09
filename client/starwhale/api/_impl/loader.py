@@ -112,6 +112,9 @@ class SimpleDataLoader(DataLoader):
 
     def __iter__(self) -> t.Any:
         for _data in self.datas:
+            if self.deserializer:
+                yield self.deserializer(_data)
+                continue
             yield _data
 
 

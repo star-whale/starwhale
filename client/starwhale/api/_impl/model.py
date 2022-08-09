@@ -134,7 +134,7 @@ class PipelineHandler(metaclass=ABCMeta):
         # self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)  # type: ignore
         # self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
 
-        self._ppl_data_field = "ppl"
+        self._ppl_data_field = "result"
         self._label_field = "label"
         self._sw_config = SWCliConfigMixed()
         self._sw_logger.debug(f"init Pipeline ...")
@@ -250,6 +250,11 @@ class PipelineHandler(metaclass=ABCMeta):
         ret[self._label_field] = self.label_data_deserialize(ret[self._label_field])
         return ret
 
+    def deserialize_new(self, data: t.Dict[str, t.Any]) -> t.Any:
+        data[self._ppl_data_field] = self.ppl_data_deserialize(data[self._ppl_data_field])
+        data[self._label_field] = self.label_data_deserialize(data[self._label_field])
+        return data
+
     def handle_label(self, label: bytes, batch_size: int, **kw: t.Any) -> t.Any:
         return label.decode()
 
@@ -277,13 +282,11 @@ class PipelineHandler(metaclass=ABCMeta):
         self._update_status(self.STATUS.START)
         now = now_str()  # type: ignore
         try:
-            _all_results = [result
-                            for result in self._datastore.get_results()]
             _ppl_results = [result
                             for result in self._datastore.get_results()
                             if result["id"].startswith("ppl_result")]
-            self._sw_logger.debug("cmp data size:{}, all size:{}", len(_ppl_results), len(_all_results))
-            _data_loader = SimpleDataLoader(_ppl_results, self._sw_logger, deserializer=self.deserialize)
+            self._sw_logger.debug("cmp data size:{}", len(_ppl_results))
+            _data_loader = SimpleDataLoader(_ppl_results, self._sw_logger, deserializer=self.deserialize_new)
             output = self.cmp(_data_loader)
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
@@ -299,13 +302,12 @@ class PipelineHandler(metaclass=ABCMeta):
                 data_id=f"cmp_log_task_{self.context.index}",
                 result=json.dumps({"time": now, "status": True, "exception": ""})
             )
+            self._sw_logger.debug("cmp result:{}", output)
             # self._result_writer.write(output)
-            self._datastore.log_result(
-                data_id=f"cmp_result_task_{self.context.index}",
-                result=output
+            self._datastore.log_metrics(
+                output
             )
             self._datastore.dump()
-            self._sw_logger.debug("cmp result:{}", output)
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
@@ -375,14 +377,7 @@ class PipelineHandler(metaclass=ABCMeta):
             result=json.dumps(_timeline)
         )
 
-        # TODO: output maybe cannot be jsonized
-        result = {
-            "index": data.idx,
-            self._ppl_data_field: base64.b64encode(
-                self.ppl_data_serialize(*args)
-            ).decode("ascii"),
-            "batch": data.batch_size,
-        }
+        _label = ""
         if self.merge_label:
             try:
                 label = self.handle_label(
@@ -391,16 +386,14 @@ class PipelineHandler(metaclass=ABCMeta):
                     index=label.idx,
                     size=label.data_size,
                 )
-                result[self._label_field] = base64.b64encode(
-                    self.label_data_serialize(label)
-                ).decode("ascii")
+                _label = base64.b64encode(self.label_data_serialize(label)).decode("ascii")
             except Exception as e:
                 self._sw_logger.exception(f"{label.data!r} label handle exception:{e}")
                 if not self.ignore_error:
                     self._update_status(self.STATUS.FAILED)
                     raise
                 else:
-                    result["label"] = ""
+                    _label = ""
 
         # self._result_writer.write(result)
         self._datastore.log_result(
@@ -408,6 +401,7 @@ class PipelineHandler(metaclass=ABCMeta):
             index=data.idx,
             result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),
             batch=data.batch_size,
+            label=_label
         )
         # self._sw_logger.debug(f"ppl data:{data.idx} result:{result}")
         self._update_status(self.STATUS.RUNNING)
