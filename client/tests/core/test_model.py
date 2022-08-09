@@ -152,10 +152,15 @@ class StandaloneModelTestCase(TestCase):
         req.request(
             HTTPMethod.POST,
             f"{base_url}/login",
-            json={"data": {"role": {"roleName": "admin"}}},
+            json={"data": {"name": "foo", "role": {"roleName": "admin"}}},
             headers={"Authorization": "token"},
         )
-        InstanceTermView().login("http://1.1.0.0:8182", "foo", "bar", alias="remote")
+        InstanceTermView().login(
+            "http://1.1.0.0:8182",
+            alias="remote",
+            username="foo",
+            password="bar",
+        )
         instances = InstanceTermView().list()
         assert len(instances) == 2  # local and remote
 

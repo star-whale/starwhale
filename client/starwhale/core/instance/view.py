@@ -32,23 +32,21 @@ class InstanceTermView(BaseTermView):
         else:
             console.print(f":clap: select {self.current_instance} instance")
 
-    def login(self, instance: str, username: str, password: str, alias: str) -> None:
+    def login(self, instance: str, alias: str, **kw: str) -> None:
         if instance == STANDALONE_INSTANCE:
             console.print(f":pinching_hand: skip {instance} instance login")
             return
 
         instance = instance or self.sw_remote_addr
         server = fmt_http_server(instance)
-        url = f"{server}/api/{SW_API_VERSION}/login"
-        r = requests.post(
-            url,
-            timeout=DEFAULT_HTTP_TIMEOUT,
-            data={"userName": username, "userPwd": password},
-        )
+        if kw.get("token"):
+            r = self._login_request_by_token(server, kw["token"])
+        else:
+            r = self._login_request_by_username(server, kw)
 
         if r.status_code == HTTPStatus.OK:
             console.print(f":man_cook: login {server} successfully!")
-            token = r.headers.get("Authorization")
+            token = r.headers.get("Authorization") or kw.get("token")
             if not token:
                 console.print("cannot get token, please contract starwhale")
                 sys.exit(1)
@@ -58,13 +56,36 @@ class InstanceTermView(BaseTermView):
 
             self.update_instance(
                 uri=server,
-                user_name=username,
+                user_name=_d.get("name", ""),
                 user_role=_role or UserRoleType.NORMAL,
                 sw_token=token,
                 alias=alias,
             )
         else:
             wrap_sw_error_resp(r, "login failed!", exit=True)
+
+    def _login_request_by_token(self, server: str, token: str) -> requests.Response:
+        url = f"{server}/api/{SW_API_VERSION}/user/current"
+        return requests.get(
+            url,
+            timeout=DEFAULT_HTTP_TIMEOUT,
+            verify=False,
+            headers={"Authorization": token},
+        )
+
+    def _login_request_by_username(
+        self, server: str, auth_request: t.Dict[str, str]
+    ) -> requests.Response:
+        url = f"{server}/api/{SW_API_VERSION}/login"
+        return requests.post(
+            url,
+            verify=False,
+            timeout=DEFAULT_HTTP_TIMEOUT,
+            data={
+                "userName": auth_request["username"],
+                "userPwd": auth_request["password"],
+            },
+        )
 
     def logout(self, instance: str = "") -> None:
         # TODO: do real logout request
