@@ -682,7 +682,7 @@ class LocalDataStore:
                 )
             else:
                 iters.append(
-                    _scan_table(info.name, info.columns, start, end, info.explicit_none)
+                    _scan_table(f"{self.root_path}/{info.name}", info.columns, start, end, info.explicit_none)
                 )
 
         for record in _merge_scan(iters):
@@ -744,7 +744,7 @@ def get_data_store() -> DataStore:
 def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
     def _new(key_prefix: str, src: Dict[str, Any], dest: Dict[str, Any]) -> None:
         for k, v in src.items():
-            k = key_prefix + k
+            k = key_prefix + str(k)
             if type(v) is dict:
                 _new(k + "/", v, dest)
             dest[k] = v
@@ -788,7 +788,7 @@ class TableWriter(threading.Thread):
         record = _flatten(record)
         for k in record:
             for ch in k:
-                if not ch.isalnum() and ch != "-" and ch != "_" and ch != "/":
+                if not ch.isalnum() and ch != "-" and ch != "_" and ch != "/" and not ch.isspace():
                     raise RuntimeError(f"invalid field {k}")
         self._insert(record)
 
