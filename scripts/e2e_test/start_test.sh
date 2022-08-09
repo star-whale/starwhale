@@ -159,7 +159,8 @@ start_docker_compose() {
 check_controller_service() {
   while true
   do
-          if kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082; then
+    started=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.containerStatuses[0].started'`
+          if [[ "$started" == "true" ]]; then
                   echo "controller started"
                   break
           else
