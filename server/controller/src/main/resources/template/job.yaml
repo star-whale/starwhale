@@ -13,18 +13,12 @@ spec:
       initContainers:
         - name: data-provider
           imagePullPolicy: IfNotPresent
-          image: minio/mc:latest
+          image: anigeo/awscli:latest
           volumeMounts:
             - mountPath: /opt/starwhale
               name: data
-          command:
-            #https://github.com/minio/mc/issues/3599
-            - sh
-            - -c
-            - >-
-              sleep 10;
-              mc alias set minio $MINIO_SERVICE $MINIO_ACCESS_KEY $MINIO_SECRET_KEY &&
-              for item in $DOWNLOADS; do SRC=$(cut -d';' -f1 <<<$item) && DST=$(cut -d';' -f2 <<<$item) && echo $SRC,$DST && mkdir -p $DST && mc cp -r $SRC $DST; done
+          command: ["/bin/sh"]
+          args: ["-c", "for item in $DOWNLOADS; do SRC=$(echo $item|cut -d';' -f1) && DST=$(echo $item|cut -d';' -f2) && echo $SRC,$DST && mkdir -p $DST && aws --endpoint-url=$ENDPOINT_URL --region=$AWS_S3_REGION s3 cp --recursive $SRC $DST; done"]
         - name: untar
           imagePullPolicy: IfNotPresent
           image: ghcr.io/star-whale/starwhale:latest
@@ -62,7 +56,7 @@ spec:
       containers:
         - name: result-uploader
           imagePullPolicy: IfNotPresent
-          image: minio/mc:latest
+          image: anigeo/awscli:latest
           volumeMounts:
             - mountPath: /opt/starwhale
               name: data
@@ -70,8 +64,7 @@ spec:
             - sh
             - -c
             - >-
-              mc alias set minio $MINIO_SERVICE $MINIO_ACCESS_KEY $MINIO_SECRET_KEY &&
-              mc cp -r /opt/starwhale/result/current $DST
+              aws --endpoint-url=$ENDPOINT_URL --region=$AWS_S3_REGION s3 cp /opt/starwhale/result/current $DST
       volumes:
         - name: pip-cache
           hostPath:
