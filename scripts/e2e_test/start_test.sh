@@ -21,7 +21,16 @@ else
     export PARENT_CLEAN=true
 fi
 
-ifconfig
+start_minikube() {
+  if in_github_action; then
+      minikube delete --all
+      minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+      ifconfig
+  fi
+}
+
+
+
 
 declare_env() {
   export PYPI_RELEASE_VERSION="${PYPI_RELEASE_VERSION:=100.0.0}"
@@ -145,10 +154,6 @@ push_images_to_nexus() {
 
 start_docker_compose() {
   pushd ../../docker/charts
-  if in_github_action; then
-    minikube delete --all
-    minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
-  fi
   helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "minikube.enabled=true,image.registry=$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION"
   popd
 }
@@ -209,21 +214,22 @@ fi
 
 main() {
   declare_env
-  start_nexus
-  overwrite_pip_config
-  overwrite_pypirc
-  build_swcli
-  build_server_image
-  create_service_check_file
-  check_nexus_service
-  create_repository_in_nexus
-  upload_pypi_to_nexus
-  buid_runtime_image
-  push_images_to_nexus
-  start_docker_compose
-  check_controller_service
-  standalone_test
-  api_test
+  start_minikube
+#  start_nexus
+#  overwrite_pip_config
+#  overwrite_pypirc
+#  build_swcli
+#  build_server_image
+#  create_service_check_file
+#  check_nexus_service
+#  create_repository_in_nexus
+#  upload_pypi_to_nexus
+#  buid_runtime_image
+#  push_images_to_nexus
+#  start_docker_compose
+#  check_controller_service
+#  standalone_test
+#  api_test
 }
 
 main
