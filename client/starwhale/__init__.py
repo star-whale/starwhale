@@ -1,8 +1,11 @@
 import os
 
-import importlib_metadata
+try:
+    from importlib.metadata import version
+except ImportError:
+    from importlib_metadata import version
 
-__version__: str = importlib_metadata.version("starwhale")  # type: ignore
+__version__: str = version("starwhale")  # type: ignore
 os.environ["SW_VERSION"] = __version__
 
 

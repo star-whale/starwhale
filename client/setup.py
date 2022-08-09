@@ -6,7 +6,8 @@ install_requires = [
     "click>=8.0.4",
     "shellingham>=1.4.0",
     # flake8 require importlib-metadata < 4.3.0
-    "importlib-metadata>=4.0.0, <=4.11.4",
+    # importlib-metadata supplies a backport of 'importlib.metadata'; Python 3.8 makes 'importlib' part of the standard lib.
+    "importlib-metadata>=4.0.0, <=4.2.0;python_version < '3.8'",
     "attrs==21.4.0",
     "pyyaml==6.0",
     "cattrs==1.7.1",
@@ -25,6 +26,7 @@ install_requires = [
     "dill==0.3.5.1",
     "packaging>=21.3",
     "pyarrow>=8.0.0",
+    "Jinja2>=3.1.2",
 ]
 
 
@@ -60,7 +62,7 @@ setup(
       sw = starwhale.cli:cli
       starwhale = starwhale.cli:cli
       """,
-    python_requires=">=3.7",
+    python_requires=">=3.7, <3.11",
     scripts=[
         "scripts/sw-docker-entrypoint",
     ],
@@ -74,6 +76,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development :: Libraries",
         "Topic :: Software Development :: Libraries :: Python Modules",

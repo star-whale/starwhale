@@ -52,6 +52,24 @@ class RuntimeTermView(BaseTermView):
     def activate(cls, path: str = "", uri: str = "") -> None:
         Runtime.activate(path, uri)
 
+    def dockerize(
+        self,
+        tags: t.List[str],
+        push: bool,
+        platforms: t.List[str],
+        dry_run: bool,
+        use_starwhale_builder: bool,
+        reset_qemu_static: bool,
+    ) -> None:
+        self.runtime.dockerize(
+            tags=tags,
+            push=push,
+            platforms=platforms,
+            dry_run=dry_run,
+            use_starwhale_builder=use_starwhale_builder,
+            reset_qemu_static=reset_qemu_static,
+        )
+
     @classmethod
     def lock(
         cls,

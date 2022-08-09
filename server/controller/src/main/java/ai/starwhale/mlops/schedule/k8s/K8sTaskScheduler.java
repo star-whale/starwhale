@@ -90,17 +90,19 @@ public class K8sTaskScheduler implements SWTaskScheduler {
      */
     private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task) {
         log.debug("deploying task to k8s {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
-        Map<String, String> initContainerEnvs = new HashMap<>();
+        Map<String, String> envs = new HashMap<>();
         List<String> downloads = new ArrayList<>();
-        String prefix = "minio/starwhale/";
-        downloads.add(prefix + task.getSwModelPackage().getPath() + ";/opt/starwhale/swmp/");
-        downloads.add(prefix + task.getSwrt().getPath() + ";/opt/starwhale/swrt/");
-        initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
+
+        String prefix = "s3://"+storageProperties.getS3Config().getBucket()+"/";
+        downloads.add(prefix + task.getSwModelPackage().getPath()+";/opt/starwhale/swmp/");
+        downloads.add(prefix + task.getSwrt().getPath()+";/opt/starwhale/swrt/");
+        envs.put("DOWNLOADS", Strings.join(downloads, ' '));
         String input = generateConfigFile(task);
-        initContainerEnvs.put("INPUT", input);
-        initContainerEnvs.put("MINIO_SERVICE", storageProperties.getS3Config().getEndpoint());
-        initContainerEnvs.put("MINIO_ACCESS_KEY", storageProperties.getS3Config().getAccessKey());
-        initContainerEnvs.put("MINIO_SECRET_KEY", storageProperties.getS3Config().getSecretKey());
+        envs.put("INPUT", input);
+        envs.put("ENDPOINT_URL",storageProperties.getS3Config().getEndpoint());
+        envs.put("AWS_ACCESS_KEY_ID",storageProperties.getS3Config().getAccessKey());
+        envs.put("AWS_SECRET_ACCESS_KEY",storageProperties.getS3Config().getSecretKey());
+        envs.put("AWS_S3_REGION",storageProperties.getS3Config().getRegion());
         // TODO
         Map<String, String> coreContainerEnvs = new HashMap<>();
         try {
@@ -111,10 +113,12 @@ public class K8sTaskScheduler implements SWTaskScheduler {
                 task.getDeviceAmount().toString()).getResourceSelector();
             V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), initContainerEnvs, resourceRequirements);
             // set result upload path
-            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + task.getResultPath().resultDir())
-                    , new V1EnvVar().name("MINIO_SERVICE").value(storageProperties.getS3Config().getEndpoint())
-                    , new V1EnvVar().name("MINIO_ACCESS_KEY").value(storageProperties.getS3Config().getAccessKey())
-                    , new V1EnvVar().name("MINIO_SECRET_KEY").value(storageProperties.getS3Config().getSecretKey())
+
+            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+ task.getResultPath().resultDir())
+                ,new V1EnvVar().name("ENDPOINT_URL").value(storageProperties.getS3Config().getEndpoint())
+                ,new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
+                ,new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
+                ,new V1EnvVar().name("AWS_SECRET_ACCESS_KEY").value(storageProperties.getS3Config().getSecretKey())
                 )
             );
             client.deploy(job);
@@ -140,7 +144,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
                 task.getSwdsBlocks().forEach(swdsBlock -> {
                     JSONObject ds = JSONUtil.createObj();
-                    ds.set("bucket", "starwhale");
+                    ds.set("bucket", storageProperties.getS3Config().getBucket());
                     ds.set("key", JSONUtil.createObj()
                         .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getOffset() + swdsBlock.getLocationInput().getSize() - 1))
                         .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
@@ -158,7 +162,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
                 JSONArray cmp = JSONUtil.createArray();
                 task.getCmpInputFilePaths().forEach(inputFilePath -> {
                     JSONObject ds = JSONUtil.createObj();
-                    ds.set("bucket", "starwhale");
+                    ds.set("bucket", storageProperties.getS3Config().getBucket());
                     ds.set("key", JSONUtil.createObj()
                         .set("data", inputFilePath)
                     );

@@ -30,6 +30,14 @@ jobs:
       run:
         shell: bash
 
+    strategy:
+      matrix:
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+
     needs:
       - filter
     if: ${{ (github.event_name == 'pull_request' && needs.filter.outputs.client == 'true') || github.event_name == 'push' }}
@@ -40,7 +48,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.7"
+          python-version: ${{matrix.python-version}}
           architecture: "x64"
 
       - name: Get pip cache
@@ -75,6 +83,13 @@ jobs:
 
   unittest:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
     defaults:
       run:
         shell: bash
@@ -89,7 +104,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.7"
+          python-version: ${{matrix.python-version}}
           architecture: "x64"
 
       - name: Get pip cache
@@ -120,7 +135,7 @@ jobs:
           parallel: true
           debug: true
           base-path: ./client
-          flag-name: unittest
+          flag-name: client-ut-coverage-python${{ matrix.python-version }}
 
   coveralls_finish:
     needs: unittest
@@ -133,6 +148,13 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
     defaults:
       run:
         shell: bash
@@ -149,7 +171,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.7"
+          python-version: ${{matrix.python-version}}
           architecture: "x64"
 
       - name: Get pip cache
@@ -167,4 +189,5 @@ jobs:
         working-directory: .
         env:
           GITHUB_ACTION: 1
+          PYTHON_VERSION: ${{matrix.python-version}}
         run: scripts/run_demo.sh

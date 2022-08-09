@@ -4,8 +4,7 @@ configs:
     channels:
       - conda-forge
   docker:
-    image: star-whale/runtime/pytorch
-    registry: ghcr.io
+    image: ghcr.io/star-whale/runtime/pytorch
   pip:
     extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple/
     index_url: https://pypi.doubanio.com/simple/

@@ -29,6 +29,14 @@ jobs:
       run:
         shell: bash
 
+    strategy:
+      matrix:
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -37,7 +45,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v3
         with:
-          python-version: "3.7"
+          python-version: ${{matrix.python-version}}
           architecture: "x64"
 
       # jar build
@@ -60,5 +68,5 @@ jobs:
       - name: run e2e
         working-directory: ./scripts/e2e_test
         env:
-          PYTHON_VERSION: 3.7
+          PYTHON_VERSION: ${{matrix.python-version}}
         run: ./start_test.sh

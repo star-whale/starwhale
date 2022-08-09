@@ -35,7 +35,7 @@ def create_sw_cli() -> click.core.Group:
         ctx.ensure_object(dict)
         ctx.obj["output"] = output
 
-    random.seed(time.time_ns)
+    random.seed(time.time_ns())
 
     cli.add_command(instance_cmd)
     cli.add_command(project_cmd)

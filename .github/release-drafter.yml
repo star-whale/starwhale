@@ -29,6 +29,10 @@ categories:
   - title: '👋 Welcome'
     label: 'good first issue'
 
+sort-by: title
+sort-direction: ascending
+prerelease: true
+
 version-resolver:
   major:
     labels:
