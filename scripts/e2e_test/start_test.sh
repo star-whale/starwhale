@@ -232,10 +232,10 @@ fi
 main() {
   declare_env
 #  create_daemon_json
-  start_minikube
+#  start_minikube
   start_nexus
-  overwrite_pip_config
-  overwrite_pypirc
+#  overwrite_pip_config
+#  overwrite_pypirc
 #  build_swcli
 #  build_server_image
   create_service_check_file
