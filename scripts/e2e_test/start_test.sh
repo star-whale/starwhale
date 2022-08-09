@@ -49,9 +49,9 @@ start_minikube() {
 
 create_daemon_json() {
   sudo chmod 666 /etc/docker/daemon.json
-  sudo service docker stop
   sudo echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /etc/docker/daemon.json
-  sudo service docker start
+  sudo systemctl daemon-reload
+  sudo systemctl restart docker
   while true
   do
           if docker ps; then
