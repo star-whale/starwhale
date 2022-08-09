@@ -169,6 +169,7 @@ check_controller_service() {
           fi
           sleep 3
   done
+  nohup kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082 &
 }
 
 standalone_test() {
