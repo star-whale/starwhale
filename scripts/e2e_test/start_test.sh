@@ -30,7 +30,7 @@ declare_env() {
   export NEXUS_USER_PWD="${NEXUS_USER_PWD:=admin123}"
   export PORT_NEXUS="${PORT_NEXUS:=8081}"
   export PORT_CONTROLLER="${PORT_CONTROLLER:=8082}"
-  export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=9001}"
+  export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=8083}"
   export IP_MINIKUBE_BRIDGE="${IP_MINIKUBE_BRIDGE:=192.168.49.1}"
   export IP_DOCKER_BRIDGE="${IP_DOCKER_BRIDGE:=172.17.0.1}"
   export IP_MINIKUBE_BRIDGE_RANGE="${IP_MINIKUBE_BRIDGE_RANGE:=192.0.0.0/8}"
@@ -40,11 +40,9 @@ declare_env() {
 }
 
 start_minikube() {
-  if in_github_action; then
-      minikube delete --all
-      minikube start --insecure-registry "$NEXUS_HOSTNAME"
-      ifconfig
-  fi
+  minikube delete
+  minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+  ifconfig
 }
 
 
@@ -218,9 +216,9 @@ restore_env() {
   rm LOCAL_DATA_DIR
   echo 'cleanup'
 }
-if ! in_github_action; then
-  trap restore_env EXIT
-fi
+#if ! in_github_action; then
+#  trap restore_env EXIT
+#fi
 
 main() {
   declare_env
