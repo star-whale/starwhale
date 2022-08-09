@@ -48,8 +48,11 @@ start_minikube() {
 }
 
 create_daemon_json() {
+  cat /etc/docker/daemon.json
   sudo chmod 666 /etc/docker/daemon.json
   sudo echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /etc/docker/daemon.json
+  cat /etc/docker/daemon.json
+  sudo kill -1 `pidof dockerd`
 #  sudo systemctl daemon-reload
 #  sudo systemctl restart docker
 #  while true
@@ -236,8 +239,8 @@ create_daemon_json_for_taskset() {
 
 main() {
   declare_env
-  create_daemon_json_for_taskset
-#  create_daemon_json
+#  create_daemon_json_for_taskset
+  create_daemon_json
 #  start_minikube
   start_nexus
 #  overwrite_pip_config
