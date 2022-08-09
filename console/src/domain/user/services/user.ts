@@ -42,11 +42,10 @@ export async function listUsers(query: IListQuerySchema): Promise<IListSchema<IU
 }
 
 export async function changePassword(data: IChangePasswordSchema) {
-    // TODO change uri when backend ready
     const resp = await axios({
         method: 'put',
-        url: '/api/v1/user/pwd',
-        data: JSON.stringify(data),
+        url: '/api/v1/user/current/pwd',
+        data: JSON.stringify({ currentUserPwd: data.originPwd, newPwd: data.userPwd }),
         headers: { 'Content-Type': 'application/json' },
     })
 
