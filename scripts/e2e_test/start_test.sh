@@ -48,7 +48,20 @@ start_minikube() {
 }
 
 create_daemon_json() {
+  sudo chmod 666 /etc/docker/daemon.json
+  sudo service docker stop
   sudo echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /etc/docker/daemon.json
+  sudo service docker start
+  while true
+  do
+          if docker ps; then
+                  echo "docker started"
+                  break
+          else
+                  echo "docker starting"
+          fi
+          sleep 3
+  done
 }
 
 
@@ -216,6 +229,7 @@ fi
 
 main() {
   declare_env
+  create_daemon_json
   start_minikube
   start_nexus
   overwrite_pip_config
@@ -225,7 +239,6 @@ main() {
   create_service_check_file
   check_nexus_service
   create_repository_in_nexus
-  create_daemon_json
   docker login http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   echo "docker login success"
 #  upload_pypi_to_nexus
