@@ -231,7 +231,7 @@ fi
 
 main() {
   declare_env
-  create_daemon_json
+#  create_daemon_json
   start_minikube
   start_nexus
   overwrite_pip_config
