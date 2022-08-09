@@ -1,3 +1,4 @@
+import sys
 import typing as t
 
 import click
@@ -28,15 +29,25 @@ def _select(instance: str) -> None:
 
 @instance_cmd.command("login")
 @click.argument("instance", default="")
-@click.option("--username", prompt="username", required=True)
-@click.password_option(confirmation_prompt=False)
+@click.option("--username")
+@click.option("--password")
+@click.option("--token", help="Login token")
 @click.option("--alias", type=str, help="Starwhale instance alias name", required=True)
-def _login(instance: str, username: str, password: str, alias: str) -> None:
+def _login(instance: str, username: str, password: str, token: str, alias: str) -> None:
     """Login Starwhale Instance
 
     * INSTANCE: Instance URI, if ignore it, swcli will login current selected instance.
     """
-    InstanceTermView().login(instance, username, password, alias)
+    if not bool(password and username) ^ bool(token):
+        click.echo("token or password+username, only choose one type")
+        sys.exit(1)
+
+    if token:
+        kw = {"token": token}
+    else:
+        kw = {"username": username, "password": password}
+
+    InstanceTermView().login(instance, alias, **kw)
 
 
 @instance_cmd.command("logout")
