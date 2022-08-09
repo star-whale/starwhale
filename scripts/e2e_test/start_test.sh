@@ -165,7 +165,8 @@ check_controller_service() {
                   echo "controller started"
                   break
           else
-                  echo "controller is starting"
+            echo "controller is starting"
+            kubectl get pods --namespace starwhale
           fi
           sleep 3
   done
