@@ -67,6 +67,8 @@ create_daemon_json() {
 
 start_nexus() {
   docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
+  sudo cp /etc/hosts /etc/hosts.bak_e2e
+  sudo echo "$IP_MINIKUBE_BRIDGE $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
 }
 
 build_swcli() {
@@ -162,7 +164,7 @@ buid_runtime_image() {
 }
 
 push_images_to_nexus() {
-  docker login http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
+  docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   docker push $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
   docker push $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
 }
@@ -239,7 +241,7 @@ main() {
   create_service_check_file
   check_nexus_service
   create_repository_in_nexus
-  docker login http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
+  docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   echo "docker login success"
 #  upload_pypi_to_nexus
 #  buid_runtime_image
