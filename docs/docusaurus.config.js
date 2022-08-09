@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
   title: "Starwhale",
-  tagline: "An MLOps Platform for Model Evaluation",
+  tagline: "An MLOps Platform",
   url: "https://doc.starwhale.ai",
   baseUrl: "/",
   onBrokenLinks: "warn",
@@ -11,12 +11,28 @@ module.exports = {
   organizationName: "doc.starwhale.ai",
   projectName: "starwhale",
 
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en', 'zh'],
+    localeConfigs: {
+      en: {
+        label: 'English',
+        direction: 'ltr',
+        htmlLang: 'en-US',
+        calendar: 'gregory',
+      },
+    },
+  },
+
   themeConfig: {
     prism: {
-      theme: require("prism-react-renderer/themes/dracula"),
+      theme: require("prism-react-renderer/themes/github"),
+      darkTheme: require("prism-react-renderer/themes/duotoneDark"),
     },
     colorMode: {
-      disableSwitch: true,
+      defaultMode: 'light',
+      disableSwitch: false,
+      respectPrefersColorScheme: false,
     },
     zoomSelector: ".markdown :not(em) > img",
     announcementBar: {
@@ -39,6 +55,7 @@ module.exports = {
           label: "Documentation",
           position: "left",
         },
+
         {
           to: "https://github.com/star-whale/starwhale",
           position: "right",
@@ -53,6 +70,10 @@ module.exports = {
           "aria-label": "Slack Channel",
           label: "Slack",
         },
+        {
+            type: 'localeDropdown',
+            position: 'right',
+        },
       ],
     },
     footer: {
@@ -66,9 +87,9 @@ module.exports = {
     },
   },
   customFields: {
-    email: "contact@starwhale.ai",
+    email: "developer@starwhale.ai",
     description:
-      "Starwhale is a MLOps platform to manage machine learning projects, models and datasets.",
+      "Starwhale is an MLOps platform to manage machine learning projects, models and datasets.",
   },
   presets: [
     [
