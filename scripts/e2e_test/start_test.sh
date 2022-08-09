@@ -21,17 +21,6 @@ else
     export PARENT_CLEAN=true
 fi
 
-start_minikube() {
-  if in_github_action; then
-      minikube delete --all
-      minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
-      ifconfig
-  fi
-}
-
-
-
-
 declare_env() {
   export PYPI_RELEASE_VERSION="${PYPI_RELEASE_VERSION:=100.0.0}"
   export RELEASE_VERSION="${RELEASE_VERSION:=0.0.0-dev}"
@@ -49,6 +38,15 @@ declare_env() {
   export REPO_NAME_PYPI="${REPO_NAME_PYPI:=pypi-hosted}"
   export PYTHON_VERSION="${PYTHON_VERSION:=3.9}"
 }
+
+start_minikube() {
+  if in_github_action; then
+      minikube delete --all
+      minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+      ifconfig
+  fi
+}
+
 
 start_nexus() {
   docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
@@ -147,7 +145,7 @@ buid_runtime_image() {
 }
 
 push_images_to_nexus() {
-  docker login https://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
+  docker login http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   docker push $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
   docker push $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
 }
