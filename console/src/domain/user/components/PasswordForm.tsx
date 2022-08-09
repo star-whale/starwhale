@@ -29,7 +29,7 @@ export default function PasswordForm({ currentUser, admin, onSubmit }: IPassword
     const [form] = useForm()
     const [css] = useStyletron()
     const [useRandom, setUseRandom] = useState(false)
-    const [passwdValid, setPasswdValid] = useState(false)
+    const [passwdValid, setPasswdValid] = useState(!admin)
     const [useRandomRadioVal, setUseRandomRadioVal] = useState('no')
 
     const handelSubmit = (data: IChangePasswordSchema) => {
