@@ -155,10 +155,10 @@ def _eval(
     runtime_restore: bool,
 ) -> None:
     """
-        [ONLY Standalone]Run evaluation processing with root dir of {target}.
+    [ONLY Standalone]Run evaluation processing with root dir of {target}.
 
-        TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
-        """
+    TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
+    """
     ModelTermView.eval(
         target=target,
         version=version,

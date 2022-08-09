@@ -107,7 +107,9 @@ class SimpleDataLoader(DataLoader):
         **kwargs: t.Any,
     ) -> None:
         # TODO: waiting refactor
-        super().__init__(FuseStorageBackend(), [], logger, DataLoaderKind.JSONL, **kwargs)
+        super().__init__(
+            FuseStorageBackend(), [], logger, DataLoaderKind.JSONL, **kwargs
+        )
         self.datas = datas
 
     def __iter__(self) -> t.Any:
@@ -301,13 +303,13 @@ class S3BufferedFileLike:
         # TODO: use smart_open 3rd lib?
         if (self._current + size) <= len(self._buffer):
             end = self._current + size
-            out = self._buffer[self._current: end]
+            out = self._buffer[self._current : end]
             self._current = end
             return out
         else:
             data, _ = self._next_data()
             _release_buffer = self._buffer
-            self._buffer = memoryview(self._buffer[self._current:].tobytes() + data)
+            self._buffer = memoryview(self._buffer[self._current :].tobytes() + data)
             _release_buffer.release()
             self._current = 0
 
@@ -320,7 +322,7 @@ class S3BufferedFileLike:
                 )
             else:
                 end = self._current + size
-                out = self._buffer[self._current: end]
+                out = self._buffer[self._current : end]
                 self._current = end
                 return out
 

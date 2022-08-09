@@ -1,12 +1,13 @@
 import os
+import typing as t
 from pathlib import Path
 
 import yaml
 from loguru import logger
-import typing as t
-from starwhale.core.job.loader import load_module
+
 from starwhale.api._impl import wrapper
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.job.loader import load_module
 
 
 class Step:

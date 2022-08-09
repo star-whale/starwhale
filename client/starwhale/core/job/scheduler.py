@@ -1,12 +1,13 @@
 import os
 import time
+import typing as t
 import threading
 import concurrent.futures
 from abc import abstractmethod
 from pathlib import Path
 
 from loguru import logger
-import typing as t
+
 from starwhale.base.uri import URI
 from starwhale.core.job.model import Step, Task, STATUS
 
@@ -38,7 +39,13 @@ class Scheduler:
             _step.status = STATUS.INIT
             for index in range(_step.task_num):
                 _step.gen_task(
-                    index, self.module, self.workdir, self.src_dir, self.dataset_uris, self.version, self.project
+                    index,
+                    self.module,
+                    self.workdir,
+                    self.src_dir,
+                    self.dataset_uris,
+                    self.version,
+                    self.project,
                 )
 
     def schedule(self) -> None:

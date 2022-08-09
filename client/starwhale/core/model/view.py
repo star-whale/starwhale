@@ -77,7 +77,8 @@ class ModelTermView(BaseTermView):
                 RuntimeProcess.from_runtime_uri(
                     uri=runtime_uri,
                     target=StandaloneModel.eval_user_handler,
-                    args=(typ,
+                    args=(
+                        typ,
                         version,
                         workdir / "src",
                         workdir,
@@ -85,7 +86,8 @@ class ModelTermView(BaseTermView):
                         DefaultYAMLName.MODEL,
                         "default",
                         step,
-                        task_index,),
+                        task_index,
+                    ),
                     kwargs={"yaml_name": yaml_name, "kw": kw},
                     runtime_restore=runtime_restore,
                 ).run()

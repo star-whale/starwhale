@@ -682,7 +682,13 @@ class LocalDataStore:
                 )
             else:
                 iters.append(
-                    _scan_table(f"{self.root_path}/{info.name}", info.columns, start, end, info.explicit_none)
+                    _scan_table(
+                        f"{self.root_path}/{info.name}",
+                        info.columns,
+                        start,
+                        end,
+                        info.explicit_none,
+                    )
                 )
 
         for record in _merge_scan(iters):
@@ -788,7 +794,13 @@ class TableWriter(threading.Thread):
         record = _flatten(record)
         for k in record:
             for ch in k:
-                if not ch.isalnum() and ch != "-" and ch != "_" and ch != "/" and not ch.isspace():
+                if (
+                    not ch.isalnum()
+                    and ch != "-"
+                    and ch != "_"
+                    and ch != "/"
+                    and not ch.isspace()
+                ):
                     raise RuntimeError(f"invalid field {k}")
         self._insert(record)
 

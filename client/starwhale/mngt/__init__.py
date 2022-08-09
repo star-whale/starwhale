@@ -36,8 +36,15 @@ def gc(dry_run: bool = False, yes: bool = False) -> None:
             continue
 
         _removed_paths = []
-        for typ in (URIType.DATASET, URIType.EVALUATION, URIType.RUNTIME, URIType.MODEL):
-            _bundle_type = get_bundle_type_by_uri(typ) if typ != URIType.EVALUATION else ""
+        for typ in (
+            URIType.DATASET,
+            URIType.EVALUATION,
+            URIType.RUNTIME,
+            URIType.MODEL,
+        ):
+            _bundle_type = (
+                get_bundle_type_by_uri(typ) if typ != URIType.EVALUATION else ""
+            )
             _recover_dir = project_dir / typ / RECOVER_DIRNAME
 
             if typ in (URIType.RUNTIME, URIType.MODEL):

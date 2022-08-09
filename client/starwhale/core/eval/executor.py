@@ -1,20 +1,20 @@
-import json
 import os
+import json
 import typing as t
 from pathlib import Path
 
 import yaml
 from loguru import logger
-from starwhale.core.dataset.model import Dataset
-from starwhale.core.dataset.store import DatasetStorage
 
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import (
+    JSON_INDENT,
     CURRENT_FNAME,
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    CNTR_DEFAULT_PIP_CACHE_DIR, JSON_INDENT, DEFAULT_INPUT_JSON_FNAME,
+    DEFAULT_INPUT_JSON_FNAME,
+    CNTR_DEFAULT_PIP_CACHE_DIR,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -24,6 +24,8 @@ from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.api._impl.model import PipelineHandler
 from starwhale.core.model.model import StandaloneModel
+from starwhale.core.dataset.model import Dataset
+from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.runtime.model import StandaloneRuntime
 
 _CNTR_WORKDIR = "/opt/starwhale"
@@ -238,6 +240,7 @@ class EvalExecutor:
 
     def _do_run_cmd_in_host(self, typ: str, step: str, task_index: int) -> None:
         from starwhale.core.runtime.process import Process as RuntimeProcess
+
         # TODO:
         # if self.runtime_uri:
         #     RuntimeProcess.from_runtime_uri(

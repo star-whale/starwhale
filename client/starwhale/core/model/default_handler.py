@@ -14,7 +14,7 @@ from starwhale.consts import (
     DEFAULT_INPUT_JSON_FNAME,
 )
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import RunSubDirType, URIType
+from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.load import import_cls
 from starwhale.api._impl.job import step
 from starwhale.core.job.model import Context
@@ -65,7 +65,9 @@ class DefaultPipeline:
         #  cool! this can be removed form here.
         _RunConfig.set_env(
             {
-                "input_config": _context.workdir / RunSubDirType.CONFIG / DEFAULT_INPUT_JSON_FNAME,
+                "input_config": _context.workdir
+                / RunSubDirType.CONFIG
+                / DEFAULT_INPUT_JSON_FNAME,
             }
         )
         _cls = self._get_cls(_context.src_dir)

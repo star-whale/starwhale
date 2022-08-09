@@ -22,12 +22,18 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NotFoundError
-from . import wrapper
 
-from .loader import DataField, DataLoader, get_data_loader, JSONLineDataLoader, SimpleDataLoader
+from . import wrapper
+from .loader import (
+    DataField,
+    DataLoader,
+    get_data_loader,
+    SimpleDataLoader,
+    JSONLineDataLoader,
+)
 from .wrapper import Evaluation
-from ...core.job.model import Context
 from ...utils.config import SWCliConfigMixed
+from ...core.job.model import Context
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
@@ -54,7 +60,9 @@ class _RunConfig:
         self.status_dir = _p(status_dir, "status")  # type: ignore
         self.log_dir = _p(log_dir, "log")  # type: ignore
         self.result_dir = _p(result_dir, "result")  # type: ignore
-        self.swds_config_path = swds_config_path # self.load_swds_config(swds_config_path)
+        self.swds_config_path = (
+            swds_config_path  # self.load_swds_config(swds_config_path)
+        )
 
         # TODO: graceful method
         self._prepare()
@@ -63,7 +71,11 @@ class _RunConfig:
         if not self.swds_config_path:
             path = Path(_TASK_ROOT_DIR) / "config" / DEFAULT_INPUT_JSON_FNAME
 
-        path = Path(self.swds_config_path) if isinstance(self.swds_config_path, str) else self.swds_config_path
+        path = (
+            Path(self.swds_config_path)
+            if isinstance(self.swds_config_path, str)
+            else self.swds_config_path
+        )
         if path.exists():
             # TODO: validate swds config
             return json.load(path.open("r"))
@@ -143,10 +155,12 @@ class PipelineHandler(metaclass=ABCMeta):
         self._monkey_patch()
 
     def _init_datastore(self) -> Evaluation:
-        os.environ['SW_ROOT_PATH'] = str(self._sw_config.datastore_dir)
-        os.environ['SW_PROJECT'] = self.context.project
-        os.environ['SW_EVAL_ID'] = self.context.version
-        self._sw_logger.debug(f"datastore path:{str(self._sw_config.datastore_dir)}, eval_id:{self.context.version}")
+        os.environ["SW_ROOT_PATH"] = str(self._sw_config.datastore_dir)
+        os.environ["SW_PROJECT"] = self.context.project
+        os.environ["SW_EVAL_ID"] = self.context.version
+        self._sw_logger.debug(
+            f"datastore path:{str(self._sw_config.datastore_dir)}, eval_id:{self.context.version}"
+        )
         return wrapper.Evaluation()
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
@@ -251,7 +265,9 @@ class PipelineHandler(metaclass=ABCMeta):
         return ret
 
     def deserialize_new(self, data: t.Dict[str, t.Any]) -> t.Any:
-        data[self._ppl_data_field] = self.ppl_data_deserialize(data[self._ppl_data_field])
+        data[self._ppl_data_field] = self.ppl_data_deserialize(
+            data[self._ppl_data_field]
+        )
         data[self._label_field] = self.label_data_deserialize(data[self._label_field])
         return data
 
@@ -282,31 +298,33 @@ class PipelineHandler(metaclass=ABCMeta):
         self._update_status(self.STATUS.START)
         now = now_str()  # type: ignore
         try:
-            _ppl_results = [result
-                            for result in self._datastore.get_results()
-                            if result["id"].startswith("ppl_result")]
+            _ppl_results = [
+                result
+                for result in self._datastore.get_results()
+                if result["id"].startswith("ppl_result")
+            ]
             self._sw_logger.debug("cmp data size:{}", len(_ppl_results))
-            _data_loader = SimpleDataLoader(_ppl_results, self._sw_logger, deserializer=self.deserialize_new)
+            _data_loader = SimpleDataLoader(
+                _ppl_results, self._sw_logger, deserializer=self.deserialize_new
+            )
             output = self.cmp(_data_loader)
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
             # self._status_writer.write({"time": now, "status": False, "exception": e})
             self._datastore.log_result(
                 data_id=f"cmp_log_task_{self.context.index}",
-                result=json.dumps({"time": now, "status": False, "exception": str(e)})
+                result=json.dumps({"time": now, "status": False, "exception": str(e)}),
             )
             raise
         else:
             # self._status_writer.write({"time": now, "status": True, "exception": ""})
             self._datastore.log_result(
                 data_id=f"cmp_log_task_{self.context.index}",
-                result=json.dumps({"time": now, "status": True, "exception": ""})
+                result=json.dumps({"time": now, "status": True, "exception": ""}),
             )
             self._sw_logger.debug("cmp result:{}", output)
             # self._result_writer.write(output)
-            self._datastore.log_metrics(
-                output
-            )
+            self._datastore.log_metrics(output)
             self._datastore.dump()
 
     @_record_status  # type: ignore
@@ -316,7 +334,9 @@ class PipelineHandler(metaclass=ABCMeta):
 
         # TODO: use datastore when dataset complete
         _data_loader = get_data_loader(
-            self.config.load_swds_config(), self._sw_logger, deserializer=self.deserialize
+            self.config.load_swds_config(),
+            self._sw_logger,
+            deserializer=self.deserialize,
         )
         for data, label in _data_loader:
             if data.idx != label.idx:
@@ -354,7 +374,9 @@ class PipelineHandler(metaclass=ABCMeta):
                 exception = None
 
             self._do_record(data, label, exception, *pred)
-        self._sw_logger.debug(f"ppl result:{len([item for item in self._datastore.get_results()])}")
+        self._sw_logger.debug(
+            f"ppl result:{len([item for item in self._datastore.get_results()])}"
+        )
         self._datastore.dump()
 
     def _do_record(
@@ -374,7 +396,7 @@ class PipelineHandler(metaclass=ABCMeta):
         # self._status_writer.write(_timeline)
         self._datastore.log_result(
             data_id=f"ppl_log_task_{self.context.index}_data_{data.idx}",
-            result=json.dumps(_timeline)
+            result=json.dumps(_timeline),
         )
 
         _label = ""
@@ -386,7 +408,9 @@ class PipelineHandler(metaclass=ABCMeta):
                     index=label.idx,
                     size=label.data_size,
                 )
-                _label = base64.b64encode(self.label_data_serialize(label)).decode("ascii")
+                _label = base64.b64encode(self.label_data_serialize(label)).decode(
+                    "ascii"
+                )
             except Exception as e:
                 self._sw_logger.exception(f"{label.data!r} label handle exception:{e}")
                 if not self.ignore_error:
@@ -401,7 +425,7 @@ class PipelineHandler(metaclass=ABCMeta):
             index=data.idx,
             result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),
             batch=data.batch_size,
-            label=_label
+            label=_label,
         )
         # self._sw_logger.debug(f"ppl data:{data.idx} result:{result}")
         self._update_status(self.STATUS.RUNNING)
@@ -409,4 +433,6 @@ class PipelineHandler(metaclass=ABCMeta):
     def _update_status(self, status: str) -> None:
         # fpath = self.config.status_dir / CURRENT_FNAME
         # ensure_file(fpath, status)
-        self._datastore.log_result(data_id=f"{self._simple_step_name}_status", result=status)
+        self._datastore.log_result(
+            data_id=f"{self._simple_step_name}_status", result=status
+        )

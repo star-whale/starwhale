@@ -10,7 +10,6 @@ from collections import defaultdict
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
-from starwhale.api._impl.loader import DataLoader
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
@@ -34,6 +33,7 @@ from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.core.job.model import Parser, Context
 from starwhale.utils.progress import run_with_progress_bar
+from starwhale.api._impl.loader import DataLoader
 from starwhale.base.bundle_copy import BundleCopy
 from starwhale.core.job.scheduler import Scheduler
 
