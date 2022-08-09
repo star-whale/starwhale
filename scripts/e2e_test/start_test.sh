@@ -24,7 +24,7 @@ fi
 declare_env() {
   export PYPI_RELEASE_VERSION="${PYPI_RELEASE_VERSION:=100.0.0}"
   export RELEASE_VERSION="${RELEASE_VERSION:=0.0.0-dev}"
-  export NEXUS_HOSTNAME="${NEXUS_HOSTNAME:=host.nexus}"
+  export NEXUS_HOSTNAME="${NEXUS_HOSTNAME:=host.minikube.internal}"
   export NEXUS_IMAGE="${NEXUS_IMAGE:=sonatype/nexus3:3.40.1}"
   export NEXUS_USER_NAME="${NEXUS_USER_NAME:=admin}"
   export NEXUS_USER_PWD="${NEXUS_USER_PWD:=admin123}"
@@ -47,30 +47,11 @@ start_minikube() {
   fi
 }
 
-create_daemon_json() {
-  docker info
-  sudo chmod 666 /etc/docker/daemon.json
-  sudo echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /etc/docker/daemon.json
-  cat /etc/docker/daemon.json
-  sudo kill -1 `pidof dockerd`
-  docker info
-#  sudo systemctl daemon-reload
-#  sudo systemctl restart docker
-#  while true
-#  do
-#          if docker ps; then
-#                  echo "docker started"
-#                  break
-#          else
-#                  echo "docker starting"
-#          fi
-#          sleep 3
-#  done
-}
-
 
 start_nexus() {
   docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
+    sudo cp /etc/hosts /etc/hosts.bak_e2e
+    sudo echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
 }
 
 build_swcli() {
@@ -91,7 +72,7 @@ build_server_image() {
   make build-package
   pushd ../docker
   docker build -t server -f Dockerfile.server .
-  docker tag server $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
+  docker tag server $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
   popd
   popd
 }
@@ -161,19 +142,19 @@ upload_pypi_to_nexus() {
 buid_runtime_image() {
   pushd ../../docker
   docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$IP_DOCKER_BRIDGE --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
-  docker tag starwhale $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
+  docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
   popd
 }
 
 push_images_to_nexus() {
   docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
-  docker push $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
-  docker push $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
+  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
+  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
 }
 
 start_docker_compose() {
   pushd ../../docker/charts
-  helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "minikube.enabled=true,image.registry=$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION"
+  helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION"
   popd
 }
 
@@ -210,8 +191,8 @@ restore_env() {
   docker kill nexus
   docker container rm nexus
   docker image rm starwhale
-  docker image rm $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
-  docker image rm $IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
+  docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
+  docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
   docker image rm server
   mv ~/.pypirc.bak_e2e ~/.pypirc
   mv ~/.pip/pip.conf.bak_e2e ~/.pip/pip.conf
@@ -231,17 +212,10 @@ if ! in_github_action; then
   trap restore_env EXIT
 fi
 
-create_daemon_json_for_taskset() {
-  cat /etc/docker/daemon.json
-  echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"$IP_DOCKER_COMPOSE_BRIDGE_RANGE\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /tmp/docker-daemon.json
-}
-
 main() {
   declare_env
-#  create_daemon_json_for_taskset
-  create_daemon_json
-  start_minikube
   start_nexus
+  start_minikube
 #  overwrite_pip_config
 #  overwrite_pypirc
 #  build_swcli
@@ -249,8 +223,7 @@ main() {
   create_service_check_file
   check_nexus_service
   create_repository_in_nexus
-  sleep 3
-  docker login http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
+  docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
   echo "docker login success"
 #  upload_pypi_to_nexus
 #  buid_runtime_image
