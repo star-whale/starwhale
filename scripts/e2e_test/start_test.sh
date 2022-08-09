@@ -50,18 +50,18 @@ start_minikube() {
 create_daemon_json() {
   sudo chmod 666 /etc/docker/daemon.json
   sudo echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$IP_MINIKUBE_BRIDGE:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /etc/docker/daemon.json
-  sudo systemctl daemon-reload
-  sudo systemctl restart docker
-  while true
-  do
-          if docker ps; then
-                  echo "docker started"
-                  break
-          else
-                  echo "docker starting"
-          fi
-          sleep 3
-  done
+#  sudo systemctl daemon-reload
+#  sudo systemctl restart docker
+#  while true
+#  do
+#          if docker ps; then
+#                  echo "docker started"
+#                  break
+#          else
+#                  echo "docker starting"
+#          fi
+#          sleep 3
+#  done
 }
 
 
@@ -229,8 +229,14 @@ if ! in_github_action; then
   trap restore_env EXIT
 fi
 
+create_daemon_json_for_taskset() {
+  cat /etc/docker/daemon.json
+  echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"$IP_DOCKER_COMPOSE_BRIDGE_RANGE\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /tmp/docker-daemon.json
+}
+
 main() {
   declare_env
+  create_daemon_json_for_taskset
 #  create_daemon_json
 #  start_minikube
   start_nexus
