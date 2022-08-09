@@ -21,6 +21,8 @@ else
     export PARENT_CLEAN=true
 fi
 
+ifconfig
+
 declare_env() {
   export PYPI_RELEASE_VERSION="${PYPI_RELEASE_VERSION:=100.0.0}"
   export RELEASE_VERSION="${RELEASE_VERSION:=0.0.0-dev}"
