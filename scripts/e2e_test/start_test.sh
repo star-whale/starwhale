@@ -159,7 +159,16 @@ start_docker_compose() {
 }
 
 check_controller_service() {
-  chmod u+x /tmp/service_wait.sh && /tmp/service_wait.sh http://localhost:$PORT_CONTROLLER
+  while true
+  do
+          if kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082; then
+                  echo "controller started"
+                  break
+          else
+                  echo "controller is starting"
+          fi
+          sleep 3
+  done
 }
 
 standalone_test() {
