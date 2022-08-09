@@ -7,10 +7,9 @@ ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ENV TZ=Etc/UTC
 
-# Install os dependence\OpenJDK-11\nvidia-smi
+# Install os dependence\OpenJDK-11
 RUN apt-get update \
     && apt-get install -y openjdk-11-jdk \
-    && apt-get install -y --no-install-recommends nvidia-driver-${NV_DRIVER_VERSION} \
     && apt-get install -y --no-install-recommends \
     wget locales make cmake build-essential software-properties-common curl sudo ca-certificates apt-transport-https iputils-ping net-tools openssh-server net-tools gcc-aarch64-linux-gnu \
     zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils gpg-agent \

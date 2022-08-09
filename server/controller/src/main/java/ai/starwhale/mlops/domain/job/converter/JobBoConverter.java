@@ -30,6 +30,7 @@ import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -49,16 +50,19 @@ public class JobBoConverter {
 
     final RuntimeVersionMapper runtimeVersionMapper;
 
-    final String image = "ghcr.io/star-whale/starwhale:latest";//todo(renyanda): replace with runtime meta
+    final String defaultRuntimeImage ;
 
     public JobBoConverter(JobSWDSVersionMapper jobSWDSVersionMapper,
                           SWModelPackageMapper swModelPackageMapper,
                           RuntimeMapper runtimeMapper,
-                          RuntimeVersionMapper runtimeVersionMapper) {
+                          RuntimeVersionMapper runtimeVersionMapper,
+        @Value("${sw.runtime.image-default}") String defaultImage) {
         this.jobSWDSVersionMapper = jobSWDSVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
+        this.defaultRuntimeImage = defaultImage;//todo(renyanda): replace with runtime meta
+
     }
 
     public Job fromEntity(JobEntity jobEntity){
@@ -85,7 +89,7 @@ public class JobBoConverter {
                 .storagePath(runtimeVersionEntity.getStoragePath())
                 .deviceAmount(jobEntity.getDeviceAmount())
                 .deviceClass(Device.Clazz.from(jobEntity.getDeviceType()))
-                .image(image)
+                .image(defaultRuntimeImage)
                 .build())
             .status(jobEntity.getJobStatus())
             .type(jobEntity.getType())

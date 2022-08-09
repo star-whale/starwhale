@@ -85,7 +85,7 @@ public class JobBoConverterTest {
             runtimeVersionEntity.getRuntimeId())).thenReturn(runtimeEntity);
 
 
-        JobBoConverter jobBoConverter = new JobBoConverter(jobSWDSVersionMapper,swModelPackageMapper,runtimeMapper,runtimeVersionMapper);
+        JobBoConverter jobBoConverter = new JobBoConverter(jobSWDSVersionMapper,swModelPackageMapper,runtimeMapper,runtimeVersionMapper,"ghcr.io/star-whale/starwhale:latest");
 
         Job job = jobBoConverter.fromEntity(jobEntity);
         Assertions.assertEquals(jobEntity.getJobStatus(),job.getStatus());
