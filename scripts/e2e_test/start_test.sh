@@ -42,7 +42,6 @@ declare_env() {
 start_minikube() {
   minikube delete
   minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
-  ifconfig
 }
 
 
