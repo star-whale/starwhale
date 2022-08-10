@@ -1,11 +1,12 @@
 import os
 import re
 import threading
-from multiprocessing import Pipe
 from typing import Any, Dict, List, Iterator, Optional
+from multiprocessing import Pipe
+
+from starwhale.consts import EvaluationResultKind
 
 from . import data_store
-from starwhale.consts import EvaluationResultKind
 
 
 class Logger:
@@ -75,9 +76,13 @@ class Evaluation(Logger):
         )
 
     def get_metrics(self):
-        _m = [metrics for metrics in self._data_store.scan_tables([(self._summary_table_name, "id", False)])
-              if metrics["id"] is self.eval_id
-              ]
+        _m = [
+            metrics
+            for metrics in self._data_store.scan_tables(
+                [(self._summary_table_name, "id", False)]
+            )
+            if metrics["id"] is self.eval_id
+        ]
         return _m[0]
 
     def dump(self):
@@ -108,7 +113,9 @@ class EvaluationForSubProcess:
         self.output_pipe = output_pipe
 
     def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
-        self.output_pipe[0].send(EvaluationResult(data_id=data_id, result=result, **kwargs))
+        self.output_pipe[0].send(
+            EvaluationResult(data_id=data_id, result=result, **kwargs)
+        )
 
     def log_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any

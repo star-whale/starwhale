@@ -1,8 +1,8 @@
 import sys
 import typing as t
 
-from loguru import logger
 from rich import box
+from loguru import logger
 from rich.tree import Tree
 from rich.table import Table
 from rich.pretty import Pretty

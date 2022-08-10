@@ -23,13 +23,8 @@ from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NotFoundError
 
-from .loader import (
-    DataField,
-    DataLoader,
-    get_data_loader,
-    SimpleDataLoader,
-)
-from .wrapper import EvaluationResult, EvaluationForSubProcess
+from .loader import DataField, DataLoader, get_data_loader, SimpleDataLoader
+from .wrapper import EvaluationForSubProcess
 from ...core.job.model import Context
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
@@ -146,8 +141,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self._ppl_data_field = "result"
         self._label_field = "label"
         self._eval = EvaluationForSubProcess(
-            self.context.get_param("input_pipe"),
-            self.context.get_param("output_pipe")
+            self.context.get_param("input_pipe"), self.context.get_param("output_pipe")
         )
         self._simple_step_name = ""
         self._monkey_patch()
@@ -285,13 +279,13 @@ class PipelineHandler(metaclass=ABCMeta):
         self._simple_step_name = "cmp"
         self._update_status(self.STATUS.START)
         now = now_str()  # type: ignore
-        _ppl_results = [
-            result
-            for result in self._eval.get_results()
-            if result["id"].startswith("ppl_result")
-        ]
-        self._sw_logger.debug("cmp data size:{}", len(_ppl_results))
         try:
+            _ppl_results = [
+                result
+                for result in self._eval.get_results()
+                if result["id"].startswith("ppl_result")
+            ]
+            self._sw_logger.debug("cmp data size:{}", len(_ppl_results))
             _data_loader = SimpleDataLoader(
                 _ppl_results, self._sw_logger, deserializer=self.deserialize_new
             )
@@ -299,9 +293,17 @@ class PipelineHandler(metaclass=ABCMeta):
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
             # self._status_writer.write({"time": now, "status": False, "exception": e})
+            self._eval.log_result(
+                data_id=f"cmp_log_task_{self.context.index}",
+                result=json.dumps({"time": now, "status": False, "exception": str(e)}),
+            )
             raise
         else:
             # self._status_writer.write({"time": now, "status": True, "exception": ""})
+            self._eval.log_result(
+                data_id=f"cmp_log_task_{self.context.index}",
+                result=json.dumps({"time": now, "status": True, "exception": ""}),
+            )
             self._sw_logger.debug("cmp result:{}", output)
             # self._result_writer.write(output)
             self._eval.log_metrics(output)
@@ -363,7 +365,7 @@ class PipelineHandler(metaclass=ABCMeta):
         label: DataField,
         exception: t.Union[None, Exception],
         *args: t.Any,
-    ):
+    ) -> None:
         _timeline = {
             "time": now_str(),  # type: ignore
             "status": exception is None,
@@ -372,10 +374,10 @@ class PipelineHandler(metaclass=ABCMeta):
             "output_tuple_len": len(args),
         }
         # self._status_writer.write(_timeline)
-        # self._datastore.log_result(
-        #     data_id=f"ppl_log_task_{self.context.index}_data_{data.idx}",
-        #     result=json.dumps(_timeline),
-        # )
+        self._eval.log_result(
+            data_id=f"ppl_log_task_{self.context.index}_data_{data.idx}",
+            result=json.dumps(_timeline),
+        )
 
         _label = ""
         if self.merge_label:

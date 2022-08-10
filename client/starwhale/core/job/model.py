@@ -1,13 +1,10 @@
-from multiprocessing import Pipe
-import threading
 import typing as t
 from pathlib import Path
+from multiprocessing import Pipe
 
 import yaml
 from loguru import logger
 
-from starwhale.api._impl.wrapper import Evaluation, EvaluationResult, EvaluationMetric, EvaluationQuery
-from starwhale.consts import EvaluationResultKind
 from starwhale.core.job.loader import load_module
 
 
@@ -58,7 +55,7 @@ class Step:
                     dataset_uris=dataset_uris,
                     workdir=workdir,
                     src_dir=src_dir,
-                    **kw
+                    **kw,
                 ),
                 status=STATUS.INIT,
                 module=module,

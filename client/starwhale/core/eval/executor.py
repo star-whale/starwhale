@@ -239,7 +239,7 @@ class EvalExecutor:
             self._do_run_cmd_in_host(typ, step, task_index)
 
     def _do_run_cmd_in_host(self, typ: str, step: str, task_index: int) -> None:
-        from starwhale.core.runtime.process import Process as RuntimeProcess
+        # from starwhale.core.runtime.process import Process as RuntimeProcess
 
         # TODO: must exec at outer
         # if self.runtime_uri and not self.use_docker and self.runtime_restore:
@@ -261,7 +261,11 @@ class EvalExecutor:
         #         runtime_restore=self.runtime_restore,
         #     ).run()
         # else:
-        logger.debug("origin project:{},uri:{}", self.project_uri.project, self.project_uri.full_uri)
+        logger.debug(
+            "origin project:{},uri:{}",
+            self.project_uri.project,
+            self.project_uri.full_uri,
+        )
         StandaloneModel.eval_user_handler(
             project=self.project_uri.project,
             version=self._version,

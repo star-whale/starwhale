@@ -3,12 +3,8 @@ from pathlib import Path
 
 from loguru import logger
 
-from starwhale.api._impl.wrapper import EvaluationForSubProcess
 from starwhale.utils import console
-from starwhale.consts import (
-    DefaultYAMLName,
-    DEFAULT_INPUT_JSON_FNAME,
-)
+from starwhale.consts import DefaultYAMLName, DEFAULT_INPUT_JSON_FNAME
 from starwhale.base.type import RunSubDirType
 from starwhale.utils.load import import_cls
 from starwhale.api._impl.job import step

@@ -438,7 +438,7 @@ def _update_schema(schema: TableSchema, record: Dict[str, Any]) -> TableSchema:
             and value_type.name != column_schema.type.name
         ):
             raise RuntimeError(
-                    f"can not insert a record with field {col} of type {value_type}, {column_schema.type} expected"
+                f"can not insert a record with field {col} of type {value_type}, {column_schema.type} expected"
             )
         if column_schema is None:
             new_schema.columns[col] = ColumnSchema(col, value_type)

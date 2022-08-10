@@ -1,20 +1,16 @@
 from __future__ import annotations
 
-import multiprocessing
 import os
-import threading
 import typing as t
 from abc import ABCMeta
 from copy import deepcopy
 from pathlib import Path
 from collections import defaultdict
-from time import sleep
 
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
-from starwhale.api._impl import wrapper
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     DefaultYAMLName,
@@ -24,7 +20,7 @@ from starwhale.consts import (
     DEFAULT_COPY_WORKERS,
     DEFAULT_EVALUATION_PIPELINE,
     DEFAULT_EVALUATION_JOBS_FNAME,
-    DEFAULT_STARWHALE_API_VERSION, EvaluationResultKind,
+    DEFAULT_STARWHALE_API_VERSION,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
@@ -40,7 +36,6 @@ from starwhale.base.bundle_copy import BundleCopy
 from starwhale.core.job.scheduler import Scheduler
 
 from .store import ModelStorage
-from ...utils.config import SWCliConfigMixed
 
 
 class ModelRunConfig:

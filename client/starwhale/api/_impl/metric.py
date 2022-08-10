@@ -95,11 +95,9 @@ def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
             else:
                 rt[f"{_prefix}{index}"] = _d
             index += 1
+
     _f(summary)
     return rt
-
-
-
 
 
 def _calculate_roc_auc(
