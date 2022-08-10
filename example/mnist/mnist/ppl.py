@@ -42,7 +42,7 @@ class MNISTInference(PipelineHandler):
     def cmp(self, _data_loader):
         _result, _label, _pr = [], [], []
         for _data in _data_loader:
-            logger.debug(f"cmp data:{_data}")
+            # logger.debug(f"cmp data:{_data}")
             _label.extend([int(l) for l in _data[self._label_field]])
             # unpack data according to the return value of function ppl
             (pred, pr) = _data[self._ppl_data_field]

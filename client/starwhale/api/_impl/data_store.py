@@ -5,6 +5,7 @@ import json
 import atexit
 import pathlib
 import threading
+from queue import Queue
 from typing import Any, Set, cast, Dict, List, Tuple, Iterator, Optional
 
 import numpy as np
@@ -437,7 +438,7 @@ def _update_schema(schema: TableSchema, record: Dict[str, Any]) -> TableSchema:
             and value_type.name != column_schema.type.name
         ):
             raise RuntimeError(
-                f"can not insert a record with field {col} of type {value_type}, {column_schema.type} expected"
+                    f"can not insert a record with field {col} of type {value_type}, {column_schema.type} expected"
             )
         if column_schema is None:
             new_schema.columns[col] = ColumnSchema(col, value_type)
@@ -554,6 +555,7 @@ class MemoryTable:
 class LocalDataStore:
     _instance = None
     _lock = threading.Lock()
+    queue = Queue()
 
     @staticmethod
     def get_instance() -> "LocalDataStore":
@@ -570,7 +572,7 @@ class LocalDataStore:
 
     def __init__(self, root_path: str) -> None:
         self.root_path = root_path
-        self.name_pattern = re.compile(r"^[A-Za-z0-9-_/]+$")
+        self.name_pattern = re.compile(r"^[A-Za-z0-9-_/ ]+$")
         self.tables: Dict[str, MemoryTable] = {}
 
     def put(
@@ -641,6 +643,7 @@ class LocalDataStore:
                 self.columns = columns
                 self.explicit_none = explicit_none
 
+        logger.debug("scan enter, table size:{}", len(tables))
         infos: List[TableInfo] = []
         for table_name, table_alias, explicit_none in tables:
             table = self.tables.get(table_name, None)
@@ -675,12 +678,14 @@ class LocalDataStore:
         iters = []
         for info in infos:
             if info.name in self.tables:
+                logger.debug("scan by memory table{}", info.name)
                 iters.append(
                     self.tables[info.name].scan(
                         info.columns, start, end, info.explicit_none
                     )
                 )
             else:
+                logger.debug("scan by disk table{}", info.name)
                 iters.append(
                     _scan_table(
                         f"{self.root_path}/{info.name}",
@@ -696,7 +701,8 @@ class LocalDataStore:
             yield record
 
     def dump(self) -> None:
-        for table in self.tables.values():
+        logger.debug(f"tables size:{len(self.tables.values())}")
+        for table in list(self.tables.values()):
             logger.debug(f"dump {table.table_name} to {self.root_path}")
             table.dump(self.root_path)
 

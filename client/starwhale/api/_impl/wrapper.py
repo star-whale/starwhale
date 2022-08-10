@@ -1,9 +1,11 @@
 import os
 import re
 import threading
+from multiprocessing import Pipe
 from typing import Any, Dict, List, Iterator, Optional
 
 from . import data_store
+from starwhale.consts import EvaluationResultKind
 
 
 class Logger:
@@ -72,8 +74,54 @@ class Evaluation(Logger):
             [(self._results_table_name, "result", False)]
         )
 
+    def get_metrics(self):
+        _m = [metrics for metrics in self._data_store.scan_tables([(self._summary_table_name, "id", False)])
+              if metrics["id"] is self.eval_id
+              ]
+        return _m[0]
+
     def dump(self):
         self._data_store.dump()
+
+
+class EvaluationResult:
+    def __init__(self, data_id: str, result: Any, **kwargs: Any):
+        self.data_id = data_id
+        self.result = result
+        self.kwargs = kwargs
+
+
+class EvaluationMetric:
+    def __init__(self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any):
+        self.metrics = metrics
+        self.kwargs = kwargs
+
+
+class EvaluationQuery:
+    def __init__(self, kind: EvaluationResultKind):
+        self.kind = kind
+
+
+class EvaluationForSubProcess:
+    def __init__(self, input_pipe: Pipe, output_pipe: Pipe):
+        self.input_pipe = input_pipe
+        self.output_pipe = output_pipe
+
+    def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
+        self.output_pipe[0].send(EvaluationResult(data_id=data_id, result=result, **kwargs))
+
+    def log_metrics(
+        self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> None:
+        self.output_pipe[0].send(EvaluationMetric(metrics=metrics, **kwargs))
+
+    def get_results(self) -> Iterator[Dict[str, Any]]:
+        self.output_pipe[0].send(EvaluationQuery(EvaluationResultKind.RESULT))
+        return self.input_pipe[1].recv()
+
+    def get_metrics(self):
+        self.output_pipe[0].send(EvaluationQuery(EvaluationResultKind.METRIC))
+        return self.input_pipe[1].recv()
 
 
 class Dataset(Logger):

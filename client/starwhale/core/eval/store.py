@@ -14,7 +14,7 @@ from starwhale.base.store import BaseStorage
 from starwhale.utils.config import SWCliConfigMixed
 
 
-class JobStorage(BaseStorage):
+class EvaluationStorage(BaseStorage):
     @property
     def recover_loc(self) -> Path:
         return (

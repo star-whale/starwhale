@@ -23,15 +23,13 @@ from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NotFoundError
 
-from . import wrapper
 from .loader import (
     DataField,
     DataLoader,
     get_data_loader,
     SimpleDataLoader,
 )
-from .wrapper import Evaluation
-from ...utils.config import SWCliConfigMixed
+from .wrapper import EvaluationResult, EvaluationForSubProcess
 from ...core.job.model import Context
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
@@ -147,20 +145,12 @@ class PipelineHandler(metaclass=ABCMeta):
 
         self._ppl_data_field = "result"
         self._label_field = "label"
-        self._sw_config = SWCliConfigMixed()
-        self._sw_logger.debug("init Pipeline ...")
-        self._datastore = self._init_datastore()
+        self._eval = EvaluationForSubProcess(
+            self.context.get_param("input_pipe"),
+            self.context.get_param("output_pipe")
+        )
         self._simple_step_name = ""
         self._monkey_patch()
-
-    def _init_datastore(self) -> Evaluation:
-        os.environ["SW_ROOT_PATH"] = str(self._sw_config.datastore_dir)
-        os.environ["SW_PROJECT"] = self.context.project
-        os.environ["SW_EVAL_ID"] = self.context.version
-        self._sw_logger.debug(
-            f"datastore path:{str(self._sw_config.datastore_dir)}, eval_id:{self.context.version}"
-        )
-        return wrapper.Evaluation()
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
         # TODO: remove logger first?
@@ -228,8 +218,7 @@ class PipelineHandler(metaclass=ABCMeta):
         #     self._status_writer.close()
         # except Exception as e:
         #     self._sw_logger.exception(f"status writer close exception: {e}")
-        self._sw_logger.debug(f"datastore close:{self._datastore.eval_id}")
-        self._datastore.close()
+
         self.logger.remove()
         self._sw_logger.remove()
 
@@ -296,13 +285,13 @@ class PipelineHandler(metaclass=ABCMeta):
         self._simple_step_name = "cmp"
         self._update_status(self.STATUS.START)
         now = now_str()  # type: ignore
+        _ppl_results = [
+            result
+            for result in self._eval.get_results()
+            if result["id"].startswith("ppl_result")
+        ]
+        self._sw_logger.debug("cmp data size:{}", len(_ppl_results))
         try:
-            _ppl_results = [
-                result
-                for result in self._datastore.get_results()
-                if result["id"].startswith("ppl_result")
-            ]
-            self._sw_logger.debug("cmp data size:{}", len(_ppl_results))
             _data_loader = SimpleDataLoader(
                 _ppl_results, self._sw_logger, deserializer=self.deserialize_new
             )
@@ -310,21 +299,12 @@ class PipelineHandler(metaclass=ABCMeta):
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
             # self._status_writer.write({"time": now, "status": False, "exception": e})
-            self._datastore.log_result(
-                data_id=f"cmp_log_task_{self.context.index}",
-                result=json.dumps({"time": now, "status": False, "exception": str(e)}),
-            )
             raise
         else:
             # self._status_writer.write({"time": now, "status": True, "exception": ""})
-            self._datastore.log_result(
-                data_id=f"cmp_log_task_{self.context.index}",
-                result=json.dumps({"time": now, "status": True, "exception": ""}),
-            )
             self._sw_logger.debug("cmp result:{}", output)
             # self._result_writer.write(output)
-            self._datastore.log_metrics(output)
-            self._datastore.dump()
+            self._eval.log_metrics(output)
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
@@ -373,10 +353,9 @@ class PipelineHandler(metaclass=ABCMeta):
                 exception = None
 
             self._do_record(data, label, exception, *pred)
-        self._sw_logger.debug(
-            f"ppl result:{len([item for item in self._datastore.get_results()])}"
-        )
-        self._datastore.dump()
+        # self._sw_logger.debug(
+        #     f"ppl result:{len([item for item in self._datastore.get_results()])}"
+        # )
 
     def _do_record(
         self,
@@ -384,7 +363,7 @@ class PipelineHandler(metaclass=ABCMeta):
         label: DataField,
         exception: t.Union[None, Exception],
         *args: t.Any,
-    ) -> None:
+    ):
         _timeline = {
             "time": now_str(),  # type: ignore
             "status": exception is None,
@@ -393,10 +372,10 @@ class PipelineHandler(metaclass=ABCMeta):
             "output_tuple_len": len(args),
         }
         # self._status_writer.write(_timeline)
-        self._datastore.log_result(
-            data_id=f"ppl_log_task_{self.context.index}_data_{data.idx}",
-            result=json.dumps(_timeline),
-        )
+        # self._datastore.log_result(
+        #     data_id=f"ppl_log_task_{self.context.index}_data_{data.idx}",
+        #     result=json.dumps(_timeline),
+        # )
 
         _label = ""
         if self.merge_label:
@@ -419,19 +398,29 @@ class PipelineHandler(metaclass=ABCMeta):
                     _label = ""
 
         # self._result_writer.write(result)
-        self._datastore.log_result(
+        # self._datastore.log_result(
+        #     data_id=f"ppl_result_task_{self.context.index}_data_{data.idx}",
+        #     index=data.idx,
+        #     result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),
+        #     batch=data.batch_size,
+        #     label=_label,
+        # )
+        self._sw_logger.debug("record ppl result:{}", data.idx)
+        self._eval.log_result(
             data_id=f"ppl_result_task_{self.context.index}_data_{data.idx}",
             index=data.idx,
             result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),
             batch=data.batch_size,
             label=_label,
         )
+
         # self._sw_logger.debug(f"ppl data:{data.idx} result:{result}")
-        self._update_status(self.STATUS.RUNNING)
+        # self._update_status(self.STATUS.RUNNING)
 
     def _update_status(self, status: str) -> None:
         # fpath = self.config.status_dir / CURRENT_FNAME
         # ensure_file(fpath, status)
-        self._datastore.log_result(
-            data_id=f"{self._simple_step_name}_status", result=status
-        )
+        # self._datastore.log_result(
+        #     data_id=f"{self._simple_step_name}_status", result=status
+        # )
+        pass

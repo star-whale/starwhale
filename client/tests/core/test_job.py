@@ -6,12 +6,13 @@ from unittest.mock import patch, MagicMock
 from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from starwhale.core.eval.model import StandaloneEvaluationJob, CloudEvaluationJob
+from starwhale.core.eval.store import EvaluationStorage
+from starwhale.core.eval.view import JobTermView, JobTermViewRich
 from starwhale.utils import config as sw_config
 from starwhale.consts import HTTPMethod, RECOVER_DIRNAME, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
-from starwhale.core.job import CloudJob, JobStorage, StandaloneJob
 from starwhale.base.type import URIType
-from starwhale.core.eval import JobTermView, JobTermViewRich
 from starwhale.utils.config import load_swcli_config
 
 from .. import ROOT_DIR
@@ -42,7 +43,7 @@ class StandaloneJobTestCase(TestCase):
 
     def test_store(self):
         uri = URI(self.job_name[:7], expected_type=URIType.EVALUATION)
-        store = JobStorage(uri)
+        store = EvaluationStorage(uri)
 
         assert store.project_dir == Path(self.root) / "self"
         assert store.loc == Path(self.job_dir)
@@ -73,7 +74,7 @@ class StandaloneJobTestCase(TestCase):
 
     def test_standalone_list(self):
         uri = URI("")
-        jobs, _ = StandaloneJob.list(uri)
+        jobs, _ = StandaloneEvaluationJob.list(uri)
         assert len(jobs) == 1
         assert jobs[0]["location"] == os.path.join(self.job_dir, DEFAULT_MANIFEST_NAME)
         assert jobs[0]["manifest"]["version"] == self.job_name
@@ -81,7 +82,7 @@ class StandaloneJobTestCase(TestCase):
 
     def test_standalone_info(self):
         uri = URI(self.job_name[:5], expected_type=URIType.EVALUATION)
-        job = StandaloneJob(uri)
+        job = StandaloneEvaluationJob(uri)
         info = job.info()
 
         assert info["manifest"]["version"] == self.job_name
@@ -91,7 +92,7 @@ class StandaloneJobTestCase(TestCase):
 
     def test_stanalone_remove(self):
         uri = URI(f"local/project/self/job/{self.job_name[:6]}")
-        job = StandaloneJob(uri)
+        job = StandaloneEvaluationJob(uri)
 
         ok, _ = job.remove()
         assert ok
@@ -120,7 +121,7 @@ class StandaloneJobTestCase(TestCase):
     @patch("starwhale.core.job.model.check_call")
     def test_stanalone_actions(self, m_call: MagicMock):
         uri = URI(f"local/project/self/job/{self.job_name}")
-        job = StandaloneJob(uri)
+        job = StandaloneEvaluationJob(uri)
 
         ok, _ = job.cancel()
         assert ok
@@ -153,7 +154,7 @@ class CloudJobTestCase(unittest.TestCase):
             json={"code": 1, "message": "ok", "data": "11"},
         )
 
-        ok, reason = CloudJob.run(
+        ok, reason = CloudEvaluationJob.run(
             project_uri=URI(self.project_uri),
             model_uri="1",
             dataset_uris=["1", "2"],
@@ -183,7 +184,7 @@ class CloudJobTestCase(unittest.TestCase):
             text=open(f"{_job_data_dir}/job_list_resp.json").read(),
         )
 
-        jobs, pager = CloudJob.list(
+        jobs, pager = CloudEvaluationJob.list(
             project_uri=URI(self.project_uri),
         )
 
@@ -218,7 +219,7 @@ class CloudJobTestCase(unittest.TestCase):
             text=open(f"{_job_data_dir}/task_list.json").read(),
         )
 
-        info = CloudJob(URI(self.job_uri)).info()
+        info = CloudEvaluationJob(URI(self.job_uri)).info()
         assert len(info["tasks"][0]) == 3
         assert info["tasks"][0][0]["taskStatus"] == "SUCCESS"
         assert info["tasks"][0][0]["id"] == "40"
@@ -253,8 +254,8 @@ class CloudJobTestCase(unittest.TestCase):
         JobTermView(self.job_uri).resume()
 
     def test_cloud_utils(self):
-        assert (1, 1) == CloudJob.parse_device("cpu:1")
-        assert (2, 1) == CloudJob.parse_device("gpu:1")
-        assert (1, 10) == CloudJob.parse_device("xxx:10")
-        assert (1, 1) == CloudJob.parse_device("cpu")
-        assert (2, 1) == CloudJob.parse_device("gpu")
+        assert (1, 1) == CloudEvaluationJob.parse_device("cpu:1")
+        assert (2, 1) == CloudEvaluationJob.parse_device("gpu:1")
+        assert (1, 10) == CloudEvaluationJob.parse_device("xxx:10")
+        assert (1, 1) == CloudEvaluationJob.parse_device("cpu")
+        assert (2, 1) == CloudEvaluationJob.parse_device("gpu")

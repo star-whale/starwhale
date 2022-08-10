@@ -49,6 +49,7 @@ def multi_classification(
                 y_true, y_pred, labels=all_labels, normalize=confusion_matrix_normalize
             )
             mcm = multilabel_confusion_matrix(y_true, y_pred, labels=all_labels)
+            # TODO:
             _r["confusion_matrix"] = {
                 "binarylabel": cm.tolist(),
                 "multilabel": mcm.tolist(),
@@ -64,11 +65,41 @@ def multi_classification(
                     _r["roc_auc"][_label] = _calculate_roc_auc(
                         y_true, y_pr, _label, _idx
                     )
-            return _r
+            return _do_flatten_summary(_r)
 
         return _wrapper
 
     return _decorator
+
+
+def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
+    rt = {}
+
+    def _f(_s: t.Dict[str, t.Any], _prefix: str = "") -> None:
+        for _k, _v in _s.items():
+            _k = f"{_prefix}{_k}"
+            if isinstance(_v, dict):
+                _f(_v, _prefix=f"{_k}/")
+            elif isinstance(_v, list):
+                _do_flatten_list(_v, _prefix=f"{_k}/")
+            else:
+                rt[_k] = _v
+
+    def _do_flatten_list(data: t.List, _prefix: str = ""):
+        index = 0
+        for _d in data:
+            if isinstance(_d, dict):
+                _f(_d, _prefix=f"{_prefix}/")
+            elif isinstance(_d, list):
+                _do_flatten_list(_d, _prefix=f"{_prefix}/")
+            else:
+                rt[f"{_prefix}{index}"] = _d
+            index += 1
+    _f(summary)
+    return rt
+
+
+
 
 
 def _calculate_roc_auc(

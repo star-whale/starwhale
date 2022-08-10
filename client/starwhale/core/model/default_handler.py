@@ -3,6 +3,7 @@ from pathlib import Path
 
 from loguru import logger
 
+from starwhale.api._impl.wrapper import EvaluationForSubProcess
 from starwhale.utils import console
 from starwhale.consts import (
     DefaultYAMLName,
@@ -28,7 +29,7 @@ class DefaultPipeline:
         _cls = import_cls(src_dir, _handler)
         return _cls
 
-    @step()
+    @step(concurrency=1, task_num=1)
     def ppl(self, _context: Context):
         from starwhale.api._impl.model import _RunConfig
 
@@ -52,5 +53,17 @@ class DefaultPipeline:
     def cmp(self, _context: Context):
         _cls = self._get_cls(_context.src_dir)
         with _cls(context=_context) as _obj:
+            # _eval = EvaluationForSubProcess(
+            #     _context.get_param("input_pipe"),
+            #     _context.get_param("output_pipe")
+            # )
+            # _ppl_results = [
+            #     result
+            #     for result in _eval.get_results()
+            #     if result["id"].startswith("ppl_result")
+            # ]
+            # logger.debug("cmp data size:{}", len(_ppl_results))
+            logger.debug("start to cmp")
             _obj._starwhale_internal_run_cmp()
+
         console.print(f":clap: finish run {_context.step}: {_obj}")

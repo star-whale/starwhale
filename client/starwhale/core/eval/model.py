@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import json
+import os
 import typing as t
 from abc import ABCMeta, abstractmethod
 from http import HTTPStatus
 from collections import defaultdict
 
-import jsonlines
+from loguru import logger
 
+from starwhale.api._impl import wrapper
 from starwhale.utils import load_yaml
 from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
@@ -19,7 +21,7 @@ from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 
-from .store import JobStorage
+from .store import EvaluationStorage
 from .executor import EvalExecutor
 
 _device_id_map = {"cpu": 1, "gpu": 2}
@@ -121,7 +123,8 @@ class EvaluationJob(metaclass=ABCMeta):
 class StandaloneEvaluationJob(EvaluationJob):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
-        self.store = JobStorage(uri)
+        self.store = EvaluationStorage(uri)
+        self._sw_config = SWCliConfigMixed()
 
     @classmethod
     def run(
@@ -157,15 +160,23 @@ class StandaloneEvaluationJob(EvaluationJob):
         return True, ee._version
 
     def _get_report(self) -> t.Dict[str, t.Any]:
-        report = {}
-        with jsonlines.open(str(self.store.eval_report_path.resolve()), "r") as _reader:
-            for _report in _reader:
-                if not _report or not isinstance(_report, dict):
-                    continue
-
-                report = _report
-                break
-        return report
+        os.environ["SW_ROOT_PATH"] = str(self._sw_config.datastore_dir)
+        os.environ["SW_PROJECT"] = self._sw_config.current_project
+        os.environ["SW_EVAL_ID"] = self.store.id
+        logger.debug(
+            f"datastore path:{str(self._sw_config.datastore_dir)}, eval_id:{self.store.id}"
+        )
+        _datastore = wrapper.Evaluation()
+        return _datastore.get_metrics()
+        # report = {}
+        # with jsonlines.open(str(self.store.eval_report_path.resolve()), "r") as _reader:
+        #     for _report in _reader:
+        #         if not _report or not isinstance(_report, dict):
+        #             continue
+        #
+        #         report = _report
+        #         break
+        # return report
 
     @staticmethod
     def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
@@ -284,7 +295,7 @@ class StandaloneEvaluationJob(EvaluationJob):
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Dict[str, t.Any]], t.Dict[str, t.Any]]:
         _rt = []
-        for _path, _is_removed in JobStorage.iter_all_jobs(project_uri):
+        for _path, _is_removed in EvaluationStorage.iter_all_jobs(project_uri):
             _manifest = load_yaml(_path)
             if not _manifest:
                 continue

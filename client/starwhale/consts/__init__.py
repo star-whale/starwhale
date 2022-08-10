@@ -99,6 +99,11 @@ class DataLoaderKind:
     JSONL = "jsonl"
 
 
+class EvaluationResultKind:
+    RESULT = "result"
+    METRIC = "metric"
+
+
 class SWDSSubFileType:
     BIN = "swds_bin"
     META = "swds_meta"

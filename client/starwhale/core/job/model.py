@@ -1,9 +1,13 @@
+from multiprocessing import Pipe
+import threading
 import typing as t
 from pathlib import Path
 
 import yaml
 from loguru import logger
 
+from starwhale.api._impl.wrapper import Evaluation, EvaluationResult, EvaluationMetric, EvaluationQuery
+from starwhale.consts import EvaluationResultKind
 from starwhale.core.job.loader import load_module
 
 
@@ -24,7 +28,7 @@ class Step:
         self.task_num = task_num
         self.dependency = dependency.strip().split(",")
         self.status = ""
-        self.tasks = []
+        self.tasks: t.List[Task] = []
 
     def __repr__(self):
         return "step_name:{0}, dependency:{1}, status: {2}".format(
@@ -40,6 +44,7 @@ class Step:
         dataset_uris: t.List[str],
         version: str,
         project: str,
+        **kw: t.Any,
     ):
         self.tasks.append(
             Task(
@@ -53,6 +58,7 @@ class Step:
                     dataset_uris=dataset_uris,
                     workdir=workdir,
                     src_dir=src_dir,
+                    **kw
                 ),
                 status=STATUS.INIT,
                 module=module,
@@ -170,6 +176,7 @@ class Context:
         dataset_uris: t.List[str] = None,
         version: str = "",
         project: str = "",
+        **kw: t.Any,
     ):
         self.project = project
         self.version = version
@@ -179,6 +186,15 @@ class Context:
         self.dataset_uris = dataset_uris
         self.workdir = workdir
         self.src_dir = src_dir
+        self.kw = kw
+
+    def get_param(self, name: str) -> t.Any:
+        return self.kw.get(name)
+
+    def put_param(self, name: str, value: t.Any):
+        if not self.kw:
+            self.kw = {}
+        self.kw.setdefault(name, value)
 
     def __repr__(self):
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
@@ -197,6 +213,10 @@ class Task:
         self.status = status
         self.module = module
         self.src_dir = src_dir
+        self.input_pipe = Pipe(True)
+        self.output_pipe = Pipe(True)
+        self.context.put_param("input_pipe", self.input_pipe)
+        self.context.put_param("output_pipe", self.output_pipe)
 
     def execute(self) -> bool:
         """
