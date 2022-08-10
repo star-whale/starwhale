@@ -170,7 +170,7 @@ check_controller_service() {
             ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.phase'`
             if [[ "$ready" == "Running" ]]; then
               name=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].metadata.name'`
-              kubectl logs $name --namespace starwhale
+              kubectl describe pod $name --namespace starwhale
             fi
           fi
           sleep 3
