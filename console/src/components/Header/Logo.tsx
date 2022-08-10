@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import smallLogoImg from '@/assets/logo_small_en_white.svg'
 import normalLogoImg from '@/assets/logo_normal_en_white.svg'
+import normalLogoGrayImg from '@/assets/logo_normal_en_gray.svg'
 import { IComposedComponentProps } from '@/theme'
 import { createUseStyles } from 'react-jss'
 import classNames from 'classnames'
@@ -20,43 +21,63 @@ const useLogoStyles = createUseStyles({
     },
 })
 
-export interface ILogoProps extends IComposedComponentProps {
-    expanded?: boolean
+const normals = {
+    white: normalLogoImg,
+    gray: normalLogoGrayImg,
 }
 
-export default function Logo({ expanded = true, className }: ILogoProps) {
+const smalls = {
+    white: smallLogoImg,
+    gray: smallLogoImg,
+}
+
+export interface ILogoProps extends IComposedComponentProps {
+    expanded?: boolean
+    kind?: 'gray' | 'white'
+}
+
+export default function Logo({ expanded = true, className, kind = 'white', style }: ILogoProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
     const styles = useLogoStyles()
+    const logo = React.useMemo(() => {
+        return (
+            <>
+                <img
+                    style={{
+                        width: 140,
+                        display: expanded ? 'inline' : 'none',
+                    }}
+                    src={normals[kind]}
+                    alt='logo'
+                />
+                <img
+                    style={{
+                        width: 50,
+                        display: !expanded ? 'inline' : 'none',
+                    }}
+                    src={smalls[kind]}
+                    alt='logo'
+                />
+            </>
+        )
+    }, [expanded, kind])
 
-    // eslint-disable-next-line no-multi-assign
-    const Wrapper = currentUser ? Link : () => React.createElement('div')
+    if (currentUser) {
+        return <div>{logo}</div>
+    }
 
     return (
-        <Wrapper
+        <Link
             className={classNames(styles.logoWrapper, className)}
             style={{
                 width: expanded ? sidebarExpandedWidth : sidebarFoldedWidth,
                 transition: 'all .2s ease',
+                ...style,
             }}
             to='/'
         >
-            <img
-                style={{
-                    width: 140,
-                    display: expanded ? 'inline' : 'none',
-                }}
-                src={normalLogoImg}
-                alt='logo'
-            />
-            <img
-                style={{
-                    width: 50,
-                    display: !expanded ? 'inline' : 'none',
-                }}
-                src={smallLogoImg}
-                alt='logo'
-            />
-        </Wrapper>
+            {logo}
+        </Link>
     )
 }

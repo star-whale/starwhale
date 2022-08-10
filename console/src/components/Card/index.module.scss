@@ -18,7 +18,6 @@
     margin-bottom: 10px;
     display: flex;
     border-radius: 8px;
-    padding: 36px 28px;
     flex-direction: column;
 
     .card {
@@ -43,7 +42,7 @@
     align-items: center;
     display: flex;
     gap: 20px;
-    margin-bottom: 28px;
+    margin-bottom: 12px;
     // padding: 6px 0;
 }
 
@@ -53,7 +52,7 @@
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
-    padding: 10px 0;
+    // padding: 10px 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;

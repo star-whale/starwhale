@@ -2,8 +2,6 @@ import React from 'react'
 import { Breadcrumbs } from 'baseui/breadcrumbs'
 import { useHistory } from 'react-router-dom'
 import { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
-import Header from '@/components/Header'
-import { headerHeight } from '@/consts'
 import { createUseStyles } from 'react-jss'
 
 const useMainStyles = createUseStyles({
@@ -11,9 +9,8 @@ const useMainStyles = createUseStyles({
         display: 'flex',
         flexFlow: 'row nowrap',
         justifyContent: 'space-between',
-        height: '100vh',
-        width: '100vw',
         position: 'relative',
+        flex: '1',
     },
     mainContentWrapper: {
         overflowY: 'auto',
@@ -24,7 +21,7 @@ const useMainStyles = createUseStyles({
         flexDirection: 'column',
     },
     mainContent: {
-        padding: '28px',
+        padding: '12px 20px',
         border: '8px',
         boxSizing: 'border-box',
         minWidth: '792px',
@@ -64,11 +61,9 @@ export default function BaseLayout({
         >
             {Sidebar && <Sidebar />}
             <div className={styles.mainContentWrapper}>
-                <Header />
                 <div
                     className={styles.mainContent}
                     style={{
-                        paddingTop: !breadcrumbItems ? headerHeight : '28px',
                         ...contentStyle,
                     }}
                 >
