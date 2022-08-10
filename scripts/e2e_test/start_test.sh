@@ -40,8 +40,13 @@ declare_env() {
 }
 
 start_minikube() {
-  minikube delete
-  minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+    if in_github_action; then
+        minikube delete
+        minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+    else
+        minikube start -p sw_e2e_test --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+    fi
+
 }
 
 
@@ -210,7 +215,7 @@ restore_env() {
   mv ~/.pip/pip.conf.bak_e2e ~/.pip/pip.conf
   rm /tmp/service_wait.sh
   script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
-  helm uninstall starwhale -n starwhale
+  minikube delete -p sw_e2e_test
   cd $script_dir/../../
   WORK_DIR=`cat WORK_DIR`
   if test -n $WORK_DIR ; then
@@ -220,9 +225,9 @@ restore_env() {
   rm LOCAL_DATA_DIR
   echo 'cleanup'
 }
-#if ! in_github_action; then
-#  trap restore_env EXIT
-#fi
+if ! in_github_action; then
+  trap restore_env EXIT
+fi
 
 main() {
   declare_env
