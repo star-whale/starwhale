@@ -66,8 +66,8 @@ build_swcli() {
 }
 
 build_server_image() {
-  pushd ../../console
-  make build-ui
+  pushd ../../docker
+  make build-console
   popd
   pushd ../../server
   make build-package
