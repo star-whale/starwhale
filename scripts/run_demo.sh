@@ -21,6 +21,7 @@ echo $WORK_DIR > WORK_DIR
 
 finish() {
   if ! in_github_action && test -n $PARENT_CLEAN ; then
+    echo 'cleanup work dir $WORK_DIR'
     rm -rf "$WORK_DIR"
   fi
   echo 'cleanup'

@@ -6,8 +6,8 @@ if [[ ! -z ${DEBUG} ]]; then
     set -x
 fi
 
+source $WORK_DIR/venv/bin/activate
 if [ -z "$GITHUB_ACTION" ]; then
-  source $WORK_DIR/venv/bin/activate
   export SW_CLI_CONFIG="$LOCAL_DATA_DIR/config.yaml"
   export SW_LOCAL_STORAGE=$LOCAL_DATA_DIR/data
 fi

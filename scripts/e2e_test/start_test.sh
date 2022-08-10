@@ -169,14 +169,14 @@ check_controller_service() {
           else
             echo "controller is starting"
             kubectl get pods --namespace starwhale
-            kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status'
-            ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.phase'`
-            if [[ "$ready" == "Running" ]]; then
-              name=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].metadata.name'`
-              kubectl describe pod $name --namespace starwhale
-            fi
+#            kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status'
+#            ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.phase'`
+#            if [[ "$ready" == "Running" ]]; then
+#              name=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].metadata.name'`
+#              kubectl describe pod $name --namespace starwhale
+#            fi
           fi
-          sleep 3
+          sleep 5
   done
   nohup kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082 &
 }
@@ -197,6 +197,8 @@ standalone_test() {
 api_test() {
   pushd ../../
   export WORK_DIR=`cat WORK_DIR`
+  ls $WORK_DIR
+  if tree $WORK_DIR; then echo "tree"; fi
   if ! in_github_action; then
     export LOCAL_DATA_DIR=`cat LOCAL_DATA_DIR`
   fi
