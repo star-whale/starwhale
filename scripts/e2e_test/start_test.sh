@@ -155,7 +155,7 @@ push_images_to_nexus() {
 
 start_starwhale() {
   pushd ../../docker/charts
-  helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION,mirror.pypi.indexUrl= http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple,mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL,,mirror.pypi.trustedHost=$NEXUS_HOSTNAME,"
+  helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION,mirror.pypi.indexUrl= http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple,mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL,,mirror.pypi.trustedHost=$NEXUS_HOSTNAME"
   popd
 }
 
