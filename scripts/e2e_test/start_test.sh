@@ -171,8 +171,8 @@ check_controller_service() {
             echo "controller is starting"
             kubectl get pods --namespace starwhale
             kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status'
-            ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.containerStatuses[0].ready'`
-            if [[ "$ready" == "true" ]]; then
+            ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.phase'`
+            if [[ "$ready" == "Running" ]]; then
               name=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].metadata.name'`
               kubectl logs $name --namespace starwhale
             fi
