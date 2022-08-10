@@ -197,8 +197,6 @@ standalone_test() {
 api_test() {
   pushd ../../
   export WORK_DIR=`cat WORK_DIR`
-  ls $WORK_DIR
-  if tree $WORK_DIR; then echo "tree"; fi
   if ! in_github_action; then
     export LOCAL_DATA_DIR=`cat LOCAL_DATA_DIR`
   fi
