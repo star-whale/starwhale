@@ -41,6 +41,7 @@ declare_env() {
 
 start_minikube() {
     minikube start -p sw-e2e-test --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+    minikube addons enable ingress
 }
 
 

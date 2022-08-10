@@ -3,16 +3,6 @@ name: End to End test for starwhale
 on:
   push:
     branches: [ e2e_fix ]
-  workflow_dispatch:
-    # Inputs the workflow accepts.
-    inputs:
-      name:
-        # Friendly description to be shown in the UI instead of 'name'
-        description: 'Person to greet'
-        # Default value if no value is explicitly provided
-        default: 'World'
-        # Input has to be provided for the workflow to run
-        required: true
   schedule:
     - cron: "34 10,13 * * *"
 
