@@ -40,20 +40,14 @@ declare_env() {
 }
 
 start_minikube() {
-    if in_github_action; then
-        minikube delete
-        minikube start --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
-    else
-        minikube start -p sw_e2e_test --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
-    fi
-
+    minikube start -p sw-e2e-test --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
 }
 
 
 start_nexus() {
   docker run -d --publish=$PORT_NEXUS:$PORT_NEXUS --publish=$PORT_NEXUS_DOCKER:$PORT_NEXUS_DOCKER --name nexus  -e NEXUS_SECURITY_RANDOMPASSWORD=false $NEXUS_IMAGE
-    sudo cp /etc/hosts /etc/hosts.bak_e2e
-    sudo echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
+  sudo cp /etc/hosts /etc/hosts.bak_e2e
+  sudo echo "127.0.0.1 $NEXUS_HOSTNAME" | sudo tee -a /etc/hosts
 }
 
 build_swcli() {
@@ -218,7 +212,7 @@ restore_env() {
   mv ~/.pip/pip.conf.bak_e2e ~/.pip/pip.conf
   rm /tmp/service_wait.sh
   script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
-  minikube delete -p sw_e2e_test
+  minikube delete -p sw-e2e-test
   cd $script_dir/../../
   WORK_DIR=`cat WORK_DIR`
   if test -n $WORK_DIR ; then
