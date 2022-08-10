@@ -82,14 +82,11 @@ class BundleCopy(CloudRequestMixed):
     def _check_cloud_obj_existed(self, uri: URI) -> bool:
         # TODO: add more params for project
         # TODO: tune controller api, use unified params name
+        url = self._get_remote_instance_rc_url(True)
         ok, _ = self.do_http_request_simple_ret(
-            path=self._get_remote_instance_rc_url(),
+            path=url,
             method=HTTPMethod.HEAD,
             instance_uri=uri,
-            params={
-                _query_param_map[self.typ]: f"{self.bundle_name}:{self.bundle_version}",
-                "project": uri.project,
-            },
             ignore_status_codes=[HTTPStatus.NOT_FOUND],
         )
         return ok
@@ -113,12 +110,17 @@ class BundleCopy(CloudRequestMixed):
         else:
             return self._get_target_path(uri).exists()
 
-    def _get_remote_instance_rc_url(self) -> str:
+    def _get_remote_instance_rc_url(self, for_head: bool = False) -> str:
         _obj = self.src_uri.object
+        project = self.dest_uri.project
         if self.src_uri.instance_type == InstanceType.CLOUD:
-            return f"/project/{self.src_uri.project}/{self.typ}/{_obj.name}/version/{_obj.version}/file"
-        else:
-            return f"/project/{self.dest_uri.project}/{self.typ}/{_obj.name}/version/{_obj.version}/file"
+            project = self.src_uri.project
+        base = [f"/project/{project}/{self.typ}/{_obj.name}/version/{_obj.version}"]
+        if not for_head:
+            # uri for head request contains no 'file'
+            base.append("file")
+
+        return "/".join(base)
 
     def _do_upload_bundle_tar(self, progress: Progress) -> None:
         file_path = self._get_target_path(self.src_uri)
