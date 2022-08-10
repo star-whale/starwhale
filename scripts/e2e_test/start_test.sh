@@ -66,12 +66,15 @@ build_swcli() {
 }
 
 build_server_image() {
+  pushd ../../console
+  make build-ui
+  popd
   pushd ../../server
   make build-package
-  pushd ../docker
+  popd
+  pushd ../../docker
   docker build -t server -f Dockerfile.server .
   docker tag server $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
-  popd
   popd
 }
 
@@ -150,7 +153,7 @@ push_images_to_nexus() {
   docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
 }
 
-start_docker_compose() {
+start_starwhale() {
   pushd ../../docker/charts
   helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION"
   popd
@@ -242,7 +245,7 @@ main() {
   upload_pypi_to_nexus
   buid_runtime_image
   push_images_to_nexus
-  start_docker_compose
+  start_starwhale
   check_controller_service
   standalone_test
   api_test
