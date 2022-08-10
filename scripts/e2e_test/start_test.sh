@@ -189,16 +189,20 @@ standalone_test() {
   rm -rf venv*
   pushd ../
   scripts/run_demo.sh
-  export WORK_DIR=`cat WORK_DIR`
-  export LOCAL_DATA_DIR=`cat LOCAL_DATA_DIR`
-  scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
-  scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
   popd
   popd
 
 }
 
 api_test() {
+  pushd ../../
+  export WORK_DIR=`cat WORK_DIR`
+  if ! in_github_action; then
+    export LOCAL_DATA_DIR=`cat LOCAL_DATA_DIR`
+  fi
+  scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
+  scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
+  popd
   pushd ../apitest/pytest
   python3 -m pip install -r requirements.txt
   pytest --host 127.0.0.1 --port $PORT_CONTROLLER
@@ -246,8 +250,8 @@ main() {
   buid_runtime_image
   push_images_to_nexus
   start_starwhale
-  check_controller_service
   standalone_test
+  check_controller_service
   api_test
 }
 
