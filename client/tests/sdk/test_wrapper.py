@@ -5,7 +5,7 @@ from starwhale.api._impl import wrapper, data_store
 from .test_base import BaseTestCase
 
 
-class TestEvaluaiton(BaseTestCase):
+class TestEvaluation(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
         os.environ["SW_PROJECT"] = "test"
