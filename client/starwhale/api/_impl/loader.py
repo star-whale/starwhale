@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import io
 import os
-import json
 import typing as t
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
@@ -10,13 +10,111 @@ import boto3
 import loguru
 from loguru import logger as _logger
 from botocore.client import Config as S3Config
+from typing_extensions import Protocol
 
 from starwhale.consts import DataLoaderKind, SWDSBackendType
-from starwhale.utils.error import NoSupportError
+from starwhale.base.uri import URI
+from starwhale.base.type import URIType, InstanceType
+from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.core.dataset.store import DatasetStorage
+
+from .dataset import TabularDataset
 
 # TODO: config chunk size
 _CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 _FILE_END_POS = -1
+
+
+class ObjectStoreS3Connection:
+    def __init__(
+        self,
+        endpoint: str,
+        access_key: str,
+        secret_key: str,
+        region: str = "",
+        connect_timeout: float = 10.0,
+        read_timeout: float = 50.0,
+        total_max_attempts: int = 6,
+    ) -> None:
+        self.endpoint = endpoint
+        self.access_key = access_key
+        self.secret_key = secret_key
+        self.region = region
+        self.connect_timeout = float(
+            os.environ.get("SW_S3_CONNECT_TIMEOUT", connect_timeout)
+        )
+        self.read_timeout = float(os.environ.get("SW_S3_READ_TIMEOUT", read_timeout))
+        self.total_max_attempts = int(
+            os.environ.get("SW_S3_TOTAL_MAX_ATTEMPTS", total_max_attempts)
+        )
+
+    def __str__(self) -> str:
+        return f"endpoint[{self.endpoint}]-region[{self.region}]"
+
+    __repr__ = __str__
+
+    @classmethod
+    def create_from_env(cls) -> ObjectStoreS3Connection:
+        # TODO: support multi s3 backend servers
+        return ObjectStoreS3Connection(
+            endpoint=os.environ.get("SW_S3_ENDPOINT", "127.0.0.1:9000"),
+            access_key=os.environ.get("SW_S3_ACCESS_KEY", "foo"),
+            secret_key=os.environ.get("SW_S3_SECRET", "bar"),
+            region=os.environ.get("SW_S3_REGION", "local"),
+        )
+
+
+class DatasetObjectStore:
+    def __init__(
+        self,
+        uri: URI,
+        backend: str = "",
+        conn: t.Optional[ObjectStoreS3Connection] = None,
+        bucket: str = "",
+    ) -> None:
+        self.uri = uri
+        _backend = backend or self._get_default_backend()
+
+        self.conn: t.Optional[ObjectStoreS3Connection]
+        self.backend: StorageBackend
+
+        _env_bucket = os.environ.get("SW_S3_BUCKET", "")
+
+        if _backend == SWDSBackendType.S3:
+            self.conn = conn or ObjectStoreS3Connection.create_from_env()
+            self.bucket = bucket or _env_bucket
+            self.backend = S3StorageBackend(self.conn)
+        else:
+            self.conn = None
+            self.bucket = bucket or _env_bucket or self._get_bucket_by_uri()
+            self.backend = FuseStorageBackend()
+
+        self._do_validate()
+
+    def _do_validate(self) -> None:
+        if self.uri.object.typ != URIType.DATASET:
+            raise NoSupportError(f"{self.uri} is not dataset uri")
+
+        if not self.bucket:
+            raise FieldTypeOrValueError("no bucket field")
+
+    def _get_default_backend(self) -> str:
+        _type = self.uri.instance_type
+
+        if _type == InstanceType.STANDALONE:
+            return SWDSBackendType.FUSE
+        elif _type == InstanceType.CLOUD:
+            return SWDSBackendType.S3
+        else:
+            raise NoSupportError(
+                f"get object store backend by the instance type({_type})"
+            )
+
+    def _get_bucket_by_uri(self) -> str:
+        if self.uri.instance_type == InstanceType.CLOUD:
+            raise NoSupportError(f"{self.uri} to fetch bucket")
+
+        return str(DatasetStorage(self.uri).data_dir.absolute())
 
 
 class DataField(t.NamedTuple):
@@ -27,20 +125,17 @@ class DataField(t.NamedTuple):
     ext_attr: t.Dict[str, t.Any]
 
 
-# TODO: use attr to simplify code
-
-
 class DataLoader(metaclass=ABCMeta):
     def __init__(
         self,
-        storage: StorageBackend,
-        swds: t.List[t.Dict[str, t.Any]] = [],
+        storage: DatasetObjectStore,
+        dataset: TabularDataset,
         logger: t.Union[loguru.Logger, None] = None,
         kind: str = DataLoaderKind.SWDS,
         deserializer: t.Optional[t.Callable] = None,
     ):
         self.storage = storage
-        self.swds = swds
+        self.dataset = dataset
         self.logger = logger or _logger
         self.kind = kind
         self.deserializer = deserializer
@@ -48,10 +143,9 @@ class DataLoader(metaclass=ABCMeta):
         self._do_validate()
 
     def _do_validate(self) -> None:
-        if self.kind not in (DataLoaderKind.JSONL, DataLoaderKind.SWDS):
+        if self.kind != DataLoaderKind.SWDS:
             raise Exception(f"{self.kind} no support")
 
-    @abstractmethod
     def __iter__(self) -> t.Any:
         raise NotImplementedError
 
@@ -59,76 +153,43 @@ class DataLoader(metaclass=ABCMeta):
         return f"DataLoader for {self.storage.backend}"
 
     def __repr__(self) -> str:
-        return (
-            f"DataLoader for {self.storage.backend}, "
-            f"swds({len(self.swds)}), extra:{self.storage.service}"
-        )
-
-
-class JSONLineDataLoader(DataLoader):
-    def __init__(
-        self,
-        storage: StorageBackend,
-        swds: t.List[t.Dict[str, t.Any]] = [],
-        logger: t.Union[loguru.Logger, None] = None,
-        **kwargs: t.Any,
-    ) -> None:
-        super().__init__(storage, swds, logger, DataLoaderKind.JSONL, **kwargs)
-
-    def __iter__(self) -> t.Any:
-        for _swds in self.swds:
-            for data in self._do_iter(_swds["bucket"], _swds["key"]["data"]):
-                yield data
-
-    def _do_iter(self, bucket: str, key_compose: str) -> t.Any:
-        self.logger.info(f"@{bucket}/{key_compose}")
-        _file = self.storage._make_file(bucket, key_compose)
-        while True:
-            line = _file.readline()
-            if not line:
-                break
-
-            line = line.strip()
-            if not line:
-                continue
-
-            if self.deserializer:
-                yield self.deserializer(line)
-                continue
-            # TODO: add json exception ignore?
-            yield json.loads(line)
+        return f"DataLoader for {self.storage.backend}, extra:{self.storage.conn}"
 
 
 class SWDSDataLoader(DataLoader):
     def __init__(
         self,
-        storage: StorageBackend,
-        swds: t.List[t.Dict[str, t.Any]] = [],
+        storage: DatasetObjectStore,
+        dataset: TabularDataset,
         logger: t.Union[loguru.Logger, None] = None,
     ) -> None:
-        super().__init__(storage, swds, logger, DataLoaderKind.SWDS)
+        super().__init__(storage, dataset, logger, DataLoaderKind.SWDS)
 
     def __iter__(self) -> t.Generator[t.Tuple[DataField, DataField], None, None]:
-        for _swds in self.swds:
-            for data, label in zip(
-                self._do_iter(
-                    _swds["bucket"], _swds["key"]["data"], _swds.get("ext_attr", {})
-                ),
-                self._do_iter(
-                    _swds["bucket"], _swds["key"]["label"], _swds.get("ext_attr", {})
-                ),
-            ):
+        _attr = {"ds_name": self.dataset.name, "ds_version": self.dataset.version}
+        for row in self.dataset.scan_all():
+            # TODO: tune performance by fetch in batch
+            # TODO: remove ext_attr field
+            _key_compose = f"{row.data_uri}:{row.data_offset}:{row.data_offset + row.data_size - 1}"
+            for data in self._do_iter(_key_compose, _attr):
+                label = DataField(
+                    idx=row.id,
+                    data_size=len(row.label),
+                    batch_size=data.batch_size,
+                    data=row.label,
+                    ext_attr=_attr,
+                )
                 yield data, label
 
     def _do_iter(
-        self, bucket: str, key_compose: str, ext_attr: t.Dict[str, t.Any]
+        self, key_compose: str, attr: t.Dict[str, str]
     ) -> t.Iterator[DataField]:
         from .dataset import _header_size, _header_struct
 
-        self.logger.info(f"@{bucket}/{key_compose}")
-        _file = self.storage._make_file(bucket, key_compose)
+        self.logger.info(f"@{self.storage.bucket}/{key_compose}")
+        _file = self.storage.backend._make_file(self.storage.bucket, key_compose)
         while True:
-            header = _file.read(_header_size)
+            header: bytes = _file.read(_header_size)
             if not header:
                 break
             _, _, idx, size, padding_size, batch, _ = _header_struct.unpack(header)
@@ -138,49 +199,21 @@ class SWDSDataLoader(DataLoader):
                 size,
                 batch,
                 data[:size].tobytes() if isinstance(data, memoryview) else data[:size],
-                ext_attr,
+                attr,
             )
 
 
 class StorageBackend(metaclass=ABCMeta):
     def __init__(
         self,
-        backend: str,
-        secret: t.Dict[str, t.Any] = {},
-        service: t.Dict[str, t.Any] = {},
+        kind: str,
     ) -> None:
-        self.service = service
-        self.backend = backend
-        self.secret = secret
-
-        self._do_validate()
+        self.kind = kind
 
     def __str__(self) -> str:
-        return f"StorageBackend for {self.backend}"
+        return f"StorageBackend for {self.kind}"
 
-    def __repr__(self) -> str:
-        return f"StorageBackend for {self.backend}, service: {self.service}"
-
-    def _do_validate(self) -> None:
-        # TODO: add more validator
-        if self.backend == SWDSBackendType.S3:
-            _s = self.secret
-            if (
-                not _s
-                or not isinstance(_s, dict)
-                or not _s.get("access_key")
-                or not _s.get("secret_key")
-            ):
-                raise Exception(f"secret({_s}) format is invalid")
-
-            _s = self.service
-            if (
-                not _s
-                or not isinstance(_s, dict)
-                or not _s.get("endpoint")
-                or not _s.get("region")
-            ):
-                raise Exception(f"s3_service({_s} format is invalid)")
+    __repr__ = __str__
 
     def _parse_key(self, key: str) -> t.Tuple[str, int, int]:
         # TODO: some builtin method to
@@ -193,38 +226,37 @@ class StorageBackend(metaclass=ABCMeta):
         else:
             return _r[0], int(_r[1]), int(_r[2])
 
-    # TODO: tune typing hint for FileObj
     @abstractmethod
-    def _make_file(self, bucket: str, key_compose: str) -> t.Any:
+    def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
         raise NotImplementedError
 
 
 class S3StorageBackend(StorageBackend):
     def __init__(
-        self, secret: t.Dict[str, t.Any] = {}, service: t.Dict[str, t.Any] = {}
+        self,
+        conn: ObjectStoreS3Connection,
     ):
-        super().__init__(backend=SWDSBackendType.S3, secret=secret, service=service)
+        super().__init__(kind=SWDSBackendType.S3)
 
-        _env = os.environ
         self.s3 = boto3.resource(
             "s3",
-            endpoint_url=self.service["endpoint"],
-            aws_access_key_id=self.secret["access_key"],
-            aws_secret_access_key=self.secret["secret_key"],
+            endpoint_url=conn.endpoint,
+            aws_access_key_id=conn.access_key,
+            aws_secret_access_key=conn.secret_key,
             config=S3Config(
-                connect_timeout=float(_env.get("SW_S3_CONNECT_TIMEOUT", 10)),
-                read_timeout=float(_env.get("SW_S3_READ_TIMEOUT", 60)),
+                connect_timeout=conn.connect_timeout,
+                read_timeout=conn.read_timeout,
                 signature_version="s3v4",
                 retries={
-                    "total_max_attempts": int(_env.get("SW_S3_TOTAL_MAX_ATTEMPTS", 6)),
+                    "total_max_attempts": conn.total_max_attempts,
                     "mode": "standard",
                 },
             ),
-            region_name=self.service["region"],
+            region_name=conn.region,
         )
 
-    # TODO: tune return typing hint
-    def _make_file(self, bucket: str, key_compose: str) -> t.Any:
+    def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
+        # TODO: merge connections for s3
         _key, _start, _end = self._parse_key(key_compose)
         return S3BufferedFileLike(
             s3=self.s3,
@@ -237,17 +269,25 @@ class S3StorageBackend(StorageBackend):
 
 class FuseStorageBackend(StorageBackend):
     def __init__(self) -> None:
-        super().__init__(backend=SWDSBackendType.FUSE)
+        super().__init__(kind=SWDSBackendType.FUSE)
 
-    def _make_file(self, bucket: str, key_compose: str) -> t.Any:
-        _key, _start, _ = self._parse_key(key_compose)
+    def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
+        _key, _start, _end = self._parse_key(key_compose)
         bucket_path = (
             Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
         )
-        _file = (bucket_path / _key).open("rb")
-        _file.seek(_start)
-        # TODO: support end
-        return _file
+        # TODO: tune reopen file performance, merge files
+        with (bucket_path / _key).open("rb") as f:
+            f.seek(_start)
+            return io.BytesIO(f.read(_end - _start + 1))
+
+
+class FileLikeObj(Protocol):
+    def readline(self) -> bytes:
+        ...
+
+    def read(self, size: int) -> t.Union[bytes, memoryview]:
+        ...
 
 
 # TODO: add mock test
@@ -268,7 +308,7 @@ class S3BufferedFileLike:
     def tell(self) -> int:
         return self._current
 
-    def readline(self) -> str:
+    def readline(self) -> bytes:
         if self._iter_lines is None:
             self._iter_lines = self.obj.get()["Body"].iter_lines(chunk_size=_CHUNK_SIZE)
 
@@ -276,7 +316,7 @@ class S3BufferedFileLike:
             line: bytes = next(self._iter_lines)  # type: ignore
         except StopIteration:
             line = b""
-        return line.decode()
+        return line
 
     def read(self, size: int) -> memoryview:
         # TODO: use smart_open 3rd lib?
@@ -338,72 +378,20 @@ class S3BufferedFileLike:
 
 
 def get_data_loader(
-    swds_config: t.Dict[str, t.Any],
+    dataset_uri: URI,
+    start: int = 0,
+    end: int = -1,
+    backend: str = "",
+    kind: str = DataLoaderKind.SWDS,
     logger: t.Union[loguru.Logger, None] = None,
-    **kwargs: t.Any,
 ) -> DataLoader:
-    """s3 or fuse data loader
-
-    Args:
-        swds_config (dict): origin json example
-
-    {
-        "backend": "s3",  // s3 or fuse
-        "kind": "swds",       // swds or jsonline
-        "secret": {       // auth info
-            "access_key": "username or access key",
-            "secret_key": "password or secret key"
-        },
-        "service": {  // only for s3
-            "endpoint": "s3 address",
-            "region": "s3 region",
-        },
-        "swds": [   // swds dataset address
-            {
-                "bucket": "s3 bucket or rootdir",
-                "key": {
-                    "data":  "{name}:{start_pos}:{end_pos}", // start default is 0
-                    "label": "{name}:{start_pos}:{end_pos}"  // end default is -1, which is EOF of File or Object
-                },
-                "ext_attr":{  //optional
-                    "ds_name": "dataset name",
-                    "ds_version": "dataset version"
-                }
-            },
-            {
-                "bucket": "s3 bucket or rootdir",
-                "key": {
-                    "data":  "{name}:{start_pos}:{end_pos}",
-                    "label": "{name}:{start_pos}:{end_pos}"
-                }
-            }
-        ]
-    }
-
-        logger (t.Union[loguru.Logger, None], optional): logger. Defaults to None.
-
-    Raises:
-        NoSupportError: _description_
-
-    Returns:
-        DataLoader: S3DataLoader or FuseDataLoader
-    """
     logger = logger or _logger
+    object_store = DatasetObjectStore(dataset_uri, backend)
+    dataset = TabularDataset.from_uri(dataset_uri)
+    dataset.set_range(start, end)
 
-    _storage: t.Union[S3StorageBackend, FuseStorageBackend]
-
-    _backend = swds_config["backend"]
-    if _backend == SWDSBackendType.S3:
-        _storage = S3StorageBackend(swds_config["secret"], swds_config["service"])
-    elif _backend == SWDSBackendType.FUSE:
-        _storage = FuseStorageBackend()
+    # TODO: support user raw data format
+    if kind == DataLoaderKind.SWDS:
+        return SWDSDataLoader(object_store, dataset, logger)
     else:
-        raise NoSupportError(f"{_backend} backend storage, no support")
-
-    _kind = swds_config.get("kind", DataLoaderKind.SWDS)
-    if _kind == DataLoaderKind.JSONL:
-        return JSONLineDataLoader(_storage, swds_config["swds"], logger, **kwargs)
-    elif _kind == DataLoaderKind.SWDS:
-        return SWDSDataLoader(_storage, swds_config["swds"], logger)
-    else:
-        raise NoSupportError(f"{_kind} data loader, no support")
+        raise NoSupportError(f"{kind} data loader, no support")

@@ -17,13 +17,14 @@ import loguru
 import jsonlines
 
 from starwhale.utils import now_str, in_production
-from starwhale.consts import CURRENT_FNAME, DEFAULT_INPUT_JSON_FNAME
+from starwhale.consts import CURRENT_FNAME
+from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
-from starwhale.utils.error import NotFoundError
 
 from .loader import DataField, DataLoader, get_data_loader
+from ...base.type import URIType
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
@@ -42,7 +43,9 @@ _jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
 class _RunConfig:
     def __init__(
         self,
-        swds_config_path: _ptype = "",
+        dataset_uri: str = "",
+        dataset_row_start: int = 0,
+        dataset_row_end: int = -1,
         status_dir: _ptype = "",
         log_dir: _ptype = "",
         result_dir: _ptype = "",
@@ -50,21 +53,13 @@ class _RunConfig:
         self.status_dir = _p(status_dir, "status")  # type: ignore
         self.log_dir = _p(log_dir, "log")  # type: ignore
         self.result_dir = _p(result_dir, "result")  # type: ignore
-        self.swds_config = self.load_swds_config(swds_config_path)
+        # TODO: refactor dataset arguments
+        self.dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
+        self.dataset_row_end = dataset_row_end
+        self.dataset_row_start = dataset_row_start
 
         # TODO: graceful method
         self._prepare()
-
-    def load_swds_config(self, path: _ptype) -> t.Any:
-        if not path:
-            path = Path(_TASK_ROOT_DIR) / "config" / DEFAULT_INPUT_JSON_FNAME
-
-        path = Path(path) if isinstance(path, str) else path
-        if path.exists():
-            # TODO: validate swds config
-            return json.load(path.open("r"))
-        else:
-            raise NotFoundError(f"{path} not found")
 
     def _prepare(self) -> None:
         ensure_dir(self.log_dir)
@@ -72,13 +67,15 @@ class _RunConfig:
         ensure_dir(self.status_dir)
 
     @classmethod
-    def create_by_env(cls) -> "_RunConfig":
+    def create_by_env(cls) -> _RunConfig:
         _env = os.environ.get
         return _RunConfig(
-            swds_config_path=_env(SWEnv.input_config),
             status_dir=_env(SWEnv.status_dir),
             log_dir=_env(SWEnv.log_dir),
             result_dir=_env(SWEnv.result_dir),
+            dataset_uri=_env(SWEnv.dataset_uri, ""),
+            dataset_row_start=int(_env(SWEnv.dataset_row_start, 0)),
+            dataset_row_end=int(_env(SWEnv.dataset_row_end, -1)),
         )
 
     @classmethod
@@ -91,7 +88,9 @@ class _RunConfig:
         _set("status_dir", SWEnv.status_dir)
         _set("log_dir", SWEnv.log_dir)
         _set("result_dir", SWEnv.result_dir)
-        _set("input_config", SWEnv.input_config)
+        _set("dataset_uri", SWEnv.dataset_uri)
+        _set("dataset_row_start", SWEnv.dataset_row_start)
+        _set("dataset_row_end", SWEnv.dataset_row_end)
 
 
 class PipelineHandler(metaclass=ABCMeta):
@@ -124,8 +123,12 @@ class PipelineHandler(metaclass=ABCMeta):
         self._orig_stderr = sys.stderr
 
         self._data_loader = get_data_loader(
-            self.config.swds_config, self._sw_logger, deserializer=self.deserialize
+            dataset_uri=self.config.dataset_uri,
+            start=self.config.dataset_row_start,
+            end=self.config.dataset_row_end,
+            logger=self._sw_logger,
         )
+
         # TODO: split status/result files
         self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)  # type: ignore
         self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore

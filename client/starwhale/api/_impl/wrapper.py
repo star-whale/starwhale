@@ -1,7 +1,7 @@
 import os
 import re
 import threading
-from typing import Any, Dict, List, Iterator, Optional
+from typing import Any, Dict, List, Union, Iterator, Optional
 
 from . import data_store
 
@@ -74,28 +74,26 @@ class Evaluation(Logger):
 
 
 class Dataset(Logger):
-    def __init__(self, dataset_id: str) -> None:
-        if dataset_id is None:
+    def __init__(self, dataset_id: str, project: str = "") -> None:
+        if not dataset_id:
             raise RuntimeError("id should not be None")
-        if re.match(r"^[A-Za-z0-9-_]+$", dataset_id) is None:
-            raise RuntimeError(
-                f"invalid id {id}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
-            )
+
         self.dataset_id = dataset_id
-        self.project = os.getenv("SW_PROJECT")
-        if self.project is None:
-            raise RuntimeError("SW_PROJECT is not set")
+        self.project = project or os.getenv("SW_PROJECT")
+        if not self.project:
+            raise RuntimeError("project is not set")
+
         self._meta_table_name = f"project/{self.project}/dataset/{self.dataset_id}/meta"
         self._data_store = data_store.get_data_store()
         self._init_writers([self._meta_table_name])
 
-    def put(self, data_id: str, **kwargs: Any) -> None:
+    def put(self, data_id: Union[int, str], **kwargs: Any) -> None:
         record = {"id": data_id}
         for k, v in kwargs.items():
             record[k.lower()] = v
         self._log(self._meta_table_name, record)
 
-    def scan(self, start: str, end: str) -> Iterator[Dict[str, Any]]:
+    def scan(self, start: Any, end: Any) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
             [(self._meta_table_name, "meta", False)], start=start, end=end
         )
