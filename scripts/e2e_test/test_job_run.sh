@@ -61,7 +61,7 @@ do
 #    kubectl logs --tail=10 -l job-name=1 -n starwhale -c worker
 #    kubectl logs --tail=10 -l job-name=1 -n starwhale -c result-uploader
     kubectl describe pod -l job-name=1 -n starwhale
-    kubectl describe node
+#    kubectl describe node
     sleep 5
   fi
 done
