@@ -43,6 +43,7 @@ start_minikube() {
     minikube start -p sw-e2e-test --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
     minikube addons enable ingress -p sw-e2e-test
     minikube addons enable ingress-dns -p sw-e2e-test
+    kubectl describe node
 }
 
 
