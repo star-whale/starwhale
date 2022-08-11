@@ -78,6 +78,21 @@ const locales0 = {
     'Create Project': {
         en: 'Create Project',
     },
+    'Private': {
+        en: 'Private',
+    },
+    'Private Project Desc': {
+        en: 'You can choose who can maintain and browse.',
+    },
+    'Public': {
+        en: 'Public',
+    },
+    'Public Project Desc': {
+        en: 'Anyone on the internet can see this project.',
+    },
+    'Description': {
+        en: 'Description',
+    },
     'Project List': {
         en: 'Project List',
     },
