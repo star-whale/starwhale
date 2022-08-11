@@ -107,6 +107,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         envs.put("SW_PYPI_INDEX_URL",runTimeProperties.getPypi().getIndexUrl());
         envs.put("SW_PYPI_EXTRA_INDEX_URL",runTimeProperties.getPypi().getExtraIndexUrl());
         envs.put("SW_PYPI_TRUSTED_HOST",runTimeProperties.getPypi().getTrustedHost());
+        envs.put("SW_PIP_CACHE_DIR","/root/.cache/pip");
         try {
             String cmd = "ppl";
             if (task.getTaskType() == TaskType.CMP) {
