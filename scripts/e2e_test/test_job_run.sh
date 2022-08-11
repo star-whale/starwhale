@@ -56,7 +56,11 @@ do
         break
   else
     echo "job status for " "$job_id" "is" "$job_status"
+    kubectl logs --tail=10 -l job-name=1 -n starwhale -c data-provider
+    kubectl logs --tail=10 -l job-name=1 -n starwhale -c untar
     kubectl logs --tail=10 -l job-name=1 -n starwhale -c worker
+    kubectl logs --tail=10 -l job-name=1 -n starwhale -c result-uploader
+    kubectl describe pod -l job-name=1 -n starwhale
     sleep 5
   fi
 done
