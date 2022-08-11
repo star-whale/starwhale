@@ -265,7 +265,7 @@ class EvalExecutor:
             f":fish: eval run:{typ} dir @ [green blink]{self._workdir}/{typ}[/]"
         )
         if not self.gencmd:
-            # check_call(f"docker pull {self.baseimage}", shell=True)
+            check_call(f"docker pull {self.baseimage}", shell=True)
             check_call(cmd, shell=True)
 
     def _gen_run_container_cmd(self, typ: str, step: str, task_index: int) -> str:

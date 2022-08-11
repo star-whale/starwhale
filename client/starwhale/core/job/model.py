@@ -226,23 +226,22 @@ class Task:
 
         # instance method
         if "." in self.context.step:
+            logger.debug("hi, use class")
             _cls_name, _func_name = self.context.step.split(".")
             _cls = getattr(_module, _cls_name, None)
             # need an instance(todo whether it's a staticmethod?)
             cls = _cls()
             func = getattr(cls, _func_name, None)
         else:
+            logger.debug("hi, use func")
             _func_name = self.context.step
             func = getattr(_module, _func_name, None)
 
         try:
             self.status = STATUS.RUNNING
             # The standard implementation does not return results
-            func(self.context)
-        # except RuntimeError as e:
-        #     self.status = STATUS.FAILED
-        #     logger.error("execute step:{} error, {}", self.context, e)
-        #     return False
+            func(context=self.context)
+
         except Exception as e:
             self.status = STATUS.FAILED
             logger.error("execute step:{} error, {}", self.context, e)
