@@ -11,7 +11,9 @@ export interface IUpdateProjectSchema {
 }
 
 export interface ICreateProjectSchema {
+    owner?: string
     projectName: string
+    visibility?: string
     description?: string
 }
 

@@ -1,9 +1,14 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState, useMemo } from 'react'
 import { createForm } from '@/components/Form'
 import { Input } from 'baseui/input'
 import useTranslation from '@/hooks/useTranslation'
 import { Button } from 'baseui/button'
 import { isModified } from '@/utils'
+import Select from '@/components/Select'
+import { RadioGroup, Radio } from 'baseui/radio'
+import { FormControl } from 'baseui/form-control'
+import { Textarea } from 'baseui/textarea'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { ICreateProjectSchema, IProjectSchema } from '../schemas/project'
 
 const { Form, FormItem } = createForm<ICreateProjectSchema>()
@@ -13,9 +18,80 @@ export interface IProjectFormProps {
     onSubmit: (data: ICreateProjectSchema) => Promise<void>
 }
 
+interface IControlledProps {
+    value?: string
+    onChange?: (val: string) => void
+}
+
+type IVisibilityProps = IControlledProps
+
+const Visibility = ({ value, onChange }: IVisibilityProps) => {
+    interface IVisibilityItemProps {
+        name: string
+        desc: string
+    }
+
+    const [t] = useTranslation()
+    const visPublic: IVisibilityItemProps = useMemo(
+        () => ({
+            name: 'public',
+            desc: t('Public Project Desc'),
+        }),
+        [t]
+    )
+    const visPrivate: IVisibilityItemProps = useMemo(
+        () => ({
+            name: 'private',
+            desc: t('Private Project Desc'),
+        }),
+        [t]
+    )
+
+    const [visibility, setVisibility] = useState<IVisibilityItemProps>(visPublic)
+    useEffect(() => {
+        const v = value === visPublic.name ? visPublic : visPrivate
+        setVisibility(v)
+    }, [value, visPublic, visPrivate])
+
+    return (
+        <FormControl caption={visibility.desc}>
+            <RadioGroup
+                align='horizontal'
+                value={visibility.name}
+                onChange={(e) => {
+                    onChange?.(e.target.value)
+                }}
+            >
+                <Radio value={visPublic.name}> {t('Public')}</Radio>
+                <Radio value={visPrivate.name}>{t('Private')}</Radio>
+            </RadioGroup>
+        </FormControl>
+    )
+}
+
+type IOwnerProps = IControlledProps
+
+const Owner = ({ value, onChange }: IOwnerProps) => {
+    // only one option for now
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const { currentUser } = useCurrentUser()
+    return (
+        <Select
+            options={[{ label: currentUser?.name, id: currentUser?.id }]}
+            value={[{ id: value }]}
+            onChange={(o) => onChange?.(o.option?.id as string)}
+        />
+    )
+}
+
 export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
+    const [t] = useTranslation()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const { currentUser } = useCurrentUser()
     const [values, setValues] = useState<ICreateProjectSchema | undefined>({
+        owner: currentUser?.id,
         projectName: '',
+        visibility: 'public',
     })
 
     useEffect(() => {
@@ -45,12 +121,19 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
         [onSubmit]
     )
 
-    const [t] = useTranslation()
-
     return (
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
-            <FormItem name='projectName' label={t('sth name', [t('Project')])}>
+            <FormItem name='owner' label={t('Owner')} required>
+                <Owner />
+            </FormItem>
+            <FormItem name='projectName' label={t('sth name', [t('Project')])} required>
                 <Input size='compact' />
+            </FormItem>
+            <FormItem name='visibility'>
+                <Visibility />
+            </FormItem>
+            <FormItem name='description' label={t('Description')}>
+                <Textarea />
             </FormItem>
             <FormItem>
                 <div style={{ display: 'flex' }}>
