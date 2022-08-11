@@ -6,6 +6,7 @@ from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZ
 from starwhale.base.type import EvalTaskType
 
 from .view import get_term_view, ModelTermView
+from ...consts.env import SWEnv
 
 
 @click.group("model", help="Model management, build/copy/ppl/cmp/eval/extract...")
@@ -123,14 +124,30 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     default=DefaultYAMLName.MODEL,
     help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
+# TODO: replace input-config by ds uri when new dataset completed
 @click.option(
     "--dataset",
-    required=True,
+    # required=True,
     multiple=True,
     help="Dataset URI, one or more",
 )
+@click.option(
+    "--input-config",
+    envvar=SWEnv.input_config,
+    default="/tmp/starwhale/cmp/config/input.json",
+    help=f"CMP input.json path, env is {SWEnv.input_config}",
+)
+# TODO: Used to distinguish remote or local mode?
+@click.option(
+    "--project",
+    envvar=SWEnv.project,
+    default="self",
+    help=f"project name, env is {SWEnv.project}",
+)
 @click.option("--name", help="Job name")
-@click.option("--version", default=None, help="Evaluation job version")
+@click.option(
+    "--version", envvar=SWEnv.eval_version, default=None, help="Evaluation job version"
+)
 @click.option(
     "--type",
     type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE]),
@@ -142,11 +159,13 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--runtime", default="", help="runtime uri")
 @click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 def _eval(
+    project: str,
     target: str,
     model_yaml: str,
     name: str,
     version: str,
     dataset: t.List[str],
+    input_config: str,
     type: str,
     step: str,
     task_index: int,
@@ -159,6 +178,7 @@ def _eval(
     TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
     ModelTermView.eval(
+        project=project,
         target=target,
         version=version,
         yaml_name=model_yaml,
@@ -168,6 +188,9 @@ def _eval(
         step=step,
         task_index=task_index,
         dataset_uris=dataset,
+        kw={
+            "input_config": input_config,
+        },
     )
     # """
     # [ONLY Standalone]Create as new job for model evaluation

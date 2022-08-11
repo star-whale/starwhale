@@ -2,7 +2,7 @@ import os
 import re
 import threading
 from typing import Any, Dict, List, Iterator, Optional
-from multiprocessing import Pipe
+from multiprocessing.connection import Connection
 
 from starwhale.consts import EvaluationResultKind
 
@@ -79,14 +79,11 @@ class Evaluation(Logger):
         _m = [
             metrics
             for metrics in self._data_store.scan_tables(
-                [(self._summary_table_name, "id", False)]
+                [(self._summary_table_name, "", False)]
             )
-            if metrics["id"] is self.eval_id
+            if metrics["id"] == self.eval_id
         ]
         return _m[0]
-
-    def dump(self):
-        self._data_store.dump()
 
 
 class EvaluationResult:
@@ -102,33 +99,31 @@ class EvaluationMetric:
         self.kwargs = kwargs
 
 
+# TODO: rich query params
 class EvaluationQuery:
     def __init__(self, kind: EvaluationResultKind):
         self.kind = kind
 
 
 class EvaluationForSubProcess:
-    def __init__(self, input_pipe: Pipe, output_pipe: Pipe):
-        self.input_pipe = input_pipe
-        self.output_pipe = output_pipe
+    def __init__(self, sub_conn: Connection):
+        self.sub_conn = sub_conn
 
     def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
-        self.output_pipe[0].send(
-            EvaluationResult(data_id=data_id, result=result, **kwargs)
-        )
+        self.sub_conn.send(EvaluationResult(data_id=data_id, result=result, **kwargs))
 
     def log_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> None:
-        self.output_pipe[0].send(EvaluationMetric(metrics=metrics, **kwargs))
+        self.sub_conn.send(EvaluationMetric(metrics=metrics, **kwargs))
 
     def get_results(self) -> Iterator[Dict[str, Any]]:
-        self.output_pipe[0].send(EvaluationQuery(EvaluationResultKind.RESULT))
-        return self.input_pipe[1].recv()
+        self.sub_conn.send(EvaluationQuery(EvaluationResultKind.RESULT))
+        return self.sub_conn.recv()
 
     def get_metrics(self):
-        self.output_pipe[0].send(EvaluationQuery(EvaluationResultKind.METRIC))
-        return self.input_pipe[1].recv()
+        self.sub_conn.send(EvaluationQuery(EvaluationResultKind.METRIC))
+        return self.sub_conn.recv()
 
 
 class Dataset(Logger):

@@ -77,6 +77,9 @@ def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
 
     def _f(_s: t.Dict[str, t.Any], _prefix: str = "") -> None:
         for _k, _v in _s.items():
+            # TODO: waiting fix datastore bug
+            if _v is None:
+                continue
             _k = f"{_prefix}{_k}"
             if isinstance(_v, dict):
                 _f(_v, _prefix=f"{_k}/")

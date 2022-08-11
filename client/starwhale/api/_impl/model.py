@@ -140,9 +140,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
         self._ppl_data_field = "result"
         self._label_field = "label"
-        self._eval = EvaluationForSubProcess(
-            self.context.get_param("input_pipe"), self.context.get_param("output_pipe")
-        )
+        self._eval = EvaluationForSubProcess(self.context.get_param("sub_conn"))
         self._simple_step_name = ""
         self._monkey_patch()
 
@@ -202,16 +200,6 @@ class PipelineHandler(metaclass=ABCMeta):
             sys.stdout = self._orig_stdout
         if self._stderr_changed:
             sys.stderr = self._orig_stderr
-
-        # try:
-        #     self._result_writer.close()
-        # except Exception as e:
-        #     self._sw_logger.exception(f"result writer close exception: {e}")
-        #
-        # try:
-        #     self._status_writer.close()
-        # except Exception as e:
-        #     self._sw_logger.exception(f"status writer close exception: {e}")
 
         self.logger.remove()
         self._sw_logger.remove()
@@ -285,7 +273,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 for result in self._eval.get_results()
                 if result["id"].startswith("ppl_result")
             ]
-            self._sw_logger.debug("cmp data size:{}", len(_ppl_results))
+            self._sw_logger.debug("cmp input data size:{}", len(_ppl_results))
             _data_loader = SimpleDataLoader(
                 _ppl_results, self._sw_logger, deserializer=self.deserialize_new
             )
@@ -355,9 +343,9 @@ class PipelineHandler(metaclass=ABCMeta):
                 exception = None
 
             self._do_record(data, label, exception, *pred)
-        # self._sw_logger.debug(
-        #     f"ppl result:{len([item for item in self._datastore.get_results()])}"
-        # )
+        self._sw_logger.debug(
+            f"ppl result:{len([item for item in self._eval.get_results()])}"
+        )
 
     def _do_record(
         self,

@@ -4,8 +4,7 @@ from pathlib import Path
 from loguru import logger
 
 from starwhale.utils import console
-from starwhale.consts import DefaultYAMLName, DEFAULT_INPUT_JSON_FNAME
-from starwhale.base.type import RunSubDirType
+from starwhale.consts import DefaultYAMLName
 from starwhale.utils.load import import_cls
 from starwhale.api._impl.job import step
 from starwhale.core.job.model import Context
@@ -27,17 +26,6 @@ class DefaultPipeline:
 
     @step(concurrency=1, task_num=1)
     def ppl(self, _context: Context):
-        from starwhale.api._impl.model import _RunConfig
-
-        # TODO: need new Dataset and Dataloader, so wo can instance dataloader by task index and total num.
-        #  cool! this can be removed form here.
-        _RunConfig.set_env(
-            {
-                "input_config": _context.workdir
-                / RunSubDirType.CONFIG
-                / DEFAULT_INPUT_JSON_FNAME,
-            }
-        )
         _cls = self._get_cls(_context.src_dir)
         logger.debug(f"cls path:{_context.src_dir}")
         with _cls(context=_context) as _obj:
@@ -49,16 +37,6 @@ class DefaultPipeline:
     def cmp(self, _context: Context):
         _cls = self._get_cls(_context.src_dir)
         with _cls(context=_context) as _obj:
-            # _eval = EvaluationForSubProcess(
-            #     _context.get_param("input_pipe"),
-            #     _context.get_param("output_pipe")
-            # )
-            # _ppl_results = [
-            #     result
-            #     for result in _eval.get_results()
-            #     if result["id"].startswith("ppl_result")
-            # ]
-            # logger.debug("cmp data size:{}", len(_ppl_results))
             logger.debug("start to cmp")
             _obj._starwhale_internal_run_cmp()
 

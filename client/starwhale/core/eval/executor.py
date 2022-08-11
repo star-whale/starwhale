@@ -19,6 +19,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
+from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
@@ -46,7 +47,6 @@ class EvalExecutor:
         desc: str = "",
         gencmd: bool = False,
         use_docker: bool = False,
-        runtime_restore: bool = False,
     ) -> None:
         self.name = name
         self.job_name = job_name
@@ -72,7 +72,6 @@ class EvalExecutor:
 
         self.gencmd = gencmd
         self.use_docker = use_docker
-        self.runtime_restore = runtime_restore
 
         self._version = version
         self._manifest: t.Dict[str, t.Any] = {"status": _STATUS.START}
@@ -204,6 +203,8 @@ class EvalExecutor:
             self._runtime_dir = Path()
 
     # TODO: this file and dir must exist because current ds implementation, wait replaced by datastore
+    #  need new Dataset and Dataloader, so wo can instance dataloader by task index and total num.
+    #  cool! this can be removed form here.
     def _gen_swds_fuse_json(self) -> Path:
         _fuse_jsons = []
         for _uri in self.dataset_uris:
@@ -239,33 +240,6 @@ class EvalExecutor:
             self._do_run_cmd_in_host(typ, step, task_index)
 
     def _do_run_cmd_in_host(self, typ: str, step: str, task_index: int) -> None:
-        # from starwhale.core.runtime.process import Process as RuntimeProcess
-
-        # TODO: must exec at outer
-        # if self.runtime_uri and not self.use_docker and self.runtime_restore:
-        #     RuntimeProcess.from_runtime_uri(
-        #         uri=self.runtime_uri,
-        #         target=StandaloneModel.eval_user_handler,
-        #         args=(
-        #             self.project_uri.project,
-        #             self._version,
-        #             typ,
-        #             self._model_dir,
-        #             self._workdir,
-        #             self.dataset_uris,
-        #             DefaultYAMLName.MODEL,
-        #             "default",
-        #             step,
-        #             task_index,
-        #         ),
-        #         runtime_restore=self.runtime_restore,
-        #     ).run()
-        # else:
-        logger.debug(
-            "origin project:{},uri:{}",
-            self.project_uri.project,
-            self.project_uri.full_uri,
-        )
         StandaloneModel.eval_user_handler(
             project=self.project_uri.project,
             version=self._version,
@@ -275,6 +249,12 @@ class EvalExecutor:
             dataset_uris=[u.full_uri for u in self.dataset_uris],
             step=step,
             task_index=task_index,
+            kw={
+                # TODO: replace when new dataset completed
+                "input_config": self._workdir
+                / RunSubDirType.CONFIG
+                / DEFAULT_INPUT_JSON_FNAME,
+            },
         )
 
     def _do_run_cmd_in_container(self, typ: str, step: str, task_index: int) -> None:
@@ -288,7 +268,6 @@ class EvalExecutor:
             # check_call(f"docker pull {self.baseimage}", shell=True)
             check_call(cmd, shell=True)
 
-    # todo
     def _gen_run_container_cmd(self, typ: str, step: str, task_index: int) -> str:
         if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             raise Exception(f"no support {typ} to gen docker cmd")
@@ -325,8 +304,8 @@ class EvalExecutor:
             cmd.extend(["-e", f"SW_TASK_STEP={step}"])
             cmd.extend(["-e", f"SW_TASK_INDEX={task_index}"])
 
-        cmd.extend(["-e", f"SW_PROJECT={self.project_uri.project}"])
-        cmd.extend(["-e", f"SW_EVAL_VERSION={self._version}"])
+        cmd.extend(["-e", f"{SWEnv.project}={self.project_uri.project}"])
+        cmd.extend(["-e", f"{SWEnv.eval_version}={self._version}"])
         # cmd.extend(["-e", f"SW_DATASETS={[u.full_uri for u in self.dataset_uris]}"])
 
         cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)

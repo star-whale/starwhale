@@ -5,7 +5,7 @@ import threading
 import concurrent.futures
 from abc import abstractmethod
 from pathlib import Path
-from multiprocessing import Pipe
+from multiprocessing.connection import Connection
 
 from loguru import logger
 
@@ -21,10 +21,18 @@ from starwhale.api._impl.wrapper import (
 
 
 class TaskPipe:
-    def __init__(self, id: str, input_pipe: Pipe, output_pipe: Pipe):
-        self.id = id
-        self.input_pipe = input_pipe
-        self.output_pipe = output_pipe
+    def __init__(self, idx: str, main_conn: Connection, sub_conn: Connection):
+        self.id = idx
+        self.main_conn = main_conn
+        self.sub_conn = sub_conn
+
+
+def _init_datastore(root_path: str, project: str, eval_id: str) -> wrapper.Evaluation:
+    os.environ["SW_ROOT_PATH"] = root_path
+    os.environ["SW_PROJECT"] = project
+    os.environ["SW_EVAL_ID"] = eval_id
+    logger.debug("datastore info:{}, {}, {}", root_path, project, eval_id)
+    return wrapper.Evaluation()
 
 
 class Scheduler:
@@ -49,39 +57,12 @@ class Scheduler:
         self.__split_tasks(**kw)
         self._lock = threading.Lock()
         self._sw_config = SWCliConfigMixed()
-        self._datastore = self._init_datastore(
+        self._datastore = _init_datastore(
             str(self._sw_config.datastore_dir), project, version
         )
         logger.debug("datastore inited:{}", self._datastore.eval_id)
         self.task_pipes: t.List[TaskPipe] = []
         self.cond = threading.Condition()
-
-    def _init_datastore(
-        self, root_path: str, project: str, eval_id: str
-    ) -> wrapper.Evaluation:
-        os.environ["SW_ROOT_PATH"] = root_path
-        os.environ["SW_PROJECT"] = project
-        os.environ["SW_EVAL_ID"] = eval_id
-        logger.debug("datastore info:{}, {}, {}", root_path, project, eval_id)
-        return wrapper.Evaluation()
-
-    def run(self) -> None:
-        while True:
-            with self.cond:
-                while len(self.task_pipes) == 0:
-                    self.cond.wait()
-                for _tp in self.task_pipes:
-                    logger.debug("get data from {}", _tp.id)
-                    # data = _tp.output_pipe[0].recv()
-                    # if isinstance(data, EvaluationResult):
-                    #     self._datastore.log_result(data_id=data.data_id, result=data.result, **data.kwargs)
-                    # elif isinstance(data, EvaluationMetric):
-                    #     self._datastore.log_metrics(metrics=data.metrics, **data.kwargs)
-                    # elif isinstance(data, EvaluationQuery):
-                    #     if data.kind is EvaluationResultKind.RESULT:
-                    #         _tp.input_pipe[0].send(self._datastore.get_results())
-                    #     if data.kind is EvaluationResultKind.METRIC:
-                    #         _tp.input_pipe[0].send(self._datastore.get_metrics())
 
     def add_data(self, data: t.Any):
         if isinstance(data, EvaluationResult):
@@ -147,9 +128,9 @@ class Scheduler:
                     for _t in _wait.tasks:
                         _d = TaskDaemon(
                             TaskPipe(
-                                id=f"{_wait.step_name}-{_t.context.index}",
-                                input_pipe=_t.input_pipe,
-                                output_pipe=_t.output_pipe,
+                                idx=f"{_wait.step_name}-{_t.context.index}",
+                                main_conn=_t.main_conn,
+                                sub_conn=_t.sub_conn,
                             ),
                             self,
                         )
@@ -179,9 +160,9 @@ class Scheduler:
         )
         _d = TaskDaemon(
             TaskPipe(
-                id=f"{_step.step_name}-{_task.context.index}",
-                input_pipe=_task.input_pipe,
-                output_pipe=_task.output_pipe,
+                idx=f"{_step.step_name}-{_task.context.index}",
+                main_conn=_task.main_conn,
+                sub_conn=_task.sub_conn,
             ),
             self,
         )
@@ -197,17 +178,16 @@ class TaskDaemon(threading.Thread):
         super().__init__()
         self.scheduler = scheduler
         self.task_pipe = task_pipe
-        self.input_pipe = task_pipe.input_pipe
-        self.output_pipe = task_pipe.output_pipe
+        self.main_conn = task_pipe.main_conn
         self.setDaemon(True)
 
     def run(self):
         while True:
             logger.debug("task:{} start to waiting data", self.task_pipe.id)
-            data = self.output_pipe[1].recv()
+            data = self.main_conn.recv()
             logger.debug("task:{} start to recv data", self.task_pipe.id)
             if isinstance(data, EvaluationQuery):
-                self.input_pipe[0].send(self.scheduler.query_data(data))
+                self.main_conn.send(self.scheduler.query_data(data))
             else:
                 self.scheduler.add_data(data)
 

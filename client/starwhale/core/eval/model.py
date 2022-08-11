@@ -20,6 +20,7 @@ from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
+from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .store import EvaluationStorage
 from .executor import EvalExecutor
@@ -153,9 +154,16 @@ class StandaloneEvaluationJob(EvaluationJob):
             desc=desc,
             gencmd=kw.get("gencmd", False),
             use_docker=use_docker,
-            runtime_restore=kw.get("runtime_restore", False),
         )
-        ee.run(typ, step, task_index)
+        if runtime_uri and not use_docker:
+            RuntimeProcess.from_runtime_uri(
+                uri=runtime_uri,
+                target=ee.run,
+                args=(typ, step, task_index),
+                runtime_restore=kw.get("runtime_restore", False),
+            ).run()
+        else:
+            ee.run(typ, step, task_index)
 
         return True, ee._version
 
@@ -246,10 +254,10 @@ class StandaloneEvaluationJob(EvaluationJob):
         return {
             "manifest": self.store.manifest,
             "report": self._get_report(),
-            "location": {
-                # "ppl": str(self.store.ppl_dir.absolute()),
-                # "cmp": str(self.store.cmp_dir.absolute()),
-            },
+            # "location": {
+            #     # "ppl": str(self.store.ppl_dir.absolute()),
+            #     # "cmp": str(self.store.cmp_dir.absolute()),
+            # },
         }
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:

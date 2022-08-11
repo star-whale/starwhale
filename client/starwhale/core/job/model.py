@@ -1,6 +1,6 @@
 import typing as t
 from pathlib import Path
-from multiprocessing import Pipe
+from multiprocessing import Pipe, connection
 
 import yaml
 from loguru import logger
@@ -210,10 +210,10 @@ class Task:
         self.status = status
         self.module = module
         self.src_dir = src_dir
-        self.input_pipe = Pipe(True)
-        self.output_pipe = Pipe(True)
-        self.context.put_param("input_pipe", self.input_pipe)
-        self.context.put_param("output_pipe", self.output_pipe)
+        self._pipe = Pipe(True)
+        self.main_conn: connection.Connection = self._pipe[0]
+        self.sub_conn: connection.Connection = self._pipe[1]
+        self.context.put_param("sub_conn", self.sub_conn)
 
     def execute(self) -> bool:
         """

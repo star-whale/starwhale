@@ -722,9 +722,6 @@ class RemoteDataStore:
     ) -> Iterator[Dict[str, Any]]:
         ...
 
-    def dump(self) -> None:
-        ...
-
 
 class DataStore(Protocol):
     def put(
@@ -739,9 +736,6 @@ class DataStore(Protocol):
         start: Optional[Any] = None,
         end: Optional[Any] = None,
     ) -> Iterator[Dict[str, Any]]:
-        ...
-
-    def dump(self):
         ...
 
 

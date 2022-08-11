@@ -98,12 +98,12 @@ restore_activate_runtime() {
 
 run_all() {
     echo "--> start to run swmp all, use $(which swcli) cli..."
-    swcli ${VERBOSE} model eval ${WORKDIR} --type=all --dataset=${DATASETS} --version=${EVAL_VERSION}
+    swcli ${VERBOSE} model eval ${WORKDIR} --type=all --version=${EVAL_VERSION}
 }
 
 run_single() {
     echo "--> start to run swmp single, use $(which swcli) cli..."
-    swcli ${VERBOSE} model eval ${WORKDIR} --type=single --dataset=${DATASETS} --step=${STEP} --task-index=${TASK_INDEX} --version=${EVAL_VERSION}
+    swcli ${VERBOSE} model eval ${WORKDIR} --type=single --step=${STEP} --task-index=${TASK_INDEX} --version=${EVAL_VERSION}
 }
 
 welcome() {

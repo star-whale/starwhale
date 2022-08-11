@@ -160,6 +160,7 @@ class JobTermView(BaseTermView):
         )
         console.print(table)
 
+    # TODO:
     def _render_job_report(self, report: t.Dict[str, t.Any]) -> None:
         if not report:
             console.print(":turtle: no report")

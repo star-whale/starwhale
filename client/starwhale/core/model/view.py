@@ -52,6 +52,7 @@ class ModelTermView(BaseTermView):
     @classmethod
     def eval(
         cls,
+        project: str,
         target: str,
         dataset_uris: t.List[str],
         version: str = "",
@@ -78,8 +79,9 @@ class ModelTermView(BaseTermView):
                     uri=runtime_uri,
                     target=StandaloneModel.eval_user_handler,
                     args=(
-                        typ,
+                        project,
                         version,
+                        typ,
                         workdir / "src",
                         workdir,
                         dataset_uris,
@@ -93,6 +95,7 @@ class ModelTermView(BaseTermView):
                 ).run()
             else:
                 StandaloneModel.eval_user_handler(
+                    project=project,
                     version=version,
                     typ=typ,
                     src_dir=workdir / "src",

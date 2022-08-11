@@ -216,10 +216,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         task_index: int = 0,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
-        # from starwhale.api._impl.model import _RunConfig
+        from starwhale.api._impl.model import _RunConfig
 
         if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             raise NoSupportError(typ)
+
+        _RunConfig.set_env(kw)
 
         _module = StandaloneModel.get_pipeline_handler(
             workdir=src_dir, yaml_name=model_yaml_name
