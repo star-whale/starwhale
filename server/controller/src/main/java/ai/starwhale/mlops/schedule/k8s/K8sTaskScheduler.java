@@ -114,7 +114,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
                 cmd = "cmp";
             }
             V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(task.getDeviceClass(),
-                task.getDeviceAmount().toString()).getResourceSelector();
+                task.getDeviceAmount().toString()+"m").getResourceSelector();
             V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), envs,resourceRequirements);
             // set result upload path
             job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+ task.getResultPath().resultDir())

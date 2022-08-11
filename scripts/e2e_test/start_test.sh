@@ -18,7 +18,7 @@ if in_github_action; then
     export SW_PYPI_EXTRA_INDEX_URL='https://pypi.org/simple'
 else
     SW_PYPI_EXTRA_INDEX_URL='https://pypi.doubanio.com/simple/'
-#    export PARENT_CLEAN=true
+    export PARENT_CLEAN=true
 fi
 
 declare_env() {
@@ -240,25 +240,23 @@ main() {
   if ! in_github_action; then
     trap restore_env EXIT
   fi
-#  start_nexus
+  start_nexus
   start_minikube
-  kubectl describe node
-
-#  overwrite_pip_config
-#  overwrite_pypirc
-#  build_swcli
-#  build_console
-#  build_server_image
-#  create_service_check_file
-#  check_nexus_service
-#  create_repository_in_nexus
-#  upload_pypi_to_nexus
-#  buid_runtime_image
-#  push_images_to_nexus
-#  start_starwhale
-#  standalone_test
-#  check_controller_service
-#  api_test
+  overwrite_pip_config
+  overwrite_pypirc
+  build_swcli
+  build_console
+  build_server_image
+  create_service_check_file
+  check_nexus_service
+  create_repository_in_nexus
+  upload_pypi_to_nexus
+  buid_runtime_image
+  push_images_to_nexus
+  start_starwhale
+  standalone_test
+  check_controller_service
+  api_test
 }
 
 declare_env
