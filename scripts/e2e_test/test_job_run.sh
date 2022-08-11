@@ -56,7 +56,8 @@ do
         break
   else
     echo "job status for " "$job_id" "is" "$job_status"
-    sleep 1
+    kubectl logs --tail=10 -l job-name=1 -n starwhale
+    sleep 5
   fi
 done
 
