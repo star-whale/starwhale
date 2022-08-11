@@ -12,6 +12,9 @@ import pyarrow as pa  # type: ignore
 import pyarrow.parquet as pq  # type: ignore
 from typing_extensions import Protocol
 
+from starwhale.utils.fs import ensure_dir
+from starwhale.utils.config import SWCliConfigMixed
+
 
 class Type:
     def __init__(
@@ -286,12 +289,12 @@ def _merge_scan(iters: List[Iterator[Dict[str, Any]]]) -> Iterator[dict]:
                 self.item = None
                 self.key = ""
 
-    n = len(iters)
     nodes = []
-    for i in range(n):
-        node = Node(i, iters[i])
-        if not node.exhausted:
-            nodes.append(node)
+    for _i, _iter in enumerate(iters):
+        _node = Node(_i, _iter)
+        if not _node.exhausted:
+            nodes.append(_node)
+
     while len(nodes) > 0:
         key = min(nodes, key=lambda x: x.key).key
         d: Dict[str, Any] = {}
@@ -315,6 +318,9 @@ def _merge_scan(iters: List[Iterator[Dict[str, Any]]]) -> Iterator[dict]:
 def _get_table_files(path: str) -> List[str]:
     if not os.path.exists(path):
         return []
+    if not os.path.isdir(path):
+        raise RuntimeError(f"{path} is not a directory")
+
     patches = []
     base_index = -1
     for file in os.listdir(path):
@@ -339,15 +345,19 @@ def _read_table_schema(path: str) -> TableSchema:
         raise RuntimeError(f"path not found: {path}")
     if not os.path.isdir(path):
         raise RuntimeError(f"{path} is not a directory")
+
     files = _get_table_files(path)
     if len(files) == 0:
         raise RuntimeError(f"table is empty, path:{path}")
+
     schema = pq.read_schema(files[-1])
     if schema.metadata is None:
         raise RuntimeError(f"no metadata for file {files[-1]}")
+
     schema_data = schema.metadata.get(b"schema", None)
     if schema_data is None:
         raise RuntimeError(f"no schema for file {files[-1]}")
+
     return TableSchema.parse(schema_data.decode())
 
 
@@ -361,6 +371,7 @@ def _scan_table(
     iters = []
     for file in _get_table_files(path):
         iters.append(_scan_parquet_file(file, columns, start, end))
+    column_names = []
     if len(iters) > 0:
         schema = _read_table_schema(path)
         column_names = [
@@ -413,7 +424,7 @@ def _records_to_table(
 
 def _get_size(d: Any) -> int:
     ret = sys.getsizeof(d)
-    if type(d) is dict:
+    if isinstance(d, dict):
         for v in d.values():
             ret += sys.getsizeof(v)
     return ret
@@ -525,10 +536,8 @@ class MemoryTable:
 
     def dump(self, root_path: str) -> None:
         path = _get_table_path(root_path, self.table_name)
-        if not os.path.exists(path):
-            os.mkdir(path)
-        if not os.path.isdir(path):
-            raise RuntimeError(f"{path} is not a directory")
+        ensure_dir(path)
+
         max_index = -1
         for file in os.listdir(path):
             type, index = _parse_parquet_name(file)
@@ -556,12 +565,11 @@ class LocalDataStore:
     def get_instance() -> "LocalDataStore":
         with LocalDataStore._lock:
             if LocalDataStore._instance is None:
-                root_path = os.getenv("SW_ROOT_PATH", None)
-                if root_path is None:
-                    raise RuntimeError(
-                        "data store root path is not defined for standalone instance"
-                    )
-                LocalDataStore._instance = LocalDataStore(root_path)
+
+                ds_path = SWCliConfigMixed().datastore_dir
+                ensure_dir(ds_path)
+
+                LocalDataStore._instance = LocalDataStore(str(ds_path))
                 atexit.register(LocalDataStore._instance.dump)
             return LocalDataStore._instance
 
@@ -630,7 +638,7 @@ class LocalDataStore:
                 self,
                 name: str,
                 key_column_type: pa.DataType,
-                columns: Dict[str, str],
+                columns: Optional[Dict[str, str]],
                 explicit_none: bool,
             ) -> None:
                 self.name = name
@@ -648,6 +656,8 @@ class LocalDataStore:
             key_column_type = schema.columns[schema.key_column].type.pa_type
             column_names = schema.columns.keys()
             col_prefix = table_alias + "."
+
+            cols: Optional[Dict[str, str]]
             if columns is None or col_prefix + "*" in columns:
                 cols = None
             else:
@@ -659,15 +669,15 @@ class LocalDataStore:
                         cols[name] = alias
             infos.append(TableInfo(table_name, key_column_type, cols, explicit_none))
 
-        # check for key type conflication
+        # check for key type conflictions
         for info in infos:
             if info is infos[0]:
                 continue
             if info.key_column_type != infos[0].key_column_type:
                 raise RuntimeError(
                     "conflicting key field type. "
-                    + f"{info.name} has a key of type {info.key_column_type},"
-                    + f" while {infos[0].name} has a key of type {infos[0].key_column_type}"
+                    f"{info.name} has a key of type {info.key_column_type},"
+                    f" while {infos[0].name} has a key of type {infos[0].key_column_type}"
                 )
         iters = []
         for info in infos:
