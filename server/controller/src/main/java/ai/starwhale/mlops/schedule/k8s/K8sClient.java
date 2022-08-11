@@ -136,9 +136,6 @@ public class K8sClient {
             List<V1EnvVar> ee = new ArrayList<>();
             env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
             podSpec.getInitContainers().forEach(c -> {
-                if (c.getName().equals(coreContainerName)) {
-                    return;
-                }
                 c.env(ee);
             });
         }
