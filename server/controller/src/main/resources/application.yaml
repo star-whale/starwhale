@@ -14,6 +14,11 @@ sw:
   version: ${SW_VERSION_CONTROLLER:0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52}
   runtime:
     image-default: ${SW_RUNTIME_IMAGE_DEFAULT:ghcr.io/star-whale/starwhale:latest}
+    pypi:
+      index-url: ${SW_PYPI_INDEX_URL:https://pypi.doubanio.com/simple/}
+      extra-index-url: ${SW_PYPI_EXTRA_INDEX_URL:https://pypi.org/simple}
+      trusted-host: ${SW_PYPI_TRUSTED_HOST:pypi.doubanio.com}
+
   jwt:
     secret: ${SW_JWT_SECRET:wdxlG3UK66m6uTUgxXFjizli}
     issuer: ${SW_JWT_ISSUER:starWhale}

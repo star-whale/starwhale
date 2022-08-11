@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -52,11 +53,15 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     final StorageProperties storageProperties;
 
+    final RunTimeProperties runTimeProperties;
+
     public K8sTaskScheduler(K8sClient k8sClient,
-                            TaskBoConverter taskConvertor, StorageProperties storageProperties) {
+        TaskBoConverter taskConvertor, StorageProperties storageProperties,
+        RunTimeProperties runTimeProperties) {
         this.k8sClient = k8sClient;
         this.taskConvertor = taskConvertor;
         this.storageProperties = storageProperties;
+        this.runTimeProperties = runTimeProperties;
     }
 
     @Override
@@ -99,6 +104,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         envs.put("AWS_ACCESS_KEY_ID",storageProperties.getS3Config().getAccessKey());
         envs.put("AWS_SECRET_ACCESS_KEY",storageProperties.getS3Config().getSecretKey());
         envs.put("AWS_S3_REGION",storageProperties.getS3Config().getRegion());
+        envs.put("SW_PYPI_INDEX_URL",runTimeProperties.getPypi().getIndexUrl());
+        envs.put("SW_PYPI_EXTRA_INDEX_URL",runTimeProperties.getPypi().getExtraIndexUrl());
+        envs.put("SW_PYPI_TRUSTED_HOST",runTimeProperties.getPypi().getTrustedHost());
         try {
             String cmd = "ppl";
             if (task.getTaskType() == TaskType.CMP) {
@@ -113,6 +121,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
                 ,new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
                 ,new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
                 ,new V1EnvVar().name("AWS_SECRET_ACCESS_KEY").value(storageProperties.getS3Config().getSecretKey())
+                ,new V1EnvVar().name("SW_PYPI_INDEX_URL").value(runTimeProperties.getPypi().getIndexUrl())
+                ,new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(runTimeProperties.getPypi().getExtraIndexUrl())
+                ,new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(runTimeProperties.getPypi().getTrustedHost())
                 )
             );
             client.deploy(job);

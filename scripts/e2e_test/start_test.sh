@@ -65,10 +65,13 @@ build_swcli() {
   popd
 }
 
-build_server_image() {
+build_console() {
   pushd ../../docker
   make build-console
   popd
+}
+
+build_server_image() {
   pushd ../../server
   make build-package
   popd
@@ -231,17 +234,18 @@ restore_env() {
   rm LOCAL_DATA_DIR
   echo 'cleanup'
 }
-if ! in_github_action; then
-  trap restore_env EXIT
-fi
+
 
 main() {
-  declare_env
+  if ! in_github_action; then
+    trap restore_env EXIT
+  fi
   start_nexus
   start_minikube
   overwrite_pip_config
   overwrite_pypirc
   build_swcli
+  build_console
   build_server_image
   create_service_check_file
   check_nexus_service
@@ -255,4 +259,10 @@ main() {
   api_test
 }
 
-main
+declare_env
+if test -z $1; then
+  main
+else
+  $1
+fi
+
