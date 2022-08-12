@@ -60,12 +60,12 @@ class _RunConfig:
     def load_swds_config(self) -> t.Any:
         if not self.swds_config_path:
             path = Path(_TASK_ROOT_DIR) / "config" / DEFAULT_INPUT_JSON_FNAME
-
-        path = (
-            Path(self.swds_config_path)
-            if isinstance(self.swds_config_path, str)
-            else self.swds_config_path
-        )
+        else:
+            path = (
+                Path(self.swds_config_path)
+                if isinstance(self.swds_config_path, str)
+                else self.swds_config_path
+            )
         if path.exists():
             # TODO: validate swds config
             return json.load(path.open("r"))
@@ -110,13 +110,11 @@ class PipelineHandler(metaclass=ABCMeta):
 
     def __init__(
         self,
-        context: Context = None,
-        evaluation: IEvaluation = None,
+        evaluation: IEvaluation,
         merge_label: bool = True,
         output_type: str = ResultOutputType.JSONL,
         ignore_error: bool = False,
     ) -> None:
-        self.context = context
         # TODO: add args for compare result and label directly
         self.merge_label = merge_label
         self.output_type = output_type
@@ -135,10 +133,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
         self._ppl_data_field = "result"
         self._label_field = "label"
-        if evaluation is None:
-            self.evaluation = Evaluation(context.version)
-        else:
-            self.evaluation = evaluation
+        self.evaluation = evaluation
         self._simple_step_name = ""
         self._monkey_patch()
 

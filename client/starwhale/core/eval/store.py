@@ -40,18 +40,6 @@ class EvaluationStorage(BaseStorage):
     def manifest_path(self) -> Path:
         return self.loc / DEFAULT_MANIFEST_NAME
 
-    @property
-    def eval_report_path(self) -> Path:
-        return self.cmp_dir / RunSubDirType.RESULT / CURRENT_FNAME
-
-    @property
-    def ppl_dir(self) -> Path:
-        return self.loc / EvalTaskType.PPL
-
-    @property
-    def cmp_dir(self) -> Path:
-        return self.loc / EvalTaskType.CMP
-
     @staticmethod
     def iter_all_jobs(project_uri: URI) -> t.Generator[t.Tuple[Path, bool], None, None]:
         # TODO: tune SWCliConfigMixed

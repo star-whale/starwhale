@@ -228,7 +228,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         )
 
         logger.debug("parse job from yaml")
-        _jobs = Parser.parse_job_from_yaml(src_dir / DEFAULT_EVALUATION_JOBS_FNAME)
+        _jobs = Parser.parse_job_from_yaml(str(src_dir / DEFAULT_EVALUATION_JOBS_FNAME))
         # steps of job
         if job_name not in _jobs:
             raise RuntimeError(f"job:{job_name} not found")

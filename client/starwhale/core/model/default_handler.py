@@ -26,7 +26,7 @@ def _get_cls(src_dir: Path) -> Any:
     return _cls
 
 
-def set_up(base_workdir: Path, step: str):
+def set_up(base_workdir: Path, step: str) -> None:
     from starwhale.api._impl.model import _RunConfig
 
     _run_dir = base_workdir / step
@@ -44,22 +44,24 @@ def set_up(base_workdir: Path, step: str):
 
 
 @step()
-def ppl(context: Context):
+def ppl(context: Context) -> None:
     set_up(context.workdir, context.step)
+    # TODO:
     _eval = EvaluationForSubProcess(context.get_param("sub_conn"))
     _cls = _get_cls(context.src_dir)
-    with _cls(context=context, evaluation=_eval) as _obj:
+    with _cls(evaluation=_eval) as _obj:
         _obj._starwhale_internal_run_ppl()
 
     console.print(f":clap: finish run {context.step}-{context.index}: {_obj}")
 
 
 @step(dependency="ppl")
-def cmp(context: Context):
+def cmp(context: Context) -> None:
     set_up(context.workdir, context.step)
+    # TODO:
     _eval = EvaluationForSubProcess(context.get_param("sub_conn"))
     _cls = _get_cls(context.src_dir)
-    with _cls(context=context, evaluation=_eval) as _obj:
+    with _cls(evaluation=_eval) as _obj:
         logger.debug("start to cmp")
         _obj._starwhale_internal_run_cmp()
 

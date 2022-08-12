@@ -287,7 +287,7 @@ class StandaloneEvaluationJob(EvaluationJob):
             cmd += ["unpause"]
 
         # TODO: search container first
-        cmd += [f"{self.name}-{EvalTaskType.PPL}", f"{self.name}-{EvalTaskType.CMP}"]
+        cmd += [f"{self.name}-{EvalTaskType.ALL}", f"{self.name}-{EvalTaskType.SINGLE}"]
         try:
             check_call(cmd)
         except Exception as e:
@@ -329,6 +329,7 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
+        version: str = "",
         name: str = "",
         desc: str = "",
         **kw: t.Any,

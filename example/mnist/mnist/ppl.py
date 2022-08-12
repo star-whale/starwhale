@@ -20,9 +20,8 @@ ONE_IMAGE_SIZE = IMAGE_WIDTH * IMAGE_WIDTH
 
 
 class MNISTInference(PipelineHandler):
-    def __init__(self, context: Context,
-                 evaluation: IEvaluation = None, device="cpu") -> None:
-        super().__init__(context=context, evaluation=evaluation, merge_label=True, ignore_error=True)
+    def __init__(self, evaluation: IEvaluation, device="cpu") -> None:
+        super().__init__(evaluation=evaluation, merge_label=True, ignore_error=True)
         self.device = torch.device(device)
         self.model = self._load_model(self.device)
 

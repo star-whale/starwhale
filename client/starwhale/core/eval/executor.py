@@ -133,15 +133,15 @@ class EvalExecutor:
 
         run_with_progress_bar("eval run in local...", operations)
 
-    def _init_storage(self):
+    def _init_storage(self) -> None:
         # TODO: init storageAPI by job version 2022/07/28
         pass
 
-    def _finally(self):
+    def _finally(self) -> None:
         # TODO
         pass
 
-    def _do_run_eval_job(self):
+    def _do_run_eval_job(self) -> None:
         _type = self._manifest["type"]
         if _type is not EvalTaskType.ALL:
             _step = self._manifest["step"]

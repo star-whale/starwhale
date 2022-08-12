@@ -561,7 +561,6 @@ class MemoryTable:
 class LocalDataStore:
     _instance = None
     _lock = threading.Lock()
-    queue = Queue()
 
     @staticmethod
     def get_instance() -> "LocalDataStore":

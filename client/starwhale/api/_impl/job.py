@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import typing as t
 from starwhale.core.job.model import Step, Parser
 
 
@@ -9,8 +10,8 @@ def step(
     concurrency: int = 1,
     task_num: int = 1,
     dependency: str = "",
-):
-    def decorator(func):
+) -> t.Any:
+    def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
             _step = Step(
                 job_name,

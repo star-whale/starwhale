@@ -60,11 +60,8 @@ class Scheduler:
         self._datastore = _init_datastore(
             str(self._sw_config.datastore_dir), project, version
         )
-        logger.debug("datastore inited:{}", self._datastore.eval_id)
-        self.task_pipes: t.List[TaskPipe] = []
-        self.cond = threading.Condition()
 
-    def add_data(self, data: t.Any):
+    def add_data(self, data: t.Any) -> None:
         if isinstance(data, EvaluationResult):
             self._datastore.log_result(
                 data_id=data.data_id, result=data.result, **data.kwargs
@@ -72,25 +69,21 @@ class Scheduler:
         elif isinstance(data, EvaluationMetric):
             self._datastore.log_metrics(metrics=data.metrics, **data.kwargs)
 
-    def query_data(self, data: EvaluationQuery) -> t.Any:
-        logger.debug("main receive query data:{}", data.kind)
-        if data.kind == EvaluationResultKind.RESULT:
+    def query_data(self, query: EvaluationQuery) -> t.Any:
+        logger.debug("main receive query data:{}", query.kind)
+        if query.kind == EvaluationResultKind.RESULT:
             logger.debug(
                 "hi,all result size: {}",
                 len([res for res in self._datastore.get_results()]),
             )
             return [res for res in self._datastore.get_results()]
-        elif data.kind == EvaluationResultKind.METRIC:
+        elif query.kind == EvaluationResultKind.METRIC:
             return self._datastore.get_metrics()
-
-    def _insert_pipes(self, task_pipe: TaskPipe):
-        with self.cond:
-            self.task_pipes.append(task_pipe)
 
     def __split_tasks(
         self,
         **kw: t.Any,
-    ):
+    ) -> None:
         for _step in self.steps:
             # update step status = init
             _step.status = STATUS.INIT
@@ -107,7 +100,7 @@ class Scheduler:
                 )
 
     def schedule(self) -> None:
-        _threads = []
+        _threads: t.List[Executor] = []
         with self._lock:
             _wait_steps = []
             _finished_step_names = []
@@ -142,10 +135,10 @@ class Scheduler:
                     # executor.setDaemon()
                     _threads.append(_executor)
 
-        for _t in _threads:
-            _t.join()
+        for _thread in _threads:
+            _thread.join()
 
-    def schedule_single_task(self, step_name: str, task_index: int):
+    def schedule_single_task(self, step_name: str, task_index: int) -> None:
         _steps = [step for step in self.steps if step_name == step.step_name]
         if len(_steps) == 0:
             raise RuntimeError(f"step:{step_name} not found")
@@ -181,7 +174,7 @@ class TaskDaemon(threading.Thread):
         self.main_conn = task_pipe.main_conn
         self.setDaemon(True)
 
-    def run(self):
+    def run(self) -> None:
         while True:
             logger.debug("task:{} start to waiting data", self.task_pipe.id)
             data = self.main_conn.recv()
@@ -197,7 +190,7 @@ class Callback:
         self.scheduler = scheduler
 
     @abstractmethod
-    def callback(self, step: Step, tasks: t.List[Task], res: bool, exec_time: float):
+    def callback(self, step: Step, tasks: t.List[Task], res: bool, exec_time: float) -> t.Any:
         pass
 
 
@@ -205,7 +198,7 @@ class StepCallback(Callback):
     def __init__(self, scheduler: Scheduler):
         super().__init__(scheduler)
 
-    def callback(self, step: Step, tasks: t.List[Task], res: bool, exec_time: float):
+    def callback(self, step: Step, tasks: t.List[Task], res: bool, exec_time: float) -> t.Any:
         if res:
             step.status = STATUS.SUCCESS
             logger.debug("step:{} success, run time:{}", step, exec_time)
@@ -221,7 +214,7 @@ class SingleTaskCallback(Callback):
     def __init__(self, scheduler: Scheduler):
         super().__init__(scheduler)
 
-    def callback(self, step: Step, tasks: t.List[Task], res: bool, exec_time: float):
+    def callback(self, step: Step, tasks: t.List[Task], res: bool, exec_time: float) -> t.Any:
         logger.debug(
             "task:{} finished, status:{}, run time:{}", tasks[0], res, exec_time
         )
@@ -241,7 +234,7 @@ class Executor(threading.Thread):
         self.tasks = tasks
         self.callback = callback
 
-    def run(self):
+    def run(self) -> None:
         # processing pool
         start_time = time.time()
         with concurrent.futures.ProcessPoolExecutor(

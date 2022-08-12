@@ -5,7 +5,7 @@ from multiprocessing import Pipe, connection
 import yaml
 from loguru import logger
 
-from starwhale.core.job.loader import load_module
+from starwhale.core.job.loader import load_module, load_cls, get_func_from_instance, get_func_from_module
 
 
 class Step:
@@ -27,7 +27,7 @@ class Step:
         self.status = ""
         self.tasks: t.List[Task] = []
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "step_name:{0}, dependency:{1}, status: {2}".format(
             self.step_name, self.dependency, self.status
         )
@@ -42,7 +42,7 @@ class Step:
         version: str,
         project: str,
         **kw: t.Any,
-    ):
+    ) -> None:
         self.tasks.append(
             Task(
                 context=Context(
@@ -64,38 +64,49 @@ class Step:
         )
 
 
+class ParseConfig:
+    def __init__(self, is_parse_stage: bool, jobs: t.Dict[str, t.List[Step]]):
+        self.parse_stage = is_parse_stage
+        self.jobs = jobs
+
+    def clear(self) -> None:
+        self.jobs = {}
+
+
 # shared memory, not thread safe
-parse_config = {"parse_stage": False, "jobs": {}}
+# parse_config = {"parse_stage": False, "jobs": {}}
+parse_config = ParseConfig(False, {})
 
 
 class Parser:
     @staticmethod
-    def set_parse_stage(parse_stage: bool):
-        parse_config["parse_stage"] = parse_stage
+    def set_parse_stage(parse_stage: bool) -> None:
+        parse_config.parse_stage = parse_stage
 
     @staticmethod
-    def is_parse_stage():
-        return parse_config["parse_stage"]
+    def is_parse_stage() -> bool:
+        return parse_config.parse_stage
 
     @staticmethod
     def add_job(job_name: str, step: Step) -> None:
-        parse_config["jobs"].setdefault(job_name, [])
+        _jobs = parse_config.jobs
+        if job_name not in _jobs:
+            parse_config.jobs[job_name] = []
 
-        logger.debug(step)
-        parse_config["jobs"][job_name].append(step)
+        parse_config.jobs[job_name].append(step)
 
     @staticmethod
-    def get_jobs():
-        return parse_config["jobs"]
+    def get_jobs() -> t.Dict[str, t.List[Step]]:
+        return parse_config.jobs
 
     # load is unique,so don't need to think multi load and clean
     @staticmethod
-    def clear_config():
+    def clear_config() -> None:
         global parse_config
-        parse_config = {"parse_stage": False, "jobs": {}}
+        parse_config.clear()
 
     @staticmethod
-    def parse_job_from_module(module: str, path: Path):
+    def parse_job_from_module(module: str, path: Path) -> t.Dict[str, t.List[Step]]:
         """
         parse @step from module
         :param module: module name
@@ -156,8 +167,8 @@ class Parser:
             return False
 
     @staticmethod
-    def parse_job_from_yaml(file: str) -> dict:
-        with open(file, "r") as file:
+    def parse_job_from_yaml(file_path: str) -> t.Any:
+        with open(file_path, "r") as file:
             return yaml.unsafe_load(file)
 
 
@@ -170,7 +181,7 @@ class Context:
         step: str = "",
         total: int = 1,
         index: int = 0,
-        dataset_uris: t.List[str] = None,
+        dataset_uris: t.Optional[t.List[str]] = None,
         version: str = "",
         project: str = "",
         **kw: t.Any,
@@ -188,12 +199,12 @@ class Context:
     def get_param(self, name: str) -> t.Any:
         return self.kw.get(name)
 
-    def put_param(self, name: str, value: t.Any):
+    def put_param(self, name: str, value: t.Any) -> None:
         if not self.kw:
             self.kw = {}
         self.kw.setdefault(name, value)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
 
 
@@ -224,20 +235,20 @@ class Task:
 
         _module = load_module(self.module, self.src_dir)
 
-        # instance method
-        if "." in self.context.step:
-            logger.debug("hi, use class")
-            _cls_name, _func_name = self.context.step.split(".")
-            _cls = getattr(_module, _cls_name, None)
-            # need an instance(todo whether it's a staticmethod?)
-            cls = _cls()
-            func = getattr(cls, _func_name, None)
-        else:
-            logger.debug("hi, use func")
-            _func_name = self.context.step
-            func = getattr(_module, _func_name, None)
-
         try:
+            # instance method
+            if "." in self.context.step:
+                logger.debug("hi, use class")
+                _cls_name, _func_name = self.context.step.split(".")
+                _cls = load_cls(_module, _cls_name)
+                # need an instance
+                cls = _cls()
+                func = get_func_from_instance(cls, _func_name)
+            else:
+                logger.debug("hi, use func")
+                _func_name = self.context.step
+                func = get_func_from_module(_module, _func_name)
+
             self.status = STATUS.RUNNING
             # The standard implementation does not return results
             func(context=self.context)

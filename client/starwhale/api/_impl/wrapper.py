@@ -59,7 +59,7 @@ class IEvaluation(metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def get_metrics(self):
+    def get_metrics(self) -> Dict[str, Any]:
         ...
 
 
@@ -100,7 +100,7 @@ class Evaluation(Logger, IEvaluation):
             [(self._results_table_name, "result", False)]
         )
 
-    def get_metrics(self):
+    def get_metrics(self) -> Dict[str, Any]:
         _m = [
             metrics
             for metrics in self._data_store.scan_tables(
@@ -126,7 +126,7 @@ class EvaluationMetric:
 
 # TODO: rich query params
 class EvaluationQuery:
-    def __init__(self, kind: EvaluationResultKind):
+    def __init__(self, kind: str):
         self.kind = kind
 
 
@@ -143,11 +143,11 @@ class EvaluationForSubProcess(IEvaluation):
     ) -> None:
         self.sub_conn.send(EvaluationMetric(metrics=metrics, **kwargs))
 
-    def get_results(self) -> Iterator[Dict[str, Any]]:
+    def get_results(self) -> Any:
         self.sub_conn.send(EvaluationQuery(EvaluationResultKind.RESULT))
         return self.sub_conn.recv()
 
-    def get_metrics(self):
+    def get_metrics(self) -> Any:
         self.sub_conn.send(EvaluationQuery(EvaluationResultKind.METRIC))
         return self.sub_conn.recv()
 
