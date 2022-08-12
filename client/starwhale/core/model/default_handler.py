@@ -3,8 +3,11 @@ from pathlib import Path
 
 from loguru import logger
 
+from starwhale.api._impl.wrapper import EvaluationForSubProcess
+from starwhale.base.type import RunSubDirType
 from starwhale.utils import console
-from starwhale.consts import DefaultYAMLName
+from starwhale.consts import DefaultYAMLName, DEFAULT_INPUT_JSON_FNAME
+from starwhale.utils.fs import ensure_dir
 from starwhale.utils.load import import_cls
 from starwhale.api._impl.job import step
 from starwhale.core.job.model import Context
@@ -23,11 +26,32 @@ def _get_cls(src_dir: Path) -> Any:
     return _cls
 
 
+def set_up(base_workdir: Path, step: str):
+    from starwhale.api._impl.model import _RunConfig
+
+    _run_dir = base_workdir / step
+    ensure_dir(_run_dir)
+
+    for _w in (_run_dir,):
+        for _n in (
+            RunSubDirType.STATUS,
+            RunSubDirType.LOG
+        ):
+            ensure_dir(_w / _n)
+    _RunConfig.set_env(
+        {
+            "status_dir": _run_dir / RunSubDirType.STATUS,
+            "log_dir": _run_dir / RunSubDirType.LOG,
+        }
+    )
+
+
 @step()
 def ppl(context: Context):
+    set_up(context.workdir, context.step)
+    _eval = EvaluationForSubProcess(context.get_param("sub_conn"))
     _cls = _get_cls(context.src_dir)
-    logger.debug(f"cls path:{context.src_dir}")
-    with _cls(context=context) as _obj:
+    with _cls(context=context, evaluation=_eval) as _obj:
         _obj._starwhale_internal_run_ppl()
 
     console.print(f":clap: finish run {context.step}-{context.index}: {_obj}")
@@ -35,9 +59,11 @@ def ppl(context: Context):
 
 @step(dependency="ppl")
 def cmp(context: Context):
+    set_up(context.workdir, context.step)
+    _eval = EvaluationForSubProcess(context.get_param("sub_conn"))
     _cls = _get_cls(context.src_dir)
-    with _cls(context=context) as _obj:
+    with _cls(context=context, evaluation=_eval) as _obj:
         logger.debug("start to cmp")
         _obj._starwhale_internal_run_cmp()
 
-    console.print(f":clap: finish run {context.step}: {_obj}")
+    console.print(f":clap: finish run {context.step}-{context.index}: {_obj}")

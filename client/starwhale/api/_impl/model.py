@@ -17,14 +17,14 @@ import loguru
 import jsonlines
 
 from starwhale.utils import now_str, in_production
-from starwhale.consts import DEFAULT_INPUT_JSON_FNAME
-from starwhale.utils.fs import ensure_dir
+from starwhale.consts import DEFAULT_INPUT_JSON_FNAME, CURRENT_FNAME
+from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NotFoundError
 
 from .loader import DataField, DataLoader, get_data_loader, SimpleDataLoader
-from .wrapper import EvaluationForSubProcess
+from .wrapper import IEvaluation, Evaluation
 from ...core.job.model import Context
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
@@ -47,11 +47,9 @@ class _RunConfig:
         swds_config_path: _ptype = "",
         status_dir: _ptype = "",
         log_dir: _ptype = "",
-        result_dir: _ptype = "",
     ) -> None:
         self.status_dir = _p(status_dir, "status")  # type: ignore
         self.log_dir = _p(log_dir, "log")  # type: ignore
-        self.result_dir = _p(result_dir, "result")  # type: ignore
         self.swds_config_path = (
             swds_config_path  # self.load_swds_config(swds_config_path)
         )
@@ -76,7 +74,6 @@ class _RunConfig:
 
     def _prepare(self) -> None:
         ensure_dir(self.log_dir)
-        ensure_dir(self.result_dir)
         ensure_dir(self.status_dir)
 
     @classmethod
@@ -86,7 +83,6 @@ class _RunConfig:
             swds_config_path=_env(SWEnv.input_config),
             status_dir=_env(SWEnv.status_dir),
             log_dir=_env(SWEnv.log_dir),
-            result_dir=_env(SWEnv.result_dir),
         )
 
     @classmethod
@@ -98,7 +94,6 @@ class _RunConfig:
 
         _set("status_dir", SWEnv.status_dir)
         _set("log_dir", SWEnv.log_dir)
-        _set("result_dir", SWEnv.result_dir)
         _set("input_config", SWEnv.input_config)
 
 
@@ -115,7 +110,8 @@ class PipelineHandler(metaclass=ABCMeta):
 
     def __init__(
         self,
-        context: Context,
+        context: Context = None,
+        evaluation: IEvaluation = None,
         merge_label: bool = True,
         output_type: str = ResultOutputType.JSONL,
         ignore_error: bool = False,
@@ -135,12 +131,14 @@ class PipelineHandler(metaclass=ABCMeta):
         self._orig_stderr = sys.stderr
 
         # TODO: split status/result files
-        # self._result_writer = _jl_writer(self.config.result_dir / CURRENT_FNAME)  # type: ignore
-        # self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
+        self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
 
         self._ppl_data_field = "result"
         self._label_field = "label"
-        self._eval = EvaluationForSubProcess(self.context.get_param("sub_conn"))
+        if evaluation is None:
+            self.evaluation = Evaluation(context.version)
+        else:
+            self.evaluation = evaluation
         self._simple_step_name = ""
         self._monkey_patch()
 
@@ -181,7 +179,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def __str__(self) -> str:
         return (
             f"PipelineHandler status@{self.config.status_dir}, "
-            f"log@{self.config.log_dir}, result@{self.config.result_dir}"
+            f"log@{self.config.log_dir}"
         )
 
     def __enter__(self) -> PipelineHandler:
@@ -268,11 +266,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self._update_status(self.STATUS.START)
         now = now_str()  # type: ignore
         try:
-            _ppl_results = [
-                result
-                for result in self._eval.get_results()
-                if result["id"].startswith("ppl_result")
-            ]
+            _ppl_results = [result for result in self.evaluation.get_results()]
             self._sw_logger.debug("cmp input data size:{}", len(_ppl_results))
             _data_loader = SimpleDataLoader(
                 _ppl_results, self._sw_logger, deserializer=self.deserialize_new
@@ -280,21 +274,12 @@ class PipelineHandler(metaclass=ABCMeta):
             output = self.cmp(_data_loader)
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
-            # self._status_writer.write({"time": now, "status": False, "exception": e})
-            self._eval.log_result(
-                data_id=f"cmp_log_task_{self.context.index}",
-                result=json.dumps({"time": now, "status": False, "exception": str(e)}),
-            )
+            self._status_writer.write({"time": now, "status": False, "exception": e})
             raise
         else:
-            # self._status_writer.write({"time": now, "status": True, "exception": ""})
-            self._eval.log_result(
-                data_id=f"cmp_log_task_{self.context.index}",
-                result=json.dumps({"time": now, "status": True, "exception": ""}),
-            )
+            self._status_writer.write({"time": now, "status": True, "exception": ""})
             self._sw_logger.debug("cmp result:{}", output)
-            # self._result_writer.write(output)
-            self._eval.log_metrics(output)
+            self.evaluation.log_metrics(output)
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
@@ -344,7 +329,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
             self._do_record(data, label, exception, *pred)
         self._sw_logger.debug(
-            f"ppl result:{len([item for item in self._eval.get_results()])}"
+            f"ppl result:{len([item for item in self.evaluation.get_results()])}"
         )
 
     def _do_record(
@@ -361,11 +346,7 @@ class PipelineHandler(metaclass=ABCMeta):
             "index": data.idx,
             "output_tuple_len": len(args),
         }
-        # self._status_writer.write(_timeline)
-        self._eval.log_result(
-            data_id=f"ppl_log_task_{self.context.index}_data_{data.idx}",
-            result=json.dumps(_timeline),
-        )
+        self._status_writer.write(_timeline)
 
         _label = ""
         if self.merge_label:
@@ -387,30 +368,16 @@ class PipelineHandler(metaclass=ABCMeta):
                 else:
                     _label = ""
 
-        # self._result_writer.write(result)
-        # self._datastore.log_result(
-        #     data_id=f"ppl_result_task_{self.context.index}_data_{data.idx}",
-        #     index=data.idx,
-        #     result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),
-        #     batch=data.batch_size,
-        #     label=_label,
-        # )
         self._sw_logger.debug("record ppl result:{}", data.idx)
-        self._eval.log_result(
-            data_id=f"ppl_result_task_{self.context.index}_data_{data.idx}",
-            index=data.idx,
+        self.evaluation.log_result(
+            data_id=str(data.idx),
             result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),
             batch=data.batch_size,
             label=_label,
         )
-
-        # self._sw_logger.debug(f"ppl data:{data.idx} result:{result}")
-        # self._update_status(self.STATUS.RUNNING)
+        self._update_status(self.STATUS.RUNNING)
 
     def _update_status(self, status: str) -> None:
-        # fpath = self.config.status_dir / CURRENT_FNAME
-        # ensure_file(fpath, status)
-        # self._datastore.log_result(
-        #     data_id=f"{self._simple_step_name}_status", result=status
-        # )
-        pass
+        fpath = self.config.status_dir / CURRENT_FNAME
+        ensure_file(fpath, status)
+

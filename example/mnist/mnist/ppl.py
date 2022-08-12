@@ -7,6 +7,7 @@ from torchvision import transforms
 from PIL import Image
 import numpy as np
 
+from starwhale.api._impl.wrapper import IEvaluation
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
 from starwhale.core.job.model import Context
@@ -19,8 +20,9 @@ ONE_IMAGE_SIZE = IMAGE_WIDTH * IMAGE_WIDTH
 
 
 class MNISTInference(PipelineHandler):
-    def __init__(self, context: Context, device="cpu") -> None:
-        super().__init__(context=context, merge_label=True, ignore_error=True)
+    def __init__(self, context: Context,
+                 evaluation: IEvaluation = None, device="cpu") -> None:
+        super().__init__(context=context, evaluation=evaluation, merge_label=True, ignore_error=True)
         self.device = torch.device(device)
         self.model = self._load_model(self.device)
 
@@ -56,7 +58,7 @@ class MNISTInference(PipelineHandler):
             # TODO: tune for batch transforms
             _start = i * ONE_IMAGE_SIZE
             _tensor = torch.tensor(
-                bytearray(input[_start : (_start + ONE_IMAGE_SIZE)]), dtype=torch.uint8
+                bytearray(input[_start: (_start + ONE_IMAGE_SIZE)]), dtype=torch.uint8
             ).reshape(IMAGE_WIDTH, IMAGE_WIDTH)
 
             _image = Image.fromarray(_tensor.numpy())

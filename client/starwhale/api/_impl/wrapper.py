@@ -1,6 +1,7 @@
 import os
 import re
 import threading
+from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, List, Iterator, Optional
 from multiprocessing.connection import Connection
 
@@ -31,7 +32,7 @@ class Logger:
         writer.insert(record)
 
 
-class Evaluation(Logger):
+class IEvaluation(metaclass=ABCMeta):
     def __init__(self, eval_id: Optional[str] = None):
         if eval_id is None:
             eval_id = os.getenv("SW_EVAL_ID", None)
@@ -42,6 +43,30 @@ class Evaluation(Logger):
                 f"invalid eval id {eval_id}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
             )
         self.eval_id = eval_id
+
+    @abstractmethod
+    def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
+        ...
+
+    @abstractmethod
+    def log_metrics(
+        self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> None:
+        ...
+
+    @abstractmethod
+    def get_results(self) -> Iterator[Dict[str, Any]]:
+        ...
+
+    @abstractmethod
+    def get_metrics(self):
+        ...
+
+
+class Evaluation(Logger, IEvaluation):
+    def __init__(self, eval_id: Optional[str] = None):
+        super().__init__()
+
         self.project = os.getenv("SW_PROJECT")
         if self.project is None:
             raise RuntimeError("SW_PROJECT is not set")
@@ -105,8 +130,9 @@ class EvaluationQuery:
         self.kind = kind
 
 
-class EvaluationForSubProcess:
-    def __init__(self, sub_conn: Connection):
+class EvaluationForSubProcess(IEvaluation):
+    def __init__(self, sub_conn: Connection, eval_id: Optional[str] = None):
+        super().__init__(eval_id)
         self.sub_conn = sub_conn
 
     def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
