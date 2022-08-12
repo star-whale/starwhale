@@ -1,7 +1,7 @@
 import sys
 import importlib
-from pathlib import Path
 from typing import Any
+from pathlib import Path
 
 import pkg_resources
 from loguru import logger

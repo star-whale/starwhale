@@ -1,15 +1,10 @@
 import typing as t
 from pathlib import Path
 
-from starwhale.consts import (
-    CURRENT_FNAME,
-    RECOVER_DIRNAME,
-    VERSION_PREFIX_CNT,
-    DEFAULT_MANIFEST_NAME,
-)
+from starwhale.consts import RECOVER_DIRNAME, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import guess_real_path
-from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
+from starwhale.base.type import URIType
 from starwhale.base.store import BaseStorage
 from starwhale.utils.config import SWCliConfigMixed
 

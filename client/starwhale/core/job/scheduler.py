@@ -190,7 +190,9 @@ class Callback:
         self.scheduler = scheduler
 
     @abstractmethod
-    def callback(self, step: Step, tasks: t.List[Task], res: bool, exec_time: float) -> t.Any:
+    def callback(
+        self, step: Step, tasks: t.List[Task], res: bool, exec_time: float
+    ) -> t.Any:
         pass
 
 
@@ -198,7 +200,9 @@ class StepCallback(Callback):
     def __init__(self, scheduler: Scheduler):
         super().__init__(scheduler)
 
-    def callback(self, step: Step, tasks: t.List[Task], res: bool, exec_time: float) -> t.Any:
+    def callback(
+        self, step: Step, tasks: t.List[Task], res: bool, exec_time: float
+    ) -> t.Any:
         if res:
             step.status = STATUS.SUCCESS
             logger.debug("step:{} success, run time:{}", step, exec_time)
@@ -214,7 +218,9 @@ class SingleTaskCallback(Callback):
     def __init__(self, scheduler: Scheduler):
         super().__init__(scheduler)
 
-    def callback(self, step: Step, tasks: t.List[Task], res: bool, exec_time: float) -> t.Any:
+    def callback(
+        self, step: Step, tasks: t.List[Task], res: bool, exec_time: float
+    ) -> t.Any:
         logger.debug(
             "task:{} finished, status:{}, run time:{}", tasks[0], res, exec_time
         )

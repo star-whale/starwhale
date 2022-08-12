@@ -40,7 +40,7 @@ def multi_classification(
             cr = classification_report(
                 y_true, y_pred, output_dict=True, labels=all_labels
             )
-            _summary_m = ["accuracy", "macro_avg", "weighted_avg"]
+            _summary_m = ["accuracy", "macro avg", "weighted avg"]
             _r["summary"] = {k: cr.get(k) for k in _summary_m}
             _r["labels"] = {k: v for k, v in cr.items() if k not in _summary_m}
 

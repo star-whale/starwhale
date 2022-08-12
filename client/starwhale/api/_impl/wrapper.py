@@ -32,7 +32,7 @@ class Logger:
         writer.insert(record)
 
 
-class IEvaluation(metaclass=ABCMeta):
+class BaseEvaluation(metaclass=ABCMeta):
     def __init__(self, eval_id: Optional[str] = None):
         if eval_id is None:
             eval_id = os.getenv("SW_EVAL_ID", None)
@@ -63,7 +63,7 @@ class IEvaluation(metaclass=ABCMeta):
         ...
 
 
-class Evaluation(Logger, IEvaluation):
+class Evaluation(Logger, BaseEvaluation):
     def __init__(self, eval_id: Optional[str] = None):
         super().__init__()
 
@@ -130,7 +130,7 @@ class EvaluationQuery:
         self.kind = kind
 
 
-class EvaluationForSubProcess(IEvaluation):
+class EvaluationForSubProcess(BaseEvaluation):
     def __init__(self, sub_conn: Connection, eval_id: Optional[str] = None):
         super().__init__(eval_id)
         self.sub_conn = sub_conn

@@ -5,7 +5,12 @@ from multiprocessing import Pipe, connection
 import yaml
 from loguru import logger
 
-from starwhale.core.job.loader import load_module, load_cls, get_func_from_instance, get_func_from_module
+from starwhale.core.job.loader import (
+    load_cls,
+    load_module,
+    get_func_from_module,
+    get_func_from_instance,
+)
 
 
 class Step:

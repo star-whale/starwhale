@@ -24,8 +24,7 @@ from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NotFoundError
 
 from .loader import DataField, DataLoader, get_data_loader, SimpleDataLoader
-from .wrapper import Evaluation, IEvaluation
-from ...core.job.model import Context
+from .wrapper import BaseEvaluation
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
@@ -50,9 +49,7 @@ class _RunConfig:
     ) -> None:
         self.status_dir = _p(status_dir, "status")  # type: ignore
         self.log_dir = _p(log_dir, "log")  # type: ignore
-        self.swds_config_path = (
-            swds_config_path  # self.load_swds_config(swds_config_path)
-        )
+        self.swds_config_path = swds_config_path
 
         # TODO: graceful method
         self._prepare()
@@ -110,7 +107,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
     def __init__(
         self,
-        evaluation: IEvaluation,
+        evaluation: BaseEvaluation,
         merge_label: bool = True,
         output_type: str = ResultOutputType.JSONL,
         ignore_error: bool = False,

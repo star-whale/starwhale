@@ -5,7 +5,6 @@ import json
 import atexit
 import pathlib
 import threading
-from queue import Queue
 from typing import Any, Set, cast, Dict, List, Tuple, Iterator, Optional
 
 import numpy as np
@@ -14,8 +13,8 @@ import pyarrow.parquet as pq  # type: ignore
 from loguru import logger
 from typing_extensions import Protocol
 
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.fs import ensure_dir
+from starwhale.utils.config import SWCliConfigMixed
 
 
 class Type:
@@ -576,7 +575,7 @@ class LocalDataStore:
 
     def __init__(self, root_path: str) -> None:
         self.root_path = root_path
-        self.name_pattern = re.compile(r"^[A-Za-z0-9-_/ ]+$")
+        self.name_pattern = re.compile(r"^[A-Za-z0-9-_/]+$")
         self.tables: Dict[str, MemoryTable] = {}
 
     def put(
@@ -647,7 +646,7 @@ class LocalDataStore:
                 self.columns = columns
                 self.explicit_none = explicit_none
 
-        logger.debug("scan enter, table size:{}", len(tables))
+        logger.debug(f"scan enter, table size:{len(tables)}")
         infos: List[TableInfo] = []
         for table_name, table_alias, explicit_none in tables:
             table = self.tables.get(table_name, None)
@@ -684,14 +683,14 @@ class LocalDataStore:
         iters = []
         for info in infos:
             if info.name in self.tables:
-                logger.debug("scan by memory table{}", info.name)
+                logger.debug(f"scan by memory table{info.name}")
                 iters.append(
                     self.tables[info.name].scan(
                         info.columns, start, end, info.explicit_none
                     )
                 )
             else:
-                logger.debug("scan by disk table{}", info.name)
+                logger.debug(f"scan by disk table{info.name}")
                 iters.append(
                     _scan_table(
                         f"{self.root_path}/{info.name}",
