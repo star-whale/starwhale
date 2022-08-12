@@ -209,8 +209,8 @@ public class UserController implements UserApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> userToken(String userName) {
-        User user = userService.loadUserByUsername(userName);
+    public ResponseEntity<ResponseMessage<String>> userToken(Long userId) {
+        User user = userService.loadUserById(userId);
         return ResponseEntity.ok(Code.success.asResponse(jwtTokenUtil.generateAccessToken(user)));
     }
 }

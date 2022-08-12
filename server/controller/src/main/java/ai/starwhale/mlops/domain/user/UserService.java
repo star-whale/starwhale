@@ -94,6 +94,14 @@ public class UserService implements UserDetailsService {
         return new User().fromEntity(userEntity);
     }
 
+    public User loadUserById(Long id) {
+        UserEntity userEntity = userMapper.findUser(id);
+        if(userEntity == null) {
+            throw new UsernameNotFoundException(String.format("User %s is not found.", id));
+        }
+        return new User().fromEntity(userEntity);
+    }
+
     public List<Role> getProjectRolesOfUser(User user, String projectUrl) {
         Long projectId = projectManager.getProjectId(projectUrl);
 
