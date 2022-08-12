@@ -32,6 +32,8 @@ public class Project {
 
     private String name;
 
+    private String description;
+
     private User owner;
 
     private boolean isDefault;

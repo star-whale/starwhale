@@ -110,6 +110,7 @@ public class ProjectService {
         ProjectEntity entity = ProjectEntity.builder()
             .projectName(project.getName())
             .ownerId(project.getOwner().getId())
+            .description(project.getDescription())
             .isDefault(project.isDefault() ? 1 : 0)
             .build();
         projectMapper.createProject(entity);
@@ -186,11 +187,13 @@ public class ProjectService {
         return id;
     }
 
-    public Boolean modifyProject(String projectUrl, String projectName) {
+    public Boolean modifyProject(String projectUrl, String projectName, String description, Long userId) {
         Long projectId = projectManager.getProjectId(projectUrl);
         ProjectEntity entity = ProjectEntity.builder()
             .id(projectId)
             .projectName(projectName)
+            .description(description)
+            .ownerId(userId)
             .build();
         int res = projectMapper.modifyProject(entity);
         log.info("Project has been modified ID={}", entity.getId());

@@ -9,8 +9,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.project.mapper.ProjectMapper">
     <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.po.ProjectEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into project_info(project_name, owner_id)
-        values (#{project.projectName}, #{project.ownerId})
+        insert into project_info(project_name, owner_id, project_description)
+        values (#{project.projectName}, #{project.ownerId}, #{project.description})
     </insert>
 
     <update id="deleteProject" parameterType="java.lang.Long">
@@ -27,7 +27,17 @@
 
     <update id="modifyProject" parameterType="ai.starwhale.mlops.domain.project.po.ProjectEntity">
         update project_info
-        set project_name = #{project.projectName}
+        <set>
+            <if test="project.projectName != null and project.projectName != ''">
+                project_name = #{project.projectName},
+            </if>
+            <if test="project.description != null and project.description != ''">
+                project_description = #{project.description},
+            </if>
+            <if test="project.ownerId != null">
+                owner_id = #{project.ownerId}
+            </if>
+        </set>
         where id = #{project.id}
     </update>
 
@@ -35,6 +45,7 @@
         select p.id as project_id,
                p.project_name,
                p.owner_id,
+               p.project_description,
                p.is_deleted as project_is_deleted,
                p.is_default as project_is_default,
                p.created_time as project_created_time,
@@ -98,6 +109,7 @@
     <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.po.ProjectEntity">
         <id property="id" column="project_id" />
         <result property="projectName" column="project_name"/>
+        <result property="description" column="project_description" />
         <result property="isDeleted" column="project_is_deleted"/>
         <result property="isDefault" column="project_is_default"/>
         <result property="createdTime" column="project_created_time"/>
