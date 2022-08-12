@@ -122,7 +122,7 @@ class SWCliConfigMixed:
 
     @property
     def datastore_dir(self) -> Path:
-        return self.rootdir / "datastore"
+        return self.rootdir / ".datastore"
 
     @property
     def eval_run_dir(self) -> Path:

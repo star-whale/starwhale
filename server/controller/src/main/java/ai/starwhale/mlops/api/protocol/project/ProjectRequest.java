@@ -36,6 +36,12 @@ public class ProjectRequest implements Serializable {
     @JsonProperty("projectId")
     private String projectId;
 
+    @JsonProperty("ownerId")
+    private String ownerId;
+
+    @JsonProperty("description")
+    private String description;
+
     @JsonProperty(value = "recover", defaultValue = "false", required = true)
     private Boolean recover;
 }

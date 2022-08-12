@@ -90,8 +90,11 @@ public class ProjectController implements ProjectApi{
             projectId = projectService
                 .createProject(Project.builder()
                     .name(projectRequest.getProjectName())
-                    .owner(User.builder().id(user.getId()).build())
+                    .owner(User.builder()
+                        .id(idConvertor.revert(projectRequest.getOwnerId()))
+                        .build())
                     .isDefault(false)
+                    .description(projectRequest.getDescription())
                     .build());
         }
 
@@ -125,7 +128,10 @@ public class ProjectController implements ProjectApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> updateProject(String projectUrl,
         ProjectRequest projectRequest) {
-        Boolean res = projectService.modifyProject(projectUrl, projectRequest.getProjectName());
+        Boolean res = projectService.modifyProject(projectUrl,
+            projectRequest.getProjectName(),
+            projectRequest.getDescription(),
+            idConvertor.revert(projectRequest.getOwnerId()));
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update project failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);

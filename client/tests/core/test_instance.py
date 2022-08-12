@@ -38,18 +38,18 @@ class InstanceTestCase(TestCase):
 
     @Mocker()
     def test_login(self, rm: Mocker):
-        InstanceTermView().login("local", "abc", "123", alias="local")
+        InstanceTermView().login("local", alias="local", username="abc", password="123")
 
         with self.assertRaises(SystemExit):
             InstanceTermView().select("pre-k8s")
 
         rm.request(
-            HTTPMethod.POST,
-            "http://1.1.0.0:8182/api/v1/login",
-            json={"data": {"role": {"roleName": "admin"}}},
+            HTTPMethod.GET,
+            "http://1.1.0.0:8182/api/v1/user/current",
+            json={"data": {"name": "abc", "role": {"roleName": "admin"}}},
             headers={"Authorization": "123"},
         )
-        InstanceTermView().login("http://1.1.0.0:8182", "abc", "123", alias="pre-k8s")
+        InstanceTermView().login("http://1.1.0.0:8182", alias="pre-k8s", token="123")
         InstanceTermView().select("pre-k8s")
         InstanceTermView().logout("pre-k8s")
 

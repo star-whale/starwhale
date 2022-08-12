@@ -240,12 +240,12 @@ public interface UserApi {
                     mediaType = "application/json",
                     schema = @Schema(implementation = String.class)))
         })
-    @GetMapping(value = "/user/token/{userName}")
+    @GetMapping(value = "/user/token/{userId}")
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> userToken(@Parameter(
         in = ParameterIn.PATH,
-        description = "account name of a user",
+        description = "account id of a user",
         schema = @Schema())
-    @PathVariable("userName")
-        String userName);
+    @PathVariable("userId")
+        Long userId);
 }

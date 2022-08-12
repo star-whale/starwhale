@@ -1,6 +1,7 @@
 import os
 import unittest
 from typing import Dict, List
+from unittest.mock import patch, MagicMock
 
 import numpy as np
 import pyarrow as pa  # type: ignore
@@ -940,13 +941,16 @@ class TestLocalDataStore(BaseTestCase):
 
 class TestTableWriter(BaseTestCase):
     def setUp(self) -> None:
+        self.mock_atexit = patch("starwhale.api._impl.data_store.atexit", MagicMock())
+        self.mock_atexit.start()
+
         super().setUp()
-        os.environ["SW_ROOT_PATH"] = self.root
         self.writer = data_store.TableWriter("p/test", "k")
 
     def tearDown(self) -> None:
         self.writer.close()
         super().tearDown()
+        self.mock_atexit.stop()
 
     def test_insert_and_delete(self) -> None:
         with self.assertRaises(RuntimeError, msg="no key"):
