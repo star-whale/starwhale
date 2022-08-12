@@ -140,6 +140,7 @@ class StandaloneJobTestCase(TestCase):
         assert m_call.call_count == 3
 
 
+@skip
 class CloudJobTestCase(unittest.TestCase):
     def setUp(self):
         self.instance_uri = "http://1.1.1.1:8888"

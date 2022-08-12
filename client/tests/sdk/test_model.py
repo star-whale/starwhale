@@ -179,6 +179,7 @@ class TestModelPipelineHandler(TestCase):
             assert line["index"] == 0
             assert line["batch"] == 10
 
+    @skip
     def test_deserializer(self) -> None:
         self.fs.add_real_directory(sysconfig.get_paths()["purelib"])
         import numpy as np
