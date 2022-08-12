@@ -17,14 +17,14 @@ import loguru
 import jsonlines
 
 from starwhale.utils import now_str, in_production
-from starwhale.consts import DEFAULT_INPUT_JSON_FNAME, CURRENT_FNAME
+from starwhale.consts import CURRENT_FNAME, DEFAULT_INPUT_JSON_FNAME
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NotFoundError
 
 from .loader import DataField, DataLoader, get_data_loader, SimpleDataLoader
-from .wrapper import IEvaluation, Evaluation
+from .wrapper import Evaluation, IEvaluation
 from ...core.job.model import Context
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
@@ -380,4 +380,3 @@ class PipelineHandler(metaclass=ABCMeta):
     def _update_status(self, status: str) -> None:
         fpath = self.config.status_dir / CURRENT_FNAME
         ensure_file(fpath, status)
-

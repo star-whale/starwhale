@@ -1,6 +1,7 @@
 import os
 import unittest
 from pathlib import Path
+from unittest import skip
 from unittest.mock import patch, MagicMock
 
 from requests_mock import Mocker
@@ -22,6 +23,7 @@ _job_manifest = open(f"{_job_data_dir}/job_manifest.yaml").read()
 _cmp_report = open(f"{_job_data_dir}/cmp_report.jsonl").read()
 
 
+@skip
 class StandaloneJobTestCase(TestCase):
     def setUp(self):
         self.setUpPyfakefs()

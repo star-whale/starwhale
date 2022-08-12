@@ -3,15 +3,15 @@ from pathlib import Path
 
 from loguru import logger
 
-from starwhale.api._impl.wrapper import EvaluationForSubProcess
-from starwhale.base.type import RunSubDirType
 from starwhale.utils import console
-from starwhale.consts import DefaultYAMLName, DEFAULT_INPUT_JSON_FNAME
+from starwhale.consts import DefaultYAMLName
 from starwhale.utils.fs import ensure_dir
+from starwhale.base.type import RunSubDirType
 from starwhale.utils.load import import_cls
 from starwhale.api._impl.job import step
 from starwhale.core.job.model import Context
 from starwhale.core.model.model import StandaloneModel
+from starwhale.api._impl.wrapper import EvaluationForSubProcess
 
 _CNTR_WORKDIR = "/opt/starwhale"
 
@@ -33,10 +33,7 @@ def set_up(base_workdir: Path, step: str):
     ensure_dir(_run_dir)
 
     for _w in (_run_dir,):
-        for _n in (
-            RunSubDirType.STATUS,
-            RunSubDirType.LOG
-        ):
+        for _n in (RunSubDirType.STATUS, RunSubDirType.LOG):
             ensure_dir(_w / _n)
     _RunConfig.set_env(
         {
