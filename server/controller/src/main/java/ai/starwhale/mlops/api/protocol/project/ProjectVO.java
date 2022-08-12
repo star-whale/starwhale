@@ -33,6 +33,8 @@ public class ProjectVO implements Serializable {
 
     private String name;
 
+    private String description;
+
     private Long createdTime;
 
     private UserVO owner;
@@ -40,10 +42,10 @@ public class ProjectVO implements Serializable {
     private Boolean isDefault;
 
     public static ProjectVO empty() {
-        return new ProjectVO("", "", -1L, UserVO.empty(), false);
+        return new ProjectVO("", "", "", -1L, UserVO.empty(), false);
     }
 
     public static ProjectVO system() {
-        return new ProjectVO("0", "SYSTEM", -1L, UserVO.empty(), false);
+        return new ProjectVO("0", "SYSTEM", "System",-1L, UserVO.empty(), false);
     }
 }

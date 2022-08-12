@@ -54,6 +54,7 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
             .name(entity.getProjectName())
             .owner(userConvertor.convert(entity.getOwner()))
             .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+            .description(entity.getDescription())
             .build();
     }
 
@@ -63,6 +64,7 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
         return ProjectEntity.builder()
             .id(idConvertor.revert(vo.getId()))
             .projectName(vo.getName())
+            .description(vo.getDescription())
             .build();
     }
 }
