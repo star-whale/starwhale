@@ -1,6 +1,8 @@
 import os
+import json
 import unittest
 from typing import Dict, List
+from unittest.mock import Mock, patch
 
 import numpy as np
 import pyarrow as pa  # type: ignore
@@ -52,7 +54,6 @@ class TestBasicFunctions(BaseTestCase):
                     "a": [0, 1, 2],
                     "b": ["x", "y", "z"],
                     "c": [10, 11, 12],
-                    "d": [None, None, str(data_store.Link(""))],
                     "-": [None, True, None],
                     "~c": [False, False, True],
                 },
@@ -64,7 +65,6 @@ class TestBasicFunctions(BaseTestCase):
                                 data_store.ColumnSchema("a", data_store.INT64),
                                 data_store.ColumnSchema("b", data_store.STRING),
                                 data_store.ColumnSchema("c", data_store.INT64),
-                                data_store.ColumnSchema("d", data_store.LINK),
                                 data_store.ColumnSchema("-", data_store.BOOL),
                                 data_store.ColumnSchema("~c", data_store.BOOL),
                             ],
@@ -77,7 +77,7 @@ class TestBasicFunctions(BaseTestCase):
             [
                 {"*": 0, "a": 0, "b": "x", "c": 10},
                 {"*": 1, "a": 1, "b": "y", "c": 11, "-": True},
-                {"*": 2, "a": 2, "b": "z", "d": data_store.Link("")},
+                {"*": 2, "a": 2, "b": "z"},
             ],
             list(data_store._scan_parquet_file(path)),
             "scan all",
@@ -142,12 +142,25 @@ class TestBasicFunctions(BaseTestCase):
             ),
             "with start and end",
         )
+        self.assertEqual(
+            [
+                {"*": 0, "a": 0, "b": "x", "c": 10},
+                {"*": 1, "a": 1, "b": "y", "c": 11, "-": True},
+                {"*": 2, "a": 2, "b": "z", "c": None},
+            ],
+            list(data_store._scan_parquet_file(path, keep_none=True)),
+            "keep none",
+        )
 
     def test_merge_scan(self) -> None:
-        self.assertEqual([], list(data_store._merge_scan([])), "no iter")
+        self.assertEqual([], list(data_store._merge_scan([], False)), "no iter")
         self.assertEqual(
             [{"*": 0, "a": 0}, {"*": 1, "a": 1}],
-            list(data_store._merge_scan([iter([{"*": 0, "a": 0}, {"*": 1, "a": 1}])])),
+            list(
+                data_store._merge_scan(
+                    [iter([{"*": 0, "a": 0}, {"*": 1, "a": 1}])], False
+                )
+            ),
             "one iter - ignore none",
         )
         self.assertEqual(
@@ -157,7 +170,8 @@ class TestBasicFunctions(BaseTestCase):
                     [
                         iter([{"*": 0, "a": 0}, {"*": 2, "a": 2}]),
                         iter([{"*": 1, "a": 1}, {"*": 3, "a": 3}]),
-                    ]
+                    ],
+                    False,
                 )
             ),
             "two iters",
@@ -169,7 +183,8 @@ class TestBasicFunctions(BaseTestCase):
                     [
                         iter([{"*": 0, "a": 0}, {"*": 1, "a": 1}]),
                         iter([{"*": 2, "a": 2}, {"*": 3, "a": 3}]),
-                    ]
+                    ],
+                    False,
                 )
             ),
             "two iters without range overlap",
@@ -188,7 +203,8 @@ class TestBasicFunctions(BaseTestCase):
                                 {"*": 3, "a": 3},
                             ]
                         ),
-                    ]
+                    ],
+                    False,
                 )
             ),
             "0 and 4",
@@ -202,6 +218,7 @@ class TestBasicFunctions(BaseTestCase):
                         iter([{"*": 0, "a": 0}, {"*": 3, "a": 3}]),
                         iter([{"*": 2, "a": 2}]),
                     ],
+                    False,
                 )
             ),
             "1 and 3",
@@ -215,9 +232,64 @@ class TestBasicFunctions(BaseTestCase):
                         iter([{"*": 1, "-": True}, {"*": 1, "b": 2}]),
                         iter([{"*": 1, "c": 3, "-": False}]),
                     ],
+                    False,
                 )
             ),
             "removal",
+        )
+        self.assertEqual(
+            [
+                {"*": 0, "a": "0"},
+                {"*": 1, "a": "1"},
+                {"*": 3},
+            ],
+            list(
+                data_store._merge_scan(
+                    [
+                        iter(
+                            [
+                                {"*": 1, "a": "1"},
+                                {"*": 3, "a": "3"},
+                            ]
+                        ),
+                        iter(
+                            [
+                                {"*": 0, "a": "0"},
+                                {"*": 3, "a": None},
+                            ]
+                        ),
+                    ],
+                    False,
+                )
+            ),
+            "keep none 1",
+        )
+        self.assertEqual(
+            [
+                {"*": 0, "a": "0"},
+                {"*": 1, "a": "1"},
+                {"*": 3, "a": None},
+            ],
+            list(
+                data_store._merge_scan(
+                    [
+                        iter(
+                            [
+                                {"*": 1, "a": "1"},
+                                {"*": 3, "a": "3"},
+                            ]
+                        ),
+                        iter(
+                            [
+                                {"*": 0, "a": "0"},
+                                {"*": 3, "a": None},
+                            ]
+                        ),
+                    ],
+                    True,
+                )
+            ),
+            "keep none 2",
         )
         self.assertEqual(
             [
@@ -262,6 +334,7 @@ class TestBasicFunctions(BaseTestCase):
                             ]
                         ),
                     ],
+                    True,
                 )
             ),
             "mixed",
@@ -413,6 +486,7 @@ class TestBasicFunctions(BaseTestCase):
                     "k": [0, 1, 2, 3],
                     "a": [None, None, None, "3"],
                     "b": ["0", "1", "2", "3"],
+                    "~b": [False, False, False, True],
                 },
                 metadata={
                     "schema": str(
@@ -422,6 +496,7 @@ class TestBasicFunctions(BaseTestCase):
                                 data_store.ColumnSchema("k", data_store.INT64),
                                 data_store.ColumnSchema("a", data_store.STRING),
                                 data_store.ColumnSchema("b", data_store.STRING),
+                                data_store.ColumnSchema("~b", data_store.BOOL),
                             ],
                         )
                     )
@@ -438,7 +513,7 @@ class TestBasicFunctions(BaseTestCase):
                 {"*": 0, "k": 0, "a": "0", "b": "0"},
                 {"*": 1, "k": 1, "a": "1", "b": "1"},
                 {"*": 2, "k": 2, "b": "2"},
-                {"*": 3, "k": 3, "a": "3", "b": "3"},
+                {"*": 3, "k": 3, "a": "3"},
                 {"*": 5, "k": 5, "a": "5.5"},
             ],
             list(data_store._scan_table(self.datastore_root)),
@@ -449,14 +524,14 @@ class TestBasicFunctions(BaseTestCase):
                 {"*": 0, "i": "0", "j": "0"},
                 {"*": 1, "i": "1", "j": "1"},
                 {"*": 2, "j": "2"},
-                {"*": 3, "i": "3", "j": "3"},
+                {"*": 3, "i": "3"},
                 {"*": 5, "i": "5.5"},
             ],
             list(data_store._scan_table(self.datastore_root, {"a": "i", "b": "j"})),
             "some columns",
         )
         self.assertEqual(
-            [{"*": 2, "j": "2"}, {"*": 3, "i": "3", "j": "3"}],
+            [{"*": 2, "j": "2"}, {"*": 3, "i": "3"}],
             list(
                 data_store._scan_table(
                     self.datastore_root, {"a": "i", "b": "j"}, start=2, end=5
@@ -468,12 +543,12 @@ class TestBasicFunctions(BaseTestCase):
             [
                 {"*": 0, "k": 0, "a": "0", "b": "0"},
                 {"*": 1, "k": 1, "a": "1", "b": "1"},
-                {"*": 2, "k": 2, "a": None, "b": "2"},
-                {"*": 3, "k": 3, "a": "3", "b": "3"},
-                {"*": 5, "k": 5, "a": "5.5", "b": None},
+                {"*": 2, "k": 2, "b": "2"},
+                {"*": 3, "k": 3, "a": "3", "b": None},
+                {"*": 5, "k": 5, "a": "5.5"},
             ],
-            list(data_store._scan_table(self.datastore_root, explicit_none=True)),
-            "explicit none",
+            list(data_store._scan_table(self.datastore_root, keep_none=True)),
+            "keep none",
         )
 
     def test_update_schema(self) -> None:
@@ -545,18 +620,18 @@ class TestBasicFunctions(BaseTestCase):
         )
         self.assertEqual(
             data_store.TableSchema(
-                "a", [data_store.ColumnSchema("a", data_store.NONE)]
+                "a", [data_store.ColumnSchema("a", data_store.UNKNOWN)]
             ),
             data_store._update_schema(data_store.TableSchema("a", []), {"a": None}),
             "none 1",
         )
         self.assertEqual(
             data_store.TableSchema(
-                "a", [data_store.ColumnSchema("a", data_store.NONE)]
+                "a", [data_store.ColumnSchema("a", data_store.UNKNOWN)]
             ),
             data_store._update_schema(
                 data_store.TableSchema(
-                    "a", [data_store.ColumnSchema("a", data_store.NONE)]
+                    "a", [data_store.ColumnSchema("a", data_store.UNKNOWN)]
                 ),
                 {"a": None},
             ),
@@ -568,7 +643,7 @@ class TestBasicFunctions(BaseTestCase):
             ),
             data_store._update_schema(
                 data_store.TableSchema(
-                    "a", [data_store.ColumnSchema("a", data_store.NONE)]
+                    "a", [data_store.ColumnSchema("a", data_store.UNKNOWN)]
                 ),
                 {"a": 0},
             ),
@@ -601,77 +676,45 @@ class TestMemoryTable(BaseTestCase):
         table.insert({"k": 2, "a": "2"})
         table.insert({"k": 3, "a": "3"})
         table.insert({"k": 1, "b": "1"})
-        table.insert({"k": 4, "x": data_store.Link("t")})
         table.delete([2])
+        table.insert({"k": 1, "a": None})
         self.assertEqual(
             [
                 {"*": 0, "k": 0, "a": "0"},
-                {"*": 1, "k": 1, "a": "1", "b": "1"},
+                {"*": 1, "k": 1, "b": "1"},
                 {"*": 2, "k": 2, "-": True},
                 {"*": 3, "k": 3, "a": "3"},
-                {"*": 4, "k": 4, "x": data_store.Link("t")},
             ],
             list(table.scan()),
             "scan all",
         )
         self.assertEqual(
             [
-                {"*": 0, "k": 0, "a": "0", "b": None, "x": None},
-                {"*": 1, "k": 1, "a": "1", "b": "1", "x": None},
-                {"*": 2, "k": 2, "a": None, "b": None, "x": None, "-": True},
-                {"*": 3, "k": 3, "a": "3", "b": None, "x": None},
-                {"*": 4, "k": 4, "a": None, "b": None, "x": data_store.Link("t")},
+                {"*": 0, "k": 0, "a": "0"},
+                {"*": 1, "k": 1, "a": None, "b": "1"},
+                {"*": 2, "k": 2, "-": True},
+                {"*": 3, "k": 3, "a": "3"},
             ],
-            list(table.scan(explicit_none=True)),
-            "explicit none",
+            list(table.scan(keep_none=True)),
+            "keep none",
         )
         self.assertEqual(
             [
                 {"*": 0, "k": 0, "x": "0"},
-                {"*": 1, "k": 1, "x": "1"},
+                {"*": 1, "k": 1},
                 {"*": 2, "k": 2, "-": True},
                 {"*": 3, "k": 3, "x": "3"},
-                {"*": 4, "k": 4},
             ],
             list(table.scan({"k": "k", "a": "x"})),
             "some columns",
         )
-        table.dump(self.datastore_root)
-        self.assertEqual(
-            [os.path.join(self.datastore_root, "test", "base-0.parquet")],
-            data_store._get_table_files(os.path.join(self.datastore_root, "test")),
-            "dump 1",
-        )
-        table.dump(self.datastore_root)
-        self.assertEqual(
-            [os.path.join(self.datastore_root, "test", "base-1.parquet")],
-            data_store._get_table_files(os.path.join(self.datastore_root, "test")),
-            "dump 2",
-        )
-        table = data_store.MemoryTable(
-            "test",
-            data_store.TableSchema(
-                "k", [data_store.ColumnSchema("k", data_store.INT64)]
-            ),
-        )
-        table.load(self.datastore_root)
-        self.assertEqual(
-            [
-                {"*": 0, "k": 0, "a": "0"},
-                {"*": 1, "k": 1, "a": "1", "b": "1"},
-                {"*": 3, "k": 3, "a": "3"},
-                {"*": 4, "k": 4, "x": data_store.Link("t")},
-            ],
-            list(table.scan()),
-            "load",
-        )
 
 
 class TestLocalDataStore(BaseTestCase):
-    def test_data_store_put(self) -> None:
+    def test_data_store_update_table(self) -> None:
         ds = data_store.LocalDataStore(self.datastore_root)
         with self.assertRaises(RuntimeError, msg="invalid column name"):
-            ds.put(
+            ds.update_table(
                 "test",
                 data_store.TableSchema(
                     "+", [data_store.ColumnSchema("+", data_store.INT64)]
@@ -679,14 +722,14 @@ class TestLocalDataStore(BaseTestCase):
                 [{"+": 0}],
             )
         with self.assertRaises(RuntimeError, msg="no key field"):
-            ds.put(
+            ds.update_table(
                 "test",
                 data_store.TableSchema(
                     "k", [data_store.ColumnSchema("k", data_store.INT64)]
                 ),
                 [{"a": 0}],
             )
-        ds.put(
+        ds.update_table(
             "project/a_b/eval/test-0",
             data_store.TableSchema(
                 "k",
@@ -700,10 +743,14 @@ class TestLocalDataStore(BaseTestCase):
         )
         self.assertEqual(
             [{"k": 0, "a": "0", "b": "0"}, {"k": 1, "a": "1"}],
-            list(ds.scan_tables([("project/a_b/eval/test-0", "test", False)])),
+            list(
+                ds.scan_tables(
+                    [data_store.TableDesc("project/a_b/eval/test-0", None, False)]
+                )
+            ),
             "name check",
         )
-        ds.put(
+        ds.update_table(
             "test",
             data_store.TableSchema(
                 "k",
@@ -717,10 +764,10 @@ class TestLocalDataStore(BaseTestCase):
         )
         self.assertEqual(
             [{"k": 0, "a": "0", "b": "0"}, {"k": 1, "a": "1"}],
-            list(ds.scan_tables([("test", "test", False)])),
+            list(ds.scan_tables([data_store.TableDesc("test", None, False)])),
             "base",
         )
-        ds.put(
+        ds.update_table(
             "test",
             data_store.TableSchema(
                 "k",
@@ -743,10 +790,23 @@ class TestLocalDataStore(BaseTestCase):
                 {"k": 2, "b": "2"},
                 {"k": 3, "a": "3", "b": "3"},
             ],
-            list(ds.scan_tables([("test", "test", False)])),
+            list(ds.scan_tables([data_store.TableDesc("test", None, False)])),
             "batch+patch",
         )
-        ds.put(
+        self.assertEqual(
+            [
+                {"k": 0, "a": "0", "b": "0"},
+                {"k": 2, "a": None, "b": "2"},
+                {"k": 3, "a": "3", "b": "3"},
+            ],
+            list(
+                ds.scan_tables(
+                    [data_store.TableDesc("test", None, True)], keep_none=True
+                )
+            ),
+            "batch+patch keep none",
+        )
+        ds.update_table(
             "test",
             data_store.TableSchema(
                 "k",
@@ -769,34 +829,13 @@ class TestLocalDataStore(BaseTestCase):
                 {"k": 2, "b": "2"},
                 {"k": 3, "a": "33", "b": "3", "c": 3},
             ],
-            list(ds.scan_tables([("test", "test", False)])),
+            list(ds.scan_tables([data_store.TableDesc("test", None, False)])),
             "overwrite",
-        )
-        ds.put(
-            "test",
-            data_store.TableSchema(
-                "k",
-                [
-                    data_store.ColumnSchema("k", data_store.INT64),
-                    data_store.ColumnSchema("x", data_store.LINK),
-                ],
-            ),
-            [{"k": 4, "x": data_store.Link("tt", "a", "b")}],
-        )
-        self.assertEqual(
-            [
-                {"k": 1, "a": "1", "b": "1"},
-                {"k": 2, "b": "2"},
-                {"k": 3, "a": "33", "b": "3", "c": 3},
-                {"k": 4, "x": data_store.Link("tt", "a", "b")},
-            ],
-            list(ds.scan_tables([("test", "test", False)])),
-            "link",
         )
 
     def test_data_store_scan(self) -> None:
         ds = data_store.LocalDataStore(self.datastore_root)
-        ds.put(
+        ds.update_table(
             "1",
             data_store.TableSchema(
                 "k",
@@ -813,7 +852,7 @@ class TestLocalDataStore(BaseTestCase):
                 {"k": 3, "a": "3", "b": "3"},
             ],
         )
-        ds.put(
+        ds.update_table(
             "2",
             data_store.TableSchema(
                 "a",
@@ -829,7 +868,7 @@ class TestLocalDataStore(BaseTestCase):
                 {"a": 3, "b": "3"},
             ],
         )
-        ds.put(
+        ds.update_table(
             "3",
             data_store.TableSchema(
                 "a",
@@ -845,17 +884,17 @@ class TestLocalDataStore(BaseTestCase):
                 {"a": 3, "x": "3"},
             ],
         )
-        ds.put(
+        ds.update_table(
             "4",
             data_store.TableSchema(
                 "x",
                 [
-                    data_store.ColumnSchema("b", data_store.STRING),
+                    data_store.ColumnSchema("x", data_store.STRING),
                 ],
             ),
             [{"x": "0"}, {"x": "1"}, {"x": "2"}, {"x": "3"}],
         )
-        ds.put(
+        ds.update_table(
             "5",
             data_store.TableSchema(
                 "a",
@@ -869,9 +908,18 @@ class TestLocalDataStore(BaseTestCase):
         with open(os.path.join(self.datastore_root, "6"), "w"):
             pass
         with self.assertRaises(RuntimeError, msg="duplicate alias"):
-            list(ds.scan_tables([("1", "1", False)], {"k": "v", "a": "v"}))
+            list(
+                ds.scan_tables([data_store.TableDesc("1", {"k": "v", "a": "v"}, False)])
+            )
         with self.assertRaises(RuntimeError, msg="conflicting key type"):
-            list(ds.scan_tables([("1", "1", False), ("4", "4", False)]))
+            list(
+                ds.scan_tables(
+                    [
+                        data_store.TableDesc("1", None, False),
+                        data_store.TableDesc("4", None, False),
+                    ]
+                )
+            )
         self.assertEqual(
             [
                 {"k": 0, "a": "0", "b": "0"},
@@ -879,7 +927,7 @@ class TestLocalDataStore(BaseTestCase):
                 {"k": 2, "b": "2"},
                 {"k": 3, "a": "3", "b": "3"},
             ],
-            list(ds.scan_tables([("1", "1", False)])),
+            list(ds.scan_tables([data_store.TableDesc("1", None, False)])),
             "scan all",
         )
         self.assertEqual(
@@ -892,10 +940,10 @@ class TestLocalDataStore(BaseTestCase):
             list(
                 ds.scan_tables(
                     [
-                        ("1", "1", False),
-                        ("2", "2", False),
-                        ("3", "3", False),
-                        ("5", "5", False),
+                        data_store.TableDesc("1", None, False),
+                        data_store.TableDesc("2", None, False),
+                        data_store.TableDesc("3", None, False),
+                        data_store.TableDesc("5", None, False),
                     ]
                 )
             ),
@@ -911,12 +959,15 @@ class TestLocalDataStore(BaseTestCase):
             list(
                 ds.scan_tables(
                     [
-                        ("1", "1", False),
-                        ("2", "2", False),
-                        ("3", "3", False),
-                        ("5", "5", False),
+                        data_store.TableDesc("1", {"a": "a", "b": "c"}, False),
+                        data_store.TableDesc("2", {"a": "a", "b": "c"}, False),
+                        data_store.TableDesc(
+                            "3", {"a": "a", "b": "c", "x": "x"}, False
+                        ),
+                        data_store.TableDesc(
+                            "5", {"a": "a", "b": "c", "x": "y"}, False
+                        ),
                     ],
-                    {"a": "a", "b": "c", "5.x": "y", "3.*": ""},
                 )
             ),
             "some columns",
@@ -926,17 +977,455 @@ class TestLocalDataStore(BaseTestCase):
             list(
                 ds.scan_tables(
                     [
-                        ("1", "1", False),
-                        ("2", "2", False),
-                        ("3", "3", False),
-                        ("5", "5", False),
+                        data_store.TableDesc("1", {"a": "a", "b": "c"}, False),
+                        data_store.TableDesc("2", {"a": "a", "b": "c"}, False),
+                        data_store.TableDesc(
+                            "3", {"a": "a", "b": "c", "x": "x"}, False
+                        ),
+                        data_store.TableDesc(
+                            "5", {"a": "a", "b": "c", "x": "y"}, False
+                        ),
                     ],
-                    {"a": "a", "b": "c", "5.x": "y", "3.*": ""},
                     1,
                     2,
                 )
             ),
             "with start and end",
+        )
+
+        ds.update_table(
+            "1",
+            data_store.TableSchema(
+                "k",
+                [
+                    data_store.ColumnSchema("k", data_store.INT64),
+                    data_store.ColumnSchema("a", data_store.STRING),
+                ],
+            ),
+            [
+                {"k": 0, "a": None},
+            ],
+        )
+        ds.dump()
+        ds = data_store.LocalDataStore(self.datastore_root)
+        self.assertEqual(
+            [
+                {"k": 0, "a": None, "b": "0"},
+                {"k": 1, "a": "1", "b": "1"},
+                {"k": 2, "b": "2"},
+                {"k": 3, "a": "3", "b": "3"},
+            ],
+            list(
+                ds.scan_tables(
+                    [
+                        data_store.TableDesc("1", None, True),
+                    ],
+                    keep_none=True,
+                )
+            ),
+            "scan disk",
+        )
+
+        ds.update_table(
+            "1",
+            data_store.TableSchema(
+                "k",
+                [
+                    data_store.ColumnSchema("k", data_store.INT64),
+                    data_store.ColumnSchema("c", data_store.INT32),
+                ],
+            ),
+            [
+                {"k": 0, "c": 1},
+                {"k": 1, "-": True},
+            ],
+        )
+        self.assertEqual(
+            [
+                {"k": 0, "a": None, "b": "0", "c": 1},
+                {"k": 2, "b": "2"},
+                {"k": 3, "a": "3", "b": "3"},
+            ],
+            list(
+                ds.scan_tables(
+                    [
+                        data_store.TableDesc("1", None, True),
+                    ],
+                    keep_none=True,
+                )
+            ),
+            "scan mem and disk",
+        )
+
+        ds.dump()
+        ds = data_store.LocalDataStore(self.datastore_root)
+        self.assertEqual(
+            [
+                {"k": 0, "a": None, "b": "0", "c": 1},
+                {"k": 2, "b": "2"},
+                {"k": 3, "a": "3", "b": "3"},
+            ],
+            list(
+                ds.scan_tables(
+                    [
+                        data_store.TableDesc("1", None, True),
+                    ],
+                    keep_none=True,
+                )
+            ),
+            "merge dump",
+        )
+
+
+class TestRemoteDataStore(unittest.TestCase):
+    def setUp(self) -> None:
+        os.environ["SW_TOKEN"] = "tt"
+        self.ds = data_store.RemoteDataStore("http://test")
+
+    @patch("starwhale.api._impl.data_store.requests.post")
+    def test_update_table(self, mock_post: Mock) -> None:
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = ""
+        self.ds.update_table(
+            "t1",
+            data_store.TableSchema(
+                "k",
+                [
+                    data_store.ColumnSchema("k", data_store.INT64),
+                    data_store.ColumnSchema("a", data_store.STRING),
+                ],
+            ),
+            [
+                {"k": 1, "a": "1"},
+                {"k": 2, "a": "2"},
+                {"k": 3, "-": True},
+                {"k": 4, "a": None},
+            ],
+        )
+        self.ds.update_table(
+            "t1",
+            data_store.TableSchema(
+                "k",
+                [
+                    data_store.ColumnSchema("k", data_store.INT64),
+                ],
+            ),
+            [],
+        )
+        self.ds.update_table(
+            "t1",
+            data_store.TableSchema(
+                "k",
+                [
+                    data_store.ColumnSchema("k", data_store.INT64),
+                    data_store.ColumnSchema("b", data_store.BOOL),
+                    data_store.ColumnSchema("c", data_store.INT8),
+                    data_store.ColumnSchema("d", data_store.INT16),
+                    data_store.ColumnSchema("e", data_store.INT32),
+                    data_store.ColumnSchema("f", data_store.FLOAT16),
+                    data_store.ColumnSchema("g", data_store.FLOAT32),
+                    data_store.ColumnSchema("h", data_store.FLOAT64),
+                    data_store.ColumnSchema("i", data_store.BYTES),
+                ],
+            ),
+            [
+                {
+                    "k": 1,
+                    "b": True,
+                    "c": 1,
+                    "d": 1,
+                    "e": 1,
+                    "f": 1.0,
+                    "g": 1.0,
+                    "h": 1.0,
+                    "i": b"1",
+                }
+            ],
+        )
+        mock_post.assert_any_call(
+            "http://test/api/v1/datastore/updateTable",
+            data=json.dumps(
+                {
+                    "tableName": "t1",
+                    "tableSchemaDesc": {
+                        "keyColumn": "k",
+                        "columnSchemaList": [
+                            {"name": "k", "type": "INT64"},
+                            {"name": "a", "type": "STRING"},
+                        ],
+                    },
+                    "records": [
+                        {
+                            "values": [
+                                {"key": "k", "value": "1"},
+                                {"key": "a", "value": "1"},
+                            ]
+                        },
+                        {
+                            "values": [
+                                {"key": "k", "value": "2"},
+                                {"key": "a", "value": "2"},
+                            ]
+                        },
+                        {
+                            "values": [
+                                {"key": "k", "value": "3"},
+                                {"key": "-", "value": "1"},
+                            ]
+                        },
+                        {
+                            "values": [
+                                {"key": "k", "value": "4"},
+                                {"key": "a", "value": None},
+                            ]
+                        },
+                    ],
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=5.0,
+        )
+        mock_post.assert_any_call(
+            "http://test/api/v1/datastore/updateTable",
+            data=json.dumps(
+                {
+                    "tableName": "t1",
+                    "tableSchemaDesc": {
+                        "keyColumn": "k",
+                        "columnSchemaList": [
+                            {"name": "k", "type": "INT64"},
+                        ],
+                    },
+                    "records": [],
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=5.0,
+        )
+        mock_post.assert_any_call(
+            "http://test/api/v1/datastore/updateTable",
+            data=json.dumps(
+                {
+                    "tableName": "t1",
+                    "tableSchemaDesc": {
+                        "keyColumn": "k",
+                        "columnSchemaList": [
+                            {"name": "k", "type": "INT64"},
+                            {"name": "b", "type": "BOOL"},
+                            {"name": "c", "type": "INT8"},
+                            {"name": "d", "type": "INT16"},
+                            {"name": "e", "type": "INT32"},
+                            {"name": "f", "type": "FLOAT16"},
+                            {"name": "g", "type": "FLOAT32"},
+                            {"name": "h", "type": "FLOAT64"},
+                            {"name": "i", "type": "BYTES"},
+                        ],
+                    },
+                    "records": [
+                        {
+                            "values": [
+                                {"key": "k", "value": "1"},
+                                {"key": "b", "value": "1"},
+                                {"key": "c", "value": "1"},
+                                {"key": "d", "value": "1"},
+                                {"key": "e", "value": "1"},
+                                {"key": "f", "value": "3c00"},
+                                {"key": "g", "value": "3f800000"},
+                                {"key": "h", "value": "3ff0000000000000"},
+                                {"key": "i", "value": "MQ=="},
+                            ]
+                        }
+                    ],
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=5.0,
+        )
+
+    @patch("starwhale.api._impl.data_store.requests.post")
+    def test_scan_table(self, mock_post: Mock) -> None:
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            "columnTypes": {
+                "a": "BOOL",
+                "b": "INT8",
+                "c": "INT16",
+                "d": "INT32",
+                "e": "INT64",
+                "f": "FLOAT16",
+                "g": "FLOAT32",
+                "h": "FLOAT64",
+                "i": "STRING",
+                "j": "BYTES",
+            },
+            "records": [
+                {
+                    "a": "1",
+                    "b": "1",
+                    "c": "1",
+                    "d": "1",
+                    "e": "1",
+                    "f": "3c00",
+                    "g": "3f800000",
+                    "h": "3ff0000000000000",
+                    "i": "1",
+                    "j": "MQ==",
+                }
+            ],
+        }
+        self.assertEqual(
+            [
+                {
+                    "a": True,
+                    "b": 1,
+                    "c": 1,
+                    "d": 1,
+                    "e": 1,
+                    "f": 1.0,
+                    "g": 1.0,
+                    "h": 1.0,
+                    "i": "1",
+                    "j": b"1",
+                }
+            ],
+            list(
+                self.ds.scan_tables(
+                    [
+                        data_store.TableDesc("t1", {"a": "b"}, True),
+                        data_store.TableDesc("t2", ["a"]),
+                        data_store.TableDesc("t3"),
+                    ],
+                    1,
+                    1,
+                    True,
+                )
+            ),
+            "all types",
+        )
+        mock_post.return_value.json.side_effect = [
+            {
+                "columnTypes": {"a": "INT32"},
+                "records": [{"a": f"{i:x}"} for i in range(1000)],
+                "lastKey": f"{999:x}",
+            },
+            {
+                "columnTypes": {"a": "INT32"},
+                "records": [{"a": f"{i+1000:x}"} for i in range(1000)],
+                "lastKey": f"{1999:x}",
+            },
+            {
+                "columnTypes": {"a": "INT32"},
+                "records": [{"a": f"{2000:x}"}],
+            },
+        ]
+        self.assertEqual(
+            [{"a": i} for i in range(2001)],
+            list(self.ds.scan_tables([data_store.TableDesc("t1")])),
+            "scan page",
+        )
+        mock_post.assert_any_call(
+            "http://test/api/v1/datastore/scanTable",
+            data=json.dumps(
+                {
+                    "tables": [
+                        {
+                            "tableName": "t1",
+                            "columns": [{"columnName": "a", "alias": "b"}],
+                            "keepNone": True,
+                        },
+                        {
+                            "tableName": "t2",
+                            "columns": [{"columnName": "a", "alias": "a"}],
+                        },
+                        {
+                            "tableName": "t3",
+                        },
+                    ],
+                    "end": "1",
+                    "start": "1",
+                    "limit": 1000,
+                    "keepNone": True,
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=5.0,
+        )
+        mock_post.assert_any_call(
+            "http://test/api/v1/datastore/scanTable",
+            data=json.dumps(
+                {
+                    "tables": [
+                        {
+                            "tableName": "t1",
+                        },
+                    ],
+                    "limit": 1000,
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=5.0,
+        )
+        mock_post.assert_any_call(
+            "http://test/api/v1/datastore/scanTable",
+            data=json.dumps(
+                {
+                    "tables": [
+                        {
+                            "tableName": "t1",
+                        },
+                    ],
+                    "limit": 1000,
+                    "start": f"{999:x}",
+                    "startInclusive": False,
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=5.0,
+        )
+        mock_post.assert_any_call(
+            "http://test/api/v1/datastore/scanTable",
+            data=json.dumps(
+                {
+                    "tables": [
+                        {
+                            "tableName": "t1",
+                        },
+                    ],
+                    "limit": 1000,
+                    "start": f"{1999:x}",
+                    "startInclusive": False,
+                },
+                separators=(",", ":"),
+            ),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": "tt",
+            },
+            timeout=5.0,
         )
 
 
@@ -966,7 +1455,7 @@ class TestTableWriter(BaseTestCase):
             [{"k": 0}, {"k": 2, "a": "22"}, {"k": 3, "b": "3"}],
             list(
                 data_store.LocalDataStore.get_instance().scan_tables(
-                    [("p/test", "test", False)]
+                    [data_store.TableDesc("p/test", None, False)]
                 )
             ),
             "scan all",

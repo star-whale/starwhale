@@ -35,7 +35,7 @@ class TestEvaluation(BaseTestCase):
             [{"id": "tt", "a": 0, "b": 1, "a/b": 2}],
             list(
                 data_store.get_data_store().scan_tables(
-                    [("project/test/eval/summary", "summary", False)]
+                    [data_store.TableDesc("project/test/eval/summary")]
                 )
             ),
         )
@@ -51,13 +51,13 @@ class TestDataset(BaseTestCase):
         dataset.put("0", a=1, b=2)
         dataset.put("1", a=2, b=3)
         dataset.put("2", a=3, b=4)
-        dataset.put("3", a=4, b=5, c=data_store.Link("a", "b", "c"))
+        dataset.put("3", a=4, b=5)
         dataset.close()
         self.assertEqual(
             [
                 {"id": "1", "a": 2, "b": 3},
                 {"id": "2", "a": 3, "b": 4},
-                {"id": "3", "a": 4, "b": 5, "c": data_store.Link("a", "b", "c")},
+                {"id": "3", "a": 4, "b": 5},
             ],
             list(dataset.scan("1", "4")),
             "scan",

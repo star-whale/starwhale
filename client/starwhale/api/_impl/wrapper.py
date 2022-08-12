@@ -69,7 +69,7 @@ class Evaluation(Logger):
 
     def get_results(self) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
-            [(self._results_table_name, "result", False)]
+            [data_store.TableDesc(self._results_table_name)]
         )
 
 
@@ -95,7 +95,7 @@ class Dataset(Logger):
 
     def scan(self, start: Any, end: Any) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
-            [(self._meta_table_name, "meta", False)], start=start, end=end
+            [data_store.TableDesc(self._meta_table_name)], start=start, end=end
         )
 
     def __str__(self) -> str:
