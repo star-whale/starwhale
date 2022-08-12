@@ -14,6 +14,7 @@ import pyarrow.parquet as pq  # type: ignore
 from loguru import logger
 from typing_extensions import Protocol
 
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.fs import ensure_dir
 
 
