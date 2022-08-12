@@ -28,7 +28,7 @@ job_id=`curl -X 'POST' \
   "datasetVersionUrls": "1",
   "runtimeVersionUrl": "1",
   "device": "1",
-  "deviceAmount": 500,
+  "deviceAmount": 200,
   "comment": "string"
 }' | jq -r '.data'`
 
