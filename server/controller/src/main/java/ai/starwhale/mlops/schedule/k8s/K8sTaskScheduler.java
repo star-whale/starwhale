@@ -90,19 +90,19 @@ public class K8sTaskScheduler implements SWTaskScheduler {
      */
     private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task) {
         log.debug("deploying task to k8s {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
-        Map<String, String> envs = new HashMap<>();
+        Map<String, String> initContainerEnvs = new HashMap<>();
         List<String> downloads = new ArrayList<>();
 
         String prefix = "s3://"+storageProperties.getS3Config().getBucket()+"/";
         downloads.add(prefix + task.getSwModelPackage().getPath()+";/opt/starwhale/swmp/");
         downloads.add(prefix + task.getSwrt().getPath()+";/opt/starwhale/swrt/");
-        envs.put("DOWNLOADS", Strings.join(downloads, ' '));
+        initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
         String input = generateConfigFile(task);
-        envs.put("INPUT", input);
-        envs.put("ENDPOINT_URL",storageProperties.getS3Config().getEndpoint());
-        envs.put("AWS_ACCESS_KEY_ID",storageProperties.getS3Config().getAccessKey());
-        envs.put("AWS_SECRET_ACCESS_KEY",storageProperties.getS3Config().getSecretKey());
-        envs.put("AWS_S3_REGION",storageProperties.getS3Config().getRegion());
+        initContainerEnvs.put("INPUT", input);
+        initContainerEnvs.put("ENDPOINT_URL",storageProperties.getS3Config().getEndpoint());
+        initContainerEnvs.put("AWS_ACCESS_KEY_ID",storageProperties.getS3Config().getAccessKey());
+        initContainerEnvs.put("AWS_SECRET_ACCESS_KEY",storageProperties.getS3Config().getSecretKey());
+        initContainerEnvs.put("AWS_S3_REGION",storageProperties.getS3Config().getRegion());
         // TODO
         Map<String, String> coreContainerEnvs = new HashMap<>();
         try {
