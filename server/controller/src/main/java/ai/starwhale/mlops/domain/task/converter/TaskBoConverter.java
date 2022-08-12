@@ -133,7 +133,7 @@ public class TaskBoConverter {
                     .resultPath(t.getResultRootPath())
                     .cmpInputFilePaths(((CMPRequest)t.getTaskRequest()).getPplResultPaths())
                     .taskType(t.getTaskType())
-                    .deviceAmount(1)
+                    .deviceAmount(jobRuntime.getDeviceAmount())
                     .deviceClass(jobRuntime.getDeviceClass())
                     .swrt(SWRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
                         jobRuntime.getStoragePath()).build())
