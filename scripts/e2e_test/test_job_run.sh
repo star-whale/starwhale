@@ -60,9 +60,11 @@ do
 #    kubectl logs --tail=10 -l job-name=1 -n starwhale -c untar
 #    kubectl logs --tail=10 -l job-name=1 -n starwhale -c worker
 #    kubectl logs --tail=10 -l job-name=1 -n starwhale -c result-uploader
-    kubectl describe pod -l "job-name in (1,2,3,4,5,6,7,8,9,10)" -n starwhale
-    kubectl describe node
-    sleep 30
+
+    kubectl logs -f -l starwhale.ai/role=controller -n starwhale
+#    kubectl describe pod -l "job-name in (1,2,3,4,5,6,7,8,9,10)" -n starwhale
+#    kubectl describe node
+#    sleep 30
   fi
 done
 
