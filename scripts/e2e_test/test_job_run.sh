@@ -39,7 +39,7 @@ fi
 
 while true
 do
-  curl --connection-timeout 30 -X 'GET' \
+  curl -X 'GET' \
     "http://$1/api/v1/project/1/job/$job_id" \
     -H 'accept: application/json' \
     -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus

@@ -34,10 +34,8 @@ spec:
             - name: controller-storage
               mountPath: "/opt/starwhale.java/static"
               subPath: static
-          {{- if not .Values.minikube.enabled }}
           resources:
             {{- toYaml .Values.resources.controller | nindent 12}}
-          {{- end }}
           livenessProbe:
             httpGet:
               path: /actuator/health
