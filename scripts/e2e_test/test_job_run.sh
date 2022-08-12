@@ -28,7 +28,7 @@ job_id=`curl -X 'POST' \
   "datasetVersionUrls": "1",
   "runtimeVersionUrl": "1",
   "device": "1",
-  "deviceAmount": 200,
+  "deviceAmount": 100,
   "comment": "string"
 }' | jq -r '.data'`
 
@@ -39,7 +39,7 @@ fi
 
 while true
 do
-  curl -X 'GET' \
+  curl --connection-timeout 30 -X 'GET' \
     "http://$1/api/v1/project/1/job/$job_id" \
     -H 'accept: application/json' \
     -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus
@@ -61,8 +61,8 @@ do
 #    kubectl logs --tail=10 -l job-name=1 -n starwhale -c worker
 #    kubectl logs --tail=10 -l job-name=1 -n starwhale -c result-uploader
     kubectl describe pod -l "job-name in (1,2,3,4,5,6,7,8,9,10)" -n starwhale
-#    kubectl describe node
-    sleep 5
+    kubectl describe node
+    sleep 30
   fi
 done
 
