@@ -27,7 +27,7 @@ class TestMultiClassificationMetric(TestCase):
 
         assert rt["kind"] == "multi_classification"
         assert "accuracy" in rt["summary"]
-        assert "macro_avg" in rt["summary"]
+        assert "macro avg" in rt["summary"]
         assert len(rt["labels"]) == 9
         assert "binarylabel" in rt["confusion_matrix"]
         assert "multilabel" in rt["confusion_matrix"]
