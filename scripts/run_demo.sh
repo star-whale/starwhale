@@ -101,9 +101,9 @@ build_rc_and_check model
 build_rc_and_check dataset
 
 echo "do ppl and cmp"
-length_must_equal 0 job "job list"
+length_must_equal 0 eval "job list"
 swcli eval run --model mnist/version/latest --dataset mnist/version/latest
-length_must_equal 1 job "job list"
+length_must_equal 1 eval "job list"
 
 #echo "check result"
 #accuracy=$(swcli -o json job info "$(swcli -o json job list | jq -r '. | last | .manifest.version')" | jq '.report.summary.accuracy')
