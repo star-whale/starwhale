@@ -189,9 +189,7 @@ class SingleTaskCallback(Callback):
     def callback(
         self, step: Step, tasks: t.List[Task], res: bool, exec_time: float
     ) -> t.Any:
-        logger.debug(
-            f"task:{tasks[0]} finished, status:{res}, run time:{exec_time}"
-        )
+        logger.debug(f"task:{tasks[0]} finished, status:{res}, run time:{exec_time}")
 
 
 class Executor(threading.Thread):
