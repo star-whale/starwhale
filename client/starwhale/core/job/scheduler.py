@@ -128,9 +128,6 @@ class Scheduler:
                 f"task_index:{task_index} out of bounds, total:{_step.task_num}"
             )
         _task = _step.tasks[task_index]
-        logger.debug(
-            "all result size: {}", len([res for res in self._datastore.get_results()])
-        )
 
         _executor = Executor(1, _step, [_task], SingleTaskCallback(self), self)
         _executor.start()
@@ -147,9 +144,9 @@ class TaskDaemon(threading.Thread):
 
     def run(self) -> None:
         while True:
-            logger.debug("task:{} start to waiting data", self.task_pipe.id)
+            logger.debug(f"task:{self.task_pipe.id} waiting data")
             data = self.main_conn.recv()
-            logger.debug("task:{} start to recv data", self.task_pipe.id)
+            logger.debug(f"task:{self.task_pipe.id} start to recv data")
             if isinstance(data, EvaluationQuery):
                 self.main_conn.send(self.scheduler.query_data(data))
             else:
@@ -176,12 +173,12 @@ class StepCallback(Callback):
     ) -> t.Any:
         if res:
             step.status = STATUS.SUCCESS
-            logger.debug("step:{} success, run time:{}", step, exec_time)
+            logger.debug(f"step:{step} success, run time:{exec_time}")
             # trigger next schedule
             self.scheduler.schedule()
         else:
             step.status = STATUS.FAILED
-            logger.debug("step:{} failed, run time:{}", step, exec_time)
+            logger.error(f"step:{step} failed, run time:{exec_time}")
             # TODO: whether break process?
 
 
@@ -193,7 +190,7 @@ class SingleTaskCallback(Callback):
         self, step: Step, tasks: t.List[Task], res: bool, exec_time: float
     ) -> t.Any:
         logger.debug(
-            "task:{} finished, status:{}, run time:{}", tasks[0], res, exec_time
+            f"task:{tasks[0]} finished, status:{res}, run time:{exec_time}"
         )
 
 
