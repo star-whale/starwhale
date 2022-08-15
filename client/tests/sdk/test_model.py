@@ -5,13 +5,18 @@ import typing as t
 import sysconfig
 from unittest.mock import patch, MagicMock
 
+import pytest
 import jsonlines
 from pyfakefs.fake_filesystem_unittest import TestCase
 
+from starwhale.consts import SWDSBackendType
+from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.base.type import URIType
 from starwhale.consts.env import SWEnv
 from starwhale.api._impl.model import _RunConfig, PipelineHandler
 from starwhale.api._impl.loader import get_data_loader, S3StorageBackend
+from starwhale.api._impl.dataset import TabularDatasetRow
 
 from .. import ROOT_DIR
 
@@ -40,33 +45,19 @@ class TestModelPipelineHandler(TestCase):
 
         ensure_dir(self.config_dir)
         self.fs.add_real_directory(self.swds_dir)
+        os.environ["SW_S3_BUCKET"] = "starwhale"
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        os.environ.pop("SW_S3_BUCKET", "")
 
     @patch("starwhale.api._impl.loader.boto3")
     def test_s3_loader(self, m_resource: MagicMock) -> None:
-
-        swds_config = {
-            "backend": "s3",
-            "kind": "swds",
-            "secret": {
-                "access_key": "username",
-                "secret_key": "password",
-            },
-            "service": {
-                "endpoint": "127.1.1.1:1123",
-                "region": "local",
-            },
-            "swds": [
-                {
-                    "bucket": "starwhale",
-                    "key": {
-                        "data": "data1",
-                        "label": "label1",
-                    },
-                }
-            ],
-        }
-        _loader = get_data_loader(swds_config)
-        assert isinstance(_loader.storage, S3StorageBackend)
+        _loader = get_data_loader(
+            dataset_uri=URI("mnist/version/latest", URIType.DATASET),
+            backend=SWDSBackendType.S3,
+        )
+        assert isinstance(_loader.storage.backend, S3StorageBackend)
 
     def test_set_run_env(self) -> None:
         _RunConfig.set_env(
@@ -74,11 +65,13 @@ class TestModelPipelineHandler(TestCase):
                 "status_dir": "status",
                 "log_dir": "log",
                 "result_dir": "result",
-                "input_config": "input_config",
+                "dataset_uri": "mnist/version/latest",
             }
         )
-        assert os.environ.get(SWEnv.input_config) == "input_config"
+        assert os.environ.get(SWEnv.status_dir) == "status"
+        assert os.environ.get(SWEnv.dataset_uri) == "mnist/version/latest"
 
+    @pytest.mark.skip(reason="wait job scheduler feature, cmp will use datastore")
     def test_cmp(self) -> None:
         ppl_result_dir = os.path.join(self.root, "ppl")
         ensure_dir(ppl_result_dir)
@@ -133,27 +126,26 @@ class TestModelPipelineHandler(TestCase):
             assert lines[0]["summary"] == {"a": 1}
             assert lines[0]["kind"] == "test"
 
-    def test_ppl(self) -> None:
-        config_json_path = os.path.join(self.config_dir, "input.json")
-        local_swds_config = {
-            "backend": "fuse",
-            "kind": "swds",
-            "swds": [
-                {
-                    "bucket": self.swds_dir,
-                    "key": {
-                        "data": "data_ubyte_0.swds_bin",
-                        "label": "label_ubyte_0.swds_bin",
-                    },
-                }
-            ],
-        }
-        ensure_file(config_json_path, json.dumps(local_swds_config))
-
+    @patch("starwhale.api._impl.loader.TabularDataset.scan")
+    def test_ppl(self, m_scan: MagicMock) -> None:
         os.environ[SWEnv.status_dir] = self.status_dir
         os.environ[SWEnv.log_dir] = self.log_dir
         os.environ[SWEnv.result_dir] = self.result_dir
-        os.environ[SWEnv.input_config] = config_json_path
+        os.environ[SWEnv.dataset_uri] = "mnist/version/latest"
+        os.environ[SWEnv.dataset_row_start] = "0"
+        os.environ[SWEnv.dataset_row_end] = "1"
+        os.environ["SW_S3_BUCKET"] = self.swds_dir
+
+        m_scan.return_value = [
+            TabularDatasetRow(
+                id=i,
+                data_uri="data_ubyte_0.swds_bin",
+                label=str(i).encode(),
+                data_offset=0,
+                data_size=8160,
+            )
+            for i in range(0, 1)
+        ]
 
         with SimpleHandler() as _handler:
             _handler._starwhale_internal_run_ppl()
@@ -177,6 +169,7 @@ class TestModelPipelineHandler(TestCase):
             assert line["index"] == 0
             assert line["batch"] == 10
 
+    @pytest.mark.skip(reason="wait job scheduler feature, cmp will use datastore")
     def test_deserializer(self) -> None:
         self.fs.add_real_directory(sysconfig.get_paths()["purelib"])
         import numpy as np
