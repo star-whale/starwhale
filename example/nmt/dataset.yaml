@@ -13,6 +13,5 @@ tag:
  - bin
 
 attr:
-  batch_size: 100
   alignment_size: 4K
   volume_size: 2M

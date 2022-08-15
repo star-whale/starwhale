@@ -43,12 +43,12 @@ class MNISTInference(PipelineHandler):
         super().__init__(merge_label=True, ignore_error=False)
         self.model = self._load_model()
 
-    def ppl(self, data:bytes, batch_size:int, **kw):
-        data = self._pre(data, batch_size)
+    def ppl(self, data:bytes, **kw):
+        data = self._pre(data)
         output = self.model(data)
         return self._post(output)
 
-    def handle_label(self, label:bytes, batch_size:int, **kw):
+    def handle_label(self, label:bytes, **kw):
         return [int(l) for l in label]
 
     @multi_classification(
@@ -67,7 +67,7 @@ class MNISTInference(PipelineHandler):
             _result.extend([int(l) for l in pred])
             _pr.extend([l for l in pr])
 
-    def _pre(self, input:bytes, batch_size:int):
+    def _pre(self, input:bytes):
         """write some mnist preprocessing code"""
 
     def _post(self, input:bytes):
@@ -115,7 +115,6 @@ ppl: mnist.ppl:MNISTInference
   label_filter: "t10k-label*"
   process: mnist.process:DataSetProcessExecutor
   attr:
-    batch_size: 50
     alignment_size: 4k
     volume_size: 2M
  ```

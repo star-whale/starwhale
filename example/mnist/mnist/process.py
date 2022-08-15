@@ -11,10 +11,10 @@ class DataSetProcessExecutor(BuildExecutor):
 
         with fpath.open("rb") as f:
             _, number, height, width = struct.unpack(">IIII", f.read(16))
-            print(f">data({fpath.name}) split {math.ceil(number / self._batch)} group")
+            print(f">data({fpath.name}) split {number} group")
 
             while True:
-                content = f.read(self._batch * height * width)
+                content = f.read(height * width)
                 if not content:
                     break
                 yield content
@@ -24,10 +24,10 @@ class DataSetProcessExecutor(BuildExecutor):
 
         with fpath.open("rb") as f:
             _, number = struct.unpack(">II", f.read(8))
-            print(f">label({fpath.name}) split {math.ceil(number / self._batch)} group")
+            print(f">label({fpath.name}) split {number} group")
 
             while True:
-                content = f.read(self._batch)
+                content = f.read(1)
                 if not content:
                     break
                 yield content
@@ -41,7 +41,6 @@ if __name__ == "__main__":
         data_dir=Path(__file__) / "data",
         data_filter="*images*",
         label_filter="*labels*",
-        batch=50,
         alignment_bytes_size=4 * 1024,
         volume_bytes_size=4 * 1024 * 1024,
     ) as executor:

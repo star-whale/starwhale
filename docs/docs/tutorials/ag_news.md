@@ -109,13 +109,13 @@ Before version `0.2.x`, Starwhale sliced the dataset into chunks where the batch
 In this example, we will read texts and labels in batch and convert them into byte arrays.
 
 ```python
-def yield_data(batch, path, label=False):
+def yield_data(path, label=False):
     data = ag_news.load_ag_data(path)
     idx = 0
     data_size = len(data)
     while True:
         last_idx = idx
-        idx = idx + batch
+        idx += 1
         if idx > data_size:
             break
         data_batch = [lbl if label else txt for lbl, txt in
@@ -126,10 +126,10 @@ def yield_data(batch, path, label=False):
 class AGNEWSSlicer(BuildExecutor):
 
     def iter_data_slice(self, path: str):
-        yield from yield_data(self._batch, path)
+        yield from yield_data(path)
 
     def iter_label_slice(self, path: str):
-        yield from yield_data(self._batch, path, True)
+        yield from yield_data(path, True)
 
 
 ```
@@ -149,12 +149,12 @@ class TextClassificationHandler(PipelineHandler):
         self.device = torch.device(device)
 
     @torch.no_grad()
-    def ppl(self, data, batch_size, **kw):
+    def ppl(self, data, **kw):
         _model, vocab, tokenizer = self._load_model(self.device)
         texts = data.decode().split('#@#@#@#')
         return list(map(lambda text: predict.predict(text, _model, vocab, tokenizer, 2), texts)), None
 
-    def handle_label(self, label, batch_size, **kw):
+    def handle_label(self, label, **kw):
         labels = label.decode().split('#@#@#@#')
         return[int(label) for label in labels]
 
@@ -244,7 +244,6 @@ tag:
  - bin
 
 attr:
-  batch_size: 64
   alignment_size: 4k
   volume_size: 2M
 ```

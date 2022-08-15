@@ -30,17 +30,17 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
     --2022-06-29 18:29:22--  https://www.manythings.org/anki/fra-eng.zip
       ...
       Saving to: ‘fra-eng.zip’
-      ... 
+      ...
       2022-06-29 18:29:26 (2.06 MB/s) - ‘fra-eng.zip’ saved [6612164/6612164]
       Archive:  fra-eng.zip
-        inflating: _about.txt              
-        inflating: fra.txt 
+        inflating: _about.txt
+        inflating: fra.txt
     ```
 
   * Copy the test file we prepared for you
 
     ```bash
-    cp test/test_eng-fra.txt data/test_eng-fra.txt  
+    cp test/test_eng-fra.txt data/test_eng-fra.txt
     ```
 
 ## Train NMT Model
@@ -98,15 +98,15 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
           self.decoder = self._load_decoder_model(self.device)
 
       @torch.no_grad()
-      def ppl(self, data, batch_size, **kw):
-          print(f"-----> ppl: {len(data)}, {batch_size}")
+      def ppl(self, data, **kw):
+          print(f"-----> ppl: {len(data)}")
           src_sentences = data.decode().split('\n')
           print("ppl-src sentexces: %s" % len(src_sentences))
           return evaluate_batch(self.device, self.vocab.input_lang, self.vocab.output_lang, src_sentences, self.encoder, self.decoder)
 
-      def handle_label(self, label, batch_size, **kw):
+      def handle_label(self, label, **kw):
           labels = label.decode().split('\n')
-          print("src lebels: %s" % len(labels))
+          print("src labels: %s" % len(labels))
           return labels
 
       def cmp(self, _data_loader):
@@ -127,7 +127,7 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
           param = torch.load(_ROOT_DIR + "/models/encoder.pth", device)
           model.load_state_dict(param)
           return model
-      
+
       def _load_decoder_model(self, device):
           hidden_size = 256
           model = AttnDecoderRNN(self.vocab.output_lang.n_words, hidden_size, device).to(device)
@@ -197,19 +197,18 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
   from starwhale.api.dataset import BuildExecutor
 
   class DataSetProcessExecutor(BuildExecutor):
-      # default param self._batch
       def iter_data_slice(self, path: str):
           pairs = prepareData(path)
           index = 0
           lines = len(pairs)
           while True:
               last_index = index
-              index = index + self._batch
+              index += 1
               index = min(index, lines - 1 )
               print('data:%s, %s' % (last_index, index))
               data_batch = [src for src, tgt in pairs[last_index:index]]
               join = "\n".join(data_batch)
-              
+
               print("res-data:%s" % join)
               yield join.encode()
               if index >= lines - 1:
@@ -221,9 +220,9 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
           lines = len(pairs)
           while True:
               last_index = index
-              index = index + self._batch
+              index += 1
               index = min(index, lines - 1)
-              
+
               print('label:%s, %s' % (last_index, index))
               data_batch = [tgt for src, tgt in pairs[last_index:index]]
               join = "\n".join(data_batch)
@@ -246,7 +245,6 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
   tag:
   - bin
   attr:
-    batch_size: 100
     alignment_size: 4K
     volume_size: 2M
   ```

@@ -1,10 +1,10 @@
-from pathlib import Path
 import os
+from pathlib import Path
 
-import torch
-from torchvision import transforms
-from PIL import Image
 import numpy as np
+import torch
+from PIL import Image
+from torchvision import transforms
 
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
@@ -19,18 +19,17 @@ ONE_IMAGE_SIZE = CHANNEL_IMAGE * HEIGHT_IMAGE * WIDTH_IMAGE
 
 
 class CIFAR10Inference(PipelineHandler):
-
     def __init__(self, device="cpu") -> None:
         super().__init__(merge_label=True, ignore_error=True)
         self.device = torch.device(device)
         self.model = self._load_model(self.device)
 
-    def ppl(self, data, batch_size, **kw):
-        data = self._pre(data, batch_size)
+    def ppl(self, data, **kw):
+        data = self._pre(data)
         output = self.model(data)
         return self._post(output)
 
-    def handle_label(self, label, batch_size, **kw):
+    def handle_label(self, label, **kw):
         return [int(l) for l in label]
 
     @multi_classification(
@@ -49,20 +48,26 @@ class CIFAR10Inference(PipelineHandler):
             _pr.extend([l for l in pr])
         return _label, _result, _pr
 
-    def _pre(self, input: bytes, batch_size: int):
+    def _pre(self, input: bytes):
+        batch_size = 1
         images = []
-        from_buffer = np.frombuffer(input, 'uint8')
-        shape = (batch_size, ONE_IMAGE_SIZE)
+        from_buffer = np.frombuffer(input, "uint8")
+        shape = (1, ONE_IMAGE_SIZE)
         batch_numpy_flatten_data = from_buffer.reshape(shape)
-        batch_numpy_flatten_data = np.vstack([batch_numpy_flatten_data]).reshape(-1, 3, 32, 32)
+        batch_numpy_flatten_data = np.vstack([batch_numpy_flatten_data]).reshape(
+            -1, 3, 32, 32
+        )
         batch_numpy_flatten_data = batch_numpy_flatten_data.transpose((0, 2, 3, 1))
         shape_image = (WIDTH_IMAGE, HEIGHT_IMAGE, CHANNEL_IMAGE)
         for i in range(0, batch_size):
             numpy_flatten_data_i_ = batch_numpy_flatten_data[i]
             _image = Image.fromarray(numpy_flatten_data_i_.reshape(shape_image))
             _image = transforms.Compose(
-                [transforms.ToTensor(),
-                 transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])(_image)
+                [
+                    transforms.ToTensor(),
+                    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                ]
+            )(_image)
             images.append(_image)
         return torch.stack(images).to(self.device)
 
