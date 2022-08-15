@@ -125,7 +125,6 @@ class StandaloneEvaluationJob(EvaluationJob):
     def __init__(self, uri: URI) -> None:
         super().__init__(uri)
         self.store = EvaluationStorage(uri)
-        self._sw_config = SWCliConfigMixed()
 
     @classmethod
     def run(
@@ -168,23 +167,13 @@ class StandaloneEvaluationJob(EvaluationJob):
         return True, ee._version
 
     def _get_report(self) -> t.Dict[str, t.Any]:
-        os.environ["SW_ROOT_PATH"] = str(self._sw_config.datastore_dir)
-        os.environ["SW_PROJECT"] = self._sw_config.current_project
+        os.environ["SW_PROJECT"] = self.sw_config.current_project
         os.environ["SW_EVAL_ID"] = self.store.id
         logger.debug(
-            f"datastore path:{str(self._sw_config.datastore_dir)}, eval_id:{self.store.id}"
+            f"datastore path:{str(self.sw_config.datastore_dir)}, eval_id:{self.store.id}"
         )
         _datastore = wrapper.Evaluation()
         return _datastore.get_metrics()
-        # report = {}
-        # with jsonlines.open(str(self.store.eval_report_path.resolve()), "r") as _reader:
-        #     for _report in _reader:
-        #         if not _report or not isinstance(_report, dict):
-        #             continue
-        #
-        #         report = _report
-        #         break
-        # return report
 
     @staticmethod
     def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
@@ -254,10 +243,6 @@ class StandaloneEvaluationJob(EvaluationJob):
         return {
             "manifest": self.store.manifest,
             "report": self._get_report(),
-            # "location": {
-            #     # "ppl": str(self.store.ppl_dir.absolute()),
-            #     # "cmp": str(self.store.cmp_dir.absolute()),
-            # },
         }
 
     def remove(self, force: bool = False) -> t.Tuple[bool, str]:

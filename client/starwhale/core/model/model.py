@@ -184,8 +184,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             # use default
             ppl = DEFAULT_EVALUATION_PIPELINE
         _f = self.store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
-        console.print("path:{}", _f)
-        console.print("ppl:{}", ppl)
+        logger.debug(f"job ppl path:{_f}, ppl is {ppl}")
         Parser.generate_job_yaml(ppl, self.store.snapshot_workdir / "src", _f)
 
     @classmethod
@@ -197,7 +196,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _mp = workdir / yaml_name
         _model_config = cls.load_model_config(_mp)
         if _model_config.run.typ is EvalHandlerType.DEFAULT:
-            # use default
             return DEFAULT_EVALUATION_PIPELINE
         return _model_config.run.ppl
 
@@ -226,10 +224,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _module = StandaloneModel.get_pipeline_handler(
             workdir=src_dir, yaml_name=model_yaml_name
         )
+        _yaml_path = str(src_dir / DEFAULT_EVALUATION_JOBS_FNAME)
 
-        logger.debug("parse job from yaml")
-        _jobs = Parser.parse_job_from_yaml(str(src_dir / DEFAULT_EVALUATION_JOBS_FNAME))
-        # steps of job
+        logger.debug(f"parse job from yaml:{_yaml_path}")
+
+        _jobs = Parser.parse_job_from_yaml(_yaml_path)
+
         if job_name not in _jobs:
             raise RuntimeError(f"job:{job_name} not found")
 
@@ -335,7 +335,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> None:
         _mp = workdir / yaml_name
         _model_config = self.load_model_config(_mp)
-        logger.debug("workdir:", workdir)
+
+        logger.debug(f"build workdir:{workdir}")
+
         operations = [
             (self._gen_version, 5, "gen version"),
             (self._prepare_snapshot, 5, "prepare snapshot"),

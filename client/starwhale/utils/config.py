@@ -109,24 +109,8 @@ class SWCliConfigMixed:
         return Path(self._config["storage"]["root"])
 
     @property
-    def workdir(self) -> Path:
-        return self.rootdir / "workdir"
-
-    @property
-    def pkgdir(self) -> Path:
-        return self.rootdir / "pkg"
-
-    @property
-    def dataset_dir(self) -> Path:
-        return self.rootdir / "dataset"
-
-    @property
     def datastore_dir(self) -> Path:
         return self.rootdir / ".datastore"
-
-    @property
-    def eval_run_dir(self) -> Path:
-        return self.rootdir / "run" / "eval"
 
     @property
     def sw_remote_addr(self) -> str:

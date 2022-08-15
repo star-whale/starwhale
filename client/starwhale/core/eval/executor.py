@@ -33,7 +33,6 @@ _CNTR_WORKDIR = "/opt/starwhale"
 _STATUS = PipelineHandler.STATUS
 
 
-# TODO: add DAG
 class EvalExecutor:
     def __init__(
         self,
@@ -72,9 +71,17 @@ class EvalExecutor:
 
         self.gencmd = gencmd
         self.use_docker = use_docker
-
-        self._version = version
         self._manifest: t.Dict[str, t.Any] = {"status": _STATUS.START}
+
+        if not version:
+            logger.info("[step:init]create eval job version...")
+            self._version = gen_uniq_version(self.name)
+            self._manifest["version"] = self._version
+            self._manifest["created_at"] = now_str()  # type
+            logger.info(f"[step:init]eval job version is {self._version}")
+        else:
+            self._version = version
+
         self._workdir = Path()
         self._model_dir = Path()
         self._runtime_dir = Path()
@@ -110,54 +117,33 @@ class EvalExecutor:
 
         return self._version
 
-    # TODO: is it necessary to support single task at local mode??
     def _do_run(self, typ: str, step: str, task_index: int) -> None:
         self._manifest["type"] = typ
         self._manifest["status"] = _STATUS.RUNNING
-        if typ is not EvalTaskType.ALL:
+        if typ != EvalTaskType.ALL:
             if not step:
                 raise FieldTypeOrValueError("step is none")
             self._manifest["step"] = step
             self._manifest["task_index"] = task_index
 
         operations = [
-            (self._gen_version, 5, "gen version"),
             (self._prepare_workdir, 5, "prepare workdir"),
             (self._extract_swmp, 15, "extract model"),
             (self._extract_swrt, 15, "extract runtime"),
             (self._gen_swds_fuse_json, 10, "gen swds fuse json"),
-            (self._init_storage, 20, "init storage"),
             (self._do_run_eval_job, 70, "run eval job"),
-            (self._finally, 95, "do finally"),
         ]
 
         run_with_progress_bar("eval run in local...", operations)
 
-    def _init_storage(self) -> None:
-        # TODO: init storageAPI by job version 2022/07/28
-        pass
-
-    def _finally(self) -> None:
-        # TODO
-        pass
-
     def _do_run_eval_job(self) -> None:
         _type = self._manifest["type"]
-        if _type is not EvalTaskType.ALL:
+        if _type != EvalTaskType.ALL:
             _step = self._manifest["step"]
             _task_index = self._manifest["task_index"]
             self._do_run_cmd(_type, _step, _task_index)
         else:
             self._do_run_cmd(_type, "", 0)
-
-    def _gen_version(self) -> None:
-        # TODO: abstract base class or mixin class for swmp/swds/
-        logger.info("[step:version]create eval job version...")
-        if not self._version:
-            self._version = gen_uniq_version(self.name)
-        self._manifest["version"] = self._version
-        self._manifest["created_at"] = now_str()  # type: ignore
-        logger.info(f"[step:version]eval job version is {self._version}")
 
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
@@ -172,11 +158,6 @@ class EvalExecutor:
         ensure_dir(self._workdir)
         for _w in (self._workdir,):
             for _n in (
-                # RunSubDirType.RESULT,
-                # RunSubDirType.DATASET,
-                # RunSubDirType.PPL_RESULT,
-                # RunSubDirType.STATUS,
-                # RunSubDirType.LOG,
                 RunSubDirType.SWMP,
                 RunSubDirType.CONFIG,
             ):
@@ -234,7 +215,6 @@ class EvalExecutor:
 
     def _do_run_cmd(self, typ: str, step: str, task_index: int) -> None:
         if self.use_docker:
-            # TODO
             self._do_run_cmd_in_container(typ, step, task_index)
         else:
             self._do_run_cmd_in_host(typ, step, task_index)

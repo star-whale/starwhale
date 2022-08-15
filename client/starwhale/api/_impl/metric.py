@@ -49,7 +49,7 @@ def multi_classification(
                 y_true, y_pred, labels=all_labels, normalize=confusion_matrix_normalize
             )
             mcm = multilabel_confusion_matrix(y_true, y_pred, labels=all_labels)
-            # TODO:
+
             _r["confusion_matrix"] = {
                 "binarylabel": cm.tolist(),
                 "multilabel": mcm.tolist(),
@@ -75,31 +75,31 @@ def multi_classification(
 def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
     rt = {}
 
-    def _f(_s: t.Dict[str, t.Any], _prefix: str = "") -> None:
+    def _f_dict(_s: t.Dict[str, t.Any], _prefix: str = "") -> None:
         for _k, _v in _s.items():
             # TODO: waiting fix datastore bug
             if _v is None:
                 continue
             _k = f"{_prefix}{_k}"
             if isinstance(_v, dict):
-                _f(_v, _prefix=f"{_k}/")
-            elif isinstance(_v, list):
-                _do_flatten_list(_v, _prefix=f"{_k}/")
+                _f_dict(_v, _prefix=f"{_k}/")
+            elif isinstance(_v, (tuple, list)):
+                _f_list(_v, _prefix=f"{_k}/")
             else:
                 rt[_k] = _v
 
-    def _do_flatten_list(data: t.List, _prefix: str = "") -> None:
+    def _f_list(data: t.List, _prefix: str = "") -> None:
         index = 0
         for _d in data:
             if isinstance(_d, dict):
-                _f(_d, _prefix=f"{_prefix}/")
-            elif isinstance(_d, list):
-                _do_flatten_list(_d, _prefix=f"{_prefix}/")
+                _f_dict(_d, _prefix=f"{_prefix}/")
+            elif isinstance(_d, (tuple, list)):
+                _f_list(_d, _prefix=f"{_prefix}/")
             else:
                 rt[f"{_prefix}{index}"] = _d
             index += 1
 
-    _f(summary)
+    _f_dict(summary)
     return rt
 
 

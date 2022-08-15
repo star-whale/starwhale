@@ -26,7 +26,7 @@ def _get_cls(src_dir: Path) -> Any:
     return _cls
 
 
-def set_up(base_workdir: Path, step: str) -> None:
+def setup(base_workdir: Path, step: str) -> None:
     from starwhale.api._impl.model import _RunConfig
 
     _run_dir = base_workdir / step
@@ -45,8 +45,8 @@ def set_up(base_workdir: Path, step: str) -> None:
 
 @step()
 def ppl(context: Context) -> None:
-    set_up(context.workdir, context.step)
-    # TODO:
+    setup(context.workdir, context.step)
+    # TODO: remove when datastore support multi processing
     _eval = EvaluationForSubProcess(context.get_param("sub_conn"))
     _cls = _get_cls(context.src_dir)
     with _cls(evaluation=_eval) as _obj:
@@ -57,8 +57,8 @@ def ppl(context: Context) -> None:
 
 @step(dependency="ppl")
 def cmp(context: Context) -> None:
-    set_up(context.workdir, context.step)
-    # TODO:
+    setup(context.workdir, context.step)
+    # TODO: remove when datastore support multi processing
     _eval = EvaluationForSubProcess(context.get_param("sub_conn"))
     _cls = _get_cls(context.src_dir)
     with _cls(evaluation=_eval) as _obj:

@@ -224,7 +224,7 @@ class PipelineHandler(metaclass=ABCMeta):
         ret[self._label_field] = self.label_data_deserialize(ret[self._label_field])
         return ret
 
-    def deserialize_new(self, data: t.Dict[str, t.Any]) -> t.Any:
+    def deserialize_fields(self, data: t.Dict[str, t.Any]) -> t.Any:
         data[self._ppl_data_field] = self.ppl_data_deserialize(
             data[self._ppl_data_field]
         )
@@ -261,7 +261,7 @@ class PipelineHandler(metaclass=ABCMeta):
             _ppl_results = [result for result in self.evaluation.get_results()]
             self._sw_logger.debug("cmp input data size:{}", len(_ppl_results))
             _data_loader = SimpleDataLoader(
-                _ppl_results, self._sw_logger, deserializer=self.deserialize_new
+                _ppl_results, self._sw_logger, deserializer=self.deserialize_fields
             )
             output = self.cmp(_data_loader)
         except Exception as e:
@@ -270,7 +270,7 @@ class PipelineHandler(metaclass=ABCMeta):
             raise
         else:
             self._status_writer.write({"time": now, "status": True, "exception": ""})
-            self._sw_logger.debug("cmp result:{}", output)
+            self._sw_logger.debug(f"cmp result:{output}")
             self.evaluation.log_metrics(output)
 
     @_record_status  # type: ignore
@@ -360,7 +360,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 else:
                     _label = ""
 
-        self._sw_logger.debug("record ppl result:{}", data.idx)
+        self._sw_logger.debug(f"record ppl result:{data.idx}")
         self.evaluation.log_result(
             data_id=str(data.idx),
             result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),

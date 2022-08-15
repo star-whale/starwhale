@@ -192,23 +192,3 @@ def _eval(
             "input_config": input_config,
         },
     )
-    # """
-    # [ONLY Standalone]Create as new job for model evaluation
-    #
-    # MODEL: model uri or model workdir path
-    # """
-    # JobTermView.run(
-    #     project_uri=project,
-    #     version=version,
-    #     model_uri=model,
-    #     dataset_uris=dataset,
-    #     runtime_uri=runtime,
-    #     name=name,
-    #     desc=desc,
-    #     use_docker=False,
-    #     gencmd=False,
-    #     typ=type,
-    #     step=step,
-    #     task_index=task_index,
-    #     runtime_restore=runtime_restore,
-    # )

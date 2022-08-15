@@ -46,26 +46,26 @@ class BaseEvaluation(metaclass=ABCMeta):
 
     @abstractmethod
     def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def log_metrics(
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> None:
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def get_results(self) -> Iterator[Dict[str, Any]]:
-        ...
+        raise NotImplementedError
 
     @abstractmethod
     def get_metrics(self) -> Dict[str, Any]:
-        ...
+        raise NotImplementedError
 
 
 class Evaluation(Logger, BaseEvaluation):
     def __init__(self, eval_id: Optional[str] = None):
-        super().__init__()
+        super().__init__(eval_id=eval_id)
 
         self.project = os.getenv("SW_PROJECT")
         if self.project is None:
@@ -112,26 +112,26 @@ class Evaluation(Logger, BaseEvaluation):
 
 
 class EvaluationResult:
-    def __init__(self, data_id: str, result: Any, **kwargs: Any):
+    def __init__(self, data_id: str, result: Any, **kwargs: Any) -> None:
         self.data_id = data_id
         self.result = result
         self.kwargs = kwargs
 
 
 class EvaluationMetric:
-    def __init__(self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any):
+    def __init__(self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any) -> None:
         self.metrics = metrics
         self.kwargs = kwargs
 
 
 # TODO: rich query params
 class EvaluationQuery:
-    def __init__(self, kind: str):
+    def __init__(self, kind: str) -> None:
         self.kind = kind
 
 
 class EvaluationForSubProcess(BaseEvaluation):
-    def __init__(self, sub_conn: Connection, eval_id: Optional[str] = None):
+    def __init__(self, sub_conn: Connection, eval_id: Optional[str] = None) -> None:
         super().__init__(eval_id)
         self.sub_conn = sub_conn
 

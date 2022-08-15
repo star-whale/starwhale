@@ -5,11 +5,11 @@ from multiprocessing import Pipe, connection
 import yaml
 from loguru import logger
 
-from starwhale.core.job.loader import (
+from starwhale.utils.load import (
     load_cls,
     load_module,
     get_func_from_module,
-    get_func_from_instance,
+    get_func_from_object,
 )
 
 
@@ -248,7 +248,7 @@ class Task:
                 _cls = load_cls(_module, _cls_name)
                 # need an instance
                 cls = _cls()
-                func = get_func_from_instance(cls, _func_name)
+                func = get_func_from_object(cls, _func_name)
             else:
                 logger.debug("hi, use func")
                 _func_name = self.context.step

@@ -63,12 +63,6 @@ pre_check() {
         echo "${WORKDIR} is not starwhale target dir, will exit"
         exit 1
     fi
-
-    # TODO: remove when new dataset completed
-    # if [ ! -f "${SW_TASK_INPUT_CONFIG}" ]; then
-    #     echo "${SW_TASK_INPUT_CONFIG} not found, please set env and volume file into container"
-    #     exit 1
-    # fi
 }
 
 set_python() {

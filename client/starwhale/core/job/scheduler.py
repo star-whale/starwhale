@@ -11,7 +11,6 @@ from loguru import logger
 
 from starwhale.consts import EvaluationResultKind
 from starwhale.api._impl import wrapper
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.job.model import Step, Task, STATUS
 from starwhale.api._impl.wrapper import (
     EvaluationQuery,
@@ -21,17 +20,16 @@ from starwhale.api._impl.wrapper import (
 
 
 class TaskPipe:
-    def __init__(self, idx: str, main_conn: Connection, sub_conn: Connection):
+    def __init__(self, idx: str, main_conn: Connection, sub_conn: Connection) -> None:
         self.id = idx
         self.main_conn = main_conn
         self.sub_conn = sub_conn
 
 
-def _init_datastore(root_path: str, project: str, eval_id: str) -> wrapper.Evaluation:
-    os.environ["SW_ROOT_PATH"] = root_path
+def _init_datastore(project: str, eval_id: str) -> wrapper.Evaluation:
     os.environ["SW_PROJECT"] = project
     os.environ["SW_EVAL_ID"] = eval_id
-    logger.debug("datastore info:{}, {}, {}", root_path, project, eval_id)
+    logger.debug(f"datastore info, project:{project}, eval_id:{eval_id}")
     return wrapper.Evaluation()
 
 
@@ -46,7 +44,7 @@ class Scheduler:
         dataset_uris: t.List[str],
         steps: t.List[Step],
         **kw: t.Any,
-    ):
+    ) -> None:
         self.project = project
         self.steps = steps
         self.dataset_uris = dataset_uris
@@ -54,12 +52,9 @@ class Scheduler:
         self.workdir = workdir
         self.src_dir = src_dir
         self.version = version
-        self.__split_tasks(**kw)
+        self._split_tasks(**kw)
         self._lock = threading.Lock()
-        self._sw_config = SWCliConfigMixed()
-        self._datastore = _init_datastore(
-            str(self._sw_config.datastore_dir), project, version
-        )
+        self._datastore = _init_datastore(project, version)
 
     def add_data(self, data: t.Any) -> None:
         if isinstance(data, EvaluationResult):
@@ -70,22 +65,20 @@ class Scheduler:
             self._datastore.log_metrics(metrics=data.metrics, **data.kwargs)
 
     def query_data(self, query: EvaluationQuery) -> t.Any:
-        logger.debug("main receive query data:{}", query.kind)
+        logger.debug(f"main process receive query cmd:{query.kind}")
         if query.kind == EvaluationResultKind.RESULT:
             logger.debug(
-                "hi,all result size: {}",
-                len([res for res in self._datastore.get_results()]),
+                f"query result size: {len(list(self._datastore.get_results()))}"
             )
-            return [res for res in self._datastore.get_results()]
+            return list(self._datastore.get_results())
         elif query.kind == EvaluationResultKind.METRIC:
             return self._datastore.get_metrics()
 
-    def __split_tasks(
+    def _split_tasks(
         self,
         **kw: t.Any,
     ) -> None:
         for _step in self.steps:
-            # update step status = init
             _step.status = STATUS.INIT
             for index in range(_step.task_num):
                 _step.gen_task(
@@ -116,23 +109,10 @@ class Scheduler:
             for _wait in _wait_steps:
                 if all(d in _finished_step_names for d in _wait.dependency if d):
                     _wait.status = STATUS.RUNNING
-                    # add pipe handler
-
-                    for _t in _wait.tasks:
-                        _d = TaskDaemon(
-                            TaskPipe(
-                                idx=f"{_wait.step_name}-{_t.context.index}",
-                                main_conn=_t.main_conn,
-                                sub_conn=_t.sub_conn,
-                            ),
-                            self,
-                        )
-                        _d.start()
                     _executor = Executor(
-                        _wait.concurrency, _wait, _wait.tasks, StepCallback(self)
+                        _wait.concurrency, _wait, _wait.tasks, StepCallback(self), self
                     )
                     _executor.start()
-                    # executor.setDaemon()
                     _threads.append(_executor)
 
         for _thread in _threads:
@@ -151,23 +131,14 @@ class Scheduler:
         logger.debug(
             "all result size: {}", len([res for res in self._datastore.get_results()])
         )
-        _d = TaskDaemon(
-            TaskPipe(
-                idx=f"{_step.step_name}-{_task.context.index}",
-                main_conn=_task.main_conn,
-                sub_conn=_task.sub_conn,
-            ),
-            self,
-        )
-        _d.start()
 
-        _executor = Executor(1, _step, [_task], SingleTaskCallback(self))
+        _executor = Executor(1, _step, [_task], SingleTaskCallback(self), self)
         _executor.start()
         _executor.join()
 
 
 class TaskDaemon(threading.Thread):
-    def __init__(self, task_pipe: TaskPipe, scheduler: Scheduler):
+    def __init__(self, task_pipe: TaskPipe, scheduler: Scheduler) -> None:
         super().__init__()
         self.scheduler = scheduler
         self.task_pipe = task_pipe
@@ -186,7 +157,7 @@ class TaskDaemon(threading.Thread):
 
 
 class Callback:
-    def __init__(self, scheduler: Scheduler):
+    def __init__(self, scheduler: Scheduler) -> None:
         self.scheduler = scheduler
 
     @abstractmethod
@@ -233,16 +204,28 @@ class Executor(threading.Thread):
         step: Step,
         tasks: t.List[Task],
         callback: Callback,
+        scheduler: Scheduler,
     ):
         super().__init__()
         self.concurrency = concurrency
         self.step = step
         self.tasks = tasks
         self.callback = callback
+        self.scheduler = scheduler
 
     def run(self) -> None:
-        # processing pool
         start_time = time.time()
+        # use pipe for multiprocessing communication
+        for _t in self.tasks:
+            _d = TaskDaemon(
+                TaskPipe(
+                    idx=f"{self.step.step_name}-{_t.context.index}",
+                    main_conn=_t.main_conn,
+                    sub_conn=_t.sub_conn,
+                ),
+                scheduler=self.scheduler,
+            )
+            _d.start()
         with concurrent.futures.ProcessPoolExecutor(
             max_workers=self.concurrency
         ) as executor:
