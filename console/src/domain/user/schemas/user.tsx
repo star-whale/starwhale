@@ -44,3 +44,7 @@ export interface INewUserSchema {
     userName: string
     userPwd: string
 }
+
+export interface ICloudLoginRespSchema {
+    data?: string
+}
