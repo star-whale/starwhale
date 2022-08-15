@@ -11,7 +11,10 @@ class TestMultiClassificationMetric(TestCase):
             return (
                 [1, 2, 3, 4, 5, 6, 7, 8, 9],
                 [1, 3, 2, 4, 5, 6, 7, 8, 9],
-                [[1 / random.randint(1, 10) for i in range(1, 10)] for i in range(1, 10)],
+                [
+                    [1 / random.randint(1, 10) for i in range(1, 10)]
+                    for i in range(1, 10)
+                ],
             )
 
         rt = multi_classification(
