@@ -42,6 +42,8 @@ public class Job extends TimeConcern {
 
     String uuid;
 
+    String evalJobContent;
+
     Step currentStep;
 
     /**
@@ -68,7 +70,9 @@ public class Job extends TimeConcern {
 
     /**
      * job result holding dir
+     * Deprecated reason: use storage unaware of resultDir
      */
+    @Deprecated
     String resultDir;
 
     List<Step> steps;

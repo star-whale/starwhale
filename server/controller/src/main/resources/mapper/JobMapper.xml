@@ -35,6 +35,7 @@
                               mv.id as mv_id,
                               mv.swmp_id,
                               mv.version_name as mv_version_name,
+                              mv.eval_jobs as mv_eval_jobs,
                               mv.version_tag as mv_version_tag,
                               mv.version_meta as mv_version_meta,
                               mv.created_time as mv_created_time,
