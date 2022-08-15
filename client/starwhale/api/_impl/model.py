@@ -23,7 +23,7 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 
-from .loader import DataField, DataLoader, get_data_loader, SimpleDataLoader
+from .loader import DataField, ResultLoader, get_data_loader
 from .wrapper import BaseEvaluation
 from ...base.type import URIType
 
@@ -121,13 +121,6 @@ class PipelineHandler(metaclass=ABCMeta):
         self._orig_stdout = sys.stdout
         self._orig_stderr = sys.stderr
 
-        self._data_loader = get_data_loader(
-            dataset_uri=self.config.dataset_uri,
-            start=self.config.dataset_row_start,
-            end=self.config.dataset_row_end,
-            logger=self._sw_logger,
-        )
-
         # TODO: split status/result files
         self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
 
@@ -203,7 +196,7 @@ class PipelineHandler(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def cmp(self, _data_loader: DataLoader) -> t.Any:
+    def cmp(self, _data_loader: ResultLoader) -> t.Any:
         raise NotImplementedError
 
     def _builtin_serialize(self, *data: t.Any) -> bytes:
@@ -263,8 +256,8 @@ class PipelineHandler(metaclass=ABCMeta):
         try:
             _ppl_results = [result for result in self.evaluation.get_results()]
             self._sw_logger.debug("cmp input data size:{}", len(_ppl_results))
-            _data_loader = SimpleDataLoader(
-                _ppl_results, self._sw_logger, deserializer=self.deserialize_fields
+            _data_loader = ResultLoader(
+                datas=_ppl_results, deserializer=self.deserialize_fields
             )
             output = self.cmp(_data_loader)
         except Exception as e:
@@ -283,9 +276,10 @@ class PipelineHandler(metaclass=ABCMeta):
 
         # TODO: use datastore when dataset complete
         _data_loader = get_data_loader(
-            self.config.load_swds_config(),
-            self._sw_logger,
-            deserializer=self.deserialize,
+            dataset_uri=self.config.dataset_uri,
+            start=self.config.dataset_row_start,
+            end=self.config.dataset_row_end,
+            logger=self._sw_logger,
         )
         for data, label in _data_loader:
             if data.idx != label.idx:

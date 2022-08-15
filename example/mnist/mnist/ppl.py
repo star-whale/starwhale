@@ -2,7 +2,6 @@ from pathlib import Path
 import os
 
 import torch
-from loguru import logger
 from torchvision import transforms
 from PIL import Image
 import numpy as np
@@ -10,7 +9,6 @@ import numpy as np
 from starwhale.api._impl.wrapper import BaseEvaluation
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
-from starwhale.core.job.model import Context
 
 from .model import Net
 

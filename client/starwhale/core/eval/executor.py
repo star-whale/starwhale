@@ -77,7 +77,7 @@ class EvalExecutor:
             logger.info("[step:init]create eval job version...")
             self._version = gen_uniq_version(self.name)
             self._manifest["version"] = self._version
-            self._manifest["created_at"] = now_str()  # type
+            # self._manifest["created_at"] = now_str()  # type
             logger.info(f"[step:init]eval job version is {self._version}")
         else:
             self._version = version

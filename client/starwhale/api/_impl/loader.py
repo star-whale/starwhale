@@ -131,7 +131,7 @@ class DataLoader(metaclass=ABCMeta):
         self,
         storage: DatasetObjectStore,
         dataset: TabularDataset,
-        logger: t.Union[loguru.Logger, None] = None,
+        logger: t.Optional[loguru.Logger] = None,
         kind: str = DataLoaderKind.SWDS,
         deserializer: t.Optional[t.Callable] = None,
     ):
@@ -157,18 +157,14 @@ class DataLoader(metaclass=ABCMeta):
         return f"DataLoader for {self.storage.backend}, extra:{self.storage.conn}"
 
 
-class SimpleDataLoader(DataLoader):
+class ResultLoader:
     def __init__(
         self,
         datas: t.List[t.Any],
-        logger: t.Union[loguru.Logger, None] = None,
-        **kwargs: t.Any,
+        deserializer: t.Optional[t.Callable] = None,
     ) -> None:
-        # TODO: waiting refactor
-        super().__init__(
-            FuseStorageBackend(), [], logger, DataLoaderKind.JSONL, **kwargs
-        )
         self.datas = datas
+        self.deserializer = deserializer
 
     def __iter__(self) -> t.Any:
         for _data in self.datas:

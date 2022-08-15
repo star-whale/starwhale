@@ -88,7 +88,9 @@ def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
             else:
                 rt[_k] = _v
 
-    def _f_list(data: t.List, _prefix: str = "") -> None:
+    def _f_list(
+        data: t.Union[t.Tuple[t.Any, ...], t.List[t.Any]], _prefix: str = ""
+    ) -> None:
         index = 0
         for _d in data:
             if isinstance(_d, dict):
