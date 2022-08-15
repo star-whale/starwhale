@@ -36,7 +36,7 @@ public final class TarFileUtil {
             }
 
         } catch (Exception e) {
-            log.error("获取压缩包文件失败!", e);
+            log.error("get tar file failed!", e);
         } finally {
             if (null != archiveInputStream) {
                 try {
