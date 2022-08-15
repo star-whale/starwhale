@@ -1,0 +1,486 @@
+/*
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ai.starwhale.mlops.datastore.impl;
+
+import ai.starwhale.mlops.datastore.ColumnSchema;
+import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.datastore.MemoryTable;
+import ai.starwhale.mlops.datastore.OrderByDesc;
+import ai.starwhale.mlops.datastore.RecordList;
+import ai.starwhale.mlops.datastore.TableQueryFilter;
+import ai.starwhale.mlops.datastore.TableScanIterator;
+import ai.starwhale.mlops.datastore.TableSchema;
+import ai.starwhale.mlops.datastore.TableSchemaDesc;
+import ai.starwhale.mlops.exception.SWValidationException;
+import lombok.Getter;
+
+import java.nio.ByteBuffer;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+public class MemoryTableImpl implements MemoryTable {
+    private TableSchema schema = null;
+
+    private final TreeMap<Object, Map<String, Object>> recordMap = new TreeMap<>();
+
+    public TableSchema getSchema() {
+        return this.schema == null ? null : new TableSchema(this.schema);
+    }
+
+    @Override
+    synchronized public void update(TableSchemaDesc schema, List<Map<String, String>> records) {
+        if (schema == null) {
+            if (this.schema == null) {
+                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                        "schema should not be null for the first update");
+            }
+        } else {
+            if (this.schema == null) {
+                this.schema = new TableSchema(schema);
+            } else {
+                this.schema.merge(schema);
+            }
+        }
+        if (records != null) {
+            var decodedRecords = new ArrayList<Map<String, Object>>();
+            for (var record : records) {
+                var key = record.get(this.schema.getKeyColumn());
+                if (key == null) {
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                            MessageFormat.format("key column {0} is null", this.schema.getKeyColumn()));
+                }
+                if (record.get("-") != null) {
+                    decodedRecords.add(Map.of(this.schema.getKeyColumn(),
+                            this.schema.getKeyColumnType().decode(key),
+                            "-",
+                            true));
+                } else {
+                    decodedRecords.add(MemoryTableImpl.decodeRecord(this.schema, record));
+                }
+            }
+            for (var record : decodedRecords) {
+                var key = record.get(this.schema.getKeyColumn());
+                if (record.get("-") != null) {
+                    this.recordMap.remove(key);
+                } else {
+                    var old = this.recordMap.putIfAbsent(key, record);
+                    if (old != null) {
+                        old.putAll(record);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    synchronized public RecordList query(
+            Map<String, String> columns,
+            List<OrderByDesc> orderBy,
+            TableQueryFilter filter,
+            int start,
+            int limit) {
+        if (this.schema == null) {
+            return new RecordList(null, List.of(), null);
+        }
+        if (columns == null) {
+            columns = this.schema.getColumnSchemas().stream()
+                    .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::getName));
+        }
+        var columnTypeMapping = this.schema.getColumnTypeMapping(columns);
+        if (orderBy != null) {
+            for (var col : orderBy) {
+                if (col == null) {
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                            "order by column should not be null");
+                }
+                if (this.schema.getColumnSchemaByName(col.getColumnName()) == null) {
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                            "unknown orderBy column " + col);
+                }
+            }
+        }
+        if (filter != null) {
+            this.checkFilter(filter);
+        }
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (var record : this.recordMap.values()) {
+            if (filter == null || this.match(filter, record)) {
+                results.add(record);
+            }
+        }
+        if (start < 0) {
+            start = 0;
+        }
+        if (limit < 0) {
+            limit = results.size();
+        }
+        int end = start + limit;
+        if (end > results.size()) {
+            end = results.size();
+        }
+        if (orderBy != null) {
+            results.sort((a, b) -> {
+                for (var col : orderBy) {
+                    var result = MemoryTableImpl.sortCompare(a.get(col.getColumnName()), b.get(col.getColumnName()));
+                    if (result != 0) {
+                        if (col.isDescending()) {
+                            return -result;
+                        }
+                        return result;
+                    }
+                }
+                return 0;
+            });
+        }
+
+        var finalColumns = columns;
+        return new RecordList(columnTypeMapping,
+                results.subList(start, end).stream().map(record -> {
+                    var r = new HashMap<String, String>();
+                    for (var entry : finalColumns.entrySet()) {
+                        var value = record.get(entry.getKey());
+                        if (value != null) {
+                            r.put(entry.getValue(), columnTypeMapping.get(entry.getValue()).encode(value));
+                        }
+                    }
+                    return r;
+                }).collect(Collectors.toList()),
+                null);
+    }
+
+    private class InternalIterator implements TableScanIterator {
+        @Getter
+        private Map<String, ColumnType> columnTypeMapping;
+        private Map<String, String> columns;
+        private Object endKey;
+        private boolean keepNone;
+        private Iterator<Map.Entry<Object, Map<String, Object>>> iterator;
+        @Getter
+        private Object key;
+        @Getter
+        private ColumnType keyColumnType;
+        @Getter
+        private Map<String, String> record;
+
+        public InternalIterator(
+                Map<String, String> columns,
+                String start,
+                boolean startInclusive,
+                String end,
+                boolean endInclusive,
+                boolean keepNone) {
+            if (MemoryTableImpl.this.schema == null) {
+                return;
+            }
+            this.columns = Objects.requireNonNullElseGet(columns,
+                    () -> MemoryTableImpl.this.schema.getColumnSchemas().stream()
+                            .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::getName)));
+            this.keepNone = keepNone;
+            this.columnTypeMapping = MemoryTableImpl.this.schema.getColumnTypeMapping(this.columns);
+            Object startKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(start);
+            Object endKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(end);
+            if (startKey == null) {
+                if (!MemoryTableImpl.this.recordMap.isEmpty()) {
+                    startKey = MemoryTableImpl.this.recordMap.firstKey();
+                }
+            } else if (startInclusive) {
+                startKey = MemoryTableImpl.this.recordMap.ceilingKey(startKey);
+            } else {
+                startKey = MemoryTableImpl.this.recordMap.higherKey(startKey);
+            }
+            if (endKey == null) {
+                if (!MemoryTableImpl.this.recordMap.isEmpty()) {
+                    this.endKey = MemoryTableImpl.this.recordMap.lastKey();
+                }
+            } else if (endInclusive) {
+                this.endKey = MemoryTableImpl.this.recordMap.floorKey(endKey);
+            } else {
+                this.endKey = MemoryTableImpl.this.recordMap.lowerKey(endKey);
+            }
+            if (startKey != null && this.endKey != null && ((Comparable) startKey).compareTo(this.endKey) <= 0) {
+                this.iterator = MemoryTableImpl.this.recordMap.subMap(startKey, true, this.endKey, true)
+                        .entrySet()
+                        .iterator();
+            }
+            this.keyColumnType = MemoryTableImpl.this.schema.getKeyColumnType();
+        }
+
+        public void next() {
+            if (this.iterator == null) {
+                return;
+            }
+            synchronized (MemoryTableImpl.this) {
+                Map<String, Object> r;
+                for (; ; ) {
+                    try {
+                        r = this.iterator.next().getValue();
+                        break;
+                    } catch (ConcurrentModificationException e) {
+                        this.iterator = MemoryTableImpl.this.recordMap.subMap(this.key, false, this.endKey, true)
+                                .entrySet()
+                                .iterator();
+                    } catch (NoSuchElementException e) {
+                        this.iterator = null;
+                        this.record = null;
+                        return;
+                    }
+                }
+                this.record = new HashMap<>();
+                this.key = r.get(MemoryTableImpl.this.schema.getKeyColumn());
+                for (var entry : this.columns.entrySet()) {
+                    var value = r.get(entry.getKey());
+                    if (value != null) {
+                        this.record.put(entry.getValue(),
+                                this.columnTypeMapping.get(entry.getValue()).encode(value));
+                    } else if (this.keepNone) {
+                        this.record.put(entry.getValue(), null);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    synchronized public TableScanIterator scan(
+            Map<String, String> columns,
+            String start,
+            boolean startInclusive,
+            String end,
+            boolean endInclusive,
+            boolean keepNone) {
+        return new InternalIterator(columns, start, startInclusive, end, endInclusive, keepNone);
+    }
+
+    private static int sortCompare(Object a, Object b) {
+        if (a == null && b == null) {
+            return 0;
+        }
+        if (a == null) {
+            return -1;
+        }
+        if (b == null) {
+            return 1;
+        }
+        var type1 = ColumnType.getColumnType(a);
+        var type2 = ColumnType.getColumnType(b);
+        if (type1 != type2) {
+            throw new IllegalArgumentException(
+                    MessageFormat.format("not same type: {0} and {1}", type1, type2));
+        }
+        if (type1 == ColumnType.STRING) {
+            return ((String) a).compareTo((String) b);
+        } else if (type1 == ColumnType.BYTES) {
+            return ((ByteBuffer) a).compareTo((ByteBuffer) b);
+        } else if (type1 == ColumnType.BOOL) {
+            return ((Boolean) a).compareTo((Boolean) b);
+        } else if (type1.getName().equals(ColumnType.INT32.getName())) {
+            return Long.compare(((Number) a).longValue(), ((Number) b).longValue());
+        } else if (type1.getName().equals(ColumnType.FLOAT32.getName())) {
+            return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+        } else {
+            throw new IllegalArgumentException("invalid type " + type1);
+        }
+    }
+
+    private boolean match(TableQueryFilter filter, Map<String, Object> record) {
+        switch (filter.getOperator()) {
+            case NOT:
+                return !this.match((TableQueryFilter) filter.getOperands().get(0), record);
+            case AND:
+                return this.match((TableQueryFilter) filter.getOperands().get(0), record)
+                        && this.match((TableQueryFilter) filter.getOperands().get(1), record);
+            case OR:
+                return this.match((TableQueryFilter) filter.getOperands().get(0), record)
+                        || this.match((TableQueryFilter) filter.getOperands().get(1), record);
+            case EQUAL:
+            case GREATER:
+            case GREATER_EQUAL:
+            case LESS:
+            case LESS_EQUAL:
+                return MemoryTableImpl.filterCompare(
+                        this.getValue(filter.getOperands().get(0), record),
+                        this.getValue(filter.getOperands().get(1), record),
+                        filter.getOperator());
+            default:
+                throw new IllegalArgumentException("Unexpected value: " + filter.getOperator());
+        }
+    }
+
+    private Object getValue(Object operand, Map<String, Object> record) {
+        if (operand instanceof TableQueryFilter.Column) {
+            return record.get(((TableQueryFilter.Column) operand).getName());
+        }
+        return operand;
+    }
+
+    private void checkFilter(TableQueryFilter filter) {
+        switch (filter.getOperator()) {
+            case NOT:
+            case AND:
+            case OR:
+                for (var op : filter.getOperands()) {
+                    this.checkFilter((TableQueryFilter) op);
+                }
+                break;
+            case EQUAL:
+            case LESS:
+            case LESS_EQUAL:
+            case GREATER:
+            case GREATER_EQUAL:
+                this.checkSameType(filter.getOperands());
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected operator: " + filter.getOperator());
+        }
+    }
+
+    private void checkSameType(List<Object> operands) {
+        if (operands.isEmpty()) {
+            return;
+        }
+        var firstCol = operands.stream()
+                .filter(x -> x instanceof TableQueryFilter.Column)
+                .map(x -> (TableQueryFilter.Column) x)
+                .findFirst();
+        var type = this.schema.getColumnSchemaByName(firstCol.orElseThrow().getName()).getType();
+        for (var op : operands) {
+            if (op instanceof TableQueryFilter.Column) {
+                var col = (TableQueryFilter.Column) op;
+                var colSchema = this.schema.getColumnSchemaByName(col.getName());
+                if (colSchema == null) {
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                            "invalid filter, unknown column " + col.getName());
+                }
+                if (!type.getName().equals(colSchema.getType().getName())) {
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                            MessageFormat.format(
+                                    "invalid filter, can not compare column {0} of type {1} with column {2} of type {3}",
+                                    col.getName(),
+                                    colSchema.getType(),
+                                    firstCol.orElseThrow().getName(),
+                                    type));
+                }
+            } else if (op != null) {
+                boolean checkFailed;
+                if (op instanceof String) {
+                    checkFailed = type != ColumnType.STRING;
+                } else if (op instanceof ByteBuffer) {
+                    checkFailed = type != ColumnType.BYTES;
+                } else if (op instanceof Boolean) {
+                    checkFailed = type != ColumnType.BOOL;
+                } else if (op instanceof Number) {
+                    checkFailed = !type.getName().equals(ColumnType.INT32.getName())
+                            && !type.getName().equals(ColumnType.FLOAT32.getName());
+                } else {
+                    throw new IllegalArgumentException("unexpectd operand class " + op.getClass());
+                }
+                if (checkFailed) {
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                            MessageFormat.format(
+                                    "invalid filter, can not compare column {0} of type {1} with value {2} of type {3}",
+                                    firstCol.orElseThrow().getName(),
+                                    type,
+                                    op,
+                                    op.getClass()));
+                }
+            }
+        }
+
+    }
+
+
+    private static boolean filterCompare(Object a, Object b, TableQueryFilter.Operator op) {
+        if (a == null || b == null) {
+            return a == null && b == null && op == TableQueryFilter.Operator.EQUAL;
+        }
+        int result;
+        var type1 = ColumnType.getColumnType(a);
+        var type2 = ColumnType.getColumnType(b);
+        if (type1.getName().equals(type2.getName())) {
+            if (type1 == ColumnType.BOOL) {
+                result = ((Boolean) a).compareTo((Boolean) b);
+            } else if (type1 == ColumnType.STRING) {
+                result = ((String) a).compareTo((String) b);
+            } else if (type1 == ColumnType.BYTES) {
+                result = ((ByteBuffer) a).compareTo((ByteBuffer) b);
+            } else if (type1.getName().equals(ColumnType.INT32.getName())) {
+                result = Long.compare(((Number) a).longValue(), ((Number) b).longValue());
+            } else if (type1.getName().equals(ColumnType.FLOAT32.getName())) {
+                result = Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+            } else {
+                throw new IllegalArgumentException("invalid type " + type1);
+            }
+        } else if (a instanceof Number && b instanceof Number) {
+            result = Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+        } else {
+            throw new IllegalArgumentException("can not compare " + type1 + " with " + type2);
+        }
+        switch (op) {
+            case EQUAL:
+                return result == 0;
+            case LESS:
+                return result < 0;
+            case LESS_EQUAL:
+                return result <= 0;
+            case GREATER:
+                return result > 0;
+            case GREATER_EQUAL:
+                return result >= 0;
+            default:
+                throw new IllegalArgumentException("Unexpected operator: " + op);
+        }
+    }
+
+    private static Map<String, Object> decodeRecord(TableSchema schema, Map<String, String> record) {
+        if (record == null) {
+            return null;
+        }
+        var ret = new HashMap<String, Object>();
+        for (var entry : record.entrySet()) {
+            var name = entry.getKey();
+            var value = entry.getValue();
+            if (value == null) {
+                ret.put(name, null);
+            } else {
+                var columnSchema = schema.getColumnSchemaByName(name);
+                if (columnSchema == null) {
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                            "no schema found for column " + name);
+                }
+                try {
+                    ret.put(name, columnSchema.getType().decode(value));
+                } catch (Exception e) {
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                            MessageFormat.format("fail to decode value {0} for column {1}: {2}",
+                                    value,
+                                    name,
+                                    e.getMessage()));
+                }
+            }
+        }
+        return ret;
+    }
+
+}
