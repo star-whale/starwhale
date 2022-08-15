@@ -97,3 +97,8 @@ class Dataset(Logger):
         return self._data_store.scan_tables(
             [(self._meta_table_name, "meta", False)], start=start, end=end
         )
+
+    def __str__(self) -> str:
+        return f"Dataset Wrapper, table:{self._meta_table_name}"
+
+    __repr__ = __str__

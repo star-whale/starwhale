@@ -126,7 +126,7 @@ class TestModelPipelineHandler(TestCase):
             assert lines[0]["summary"] == {"a": 1}
             assert lines[0]["kind"] == "test"
 
-    @patch("starwhale.api._impl.loader.TabularDataset.scan_all")
+    @patch("starwhale.api._impl.loader.TabularDataset.scan")
     def test_ppl(self, m_scan: MagicMock) -> None:
         os.environ[SWEnv.status_dir] = self.status_dir
         os.environ[SWEnv.log_dir] = self.log_dir

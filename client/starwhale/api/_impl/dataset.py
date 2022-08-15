@@ -6,6 +6,7 @@ import struct
 import typing as t
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
+from enum import Enum, unique
 from types import TracebackType
 from pathlib import Path
 from binascii import crc32
@@ -36,17 +37,20 @@ _header_struct = struct.Struct(">IIQIIII")
 _header_size = _header_struct.size
 
 
-class RawDataFormatType:
+@unique
+class RawDataFormatType(Enum):
     SWDS_BIN = "s"
     USER = "u"
 
 
-class ObjectStoreType:
+@unique
+class ObjectStoreType(Enum):
     LOCAL = "l"
     REMOTE = "r"
 
 
-class DataOriginType:
+@unique
+class DataOriginType(Enum):
     NEW = "n"
     INHERIT = "i"
 
@@ -57,11 +61,11 @@ class TabularDatasetRow:
         id: int,
         data_uri: str,
         label: t.Union[str, bytes],
-        data_format: str = RawDataFormatType.SWDS_BIN,
-        object_store_type: str = ObjectStoreType.LOCAL,
+        data_format: RawDataFormatType = RawDataFormatType.SWDS_BIN,
+        object_store_type: ObjectStoreType = ObjectStoreType.LOCAL,
         data_offset: int = 0,
         data_size: int = 0,
-        data_origin: str = DataOriginType.NEW,
+        data_origin: DataOriginType = DataOriginType.NEW,
         **kw: t.Any,
     ) -> None:
         self.id = id
@@ -86,10 +90,10 @@ class TabularDatasetRow:
         if not self.data_uri:
             raise FieldTypeOrValueError("no raw_data_uri field")
 
-        if self.data_format not in [RawDataFormatType.SWDS_BIN, RawDataFormatType.USER]:
+        if self.data_format not in RawDataFormatType:
             raise NoSupportError(f"data format: {self.data_format}")
 
-        if self.data_origin not in [DataOriginType.NEW, DataOriginType.INHERIT]:
+        if self.data_origin not in DataOriginType:
             raise NoSupportError(f"data origin: {self.data_origin}")
 
         # TODO: support non-starwhale remote object store, for index-only feature
@@ -103,18 +107,29 @@ class TabularDatasetRow:
         return f"row-{self.id}, data-{self.data_uri}(offset:{self.data_offset}, size:{self.data_size}, format:{self.data_format}), origin-[{self.data_origin}], object store-{self.object_store_type}"
 
     def asdict(self) -> t.Dict[str, t.Union[str, bytes, int]]:
-        return deepcopy(self.__dict__)
+        d = deepcopy(self.__dict__)
+        d["data_format"] = self.data_format.value
+        d["data_origin"] = self.data_origin.value
+        d["object_store_type"] = self.object_store_type.value
+        return d
 
 
 class TabularDataset:
-    def __init__(self, name: str, version: str, project: str) -> None:
+    def __init__(
+        self,
+        name: str,
+        version: str,
+        project: str,
+        start: int = 0,
+        end: int = sys.maxsize,
+    ) -> None:
         self.name = name
         self.version = version
         self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
         self._ds_wrapper = DatastoreWrapperDataset(self.table_name, project)
 
-        self.start = -1
-        self.end = sys.maxsize
+        self.start = start
+        self.end = end
 
         self._do_validate()
 
@@ -127,38 +142,48 @@ class TabularDataset:
             raise FieldTypeOrValueError("no version field")
 
     def __str__(self) -> str:
-        return f"Dataset Table: {self._ds_wrapper._meta_table_name}"
+        return f"Dataset Table: {self._ds_wrapper}"
 
     __repr__ = __str__
-
-    def set_range(self, start: int, end: int) -> None:
-        self.start = max(start, self.start)
-        self.end = min(end, self.end)
 
     def put(self, row: TabularDatasetRow) -> None:
         self._ds_wrapper.put(row.id, **row.asdict())
 
-    def scan_all(self) -> t.Generator[TabularDatasetRow, None, None]:
-        return self.scan(self.start, self.end)
+    def scan(
+        self, start: int = 0, end: int = sys.maxsize
+    ) -> t.Generator[TabularDatasetRow, None, None]:
+        _start = start + self.start
+        _end = min(end + self.start, self.end)
 
-    def scan(self, start: int, end: int) -> t.Generator[TabularDatasetRow, None, None]:
-        for _d in self._ds_wrapper.scan(start, end):
+        _map_types = {
+            "data_format": RawDataFormatType,
+            "data_origin": DataOriginType,
+            "object_store_type": ObjectStoreType,
+        }
+        for _d in self._ds_wrapper.scan(_start, _end):
+            for k, v in _map_types.items():
+                if k not in _d:
+                    continue
+                _d[k] = v(_d[k])
             yield TabularDatasetRow(**_d)
 
     def close(self) -> None:
         self._ds_wrapper.close()
 
     @classmethod
-    def from_uri(cls, uri: URI) -> TabularDataset:
+    def from_uri(
+        cls,
+        uri: URI,
+        start: int = -1,
+        end: int = sys.maxsize,
+    ) -> TabularDataset:
         _version = uri.object.version
         if uri.instance_type == InstanceType.STANDALONE:
             _store = DatasetStorage(uri)
             _version = _store.id
 
         return TabularDataset(
-            uri.object.name,
-            _version,
-            uri.project,
+            uri.object.name, _version, uri.project, start=start, end=end
         )
 
 

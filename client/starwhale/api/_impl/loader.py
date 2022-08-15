@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 import typing as t
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
@@ -167,7 +168,7 @@ class SWDSDataLoader(DataLoader):
 
     def __iter__(self) -> t.Generator[t.Tuple[DataField, DataField], None, None]:
         _attr = {"ds_name": self.dataset.name, "ds_version": self.dataset.version}
-        for row in self.dataset.scan_all():
+        for row in self.dataset.scan():
             # TODO: tune performance by fetch in batch
             # TODO: remove ext_attr field
             _key_compose = f"{row.data_uri}:{row.data_offset}:{row.data_offset + row.data_size - 1}"
@@ -380,15 +381,14 @@ class S3BufferedFileLike:
 def get_data_loader(
     dataset_uri: URI,
     start: int = 0,
-    end: int = -1,
+    end: int = sys.maxsize,
     backend: str = "",
     kind: str = DataLoaderKind.SWDS,
     logger: t.Union[loguru.Logger, None] = None,
 ) -> DataLoader:
     logger = logger or _logger
     object_store = DatasetObjectStore(dataset_uri, backend)
-    dataset = TabularDataset.from_uri(dataset_uri)
-    dataset.set_range(start, end)
+    dataset = TabularDataset.from_uri(dataset_uri, start=start, end=end)
 
     # TODO: support user raw data format
     if kind == DataLoaderKind.SWDS:
