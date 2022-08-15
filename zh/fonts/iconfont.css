@@ -1,0 +1,182 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 3410006 */
+  src: url("iconfont.woff2?t=1653618251450") format("woff2"),
+    url("iconfont.woff?t=1653618251450") format("woff"),
+    url("iconfont.ttf?t=1653618251450") format("truetype");
+}
+
+.icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  overflow: hidden;
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-line:before {
+  content: "\e623";
+}
+
+.icon-Twitter:before {
+  content: "\e624";
+}
+
+.icon-Facebook:before {
+  content: "\e625";
+}
+
+.icon-Instagram:before {
+  content: "\e626";
+}
+
+.icon-Linkedin:before {
+  content: "\e627";
+}
+
+.icon-Youtub:before {
+  content: "\e628";
+}
+
+.icon-arrow3:before {
+  content: "\e61f";
+}
+
+.icon-email:before {
+  content: "\e620";
+}
+
+.icon-value:before {
+  content: "\e621";
+}
+
+.icon-integrates:before {
+  content: "\e622";
+}
+
+.icon-setting2:before {
+  content: "\e61e";
+}
+
+.icon-setting:before {
+  content: "\e61d";
+}
+
+.icon-arrow2_down:before {
+  content: "\e601";
+}
+
+.icon-arrow2_right:before {
+  content: "\e602";
+}
+
+.icon-clear2:before {
+  content: "\e603";
+}
+
+.icon-arrow_left:before {
+  content: "\e604";
+}
+
+.icon-arrow_down:before {
+  content: "\e605";
+}
+
+.icon-eye_off:before {
+  content: "\e606";
+}
+
+.icon-clear:before {
+  content: "\e607";
+}
+
+.icon-fold:before {
+  content: "\e608";
+}
+
+.icon-arrow_right:before {
+  content: "\e609";
+}
+
+.icon-job:before {
+  content: "\e60a";
+}
+
+.icon-logout:before {
+  content: "\e60b";
+}
+
+.icon-fold2:before {
+  content: "\e60c";
+}
+
+.icon-password:before {
+  content: "\e60d";
+}
+
+.icon-unfold:before {
+  content: "\e60e";
+}
+
+.icon-dataset:before {
+  content: "\e60f";
+}
+
+.icon-close:before {
+  content: "\e610";
+}
+
+.icon-results:before {
+  content: "\e611";
+}
+
+.icon-model:before {
+  content: "\e612";
+}
+
+.icon-project:before {
+  content: "\e613";
+}
+
+.icon-unfold2:before {
+  content: "\e614";
+}
+
+.icon-show:before {
+  content: "\e615";
+}
+
+.icon-revert:before {
+  content: "\e616";
+}
+
+.icon-eye:before {
+  content: "\e617";
+}
+
+.icon-user:before {
+  content: "\e618";
+}
+
+.icon-search:before {
+  content: "\e619";
+}
+
+.icon-tasks:before {
+  content: "\e61a";
+}
+
+.icon-arrow_top:before {
+  content: "\e61b";
+}
+
+.icon-add:before {
+  content: "\e61c";
+}

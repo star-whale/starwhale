@@ -1,0 +1,289 @@
+{
+  "id": "3410006",
+  "name": "starwhale ",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "30022319",
+      "name": "line",
+      "font_class": "line",
+      "unicode": "e623",
+      "unicode_decimal": 58915
+    },
+    {
+      "icon_id": "30000202",
+      "name": "icon-kfckfc",
+      "font_class": "Twitter",
+      "unicode": "e624",
+      "unicode_decimal": 58916
+    },
+    {
+      "icon_id": "30000203",
+      "name": "Facebook",
+      "font_class": "Facebook",
+      "unicode": "e625",
+      "unicode_decimal": 58917
+    },
+    {
+      "icon_id": "30000204",
+      "name": "Instagram",
+      "font_class": "Instagram",
+      "unicode": "e626",
+      "unicode_decimal": 58918
+    },
+    {
+      "icon_id": "30000205",
+      "name": "Linkedin",
+      "font_class": "Linkedin",
+      "unicode": "e627",
+      "unicode_decimal": 58919
+    },
+    {
+      "icon_id": "30000206",
+      "name": "Youtub",
+      "font_class": "Youtub",
+      "unicode": "e628",
+      "unicode_decimal": 58920
+    },
+    {
+      "icon_id": "30000075",
+      "name": "arrow3",
+      "font_class": "arrow3",
+      "unicode": "e61f",
+      "unicode_decimal": 58911
+    },
+    {
+      "icon_id": "30000076",
+      "name": "email",
+      "font_class": "email",
+      "unicode": "e620",
+      "unicode_decimal": 58912
+    },
+    {
+      "icon_id": "30000077",
+      "name": "value",
+      "font_class": "value",
+      "unicode": "e621",
+      "unicode_decimal": 58913
+    },
+    {
+      "icon_id": "30000078",
+      "name": "integrates",
+      "font_class": "integrates",
+      "unicode": "e622",
+      "unicode_decimal": 58914
+    },
+    {
+      "icon_id": "29914993",
+      "name": "setting2",
+      "font_class": "setting2",
+      "unicode": "e61e",
+      "unicode_decimal": 58910
+    },
+    {
+      "icon_id": "29832564",
+      "name": "setting",
+      "font_class": "setting",
+      "unicode": "e61d",
+      "unicode_decimal": 58909
+    },
+    {
+      "icon_id": "29795139",
+      "name": "arrow2_down",
+      "font_class": "arrow2_down",
+      "unicode": "e601",
+      "unicode_decimal": 58881
+    },
+    {
+      "icon_id": "29795140",
+      "name": "arrow2_right",
+      "font_class": "arrow2_right",
+      "unicode": "e602",
+      "unicode_decimal": 58882
+    },
+    {
+      "icon_id": "29795141",
+      "name": "clear2",
+      "font_class": "clear2",
+      "unicode": "e603",
+      "unicode_decimal": 58883
+    },
+    {
+      "icon_id": "29795142",
+      "name": "arrow_left",
+      "font_class": "arrow_left",
+      "unicode": "e604",
+      "unicode_decimal": 58884
+    },
+    {
+      "icon_id": "29795143",
+      "name": "arrow_down",
+      "font_class": "arrow_down",
+      "unicode": "e605",
+      "unicode_decimal": 58885
+    },
+    {
+      "icon_id": "29795144",
+      "name": "eye_off",
+      "font_class": "eye_off",
+      "unicode": "e606",
+      "unicode_decimal": 58886
+    },
+    {
+      "icon_id": "29795145",
+      "name": "clear",
+      "font_class": "clear",
+      "unicode": "e607",
+      "unicode_decimal": 58887
+    },
+    {
+      "icon_id": "29795146",
+      "name": "fold",
+      "font_class": "fold",
+      "unicode": "e608",
+      "unicode_decimal": 58888
+    },
+    {
+      "icon_id": "29795147",
+      "name": "arrow_right",
+      "font_class": "arrow_right",
+      "unicode": "e609",
+      "unicode_decimal": 58889
+    },
+    {
+      "icon_id": "29795148",
+      "name": "job",
+      "font_class": "job",
+      "unicode": "e60a",
+      "unicode_decimal": 58890
+    },
+    {
+      "icon_id": "29795149",
+      "name": "logout",
+      "font_class": "logout",
+      "unicode": "e60b",
+      "unicode_decimal": 58891
+    },
+    {
+      "icon_id": "29795150",
+      "name": "fold2",
+      "font_class": "fold2",
+      "unicode": "e60c",
+      "unicode_decimal": 58892
+    },
+    {
+      "icon_id": "29795151",
+      "name": "password",
+      "font_class": "password",
+      "unicode": "e60d",
+      "unicode_decimal": 58893
+    },
+    {
+      "icon_id": "29795152",
+      "name": "unfold",
+      "font_class": "unfold",
+      "unicode": "e60e",
+      "unicode_decimal": 58894
+    },
+    {
+      "icon_id": "29795153",
+      "name": "dataset",
+      "font_class": "dataset",
+      "unicode": "e60f",
+      "unicode_decimal": 58895
+    },
+    {
+      "icon_id": "29795154",
+      "name": "close",
+      "font_class": "close",
+      "unicode": "e610",
+      "unicode_decimal": 58896
+    },
+    {
+      "icon_id": "29795155",
+      "name": "results",
+      "font_class": "results",
+      "unicode": "e611",
+      "unicode_decimal": 58897
+    },
+    {
+      "icon_id": "29795156",
+      "name": "model",
+      "font_class": "model",
+      "unicode": "e612",
+      "unicode_decimal": 58898
+    },
+    {
+      "icon_id": "29795157",
+      "name": "project",
+      "font_class": "project",
+      "unicode": "e613",
+      "unicode_decimal": 58899
+    },
+    {
+      "icon_id": "29795158",
+      "name": "unfold2",
+      "font_class": "unfold2",
+      "unicode": "e614",
+      "unicode_decimal": 58900
+    },
+    {
+      "icon_id": "29795159",
+      "name": "show",
+      "font_class": "show",
+      "unicode": "e615",
+      "unicode_decimal": 58901
+    },
+    {
+      "icon_id": "29795160",
+      "name": "revert",
+      "font_class": "revert",
+      "unicode": "e616",
+      "unicode_decimal": 58902
+    },
+    {
+      "icon_id": "29795161",
+      "name": "eye",
+      "font_class": "eye",
+      "unicode": "e617",
+      "unicode_decimal": 58903
+    },
+    {
+      "icon_id": "29795162",
+      "name": "user",
+      "font_class": "user",
+      "unicode": "e618",
+      "unicode_decimal": 58904
+    },
+    {
+      "icon_id": "29795163",
+      "name": "search",
+      "font_class": "search",
+      "unicode": "e619",
+      "unicode_decimal": 58905
+    },
+    {
+      "icon_id": "29795164",
+      "name": "tasks",
+      "font_class": "tasks",
+      "unicode": "e61a",
+      "unicode_decimal": 58906
+    },
+    {
+      "icon_id": "29797768",
+      "name": "arrow_top",
+      "font_class": "arrow_top",
+      "unicode": "e61b",
+      "unicode_decimal": 58907
+    },
+    {
+      "icon_id": "29797769",
+      "name": "add",
+      "font_class": "add",
+      "unicode": "e61c",
+      "unicode_decimal": 58908
+    }
+  ]
+}
