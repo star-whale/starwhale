@@ -2,12 +2,10 @@ import os
 import re
 import threading
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, List, Iterator, Optional
+from typing import Any, Dict, List, Union, Iterator, Optional
 from multiprocessing.connection import Connection
 
 from starwhale.consts import EvaluationResultKind
-
-from typing import Any, Dict, List, Union, Iterator, Optional
 
 from . import data_store
 

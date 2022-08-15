@@ -52,7 +52,6 @@ class _RunConfig:
     ) -> None:
         self.status_dir = _p(status_dir, "status")  # type: ignore
         self.log_dir = _p(log_dir, "log")  # type: ignore
-        self.result_dir = _p(result_dir, "result")  # type: ignore
         # TODO: refactor dataset arguments
         self.dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
         self.dataset_row_end = dataset_row_end

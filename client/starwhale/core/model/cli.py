@@ -4,12 +4,9 @@ import click
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.type import EvalTaskType
-
 from starwhale.consts.env import SWEnv
-from starwhale.core.job.view import JobTermView
 
 from .view import get_term_view, ModelTermView
-from ...consts.env import SWEnv
 
 
 @click.group("model", help="Model management, build/copy/ppl/cmp/eval/extract...")
@@ -127,18 +124,6 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     default=DefaultYAMLName.MODEL,
     help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
-# TODO: replace input-config by ds uri when new dataset completed
-@click.option(
-    "--dataset",
-    # required=True,
-    multiple=True,
-    help="Dataset URI, one or more",
-)
-@click.option(
-    "--input-config",
-    envvar=SWEnv.input_config,
-    default="/tmp/starwhale/cmp/config/input.json",
-    help=f"CMP input.json path, env is {SWEnv.input_config}",
 @click.option(
     "--status-dir",
     envvar=SWEnv.status_dir,
@@ -188,7 +173,6 @@ def _eval(
     name: str,
     version: str,
     dataset: t.List[str],
-    input_config: str,
     type: str,
     step: str,
     task_index: int,
@@ -197,6 +181,8 @@ def _eval(
     result_dir: str,
     runtime: str,
     runtime_restore: bool,
+    dataset_row_start: int,
+    dataset_row_end: int,
 ) -> None:
     """
     [ONLY Standalone]Run evaluation processing with root dir of {target}.
@@ -217,6 +203,5 @@ def _eval(
         kw={
             "status_dir": status_dir,
             "log_dir": log_dir,
-            "result_dir": result_dir,
         },
     )
