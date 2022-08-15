@@ -14,8 +14,11 @@ import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { INavItem } from '@/components/BaseSidebar'
 import { Checkbox } from 'baseui/checkbox'
 import { Trans } from 'react-i18next'
-import LoginLayout from './LoginLayout'
 import './login.scss'
+import { useSearchParam } from 'react-use'
+import ThirdPartyLoginButton from '@user/components/ThirdPartyLoginButton'
+import { SignupNeedCreateAccount } from '@/consts'
+import LoginLayout from './LoginLayout'
 
 const { Form, FormItem } = createForm<ILoginUserSchema>()
 
@@ -24,32 +27,43 @@ export default function LoginNew() {
     const location = useLocation()
     const history = useHistory()
     const [isLoading, setIsLoading] = useState(false)
+    const step = useSearchParam('step')
+    if (step === SignupNeedCreateAccount) {
+        history.push({
+            pathname: '/create-account',
+            search: location.search,
+        })
+    }
+
+    const handleRedirect = useCallback(() => {
+        const search = qs.parse(location.search, { ignoreQueryPrefix: true })
+        let { redirect } = search
+        if (redirect && typeof redirect === 'string') {
+            redirect = decodeURI(redirect)
+        } else {
+            redirect = '/'
+        }
+        history.push(redirect)
+    }, [history, location.search])
 
     const handleFinish = useCallback(
         async (data: ILoginUserSchema) => {
             setIsLoading(true)
             try {
                 await loginUser(data)
-                const search = qs.parse(location.search, { ignoreQueryPrefix: true })
-                let { redirect } = search
-                if (redirect && typeof redirect === 'string') {
-                    redirect = decodeURI(redirect)
-                } else {
-                    redirect = '/'
-                }
-                history.push(redirect)
+                handleRedirect()
             } finally {
                 setIsLoading(false)
             }
         },
-        [history, location.search]
+        [handleRedirect]
     )
 
     const navItems: INavItem[] = React.useMemo(() => {
         const items = [
             {
                 title: t('logIn'),
-                path: '/login',
+                path: '/loginnew',
                 pattern: '/\\/login\\/?',
             },
             {
@@ -60,6 +74,8 @@ export default function LoginNew() {
         ]
         return items
     }, [t])
+
+    const isLogin = location.pathname.includes('login')
 
     return (
         <LoginLayout>
@@ -140,9 +156,30 @@ export default function LoginNew() {
                             }}
                         >
                             <Form onFinish={handleFinish}>
+                                <FormItem>
+                                    {/* TODO use the right icons */}
+                                    <ThirdPartyLoginButton
+                                        isLogin={isLogin}
+                                        vendorName={t('Github')}
+                                        vendor='github'
+                                        icon={<IconFont type='Facebook' />}
+                                    />
+                                </FormItem>
+                                <FormItem>
+                                    <ThirdPartyLoginButton
+                                        isLogin={isLogin}
+                                        vendorName={t('Google')}
+                                        vendor='google'
+                                        icon={<IconFont type='Instagram' />}
+                                    />
+                                </FormItem>
                                 <FormItem name='userName'>
                                     <Input
-                                        placeholder={t('emailPlaceholder')}
+                                        placeholder={
+                                            isLogin
+                                                ? t('emailPlaceholder for login')
+                                                : t('emailPlaceholder for sing up')
+                                        }
                                         startEnhancer={<IconFont type='email' kind='gray' />}
                                     />
                                 </FormItem>
@@ -157,46 +194,48 @@ export default function LoginNew() {
                                         placeholder={t('passwordPlaceholder')}
                                     />
                                 </FormItem>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        gap: '8px',
-                                    }}
-                                >
-                                    <FormItem name='agreement'>
-                                        <Checkbox
-                                            overrides={{
-                                                Root: {
-                                                    style: {
-                                                        alignItems: 'center',
+                                {isLogin || (
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            gap: '8px',
+                                        }}
+                                    >
+                                        <FormItem name='agreement'>
+                                            <Checkbox
+                                                overrides={{
+                                                    Root: {
+                                                        style: {
+                                                            alignItems: 'center',
+                                                        },
                                                     },
-                                                },
-                                                Checkmark: {
-                                                    style: {
-                                                        width: '14px',
-                                                        height: '14px',
-                                                        border: '1px solid #CFD7E6;',
+                                                    Checkmark: {
+                                                        style: {
+                                                            width: '14px',
+                                                            height: '14px',
+                                                            border: '1px solid #CFD7E6;',
+                                                        },
                                                     },
-                                                },
-                                            }}
-                                        />
-                                    </FormItem>
-                                    <div className='agreement'>
-                                        <p>
-                                            <Trans i18nKey='agreePolicy'>
-                                                I agree to <Link to='/'>Terms of Service</Link> and
-                                                <Link to='/'>Privacy Policy</Link>
-                                            </Trans>
-                                        </p>
-                                        <p>
-                                            <Trans i18nKey='alreadyHaveAccount'>
-                                                I agree to <Link to='/'>Terms of Service</Link> and
-                                                <Link to='/'>Privacy Policy</Link>
-                                            </Trans>
-                                            <Link to='/login'>{t('logIn')}</Link>
-                                        </p>
+                                                }}
+                                            />
+                                        </FormItem>
+                                        <div className='agreement'>
+                                            <p>
+                                                <Trans i18nKey='agreePolicy'>
+                                                    I agree to <Link to='/'>Terms of Service</Link> and
+                                                    <Link to='/'>Privacy Policy</Link>
+                                                </Trans>
+                                            </p>
+                                            <p>
+                                                <Trans i18nKey='alreadyHaveAccount'>
+                                                    I agree to <Link to='/'>Terms of Service</Link> and
+                                                    <Link to='/'>Privacy Policy</Link>
+                                                </Trans>
+                                                <Link to='/login'>{t('logIn')}</Link>
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                                 <FormItem>
                                     <div style={{ display: 'flex', marginTop: '20px' }}>
                                         <Button
@@ -204,7 +243,7 @@ export default function LoginNew() {
                                             isLoading={isLoading}
                                             overrides={{ BaseButton: { style: { height: '40px', fontSize: '16px' } } }}
                                         >
-                                            {t('logIn')}
+                                            {isLogin ? t('logIn') : t('signUp')}
                                         </Button>
                                     </div>
                                 </FormItem>

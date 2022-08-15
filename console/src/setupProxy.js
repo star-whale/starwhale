@@ -11,7 +11,7 @@ module.exports = (app) => {
         })
     )
     app.use(
-        proxy.createProxyMiddleware(['/api'], {
+        proxy.createProxyMiddleware(['/api', '/swcloud/api'], {
             target: process.env.PROXY || 'http://127.0.0.1:8082',
             // pathRewrite: {'/api/v1': '/'},
             changeOrigin: true,

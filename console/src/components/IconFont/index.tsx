@@ -44,6 +44,9 @@ const iconTypes = [
     'a-sortasc',
     'a-sortdesc',
     'email',
+    'Facebook',
+    'Twitter',
+    'Instagram',
 ]
 
 interface IIconFontProps {

@@ -94,3 +94,12 @@ export async function changeUserPasswd(user: string, currentUserPwd: string, new
 
     return resp.data
 }
+
+export async function createAccount(userName: string, verifier: string): Promise<string> {
+    const { data } = await axios({
+        method: 'post',
+        url: '/swcloud/api/v1/register/account',
+        data: { userName, verifier },
+    })
+    return data
+}
