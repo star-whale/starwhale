@@ -496,6 +496,24 @@ const locales0 = {
     'Edit': {
         en: 'Edit',
     },
+    'emailPlaceholder': {
+        en: 'yours@example.com',
+    },
+    'passwordPlaceholder': {
+        en: 'your password',
+    },
+    'logIn': {
+        en: 'Log in',
+    },
+    'signUp': {
+        en: 'Sign up',
+    },
+    'agreePolicy': {
+        en: 'I agree to <1>Terms of Service</1> and <3>Privacy Policy</3>',
+    },
+    'alreadyHaveAccount': {
+        en: 'Already have an account?',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

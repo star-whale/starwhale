@@ -1,23 +1,27 @@
 /* eslint-disable react/no-unused-prop-types */
 
 import React, { useMemo } from 'react'
-import { Tabs, Tab } from 'baseui/tabs-motion'
+import { Tabs, Tab, TabsProps, TabProps } from 'baseui/tabs-motion'
 import { useHistory, useLocation } from 'react-router-dom'
 import _ from 'lodash'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { AiOutlineQuestionCircle } from 'react-icons/ai'
+import { mergeOverrides } from '@/utils/baseui'
 import { INavItem } from './BaseSidebar'
 
 export interface IComposedNavTabsProps {
     style?: React.CSSProperties
     navStyle?: React.CSSProperties
+    fill?: TabsProps['fill']
+    tabsOverrides?: TabsProps['overrides']
+    tabOverrides?: TabProps['overrides']
 }
 
 export interface IBaseNavTabsProps extends IComposedNavTabsProps {
     navItems: INavItem[]
 }
 
-export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
+export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOverrides }: IBaseNavTabsProps) {
     const history = useHistory()
     const location = useLocation()
 
@@ -35,37 +39,43 @@ export function BaseNavTabs({ navItems }: IBaseNavTabsProps) {
             onChange={({ activeKey }) => {
                 history.push(activeKey as string)
             }}
-            fill='intrinsic'
+            fill={fill}
             activateOnFocus
-            overrides={{
-                TabHighlight: {
-                    style: {
-                        background: 'var(--color-brandPrimary)',
+            overrides={mergeOverrides(
+                {
+                    TabHighlight: {
+                        style: {
+                            background: 'var(--color-brandPrimary)',
+                        },
                     },
                 },
-            }}
+                tabsOverrides
+            )}
         >
             {navItems.map((item) => {
                 const Icon = item.icon
                 return (
                     <Tab
-                        overrides={{
-                            TabPanel: {
-                                style: {
-                                    padding: '0px !important',
+                        overrides={mergeOverrides(
+                            {
+                                TabPanel: {
+                                    style: {
+                                        padding: '0px !important',
+                                    },
                                 },
-                            },
-                            Tab: {
-                                style: {
-                                    'background': 'transparent',
-                                    'color': item.path === activeItemId ? 'var(--color-brandPrimary)' : '',
-                                    ':hover': {
-                                        background: 'transparent',
-                                        color: 'var(--color-brandPrimary)',
+                                Tab: {
+                                    style: {
+                                        'background': 'transparent',
+                                        'color': item.path === activeItemId ? 'var(--color-brandPrimary)' : '',
+                                        ':hover': {
+                                            background: 'transparent',
+                                            color: 'var(--color-brandPrimary)',
+                                        },
                                     },
                                 },
                             },
-                        }}
+                            tabOverrides
+                        )}
                         disabled={item.disabled}
                         key={item.path}
                         title={

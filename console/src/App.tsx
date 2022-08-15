@@ -16,7 +16,6 @@ import '@/assets/fonts/iconfont.css'
 apiInit()
 const engine = new Styletron()
 const queryClient = new QueryClient()
-
 export default function App(): any {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const sidebarData = useSidebar()

@@ -10,8 +10,6 @@ import type { IconBaseProps } from 'react-icons/lib'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import Text from '@/components/Text'
 import { createUseStyles } from 'react-jss'
-import Logo from '@/components/Header/Logo'
-import { headerHeight, sidebarExpandedWidth, sidebarFoldedWidth } from '@/consts'
 import IconFont from '@/components/IconFont'
 
 const useBaseSideBarStyles = createUseStyles({
@@ -21,33 +19,31 @@ const useBaseSideBarStyles = createUseStyles({
         flexDirection: 'column',
         overflow: 'hidden',
         overflowY: 'auto',
-        background: 'var(--color-brandBgNav)',
+        background: '#FFFFFF',
         transition: 'all 200ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
-    },
-
-    siderLogo: {
-        height: headerHeight,
+        color: 'rgba(2,16,43,0.60)',
+        borderRight: '1px solid #E2E7F0',
     },
     siderTitle: {
-        height: '56px',
-        backgroundColor: 'var(--color-brandBgNavTitle)',
-        color: 'var(--color-brandBgNavFont)',
+        height: '48px',
+        backgroundColor: '#F7F8FA',
+        color: '#02102B',
         display: 'flex',
         gap: 14,
         fontSize: '14px',
         placeItems: 'center',
-        padding: '8px 15px 8px 15px',
+        padding: '8px 26px 8px 26px',
         overflow: 'hidden',
         textDecoration: 'none',
-        marginBottom: '7px',
+        marginBottom: '5px',
     },
     siderNavLink: {
         display: 'flex',
         alignItems: 'center',
         fontSize: 14,
         lineHeight: '40px',
-        height: 40,
-        gap: 12,
+        height: 38,
+        gap: 10,
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -77,6 +73,9 @@ export interface IBaseSideBarProps extends IComposedSidebarProps {
     navItems: INavItem[]
 }
 
+const EXPANDED_PADDING = '26px'
+const FOLDED_PADDING = '0px'
+
 export default function BaseSidebar({ navItems, style, title, icon, titleLink }: IBaseSideBarProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const width = useSidebarWidth()
@@ -92,7 +91,13 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
             const { icon: Icon } = item
             return {
                 title: (
-                    <div className={styles.siderNavLink} style={{ paddingLeft: ctx.expanded ? 24 : 18 }}>
+                    <div
+                        className={styles.siderNavLink}
+                        style={{
+                            paddingLeft: ctx.expanded ? '18px' : '',
+                            justifyContent: ctx.expanded ? 'flex-start' : 'center',
+                        }}
+                    >
                         {Icon}
                         {ctx.expanded && <span>{item.title}</span>}
                     </div>
@@ -140,12 +145,11 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                 ...style,
             }}
         >
-            <Logo className={styles.siderLogo} expanded={ctx.expanded} />
             {title && icon && (
                 <Link
                     className={styles.siderTitle}
                     style={{
-                        paddingLeft: !ctx.expanded ? 28 : 15,
+                        paddingLeft: EXPANDED_PADDING,
                     }}
                     to={titleLink ?? '/projects'}
                 >
@@ -156,7 +160,6 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
                                 whiteSpace: 'nowrap',
-                                color: 'var(--color-brandWhite)',
                             }}
                         >
                             {title}
@@ -175,8 +178,8 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                     },
                     NavItemContainer: {
                         style: {
-                            height: 40,
-                            padding: '5px 10px',
+                            height: 38,
+                            padding: '5px 8px',
                             boxSizing: 'border-box',
                             borderLeftWidth: '0',
                             backgroundImage: 'none',
@@ -193,11 +196,12 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                                     'paddingBottom': '0',
                                     'backgroundImage': 'none',
                                     'borderLeftWidth': '0',
-                                    'backgroundColor': 'var(--color-brandPrimary)',
                                     'borderRadius': '8px',
-                                    'color': 'var(--color-brandBgNavFont)',
+                                    'color': '#2B65D9',
+                                    'backgroundColor': '#F0F4FF',
                                     ':hover': {
-                                        color: 'var(--color-brandBgNavFont)',
+                                        color: '#2B65D9',
+                                        backgroundColor: '#F0F4FF',
                                     },
                                 }
 
@@ -210,10 +214,10 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                                 'backgroundColor': 'none',
                                 'backgroundImage': 'none',
                                 'borderRadius': '8px',
-                                'color': 'var(--color-brandBgNavFontGray)',
+                                'color': 'rgba(2,16,43,0.60)',
                                 ':hover': {
-                                    color: 'var(--color-brandBgNavFont)',
-                                    backgroundColor: 'var(--color-brandPrimaryHover)',
+                                    color: '#2B65D9',
+                                    backgroundColor: '#F0F4FF',
                                 },
                             }
                         },
@@ -232,46 +236,27 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
             <div
                 style={{
                     display: 'flex',
-                    flexDirection: ctx.expanded ? 'row' : 'column',
                     alignItems: 'center',
                     height: 48,
                     position: 'relative',
-                    borderTop: '1px solid var(--color-brandBgNavBorder)',
+                    borderTop: '1px solid #EEF1F6',
+                    paddingLeft: ctx.expanded ? EXPANDED_PADDING : FOLDED_PADDING,
+                    justifyContent: ctx.expanded ? 'flex-start' : 'center',
                 }}
             >
-                <div
-                    style={{
-                        flexGrow: 1,
-                        width: ctx.expanded ? sidebarExpandedWidth - sidebarFoldedWidth : sidebarFoldedWidth,
-                    }}
-                />
                 <div
                     role='button'
                     tabIndex={0}
                     onClick={handleExpandedClick}
                     style={{
-                        position: 'absolute',
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'row',
+                        color: 'rgba(2,16,43,0.60)',
                         alignItems: 'center',
-                        color: 'var(--color-brandBgNavFont)',
                     }}
                 >
-                    <div
-                        style={{
-                            display: 'inline-flex',
-                            float: 'right',
-                            alignSelf: 'center',
-                            width: sidebarFoldedWidth,
-                            justifyContent: 'center',
-                        }}
-                    >
-                        {ctx.expanded ? <IconFont type='fold' /> : <IconFont type='unfold' />}
-                    </div>
+                    {ctx.expanded ? <IconFont type='fold' /> : <IconFont type='unfold' />}
                 </div>
             </div>
         </div>

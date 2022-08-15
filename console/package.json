@@ -146,6 +146,7 @@
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
     "@typescript-eslint/typescript-estree": "^5.23.0",
+    "@vitejs/plugin-react": "^2.0.0",
     "babel-eslint": "^10.1.0",
     "craco-esbuild": "^0.3.3",
     "cypress": "^9.6.1",

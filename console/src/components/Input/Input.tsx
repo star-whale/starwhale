@@ -16,6 +16,8 @@ export default function Input({ size = 'compact', ...props }: IInputProps) {
                     'borderBottomWidth': '1px',
                     'borderLeftWidth': '1px',
                     'borderRightWidth': '1px',
+                    'paddingLeft': '0px',
+                    'paddingRight': '0px',
                     ':hover': {
                         borderColor: '#799EE8',
                     },

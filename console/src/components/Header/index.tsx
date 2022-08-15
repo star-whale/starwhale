@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useState, useContext } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import { setToken } from '@/api'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
@@ -8,30 +8,30 @@ import useTranslation from '@/hooks/useTranslation'
 import { createUseStyles } from 'react-jss'
 import { IThemedStyleProps } from '@/theme'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
-import User from '@/domain/user/components/User'
 import { simulationJump } from '@/utils'
 import { BsChevronDown } from 'react-icons/bs'
 import { Link, useHistory } from 'react-router-dom'
 import PasswordForm from '@user/components/PasswordForm'
 import { IChangePasswordSchema } from '@user/schemas/user'
 import { changePassword } from '@user/services/user'
+import { SidebarContext } from '@/contexts/SidebarContext'
 import { toaster } from 'baseui/toast'
 import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import IconFont from '../IconFont'
+import Logo from './Logo'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: {
-        padding: '0 32px 0 0',
-        position: 'absolute',
-        zIndex: 100,
-        top: 0,
-        right: 0,
+        padding: '0 20px 0 0',
         height: `${headerHeight}px`,
-        width: '50%',
+        width: '100%',
         display: 'flex',
         flexFlow: 'row nowrap',
         alignItems: 'center',
         color: 'var(--color-contentPrimary)',
+        backgroundColor: 'var(--color-brandBgNav)',
+        position: 'relative',
+        zIndex: 10,
     },
 })
 
@@ -97,9 +97,9 @@ const useStyles = createUseStyles({
         'min-width': '140px',
         'height': '100%',
         'margin-left': '12px',
-        'flex-direction': 'column',
+        'padding': '10px 0 10px 0',
+        'justifyContent': 'flex-end',
 
-        'padding': '14px 0 14px 0',
         '&:hover': {
             '& $userMenu': {
                 display: 'flex',
@@ -107,16 +107,15 @@ const useStyles = createUseStyles({
         },
     },
     userNameWrapper: {
-        'height': '100%',
         'display': 'flex',
-        'color': 'var(--color-brandBgUserFont)',
-        'backgroundColor': 'var(--color-brandBgUser)',
+        'color': '#FFF',
         'borderRadius': '20px',
         'fontSize': '16px',
         'padding': '7px 13px 7px 7px',
         'align-items': 'center',
-        'lineHeight': '40px',
+        'height': '36px',
         'gap': '9px',
+        'backgroundColor': '#264480',
     },
     userMenu: (props: IThemedStyleProps) => ({
         'position': 'absolute',
@@ -173,6 +172,7 @@ export default function Header() {
     const themeType = useCurrentThemeType()
     const styles = useStyles({ theme, themeType })
     const headerStyles = useHeaderStyles({ theme })
+    const ctx = useContext(SidebarContext)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -192,7 +192,7 @@ export default function Header() {
         [t]
     )
 
-    useEffect(() => {
+    React.useEffect(() => {
         if (!currentUserRole) {
             return
         }
@@ -206,31 +206,14 @@ export default function Header() {
 
     return (
         <header className={headerStyles.headerWrapper}>
+            <Logo expanded={ctx.expanded} />
+            {currentUser && (
+                <div className={styles.systemWrapper}>
+                    <Link to='/projects'>{t}</Link>
+                </div>
+            )}
             <div style={{ flexGrow: 1 }} />
-            {currentUser && (
-                <div className={styles.systemWrapper}>
-                    <div className={styles.roundWrapper}>
-                        <Link to='/projects'>
-                            <IconFont type='project' size={20} />
-                        </Link>
-                    </div>
-                </div>
-            )}
-            {currentUser && (
-                <div className={styles.systemWrapper}>
-                    <div className={styles.roundWrapper}>
-                        <Link to='/settings'>
-                            <IconFont type='setting2' size={20} />
-                        </Link>
-                    </div>
-                    {/* <div className={styles.systemMenu}>
-                        <Link className={styles.systemMenuItem} to='/settings/agents'>
-                            <AiOutlineCloudServer size={20} />
-                            <span>{t('Agent List')}</span>
-                        </Link>
-                    </div> */}
-                </div>
-            )}
+
             {currentUser && (
                 <div className={styles.userWrapper}>
                     <div className={styles.userNameWrapper}>
@@ -238,7 +221,6 @@ export default function Header() {
                             <IconFont type='user' size={20} kind='white2' />
                         </div>
 
-                        <User size='large' user={currentUser} />
                         <BsChevronDown size={14} />
                     </div>
                     <div className={styles.userMenu}>
