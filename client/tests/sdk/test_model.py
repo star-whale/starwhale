@@ -22,7 +22,7 @@ from .. import ROOT_DIR
 
 
 class SimpleHandler(PipelineHandler):
-    def ppl(self, data: bytes, batch_size: int, **kw: t.Any) -> t.Any:
+    def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
         return [1, 2], 0.1
 
     def cmp(self, _data_loader: t.Any) -> t.Any:
@@ -105,7 +105,6 @@ class TestModelPipelineHandler(TestCase):
                         "ppl": base64.b64encode(
                             _handler.ppl_data_serialize([1, 2], 0.1)
                         ).decode("ascii"),
-                        "batch": 10,
                         "label": base64.b64encode(
                             _handler.label_data_serialize([3, 4])
                         ).decode("ascii"),
@@ -167,7 +166,6 @@ class TestModelPipelineHandler(TestCase):
             assert result == [1, 2]
             assert pr == 0.1
             assert line["index"] == 0
-            assert line["batch"] == 10
 
     @pytest.mark.skip(reason="wait job scheduler feature, cmp will use datastore")
     def test_deserializer(self) -> None:
@@ -181,10 +179,10 @@ class TestModelPipelineHandler(TestCase):
         label_data = [1, 2, 3]
 
         class Dummy(PipelineHandler):
-            def ppl(self, data: bytes, batch_size: int, **kw: t.Any) -> t.Any:
+            def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
                 return builtin_data, np_data, tensor_data
 
-            def handle_label(self, label: bytes, batch_size: int, **kw: t.Any) -> t.Any:
+            def handle_label(self, label: bytes, **kw: t.Any) -> t.Any:
                 return label_data
 
             def cmp(self, _data_loader: t.Any) -> t.Any:

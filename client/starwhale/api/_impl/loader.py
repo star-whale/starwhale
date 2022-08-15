@@ -121,7 +121,6 @@ class DatasetObjectStore:
 class DataField(t.NamedTuple):
     idx: int
     data_size: int
-    batch_size: int
     data: bytes
     ext_attr: t.Dict[str, t.Any]
 
@@ -176,7 +175,6 @@ class SWDSDataLoader(DataLoader):
                 label = DataField(
                     idx=row.id,
                     data_size=len(row.label),
-                    batch_size=data.batch_size,
                     data=row.label,
                     ext_attr=_attr,
                 )
@@ -193,12 +191,11 @@ class SWDSDataLoader(DataLoader):
             header: bytes = _file.read(_header_size)
             if not header:
                 break
-            _, _, idx, size, padding_size, batch, _ = _header_struct.unpack(header)
+            _, _, idx, size, padding_size, _, _ = _header_struct.unpack(header)
             data = _file.read(size + padding_size)
             yield DataField(
                 idx,
                 size,
-                batch,
                 data[:size].tobytes() if isinstance(data, memoryview) else data[:size],
                 attr,
             )

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-import math
 import struct
 import typing as t
 from abc import ABCMeta, abstractmethod
@@ -24,17 +23,14 @@ from starwhale.utils.error import (
 )
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.core.dataset.store import DatasetStorage
-from starwhale.core.dataset.dataset import (
-    D_ALIGNMENT_SIZE,
-    D_USER_BATCH_SIZE,
-    D_FILE_VOLUME_SIZE,
-)
+from starwhale.core.dataset.dataset import D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
 
 # TODO: tune header size
 _header_magic = struct.unpack(">I", b"SWDS")[0]
 _data_magic = struct.unpack(">I", b"SDWS")[0]
 _header_struct = struct.Struct(">IIQIIII")
 _header_size = _header_struct.size
+_header_version = 0
 
 
 @unique
@@ -192,13 +188,13 @@ class BuildExecutor(metaclass=ABCMeta):
     BuildExecutor can build swds.
 
     swds_bin format:
-        header_magic  uint32  I
-        crc           uint32  I
-        idx           uint64  Q
-        size          uint32  I
-        padding_size  uint32  I
-        batch_size    uint32  I
-        data_magic    uint32  I --> above 32 bytes
+        header_magic    uint32  I
+        crc             uint32  I
+        idx             uint64  Q
+        size            uint32  I
+        padding_size    uint32  I
+        header_version  uint32  I
+        data_magic      uint32  I --> above 32 bytes
         data bytes...
         padding bytes...        --> default 4K padding
     """
@@ -216,13 +212,11 @@ class BuildExecutor(metaclass=ABCMeta):
         output_dir: Path = Path("./sw_output"),
         data_filter: str = "*",
         label_filter: str = "*",
-        batch: int = D_USER_BATCH_SIZE,
         alignment_bytes_size: int = D_ALIGNMENT_SIZE,
         volume_bytes_size: int = D_FILE_VOLUME_SIZE,
     ) -> None:
         # TODO: add more docstring for args
         # TODO: validate group upper and lower?
-        self._batch = max(batch, 1)
         self.data_dir = data_dir
         self.data_filter = data_filter
         self.label_filter = label_filter
@@ -269,7 +263,7 @@ class BuildExecutor(metaclass=ABCMeta):
         padding_size = self._get_padding_size(size + _header_size)
 
         _header = _header_struct.pack(
-            _header_magic, crc, idx, size, padding_size, self._batch, _data_magic
+            _header_magic, crc, idx, size, padding_size, _header_version, _data_magic
         )
         _padding = b"\0" * padding_size
         writer.write(_header + data + _padding)
@@ -366,10 +360,10 @@ class MNISTBuildExecutor(BuildExecutor):
 
         with fpath.open("rb") as f:
             _, number, height, width = struct.unpack(">IIII", f.read(16))
-            print(f">data({fpath.name}) split {math.ceil(number / self._batch)} group")
+            print(f">data({fpath.name}) split {number} group")
 
             while True:
-                content = f.read(self._batch * height * width)
+                content = f.read(height * width)
                 if not content:
                     break
                 yield content
@@ -379,10 +373,10 @@ class MNISTBuildExecutor(BuildExecutor):
 
         with fpath.open("rb") as f:
             _, number = struct.unpack(">II", f.read(8))
-            print(f">label({fpath.name}) split {math.ceil(number / self._batch)} group")
+            print(f">label({fpath.name}) split {number} group")
 
             while True:
-                content = f.read(self._batch)
+                content = f.read(1)
                 if not content:
                     break
                 yield content
