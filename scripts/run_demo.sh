@@ -108,4 +108,4 @@ length_must_equal 1 eval "job list"
 #echo "check result"
 #accuracy=$(swcli -o json job info "$(swcli -o json job list | jq -r '. | last | .manifest.version')" | jq '.report.summary.accuracy')
 #must_equal 0.9894 "$accuracy" "mnist accuracy"
-#echo "done"
+echo "done"

@@ -124,7 +124,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                     key=dict(
                         data=f"{path_prefix}/{SWDS_DATA_FNAME_FMT.format(index=idx)}",
                         label=f"{path_prefix}/{SWDS_LABEL_FNAME_FMT.format(index=idx)}",
-                        # TODO: add extra_attr ds_name, ds_versoin
+                        # TODO: add extra_attr ds_name, ds_version
                     ),
                     ext_attr=dict(
                         ds_name=ds_name,
@@ -265,6 +265,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         _cls = import_cls(workdir, swds_config.process, BuildExecutor)
 
         with _cls(
+            dataset_name=self.uri.object.name,
+            dataset_version=self._version,
+            project_name=self.uri.project,
             data_dir=workdir / swds_config.data_dir,
             output_dir=self.store.data_dir,
             data_filter=swds_config.data_filter,

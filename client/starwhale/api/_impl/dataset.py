@@ -1,16 +1,29 @@
 from __future__ import annotations
 
+import sys
 import math
 import struct
 import typing as t
 from abc import ABCMeta, abstractmethod
+from copy import deepcopy
+from enum import Enum, unique
 from types import TracebackType
 from pathlib import Path
 from binascii import crc32
 
 import jsonlines
 
-from starwhale.consts import SWDS_DATA_FNAME_FMT, SWDS_LABEL_FNAME_FMT
+from starwhale.utils import validate_obj_name
+from starwhale.consts import VERSION_PREFIX_CNT, SWDS_DATA_FNAME_FMT
+from starwhale.base.uri import URI
+from starwhale.base.type import InstanceType
+from starwhale.utils.error import (
+    NoSupportError,
+    InvalidObjectName,
+    FieldTypeOrValueError,
+)
+from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
+from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.dataset import (
     D_ALIGNMENT_SIZE,
     D_USER_BATCH_SIZE,
@@ -22,6 +35,156 @@ _header_magic = struct.unpack(">I", b"SWDS")[0]
 _data_magic = struct.unpack(">I", b"SDWS")[0]
 _header_struct = struct.Struct(">IIQIIII")
 _header_size = _header_struct.size
+
+
+@unique
+class RawDataFormatType(Enum):
+    SWDS_BIN = "s"
+    USER = "u"
+
+
+@unique
+class ObjectStoreType(Enum):
+    LOCAL = "l"
+    REMOTE = "r"
+
+
+@unique
+class DataOriginType(Enum):
+    NEW = "n"
+    INHERIT = "i"
+
+
+class TabularDatasetRow:
+    def __init__(
+        self,
+        id: int,
+        data_uri: str,
+        label: t.Union[str, bytes],
+        data_format: RawDataFormatType = RawDataFormatType.SWDS_BIN,
+        object_store_type: ObjectStoreType = ObjectStoreType.LOCAL,
+        data_offset: int = 0,
+        data_size: int = 0,
+        data_origin: DataOriginType = DataOriginType.NEW,
+        **kw: t.Any,
+    ) -> None:
+        self.id = id
+        self.data_uri = data_uri.strip()
+        self.data_format = data_format
+        self.data_offset = data_offset
+        self.data_size = data_size
+        self.data_origin = data_origin
+        self.object_store_type = object_store_type
+        self.label = label.encode() if isinstance(label, str) else label
+
+        # TODO: add non-starwhale object store related fields, such as address, authority
+        # TODO: add data uri crc for versioning
+        # TODO: support user custom annotations
+
+    def _do_validate(self) -> None:
+        if self.id < 0:
+            raise FieldTypeOrValueError(
+                f"id need to be greater than or equal to zero, but current id is {self.id}"
+            )
+
+        if not self.data_uri:
+            raise FieldTypeOrValueError("no raw_data_uri field")
+
+        if self.data_format not in RawDataFormatType:
+            raise NoSupportError(f"data format: {self.data_format}")
+
+        if self.data_origin not in DataOriginType:
+            raise NoSupportError(f"data origin: {self.data_origin}")
+
+        # TODO: support non-starwhale remote object store, for index-only feature
+        if self.object_store_type != ObjectStoreType.LOCAL:
+            raise NoSupportError(f"object store {self.object_store_type}")
+
+    def __str__(self) -> str:
+        return f"row-{self.id}, data-{self.data_uri}, origin-[{self.data_origin}]"
+
+    def __repr__(self) -> str:
+        return f"row-{self.id}, data-{self.data_uri}(offset:{self.data_offset}, size:{self.data_size}, format:{self.data_format}), origin-[{self.data_origin}], object store-{self.object_store_type}"
+
+    def asdict(self) -> t.Dict[str, t.Union[str, bytes, int]]:
+        d = deepcopy(self.__dict__)
+        d["data_format"] = self.data_format.value
+        d["data_origin"] = self.data_origin.value
+        d["object_store_type"] = self.object_store_type.value
+        return d
+
+
+class TabularDataset:
+    def __init__(
+        self,
+        name: str,
+        version: str,
+        project: str,
+        start: int = 0,
+        end: int = sys.maxsize,
+    ) -> None:
+        self.name = name
+        self.version = version
+        self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
+        self._ds_wrapper = DatastoreWrapperDataset(self.table_name, project)
+
+        self.start = start
+        self.end = end
+
+        self._do_validate()
+
+    def _do_validate(self) -> None:
+        _ok, _reason = validate_obj_name(self.name)
+        if not _ok:
+            raise InvalidObjectName(f"{self.name}: {_reason}")
+
+        if not self.version:
+            raise FieldTypeOrValueError("no version field")
+
+    def __str__(self) -> str:
+        return f"Dataset Table: {self._ds_wrapper}"
+
+    __repr__ = __str__
+
+    def put(self, row: TabularDatasetRow) -> None:
+        self._ds_wrapper.put(row.id, **row.asdict())
+
+    def scan(
+        self, start: int = 0, end: int = sys.maxsize
+    ) -> t.Generator[TabularDatasetRow, None, None]:
+        _start = start + self.start
+        _end = min(end + self.start, self.end)
+
+        _map_types = {
+            "data_format": RawDataFormatType,
+            "data_origin": DataOriginType,
+            "object_store_type": ObjectStoreType,
+        }
+        for _d in self._ds_wrapper.scan(_start, _end):
+            for k, v in _map_types.items():
+                if k not in _d:
+                    continue
+                _d[k] = v(_d[k])
+            yield TabularDatasetRow(**_d)
+
+    def close(self) -> None:
+        self._ds_wrapper.close()
+
+    @classmethod
+    def from_uri(
+        cls,
+        uri: URI,
+        start: int = -1,
+        end: int = sys.maxsize,
+    ) -> TabularDataset:
+        _version = uri.object.version
+        if uri.instance_type == InstanceType.STANDALONE:
+            _store = DatasetStorage(uri)
+            _version = _store.id
+
+        return TabularDataset(
+            uri.object.name, _version, uri.project, start=start, end=end
+        )
 
 
 class BuildExecutor(metaclass=ABCMeta):
@@ -42,14 +205,13 @@ class BuildExecutor(metaclass=ABCMeta):
 
     # TODO: add more docstring for class
 
-    INDEX_NAME = "index.jsonl"
-    _DATA_TMP_IDX = "_tmp_index_data.jsonl"
-    _LABEL_TMP_IDX = "_tmp_index_label.jsonl"
     _DATA_FMT = SWDS_DATA_FNAME_FMT
-    _LABEL_FMT = SWDS_LABEL_FNAME_FMT
 
     def __init__(
         self,
+        dataset_name: str,
+        dataset_version: str,
+        project_name: str,
         data_dir: Path = Path("."),
         output_dir: Path = Path("./sw_output"),
         data_filter: str = "*",
@@ -68,14 +230,18 @@ class BuildExecutor(metaclass=ABCMeta):
         self.alignment_bytes_size = alignment_bytes_size
         self.volume_bytes_size = volume_bytes_size
 
+        self.project_name = project_name
+        self.dataset_name = dataset_name
+        self.dataset_version = dataset_version
+        self.tabular_dataset = TabularDataset(
+            dataset_name, dataset_version, project_name
+        )
+
         self._index_writer: t.Optional[jsonlines.Writer] = None
         self._prepare()
 
     def _prepare(self) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self._index_writer = jsonlines.open(
-            str((self.output_dir / self.INDEX_NAME).resolve()), mode="w"
-        )
 
     def __enter__(self) -> BuildExecutor:
         return self
@@ -90,9 +256,9 @@ class BuildExecutor(metaclass=ABCMeta):
             print(f"type:{type}, exception:{value}, traceback:{trace}")
 
         try:
-            self._index_writer.close()  # type: ignore
+            self.tabular_dataset.close()
         except Exception as e:
-            print(f"index writer close exception: {e}")
+            print(f"tabular dataset close exception: {e}")
 
         print("cleanup done.")
 
@@ -113,44 +279,27 @@ class BuildExecutor(metaclass=ABCMeta):
         remain = (size + _header_size) % self.alignment_bytes_size
         return 0 if remain == 0 else (self.alignment_bytes_size - remain)
 
-    def _write_index(
-        self,
-        idx: int,
-        fno: int,
-        data_pos: int,
-        data_size: int,
-        label_pos: int,
-        label_size: int,
-    ) -> None:
-        self._index_writer.write(  # type: ignore
-            dict(
-                id=idx,
-                batch=self._batch,
-                data=dict(
-                    file=self._DATA_FMT.format(index=fno),
-                    offset=data_pos,
-                    size=data_size,
-                ),
-                label=dict(
-                    file=self._LABEL_FMT.format(index=fno),
-                    offset=label_pos,
-                    size=label_size,
-                ),
-            )
-        )
-
     def make_swds(self) -> None:
         # TODO: add lock
         fno, wrote_size = 0, 0
         dwriter = (self.output_dir / self._DATA_FMT.format(index=fno)).open("wb")
-        lwriter = (self.output_dir / self._LABEL_FMT.format(index=fno)).open("wb")
 
         for idx, (data, label) in enumerate(
             zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())
         ):
-            data_pos, data_size = self._write(dwriter, idx, data)
-            label_pos, label_size = self._write(lwriter, idx, label)
-            self._write_index(idx, fno, data_pos, data_size, label_pos, label_size)
+            data_offset, data_size = self._write(dwriter, idx, data)
+            self.tabular_dataset.put(
+                TabularDatasetRow(
+                    id=idx,
+                    data_uri=self._DATA_FMT.format(index=fno),
+                    label=label,
+                    data_format=RawDataFormatType.SWDS_BIN,
+                    object_store_type=ObjectStoreType.LOCAL,
+                    data_offset=data_offset,
+                    data_size=data_size,
+                    data_origin=DataOriginType.NEW,
+                )
+            )
 
             wrote_size += data_size
             if wrote_size > self.volume_bytes_size:
@@ -158,20 +307,14 @@ class BuildExecutor(metaclass=ABCMeta):
                 fno += 1
 
                 dwriter.close()
-                lwriter.close()
-
                 dwriter = (self.output_dir / self._DATA_FMT.format(index=fno)).open(
-                    "wb"
-                )
-                lwriter = (self.output_dir / self._LABEL_FMT.format(index=fno)).open(
                     "wb"
                 )
 
         try:
             dwriter.close()
-            lwriter.close()
         except Exception as e:
-            print(f"data/label write close exception: {e}")
+            print(f"data write close exception: {e}")
 
     def _iter_files(
         self, filter: str, sort_key: t.Optional[t.Any] = None

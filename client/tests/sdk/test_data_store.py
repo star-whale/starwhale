@@ -1,7 +1,6 @@
 import os
 import unittest
 from typing import Dict, List
-from unittest.mock import patch, MagicMock
 
 import numpy as np
 import pyarrow as pa  # type: ignore
@@ -45,7 +44,7 @@ class TestBasicFunctions(BaseTestCase):
         )
 
     def test_write_and_scan(self) -> None:
-        path = os.path.join(self.root, "base-0.parquet")
+        path = os.path.join(self.datastore_root, "base-0.parquet")
         data_store._write_parquet_file(
             path,
             pa.Table.from_pydict(
@@ -281,7 +280,7 @@ class TestBasicFunctions(BaseTestCase):
             ],
         }
         for dir, files in data.items():
-            dir = os.path.join(self.root, dir)
+            dir = os.path.join(self.datastore_root, dir)
             os.makedirs(dir)
             for file in files:
                 file = os.path.join(dir, file)
@@ -289,34 +288,34 @@ class TestBasicFunctions(BaseTestCase):
                     pass
         self.assertEqual(
             [],
-            data_store._get_table_files(os.path.join(self.root, "0")),
+            data_store._get_table_files(os.path.join(self.datastore_root, "0")),
             "empty",
         )
         self.assertEqual(
-            [os.path.join(self.root, "1", "base-1.parquet")],
-            data_store._get_table_files(os.path.join(self.root, "1")),
+            [os.path.join(self.datastore_root, "1", "base-1.parquet")],
+            data_store._get_table_files(os.path.join(self.datastore_root, "1")),
             "base only",
         )
         self.assertEqual(
             [
-                os.path.join(self.root, "2", f)
+                os.path.join(self.datastore_root, "2", f)
                 for f in ("base-0.parquet", "patch-1.parquet", "patch-3.parquet")
             ],
-            data_store._get_table_files(os.path.join(self.root, "2")),
+            data_store._get_table_files(os.path.join(self.datastore_root, "2")),
             "base and patches",
         )
         self.assertEqual(
             [
-                os.path.join(self.root, "3", f)
+                os.path.join(self.datastore_root, "3", f)
                 for f in ("base-1.parquet", "patch-2.parquet")
             ],
-            data_store._get_table_files(os.path.join(self.root, "3")),
+            data_store._get_table_files(os.path.join(self.datastore_root, "3")),
             "multiple bases",
         )
 
     def test_scan_table(self) -> None:
         data_store._write_parquet_file(
-            os.path.join(self.root, "base-0.parquet"),
+            os.path.join(self.datastore_root, "base-0.parquet"),
             pa.Table.from_pydict(
                 {"a": [0, 1, 2], "t": [7, 7, 7]},
                 metadata={
@@ -333,7 +332,7 @@ class TestBasicFunctions(BaseTestCase):
             ),
         )
         data_store._write_parquet_file(
-            os.path.join(self.root, "patch-1.parquet"),
+            os.path.join(self.datastore_root, "patch-1.parquet"),
             pa.Table.from_pydict(
                 {
                     "a": [0, 1, 2],
@@ -357,7 +356,7 @@ class TestBasicFunctions(BaseTestCase):
             ),
         )
         data_store._write_parquet_file(
-            os.path.join(self.root, "base-1.parquet"),
+            os.path.join(self.datastore_root, "base-1.parquet"),
             pa.Table.from_pydict(
                 {"k": [1, 3, 4, 5], "a": ["1", "3", "4", "5"]},
                 metadata={
@@ -374,7 +373,7 @@ class TestBasicFunctions(BaseTestCase):
             ),
         )
         data_store._write_parquet_file(
-            os.path.join(self.root, "patch-2.parquet"),
+            os.path.join(self.datastore_root, "patch-2.parquet"),
             pa.Table.from_pydict(
                 {"k": [0, 2, 3, 5], "a": ["0", "2", "3.3", "5.5"]},
                 metadata={
@@ -391,7 +390,7 @@ class TestBasicFunctions(BaseTestCase):
             ),
         )
         data_store._write_parquet_file(
-            os.path.join(self.root, "patch-3.parquet"),
+            os.path.join(self.datastore_root, "patch-3.parquet"),
             pa.Table.from_pydict(
                 {"k": [2, 4], "-": [True, True]},
                 metadata={
@@ -408,7 +407,7 @@ class TestBasicFunctions(BaseTestCase):
             ),
         )
         data_store._write_parquet_file(
-            os.path.join(self.root, "patch-4.parquet"),
+            os.path.join(self.datastore_root, "patch-4.parquet"),
             pa.Table.from_pydict(
                 {
                     "k": [0, 1, 2, 3],
@@ -431,7 +430,7 @@ class TestBasicFunctions(BaseTestCase):
         )
         self.assertEqual(
             [],
-            list(data_store._scan_table(os.path.join(self.root, "no"))),
+            list(data_store._scan_table(os.path.join(self.datastore_root, "no"))),
             "empty",
         )
         self.assertEqual(
@@ -442,7 +441,7 @@ class TestBasicFunctions(BaseTestCase):
                 {"*": 3, "k": 3, "a": "3", "b": "3"},
                 {"*": 5, "k": 5, "a": "5.5"},
             ],
-            list(data_store._scan_table(self.root)),
+            list(data_store._scan_table(self.datastore_root)),
             "scan all",
         )
         self.assertEqual(
@@ -453,13 +452,15 @@ class TestBasicFunctions(BaseTestCase):
                 {"*": 3, "i": "3", "j": "3"},
                 {"*": 5, "i": "5.5"},
             ],
-            list(data_store._scan_table(self.root, {"a": "i", "b": "j"})),
+            list(data_store._scan_table(self.datastore_root, {"a": "i", "b": "j"})),
             "some columns",
         )
         self.assertEqual(
             [{"*": 2, "j": "2"}, {"*": 3, "i": "3", "j": "3"}],
             list(
-                data_store._scan_table(self.root, {"a": "i", "b": "j"}, start=2, end=5)
+                data_store._scan_table(
+                    self.datastore_root, {"a": "i", "b": "j"}, start=2, end=5
+                )
             ),
             "with start and end",
         )
@@ -471,7 +472,7 @@ class TestBasicFunctions(BaseTestCase):
                 {"*": 3, "k": 3, "a": "3", "b": "3"},
                 {"*": 5, "k": 5, "a": "5.5", "b": None},
             ],
-            list(data_store._scan_table(self.root, explicit_none=True)),
+            list(data_store._scan_table(self.datastore_root, explicit_none=True)),
             "explicit none",
         )
 
@@ -635,16 +636,16 @@ class TestMemoryTable(BaseTestCase):
             list(table.scan({"k": "k", "a": "x"})),
             "some columns",
         )
-        table.dump(self.root)
+        table.dump(self.datastore_root)
         self.assertEqual(
-            [os.path.join(self.root, "test", "base-0.parquet")],
-            data_store._get_table_files(os.path.join(self.root, "test")),
+            [os.path.join(self.datastore_root, "test", "base-0.parquet")],
+            data_store._get_table_files(os.path.join(self.datastore_root, "test")),
             "dump 1",
         )
-        table.dump(self.root)
+        table.dump(self.datastore_root)
         self.assertEqual(
-            [os.path.join(self.root, "test", "base-1.parquet")],
-            data_store._get_table_files(os.path.join(self.root, "test")),
+            [os.path.join(self.datastore_root, "test", "base-1.parquet")],
+            data_store._get_table_files(os.path.join(self.datastore_root, "test")),
             "dump 2",
         )
         table = data_store.MemoryTable(
@@ -653,7 +654,7 @@ class TestMemoryTable(BaseTestCase):
                 "k", [data_store.ColumnSchema("k", data_store.INT64)]
             ),
         )
-        table.load(self.root)
+        table.load(self.datastore_root)
         self.assertEqual(
             [
                 {"*": 0, "k": 0, "a": "0"},
@@ -668,7 +669,7 @@ class TestMemoryTable(BaseTestCase):
 
 class TestLocalDataStore(BaseTestCase):
     def test_data_store_put(self) -> None:
-        ds = data_store.LocalDataStore(self.root)
+        ds = data_store.LocalDataStore(self.datastore_root)
         with self.assertRaises(RuntimeError, msg="invalid column name"):
             ds.put(
                 "test",
@@ -794,7 +795,7 @@ class TestLocalDataStore(BaseTestCase):
         )
 
     def test_data_store_scan(self) -> None:
-        ds = data_store.LocalDataStore(self.root)
+        ds = data_store.LocalDataStore(self.datastore_root)
         ds.put(
             "1",
             data_store.TableSchema(
@@ -865,7 +866,7 @@ class TestLocalDataStore(BaseTestCase):
             ),
             [{"a": 0, "x": "10"}, {"a": 1}, {"a": 2, "x": "12"}, {"a": 3, "x": "13"}],
         )
-        with open(os.path.join(self.root, "6"), "w"):
+        with open(os.path.join(self.datastore_root, "6"), "w"):
             pass
         with self.assertRaises(RuntimeError, msg="duplicate alias"):
             list(ds.scan_tables([("1", "1", False)], {"k": "v", "a": "v"}))
@@ -941,16 +942,12 @@ class TestLocalDataStore(BaseTestCase):
 
 class TestTableWriter(BaseTestCase):
     def setUp(self) -> None:
-        self.mock_atexit = patch("starwhale.api._impl.data_store.atexit", MagicMock())
-        self.mock_atexit.start()
-
         super().setUp()
         self.writer = data_store.TableWriter("p/test", "k")
 
     def tearDown(self) -> None:
         self.writer.close()
         super().tearDown()
-        self.mock_atexit.stop()
 
     def test_insert_and_delete(self) -> None:
         with self.assertRaises(RuntimeError, msg="no key"):

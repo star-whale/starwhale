@@ -60,3 +60,7 @@ class ParameterError(Exception):
 
 class ExclusiveArgsError(Exception):
     pass
+
+
+class InvalidObjectName(Exception):
+    pass

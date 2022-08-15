@@ -5,6 +5,9 @@ import click
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.type import EvalTaskType
 
+from starwhale.consts.env import SWEnv
+from starwhale.core.job.view import JobTermView
+
 from .view import get_term_view, ModelTermView
 from ...consts.env import SWEnv
 
@@ -136,6 +139,11 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     envvar=SWEnv.input_config,
     default="/tmp/starwhale/cmp/config/input.json",
     help=f"CMP input.json path, env is {SWEnv.input_config}",
+@click.option(
+    "--status-dir",
+    envvar=SWEnv.status_dir,
+    default="/tmp/starwhale/cmp/status",
+    help=f"CMP status dir, env is {SWEnv.status_dir}",
 )
 # TODO: Used to distinguish remote or local mode?
 @click.option(
@@ -158,6 +166,21 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--task-index", default=0, help="Index of tasks in the current step")
 @click.option("--runtime", default="", help="runtime uri")
 @click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
+@click.option("--dataset", envvar=SWEnv.dataset_uri, help="dataset uri")
+@click.option(
+    "--dataset-row-start",
+    envvar=SWEnv.dataset_row_start,
+    type=int,
+    default=0,
+    help="dataset row start index",
+)
+@click.option(
+    "--dataset-row-end",
+    envvar=SWEnv.dataset_row_end,
+    type=int,
+    default=-1,
+    help="dataset row end index",
+)
 def _eval(
     project: str,
     target: str,
@@ -169,6 +192,9 @@ def _eval(
     type: str,
     step: str,
     task_index: int,
+    status_dir: str,
+    log_dir: str,
+    result_dir: str,
     runtime: str,
     runtime_restore: bool,
 ) -> None:
@@ -189,6 +215,8 @@ def _eval(
         task_index=task_index,
         dataset_uris=dataset,
         kw={
-            "input_config": input_config,
+            "status_dir": status_dir,
+            "log_dir": log_dir,
+            "result_dir": result_dir,
         },
     )

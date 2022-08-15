@@ -35,6 +35,9 @@ class DataSetProcessExecutor(BuildExecutor):
 
 if __name__ == "__main__":
     with DataSetProcessExecutor(
+        dataset_name="mnist",
+        dataset_version="11223344",
+        project_name="self",
         data_dir=Path(__file__) / "data",
         data_filter="*images*",
         label_filter="*labels*",
