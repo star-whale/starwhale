@@ -36,6 +36,9 @@ public class TaskEntity extends BaseEntity {
 
     private Long id;
 
+    // TODO : remove to task Request
+    private Integer taskIndex;
+
     private String taskUuid;
 
     private Long stepId;
@@ -46,10 +49,12 @@ public class TaskEntity extends BaseEntity {
 
     private TaskStatus taskStatus;
 
+    @Deprecated
     private String resultPath;
 
     private String taskRequest;
 
+    @Deprecated
     private TaskType taskType;
 
     private LocalDateTime startedTime;

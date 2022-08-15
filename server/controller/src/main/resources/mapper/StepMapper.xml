@@ -15,6 +15,8 @@
                t.job_id,
                t.last_step_id,
                t.step_status,
+               t.concurrency,
+               t.task_num,
                t.started_time as step_started_time,
                t.finished_time as step_finished_time,
                t.created_time as step_created_time,
@@ -30,8 +32,8 @@
     </select>
 
     <insert id="save" parameterType="ai.starwhale.mlops.domain.job.step.po.StepEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        insert into step(step_name, job_id, last_step_id, step_status, step_uuid)
-        values(#{step.name}, #{step.jobId}, #{step.lastStepId}, #{step.status}, #{step.uuid})
+        insert into step(step_name, job_id, last_step_id, step_status, step_uuid, concurrency, task_num)
+        values(#{step.name}, #{step.jobId}, #{step.lastStepId}, #{step.status}, #{step.uuid}, #{step.concurrency}, #{step.taskNum})
     </insert>
 
     <update id="updateStatus">
@@ -58,6 +60,8 @@
         <result property="jobId" column="job_id" />
         <result property="status" column="step_status" />
         <result property="uuid" column="step_uuid" />
+        <result property="concurrency" column="concurrency" />
+        <result property="taskNum" column="task_num" />
         <result property="startedTime" column="step_started_time" />
         <result property="finishedTime" column="step_finished_time" />
         <result property="createdTime" column="step_created_time" />

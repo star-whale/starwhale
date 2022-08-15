@@ -12,6 +12,7 @@
         select t.id as task_id,
                t.task_uuid,
                t.step_id,
+               t.task_index,
                t.agent_id,
                t.task_status,
                t.task_type,
@@ -65,7 +66,7 @@
     </insert>
 
     <insert id="addAll" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        INSERT INTO task_info(task_uuid, step_id, agent_id, task_status, task_type, result_path, task_request)
+        INSERT INTO task_info(task_uuid, step_id, agent_id, task_status, task_type, result_path, task_request, task_index)
         VALUES
         <foreach collection="taskList" item="task" index="index" open="(" separator="),("  close=")">
             #{task.taskUuid},
@@ -74,7 +75,8 @@
             #{task.taskStatus},
             #{task.taskType},
             #{task.resultPath},
-            #{task.taskRequest}
+            #{task.taskRequest},
+            #{task.taskIndex}
         </foreach>
     </insert>
 
@@ -125,6 +127,7 @@
         <id property="id" column="task_id" />
         <result property="taskUuid" column="task_uuid" />
         <result property="stepId" column="step_id" />
+        <result property="index" column="index" />
         <result property="agentId" column="agent_id" />
         <result property="taskStatus" column="task_status" />
         <result property="taskType" column="task_type" />

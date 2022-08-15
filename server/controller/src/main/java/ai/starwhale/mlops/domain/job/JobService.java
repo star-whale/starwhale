@@ -249,12 +249,13 @@ public class JobService {
         allNewJobs.parallel().forEach(job->{
             //one transaction
             jobSpliterator.split(job);
-            hotJobHolder.adopt(job);
+            jobLoader.loadEntities(List.of(jobMapper.findJobById(job.getId())),false,true);
+            /*hotJobHolder.adopt(job);
             List<Task> readyToScheduleTasks = job.getSteps().parallelStream().map(Step::getTasks)
                 .flatMap(Collection::stream)
                 .filter(t -> t.getStatus() == TaskStatus.READY)
                 .collect(Collectors.toList());
-            swTaskScheduler.adopt(readyToScheduleTasks,job.getJobRuntime().getDeviceClass());
+            swTaskScheduler.adopt(readyToScheduleTasks,job.getJobRuntime().getDeviceClass());*/
         });
 
     }
