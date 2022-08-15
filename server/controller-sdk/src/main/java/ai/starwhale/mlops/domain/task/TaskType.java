@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.task;
 /**
  * inference task type,the complete process includes ppl and result
  */
-@Deprecated
 public enum TaskType {
     UNKNOWN(-1), PPL(1), CMP(2);
     final int value;
