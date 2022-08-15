@@ -1,10 +1,10 @@
-from pathlib import Path
 import os
+from pathlib import Path
 
-import torch
-from torchvision import transforms
-from PIL import Image
 import numpy as np
+import torch
+from PIL import Image
+from torchvision import transforms
 
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
@@ -22,12 +22,12 @@ class MNISTInference(PipelineHandler):
         self.device = torch.device(device)
         self.model = self._load_model(self.device)
 
-    def ppl(self, data, batch_size, **kw):
-        data = self._pre(data, batch_size)
+    def ppl(self, data, **kw):
+        data = self._pre(data)
         output = self.model(data)
         return self._post(output)
 
-    def handle_label(self, label, batch_size, **kw):
+    def handle_label(self, label, **kw):
         return [int(l) for l in label]
 
     @multi_classification(
@@ -47,22 +47,15 @@ class MNISTInference(PipelineHandler):
             _pr.extend([l for l in pr])
         return _label, _result, _pr
 
-    def _pre(self, input: bytes, batch_size: int):
-        images = []
-        for i in range(0, batch_size):
-            # TODO: tune for batch transforms
-            _start = i * ONE_IMAGE_SIZE
-            _tensor = torch.tensor(
-                bytearray(input[_start : (_start + ONE_IMAGE_SIZE)]), dtype=torch.uint8
-            ).reshape(IMAGE_WIDTH, IMAGE_WIDTH)
-
-            _image = Image.fromarray(_tensor.numpy())
-            _image = transforms.Compose(
-                [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
-            )(_image)
-
-            images.append(_image)
-        return torch.stack(images).to(self.device)
+    def _pre(self, input: bytes):
+        _tensor = torch.tensor(bytearray(input), dtype=torch.uint8).reshape(
+            IMAGE_WIDTH, IMAGE_WIDTH
+        )
+        _image_array = Image.fromarray(_tensor.numpy())
+        _image = transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        )(_image_array)
+        return torch.stack([_image]).to(self.device)
 
     def _post(self, input):
         pred_value = input.argmax(1).flatten().tolist()
