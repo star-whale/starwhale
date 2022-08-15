@@ -116,7 +116,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     @Transactional
     public List<StepEntity> split(Job job) {
         // read swmp yaml
-        List<StepMetaData> stepMetaDatas = JobParser.parseStepFromYaml(job.getEvalJobContent());
+        List<StepMetaData> stepMetaDatas = JobParser.parseStepFromYaml(job.getEvalJobDDL());
         List<StepEntity> stepEntities = new ArrayList<>();
         Map<String, List<String>> allDependencies = new HashMap<>();
         Map<String, StepEntity> nameMapping = new HashMap<>();
