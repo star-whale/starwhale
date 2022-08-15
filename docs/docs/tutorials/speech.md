@@ -144,7 +144,7 @@ class SpeechCommandsSlicer(BuildExecutor):
         data_size = len(datafiles)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield _pickle_data(datafiles[last_idx:idx])
@@ -155,7 +155,7 @@ class SpeechCommandsSlicer(BuildExecutor):
         data_size = len(datafiles)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield _pickle_label(datafiles[last_idx:idx])
@@ -179,8 +179,8 @@ class M5Inference(PipelineHandler):
                                                         new_freq=8000)
         self.transform = self.transform.to(device)
 
-    def ppl(self, data, batch_size, **kw):
-        audios = self._pre(data, batch_size)
+    def ppl(self, data, **kw):
+        audios = self._pre(data)
         result = []
         for audio_f in audios:
             try:
@@ -191,7 +191,7 @@ class M5Inference(PipelineHandler):
                 result.append('ERROR')
         return result, None
 
-    def handle_label(self, label, batch_size, **kw):
+    def handle_label(self, label, **kw):
         return pickle.loads(label)
 
     @multi_classification(
@@ -209,7 +209,7 @@ class M5Inference(PipelineHandler):
             # _pr.extend(_data["pr"])
         return _result, _label
 
-    def _pre(self, input: bytes, batch_size: int):
+    def _pre(self, input: bytes):
         audios = pickle.loads(input)
         _result = []
         for file_bytes in audios:
@@ -286,7 +286,6 @@ tag:
   - bin
 
 attr:
-  batch_size:  256
   alignment_size: 4k
   volume_size: 64M
 ```
