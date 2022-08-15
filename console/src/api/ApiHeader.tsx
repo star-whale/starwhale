@@ -45,7 +45,7 @@ export default function ApiHeader() {
                     } else {
                         redirect = '/'
                     }
-                    if (location.pathname !== '/login' && location.pathname !== '/login/') {
+                    if (!location.pathname.startsWith('/login')) {
                         window.location.href = `${window.location.protocol}//${
                             window.location.host
                         }/login?redirect=${encodeURIComponent(redirect)}`

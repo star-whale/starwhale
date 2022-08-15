@@ -40,10 +40,18 @@ import JobDAG from './pages/Job/JobDAG'
 import ProjectEvaluations from './pages/Project/Evaluations'
 import EvaluationOverviewLayout from './pages/Evaluation/EvaluationOverviewLayout'
 import EvaluationResults from './pages/Evaluation/EvaluationResults'
+import Header from './components/Header'
+import { useCurrentUser } from './hooks/useCurrentUser'
+import LoginNew from './pages/Home/LoginNew'
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
-        background: 'var(--color-brandRootBackground)',
+        // background: 'var(--color-brandRootBackground)',
+        display: 'flex',
+        flexFlow: 'column nowrap',
+        height: '100vh',
+        width: '100vw',
+        position: 'relative',
         color: 'var(--color-contentPrimary)',
         ...Object.entries(theme.colors).reduce((p, [k, v]) => {
             return {
@@ -58,11 +66,14 @@ const Routes = () => {
     const themeType = useCurrentThemeType()
     const [, theme] = useStyletron()
     const styles = useStyles({ theme, themeType })
+    // eslint-disable-next-line  react-hooks/exhaustive-deps
+    const { currentUser } = useCurrentUser()
 
     return (
         <BrowserRouter>
             <div className={styles.root}>
                 <ApiHeader />
+                {currentUser && <Header />}
                 <Switch>
                     {/* setting */}
                     <Route exact path='/settings/:path?'>
@@ -212,6 +223,8 @@ const Routes = () => {
                     </Route>
                     {/* other */}
                     <Route exact path='/login' component={Login} />
+                    <Route exact path='/loginnew' component={LoginNew} />
+                    <Route exact path='/signup' component={Login} />
                     <Route exact path='/logout' component={Pending} />
                     <Route>
                         <ProjectLayout>

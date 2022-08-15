@@ -43,6 +43,7 @@ const iconTypes = [
     'more',
     'a-sortasc',
     'a-sortdesc',
+    'email',
 ]
 
 interface IIconFontProps {

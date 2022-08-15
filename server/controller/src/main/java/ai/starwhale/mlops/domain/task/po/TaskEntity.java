@@ -36,6 +36,7 @@ public class TaskEntity extends BaseEntity {
 
     private Long id;
 
+    // TODO : remove to task Request
     private Integer taskIndex;
 
     private String taskUuid;

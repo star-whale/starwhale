@@ -18,7 +18,7 @@ const useStyles = createUseStyles({
 
         return {
             'background': props.theme.colors.backgroundPrimary,
-            'marginTop': '100px',
+            'marginTop': '12px',
             '& a': linkStyle,
             '& a:link': linkStyle,
             '& a:visited': linkStyle,
@@ -127,8 +127,9 @@ export default function Card({
                                     <Text
                                         // size='large'
                                         style={{
-                                            fontSize: 30,
-                                            fontWeight: 700,
+                                            fontSize: '18px',
+                                            fontWeight: 'bold',
+                                            lineHeight: '32px',
                                         }}
                                     >
                                         {title}

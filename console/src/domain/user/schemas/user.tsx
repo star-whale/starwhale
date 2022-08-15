@@ -22,6 +22,7 @@ export interface IRegisterUserSchema {
 export interface ILoginUserSchema {
     userName: string
     userPwd: string
+    agreement: boolean
 }
 
 export interface IUpdateUserSchema {

@@ -12,7 +12,7 @@ import { LocaleContext } from './locales'
 import { IStore } from './store'
 
 // consider pulling this out to a prop if useful.
-const HEADER_ROW_HEIGHT = 54
+const HEADER_ROW_HEIGHT = 44
 const IS_BROWSER = true
 
 type HeaderContextT = {

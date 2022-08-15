@@ -95,7 +95,7 @@ public class JobBoConverter {
                 .name(modelPackageEntity.getSwmpName())
                 .version(jobEntity.getSwmpVersion().getVersionName())
                 .path(jobEntity.getSwmpVersion().getStoragePath()).build())
-            .evalJobContent(jobEntity.getSwmpVersion().getEvalJobs())
+            .evalJobDDL(jobEntity.getSwmpVersion().getEvalJobs())
             .swDataSets(swDataSets)
             .resultDir(jobEntity.getResultOutputPath())
             .uuid(jobEntity.getJobUuid())

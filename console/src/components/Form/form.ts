@@ -4,6 +4,7 @@
 /* eslint-disable react/require-default-props */
 
 import React, { ReactElement, ReactNode } from 'react'
+// @ts-ignore
 import RcForm, { useForm as RcUseForm } from 'rc-field-form'
 import { FormProps as RcFormProps } from 'rc-field-form/es/Form'
 import { FieldProps as RcFieldProps } from 'rc-field-form/es/Field'
