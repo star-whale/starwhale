@@ -191,7 +191,7 @@ class EvalExecutor:
         if _workdir.exists() and _model_yaml_path.exists() and not self.use_docker:
             self._model_dir = _workdir
         else:
-            console.print("进入解压")
+            console.print("start to uncompress swmp...")
             model_uri = URI(self.model_uri, expected_type=URIType.MODEL)
             _m = StandaloneModel(model_uri)
             self._model_dir = _m.extract() / "src"
