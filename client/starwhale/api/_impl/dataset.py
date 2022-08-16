@@ -6,7 +6,6 @@ import struct
 import typing as t
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
-from enum import Enum, unique
 from types import TracebackType
 from pathlib import Path
 from binascii import crc32
@@ -22,7 +21,13 @@ from starwhale.consts import (
     DUMPED_SWDS_META_FNAME,
 )
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType
+from starwhale.base.type import (
+    URIType,
+    InstanceType,
+    DataOriginType,
+    ObjectStoreType,
+    RawDataFormatType,
+)
 from starwhale.utils.error import (
     NotFoundError,
     NoSupportError,
@@ -31,7 +36,11 @@ from starwhale.utils.error import (
 )
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.core.dataset.store import DatasetStorage
-from starwhale.core.dataset.dataset import D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
+from starwhale.core.dataset.dataset import (
+    DatasetSummary,
+    D_ALIGNMENT_SIZE,
+    D_FILE_VOLUME_SIZE,
+)
 
 # TODO: tune header size
 _header_magic = struct.unpack(">I", b"SWDS")[0]
@@ -39,24 +48,6 @@ _data_magic = struct.unpack(">I", b"SDWS")[0]
 _header_struct = struct.Struct(">IIQIIII")
 _header_size = _header_struct.size
 _header_version = 0
-
-
-@unique
-class RawDataFormatType(Enum):
-    SWDS_BIN = "s"
-    USER = "u"
-
-
-@unique
-class ObjectStoreType(Enum):
-    LOCAL = "l"
-    REMOTE = "r"
-
-
-@unique
-class DataOriginType(Enum):
-    NEW = "n"
-    INHERIT = "i"
 
 
 class TabularDatasetRow:
@@ -355,14 +346,20 @@ class BuildExecutor(metaclass=ABCMeta):
         remain = (size + _header_size) % self.alignment_bytes_size
         return 0 if remain == 0 else (self.alignment_bytes_size - remain)
 
-    def make_swds(self) -> None:
+    def make_swds(self) -> DatasetSummary:
         # TODO: add lock
         fno, wrote_size = 0, 0
         dwriter = (self.output_dir / self._DATA_FMT.format(index=fno)).open("wb")
+        data_format = RawDataFormatType.SWDS_BIN
+        object_store_type = ObjectStoreType.LOCAL
+        rows, increased_rows = 0, 0
+        total_label_size, total_data_size = 0, 0
 
         for idx, (data, label) in enumerate(
             zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())
         ):
+            # TODO: support inherit data from old dataset version
+            data_origin = DataOriginType.NEW
             data_offset, data_size = self._write(dwriter, idx, data)
             self.tabular_dataset.put(
                 TabularDatasetRow(
@@ -373,9 +370,12 @@ class BuildExecutor(metaclass=ABCMeta):
                     object_store_type=ObjectStoreType.LOCAL,
                     data_offset=data_offset,
                     data_size=data_size,
-                    data_origin=DataOriginType.NEW,
+                    data_origin=data_origin,
                 )
             )
+
+            total_data_size += data_size
+            total_label_size += len(label)
 
             wrote_size += data_size
             if wrote_size > self.volume_bytes_size:
@@ -387,10 +387,24 @@ class BuildExecutor(metaclass=ABCMeta):
                     "wb"
                 )
 
+            rows += 1
+            if data_origin == DataOriginType.NEW:
+                increased_rows += 1
+
         try:
             dwriter.close()
         except Exception as e:
             print(f"data write close exception: {e}")
+
+        summary = DatasetSummary(
+            rows=rows,
+            increased_rows=increased_rows,
+            data_format=data_format,
+            object_store_type=object_store_type,
+            label_byte_size=total_label_size,
+            data_byte_size=total_data_size,
+        )
+        return summary
 
     def _iter_files(
         self, filter: str, sort_key: t.Optional[t.Any] = None

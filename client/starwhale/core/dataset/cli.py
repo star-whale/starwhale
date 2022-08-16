@@ -107,6 +107,13 @@ def _history(
     view(dataset).history(fullname)
 
 
+@dataset_cmd.command("summary", help="Show dataset summary")
+@click.argument("dataset")
+@click.pass_obj
+def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
+    view(dataset).summary()
+
+
 @dataset_cmd.command("render-fuse")
 @click.argument("target")
 @click.option(

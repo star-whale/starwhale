@@ -1,3 +1,5 @@
+from enum import Enum, unique
+
 from starwhale.utils.error import NoSupportError
 
 
@@ -73,3 +75,21 @@ def get_bundle_type_by_uri(uri_type: str) -> str:
         return BundleType.RUNTIME
     else:
         raise NoSupportError(uri_type)
+
+
+@unique
+class RawDataFormatType(Enum):
+    SWDS_BIN = "s"
+    USER = "u"
+
+
+@unique
+class ObjectStoreType(Enum):
+    LOCAL = "l"
+    REMOTE = "r"
+
+
+@unique
+class DataOriginType(Enum):
+    NEW = "n"
+    INHERIT = "i"

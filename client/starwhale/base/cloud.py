@@ -20,6 +20,7 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.utils.http import ignore_error, wrap_sw_error_resp
+from starwhale.utils.error import NoSupportError
 
 _TMP_FILE_BUFSIZE = 8192
 _DEFAULT_TIMEOUT_SECS = 90
@@ -291,3 +292,9 @@ class CloudBundleModelMixin(CloudRequestMixed):
             method=HTTPMethod.PUT,
             instance_uri=uri,
         )
+
+    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        raise NoSupportError("no support add tags for dataset in the cloud instance")
+
+    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        raise NoSupportError("no support remove tags for dataset in the cloud instance")

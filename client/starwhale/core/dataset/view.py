@@ -2,6 +2,8 @@ import os
 import typing as t
 from pathlib import Path
 
+from rich.pretty import Pretty
+
 from starwhale.utils import console, pretty_bytes
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
@@ -43,6 +45,9 @@ class DatasetTermView(BaseTermView):
     @BaseTermView._header
     def info(self, fullname: bool = False) -> None:
         self._print_info(self.dataset.info(), fullname=fullname)
+
+    def summary(self) -> None:
+        console.print(Pretty(self.dataset.summary(), expand_all=True))
 
     @classmethod
     def list(

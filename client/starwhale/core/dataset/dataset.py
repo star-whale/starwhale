@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import typing as t
 from copy import deepcopy
+from enum import Enum
 from pathlib import Path
 
 from starwhale.utils import load_yaml, convert_to_bytes
 from starwhale.consts import DEFAULT_STARWHALE_API_VERSION
+from starwhale.base.type import ObjectStoreType, RawDataFormatType
 from starwhale.utils.error import NoSupportError
 
 
@@ -16,6 +18,32 @@ class DSProcessMode:
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
+
+
+class DatasetSummary:
+    def __init__(
+        self,
+        rows: int,
+        increased_rows: int,
+        data_format: RawDataFormatType,
+        object_store_type: ObjectStoreType,
+        label_byte_size: int,
+        data_byte_size: int,
+    ) -> None:
+        self.rows = rows
+        self.increased_rows = increased_rows
+        self.unchanged_rows = rows - increased_rows
+        self.data_format_type = data_format
+        self.object_store_type = object_store_type
+        self.label_byte_size = label_byte_size
+        self.data_byte_size = data_byte_size
+
+    def as_dict(self) -> t.Dict[str, t.Any]:
+        d = deepcopy(self.__dict__)
+        for k, v in d.items():
+            if isinstance(v, Enum):
+                d[k] = v.name
+        return d
 
 
 # TODO: use attr to tune code
