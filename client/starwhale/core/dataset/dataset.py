@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from starwhale.utils import load_yaml, convert_to_bytes
-from starwhale.consts import SWDSSubFileType, DEFAULT_STARWHALE_API_VERSION
+from starwhale.consts import DEFAULT_STARWHALE_API_VERSION
 from starwhale.utils.error import NoSupportError
 
 
@@ -16,7 +16,6 @@ class DSProcessMode:
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
-ARCHIVE_SWDS_META = "archive.%s" % SWDSSubFileType.META
 
 
 # TODO: use attr to tune code

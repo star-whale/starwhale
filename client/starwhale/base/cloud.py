@@ -79,25 +79,27 @@ class CloudRequestMixed:
 
         _headers = deepcopy(headers)
         fpath = Path(file_path)
-        fields["file"] = (fpath.name, fpath.open("rb"), "text/plain")
 
-        _encoder = MultipartEncoder(fields=fields)
-        # default chunk is 8192 Bytes
-        _encoder._read = _encoder.read  # type: ignore
-        _encoder.read = lambda size: _encoder._read(_UPLOAD_CHUNK_SIZE)  # type: ignore
+        with fpath.open("rb") as f:
+            fields["file"] = (fpath.name, f, "text/plain")
 
-        _headers["Content-Type"] = _encoder.content_type
-        _monitor = MultipartEncoderMonitor(_encoder, callback=_progress_bar)
+            _encoder = MultipartEncoder(fields=fields)
+            # default chunk is 8192 Bytes
+            _encoder._read = _encoder.read  # type: ignore
+            _encoder.read = lambda size: _encoder._read(_UPLOAD_CHUNK_SIZE)  # type: ignore
 
-        return self.do_http_request(
-            url_path,
-            instance_uri=instance_uri,
-            method=HTTPMethod.POST,
-            timeout=1200,
-            data=_monitor,
-            headers=_headers,
-            **kw,
-        )
+            _headers["Content-Type"] = _encoder.content_type
+            _monitor = MultipartEncoderMonitor(_encoder, callback=_progress_bar)
+
+            return self.do_http_request(
+                url_path,
+                instance_uri=instance_uri,
+                method=HTTPMethod.POST,
+                timeout=1200,
+                data=_monitor,
+                headers=_headers,
+                **kw,
+            )
 
     def do_http_request_simple_ret(
         self,

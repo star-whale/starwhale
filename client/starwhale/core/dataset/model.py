@@ -26,6 +26,7 @@ from starwhale.consts import (
     LOCAL_FUSE_JSON_NAME,
     SWDS_LABEL_FNAME_FMT,
     DEFAULT_MANIFEST_NAME,
+    ARCHIVED_SWDS_META_FNAME,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
@@ -44,9 +45,10 @@ from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.api._impl.dataset import StandaloneTabularDataset
 
 from .store import DatasetStorage
-from .dataset import DatasetConfig, DSProcessMode, ARCHIVE_SWDS_META
+from .dataset import DatasetConfig, DSProcessMode
 
 
 class Dataset(BaseBundle, metaclass=ABCMeta):
@@ -65,7 +67,19 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
     @classmethod
     def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
         bc = BundleCopy(src_uri, dest_uri, URIType.DATASET, force)
+        if bc.src_uri.instance_type == InstanceType.STANDALONE:
+            with StandaloneTabularDataset.from_uri(bc.src_uri) as tds:
+                tds.dump_meta(force)
+
         bc.do()
+
+        if bc.src_uri.instance_type == InstanceType.CLOUD:
+            with StandaloneTabularDataset(
+                name=bc.bundle_name,
+                version=bc.bundle_version,
+                project=bc.dest_uri.project,
+            ) as tds:
+                tds.load_meta()
 
     @classmethod
     def _get_cls(  # type: ignore
@@ -85,7 +99,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         self.typ = InstanceType.STANDALONE
         self.store = DatasetStorage(uri)
         self.tag = StandaloneTag(uri)
-        self._manifest: t.Dict[str, t.Any] = {}  # TODO: use manifest classget_conda_env
+        self._manifest: t.Dict[
+            str, t.Any
+        ] = {}  # TODO: use manifest class get_conda_env
         self.yaml_name = DefaultYAMLName.DATASET
 
     def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
@@ -296,7 +312,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
         console.print(":robot: calculate signature...")
 
-        # TODO: _cal(self._snapshot_workdir / ARCHIVE_SWDS_META) # add meta sign into _manifest.yaml
+        # TODO: _cal(self._snapshot_workdir / ARCHIVED_SWDS_META_FNAME) # add meta sign into _manifest.yaml
         for f in self.store.data_dir.iterdir():
             if not f.is_file():
                 continue
@@ -312,7 +328,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
 
     def _make_swds_meta_tar(self) -> None:
-        out = self.store.snapshot_workdir / ARCHIVE_SWDS_META
+        out = self.store.snapshot_workdir / ARCHIVED_SWDS_META_FNAME
         logger.info(f"[step:tar]try to tar for swmp meta(NOT INCLUDE DATASET){out}")
         with tarfile.open(out, "w:") as tar:
             tar.add(str(self.store.src_dir), arcname="src")
