@@ -72,6 +72,7 @@ class DatasetObjectStore:
         backend: str = "",
         conn: t.Optional[ObjectStoreS3Connection] = None,
         bucket: str = "",
+        key_prefix: str = "",
     ) -> None:
         self.uri = uri
         _backend = backend or self._get_default_backend()
@@ -89,6 +90,8 @@ class DatasetObjectStore:
             self.conn = None
             self.bucket = bucket or _env_bucket or self._get_bucket_by_uri()
             self.backend = FuseStorageBackend()
+
+        self.key_prefix = key_prefix or os.environ.get("SW_OBJECT_STORE_KEY_PREFIX", "")
 
         self._do_validate()
 
@@ -170,7 +173,14 @@ class SWDSDataLoader(DataLoader):
         for row in self.dataset.scan():
             # TODO: tune performance by fetch in batch
             # TODO: remove ext_attr field
-            _key_compose = f"{row.data_uri}:{row.data_offset}:{row.data_offset + row.data_size - 1}"
+
+            _data_uri = row.data_uri
+            if self.storage.key_prefix:
+                _data_uri = os.path.join(self.storage.key_prefix, _data_uri.lstrip("/"))
+
+            _key_compose = (
+                f"{_data_uri}:{row.data_offset}:{row.data_offset + row.data_size - 1}"
+            )
             for data in self._do_iter(_key_compose, _attr):
                 label = DataField(
                     idx=row.id,
