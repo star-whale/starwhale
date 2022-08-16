@@ -18,14 +18,14 @@ package ai.starwhale.mlops.exception;
 
 public class SWValidationException extends StarWhaleException {
 
-    static final String PREFIX_CODE="INVALID REQUEST: ";
+    static final String PREFIX_CODE = "INVALID REQUEST: ";
 
-    static final String PREFIX_TIP="invalid request on subject ";
+    static final String PREFIX_TIP = "invalid request on subject ";
 
     private final String code;
     private String tip;
 
-    public SWValidationException(ValidSubject validSubject){
+    public SWValidationException(ValidSubject validSubject) {
         super(PREFIX_TIP + validSubject.tipSubject);
         this.code = PREFIX_CODE + validSubject.tipSubject;
         this.tip = PREFIX_TIP + validSubject.tipSubject;
@@ -41,24 +41,26 @@ public class SWValidationException extends StarWhaleException {
         return this.tip;
     }
 
-    public SWValidationException tip(String tip){
+    public SWValidationException tip(String tip) {
         this.tip += "\n";
         this.tip += tip;
         return this;
     }
 
-    public enum ValidSubject{
-        JOB("001","JOB"),
-        TASK("002","TASK"),
-        USER("003","USER"),
-        NODE("004","NODE"),
-        SWDS("005","StarWhale DataSet"),
-        SWMP("006","StarWhale ModelPackage"),
-        PROJECT("007","PROJECT"),
-        RUNTIME("008","StarWhale Runtime");
+    public enum ValidSubject {
+        JOB("001", "JOB"),
+        TASK("002", "TASK"),
+        USER("003", "USER"),
+        NODE("004", "NODE"),
+        SWDS("005", "StarWhale DataSet"),
+        SWMP("006", "StarWhale ModelPackage"),
+        PROJECT("007", "PROJECT"),
+        RUNTIME("008", "StarWhale Runtime"),
+        DATASTORE("009", "StarWhale Internal DataStore");
         final String code;
         final String tipSubject;
-        ValidSubject(String code,String tipSubject){
+
+        ValidSubject(String code, String tipSubject) {
             this.code = code;
             this.tipSubject = tipSubject;
         }

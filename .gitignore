@@ -27,6 +27,7 @@ build/
 
 # IDE file
 /.idea/
+**/.idea/
 /server/**/target/**
 .history
 .vscode
