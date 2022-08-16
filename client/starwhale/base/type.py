@@ -29,13 +29,10 @@ class EvalTaskType:
 
 
 class RunSubDirType:
-    RESULT = "result"
     DATASET = "dataset"
-    PPL_RESULT = "ppl_result"
     STATUS = "status"
     LOG = "log"
     SWMP = "swmp"
-    CONFIG = "config"
 
 
 class JobOperationType:

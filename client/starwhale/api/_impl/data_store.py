@@ -854,7 +854,7 @@ class LocalDataStore:
             yield record
 
     def dump(self) -> None:
-        logger.debug(f"tables size:{len(self.tables.values())}")
+        logger.debug(f"start dump, tables size:{len(self.tables.values())}")
         for table in list(self.tables.values()):
             logger.debug(f"dump {table.table_name} to {self.root_path}")
             table.dump(self.root_path)
@@ -982,8 +982,10 @@ class DataStore(Protocol):
 
 
 def get_data_store() -> DataStore:
-    instance = os.getenv("SW_INSTANCE")
-    if instance is None or instance == "local":
+    instance = os.getenv("SW_INSTANCE_URI")
+    if instance is None:
+        instance = SWCliConfigMixed()._current_instance_obj["uri"]
+    if instance == "local":
         return LocalDataStore.get_instance()
     else:
         return RemoteDataStore(instance)

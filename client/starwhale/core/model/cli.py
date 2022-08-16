@@ -124,12 +124,6 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     default=DefaultYAMLName.MODEL,
     help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
-@click.option(
-    "--status-dir",
-    envvar=SWEnv.status_dir,
-    default="/tmp/starwhale/cmp/status",
-    help=f"CMP status dir, env is {SWEnv.status_dir}",
-)
 # TODO: Used to distinguish remote or local mode?
 @click.option(
     "--project",
@@ -176,9 +170,6 @@ def _eval(
     type: str,
     step: str,
     task_index: int,
-    status_dir: str,
-    log_dir: str,
-    result_dir: str,
     runtime: str,
     runtime_restore: bool,
     dataset_row_start: int,
@@ -201,7 +192,9 @@ def _eval(
         task_index=task_index,
         dataset_uris=dataset,
         kw={
-            "status_dir": status_dir,
-            "log_dir": log_dir,
+            # TODO : need in step processing(use task index and total num)
+            "dataset_uri": dataset,
+            "dataset_row_start": dataset_row_start,
+            "dataset_row_end": dataset_row_end,
         },
     )

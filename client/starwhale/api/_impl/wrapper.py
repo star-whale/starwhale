@@ -1,11 +1,7 @@
 import os
 import re
 import threading
-from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, List, Union, Iterator, Optional
-from multiprocessing.connection import Connection
-
-from starwhale.consts import EvaluationResultKind
 
 from . import data_store
 
@@ -32,7 +28,7 @@ class Logger:
         writer.insert(record)
 
 
-class BaseEvaluation(metaclass=ABCMeta):
+class Evaluation(Logger):
     def __init__(self, eval_id: Optional[str] = None):
         if eval_id is None:
             eval_id = os.getenv("SW_EVAL_ID", None)
@@ -43,30 +39,6 @@ class BaseEvaluation(metaclass=ABCMeta):
                 f"invalid eval id {eval_id}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
             )
         self.eval_id = eval_id
-
-    @abstractmethod
-    def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def log_metrics(
-        self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_results(self) -> Iterator[Dict[str, Any]]:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_metrics(self) -> Dict[str, Any]:
-        raise NotImplementedError
-
-
-class Evaluation(Logger, BaseEvaluation):
-    def __init__(self, eval_id: Optional[str] = None):
-        super().__init__(eval_id=eval_id)
-
         self.project = os.getenv("SW_PROJECT")
         if self.project is None:
             raise RuntimeError("SW_PROJECT is not set")
@@ -109,47 +81,6 @@ class Evaluation(Logger, BaseEvaluation):
             if metrics["id"] == self.eval_id
         ]
         return _m[0]
-
-
-class EvaluationResult:
-    def __init__(self, data_id: str, result: Any, **kwargs: Any) -> None:
-        self.data_id = data_id
-        self.result = result
-        self.kwargs = kwargs
-
-
-class EvaluationMetric:
-    def __init__(self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any) -> None:
-        self.metrics = metrics
-        self.kwargs = kwargs
-
-
-# TODO: rich query params
-class EvaluationQuery:
-    def __init__(self, kind: str) -> None:
-        self.kind = kind
-
-
-class EvaluationForSubProcess(BaseEvaluation):
-    def __init__(self, sub_conn: Connection, eval_id: Optional[str] = None) -> None:
-        super().__init__(eval_id)
-        self.sub_conn = sub_conn
-
-    def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
-        self.sub_conn.send(EvaluationResult(data_id=data_id, result=result, **kwargs))
-
-    def log_metrics(
-        self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> None:
-        self.sub_conn.send(EvaluationMetric(metrics=metrics, **kwargs))
-
-    def get_results(self) -> Any:
-        self.sub_conn.send(EvaluationQuery(EvaluationResultKind.RESULT))
-        return self.sub_conn.recv()
-
-    def get_metrics(self) -> Any:
-        self.sub_conn.send(EvaluationQuery(EvaluationResultKind.METRIC))
-        return self.sub_conn.recv()
 
 
 class Dataset(Logger):

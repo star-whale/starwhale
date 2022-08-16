@@ -93,8 +93,6 @@ class TestModelPipelineHandler(TestCase):
 
         os.environ[SWEnv.status_dir] = self.status_dir
         os.environ[SWEnv.log_dir] = self.log_dir
-        os.environ[SWEnv.result_dir] = self.result_dir
-        os.environ[SWEnv.input_config] = config_json_path
 
         with SimpleHandler() as _handler:
             ppl_result_path = os.path.join(ppl_result_dir, "current")
@@ -116,21 +114,19 @@ class TestModelPipelineHandler(TestCase):
         assert os.path.exists(status_file_path)
         assert "success" in open(status_file_path).read()
         assert os.path.exists(os.path.join(self.status_dir, "timeline"))
-        result_file_path = os.path.join(self.result_dir, "current")
-        assert os.path.exists(result_file_path)
 
-        with jsonlines.open(result_file_path) as reader:
-            lines = [_l for _l in reader]
-            assert len(lines) == 1
-            assert lines[0]["summary"] == {"a": 1}
-            assert lines[0]["kind"] == "test"
+        # TODO: use datastore results
+        # with jsonlines.open(result_file_path) as reader:
+        #     lines = [_l for _l in reader]
+        #     assert len(lines) == 1
+        #     assert lines[0]["summary"] == {"a": 1}
+        #     assert lines[0]["kind"] == "test"
 
     @pytest.mark.skip(reason="wait job scheduler feature, ppl will use datastore")
     @patch("starwhale.api._impl.loader.TabularDataset.scan")
     def test_ppl(self, m_scan: MagicMock) -> None:
         os.environ[SWEnv.status_dir] = self.status_dir
         os.environ[SWEnv.log_dir] = self.log_dir
-        os.environ[SWEnv.result_dir] = self.result_dir
         os.environ[SWEnv.dataset_uri] = "mnist/version/latest"
         os.environ[SWEnv.dataset_row_start] = "0"
         os.environ[SWEnv.dataset_row_end] = "1"
@@ -155,18 +151,16 @@ class TestModelPipelineHandler(TestCase):
         assert "success" in open(status_file_path).read()
         assert os.path.exists(os.path.join(self.status_dir, "timeline"))
 
-        result_file_path = os.path.join(self.result_dir, "current")
-        assert os.path.exists(result_file_path)
-
-        with open(result_file_path) as reader:
-            lines = reader.readlines()
-            assert len(lines) == 1
-            with SimpleHandler() as _handler:
-                line = _handler.deserialize(lines[0].encode("utf-8"))
-            (result, pr) = line["ppl"]
-            assert result == [1, 2]
-            assert pr == 0.1
-            assert line["index"] == 0
+        # TODO: use datastore results
+        # with open(result_file_path) as reader:
+        #     lines = reader.readlines()
+        #     assert len(lines) == 1
+        #     with SimpleHandler() as _handler:
+        #         line = _handler.deserialize(lines[0].encode("utf-8"))
+        #     (result, pr) = line["ppl"]
+        #     assert result == [1, 2]
+        #     assert pr == 0.1
+        #     assert line["index"] == 0
 
     @pytest.mark.skip(reason="wait job scheduler feature, cmp will use datastore")
     def test_deserializer(self) -> None:

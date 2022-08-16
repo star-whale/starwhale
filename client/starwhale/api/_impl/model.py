@@ -20,12 +20,13 @@ from starwhale.utils import now_str, in_production
 from starwhale.consts import CURRENT_FNAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.base.type import URIType
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
+from starwhale.api._impl.job import Context
+from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
 
-from .loader import DataField, ResultLoader, get_data_loader
-from .wrapper import BaseEvaluation
-from ...base.type import URIType
+from . import wrapper
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
@@ -84,7 +85,6 @@ class _RunConfig:
 
         _set("status_dir", SWEnv.status_dir)
         _set("log_dir", SWEnv.log_dir)
-        _set("result_dir", SWEnv.result_dir)
         _set("dataset_uri", SWEnv.dataset_uri)
         _set("dataset_row_start", SWEnv.dataset_row_start)
         _set("dataset_row_end", SWEnv.dataset_row_end)
@@ -103,16 +103,17 @@ class PipelineHandler(metaclass=ABCMeta):
 
     def __init__(
         self,
-        evaluation: BaseEvaluation,
+        context: Context,
         merge_label: bool = True,
         output_type: str = ResultOutputType.JSONL,
         ignore_error: bool = False,
     ) -> None:
+        self.context = context
         # TODO: add args for compare result and label directly
         self.merge_label = merge_label
         self.output_type = output_type
         self.ignore_error = ignore_error
-        # TODO: use datastore when dataset complete
+
         self.config = _RunConfig.create_by_env()
 
         self.logger, self._sw_logger = self._init_logger()
@@ -122,13 +123,17 @@ class PipelineHandler(metaclass=ABCMeta):
         self._orig_stderr = sys.stderr
 
         # TODO: split status/result files
-        self._status_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
+        self._timeline_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
 
         self._ppl_data_field = "result"
         self._label_field = "label"
-        self.evaluation = evaluation
-        self._simple_step_name = ""
+        self.evaluation = self._init_datastore()
         self._monkey_patch()
+
+    def _init_datastore(self) -> wrapper.Evaluation:
+        os.environ["SW_PROJECT"] = self.context.project
+        os.environ["SW_EVAL_ID"] = self.context.version
+        return wrapper.Evaluation()
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
         # TODO: remove logger first?
@@ -179,6 +184,7 @@ class PipelineHandler(metaclass=ABCMeta):
         value: t.Optional[BaseException],
         trace: TracebackType,
     ) -> None:
+        self._sw_logger.debug("execute ppl exit func...")
         if value:
             print(f"type:{type}, exception:{value}, traceback:{trace}")
 
@@ -186,7 +192,7 @@ class PipelineHandler(metaclass=ABCMeta):
             sys.stdout = self._orig_stdout
         if self._stderr_changed:
             sys.stderr = self._orig_stderr
-
+        self.evaluation.close()
         self.logger.remove()
         self._sw_logger.remove()
 
@@ -251,11 +257,10 @@ class PipelineHandler(metaclass=ABCMeta):
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_cmp(self) -> None:
-        self._simple_step_name = "cmp"
         self._update_status(self.STATUS.START)
         now = now_str()  # type: ignore
         try:
-            _ppl_results = [result for result in self.evaluation.get_results()]
+            _ppl_results = list(self.evaluation.get_results())
             self._sw_logger.debug("cmp input data size:{}", len(_ppl_results))
             _data_loader = ResultLoader(
                 datas=_ppl_results, deserializer=self.deserialize_fields
@@ -263,16 +268,15 @@ class PipelineHandler(metaclass=ABCMeta):
             output = self.cmp(_data_loader)
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
-            self._status_writer.write({"time": now, "status": False, "exception": e})
+            self._timeline_writer.write({"time": now, "status": False, "exception": e})
             raise
         else:
-            self._status_writer.write({"time": now, "status": True, "exception": ""})
+            self._timeline_writer.write({"time": now, "status": True, "exception": ""})
             self._sw_logger.debug(f"cmp result:{output}")
             self.evaluation.log_metrics(output)
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
-        self._simple_step_name = "ppl"
         self._update_status(self.STATUS.START)
 
         # TODO: use datastore when dataset complete
@@ -336,7 +340,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 self.ppl_data_serialize(*args)
             ).decode("ascii"),
         }
-        self._status_writer.write(_timeline)
+        self._timeline_writer.write(_timeline)
 
         _label = ""
         if self.merge_label:
@@ -356,8 +360,7 @@ class PipelineHandler(metaclass=ABCMeta):
                     raise
                 else:
                     _label = ""
-
-        self._sw_logger.debug(f"record ppl result:{data.idx}")
+        # self._sw_logger.debug(f"record ppl result:{data.idx}")
         self.evaluation.log_result(
             data_id=str(data.idx),
             result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),

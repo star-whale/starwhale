@@ -1,4 +1,5 @@
-from typing import Any
+import math
+from typing import Any, Tuple
 from pathlib import Path
 
 from loguru import logger
@@ -8,10 +9,8 @@ from starwhale.consts import DefaultYAMLName
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import RunSubDirType
 from starwhale.utils.load import import_cls
-from starwhale.api._impl.job import step
-from starwhale.core.job.model import Context
+from starwhale.api._impl.job import step, Context
 from starwhale.core.model.model import StandaloneModel
-from starwhale.api._impl.wrapper import EvaluationForSubProcess
 
 _CNTR_WORKDIR = "/opt/starwhale"
 
@@ -26,10 +25,10 @@ def _get_cls(src_dir: Path) -> Any:
     return _cls
 
 
-def setup(base_workdir: Path, step: str) -> None:
+def setup(context: Context) -> None:
     from starwhale.api._impl.model import _RunConfig
 
-    _run_dir = base_workdir / step
+    _run_dir = context.workdir / context.step
     ensure_dir(_run_dir)
 
     for _w in (_run_dir,):
@@ -43,13 +42,36 @@ def setup(base_workdir: Path, step: str) -> None:
     )
 
 
+def calculate_index(data_size: int, task_num: int, task_index: int) -> Tuple[int, int]:
+    _batch_size = 1
+    if data_size > task_num:
+        _batch_size = math.ceil(data_size / task_num)
+    _start_index = min(_batch_size * task_index, data_size - 1)
+    _end_index = min(_batch_size * (task_index + 1), data_size - 1)
+    return _start_index, _end_index
+
+
 @step()
 def ppl(context: Context) -> None:
-    setup(context.workdir, context.step)
-    # TODO: remove when datastore support multi processing
-    _eval = EvaluationForSubProcess(context.get_param("sub_conn"))
+    from starwhale.api._impl.model import _RunConfig
+
+    # TODO: use dataset.size() and support multi dataset uris
+    _dataset_uri = context.dataset_uris[0]
+    dataset_row_start, dataset_row_end = calculate_index(
+        200, context.total, context.index
+    )
+
+    _RunConfig.set_env(
+        {
+            "dataset_uri": _dataset_uri,
+            "dataset_row_start": dataset_row_start,
+            "dataset_row_end": dataset_row_end,
+        }
+    )
+    # TODO: some env can be replaced by user param
+    setup(context)
     _cls = _get_cls(context.src_dir)
-    with _cls(evaluation=_eval) as _obj:
+    with _cls(context=context) as _obj:
         _obj._starwhale_internal_run_ppl()
 
     console.print(f":clap: finish run {context.step}-{context.index}: {_obj}")
@@ -57,11 +79,9 @@ def ppl(context: Context) -> None:
 
 @step(dependency="ppl")
 def cmp(context: Context) -> None:
-    setup(context.workdir, context.step)
-    # TODO: remove when datastore support multi processing
-    _eval = EvaluationForSubProcess(context.get_param("sub_conn"))
+    setup(context)
     _cls = _get_cls(context.src_dir)
-    with _cls(evaluation=_eval) as _obj:
+    with _cls(context=context) as _obj:
         logger.debug("start to cmp")
         _obj._starwhale_internal_run_cmp()
 

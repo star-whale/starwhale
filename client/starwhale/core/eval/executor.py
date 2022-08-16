@@ -1,5 +1,4 @@
 import os
-import json
 import typing as t
 from pathlib import Path
 
@@ -8,25 +7,21 @@ from loguru import logger
 
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import (
-    JSON_INDENT,
     CURRENT_FNAME,
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    DEFAULT_INPUT_JSON_FNAME,
     CNTR_DEFAULT_PIP_CACHE_DIR,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.api.model import PipelineHandler
 from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
-from starwhale.api._impl.model import PipelineHandler
 from starwhale.core.model.model import StandaloneModel
-from starwhale.core.dataset.model import Dataset
-from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.runtime.model import StandaloneRuntime
 
 _CNTR_WORKDIR = "/opt/starwhale"
@@ -130,7 +125,6 @@ class EvalExecutor:
             (self._prepare_workdir, 5, "prepare workdir"),
             (self._extract_swmp, 15, "extract model"),
             (self._extract_swrt, 15, "extract runtime"),
-            (self._gen_swds_fuse_json, 10, "gen swds fuse json"),
             (self._do_run_eval_job, 70, "run eval job"),
         ]
 
@@ -157,10 +151,7 @@ class EvalExecutor:
 
         ensure_dir(self._workdir)
         for _w in (self._workdir,):
-            for _n in (
-                RunSubDirType.SWMP,
-                RunSubDirType.CONFIG,
-            ):
+            for _n in (RunSubDirType.SWMP,):
                 ensure_dir(_w / _n)
 
         logger.info(f"[step:prepare]eval workdir: {self._workdir}")
@@ -183,36 +174,6 @@ class EvalExecutor:
         else:
             self._runtime_dir = Path()
 
-    # TODO: this file and dir must exist because current ds implementation, wait replaced by datastore
-    #  need new Dataset and Dataloader, so wo can instance dataloader by task index and total num.
-    #  cool! this can be removed form here.
-    def _gen_swds_fuse_json(self) -> Path:
-        _fuse_jsons = []
-        for _uri in self.dataset_uris:
-            _store = DatasetStorage(_uri)
-            _file_name = Dataset.render_fuse_json(_store.loc, force=False)
-            _fuse_jsons.append(_file_name)
-            logger.debug(f"[gen fuse input.json]{_file_name}")
-
-        _base = json.load(open(_fuse_jsons[0], "r"))
-        for _f in _fuse_jsons[1:]:
-            _config = json.load(open(_f, "r"))
-            _base["swds"].extend(_config["swds"])
-
-        if self.use_docker:
-            _bucket = f"{_CNTR_WORKDIR}/{RunSubDirType.DATASET}"
-            for i in range(len(_base["swds"])):
-                _base["swds"][i]["bucket"] = _bucket
-
-        _json_f: Path = (
-            self._workdir
-            # / EvalTaskType.PPL
-            / RunSubDirType.CONFIG
-            / DEFAULT_INPUT_JSON_FNAME
-        )
-        ensure_file(_json_f, json.dumps(_base, indent=JSON_INDENT))
-        return _json_f
-
     def _do_run_cmd(self, typ: str, step: str, task_index: int) -> None:
         if self.use_docker:
             self._do_run_cmd_in_container(typ, step, task_index)
@@ -229,12 +190,7 @@ class EvalExecutor:
             dataset_uris=[u.full_uri for u in self.dataset_uris],
             step=step,
             task_index=task_index,
-            kw={
-                # TODO: replace when new dataset completed
-                "input_config": self._workdir
-                / RunSubDirType.CONFIG
-                / DEFAULT_INPUT_JSON_FNAME,
-            },
+            kw={},
         )
 
     def _do_run_cmd_in_container(self, typ: str, step: str, task_index: int) -> None:

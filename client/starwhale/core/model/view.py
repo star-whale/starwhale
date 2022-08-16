@@ -104,7 +104,7 @@ class ModelTermView(BaseTermView):
                     step=step,
                     task_index=task_index,
                     model_yaml_name=yaml_name,
-                    kw=kw,
+                    **kw,
                 )
         else:
             raise NoSupportError(f"eval {typ}")
