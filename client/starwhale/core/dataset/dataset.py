@@ -16,7 +16,6 @@ class DSProcessMode:
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
 D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
-D_USER_BATCH_SIZE = 1
 ARCHIVE_SWDS_META = "archive.%s" % SWDSSubFileType.META
 
 
@@ -26,10 +25,8 @@ class DatasetAttr:
         self,
         volume_size: t.Union[int, str] = D_FILE_VOLUME_SIZE,
         alignment_size: t.Union[int, str] = D_ALIGNMENT_SIZE,
-        batch_size: int = D_USER_BATCH_SIZE,
         **kw: t.Any,
     ) -> None:
-        self.batch_size = batch_size
         self.volume_size = convert_to_bytes(volume_size)
         self.alignment_size = convert_to_bytes(alignment_size)
         self.kw = kw

@@ -1,7 +1,9 @@
 import io
-import typing as t
 import pickle
+import typing as t
+
 from PIL import Image
+
 from starwhale.api.dataset import BuildExecutor
 
 
@@ -12,33 +14,34 @@ class FileBytes:
 
 
 def _pickle_data(image_file_paths):
-    all_bytes = [FileBytes(image_f, _image_to_bytes(image_f)) for image_f in
-                 image_file_paths]
+    all_bytes = [
+        FileBytes(image_f, _image_to_bytes(image_f)) for image_f in image_file_paths
+    ]
     return pickle.dumps(all_bytes)
 
 
 def _pickle_label(label_file_paths):
-    all_bytes = [FileBytes(label_f, _label_to_bytes(label_f)) for label_f in
-                 label_file_paths]
+    all_bytes = [
+        FileBytes(label_f, _label_to_bytes(label_f)) for label_f in label_file_paths
+    ]
     return pickle.dumps(all_bytes)
 
 
 def _label_to_bytes(label_file_path):
     img = Image.open(label_file_path)
     img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format='PNG')
+    img.save(img_byte_arr, format="PNG")
     return img_byte_arr.getvalue()
 
 
 def _image_to_bytes(image_file_path):
     img = Image.open(image_file_path).convert("RGB")
     img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format='PNG')
+    img.save(img_byte_arr, format="PNG")
     return img_byte_arr.getvalue()
 
 
 class PennFudanPedSlicer(BuildExecutor):
-
     def iter_data_slice(self, path: str):
         pass
 
@@ -51,7 +54,7 @@ class PennFudanPedSlicer(BuildExecutor):
         data_size = len(datafiles)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield _pickle_data(datafiles[last_idx:idx])
@@ -62,7 +65,7 @@ class PennFudanPedSlicer(BuildExecutor):
         data_size = len(labelfiles)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield _pickle_label(labelfiles[last_idx:idx])

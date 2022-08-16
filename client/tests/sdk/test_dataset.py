@@ -34,7 +34,6 @@ class TestDatasetBuildExecutor(BaseTestCase):
             f.write(_mnist_label)
 
     def test_workflow(self) -> None:
-        batch_size = 2
         with MNISTBuildExecutor(
             dataset_name="mnist",
             dataset_version="112233",
@@ -43,7 +42,6 @@ class TestDatasetBuildExecutor(BaseTestCase):
             output_dir=Path(self.output_data),
             data_filter="mnist-data-*",
             label_filter="mnist-data-*",
-            batch=batch_size,
             alignment_bytes_size=64,
             volume_bytes_size=100,
         ) as e:
@@ -58,8 +56,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         _parser = _header_struct.unpack(data_content[:_header_size])
         assert _parser[0] == _header_magic
         assert _parser[2] == 0
-        assert _parser[3] == 28 * 28 * batch_size
-        assert _parser[5] == batch_size
+        assert _parser[3] == 28 * 28
         assert _parser[6] == _data_magic
         assert len(data_content) == _header_size + _parser[3] + _parser[4]
 

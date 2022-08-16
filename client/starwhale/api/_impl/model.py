@@ -20,10 +20,11 @@ from starwhale.utils import now_str, in_production
 from starwhale.consts import CURRENT_FNAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.base.type import URIType
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 
-from .loader import DataField, ResultLoader, get_data_loader
+from .loader import DataField, DataLoader, ResultLoader, get_data_loader
 from .wrapper import BaseEvaluation
 from ...base.type import URIType
 
@@ -191,8 +192,8 @@ class PipelineHandler(metaclass=ABCMeta):
         self._sw_logger.remove()
 
     @abstractmethod
-    def ppl(self, data: bytes, batch_size: int, **kw: t.Any) -> t.Any:
-        # TODO: how to handle each batch element is not equal.
+    def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
+        # TODO: how to handle each element is not equal.
         raise NotImplementedError
 
     @abstractmethod
@@ -227,7 +228,7 @@ class PipelineHandler(metaclass=ABCMeta):
         data[self._label_field] = self.label_data_deserialize(data[self._label_field])
         return data
 
-    def handle_label(self, label: bytes, batch_size: int, **kw: t.Any) -> t.Any:
+    def handle_label(self, label: bytes, **kw: t.Any) -> t.Any:
         return label.decode()
 
     def _record_status(func):  # type: ignore
@@ -297,12 +298,10 @@ class PipelineHandler(metaclass=ABCMeta):
                 # TODO: inspect profiling
                 pred = self.ppl(
                     data.data,
-                    data.batch_size,
                     data_index=data.idx,
                     data_size=data.data_size,
                     label_content=label.data,
                     label_size=label.data_size,
-                    label_batch=label.batch_size,
                     label_index=label.idx,
                     ds_name=data.ext_attr.get("ds_name", ""),
                     ds_version=data.ext_attr.get("ds_version", ""),
@@ -333,7 +332,9 @@ class PipelineHandler(metaclass=ABCMeta):
             "status": exception is None,
             "exception": str(exception),
             "index": data.idx,
-            "output_tuple_len": len(args),
+            self._ppl_data_field: base64.b64encode(
+                self.ppl_data_serialize(*args)
+            ).decode("ascii"),
         }
         self._status_writer.write(_timeline)
 
@@ -342,7 +343,6 @@ class PipelineHandler(metaclass=ABCMeta):
             try:
                 label = self.handle_label(
                     label.data,
-                    label.batch_size,
                     index=label.idx,
                     size=label.data_size,
                 )

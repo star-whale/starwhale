@@ -272,7 +272,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             output_dir=self.store.data_dir,
             data_filter=swds_config.data_filter,
             label_filter=swds_config.label_filter,
-            batch=swds_config.attr.batch_size,
             alignment_bytes_size=swds_config.attr.alignment_size,
             volume_bytes_size=swds_config.attr.volume_size,
         ) as _obj:

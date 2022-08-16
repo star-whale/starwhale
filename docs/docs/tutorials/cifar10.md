@@ -81,7 +81,7 @@ class CIFAR10Slicer(BuildExecutor):
         data_size = len(data_numpy)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield data_numpy[last_idx:idx].tobytes()
@@ -93,7 +93,7 @@ class CIFAR10Slicer(BuildExecutor):
         data_size = len(labels_list)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield bytes(labels_list[last_idx:idx])
@@ -114,12 +114,12 @@ class CIFAR10Inference(PipelineHandler):
         self.device = torch.device(device)
         self.model = self._load_model(self.device)
 
-    def ppl(self, data, batch_size, **kw):
-        data = self._pre(data, batch_size)
+    def ppl(self, data, **kw):
+        data = self._pre(data)
         output = self.model(data)
         return self._post(output)
 
-    def handle_label(self, label, batch_size, **kw):
+    def handle_label(self, label, **kw):
         return [int(l) for l in label]
 
     @multi_classification(
@@ -137,7 +137,8 @@ class CIFAR10Inference(PipelineHandler):
             _pr.extend([l for l in _data["pr"]])
         return _label, _result, _pr
 
-    def _pre(self, input: bytes, batch_size: int):
+    def _pre(self, input: bytes):
+        batch_size = 1
         images = []
         from_buffer = np.frombuffer(input, 'uint8')
         shape = (batch_size, ONE_IMAGE_SIZE)
@@ -228,7 +229,6 @@ pip_req: requirements.txt
 desc: CIFAR10 data and label test dataset
 
 attr:
-    batch_size: 50
     alignment_size: 4k
     volume_size: 2M
 ```

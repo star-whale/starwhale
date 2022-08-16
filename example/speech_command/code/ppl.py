@@ -1,10 +1,10 @@
-from pathlib import Path
 import io
+import pickle
+from pathlib import Path
 
+import numpy as np
 import torch
 import torchaudio
-import numpy as np
-import pickle
 
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
@@ -12,36 +12,66 @@ from starwhale.api.metric import multi_classification
 from .model import M5
 
 ROOTDIR = Path(__file__).parent.parent
-labels = ['backward', 'bed', 'bird', 'cat', 'dog', 'down', 'eight', 'five',
-          'follow', 'forward', 'four', 'go', 'happy', 'house', 'learn', 'left',
-          'marvin', 'nine', 'no', 'off', 'on', 'one', 'right', 'seven',
-          'sheila', 'six', 'stop', 'three', 'tree', 'two', 'up', 'visual',
-          'wow', 'yes', 'zero', 'ERROR']
+labels = [
+    "backward",
+    "bed",
+    "bird",
+    "cat",
+    "dog",
+    "down",
+    "eight",
+    "five",
+    "follow",
+    "forward",
+    "four",
+    "go",
+    "happy",
+    "house",
+    "learn",
+    "left",
+    "marvin",
+    "nine",
+    "no",
+    "off",
+    "on",
+    "one",
+    "right",
+    "seven",
+    "sheila",
+    "six",
+    "stop",
+    "three",
+    "tree",
+    "two",
+    "up",
+    "visual",
+    "wow",
+    "yes",
+    "zero",
+    "ERROR",
+]
 
 
 class M5Inference(PipelineHandler):
-
     def __init__(self, device="cpu") -> None:
         super().__init__(merge_label=True, ignore_error=True)
         self.device = torch.device(device)
         self.model = self._load_model(self.device)
-        self.transform = torchaudio.transforms.Resample(orig_freq=16000,
-                                                        new_freq=8000)
+        self.transform = torchaudio.transforms.Resample(orig_freq=16000, new_freq=8000)
         self.transform = self.transform.to(device)
 
-    def ppl(self, data, batch_size, **kw):
-        audios = self._pre(data, batch_size)
+    def ppl(self, data, **kw):
+        audios = self._pre(data)
         result = []
         for audio_f in audios:
             try:
-                label_idx = self.model(audio_f.unsqueeze(0)).argmax(
-                    dim=-1).squeeze()
+                label_idx = self.model(audio_f.unsqueeze(0)).argmax(dim=-1).squeeze()
                 result.append(labels[label_idx])
             except Exception:
-                result.append('ERROR')
+                result.append("ERROR")
         return result
 
-    def handle_label(self, label, batch_size, **kw):
+    def handle_label(self, label, **kw):
         return pickle.loads(label)
 
     @multi_classification(
@@ -60,7 +90,7 @@ class M5Inference(PipelineHandler):
             # _pr.extend(_data["pr"])
         return _result, _label
 
-    def _pre(self, input: bytes, batch_size: int):
+    def _pre(self, input: bytes):
         audios = pickle.loads(input)
         _result = []
         for file_bytes in audios:

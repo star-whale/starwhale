@@ -156,7 +156,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                     final String taskUuid = UUID.randomUUID().toString();
                     taskEntities.add(TaskEntity.builder()
                         .stepId(stepEntity.getId())
-                        .taskIndex(index)
+                        // .taskIndex(index) TODO: store with task request
                         .resultPath(storagePath(job.getUuid(), taskUuid))
                         .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
                         .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))

@@ -192,6 +192,18 @@ const locales0 = {
     'Username': {
         en: 'Username',
     },
+    'Create Your Account': {
+        en: 'Create your account',
+    },
+    'Account Name': {
+        en: 'Account Name',
+    },
+    'Send Email': {
+        en: 'Send Email',
+    },
+    'Reset Password Form title': {
+        en: 'Please enter your email address',
+    },
     'LOGIN': {
         en: 'LOGIN',
     },
@@ -496,7 +508,10 @@ const locales0 = {
     'Edit': {
         en: 'Edit',
     },
-    'emailPlaceholder': {
+    'emailPlaceholder for login': {
+        en: 'yours@example.com or your username',
+    },
+    'emailPlaceholder for sing up': {
         en: 'yours@example.com',
     },
     'passwordPlaceholder': {
@@ -507,6 +522,18 @@ const locales0 = {
     },
     'signUp': {
         en: 'Sign up',
+    },
+    'Sign Up With': {
+        en: 'Sign up with {{0}}',
+    },
+    'Log In With': {
+        en: 'Log in with {{0}}',
+    },
+    'Github': {
+        en: 'Github',
+    },
+    'Google': {
+        en: 'Google',
     },
     'agreePolicy': {
         en: 'I agree to <1>Terms of Service</1> and <3>Privacy Policy</3>',

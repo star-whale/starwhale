@@ -1,7 +1,8 @@
 import os
-import typing as t
 import pickle
+import typing as t
 from pathlib import Path
+
 from starwhale.api.dataset import BuildExecutor
 
 
@@ -17,13 +18,13 @@ def _pickle_data(audio_file_paths):
 
 
 def _pickle_label(audio_file_paths):
-    all_strings = [os.path.basename(os.path.dirname(str(audio_f))) for audio_f
-                   in audio_file_paths]
+    all_strings = [
+        os.path.basename(os.path.dirname(str(audio_f))) for audio_f in audio_file_paths
+    ]
     return pickle.dumps(all_strings)
 
 
 class SpeechCommandsSlicer(BuildExecutor):
-
     def load_list(self, file_filter):
         filepath = self.data_dir / file_filter
         with open(filepath) as fileobj:
@@ -54,7 +55,7 @@ class SpeechCommandsSlicer(BuildExecutor):
         data_size = len(datafiles)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield _pickle_data(datafiles[last_idx:idx])
@@ -65,7 +66,7 @@ class SpeechCommandsSlicer(BuildExecutor):
         data_size = len(datafiles)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield _pickle_label(datafiles[last_idx:idx])

@@ -134,7 +134,7 @@ class PennFudanPedSlicer(BuildExecutor):
         data_size = len(datafiles)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield _pickle_data(datafiles[last_idx:idx])
@@ -145,7 +145,7 @@ class PennFudanPedSlicer(BuildExecutor):
         data_size = len(labelfiles)
         while True:
             last_idx = idx
-            idx = idx + self._batch
+            idx += 1
             if idx > data_size:
                 break
             yield _pickle_label(labelfiles[last_idx:idx])
@@ -180,7 +180,7 @@ class MARSKRCNN(PipelineHandler):
         self.device = torch.device(device)
 
     @torch.no_grad()
-    def ppl(self, data, batch_size, **kw):
+    def ppl(self, data, **kw):
         model = self._load_model(self.device)
         files_bytes = pickle.loads(data)
         _result = []
@@ -197,12 +197,12 @@ class MARSKRCNN(PipelineHandler):
             _result.append(output)
         return _result
 
-    def handle_label(self, label, batch_size, **kw):
+    def handle_label(self, label, **kw):
         files_bytes = pickle.loads(label)
         _result = []
         for idx, file_bytes in enumerate(files_bytes):
             image = Image.open(io.BytesIO(file_bytes.content_bytes))
-            target = penn_fudan_ped_ds.mask_to_coco_target(image, kw['index'] * batch_size + idx)
+            target = penn_fudan_ped_ds.mask_to_coco_target(image, kw['index'] + idx)
             _result.append(target)
         return _result
 
@@ -229,7 +229,7 @@ class MARSKRCNN(PipelineHandler):
 
         return [{iou_type: coco_eval.stats.tolist() for iou_type, coco_eval in coco_evaluator.coco_eval.items()}]
 
-    def _pre(self, input: bytes, batch_size: int):
+    def _pre(self, input: bytes):
         image = Image.open(io.BytesIO(input))
         image = F.to_tensor(image)
         return [image.to(self.device)]
@@ -299,7 +299,6 @@ tag:
   - bin
 
 attr:
-    batch_size: 4
     alignment_size: 4k
     volume_size: 8M
 ```

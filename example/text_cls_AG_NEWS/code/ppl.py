@@ -2,6 +2,7 @@ import os
 
 import torch
 from torchtext.data.utils import get_tokenizer
+
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
 
@@ -20,20 +21,21 @@ _ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 class TextClassificationHandler(PipelineHandler):
-
     def __init__(self, device="cpu") -> None:
         super().__init__(merge_label=True, ignore_error=True)
         self.device = torch.device(device)
 
     @torch.no_grad()
-    def ppl(self, data, batch_size, **kw):
+    def ppl(self, data, **kw):
         _model, vocab, tokenizer = self._load_model(self.device)
-        texts = data.decode().split('#@#@#@#')
-        return list(map(lambda text: predict.predict(text, _model, vocab, tokenizer, 2), texts))
+        texts = data.decode().split("#@#@#@#")
+        return list(
+            map(lambda text: predict.predict(text, _model, vocab, tokenizer, 2), texts)
+        )
 
-    def handle_label(self, label, batch_size, **kw):
-        labels = label.decode().split('#@#@#@#')
-        return[int(label) for label in labels]
+    def handle_label(self, label, **kw):
+        labels = label.decode().split("#@#@#@#")
+        return [int(label) for label in labels]
 
     @multi_classification(
         confusion_matrix_normalize="all",
@@ -78,7 +80,9 @@ def load_test_env_ppl(fuse=True):
     os.environ["SW_TASK_RESULT_DIR"] = "result"
 
     # fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
-    os.environ["SW_TASK_INPUT_CONFIG"] = "/home/anda/.cache/starwhale/self/dataset/ag_news/ga/gaygmnztgq2wgmrsmuydgy3enayhmzy.swds/local_fuse.json"
+    os.environ[
+        "SW_TASK_INPUT_CONFIG"
+    ] = "/home/anda/.cache/starwhale/self/dataset/ag_news/ga/gaygmnztgq2wgmrsmuydgy3enayhmzy.swds/local_fuse.json"
 
 
 if __name__ == "__main__":
