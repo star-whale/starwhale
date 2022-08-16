@@ -3,18 +3,50 @@ import re
 import sys
 import json
 import atexit
+import base64
+import struct
+import urllib
 import pathlib
+import binascii
 import threading
-from typing import Any, Set, cast, Dict, List, Tuple, Iterator, Optional
+from typing import Any, Set, cast, Dict, List, Tuple, Union, Iterator, Optional
 
 import numpy as np
 import pyarrow as pa  # type: ignore
+import requests
 import pyarrow.parquet as pq  # type: ignore
-from loguru import logger
 from typing_extensions import Protocol
 
 from starwhale.utils.fs import ensure_dir
 from starwhale.utils.config import SWCliConfigMixed
+
+try:
+    import fcntl
+
+    has_fcntl = True
+except ImportError:
+    has_fcntl = False
+
+
+def _check_move(src: str, dest: str) -> bool:
+    if has_fcntl:
+        with open(os.path.join(os.path.dirname(src), ".lock"), "w") as f:
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX)  # type: ignore
+            except OSError:
+                return False
+            try:
+                os.rename(src, dest)
+                return True
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)  # type: ignore
+    else:
+        # windows
+        try:
+            os.rename(src, dest)
+            return True
+        except FileExistsError:
+            return False
 
 
 class Type:
@@ -32,32 +64,61 @@ class Type:
     def deserialize(self, value: Any) -> Any:
         return value
 
+    def encode(self, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        if self is UNKNOWN:
+            return None
+        if self is BOOL:
+            if value:
+                return "1"
+            else:
+                return "0"
+        if self is STRING:
+            return cast(str, value)
+        if self is BYTES:
+            return base64.b64encode(value).decode()
+        if self.name == "int":
+            return f"{value:x}"
+        if self.name == "float":
+            if self.nbits == 16:
+                return binascii.hexlify(struct.pack(">e", value)).decode()
+            if self.nbits == 32:
+                return binascii.hexlify(struct.pack(">f", value)).decode()
+            if self.nbits == 64:
+                return binascii.hexlify(struct.pack(">d", value)).decode()
+        raise RuntimeError("invalid type " + str(self))
+
+    def decode(self, value: str) -> Any:
+        if value is None:
+            return None
+        if self is UNKNOWN:
+            return None
+        if self is BOOL:
+            return value == "1"
+        if self is STRING:
+            return value
+        if self is BYTES:
+            return base64.b64decode(value)
+        if self.name == "int":
+            return int(value, 16)
+        if self.name == "float":
+            raw = binascii.unhexlify(value)
+            if self.nbits == 16:
+                return struct.unpack(">e", raw)[0]
+            if self.nbits == 32:
+                return struct.unpack(">f", raw)[0]
+            if self.nbits == 64:
+                return struct.unpack(">d", raw)[0]
+        raise RuntimeError("invalid type " + str(self))
+
     def __str__(self) -> str:
         if self.name == "int" or self.name == "float":
-            return f"{self.name}{self.nbits}"
+            return f"{self.name}{self.nbits}".upper()
         else:
-            return self.name
+            return self.name.upper()
 
     __repr__ = __str__
-
-
-class LinkType(Type):
-    def __init__(self) -> None:
-        super().__init__("link", pa.string(), 32, "")
-
-    def serialize(self, value: Any) -> Any:
-        if value is None:
-            return None
-        assert isinstance(value, Link)
-        return str(value)
-
-    def deserialize(self, value: Any) -> Any:
-        if value is None:
-            return None
-        d = json.loads(value)
-        return Link(
-            d.get("uri", None), d.get("display_text", None), d.get("mime_type", None)
-        )
 
 
 class Link:
@@ -89,7 +150,7 @@ class Link:
         )
 
 
-NONE = Type("none", None, 1, None)
+UNKNOWN = Type("unknown", None, 1, None)
 INT8 = Type("int", pa.int8(), 8, 0)
 INT16 = Type("int", pa.int16(), 16, 0)
 INT32 = Type("int", pa.int32(), 32, 0)
@@ -98,12 +159,11 @@ FLOAT16 = Type("float", pa.float16(), 16, 0.0)
 FLOAT32 = Type("float", pa.float32(), 32, 0.0)
 FLOAT64 = Type("float", pa.float64(), 64, 0.0)
 BOOL = Type("bool", pa.bool_(), 1, 0)
-STRING = Type("str", pa.string(), 32, "")
+STRING = Type("string", pa.string(), 32, "")
 BYTES = Type("bytes", pa.binary(), 32, b"")
-LINK = LinkType()
 
 _TYPE_DICT: Dict[Any, Type] = {
-    type(None): NONE,
+    type(None): UNKNOWN,
     np.byte: INT8,
     np.int8: INT8,
     np.int16: INT16,
@@ -118,7 +178,6 @@ _TYPE_DICT: Dict[Any, Type] = {
     bool: BOOL,
     str: STRING,
     bytes: BYTES,
-    Link: LINK,
 }
 
 _TYPE_NAME_DICT = {str(v): v for k, v in _TYPE_DICT.items()}
@@ -141,6 +200,14 @@ class ColumnSchema:
         )
 
 
+class TableSchemaDesc:
+    def __init__(
+        self, key_column: Optional[str], columns: Optional[List[ColumnSchema]]
+    ) -> None:
+        self.key_column = key_column
+        self.columns = columns
+
+
 class TableSchema:
     def __init__(self, key_column: str, columns: List[ColumnSchema]) -> None:
         self.key_column = key_column
@@ -148,6 +215,35 @@ class TableSchema:
 
     def copy(self) -> "TableSchema":
         return TableSchema(self.key_column, list(self.columns.values()))
+
+    def merge(self, other: "TableSchema") -> None:
+        if self.key_column != other.key_column:
+            raise RuntimeError(
+                f"conflicting key column, expected {self.key_column}, acutal {other.key_column}"
+            )
+        new_schema = {}
+        for col in other.columns.values():
+            column_schema = self.columns.get(col.name, None)
+            if (
+                column_schema is not None
+                and column_schema.type is not UNKNOWN
+                and col.type is not UNKNOWN
+                and col.type is not column_schema.type
+                and col.type.name != column_schema.type.name
+            ):
+                raise RuntimeError(
+                    f"conflicting column type, name {col.name}, expected {column_schema.type}, actual {col.type}"
+                )
+            if (
+                column_schema is None
+                or column_schema.type is UNKNOWN
+                or (
+                    col.type is not UNKNOWN
+                    and col.type.nbits > column_schema.type.nbits
+                )
+            ):
+                new_schema[col.name] = col
+        self.columns.update(new_schema)
 
     @staticmethod
     def parse(json_str: str) -> "TableSchema":
@@ -171,7 +267,7 @@ class TableSchema:
             }
         )
 
-    __rept__ = __str__
+    __repr__ = __str__
 
     def __eq__(self, other: Any) -> bool:
         return (
@@ -208,6 +304,7 @@ def _scan_parquet_file(
     columns: Optional[Dict[str, str]] = None,
     start: Optional[Any] = None,
     end: Optional[Any] = None,
+    keep_none: bool = False,
 ) -> Iterator[dict]:
     f = pq.ParquetFile(path)
     schema_arrow = f.schema_arrow
@@ -263,7 +360,12 @@ def _scan_parquet_file(
                     if value is not None:
                         d["-"] = value
                 elif name.startswith("~") and value:
-                    d.pop(columns.get(name[1:], ""), "")
+                    alias = columns.get(name[1:], "")
+                    if alias != "":
+                        if keep_none:
+                            d[alias] = None
+                        else:
+                            d.pop(alias, "")
                 else:
                     alias = columns.get(name, "")
                     if alias != "" and value is not None:
@@ -271,7 +373,9 @@ def _scan_parquet_file(
             yield d
 
 
-def _merge_scan(iters: List[Iterator[Dict[str, Any]]]) -> Iterator[dict]:
+def _merge_scan(
+    iters: List[Iterator[Dict[str, Any]]], keep_none: bool
+) -> Iterator[dict]:
     class Node:
         def __init__(self, index: int, iter: Iterator[dict]) -> None:
             self.index = index
@@ -291,10 +395,10 @@ def _merge_scan(iters: List[Iterator[Dict[str, Any]]]) -> Iterator[dict]:
                 self.key = ""
 
     nodes = []
-    for _i, _iter in enumerate(iters):
-        _node = Node(_i, _iter)
-        if not _node.exhausted:
-            nodes.append(_node)
+    for i, iter in enumerate(iters):
+        node = Node(i, iter)
+        if not node.exhausted:
+            nodes.append(node)
 
     while len(nodes) > 0:
         key = min(nodes, key=lambda x: x.key).key
@@ -312,17 +416,14 @@ def _merge_scan(iters: List[Iterator[Dict[str, Any]]]) -> Iterator[dict]:
                 nodes[i].nextItem()
         if len(d) > 0:
             d["*"] = key
+            if not keep_none:
+                d = {k: v for k, v in d.items() if v is not None}
             yield d
         nodes = [node for node in nodes if not node.exhausted]
 
 
 def _get_table_files(path: str) -> List[str]:
-    if not os.path.exists(path):
-        logger.warning(f"not find path {path} as table file path")
-        return []
-
-    if not os.path.isdir(path):
-        raise RuntimeError(f"{path} is not a directory")
+    ensure_dir(path)
 
     patches = []
     base_index = -1
@@ -344,10 +445,7 @@ def _get_table_files(path: str) -> List[str]:
 
 
 def _read_table_schema(path: str) -> TableSchema:
-    if not os.path.exists(path):
-        raise RuntimeError(f"path not found: {path}")
-    if not os.path.isdir(path):
-        raise RuntimeError(f"{path} is not a directory")
+    ensure_dir(path)
 
     files = _get_table_files(path)
     if len(files) == 0:
@@ -369,24 +467,16 @@ def _scan_table(
     columns: Optional[Dict[str, str]] = None,
     start: Optional[Any] = None,
     end: Optional[Any] = None,
-    explicit_none: bool = False,
+    keep_none: bool = False,
 ) -> Iterator[dict]:
     iters = []
     for file in _get_table_files(path):
-        iters.append(_scan_parquet_file(file, columns, start, end))
-    column_names = []
-    if len(iters) > 0:
-        schema = _read_table_schema(path)
-        column_names = [
-            col.name
-            for col in schema.columns.values()
-            if col.name != "-" and not col.name.startswith("~")
-        ]
-    for record in _merge_scan(iters):
-        if explicit_none:
-            for col in column_names:
-                record.setdefault(col, None)
-        yield record
+        if os.path.basename(file).startswith("patch"):
+            keep = True
+        else:
+            keep = keep_none
+        iters.append(_scan_parquet_file(file, columns, start, end, keep))
+    return _merge_scan(iters, keep_none)
 
 
 def _records_to_table(
@@ -442,8 +532,8 @@ def _update_schema(schema: TableSchema, record: Dict[str, Any]) -> TableSchema:
         column_schema = schema.columns.get(col, None)
         if (
             column_schema is not None
-            and column_schema.type is not NONE
-            and value_type is not NONE
+            and column_schema.type is not UNKNOWN
+            and value_type is not UNKNOWN
             and value_type is not column_schema.type
             and value_type.name != column_schema.type.name
         ):
@@ -452,9 +542,9 @@ def _update_schema(schema: TableSchema, record: Dict[str, Any]) -> TableSchema:
             )
         if column_schema is None:
             new_schema.columns[col] = ColumnSchema(col, value_type)
-        elif column_schema.type is NONE:
+        elif column_schema.type is UNKNOWN:
             new_schema.columns[col].type = value_type
-        elif value_type is not NONE and value_type.nbits > column_schema.type.nbits:
+        elif value_type is not UNKNOWN and value_type.nbits > column_schema.type.nbits:
             new_schema.columns[col].type = value_type
     return new_schema
 
@@ -472,23 +562,12 @@ class MemoryTable:
         with self.lock:
             return self.schema.copy()
 
-    def load(self, root_path: str) -> None:
-        for record in _scan_table(_get_table_path(root_path, self.table_name)):
-            key = record.get(self.schema.key_column, None)
-            actual = record.pop("*")
-            if record.get(self.schema.key_column, None) != key:
-                raise RuntimeError(
-                    f"failed to load table {self.table_name}: key column={self.schema.key_column}, expected key:{key}, actual key:{actual}"
-                )
-            record.pop("-", None)
-            self.records[key] = record
-
     def scan(
         self,
         columns: Optional[Dict[str, str]] = None,
         start: Optional[Any] = None,
         end: Optional[Any] = None,
-        explicit_none: bool = False,
+        keep_none: bool = False,
     ) -> Iterator[Dict[str, Any]]:
         with self.lock:
             schema = self.schema.copy()
@@ -503,16 +582,13 @@ class MemoryTable:
         records.sort(key=lambda x: cast(str, x[self.schema.key_column]))
         for r in records:
             if columns is None:
-                d = r
+                d = dict(r)
             else:
                 d = {columns[k]: v for k, v in r.items() if k in columns}
                 if "-" in r:
                     d["-"] = r["-"]
-            d["*"] = r[self.schema.key_column]
-            if explicit_none:
-                for col in schema.columns.values():
-                    d.setdefault(col.name, None)
-            else:
+            d["*"] = r[schema.key_column]
+            if not keep_none:
                 d = {k: v for k, v in d.items() if v is not None}
             yield d
 
@@ -538,25 +614,86 @@ class MemoryTable:
                     self.nbytes -= _get_size(r)
 
     def dump(self, root_path: str) -> None:
+        with self.lock:
+            schema = self.schema.copy()
         path = _get_table_path(root_path, self.table_name)
         ensure_dir(path)
-        max_index = -1
-        for file in os.listdir(path):
-            type, index = _parse_parquet_name(file)
-            if type != "" and index > max_index:
-                max_index = index
-        if max_index < 0:
-            filename = "base-0.parquet"
-        else:
-            filename = f"base-{max_index + 1}.parquet"
-        _write_parquet_file(
-            os.path.join(path, filename),
-            _records_to_table(
-                self.schema,
-                list(self.records.values()),
-                list(self.deletes),
-            ),
-        )
+        while True:
+            max_index = -1
+            for file in os.listdir(path):
+                type, index = _parse_parquet_name(file)
+                if type != "" and index > max_index:
+                    max_index = index
+            if max_index < 0:
+                filename = "base-0.parquet"
+            else:
+                filename = f"base-{max_index + 1}.parquet"
+            temp_filename = f"temp.{os.getpid()}"
+            if max_index >= 0:
+                s = _read_table_schema(os.path.join(path))
+                s.merge(schema)
+                schema = s
+            _write_parquet_file(
+                os.path.join(path, temp_filename),
+                _records_to_table(
+                    schema,
+                    list(
+                        _merge_scan(
+                            [
+                                _scan_table(path, keep_none=True),
+                                self.scan(keep_none=True),
+                            ],
+                            True,
+                        )
+                    ),
+                    [],
+                ),
+            )
+            if _check_move(
+                os.path.join(path, temp_filename), os.path.join(path, filename)
+            ):
+                break
+
+
+class TableDesc:
+    def __init__(
+        self,
+        table_name: str,
+        columns: Union[Dict[str, str], List[str], None] = None,
+        keep_none: bool = False,
+    ) -> None:
+        self.table_name = table_name
+        self.columns: Optional[Dict[str, str]] = None
+        self.keep_none = keep_none
+        if columns is not None:
+            self.columns = {}
+            if isinstance(columns, dict):
+                alias_map: Dict[str, str] = {}
+                for col, alias in columns.items():
+                    key = alias_map.setdefault(alias, col)
+                    if key != col:
+                        raise RuntimeError(
+                            f"duplicate alias {alias} for column {col} and {key}"
+                        )
+                self.columns = columns
+            else:
+                for col in columns:
+                    if col in self.columns:
+                        raise RuntimeError(f"duplicate column name {col}")
+                    self.columns[col] = col
+
+    def to_dict(self) -> Dict[str, Any]:
+        ret: Dict[str, Any] = {
+            "tableName": self.table_name,
+        }
+        if self.columns is not None:
+            ret["columns"] = [
+                {"columnName": col, "alias": alias}
+                for col, alias in self.columns.items()
+            ]
+        if self.keep_none:
+            ret["keepNone"] = True
+        return ret
 
 
 class LocalDataStore:
@@ -580,8 +717,11 @@ class LocalDataStore:
         self.name_pattern = re.compile(r"^[A-Za-z0-9-_/ ]+$")
         self.tables: Dict[str, MemoryTable] = {}
 
-    def put(
-        self, table_name: str, schema: TableSchema, records: List[Dict[str, Any]]
+    def update_table(
+        self,
+        table_name: str,
+        schema: TableSchema,
+        records: List[Dict[str, Any]],
     ) -> None:
         if self.name_pattern.match(table_name) is None:
             raise RuntimeError(
@@ -589,14 +729,19 @@ class LocalDataStore:
             )
         for r in records:
             for k in r.keys():
-                if self.name_pattern.match(k) is None:
+                if k != "-" and self.name_pattern.match(k) is None:
                     raise RuntimeError(
                         f"invalid column name {k}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
                     )
         table = self.tables.get(table_name, None)
         if table is None:
-            table = MemoryTable(table_name, schema)
-            table.load(self.root_path)
+            table_path = _get_table_path(self.root_path, table_name)
+            if _get_table_files(table_path):
+                table_schema = _read_table_schema(table_path)
+                table_schema.merge(schema)
+            else:
+                table_schema = schema
+            table = MemoryTable(table_name, table_schema)
             self.tables[table_name] = table
         if schema.key_column != table.schema.key_column:
             raise RuntimeError(
@@ -608,11 +753,6 @@ class LocalDataStore:
                 raise RuntimeError(
                     f"key {schema.key_column} should not be none, record: {r.keys()}"
                 )
-            for name in r.keys():
-                if self.name_pattern.match(name) is None:
-                    raise RuntimeError(
-                        f"invalid column name {name}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
-                    )
             if "-" in r:
                 table.delete([key])
             else:
@@ -620,61 +760,42 @@ class LocalDataStore:
 
     def scan_tables(
         self,
-        tables: List[Tuple[str, str, bool]],
-        columns: Optional[Dict[str, str]] = None,
+        tables: List[TableDesc],
         start: Optional[Any] = None,
         end: Optional[Any] = None,
+        keep_none: bool = False,
     ) -> Iterator[Dict[str, Any]]:
-        # check for alias duplications
-        if columns is not None:
-            alias_map: Dict[str, str] = {}
-            for col, alias in columns.items():
-                key = alias_map.setdefault(alias, col)
-                if key != col:
-                    raise RuntimeError(
-                        f"duplicate alias {alias} for column {col} and {key}"
-                    )
-
         class TableInfo:
             def __init__(
                 self,
                 name: str,
                 key_column_type: pa.DataType,
                 columns: Optional[Dict[str, str]],
-                explicit_none: bool,
-                path: str,
+                keep_none: bool,
             ) -> None:
                 self.name = name
                 self.key_column_type = key_column_type
                 self.columns = columns
-                self.explicit_none = explicit_none
-                self.path = path
+                self.keep_none = keep_none
 
         logger.debug(f"scan enter, table size:{len(tables)}")
         infos: List[TableInfo] = []
-        for table_name, table_alias, explicit_none in tables:
-            table_path = _get_table_path(self.root_path, table_name)
-            table = self.tables.get(table_name, None)
-            if table is None:
-                schema = _read_table_schema(table_path)
-            else:
+        for table_desc in tables:
+            table = self.tables.get(table_desc.table_name, None)
+            if table is not None:
                 schema = table.get_schema()
-            key_column_type = schema.columns[schema.key_column].type.pa_type
-            column_names = schema.columns.keys()
-            col_prefix = table_alias + "."
-
-            cols: Optional[Dict[str, str]]
-            if columns is None or col_prefix + "*" in columns:
-                cols = None
             else:
-                cols = {}
-                for name in column_names:
-                    alias = columns.get(name, "")
-                    alias = columns.get(col_prefix + name, alias)
-                    if alias != "":
-                        cols[name] = alias
+                schema = _read_table_schema(
+                    _get_table_path(self.root_path, table_desc.table_name)
+                )
+            key_column_type = schema.columns[schema.key_column].type.pa_type
             infos.append(
-                TableInfo(table_name, key_column_type, cols, explicit_none, table_path)
+                TableInfo(
+                    table_desc.table_name,
+                    key_column_type,
+                    table_desc.columns,
+                    table_desc.keep_none,
+                )
             )
 
         # check for key type conflictions
@@ -687,22 +808,47 @@ class LocalDataStore:
                     f"{info.name} has a key of type {info.key_column_type},"
                     f" while {infos[0].name} has a key of type {infos[0].key_column_type}"
                 )
+
         iters = []
         for info in infos:
+            table_path = _get_table_path(self.root_path, info.name)
             if info.name in self.tables:
-                logger.debug(f"scan by memory table{info.name}")
-                iters.append(
-                    self.tables[info.name].scan(
-                        info.columns, start, end, info.explicit_none
+                if _get_table_files(table_path):
+                    iters.append(
+                        _merge_scan(
+                            [
+                                _scan_table(
+                                    table_path,
+                                    info.columns,
+                                    start,
+                                    end,
+                                    info.keep_none,
+                                ),
+                                self.tables[info.name].scan(
+                                    info.columns, start, end, True
+                                ),
+                            ],
+                            info.keep_none,
+                        )
                     )
-                )
+                else:
+                    iters.append(
+                        self.tables[info.name].scan(
+                            info.columns, start, end, info.keep_none
+                        )
+                    )
             else:
                 logger.debug(f"scan by disk table{info.name}")
                 iters.append(
-                    _scan_table(info.path, info.columns, start, end, info.explicit_none)
+                    _scan_table(
+                        table_path,
+                        info.columns,
+                        start,
+                        end,
+                        info.keep_none,
+                    )
                 )
-
-        for record in _merge_scan(iters):
+        for record in _merge_scan(iters, keep_none):
             record.pop("*", None)
             yield record
 
@@ -714,33 +860,122 @@ class LocalDataStore:
 
 
 class RemoteDataStore:
-    def put(
-        self, table_name: str, schema: TableSchema, records: List[Dict[str, Any]]
+    def __init__(self, instance_uri: str) -> None:
+        self.instance_uri = instance_uri
+        self.token = os.getenv("SW_TOKEN")
+        if self.token is None:
+            raise RuntimeError("SW_TOKEN is not found in environment")
+
+    def update_table(
+        self,
+        table_name: str,
+        schema: TableSchema,
+        records: List[Dict[str, Any]],
     ) -> None:
-        ...
+        data: Dict[str, Any] = {"tableName": table_name}
+        schema_data: Dict[str, Any] = {
+            "keyColumn": schema.key_column,
+            "columnSchemaList": [
+                {"name": col.name, "type": str(col.type)}
+                for col in schema.columns.values()
+            ],
+        }
+        data["tableSchemaDesc"] = schema_data
+        if records is not None:
+            encoded: List[Dict[str, List[Dict[str, Optional[str]]]]] = []
+            for record in records:
+                r: List[Dict[str, Optional[str]]] = []
+                for k, v in record.items():
+                    if k == "-":
+                        r.append({"key": "-", "value": "1"})
+                    else:
+                        r.append({"key": k, "value": schema.columns[k].type.encode(v)})
+                encoded.append({"values": r})
+            data["records"] = encoded
+
+        assert self.token is not None
+        resp = requests.post(
+            urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/updateTable"),
+            data=json.dumps(data, separators=(",", ":")),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": self.token,
+            },
+            timeout=5.0,
+        )
+        resp.raise_for_status()
 
     def scan_tables(
         self,
-        tables: List[Tuple[str, str, bool]],
-        columns: Optional[Dict[str, str]] = None,
+        tables: List[TableDesc],
         start: Optional[Any] = None,
         end: Optional[Any] = None,
+        keep_none: bool = False,
     ) -> Iterator[Dict[str, Any]]:
-        ...
+        post_data: Dict[str, Any] = {"tables": [table.to_dict() for table in tables]}
+        key_type = _get_type(start)
+        assert key_type is not None
+        if end is not None:
+            post_data["end"] = key_type.encode(end)
+        if start is not None:
+            post_data["start"] = key_type.encode(start)
+        post_data["limit"] = 1000
+        if keep_none:
+            post_data["keepNone"] = True
+        assert self.token is not None
+        while True:
+            resp = requests.post(
+                urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/scanTable"),
+                data=json.dumps(post_data, separators=(",", ":")),
+                headers={
+                    "Content-Type": "application/json; charset=utf-8",
+                    "Authorization": self.token,
+                },
+                timeout=5.0,
+            )
+            resp.raise_for_status()
+            resp_json: Dict[str, Any] = resp.json()
+            records = resp_json.get("records", None)
+            if records is None or len(records) == 0:
+                break
+            if "columnTypes" not in resp_json:
+                raise RuntimeError("no column types in response")
+            column_types = {
+                col: _TYPE_NAME_DICT[type]
+                for col, type in resp_json["columnTypes"].items()
+            }
+            for record in records:
+                r = {}
+                for k, v in record.items():
+                    col_type = column_types.get(k, None)
+                    if col_type is None:
+                        raise RuntimeError(
+                            f"unknown type for column {k}, record={record}"
+                        )
+                    r[k] = col_type.decode(v)
+                yield r
+            if len(records) == 1000:
+                post_data["start"] = resp_json["lastKey"]
+                post_data["startInclusive"] = False
+            else:
+                break
 
 
 class DataStore(Protocol):
-    def put(
-        self, table_name: str, schema: TableSchema, records: List[Dict[str, Any]]
+    def update_table(
+        self,
+        table_name: str,
+        schema: TableSchema,
+        records: List[Dict[str, Any]],
     ) -> None:
         ...
 
     def scan_tables(
         self,
-        tables: List[Tuple[str, str, bool]],
-        columns: Optional[Dict[str, str]] = None,
+        tables: List[TableDesc],
         start: Optional[Any] = None,
         end: Optional[Any] = None,
+        keep_none: bool = False,
     ) -> Iterator[Dict[str, Any]]:
         ...
 
@@ -750,7 +985,7 @@ def get_data_store() -> DataStore:
     if instance is None or instance == "local":
         return LocalDataStore.get_instance()
     else:
-        return RemoteDataStore()
+        return RemoteDataStore(instance)
 
 
 def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
@@ -833,4 +1068,4 @@ class TableWriter(threading.Thread):
                     break
                 records = self.records
                 self.records = []
-            self.data_store.put(self.table_name, self.schema, records)
+            self.data_store.update_table(self.table_name, self.schema, records)
