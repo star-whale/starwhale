@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import json
 import struct
 import typing as t
 from abc import ABCMeta, abstractmethod
@@ -11,12 +12,19 @@ from pathlib import Path
 from binascii import crc32
 
 import jsonlines
+from loguru import logger
 
-from starwhale.utils import validate_obj_name
-from starwhale.consts import VERSION_PREFIX_CNT, SWDS_DATA_FNAME_FMT
+from starwhale.utils import console, validate_obj_name
+from starwhale.consts import (
+    VERSION_PREFIX_CNT,
+    STANDALONE_INSTANCE,
+    SWDS_DATA_FNAME_FMT,
+    DUMPED_SWDS_META_FNAME,
+)
 from starwhale.base.uri import URI
-from starwhale.base.type import InstanceType
+from starwhale.base.type import URIType, InstanceType
 from starwhale.utils.error import (
+    NotFoundError,
     NoSupportError,
     InvalidObjectName,
     FieldTypeOrValueError,
@@ -110,6 +118,9 @@ class TabularDatasetRow:
         return d
 
 
+_TDType = t.TypeVar("_TDType", bound="TabularDataset")
+
+
 class TabularDataset:
     def __init__(
         self,
@@ -166,21 +177,92 @@ class TabularDataset:
     def close(self) -> None:
         self._ds_wrapper.close()
 
+    def __enter__(self: _TDType) -> _TDType:
+        return self
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
+        if value:
+            logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+
+        self.close()
+
     @classmethod
     def from_uri(
-        cls,
+        cls: t.Type[_TDType],
         uri: URI,
-        start: int = -1,
+        start: int = 0,
         end: int = sys.maxsize,
-    ) -> TabularDataset:
+    ) -> _TDType:
         _version = uri.object.version
         if uri.instance_type == InstanceType.STANDALONE:
             _store = DatasetStorage(uri)
             _version = _store.id
 
-        return TabularDataset(
-            uri.object.name, _version, uri.project, start=start, end=end
+        return cls(uri.object.name, _version, uri.project, start=start, end=end)
+
+
+class StandaloneTabularDataset(TabularDataset):
+    class _BytesEncoder(json.JSONEncoder):
+        def default(self, obj: t.Any) -> t.Any:
+            if isinstance(obj, bytes):
+                return obj.decode()
+            return json.JSONEncoder.default(self, obj)
+
+    def __init__(
+        self,
+        name: str,
+        version: str,
+        project: str,
+        start: int = 0,
+        end: int = sys.maxsize,
+    ) -> None:
+        super().__init__(name, version, project, start, end)
+
+        self.uri = URI.capsulate_uri(
+            instance=STANDALONE_INSTANCE,
+            project=project,
+            obj_type=URIType.DATASET,
+            obj_name=name,
+            obj_ver=version,
         )
+        self.store = DatasetStorage(self.uri)
+
+    def dump_meta(self, force: bool = False) -> Path:
+        fpath = self.store.snapshot_workdir / DUMPED_SWDS_META_FNAME
+
+        if fpath.exists() and not force:
+            console.print(f":blossom: {fpath} existed, skip dump meta")
+            return fpath
+
+        console.print(":bear_face: dump dataset meta from data store")
+
+        with jsonlines.open(
+            str(fpath), mode="w", dumps=self._BytesEncoder(separators=(",", ":")).encode
+        ) as writer:
+            for row in self.scan():
+                writer.write(row.asdict())
+
+        return fpath
+
+    def load_meta(self) -> None:
+        fpath = self.store.snapshot_workdir / DUMPED_SWDS_META_FNAME
+
+        if not fpath.exists():
+            raise NotFoundError(fpath)
+
+        console.print(":bird: load dataset meta to standalone data store")
+        with jsonlines.open(
+            str(fpath),
+            mode="r",
+        ) as reader:
+            for line in reader:
+                row = TabularDatasetRow(**line)
+                self.put(row)
 
 
 class BuildExecutor(metaclass=ABCMeta):
