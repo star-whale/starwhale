@@ -15,6 +15,7 @@ import numpy as np
 import pyarrow as pa  # type: ignore
 import requests
 import pyarrow.parquet as pq  # type: ignore
+from loguru import logger
 from typing_extensions import Protocol
 
 from starwhale.utils.fs import ensure_dir
