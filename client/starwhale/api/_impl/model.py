@@ -20,11 +20,10 @@ from starwhale.utils import now_str, in_production
 from starwhale.consts import CURRENT_FNAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 
-from .loader import DataField, DataLoader, ResultLoader, get_data_loader
+from .loader import DataField, ResultLoader, get_data_loader
 from .wrapper import BaseEvaluation
 from ...base.type import URIType
 
@@ -215,6 +214,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def label_data_deserialize(self, data: bytes) -> bytes:
         return dill.loads(base64.b64decode(data))[0]  # type: ignore
 
+    # todo： waiting remove it
     def deserialize(self, data: t.Union[str, bytes]) -> t.Any:
         ret = json.loads(data)
         ret[self._ppl_data_field] = self.ppl_data_deserialize(ret[self._ppl_data_field])
@@ -361,7 +361,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self.evaluation.log_result(
             data_id=str(data.idx),
             result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),
-            batch=data.batch_size,
+            data_size=data.data_size,
             label=_label,
         )
         self._update_status(self.STATUS.RUNNING)
