@@ -17,7 +17,8 @@ import { Trans } from 'react-i18next'
 import './login.scss'
 import { useSearchParam } from 'react-use'
 import ThirdPartyLoginButton from '@user/components/ThirdPartyLoginButton'
-import { SignupNeedCreateAccount } from '@/consts'
+import { SignupNeedCreateAccount, SignupAccountCreated } from '@/consts'
+import { setToken } from '@/api'
 import LoginLayout from './LoginLayout'
 
 const { Form, FormItem } = createForm<ILoginUserSchema>()
@@ -28,11 +29,15 @@ export default function LoginNew() {
     const history = useHistory()
     const [isLoading, setIsLoading] = useState(false)
     const step = useSearchParam('step')
+    const token = useSearchParam('token') ?? ''
     if (step === SignupNeedCreateAccount) {
         history.push({
             pathname: '/create-account',
             search: location.search,
         })
+    } else if (step === SignupAccountCreated) {
+        setToken(token)
+        history.push('/')
     }
 
     const handleRedirect = useCallback(() => {
