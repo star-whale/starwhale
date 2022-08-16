@@ -8,3 +8,4 @@ export const dateTimeFormat = 'YYYY-MM-DD HH:mm:ss'
 export const drawerExpandedWidthOfColumnManage = 520
 export const passwordMinLength = 8
 export const SignupNeedCreateAccount = 'account_not_created'
+export const SignupAccountCreated = 'account_created'
