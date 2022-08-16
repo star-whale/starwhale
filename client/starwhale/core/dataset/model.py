@@ -3,16 +3,18 @@ from __future__ import annotations
 import json
 import typing as t
 import tarfile
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from collections import defaultdict
 
+import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
+    HTTPMethod,
     JSON_INDENT,
     DataLoaderKind,
     DefaultYAMLName,
@@ -48,12 +50,16 @@ from starwhale.base.bundle_copy import BundleCopy
 from starwhale.api._impl.dataset import StandaloneTabularDataset
 
 from .store import DatasetStorage
-from .dataset import DatasetConfig, DSProcessMode
+from .dataset import DatasetConfig, DSProcessMode, DatasetSummary
 
 
 class Dataset(BaseBundle, metaclass=ABCMeta):
     def __str__(self) -> str:
         return f"Starwhale Dataset: {self.uri}"
+
+    @abstractmethod
+    def summary(self) -> t.Dict[str, t.Any]:
+        raise NotImplementedError
 
     @classmethod
     def render_fuse_json(cls, workdir: Path, force: bool = False) -> str:
@@ -197,6 +203,10 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
 
+    def summary(self) -> t.Dict[str, t.Any]:
+        _manifest = self.store.manifest
+        return _manifest.get("dataset_summary", {})
+
     @classmethod
     def list(
         cls,
@@ -211,6 +221,10 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             bundle_type=BundleType.DATASET,
             uri_type=URIType.DATASET,
         ):
+            _mf = _bf.path / DEFAULT_MANIFEST_NAME
+            if not _mf.exists():
+                continue
+
             _manifest = load_yaml(_bf.path / DEFAULT_MANIFEST_NAME)
 
             rs[_bf.name].append(
@@ -296,7 +310,8 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             )
             if swds_config.mode == DSProcessMode.GENERATE:
                 logger.info("[info:swds]do make swds_bin job...")
-                _obj.make_swds()
+                _summary: DatasetSummary = _obj.make_swds()
+                self._manifest["dataset_summary"] = _summary.as_dict()
             else:
                 logger.info("[info:swds]skip make swds_bin")
 
@@ -398,3 +413,16 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(project_uri, URIType.DATASET, page, size)
+
+    def summary(self) -> t.Dict[str, t.Any]:
+        r = self.do_http_request(
+            f"/project/{self.uri.project}/{self.uri.object.typ}/{self.uri.object.name}",
+            method=HTTPMethod.GET,
+            instance_uri=self.uri,
+            params={"versionUrl": self.uri.object.version},
+        ).json()
+        _manifest: t.Dict[str, t.Any] = yaml.safe_load(r["data"].get("versionMeta", {}))
+        return _manifest.get("dataset_summary", {})
+
+    def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
+        raise NoSupportError("no support build dataset in the cloud instance")

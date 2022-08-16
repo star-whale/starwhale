@@ -1266,3 +1266,6 @@ class CloudRuntime(CloudRequestMixed, Runtime):
     ) -> t.Tuple[t.Dict[str, t.Any], t.Dict[str, t.Any]]:
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(project_uri, URIType.RUNTIME, page, size)
+
+    def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
+        raise NoSupportError("no support build runtime in the cloud instance")
