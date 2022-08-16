@@ -104,7 +104,7 @@ class Evaluation(Logger, BaseEvaluation):
         _m = [
             metrics
             for metrics in self._data_store.scan_tables(
-                [(self._summary_table_name, "", False)]
+                [data_store.TableDesc(self._summary_table_name)]
             )
             if metrics["id"] == self.eval_id
         ]
