@@ -44,11 +44,6 @@ public class Task extends TimeConcern {
     Long id;
 
     /**
-     * the index of task pool
-     */
-    Integer index;
-
-    /**
      * random uuid for the task
      */
     String uuid;

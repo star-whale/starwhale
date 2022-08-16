@@ -90,7 +90,6 @@ public class TaskBoConverter {
             }
             Task task = Task.builder()
                 .id(entity.getId())
-                .index(entity.getTaskIndex())
                 .step(step)
                 .agent(agentConverter.fromEntity(entity.getAgent()))
                 .status(entity.getTaskStatus())
