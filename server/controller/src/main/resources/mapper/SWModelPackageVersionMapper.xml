@@ -86,7 +86,7 @@
                #{version.versionMeta},
                #{version.storagePath},
                #{version.manifest},
-               #{version.eval_jobs})
+               #{version.evalJobs})
     </insert>
 
     <update id="update" parameterType="ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity">
