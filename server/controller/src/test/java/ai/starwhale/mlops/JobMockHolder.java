@@ -55,7 +55,7 @@ public class JobMockHolder {
             .jobRuntime(JobRuntime.builder().name("runtime1").version("version1").deviceAmount(1).storagePath(jobDir).deviceClass(Clazz.CPU).build())
             .swmp(SWModelPackage.builder().id(1L).name("swmp1").version("versionsmp1").path(storagePathCoordinator.generateSwmpPath("swmp1","versionsmp1")).build())
             .swDataSets(List.of(SWDataSet.builder().id(1L).name("swds1").version("versionswds1").path(
-                swdsPath).indexPath(swdsPath+"/index").size(1024).build()))
+                swdsPath).indexPath(swdsPath+"/index").size(1024L).build()))
             .status(JobStatus.RUNNING)
             .type(JobType.EVALUATION)
             .steps(steps)

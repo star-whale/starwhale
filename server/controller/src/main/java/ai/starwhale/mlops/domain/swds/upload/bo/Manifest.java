@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.swds.upload.bo;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
@@ -44,6 +43,7 @@ public class Manifest{
     String name;
     Map<String,String> signature;
     String rawYaml;
+    Long size;
     @Data
     public static class Extra{
         String desc;

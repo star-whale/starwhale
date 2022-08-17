@@ -40,6 +40,9 @@ import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.swds.bo.SWDSQuery;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersionQuery;
+import ai.starwhale.mlops.domain.swds.converter.SWDSVOConvertor;
+import ai.starwhale.mlops.domain.swds.converter.SWDSVersionConvertor;
+import ai.starwhale.mlops.domain.swds.datastore.DSRHelper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
@@ -50,12 +53,15 @@ import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.storage.configuration.StorageProperties;
+import ai.starwhale.mlops.storage.fs.FileStorageEnv;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -74,7 +80,7 @@ public class SWDatasetService {
     private SWDatasetVersionMapper swdsVersionMapper;
 
     @Resource
-    private SWDSConvertor swdsConvertor;
+    private SWDSVOConvertor SWDSVOConvertor;
 
     @Resource
     private SWDSVersionConvertor versionConvertor;
@@ -97,6 +103,9 @@ public class SWDatasetService {
     @Resource
     private UserService userService;
 
+    @Resource
+    private StorageProperties storageProperties;
+
     private BundleManager bundleManager() {
         return new BundleManager(idConvertor, projectManager, swdsManager, swdsManager, ValidSubject.SWDS);
     }
@@ -109,7 +118,7 @@ public class SWDatasetService {
 
         return PageUtil.toPageInfo(entities, ds -> {
             SWDatasetVersionEntity version = swdsVersionMapper.getLatestVersion(ds.getId());
-            DatasetVO vo = swdsConvertor.convert(ds);
+            DatasetVO vo = SWDSVOConvertor.convert(ds);
             vo.setVersion(versionConvertor.convert(version));
             return vo;
         });
@@ -162,7 +171,8 @@ public class SWDatasetService {
         try {
             String storagePath = versionEntity.getStoragePath();
             List<StorageFileVO> collect = storageService.listStorageFile(storagePath);
-
+            Map<String, FileStorageEnv> fileStorageEnvs = storageProperties.toFileStorageEnvs();
+            fileStorageEnvs.values().forEach(fileStorageEnv -> fileStorageEnv.add(FileStorageEnv.ENV_KEY_PREFIX,versionEntity.getStoragePath()));
             return SWDatasetInfoVO.builder()
                 .id(idConvertor.convert(ds.getId()))
                 .name(ds.getDatasetName())
@@ -170,6 +180,8 @@ public class SWDatasetService {
                 .versionTag(versionEntity.getVersionTag())
                 .versionMeta(versionEntity.getVersionMeta())
                 .createdTime(localDateTimeConvertor.convert(versionEntity.getCreatedTime()))
+                .fileStorageEnvs(fileStorageEnvs)
+                .indexTable(versionEntity.getIndexTable())
                 .files(collect)
                 .build();
 
@@ -225,7 +237,7 @@ public class SWDatasetService {
 
         return versions.stream().map(version -> {
             SWDatasetEntity ds = swdsMapper.findDatasetById(version.getDatasetId());
-            DatasetVO vo = swdsConvertor.convert(ds);
+            DatasetVO vo = SWDSVOConvertor.convert(ds);
             vo.setVersion(versionConvertor.convert(version));
             return vo;
         }).collect(Collectors.toList());

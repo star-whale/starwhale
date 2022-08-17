@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.swds;
+package ai.starwhale.mlops.domain.swds.converter;
 
 import ai.starwhale.mlops.api.protocol.swds.DatasetVO;
 import ai.starwhale.mlops.common.Convertor;
@@ -28,7 +28,7 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SWDSConvertor implements Convertor<SWDatasetEntity, DatasetVO> {
+public class SWDSVOConvertor implements Convertor<SWDatasetEntity, DatasetVO> {
 
     @Resource
     private IDConvertor idConvertor;

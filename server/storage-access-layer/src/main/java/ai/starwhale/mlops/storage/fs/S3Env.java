@@ -13,19 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ai.starwhale.mlops.api.protocol.datastore;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+package ai.starwhale.mlops.storage.fs;
 
-import javax.validation.constraints.NotNull;
-import lombok.NoArgsConstructor;
+/**
+ * holds s3 env keys
+ */
+public class S3Env extends FileStorageEnv {
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class RecordValueDesc {
-    @NotNull
-    private String key;
-    private String value;
+    public static final String ENV_BUCKET="SW_S3_BUCKET";
+
+    public static final String ENV_SECRET_KEY="SW_S3_SECRET_KEY";
+
+    public static final String ENV_SECRET_ID="SW_S3_SECRET_ID";
+
+    public static final String ENV_REGION="SW_S3_REGION";
+
+    public static final String ENV_ENDPOINT="SW_S3_ENDPOINT";
+
+    public S3Env() {
+        super(FileSystemEnvType.S3);
+    }
 }
