@@ -75,7 +75,7 @@ def ensure_dir(
             os.mkdir(path, mode)
     except OSError as e:
         if e.errno != errno.EEXIST:
-            # TODO: add more hunmanable exception log
+            # TODO: add more human friendly exception log
             raise
 
 

@@ -90,6 +90,7 @@ class SWDSBackendType:
 class DataLoaderKind:
     SWDS = "swds"
     JSONL = "jsonl"
+    RAW = "raw"
 
 
 class SWDSSubFileType:

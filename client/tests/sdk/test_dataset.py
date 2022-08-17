@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from starwhale.utils.fs import ensure_dir
-from starwhale.base.type import ObjectStoreType, RawDataFormatType
+from starwhale.base.type import DataFormatType, ObjectStoreType
 from starwhale.api._impl.dataset import (
     _data_magic,
     _header_size,
@@ -11,6 +11,7 @@ from starwhale.api._impl.dataset import (
     _header_struct,
     TabularDataset,
     MNISTBuildExecutor,
+    UserRawBuildExecutor,
 )
 
 from .. import ROOT_DIR
@@ -19,6 +20,27 @@ from .test_base import BaseTestCase
 _mnist_dir = f"{ROOT_DIR}/data/dataset/mnist"
 _mnist_data = open(f"{_mnist_dir}/data", "rb").read()
 _mnist_label = open(f"{_mnist_dir}/label", "rb").read()
+
+
+class _UserRawMNIST(UserRawBuildExecutor):
+    def iter_data_slice(self, path: str):
+        size = 28 * 28
+        file_size = Path(path).stat().st_size
+        offset = 16
+        while offset < file_size:
+            yield offset, size
+            offset += size
+
+    def iter_label_slice(self, path: str):
+        fpath = Path(path)
+
+        with fpath.open("rb") as f:
+            f.seek(8)
+            while True:
+                content = f.read(1)
+                if not content:
+                    break
+                yield content
 
 
 class TestDatasetBuildExecutor(BaseTestCase):
@@ -35,7 +57,34 @@ class TestDatasetBuildExecutor(BaseTestCase):
         with open(os.path.join(self.raw_data, "mnist-label-0"), "wb") as f:
             f.write(_mnist_label)
 
-    def test_workflow(self) -> None:
+    def test_user_raw_workflow(self) -> None:
+        with _UserRawMNIST(
+            dataset_name="mnist",
+            dataset_version="332211",
+            project_name="self",
+            data_dir=Path(self.raw_data),
+            output_dir=Path(self.output_data),
+            data_filter="mnist-data-*",
+            label_filter="mnist-data-*",
+            alignment_bytes_size=64,
+            volume_bytes_size=100,
+        ) as e:
+            summary = e.make_swds()
+
+        assert summary.rows == 10
+        assert summary.data_format_type == DataFormatType.USER_RAW
+        assert summary.object_store_type == ObjectStoreType.LOCAL
+        data_path = Path(self.output_data, "mnist-data-0")
+
+        assert data_path.exists()
+        assert data_path.stat().st_size == 28 * 28 * summary.rows + 16
+        tdb = TabularDataset(name="mnist", version="332211", project="self")
+        meta = list(tdb.scan(0, 1))[0]
+        assert meta.id == 0
+        assert meta.data_offset == 16
+        assert meta.data_uri == "mnist-data-0"
+
+    def test_swds_bin_workflow(self) -> None:
         with MNISTBuildExecutor(
             dataset_name="mnist",
             dataset_version="112233",
@@ -54,7 +103,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert summary.rows == 10
         assert summary.increased_rows == 10
         assert summary.unchanged_rows == 0
-        assert summary.data_format_type == RawDataFormatType.SWDS_BIN
+        assert summary.data_format_type == DataFormatType.SWDS_BIN
         assert summary.object_store_type == ObjectStoreType.LOCAL
 
         data_path = Path(self.output_data, "data_ubyte_0.swds_bin")

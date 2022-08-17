@@ -47,7 +47,7 @@ class DatasetTermView(BaseTermView):
         self._print_info(self.dataset.info(), fullname=fullname)
 
     def summary(self) -> None:
-        console.print(Pretty(self.dataset.summary(), expand_all=True))
+        console.print(Pretty(self.dataset.summary().as_dict(), expand_all=True))
 
     @classmethod
     def list(
