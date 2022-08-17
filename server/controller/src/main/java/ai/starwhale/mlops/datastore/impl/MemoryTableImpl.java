@@ -16,6 +16,7 @@
 package ai.starwhale.mlops.datastore.impl;
 
 import ai.starwhale.mlops.datastore.ColumnSchema;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.MemoryTable;
 import ai.starwhale.mlops.datastore.OrderByDesc;
@@ -24,12 +25,16 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableScanIterator;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
+import ai.starwhale.mlops.datastore.Wal;
+import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.exception.SWValidationException;
+import com.google.protobuf.ByteString;
 import lombok.Getter;
 
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,57 +46,226 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class MemoryTableImpl implements MemoryTable {
+    private final String tableName;
+
+    private final WalManager walManager;
+
     private TableSchema schema = null;
 
     private final TreeMap<Object, Map<String, Object>> recordMap = new TreeMap<>();
+
+    // used only for initialization from WAL
+    private final Map<Integer, ColumnSchema> indexMap = new HashMap<>();
+
+    public MemoryTableImpl(String tableName, WalManager walManager) {
+        this.tableName = tableName;
+        this.walManager = walManager;
+    }
 
     public TableSchema getSchema() {
         return this.schema == null ? null : new TableSchema(this.schema);
     }
 
     @Override
+    public void updateFromWal(Wal.WalEntry entry) {
+        if (entry.hasTableSchema()) {
+            var schemaDesc = this.parseSchema(entry.getTableSchema());
+            if (this.schema == null) {
+                this.schema = new TableSchema(schemaDesc);
+            } else {
+                this.schema.merge(schemaDesc);
+            }
+        }
+        var recordList = entry.getRecordsList();
+        if (!recordList.isEmpty()) {
+            this.insertRecords(recordList.stream().map(this::parseRecord).collect(Collectors.toList()));
+        }
+    }
+
+    private TableSchemaDesc parseSchema(Wal.TableSchema tableSchema) {
+        var ret = new TableSchemaDesc();
+        var keyColumn = tableSchema.getKeyColumn();
+        if (!keyColumn.isEmpty()) {
+            ret.setKeyColumn(keyColumn);
+        }
+        var columnList = new ArrayList<>(tableSchema.getColumnsList());
+        columnList.sort(Comparator.comparingInt(Wal.ColumnSchema::getColumnIndex));
+        var columnSchemaList = new ArrayList<ColumnSchemaDesc>();
+        for (var col : columnList) {
+            var colDesc = new ColumnSchemaDesc(col.getColumnName(), col.getColumnType());
+            columnSchemaList.add(colDesc);
+            this.indexMap.put(col.getColumnIndex(), new ColumnSchema(colDesc, col.getColumnIndex()));
+        }
+        ret.setColumnSchemaList(columnSchemaList);
+        return ret;
+    }
+
+    private Map<String, Object> parseRecord(Wal.Record record) {
+        Map<String, Object> ret = new HashMap<>();
+        for (var col : record.getColumnsList()) {
+            if (col.getIndex() == -1) {
+                ret.put("-", true);
+            } else {
+                var colSchema = this.indexMap.get(col.getIndex());
+                ret.put(colSchema.getName(), this.parseValue(colSchema, col));
+            }
+        }
+        return ret;
+    }
+
+    private Object parseValue(ColumnSchema columnSchema, Wal.Column col) {
+        if (col.getNullValue()) {
+            return null;
+        }
+        switch (columnSchema.getType()) {
+            case UNKNOWN:
+                return null;
+            case BOOL:
+                return col.getBoolValue();
+            case INT8:
+                return (byte) col.getIntValue();
+            case INT16:
+                return (short) col.getIntValue();
+            case INT32:
+                return (int) col.getIntValue();
+            case INT64:
+                return col.getIntValue();
+            case FLOAT32:
+                return col.getFloatValue();
+            case FLOAT64:
+                return col.getDoubleValue();
+            case STRING:
+                return col.getStringValue();
+            case BYTES:
+                return ByteBuffer.wrap(col.getBytesValue().toByteArray());
+            default:
+                throw new IllegalArgumentException("invalid type " + this);
+        }
+    }
+
+
+    @Override
     synchronized public void update(TableSchemaDesc schema, List<Map<String, String>> records) {
+        var logEntryBuilder = Wal.WalEntry.newBuilder()
+                .setEntryType(Wal.WalEntry.Type.UPDATE)
+                .setTableName(this.tableName);
+        TableSchema newSchema = this.schema;
         if (schema == null) {
             if (this.schema == null) {
-                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
                         "schema should not be null for the first update");
             }
         } else {
+            var logSchemaBuilder = Wal.TableSchema.newBuilder();
+            List<ColumnSchema> diff;
             if (this.schema == null) {
-                this.schema = new TableSchema(schema);
+                newSchema = new TableSchema(schema);
+                diff = newSchema.getColumnSchemas();
+                logSchemaBuilder.setKeyColumn(newSchema.getKeyColumn());
             } else {
-                this.schema.merge(schema);
+                newSchema = new TableSchema(this.schema);
+                diff = newSchema.merge(schema);
             }
+            for (var col : diff) {
+                logSchemaBuilder.addColumns(Wal.ColumnSchema.newBuilder()
+                        .setColumnIndex(col.getIndex())
+                        .setColumnName(col.getName())
+                        .setColumnType(col.getType().toString()));
+            }
+            logEntryBuilder.setTableSchema(logSchemaBuilder);
         }
+        List<Map<String, Object>> decodedRecords = null;
         if (records != null) {
-            var decodedRecords = new ArrayList<Map<String, Object>>();
+            decodedRecords = new ArrayList<>();
             for (var record : records) {
-                var key = record.get(this.schema.getKeyColumn());
+                var key = record.get(newSchema.getKeyColumn());
                 if (key == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
-                            MessageFormat.format("key column {0} is null", this.schema.getKeyColumn()));
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                            MessageFormat.format("key column {0} is null", newSchema.getKeyColumn()));
                 }
                 if (record.get("-") != null) {
-                    decodedRecords.add(Map.of(this.schema.getKeyColumn(),
-                            this.schema.getKeyColumnType().decode(key),
+                    decodedRecords.add(Map.of(newSchema.getKeyColumn(),
+                            newSchema.getKeyColumnType().decode(key),
                             "-",
                             true));
                 } else {
-                    decodedRecords.add(MemoryTableImpl.decodeRecord(this.schema, record));
+                    decodedRecords.add(MemoryTableImpl.decodeRecord(newSchema, record));
                 }
             }
             for (var record : decodedRecords) {
-                var key = record.get(this.schema.getKeyColumn());
-                if (record.get("-") != null) {
-                    this.recordMap.remove(key);
-                } else {
-                    var old = this.recordMap.putIfAbsent(key, record);
-                    if (old != null) {
-                        old.putAll(record);
-                    }
+                logEntryBuilder.addRecords(MemoryTableImpl.writeRecord(newSchema, record));
+            }
+        }
+        this.walManager.append(logEntryBuilder.build());
+        this.schema = newSchema;
+        if (decodedRecords != null) {
+            this.insertRecords(decodedRecords);
+        }
+    }
+
+    private void insertRecords(List<Map<String, Object>> records) {
+        for (var record : records) {
+            var key = record.get(this.schema.getKeyColumn());
+            if (record.get("-") != null) {
+                this.recordMap.remove(key);
+            } else {
+                var old = this.recordMap.putIfAbsent(key, record);
+                if (old != null) {
+                    old.putAll(record);
                 }
             }
         }
+    }
+
+    private static Wal.Record.Builder writeRecord(TableSchema schema, Map<String, Object> record) {
+        var ret = Wal.Record.newBuilder();
+        for (var entry : record.entrySet()) {
+            ret.addColumns(MemoryTableImpl.writeColumn(schema, entry.getKey(), entry.getValue()));
+        }
+        return ret;
+    }
+
+    private static Wal.Column.Builder writeColumn(TableSchema schema, String name, Object value) {
+        var ret = Wal.Column.newBuilder();
+        if (name.equals("-")) {
+            ret.setIndex(-1);
+        } else {
+            var colSchema = schema.getColumnSchemaByName(name);
+            ret.setIndex(colSchema.getIndex());
+            if (value == null) {
+                ret.setNullValue(true);
+            } else {
+                switch (colSchema.getType()) {
+                    case UNKNOWN:
+                        ret.setNullValue(true);
+                        break;
+                    case BOOL:
+                        ret.setBoolValue((Boolean) value);
+                        break;
+                    case INT8:
+                    case INT16:
+                    case INT32:
+                    case INT64:
+                        ret.setIntValue(((Number) value).longValue());
+                        break;
+                    case FLOAT32:
+                        ret.setFloatValue((Float) value);
+                        break;
+                    case FLOAT64:
+                        ret.setDoubleValue((Double) value);
+                        break;
+                    case STRING:
+                        ret.setStringValue((String) value);
+                        break;
+                    case BYTES:
+                        ret.setBytesValue(ByteString.copyFrom(((ByteBuffer) value).array()));
+                        break;
+                    default:
+                        throw new IllegalArgumentException("invalid type " + colSchema.getType());
+                }
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -112,11 +286,11 @@ public class MemoryTableImpl implements MemoryTable {
         if (orderBy != null) {
             for (var col : orderBy) {
                 if (col == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
                             "order by column should not be null");
                 }
                 if (this.schema.getColumnSchemaByName(col.getColumnName()) == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
                             "unknown orderBy column " + col);
                 }
             }
@@ -219,6 +393,7 @@ public class MemoryTableImpl implements MemoryTable {
             } else {
                 this.endKey = MemoryTableImpl.this.recordMap.lowerKey(endKey);
             }
+            //noinspection rawtypes,unchecked
             if (startKey != null && this.endKey != null && ((Comparable) startKey).compareTo(this.endKey) <= 0) {
                 this.iterator = MemoryTableImpl.this.recordMap.subMap(startKey, true, this.endKey, true)
                         .entrySet()
@@ -370,11 +545,11 @@ public class MemoryTableImpl implements MemoryTable {
                 var col = (TableQueryFilter.Column) op;
                 var colSchema = this.schema.getColumnSchemaByName(col.getName());
                 if (colSchema == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
                             "invalid filter, unknown column " + col.getName());
                 }
                 if (!type.getName().equals(colSchema.getType().getName())) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
                             MessageFormat.format(
                                     "invalid filter, can not compare column {0} of type {1} with column {2} of type {3}",
                                     col.getName(),
@@ -394,10 +569,10 @@ public class MemoryTableImpl implements MemoryTable {
                     checkFailed = !type.getName().equals(ColumnType.INT32.getName())
                             && !type.getName().equals(ColumnType.FLOAT32.getName());
                 } else {
-                    throw new IllegalArgumentException("unexpectd operand class " + op.getClass());
+                    throw new IllegalArgumentException("unexpected operand class " + op.getClass());
                 }
                 if (checkFailed) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
                             MessageFormat.format(
                                     "invalid filter, can not compare column {0} of type {1} with value {2} of type {3}",
                                     firstCol.orElseThrow().getName(),
@@ -466,13 +641,13 @@ public class MemoryTableImpl implements MemoryTable {
             } else {
                 var columnSchema = schema.getColumnSchemaByName(name);
                 if (columnSchema == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
                             "no schema found for column " + name);
                 }
                 try {
                     ret.put(name, columnSchema.getType().decode(value));
                 } catch (Exception e) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
                             MessageFormat.format("fail to decode value {0} for column {1}: {2}",
                                     value,
                                     name,

@@ -18,17 +18,23 @@ package ai.starwhale.mlops.exception;
 
 public class SWProcessException extends StarWhaleException {
 
-    static final String PREFIX_CODE="SYSTEM ERROR: ";
+    static final String PREFIX_CODE = "SYSTEM ERROR: ";
 
-    static final String PREFIX_TIP="ERROR occurs while dealing with ";
+    static final String PREFIX_TIP = "ERROR occurs while dealing with ";
 
     private final String code;
     private String tip;
 
-    public SWProcessException(ErrorType errorType){
+    public SWProcessException(ErrorType errorType) {
         super(PREFIX_TIP + errorType.tipSubject);
         this.code = PREFIX_CODE + errorType.tipSubject;
         this.tip = PREFIX_TIP + errorType.tipSubject;
+    }
+
+    public SWProcessException(ErrorType errorType, String tip) {
+        super(PREFIX_TIP + errorType.tipSubject + "\n" + tip);
+        this.code = PREFIX_CODE + errorType.tipSubject;
+        this.tip = PREFIX_TIP + errorType.tipSubject + "\n" + tip;
     }
 
     @Override
@@ -41,21 +47,23 @@ public class SWProcessException extends StarWhaleException {
         return this.tip;
     }
 
-    public SWProcessException tip(String tip){
+    public SWProcessException tip(String tip) {
         this.tip += "\n";
         this.tip += tip;
         return this;
     }
 
-    public enum ErrorType{
-        STORAGE("001","STORAGE"),
-        DB("002","DB"),
-        NETWORK("003","NETWORK"),
-        SYSTEM("004","SYSTEM"),
-        INFRA("005","INFRA");
+    public enum ErrorType {
+        STORAGE("001", "STORAGE"),
+        DB("002", "DB"),
+        NETWORK("003", "NETWORK"),
+        SYSTEM("004", "SYSTEM"),
+        INFRA("005", "INFRA"),
+        DATASTORE("006", "DATASTORE");
         final String code;
         final String tipSubject;
-        ErrorType(String code,String tipSubject){
+
+        ErrorType(String code, String tipSubject) {
             this.code = code;
             this.tipSubject = tipSubject;
         }

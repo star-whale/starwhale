@@ -38,6 +38,7 @@ public class TableSchema {
     @Getter
     private final ColumnType keyColumnType;
     private final Map<String, ColumnSchema> columnSchemaMap;
+    private int maxColumnIndex;
 
     public TableSchema(@NonNull TableSchemaDesc schema) {
         this.keyColumn = schema.getKeyColumn();
@@ -48,7 +49,7 @@ public class TableSchema {
         this.columnSchemaMap = new HashMap<>();
         if (schema.getColumnSchemaList() != null) {
             for (var col : schema.getColumnSchemaList()) {
-                var colSchema = new ColumnSchema(col);
+                var colSchema = new ColumnSchema(col, this.maxColumnIndex++);
                 if (!TableSchema.COLUMN_NAME_PATTERN.matcher(col.getName()).matches()) {
                     throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
                             "invalid column name " + col.getName());
@@ -75,6 +76,7 @@ public class TableSchema {
         this.keyColumn = schema.keyColumn;
         this.keyColumnType = schema.keyColumnType;
         this.columnSchemaMap = new HashMap<>(schema.columnSchemaMap);
+        this.maxColumnIndex = schema.maxColumnIndex;
     }
 
     public ColumnSchema getColumnSchemaByName(@NonNull String name) {
@@ -85,7 +87,7 @@ public class TableSchema {
         return List.copyOf(this.columnSchemaMap.values());
     }
 
-    public void merge(@NonNull TableSchemaDesc schema) {
+    public List<ColumnSchema> merge(@NonNull TableSchemaDesc schema) {
         if (schema.getKeyColumn() != null && !this.keyColumn.equals(schema.getKeyColumn())) {
             throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
                     MessageFormat.format(
@@ -94,9 +96,10 @@ public class TableSchema {
                             schema.getKeyColumn()));
         }
         var columnSchemaMap = new HashMap<String, ColumnSchema>();
+        var columnIndex = this.maxColumnIndex;
         for (var col : schema.getColumnSchemaList()) {
             var current = this.columnSchemaMap.get(col.getName());
-            var colSchema = new ColumnSchema(col);
+            var colSchema = new ColumnSchema(col, current == null ? columnIndex++ : current.getIndex());
             if (current != null
                     && current.getType() != ColumnType.UNKNOWN
                     && colSchema.getType() != ColumnType.UNKNOWN
@@ -105,11 +108,14 @@ public class TableSchema {
                         MessageFormat.format("conflicting type for column {0}, expected {1}, actual {2}",
                                 col.getName(), current.getType(), col.getType()));
             }
-            if (current == null || colSchema.getType() != ColumnType.UNKNOWN) {
+            if (current == null
+                    || current.getType() != colSchema.getType() && colSchema.getType() != ColumnType.UNKNOWN) {
                 columnSchemaMap.put(col.getName(), colSchema);
             }
         }
         this.columnSchemaMap.putAll(columnSchemaMap);
+        this.maxColumnIndex = columnIndex;
+        return List.copyOf(columnSchemaMap.values());
     }
 
     public Map<String, ColumnType> getColumnTypeMapping() {

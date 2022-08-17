@@ -15,6 +15,8 @@
  */
 package ai.starwhale.mlops.memory;
 
-public interface BufferManager {
+public interface SwBufferManager {
     SwBuffer allocate(int capacity);
+
+    void release(SwBuffer buffer);
 }

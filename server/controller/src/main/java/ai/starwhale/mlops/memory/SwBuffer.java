@@ -46,11 +46,13 @@ public interface SwBuffer {
 
     void setString(int index, String value);
 
-    byte[] getBytes(int index, int count);
+    int getBytes(int index, byte[] b, int offset, int len);
 
-    void setBytes(int index, byte[] value);
+    void setBytes(int index, byte[] b, int offset, int len);
 
     int capacity();
+
+    SwBuffer slice(int offset, int len);
 
     void copyTo(SwBuffer buf);
 

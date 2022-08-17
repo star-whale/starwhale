@@ -17,7 +17,7 @@ package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.datastore.impl.MemoryTableImpl;
 import ai.starwhale.mlops.exception.SWValidationException;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,14 +26,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Service
+@Component
 public class DataStore {
+    private final WalManager walManager;
+
     private final Map<String, MemoryTable> tables = new ConcurrentHashMap<>();
+
+    public DataStore(WalManager walManager) {
+        this.walManager = walManager;
+        var it = this.walManager.readAll();
+        while (it.hasNext()) {
+            var entry = it.next();
+            var tableName = entry.getTableName();
+            var table = this.tables.computeIfAbsent(tableName, k -> new MemoryTableImpl(tableName, this.walManager));
+            table.updateFromWal(entry);
+        }
+    }
+
+    public void terminate() {
+        this.walManager.terminate();
+    }
 
     public void update(String tableName,
                        TableSchemaDesc schema,
                        List<Map<String, String>> records) {
-        var table = this.tables.computeIfAbsent(tableName, k -> new MemoryTableImpl());
+        var table = this.tables.computeIfAbsent(tableName, k -> new MemoryTableImpl(tableName, this.walManager));
         table.update(schema, records);
     }
 
@@ -75,8 +92,9 @@ public class DataStore {
         List<Map<String, String>> ret = new ArrayList<>();
         while (!iters.isEmpty() && (req.getLimit() < 0 || ret.size() < req.getLimit())) {
             lastKey = Collections.min(iters, (a, b) -> {
-                var x = (Comparable) a.getKey();
-                var y = (Comparable) b.getKey();
+                @SuppressWarnings("rawtypes") var x = (Comparable) a.getKey();
+                @SuppressWarnings("rawtypes") var y = (Comparable) b.getKey();
+                //noinspection unchecked
                 return x.compareTo(y);
             }).getKey();
             var record = new HashMap<String, String>();
