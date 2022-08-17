@@ -17,6 +17,7 @@ from starwhale.utils.venv import (
 def import_cls(
     workdir: Path, mc: str, parentClass: t.Any = object, py_env: str = ""
 ) -> t.Any:
+    logger.debug("enter import cls func...")
     workdir_path = str(workdir.absolute())
     external_paths = [workdir_path]
     py_env = py_env or guess_current_py_env()
@@ -39,6 +40,7 @@ def import_cls(
 
     try:
         module_name, cls_name = mc.split(":", 1)
+        logger.debug(f"cmp import module:{module_name}, cls:{cls_name}")
         _module = importlib.import_module(module_name, package=workdir_path)
         _cls = getattr(_module, cls_name, None)
         if not _cls or not issubclass(_cls, parentClass):

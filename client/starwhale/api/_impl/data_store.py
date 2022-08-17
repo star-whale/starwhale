@@ -711,7 +711,7 @@ class LocalDataStore:
                 ensure_dir(ds_path)
 
                 LocalDataStore._instance = LocalDataStore(str(ds_path))
-                # atexit.register(LocalDataStore._instance.dump)
+                atexit.register(LocalDataStore._instance.dump)
             return LocalDataStore._instance
 
     def __init__(self, root_path: str) -> None:

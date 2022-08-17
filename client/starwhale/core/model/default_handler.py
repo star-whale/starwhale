@@ -1,5 +1,4 @@
-import math
-from typing import Any, Tuple
+from typing import Any
 from pathlib import Path
 
 from loguru import logger
@@ -28,7 +27,7 @@ def _get_cls(src_dir: Path) -> Any:
 def setup(context: Context) -> None:
     from starwhale.api._impl.model import _RunConfig
 
-    _run_dir = context.workdir / context.step
+    _run_dir = context.workdir / context.step / str(context.index)
     ensure_dir(_run_dir)
 
     for _w in (_run_dir,):
@@ -42,35 +41,8 @@ def setup(context: Context) -> None:
     )
 
 
-def calculate_index(data_size: int, task_num: int, task_index: int) -> Tuple[int, int]:
-    _batch_size = 1
-    if data_size > task_num:
-        _batch_size = math.ceil(data_size / task_num)
-    _start_index = min(_batch_size * task_index, data_size - 1)
-    _end_index = min(_batch_size * (task_index + 1), data_size - 1)
-    return _start_index, _end_index
-
-
-@step()
+@step(concurrency=3, task_num=6)
 def ppl(context: Context) -> None:
-    from starwhale.api._impl.model import _RunConfig
-
-    # TODO: use dataset.size() and support multi dataset uris
-    _dataset_uri = ""
-    if context.dataset_uris:
-        _dataset_uri = context.dataset_uris[0]
-    dataset_row_start, dataset_row_end = calculate_index(
-        200, context.total, context.index
-    )
-
-    _RunConfig.set_env(
-        {
-            "dataset_uri": _dataset_uri,
-            "dataset_row_start": dataset_row_start,
-            "dataset_row_end": dataset_row_end,
-        }
-    )
-    # TODO: some env can be replaced by user param
     setup(context)
     logger.debug(f"src : {context.src_dir}")
     _cls = _get_cls(context.src_dir)
@@ -85,7 +57,6 @@ def cmp(context: Context) -> None:
     setup(context)
     _cls = _get_cls(context.src_dir)
     with _cls(context=context) as _obj:
-        logger.debug("start to cmp")
         _obj._starwhale_internal_run_cmp()
 
     console.print(f":clap: finish run {context.step}-{context.index}: {_obj}")

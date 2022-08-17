@@ -212,7 +212,7 @@ class SWDSDataLoader(DataLoader):
     ) -> t.Iterator[DataField]:
         from .dataset import _header_size, _header_struct
 
-        self.logger.info(f"@{self.storage.bucket}/{key_compose}")
+        # self.logger.info(f"@{self.storage.bucket}/{key_compose}")
         _file = self.storage.backend._make_file(self.storage.bucket, key_compose)
         while True:
             header: bytes = _file.read(_header_size)

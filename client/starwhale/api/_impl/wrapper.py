@@ -4,7 +4,6 @@ import threading
 from typing import Any, Dict, List, Union, Iterator, Optional
 
 from . import data_store
-from .data_store import LocalDataStore
 
 
 class Logger:
@@ -82,11 +81,6 @@ class Evaluation(Logger):
 
         return {}
 
-    def close(self) -> None:
-        super().close()
-        if isinstance(self._data_store, LocalDataStore):
-            self._data_store.dump()
-
 
 class Dataset(Logger):
     def __init__(self, dataset_id: str, project: str = "") -> None:
@@ -112,11 +106,6 @@ class Dataset(Logger):
         return self._data_store.scan_tables(
             [data_store.TableDesc(self._meta_table_name)], start=start, end=end
         )
-
-    def close(self) -> None:
-        super().close()
-        if isinstance(self._data_store, LocalDataStore):
-            self._data_store.dump()
 
     def __str__(self) -> str:
         return f"Dataset Wrapper, table:{self._meta_table_name}"

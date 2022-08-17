@@ -10,16 +10,16 @@ import pytest
 import jsonlines
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.api._impl.job import Context
-from starwhale.api._impl.wrapper import Evaluation
-from starwhale.consts import SWDSBackendType, DEFAULT_PROJECT
+from starwhale.consts import DEFAULT_PROJECT, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.consts.env import SWEnv
+from starwhale.api._impl.job import Context
 from starwhale.api._impl.model import _RunConfig, PipelineHandler
 from starwhale.api._impl.loader import get_data_loader, S3StorageBackend
 from starwhale.api._impl.dataset import TabularDatasetRow
+from starwhale.api._impl.wrapper import Evaluation
 
 from .. import ROOT_DIR
 
@@ -149,11 +149,13 @@ class TestModelPipelineHandler(TestCase):
             for i in range(0, 1)
         ]
         _eval_store = Evaluation(eval_id=self.eval_id)
-        with SimpleHandler(context=Context(
-            workdir=Path(),
-            src_dir=Path(),
-            project=self.project,
-            version=self.eval_id)
+        with SimpleHandler(
+            context=Context(
+                workdir=Path(),
+                src_dir=Path(),
+                project=self.project,
+                version=self.eval_id,
+            )
         ) as _handler:
             _handler._starwhale_internal_run_ppl()
 
@@ -165,11 +167,13 @@ class TestModelPipelineHandler(TestCase):
         # TODO: use datastore results
         _ppl_results = list(_eval_store.get_results())
         assert len(_ppl_results) == 1
-        with SimpleHandler(context=Context(
-            workdir=Path(),
-            src_dir=Path(),
-            project=self.project,
-            version=self.eval_id)
+        with SimpleHandler(
+            context=Context(
+                workdir=Path(),
+                src_dir=Path(),
+                project=self.project,
+                version=self.eval_id,
+            )
         ) as _handler:
             _result = _handler.deserialize_fields(_ppl_results[0])
 
