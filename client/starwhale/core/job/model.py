@@ -55,11 +55,11 @@ class Task:
 
         except Exception as e:
             self.status = STATUS.FAILED
-            logger.error("execute step:{} error, {}", self.context, e)
+            logger.error(f"execute step:{self.context}, error:{e}")
             return False
         else:
             self.status = STATUS.SUCCESS
-            logger.debug("execute step:{} success", self.context)
+            logger.debug(f"execute step:{self.context} success")
             return True
         finally:
             atexit._run_exitfuncs()

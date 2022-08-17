@@ -193,6 +193,7 @@ class PipelineHandler(metaclass=ABCMeta):
         if self._stderr_changed:
             sys.stderr = self._orig_stderr
         self.evaluation.close()
+        self._timeline_writer.close()
         self.logger.remove()
         self._sw_logger.remove()
 

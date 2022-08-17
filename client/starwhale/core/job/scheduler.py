@@ -179,12 +179,12 @@ class Executor(threading.Thread):
             max_workers=self.concurrency
         ) as executor:
             futures = [executor.submit(task.execute) for task in self.tasks]
-            self.callback.callback(
-                step=self.step,
-                tasks=self.tasks,
-                res=all(
-                    future.result()
-                    for future in concurrent.futures.as_completed(futures)
-                ),
-                exec_time=time.time() - start_time,
+            res = all(
+                future.result() for future in concurrent.futures.as_completed(futures)
             )
+        self.callback.callback(
+            step=self.step,
+            tasks=self.tasks,
+            res=res,
+            exec_time=time.time() - start_time,
+        )
