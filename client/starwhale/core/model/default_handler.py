@@ -56,7 +56,9 @@ def ppl(context: Context) -> None:
     from starwhale.api._impl.model import _RunConfig
 
     # TODO: use dataset.size() and support multi dataset uris
-    _dataset_uri = context.dataset_uris[0]
+    _dataset_uri = ""
+    if context.dataset_uris:
+        _dataset_uri = context.dataset_uris[0]
     dataset_row_start, dataset_row_end = calculate_index(
         200, context.total, context.index
     )
@@ -70,6 +72,7 @@ def ppl(context: Context) -> None:
     )
     # TODO: some env can be replaced by user param
     setup(context)
+    logger.debug(f"src : {context.src_dir}")
     _cls = _get_cls(context.src_dir)
     with _cls(context=context) as _obj:
         _obj._starwhale_internal_run_ppl()

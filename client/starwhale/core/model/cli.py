@@ -166,7 +166,7 @@ def _eval(
     model_yaml: str,
     name: str,
     version: str,
-    dataset: t.List[str],
+    dataset: str,
     type: str,
     step: str,
     task_index: int,
@@ -190,11 +190,5 @@ def _eval(
         runtime_restore=runtime_restore,
         step=step,
         task_index=task_index,
-        dataset_uris=dataset,
-        kw={
-            # TODO : need in step processing(use task index and total num)
-            "dataset_uri": dataset,
-            "dataset_row_start": dataset_row_start,
-            "dataset_row_end": dataset_row_end,
-        },
+        dataset_uris=[dataset],
     )

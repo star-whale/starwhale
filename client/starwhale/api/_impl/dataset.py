@@ -11,6 +11,7 @@ from pathlib import Path
 from binascii import crc32
 
 import jsonlines
+from loguru import logger
 
 from starwhale.utils import validate_obj_name
 from starwhale.consts import VERSION_PREFIX_CNT, SWDS_DATA_FNAME_FMT
@@ -122,6 +123,7 @@ class TabularDataset:
         self.name = name
         self.version = version
         self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
+        logger.debug(f"dataset table name:{self.table_name}")
         self._ds_wrapper = DatastoreWrapperDataset(self.table_name, project)
 
         self.start = start

@@ -1,4 +1,3 @@
-import atexit
 from pathlib import Path
 
 from loguru import logger
@@ -61,5 +60,3 @@ class Task:
             self.status = STATUS.SUCCESS
             logger.debug(f"execute step:{self.context} success")
             return True
-        finally:
-            atexit._run_exitfuncs()

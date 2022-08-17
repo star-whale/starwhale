@@ -2,7 +2,7 @@ import time
 import typing as t
 import threading
 import concurrent.futures
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
 from loguru import logger
@@ -120,7 +120,7 @@ class Scheduler:
         _executor.join()
 
 
-class Callback:
+class Callback(metaclass=ABCMeta):
     def __init__(self, scheduler: Scheduler) -> None:
         self.scheduler = scheduler
 
@@ -128,7 +128,7 @@ class Callback:
     def callback(
         self, step: Step, tasks: t.List[Task], res: bool, exec_time: float
     ) -> t.Any:
-        pass
+        raise NotImplementedError
 
 
 class StepCallback(Callback):

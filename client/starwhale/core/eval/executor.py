@@ -19,6 +19,7 @@ from starwhale.api.model import PipelineHandler
 from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.core.model.model import StandaloneModel
@@ -76,6 +77,8 @@ class EvalExecutor:
             logger.info(f"[step:init]eval job version is {self._version}")
         else:
             self._version = version
+
+        self.sw_config = SWCliConfigMixed()
 
         self._workdir = Path()
         self._model_dir = Path()
@@ -225,7 +228,9 @@ class EvalExecutor:
             "-v",
             f"{_run_dir}:{_CNTR_WORKDIR}",
             "-v",
-            f"{self.project_dir / URIType.DATASET}:{_CNTR_WORKDIR}/{RunSubDirType.DATASET}",
+            f"{self.project_dir/URIType.DATASET}:/root/.starwhale/{self.project_uri.project}/{RunSubDirType.DATASET}",
+            "-v",
+            f"{self.sw_config.datastore_dir}:/root/.starwhale/.datastore",
             "-v",
             f"{self._model_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/src",
             "-v",
@@ -240,9 +245,16 @@ class EvalExecutor:
             cmd.extend(["-e", f"SW_TASK_STEP={step}"])
             cmd.extend(["-e", f"SW_TASK_INDEX={task_index}"])
 
+        cmd.extend(
+            [
+                "-e",
+                f"{SWEnv.instance_uri}={self.sw_config._current_instance_obj['uri']}",
+            ]
+        )
         cmd.extend(["-e", f"{SWEnv.project}={self.project_uri.project}"])
         cmd.extend(["-e", f"{SWEnv.eval_version}={self._version}"])
-        # cmd.extend(["-e", f"SW_DATASETS={[u.full_uri for u in self.dataset_uris]}"])
+        # TODO: support multi dataset
+        cmd.extend(["-e", f"{SWEnv.dataset_uri}={self.dataset_uris[0]}"])
 
         cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
         host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")

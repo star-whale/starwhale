@@ -43,10 +43,11 @@ def _list(
 @click.argument("project", default="")
 @click.option("--version", default=None, help="Evaluation job version")
 @click.option("--model", required=True, help="model uri or model.yaml dir path")
+# TODO:support multi dataset
 @click.option(
     "--dataset",
     required=True,
-    multiple=True,
+    # multiple=True,
     help="dataset uri, one or more",
 )
 @click.option("--runtime", default="", help="runtime uri")
@@ -77,7 +78,7 @@ def _run(
     project: str,
     version: str,
     model: str,
-    dataset: t.List[str],
+    dataset: str,
     runtime: str,
     runtime_restore: bool,
     name: str,
@@ -93,7 +94,7 @@ def _run(
         project_uri=project,
         version=version,
         model_uri=model,
-        dataset_uris=dataset,
+        dataset_uris=[dataset],
         runtime_uri=runtime,
         name=name,
         desc=desc,

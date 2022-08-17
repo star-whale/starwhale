@@ -9,9 +9,6 @@ PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
 _MANIFEST_RUNTIME=$(cat ${WORKDIR}/_manifest.yaml| grep "python:" | awk '{print $2}' | awk -F '.' '{print $1"."$2}') || true
 _MODEL_RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}') || true
 VERBOSE="-vvvv"
-EVAL_VERSION=${SW_EVAL_VERSION}
-DATASETS=${SW_DATASETS}
-STEP=${SW_TASK_STEP}
 TASK_INDEX=${SW_TASK_INDEX:=0}
 
 _update_python_alter() {
@@ -92,12 +89,12 @@ restore_activate_runtime() {
 
 run_all() {
     echo "--> start to run swmp all, use $(which swcli) cli..."
-    swcli ${VERBOSE} model eval ${WORKDIR} --type=all --version=${SW_EVAL_VERSION}
+    swcli ${VERBOSE} model eval ${WORKDIR} --type=all --dataset=${SW_DATASET_URI} --version=${SW_EVALUATION_VERSION}
 }
 
 run_single() {
     echo "--> start to run swmp single, use $(which swcli) cli..."
-    swcli ${VERBOSE} model eval ${WORKDIR} --type=single --step=${SW_TASK_STEP} --task-index=${TASK_INDEX} --version=${SW_EVAL_VERSION}
+    swcli ${VERBOSE} model eval ${WORKDIR} --type=single --dataset=${SW_DATASET_URI} --step=${SW_TASK_STEP} --task-index=${TASK_INDEX} --version=${SW_EVALUATION_VERSION}
 }
 
 welcome() {

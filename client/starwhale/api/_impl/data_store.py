@@ -19,6 +19,7 @@ from loguru import logger
 from typing_extensions import Protocol
 
 from starwhale.utils.fs import ensure_dir
+from starwhale.consts.env import SWEnv
 from starwhale.utils.config import SWCliConfigMixed
 
 try:
@@ -710,7 +711,7 @@ class LocalDataStore:
                 ensure_dir(ds_path)
 
                 LocalDataStore._instance = LocalDataStore(str(ds_path))
-                atexit.register(LocalDataStore._instance.dump)
+                # atexit.register(LocalDataStore._instance.dump)
             return LocalDataStore._instance
 
     def __init__(self, root_path: str) -> None:
@@ -982,13 +983,13 @@ class DataStore(Protocol):
 
 
 def get_data_store() -> DataStore:
-    instance = os.getenv("SW_INSTANCE_URI")
-    if instance is None:
-        instance = SWCliConfigMixed()._current_instance_obj["uri"]
-    if instance == "local":
+    instance_uri = os.getenv(SWEnv.instance_uri)
+    if instance_uri is None:
+        instance_uri = SWCliConfigMixed()._current_instance_obj["uri"]
+    if instance_uri == "local":
         return LocalDataStore.get_instance()
     else:
-        return RemoteDataStore(instance)
+        return RemoteDataStore(instance_uri)
 
 
 def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
