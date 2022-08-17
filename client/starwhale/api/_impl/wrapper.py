@@ -74,14 +74,13 @@ class Evaluation(Logger):
         )
 
     def get_metrics(self) -> Dict[str, Any]:
-        _m = [
-            metrics
-            for metrics in self._data_store.scan_tables(
-                [data_store.TableDesc(self._summary_table_name)]
-            )
-            if metrics["id"] == self.eval_id
-        ]
-        return _m[0]
+        for metrics in self._data_store.scan_tables(
+            [data_store.TableDesc(self._summary_table_name)]
+        ):
+            if metrics["id"] == self.eval_id:
+                return metrics
+
+        return {}
 
     def close(self) -> None:
         super().close()
