@@ -1,9 +1,8 @@
 import Card from '@/components/Card'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
-import { ILoginUserSchema } from '@user/schemas/user'
-import { loginUser } from '@user/services/user'
-import qs from 'qs'
+import { ICloudLoginRespSchema, ISignupUserSchema } from '@user/schemas/user'
+import { loginUserWithEmail, signupWithEmail, resendEmail } from '@user/services/user'
 import React, { useCallback, useState } from 'react'
 import { Link, useHistory, useLocation } from 'react-router-dom'
 import Button from '@/components/Button'
@@ -12,60 +11,110 @@ import Logo from '@/components/Header/Logo'
 import Input from '@/components/Input'
 import { BaseNavTabs } from '@/components/BaseNavTabs'
 import { INavItem } from '@/components/BaseSidebar'
-import { Checkbox } from 'baseui/checkbox'
+import Checkbox from '@/components/Checkbox'
 import { Trans } from 'react-i18next'
 import './login.scss'
 import { useSearchParam } from 'react-use'
 import ThirdPartyLoginButton from '@user/components/ThirdPartyLoginButton'
-import { SignupNeedCreateAccount, SignupAccountCreated } from '@/consts'
+import {
+    SignupStepNeedCreateAccount,
+    SignupStepAccountCreated,
+    SignupStepStranger,
+    SignupStepEmailNeedVerify,
+    CreateAccountPageUri,
+} from '@/consts'
 import { setToken } from '@/api'
+import { toaster } from 'baseui/toast'
+import EmailConfirm from '@user/components/EmailConfirm'
 import LoginLayout from './LoginLayout'
 
-const { Form, FormItem } = createForm<ILoginUserSchema>()
+const { Form, FormItem } = createForm<ISignupUserSchema>()
 
 export default function LoginNew() {
     const [t] = useTranslation()
     const location = useLocation()
     const history = useHistory()
     const [isLoading, setIsLoading] = useState(false)
+    const [showConfirm, setShowConfirm] = useState(false)
+    const [userLoginData, setUserLoginData] = useState<ISignupUserSchema>()
+    const isLogin = location.pathname.includes('login')
     const step = useSearchParam('step')
     const token = useSearchParam('token') ?? ''
-    if (step === SignupNeedCreateAccount) {
-        history.push({
-            pathname: '/create-account',
-            search: location.search,
-        })
-    } else if (step === SignupAccountCreated) {
-        setToken(token)
-        history.push('/')
+
+    const handleStep = useCallback(
+        (currentStep: string, loginResp?: ICloudLoginRespSchema) => {
+            if (currentStep === SignupStepNeedCreateAccount) {
+                history.push({
+                    pathname: CreateAccountPageUri,
+                    search: `${location.search}verification=${loginResp?.verification}&title=${loginResp?.title}`,
+                })
+            } else if (currentStep === SignupStepAccountCreated) {
+                setToken(token)
+                history.push('/')
+            } else if (currentStep === SignupStepStranger) {
+                toaster.info(t('User Not Registered'), { autoHideDuration: 1000 })
+            } else if (currentStep === SignupStepEmailNeedVerify) {
+                setShowConfirm(true)
+            }
+        },
+        [history, location.search, token, t]
+    )
+
+    if (step) {
+        handleStep(step)
     }
 
-    const handleRedirect = useCallback(() => {
-        const search = qs.parse(location.search, { ignoreQueryPrefix: true })
-        let { redirect } = search
-        if (redirect && typeof redirect === 'string') {
-            redirect = decodeURI(redirect)
-        } else {
-            redirect = '/'
-        }
-        history.push(redirect)
-    }, [history, location.search])
+    const addCallback = (data: ISignupUserSchema, extraUri?: string): ISignupUserSchema => {
+        const base = `${window.location.protocol}//${window.location.host}`
+        const uri = extraUri ?? CreateAccountPageUri
+        const resp = data
+        resp.callback = `${base}${uri}`
+        return resp
+    }
 
-    const handleFinish = useCallback(
-        async (data: ILoginUserSchema) => {
-            setIsLoading(true)
+    const handleSignup = useCallback(
+        async (data?: ISignupUserSchema) => {
+            if (!data) {
+                return
+            }
+            const { agreement } = data
+            if (!agreement) {
+                toaster.info(t('Should Check the ToS'), { autoHideDuration: 1000 })
+                return
+            }
             try {
-                await loginUser(data)
-                handleRedirect()
+                setIsLoading(true)
+                const params = addCallback(data)
+                setUserLoginData(params)
+                await signupWithEmail(params)
+                setShowConfirm(true)
             } finally {
                 setIsLoading(false)
             }
         },
-        [handleRedirect]
+        [setIsLoading, t]
+    )
+
+    const handleLogin = useCallback(
+        async (data: ISignupUserSchema) => {
+            if (!data) {
+                return
+            }
+            try {
+                setIsLoading(true)
+                const params = addCallback(data)
+                setUserLoginData(params)
+                const resp = await loginUserWithEmail(params)
+                handleStep(resp.step, resp)
+            } finally {
+                setIsLoading(false)
+            }
+        },
+        [handleStep, setIsLoading]
     )
 
     const navItems: INavItem[] = React.useMemo(() => {
-        const items = [
+        return [
             {
                 title: t('logIn'),
                 path: '/loginnew',
@@ -77,10 +126,28 @@ export default function LoginNew() {
                 pattern: '/\\/signup\\/?',
             },
         ]
-        return items
     }, [t])
 
-    const isLogin = location.pathname.includes('login')
+    const Confirm = () => (
+        <EmailConfirm
+            show={showConfirm}
+            email={userLoginData?.userName}
+            alreadyVerified={async () => {
+                if (!userLoginData) {
+                    return
+                }
+                setShowConfirm(false)
+                await handleLogin(userLoginData)
+            }}
+            resendEmail={async () => {
+                if (!userLoginData) {
+                    return
+                }
+                await resendEmail(userLoginData)
+                toaster.info(t('Send Email Success'), { autoHideDuration: 1000 })
+            }}
+        />
+    )
 
     return (
         <LoginLayout>
@@ -160,7 +227,7 @@ export default function LoginNew() {
                                 padding: '20px 30px 40px',
                             }}
                         >
-                            <Form onFinish={handleFinish}>
+                            <Form onFinish={isLogin ? handleLogin : handleSignup}>
                                 <FormItem>
                                     {/* TODO use the right icons */}
                                     <ThirdPartyLoginButton
@@ -178,7 +245,7 @@ export default function LoginNew() {
                                         icon={<IconFont type='google' size={20} />}
                                     />
                                 </FormItem>
-                                <FormItem name='userName'>
+                                <FormItem name='userName' required>
                                     <Input
                                         placeholder={
                                             isLogin
@@ -188,7 +255,7 @@ export default function LoginNew() {
                                         startEnhancer={<IconFont type='email' kind='gray' />}
                                     />
                                 </FormItem>
-                                <FormItem name='userPwd'>
+                                <FormItem name='userPwd' required>
                                     <Input
                                         startEnhancer={<IconFont type='password' kind='gray' />}
                                         overrides={{
@@ -236,7 +303,7 @@ export default function LoginNew() {
                                                     I agree to <Link to='/'>Terms of Service</Link> and
                                                     <Link to='/'>Privacy Policy</Link>
                                                 </Trans>
-                                                <Link to='/login'>{t('logIn')}</Link>
+                                                <Link to='/loginnew'>{t('logIn')}</Link>
                                             </p>
                                         </div>
                                     </div>
@@ -246,7 +313,12 @@ export default function LoginNew() {
                                         <Button
                                             isFull
                                             isLoading={isLoading}
-                                            overrides={{ BaseButton: { style: { height: '40px', fontSize: '16px' } } }}
+                                            overrides={{
+                                                BaseButton: {
+                                                    style: { height: '40px', fontSize: '16px' },
+                                                    props: { type: 'submit' },
+                                                },
+                                            }}
                                         >
                                             {isLogin ? t('logIn') : t('signUp')}
                                         </Button>
@@ -257,6 +329,7 @@ export default function LoginNew() {
                     </Card>
                 </div>
             </div>
+            <Confirm />
         </LoginLayout>
     )
 }

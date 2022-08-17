@@ -46,6 +46,7 @@ const iconTypes = [
     'a-sortasc',
     'a-sortdesc',
     'email',
+    'warning',
     'Facebook',
     'Twitter',
     'Instagram',

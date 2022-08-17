@@ -188,17 +188,29 @@ export function createForm<S extends {} = Store>({
 
                 const error = errors && errors[0]
 
+                const renderLabel = () => {
+                    if (!props.required) {
+                        return label
+                    }
+                    if (label) {
+                        return React.createElement(
+                            'div',
+                            { style: { display: 'flex', alignItems: 'center', gap: 4 } },
+                            [
+                                React.createElement('div', {}, '*'),
+                                React.createElement('div', { style: { flexShrink: 0 } }, label),
+                            ]
+                        )
+                    }
+                    return null
+                }
+
                 // eslint-disable-next-line react/no-children-prop
                 return React.createElement(
                     FormControl,
                     {
                         error: error?.toString(),
-                        label: props.required
-                            ? React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 4 } }, [
-                                  React.createElement('div', {}, '*'),
-                                  React.createElement('div', { style: { flexShrink: 0 } }, label),
-                              ])
-                            : label,
+                        label: renderLabel(),
                         caption,
                         children: childNode,
                     },
