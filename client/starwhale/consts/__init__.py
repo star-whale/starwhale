@@ -111,6 +111,8 @@ class SWDSSubFileType:
 
 SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDSSubFileType.BIN
 SWDS_LABEL_FNAME_FMT = "label_ubyte_{index}.%s" % SWDSSubFileType.BIN
+ARCHIVED_SWDS_META_FNAME = "archive.%s" % SWDSSubFileType.META
+DUMPED_SWDS_META_FNAME = "_meta.jsonl"
 
 CURRENT_FNAME = "current"
 

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import sys
+import json
 import struct
 import typing as t
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
-from enum import Enum, unique
 from types import TracebackType
 from pathlib import Path
 from binascii import crc32
@@ -13,18 +13,34 @@ from binascii import crc32
 import jsonlines
 from loguru import logger
 
-from starwhale.utils import validate_obj_name
-from starwhale.consts import VERSION_PREFIX_CNT, SWDS_DATA_FNAME_FMT
+from starwhale.utils import console, validate_obj_name
+from starwhale.consts import (
+    VERSION_PREFIX_CNT,
+    STANDALONE_INSTANCE,
+    SWDS_DATA_FNAME_FMT,
+    DUMPED_SWDS_META_FNAME,
+)
 from starwhale.base.uri import URI
-from starwhale.base.type import InstanceType
+from starwhale.base.type import (
+    URIType,
+    InstanceType,
+    DataOriginType,
+    ObjectStoreType,
+    RawDataFormatType,
+)
 from starwhale.utils.error import (
+    NotFoundError,
     NoSupportError,
     InvalidObjectName,
     FieldTypeOrValueError,
 )
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.core.dataset.store import DatasetStorage
-from starwhale.core.dataset.dataset import D_ALIGNMENT_SIZE, D_FILE_VOLUME_SIZE
+from starwhale.core.dataset.dataset import (
+    DatasetSummary,
+    D_ALIGNMENT_SIZE,
+    D_FILE_VOLUME_SIZE,
+)
 
 # TODO: tune header size
 _header_magic = struct.unpack(">I", b"SWDS")[0]
@@ -32,24 +48,6 @@ _data_magic = struct.unpack(">I", b"SDWS")[0]
 _header_struct = struct.Struct(">IIQIIII")
 _header_size = _header_struct.size
 _header_version = 0
-
-
-@unique
-class RawDataFormatType(Enum):
-    SWDS_BIN = "s"
-    USER = "u"
-
-
-@unique
-class ObjectStoreType(Enum):
-    LOCAL = "l"
-    REMOTE = "r"
-
-
-@unique
-class DataOriginType(Enum):
-    NEW = "n"
-    INHERIT = "i"
 
 
 class TabularDatasetRow:
@@ -111,6 +109,9 @@ class TabularDatasetRow:
         return d
 
 
+_TDType = t.TypeVar("_TDType", bound="TabularDataset")
+
+
 class TabularDataset:
     def __init__(
         self,
@@ -168,21 +169,92 @@ class TabularDataset:
     def close(self) -> None:
         self._ds_wrapper.close()
 
+    def __enter__(self: _TDType) -> _TDType:
+        return self
+
+    def __exit__(
+        self,
+        type: t.Optional[t.Type[BaseException]],
+        value: t.Optional[BaseException],
+        trace: TracebackType,
+    ) -> None:
+        if value:
+            logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
+
+        self.close()
+
     @classmethod
     def from_uri(
-        cls,
+        cls: t.Type[_TDType],
         uri: URI,
-        start: int = -1,
+        start: int = 0,
         end: int = sys.maxsize,
-    ) -> TabularDataset:
+    ) -> _TDType:
         _version = uri.object.version
         if uri.instance_type == InstanceType.STANDALONE:
             _store = DatasetStorage(uri)
             _version = _store.id
 
-        return TabularDataset(
-            uri.object.name, _version, uri.project, start=start, end=end
+        return cls(uri.object.name, _version, uri.project, start=start, end=end)
+
+
+class StandaloneTabularDataset(TabularDataset):
+    class _BytesEncoder(json.JSONEncoder):
+        def default(self, obj: t.Any) -> t.Any:
+            if isinstance(obj, bytes):
+                return obj.decode()
+            return json.JSONEncoder.default(self, obj)
+
+    def __init__(
+        self,
+        name: str,
+        version: str,
+        project: str,
+        start: int = 0,
+        end: int = sys.maxsize,
+    ) -> None:
+        super().__init__(name, version, project, start, end)
+
+        self.uri = URI.capsulate_uri(
+            instance=STANDALONE_INSTANCE,
+            project=project,
+            obj_type=URIType.DATASET,
+            obj_name=name,
+            obj_ver=version,
         )
+        self.store = DatasetStorage(self.uri)
+
+    def dump_meta(self, force: bool = False) -> Path:
+        fpath = self.store.snapshot_workdir / DUMPED_SWDS_META_FNAME
+
+        if fpath.exists() and not force:
+            console.print(f":blossom: {fpath} existed, skip dump meta")
+            return fpath
+
+        console.print(":bear_face: dump dataset meta from data store")
+
+        with jsonlines.open(
+            str(fpath), mode="w", dumps=self._BytesEncoder(separators=(",", ":")).encode
+        ) as writer:
+            for row in self.scan():
+                writer.write(row.asdict())
+
+        return fpath
+
+    def load_meta(self) -> None:
+        fpath = self.store.snapshot_workdir / DUMPED_SWDS_META_FNAME
+
+        if not fpath.exists():
+            raise NotFoundError(fpath)
+
+        console.print(":bird: load dataset meta to standalone data store")
+        with jsonlines.open(
+            str(fpath),
+            mode="r",
+        ) as reader:
+            for line in reader:
+                row = TabularDatasetRow(**line)
+                self.put(row)
 
 
 class BuildExecutor(metaclass=ABCMeta):
@@ -275,14 +347,20 @@ class BuildExecutor(metaclass=ABCMeta):
         remain = (size + _header_size) % self.alignment_bytes_size
         return 0 if remain == 0 else (self.alignment_bytes_size - remain)
 
-    def make_swds(self) -> None:
+    def make_swds(self) -> DatasetSummary:
         # TODO: add lock
         fno, wrote_size = 0, 0
         dwriter = (self.output_dir / self._DATA_FMT.format(index=fno)).open("wb")
+        data_format = RawDataFormatType.SWDS_BIN
+        object_store_type = ObjectStoreType.LOCAL
+        rows, increased_rows = 0, 0
+        total_label_size, total_data_size = 0, 0
 
         for idx, (data, label) in enumerate(
             zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())
         ):
+            # TODO: support inherit data from old dataset version
+            data_origin = DataOriginType.NEW
             data_offset, data_size = self._write(dwriter, idx, data)
             self.tabular_dataset.put(
                 TabularDatasetRow(
@@ -293,9 +371,12 @@ class BuildExecutor(metaclass=ABCMeta):
                     object_store_type=ObjectStoreType.LOCAL,
                     data_offset=data_offset,
                     data_size=data_size,
-                    data_origin=DataOriginType.NEW,
+                    data_origin=data_origin,
                 )
             )
+
+            total_data_size += data_size
+            total_label_size += len(label)
 
             wrote_size += data_size
             if wrote_size > self.volume_bytes_size:
@@ -307,10 +388,24 @@ class BuildExecutor(metaclass=ABCMeta):
                     "wb"
                 )
 
+            rows += 1
+            if data_origin == DataOriginType.NEW:
+                increased_rows += 1
+
         try:
             dwriter.close()
         except Exception as e:
             print(f"data write close exception: {e}")
+
+        summary = DatasetSummary(
+            rows=rows,
+            increased_rows=increased_rows,
+            data_format=data_format,
+            object_store_type=object_store_type,
+            label_byte_size=total_label_size,
+            data_byte_size=total_data_size,
+        )
+        return summary
 
     def _iter_files(
         self, filter: str, sort_key: t.Optional[t.Any] = None

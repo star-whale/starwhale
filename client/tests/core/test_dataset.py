@@ -37,6 +37,17 @@ class StandaloneDatasetTestCase(TestCase):
         sw = SWCliConfigMixed()
 
         m_cls = MagicMock()
+        m_cls.return_value = MagicMock(
+            **{
+                "__enter__.return_value": MagicMock(
+                    **{
+                        "make_swds.return_value": MagicMock(
+                            **{"as_dict.return_value": {}}
+                        )
+                    }
+                )
+            }
+        )
         m_import.return_value = m_cls
 
         workdir = "/home/starwhale/myproject"

@@ -14,7 +14,13 @@ from rich.progress import (
 )
 
 from starwhale.utils import console, load_yaml
-from starwhale.consts import HTTPMethod, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
+from starwhale.consts import (
+    HTTPMethod,
+    VERSION_PREFIX_CNT,
+    DEFAULT_MANIFEST_NAME,
+    DUMPED_SWDS_META_FNAME,
+    ARCHIVED_SWDS_META_FNAME,
+)
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import URIType, InstanceType, get_bundle_type_by_uri
@@ -24,7 +30,6 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.runtime.store import RuntimeStorage
-from starwhale.core.dataset.dataset import ARCHIVE_SWDS_META
 
 TMP_FILE_BUFSIZE = 8192
 
@@ -250,11 +255,11 @@ class BundleCopy(CloudRequestMixed):
             )
 
         try:
-            from starwhale.core.dataset.dataset import ARCHIVE_SWDS_META
 
             _p_map = {}
             for _p in [_workdir / "data" / n for n in _manifest["signature"]] + [
-                _workdir / ARCHIVE_SWDS_META
+                _workdir / ARCHIVED_SWDS_META_FNAME,
+                _workdir / DUMPED_SWDS_META_FNAME,
             ]:
                 _tid = progress.add_task(
                     f":arrow_up: {_p.name}",
@@ -328,8 +333,9 @@ class BundleCopy(CloudRequestMixed):
             _tid = progress.add_task(f":arrow_down: {_k}")
             _p_map[_tid] = {"path": _workdir / "data" / _k, "part": _k}
 
-        _tid = progress.add_task(f":arrow_down: {ARCHIVE_SWDS_META}")
-        _p_map[_tid] = {"path": _workdir / ARCHIVE_SWDS_META, "part": ARCHIVE_SWDS_META}
+        for _f in [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]:
+            _tid = progress.add_task(f":arrow_down: {_f}")
+            _p_map[_tid] = {"path": _workdir / _f, "part": _f}
 
         for _tid, _info in _p_map.items():
             _download(_info["path"], _info["part"], _tid)

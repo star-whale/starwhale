@@ -5,12 +5,11 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
-from starwhale.consts import HTTPMethod, DEFAULT_MANIFEST_NAME
+from starwhale.consts import HTTPMethod, DEFAULT_MANIFEST_NAME, ARCHIVED_SWDS_META_FNAME
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
 from starwhale.base.bundle_copy import BundleCopy
-from starwhale.core.dataset.dataset import ARCHIVE_SWDS_META
 
 from .. import get_predefined_config_yaml
 
@@ -103,7 +102,8 @@ class TestBundleCopy(TestCase):
 
         ensure_file(dataset_dir / DEFAULT_MANIFEST_NAME, " ")
         ensure_file(
-            dataset_dir / ARCHIVE_SWDS_META, json.dumps({"signature": ["1", "2"]})
+            dataset_dir / ARCHIVED_SWDS_META_FNAME,
+            json.dumps({"signature": ["1", "2"]}),
         )
         ensure_dir(dataset_dir / "data")
         ensure_file(dataset_dir / "data" / "1", " ")
@@ -146,6 +146,6 @@ class TestBundleCopy(TestCase):
             / "latest.swds"
         )
         assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
-        assert (dataset_dir / ARCHIVE_SWDS_META).exists()
+        assert (dataset_dir / ARCHIVED_SWDS_META_FNAME).exists()
         assert (dataset_dir / "data" / "1").exists()
         assert (dataset_dir / "data" / "2").exists()

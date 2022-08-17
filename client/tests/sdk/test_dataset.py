@@ -1,7 +1,9 @@
 import os
+import json
 from pathlib import Path
 
 from starwhale.utils.fs import ensure_dir
+from starwhale.base.type import ObjectStoreType, RawDataFormatType
 from starwhale.api._impl.dataset import (
     _data_magic,
     _header_size,
@@ -45,7 +47,15 @@ class TestDatasetBuildExecutor(BaseTestCase):
             alignment_bytes_size=64,
             volume_bytes_size=100,
         ) as e:
-            e.make_swds()
+            summary = e.make_swds()
+
+        summary_content = json.dumps(summary.as_dict())
+        assert summary_content
+        assert summary.rows == 10
+        assert summary.increased_rows == 10
+        assert summary.unchanged_rows == 0
+        assert summary.data_format_type == RawDataFormatType.SWDS_BIN
+        assert summary.object_store_type == ObjectStoreType.LOCAL
 
         data_path = Path(self.output_data, "data_ubyte_0.swds_bin")
 

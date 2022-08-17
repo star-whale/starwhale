@@ -20,6 +20,7 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.utils.http import ignore_error, wrap_sw_error_resp
+from starwhale.utils.error import NoSupportError
 
 _TMP_FILE_BUFSIZE = 8192
 _DEFAULT_TIMEOUT_SECS = 90
@@ -79,25 +80,27 @@ class CloudRequestMixed:
 
         _headers = deepcopy(headers)
         fpath = Path(file_path)
-        fields["file"] = (fpath.name, fpath.open("rb"), "text/plain")
 
-        _encoder = MultipartEncoder(fields=fields)
-        # default chunk is 8192 Bytes
-        _encoder._read = _encoder.read  # type: ignore
-        _encoder.read = lambda size: _encoder._read(_UPLOAD_CHUNK_SIZE)  # type: ignore
+        with fpath.open("rb") as f:
+            fields["file"] = (fpath.name, f, "text/plain")
 
-        _headers["Content-Type"] = _encoder.content_type
-        _monitor = MultipartEncoderMonitor(_encoder, callback=_progress_bar)
+            _encoder = MultipartEncoder(fields=fields)
+            # default chunk is 8192 Bytes
+            _encoder._read = _encoder.read  # type: ignore
+            _encoder.read = lambda size: _encoder._read(_UPLOAD_CHUNK_SIZE)  # type: ignore
 
-        return self.do_http_request(
-            url_path,
-            instance_uri=instance_uri,
-            method=HTTPMethod.POST,
-            timeout=1200,
-            data=_monitor,
-            headers=_headers,
-            **kw,
-        )
+            _headers["Content-Type"] = _encoder.content_type
+            _monitor = MultipartEncoderMonitor(_encoder, callback=_progress_bar)
+
+            return self.do_http_request(
+                url_path,
+                instance_uri=instance_uri,
+                method=HTTPMethod.POST,
+                timeout=1200,
+                data=_monitor,
+                headers=_headers,
+                **kw,
+            )
 
     def do_http_request_simple_ret(
         self,
@@ -289,3 +292,9 @@ class CloudBundleModelMixin(CloudRequestMixed):
             method=HTTPMethod.PUT,
             instance_uri=uri,
         )
+
+    def add_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        raise NoSupportError("no support add tags for dataset in the cloud instance")
+
+    def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
+        raise NoSupportError("no support remove tags for dataset in the cloud instance")
