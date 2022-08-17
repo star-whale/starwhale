@@ -11,17 +11,17 @@ import { useHistory } from 'react-router-dom'
 export default function CreateAccount() {
     const [t] = useTranslation()
     const title = useSearchParam('title') ?? ''
-    const verifier = useSearchParam('verifier') ?? ''
+    const verification = useSearchParam('verification') ?? ''
     const history = useHistory()
 
     const handleSubmit = useCallback(
         async (name: string) => {
-            const data = await createAccount(name, verifier)
-            setToken(data)
+            const { token } = await createAccount(name, verification)
+            setToken(token)
             // TODO redirect to the page before register
             history.push('/')
         },
-        [verifier, history]
+        [verification, history]
     )
 
     return (

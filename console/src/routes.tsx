@@ -11,6 +11,7 @@ import Login from '@/pages/Home/Login'
 import ProjectMembers from '@/pages/Project/ProjectMembers'
 import CreateAccount from '@/pages/Home/CreateAccount'
 import ResetPassword from '@/pages/Home/ResetPassword'
+import { CreateAccountPageUri } from '@/consts'
 import ProjectListCard from './pages/Project/ProjectListCard'
 import ModelLayout from './pages/Model/ModelLayout'
 import ModelOverview from './pages/Model/Overview'
@@ -224,7 +225,7 @@ const Routes = () => {
                         </AdminLayout>
                     </Route>
                     {/* other */}
-                    <Route exact path='/create-account' component={CreateAccount} />
+                    <Route exact path={CreateAccountPageUri} component={CreateAccount} />
                     <Route exact path='/reset' component={ResetPassword} />
                     <Route exact path='/login' component={Login} />
                     <Route exact path='/loginnew' component={LoginNew} />

@@ -25,6 +25,11 @@ export interface ILoginUserSchema {
     agreement: boolean
 }
 
+export interface ISignupUserSchema extends ILoginUserSchema {
+    agreement: boolean
+    callback: string
+}
+
 export interface IUpdateUserSchema {
     userName: string
     isEnabled: boolean
@@ -46,5 +51,9 @@ export interface INewUserSchema {
 }
 
 export interface ICloudLoginRespSchema {
-    data?: string
+    token?: string
+    verification?: string
+    // step will be one of: strange_user, email_not_verified, account_not_created, account_created
+    step: string
+    title?: string
 }
