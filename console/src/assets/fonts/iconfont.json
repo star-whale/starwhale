@@ -6,6 +6,20 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "31308852",
+      "name": "google",
+      "font_class": "google",
+      "unicode": "e63f",
+      "unicode_decimal": 58943
+    },
+    {
+      "icon_id": "31306986",
+      "name": "Github",
+      "font_class": "Github",
+      "unicode": "e640",
+      "unicode_decimal": 58944
+    },
+    {
       "icon_id": "30871637",
       "name": "check",
       "font_class": "check",

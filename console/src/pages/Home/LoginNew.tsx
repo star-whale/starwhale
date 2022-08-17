@@ -167,7 +167,7 @@ export default function LoginNew() {
                                         isLogin={isLogin}
                                         vendorName={t('Github')}
                                         vendor='github'
-                                        icon={<IconFont type='Facebook' />}
+                                        icon={<IconFont type='Github' size={20} />}
                                     />
                                 </FormItem>
                                 <FormItem>
@@ -175,7 +175,7 @@ export default function LoginNew() {
                                         isLogin={isLogin}
                                         vendorName={t('Google')}
                                         vendor='google'
-                                        icon={<IconFont type='Instagram' />}
+                                        icon={<IconFont type='google' size={20} />}
                                     />
                                 </FormItem>
                                 <FormItem name='userName'>
