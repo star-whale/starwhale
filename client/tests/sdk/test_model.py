@@ -131,6 +131,7 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.api._impl.loader.TabularDataset.scan")
     def test_ppl(self, m_scan: MagicMock) -> None:
         os.environ[SWEnv.instance_uri] = "local"
+        os.environ[SWEnv.project] = self.project
         os.environ[SWEnv.status_dir] = self.status_dir
         os.environ[SWEnv.log_dir] = self.log_dir
         os.environ[SWEnv.dataset_uri] = "mnist/version/latest"
