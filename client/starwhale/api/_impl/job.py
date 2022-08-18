@@ -1,7 +1,7 @@
 import copy
 import typing as t
-from collections import defaultdict
 from pathlib import Path
+from collections import defaultdict
 
 import yaml
 from loguru import logger
@@ -122,7 +122,6 @@ class ParseConfig:
 
 
 # shared memory, not thread safe
-# parse_config = {"parse_stage": False, "jobs": {}}
 parse_config = ParseConfig(False, {})
 
 
@@ -190,7 +189,6 @@ class Parser:
 
     @staticmethod
     def check(jobs: t.Dict[str, t.List[t.Dict]]) -> bool:
-        # check
         checks = []
         logger.debug(f"jobs:{jobs}")
         for job in jobs.items():
@@ -206,7 +204,7 @@ class Parser:
             if not _check:
                 logger.error(f"job:{job[0]} check error!")
             checks.append(_check)
-        # all is ok
+
         return all(checks)
 
     @staticmethod
