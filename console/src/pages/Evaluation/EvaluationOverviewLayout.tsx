@@ -130,7 +130,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
         <Card
             style={{
                 fontSize: '16px',
-                background: 'var(--color-brandBgSecondory4)',
+                background: 'var(--color-brandBgSecondary4)',
                 padding: '12px 20px',
                 marginBottom: '10px',
             }}
@@ -145,7 +145,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
                     <div
                         style={{
                             // flexBasis: '130px',
-                            background: 'var(--color-brandBgSecondory)',
+                            background: 'var(--color-brandBgSecondary)',
                             lineHeight: '24px',
                             padding: '0 12px',
                             borderRadius: '4px',
