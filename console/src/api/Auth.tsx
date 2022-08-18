@@ -23,7 +23,7 @@ const location = window.location
 export const AuthProvider = ({ children }: any) => {
     const [token, setToken] = React.useState(getToken())
 
-    const userInfo = useQuery('currentUser', fetchCurrentUser)
+    const userInfo = useQuery('currentUser', fetchCurrentUser, { refetchOnWindowFocus: false })
 
     const { currentUser, setCurrentUser } = useCurrentUser()
 

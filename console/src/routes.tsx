@@ -75,7 +75,7 @@ const Routes = () => {
 
     if (!token) {
         return (
-            <React.Suspense fallback={<>...</>}>
+            <React.Suspense fallback={<Pending />}>
                 <BrowserRouter>
                     <div className={styles.root}>
                         <ApiHeader />
