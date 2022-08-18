@@ -201,8 +201,11 @@ const locales0 = {
     'Send Email': {
         en: 'Send Email',
     },
-    'Reset Password Form title': {
+    'Send Reset Password Email Form title': {
         en: 'Please enter your email address',
+    },
+    'Reset Your Password': {
+        en: 'Reset Your Password',
     },
     'LOGIN': {
         en: 'LOGIN',
@@ -323,6 +326,9 @@ const locales0 = {
     },
     'Enter your password': {
         en: 'Enter your password',
+    },
+    '(reset from) Enter your password For': {
+        en: 'Enter a new password for',
     },
     'Use random password': {
         en: 'Use random password',
@@ -516,6 +522,15 @@ const locales0 = {
     },
     'passwordPlaceholder': {
         en: 'your password',
+    },
+    'Do Not Remember Your Password': {
+        en: "Don't remember your password?",
+    },
+    'Reset Password Email Send Success': {
+        en: 'You should receive an email shortly with further instructions.',
+    },
+    'Reset Password Success': {
+        en: 'Reset password success!',
     },
     'logIn': {
         en: 'Log in',

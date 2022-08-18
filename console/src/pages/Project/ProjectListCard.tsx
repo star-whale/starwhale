@@ -167,7 +167,7 @@ export default function ProjectListCard() {
     const [data, setData] = useState<IProjectSchema[]>([])
     const [css] = useStyletron()
     const [t] = useTranslation()
-    // eslintd-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
 
     useEffect(() => {
