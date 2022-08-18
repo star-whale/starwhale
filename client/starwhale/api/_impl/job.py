@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
-from starwhale.consts import DEFAULT_EVALUATION_RESOURCE, DEFAULT_EVALUATION_JOB_NAME
+from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME, DEFAULT_EVALUATION_RESOURCE
 from starwhale.utils.load import load_module
 
 
@@ -16,7 +16,9 @@ def step(
     task_num: int = 1,
     dependency: t.Optional[t.List[str]] = None,
 ) -> t.Any:
-    _resources = resources or [DEFAULT_EVALUATION_RESOURCE, ]
+    _resources = resources or [
+        DEFAULT_EVALUATION_RESOURCE,
+    ]
     _dependency = dependency or []
 
     def decorator(func: t.Any) -> t.Any:
@@ -91,8 +93,10 @@ class Step:
         self.status = ""
 
     def __repr__(self) -> str:
-        return f"job_name:{self.job_name}, step_name:{self.step_name}, " \
-               f"dependency:{self.dependency}, status: {self.status}"
+        return (
+            f"job_name:{self.job_name}, step_name:{self.step_name}, "
+            f"dependency:{self.dependency}, status: {self.status}"
+        )
 
 
 class ParseConfig:
