@@ -10,6 +10,7 @@ install_requires = [
     "importlib-metadata>=4.0.0, <=4.2.0;python_version < '3.8'",
     "attrs==21.4.0",
     "pyyaml==6.0",
+    "yamlable>=1.1.1",
     "cattrs==1.7.1",
     "requests>=2.1.0",
     "requests-toolbelt>=0.9.0",
