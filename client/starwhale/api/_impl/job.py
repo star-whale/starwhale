@@ -4,7 +4,6 @@ from pathlib import Path
 
 import yaml
 from loguru import logger
-from yamlable import YamlAble, yaml_info
 
 from starwhale.utils import load_yaml
 from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME, DEFAULT_EVALUATION_RESOURCE
@@ -26,7 +25,7 @@ def step(
 
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
-            _step = Step(
+            _step = dict(
                 job_name=job_name,
                 step_name=func.__qualname__,
                 resources=_resources,
@@ -77,8 +76,7 @@ class Context:
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
 
 
-@yaml_info(yaml_tag_ns="step")
-class Step(YamlAble):
+class Step:
     def __init__(
         self,
         job_name: str,
@@ -114,7 +112,7 @@ class Step(YamlAble):
 
 
 class ParseConfig:
-    def __init__(self, is_parse_stage: bool, jobs: t.Dict[str, t.List[Step]]):
+    def __init__(self, is_parse_stage: bool, jobs: t.Dict[str, t.List[t.Dict]]):
         self.parse_stage = is_parse_stage
         self.jobs = jobs
 
@@ -137,7 +135,7 @@ class Parser:
         return parse_config.parse_stage
 
     @staticmethod
-    def add_job(job_name: str, step: Step) -> None:
+    def add_job(job_name: str, step: t.Dict) -> None:
         _jobs = parse_config.jobs
         if job_name not in _jobs:
             parse_config.jobs[job_name] = []
@@ -145,7 +143,7 @@ class Parser:
         parse_config.jobs[job_name].append(step)
 
     @staticmethod
-    def get_jobs() -> t.Dict[str, t.List[Step]]:
+    def get_jobs() -> t.Dict[str, t.List[t.Dict]]:
         return parse_config.jobs
 
     # load is unique,so don't need to think multi load and clean
@@ -155,7 +153,7 @@ class Parser:
         parse_config.clear()
 
     @staticmethod
-    def parse_job_from_module(module: str, path: Path) -> t.Dict[str, t.List[Step]]:
+    def parse_job_from_module(module: str, path: Path) -> t.Dict[str, t.List[t.Dict]]:
         """
         parse @step from module
         :param module: module name
@@ -190,7 +188,7 @@ class Parser:
             logger.error("generator DAG error! reason:{}", "check is failed.")
 
     @staticmethod
-    def check(jobs: t.Dict[str, t.List[Step]]) -> bool:
+    def check(jobs: t.Dict[str, t.List[t.Dict]]) -> bool:
         # check
         checks = []
         logger.debug(f"jobs:{jobs}")
@@ -198,8 +196,8 @@ class Parser:
             all_steps = []
             needs = []
             for _step in job[1]:
-                all_steps.append(_step.step_name)
-                for d in _step.needs:
+                all_steps.append(_step["step_name"])
+                for d in _step["needs"]:
                     if d:
                         needs.append(d)
             logger.debug("all steps:{}, length:{}", all_steps, len(all_steps))
@@ -211,5 +209,13 @@ class Parser:
         return all(checks)
 
     @staticmethod
-    def parse_job_from_yaml(file_path: str) -> t.Any:
-        return load_yaml(file_path)
+    def parse_job_from_yaml(file_path: str) -> t.Dict[str, t.List[Step]]:
+        rt: t.Dict[str, t.List[Step]] = {}
+        _jobs = load_yaml(file_path)
+        for item in _jobs.items():
+            k = item[0]
+            v = item[1]
+            rt.setdefault(k, [])
+            for d in v:
+                rt[k].append(Step(**d))
+        return rt
