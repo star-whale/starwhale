@@ -200,6 +200,7 @@ public interface DatasetApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<UploadResult>> uploadDS(
         @RequestHeader(name = "X-SW-UPLOAD-ID", required = false) String uploadId,
+        @RequestHeader(name = "X-SW-UPLOAD-DATA-URI", required = false) String uri,
         @PathVariable(name = "projectUrl") String projectUrl,
         @Pattern(regexp = RegExps.BUNDLE_NAME_REGEX, message = "Dataset name is invalid")
         @PathVariable(name = "datasetName") String datasetName,

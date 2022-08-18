@@ -11,6 +11,8 @@
         select dsv.id as dsv_id,
                dataset_id,
                dsv.owner_id,
+               dsv.size as dsv_size,
+               dsv.index_table as dsv_index_table,
                version_name as dsv_version_name,
                version_tag as dsv_version_tag,
                version_meta as dsv_version_meta,
@@ -91,15 +93,15 @@
     </select>
 
     <insert id="revertTo">
-        replace into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, files_uploaded, storage_path, status)
-        select dataset_id, owner_id, version_name, version_tag, version_meta, files_uploaded, storage_path, status
+        replace into dataset_version (dataset_id, owner_id, version_name, size, index_table, version_tag, version_meta, files_uploaded, storage_path, status)
+        select dataset_id, owner_id, version_name, size, index_table, version_tag, version_meta, files_uploaded, storage_path, status
         from dataset_version
         where id = #{dsVersionId}
     </insert>
 
     <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into dataset_version (dataset_id, owner_id, version_name, version_tag, version_meta, storage_path, files_uploaded)
-        values(#{version.datasetId}, #{version.ownerId}, #{version.versionName}, #{version.versionTag}, #{version.versionMeta}, #{version.storagePath}, #{version.filesUploaded})
+        insert into dataset_version (dataset_id, owner_id, version_name, size, index_table, version_tag, version_meta, storage_path, files_uploaded)
+        values(#{version.datasetId}, #{version.ownerId}, #{version.versionName}, #{version.size}, #{version.indexTable}, #{version.versionTag}, #{version.versionMeta}, #{version.storagePath}, #{version.filesUploaded})
     </insert>
 
     <update id="update" parameterType="ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity">
@@ -129,6 +131,8 @@
         <result property="datasetId" column="dataset_id" />
         <result property="versionName" column="dsv_version_name" />
         <result property="datasetName" column="ds_dataset_name" />
+        <result property="size" column="dsv_size" />
+        <result property="indexTable" column="dsv_index_table" />
         <result property="versionTag" column="dsv_version_tag" />
         <result property="versionMeta" column="dsv_version_meta" />
         <result property="storagePath" column="dsv_storage_path" />

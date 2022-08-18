@@ -36,6 +36,8 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolderImpl;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.swds.datastore.DSRHelper;
+import ai.starwhale.mlops.domain.swds.datastore.IndexWriter;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
@@ -50,8 +52,15 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.JobMockHolder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
+import java.util.stream.Stream;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -60,6 +69,10 @@ import org.springframework.mock.web.MockMultipartFile;
  * test for {@link SwdsUploader}
  */
 public class SwdsUploaderTest {
+
+    final DSRHelper dsrHelper = new DSRHelper();
+
+    final IndexWriter indexWriter = mock(IndexWriter.class);
 
     @Test
     public void testSwdsUploader() throws IOException {
@@ -80,31 +93,17 @@ public class SwdsUploaderTest {
 
         SwdsUploader swdsUploader = new SwdsUploader(hotSwdsHolder, swdsMapper, swdsVersionMapper,
             storagePathCoordinator, storageAccessService, userService, projectMapper, yamlMapper,
-            hotJobHolder, projectManager);
+            hotJobHolder, projectManager, dsrHelper, indexWriter);
 
         swdsUploader.create(HotSwdsHolderTest.MANIFEST,"_manifest.yaml", new UploadRequest());
         String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
         swdsUploader.uploadBody(
-            dsVersionId,new MockMultipartFile("index.jsonl","index.jsonl","plain/text",index_file_content.getBytes()));
-        swdsUploader.uploadBody(
-            dsVersionId,new MockMultipartFile("index.jsonl","index.jsonl","plain/text",index_file_content.getBytes()));
-        swdsUploader.uploadBody(
-            dsVersionId,new MockMultipartFile("index.jsonl","index.jsonl","plain/text",index_file_content.getBytes()));
-        swdsUploader.uploadBody(
-            dsVersionId,new MockMultipartFile("index.jsonl","index.jsonl","plain/text",index_file_content.getBytes()));
-
-
-
-        Assertions.assertThrowsExactly(SWValidationException.class,()->{
-            swdsUploader.uploadBody(
-                dsVersionId,new MockMultipartFile("index.jsonl","index.jsonl","plain/text","index_file_content".getBytes()));
-        });
-        swdsUploader.uploadBody(
-            dsVersionId,new MockMultipartFile("index.jsonl-2","index.jsonl-2","plain/text","index_file_content".getBytes()));
+            dsVersionId,new MockMultipartFile("index.jsonl","index.jsonl","plain/text",index_file_content.getBytes()),"abc/index.jsonl");
 
         swdsUploader.end(dsVersionId);
 
-        verify(storageAccessService,times(3)).put(anyString(),any(byte[].class));
+        verify(storageAccessService).put(anyString(),any(byte[].class));
+        verify(storageAccessService).put(anyString(),any(InputStream.class));
         verify(swdsVersionMapper).updateStatus(null, STATUS_AVAILABLE);
         verify(swdsVersionMapper).addNewVersion(any(SWDatasetVersionEntity.class));
         String dsName = "testds3";
@@ -112,7 +111,7 @@ public class SwdsUploaderTest {
         verify(swdsMapper).addDataset(any(SWDatasetEntity.class));
 
 
-        when(storageAccessService.list(anyString())).thenReturn(List.of("a","b").stream());
+        when(storageAccessService.list(anyString())).thenReturn(Stream.of("a","b"));
         swdsUploader.create(HotSwdsHolderTest.MANIFEST,"_manifest.yaml", new UploadRequest());
         swdsUploader.cancel(dsVersionId);
         verify(swdsVersionMapper).deleteById(null);
@@ -131,22 +130,36 @@ public class SwdsUploaderTest {
         when(swdsVersionMapper.findByDSIdAndVersionNameForUpdate(1L,dsVersionId)).thenReturn(mockedEntity);
         when(swdsVersionMapper.findByDSIdAndVersionName(1L,dsVersionId)).thenReturn(mockedEntity);
         when(storageAccessService.get(anyString())).thenReturn(new ByteArrayInputStream(index_file_content.getBytes()));
-        byte[] indexbytes = swdsUploader.pull("project",dsName, dsVersionId, "index.jsonl");
+        HttpServletResponse httpResponse = mock(HttpServletResponse.class);
+        ServletOutputStream mockOutPutStream = new ServletOutputStream() {
 
-        Assertions.assertEquals(index_file_content,new String(indexbytes));;
+            @Override
+            public boolean isReady() {
+                return false;
+            }
 
-        Assertions.assertThrowsExactly(SWValidationException.class,()->{
-            swdsUploader.create(HotSwdsHolderTest.MANIFEST,"_manifest.yaml", new UploadRequest());
-        });
+            @Override
+            public void setWriteListener(WriteListener writeListener) {
+
+            }
+
+            @Override
+            public void write(int b) throws IOException {
+
+            }
+
+        };
+        when(httpResponse.getOutputStream()).thenReturn(mockOutPutStream);
+        swdsUploader.pull("project",dsName, dsVersionId, "index.jsonl", httpResponse);
+
+        Assertions.assertThrowsExactly(SWValidationException.class,()-> swdsUploader.create(HotSwdsHolderTest.MANIFEST,"_manifest.yaml", new UploadRequest()));
 
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job mockJob = jobMockHolder.mockJob();
         hotJobHolder.adopt(mockJob);
         UploadRequest uploadRequest = new UploadRequest();
         uploadRequest.setForce("1");
-        Assertions.assertThrowsExactly(SWValidationException.class,()->{
-            swdsUploader.create(HotSwdsHolderTest.MANIFEST,"_manifest.yaml", uploadRequest);
-        });
+        Assertions.assertThrowsExactly(SWValidationException.class,()-> swdsUploader.create(HotSwdsHolderTest.MANIFEST,"_manifest.yaml", uploadRequest));
         hotJobHolder.remove(mockJob.getId());
         swdsUploader.create(HotSwdsHolderTest.MANIFEST,"_manifest.yaml", uploadRequest);
         verify(swdsVersionMapper,times(1)).updateStatus(1l, STATUS_UN_AVAILABLE);

@@ -52,6 +52,10 @@ public class SWDatasetVersionEntity extends BaseEntity implements BundleVersionE
 
     private String storagePath;
 
+    private Long size;
+
+    private String indexTable;
+
     /**
      * 0 - unavailable
      * 1 - available

@@ -31,6 +31,7 @@ import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
+import ai.starwhale.mlops.domain.swds.converter.SWDSBOConverter;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
@@ -45,6 +46,8 @@ import org.junit.jupiter.api.Test;
  * a test for {@link JobBoConverter}
  */
 public class JobBoConverterTest {
+
+    final SWDSBOConverter swdsboConverter = mock(SWDSBOConverter.class);
 
     @Test
     public void testJobBoConverter(){
@@ -85,7 +88,8 @@ public class JobBoConverterTest {
             runtimeVersionEntity.getRuntimeId())).thenReturn(runtimeEntity);
 
 
-        JobBoConverter jobBoConverter = new JobBoConverter(jobSWDSVersionMapper,swModelPackageMapper,runtimeMapper,runtimeVersionMapper);
+        JobBoConverter jobBoConverter = new JobBoConverter(jobSWDSVersionMapper,swModelPackageMapper,runtimeMapper,runtimeVersionMapper,
+            swdsboConverter);
 
         Job job = jobBoConverter.fromEntity(jobEntity);
         Assertions.assertEquals(jobEntity.getJobStatus(),job.getStatus());

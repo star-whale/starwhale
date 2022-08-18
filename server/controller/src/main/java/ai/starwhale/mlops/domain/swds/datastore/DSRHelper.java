@@ -13,19 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ai.starwhale.mlops.api.protocol.datastore;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+package ai.starwhale.mlops.domain.swds.datastore;
 
-import javax.validation.constraints.NotNull;
-import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class RecordValueDesc {
-    @NotNull
-    private String key;
-    private String value;
+/**
+ * data store helper for data set
+ */
+@Component
+public class DSRHelper {
+
+    public static final String FORMATTER_TABLE_NAME="SW_TABLE_DST_%s_%s";
+
+    public String tableNameOf(String name,String version){
+        return String.format(FORMATTER_TABLE_NAME,name,version);
+    }
+
 }
