@@ -1,5 +1,6 @@
 import copy
 import typing as t
+from collections import defaultdict
 from pathlib import Path
 
 import yaml
@@ -210,12 +211,8 @@ class Parser:
 
     @staticmethod
     def parse_job_from_yaml(file_path: str) -> t.Dict[str, t.List[Step]]:
-        rt: t.Dict[str, t.List[Step]] = {}
         _jobs = load_yaml(file_path)
-        for item in _jobs.items():
-            k = item[0]
-            v = item[1]
-            rt.setdefault(k, [])
-            for d in v:
-                rt[k].append(Step(**d))
+        rt = defaultdict(list)
+        for k, v in _jobs.items():
+            rt[k] = [Step(**_v) for _v in v]
         return rt
