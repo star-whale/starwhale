@@ -14,9 +14,12 @@ from fs.copy import copy_fs, copy_file
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     DefaultYAMLName,
+    EvalHandlerType,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     DEFAULT_COPY_WORKERS,
+    DEFAULT_EVALUATION_PIPELINE,
+    DEFAULT_EVALUATION_JOBS_FNAME,
     DEFAULT_STARWHALE_API_VERSION,
 )
 from starwhale.base.tag import StandaloneTag
@@ -25,13 +28,14 @@ from starwhale.utils.fs import move_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
-from starwhale.utils.load import import_cls
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.core.job.scheduler import Scheduler
 
 from .store import ModelStorage
+from ...api._impl.job import Parser
 
 
 class ModelRunConfig:
@@ -40,6 +44,7 @@ class ModelRunConfig:
     def __init__(
         self,
         ppl: str,
+        type: str = EvalHandlerType.DEFAULT,
         runtime: str = "",
         pkg_data: t.Union[t.List[str], None] = None,
         exclude_pkg_data: t.Union[t.List[str], None] = None,
@@ -47,6 +52,7 @@ class ModelRunConfig:
         **kw: t.Any,
     ):
         self.ppl = ppl.strip()
+        self.typ = type
         self.runtime = runtime.strip()
         self.pkg_data = pkg_data or []
         self.exclude_pkg_data = exclude_pkg_data or []
@@ -83,7 +89,6 @@ class ModelConfig:
         version: str = DEFAULT_STARWHALE_API_VERSION,
         **kw: t.Any,
     ):
-
         # TODO: format model name
         self.name = name
         self.model = model or []
@@ -174,31 +179,75 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.remove(tags, quiet)
 
+    def _gen_steps(self, typ: str, ppl: str) -> None:
+        if typ is EvalHandlerType.DEFAULT:
+            # use default
+            ppl = DEFAULT_EVALUATION_PIPELINE
+        _f = self.store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
+        logger.debug(f"job ppl path:{_f}, ppl is {ppl}")
+        Parser.generate_job_yaml(ppl, self.store.snapshot_workdir / "src", _f)
+
+    @classmethod
+    def get_pipeline_handler(
+        cls,
+        workdir: Path,
+        yaml_name: str = DefaultYAMLName.MODEL,
+    ) -> str:
+        _mp = workdir / yaml_name
+        _model_config = cls.load_model_config(_mp)
+        if _model_config.run.typ is EvalHandlerType.DEFAULT:
+            return DEFAULT_EVALUATION_PIPELINE
+        return _model_config.run.ppl
+
     @classmethod
     def eval_user_handler(
         cls,
+        project: str,
+        version: str,
         typ: str,
+        src_dir: Path,
         workdir: Path,
-        yaml_name: str = DefaultYAMLName.MODEL,
+        dataset_uris: t.List[str],
+        model_yaml_name: str = DefaultYAMLName.MODEL,
+        job_name: str = "default",
+        step: str = "",
+        task_index: int = 0,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
-        from starwhale.api._impl.model import _RunConfig
 
-        _mp = workdir / yaml_name
-        _model_config = cls._load_model_config(_mp)
-        _handler = _model_config.run.ppl
+        if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
+            raise NoSupportError(typ)
 
-        _RunConfig.set_env(kw)
-        console.print(f"try to import {_handler}@{workdir}...")
-        _cls = import_cls(workdir, _handler)
+        _module = StandaloneModel.get_pipeline_handler(
+            workdir=src_dir, yaml_name=model_yaml_name
+        )
+        _yaml_path = str(src_dir / DEFAULT_EVALUATION_JOBS_FNAME)
 
-        with _cls() as _obj:
-            if typ == EvalTaskType.CMP:
-                _obj._starwhale_internal_run_cmp()
-            else:
-                _obj._starwhale_internal_run_ppl()
+        logger.debug(f"parse job from yaml:{_yaml_path}")
 
-        console.print(f":clap: finish run {typ}: {_obj}")
+        _jobs = Parser.parse_job_from_yaml(_yaml_path)
+
+        if job_name not in _jobs:
+            raise RuntimeError(f"job:{job_name} not found")
+
+        _scheduler = Scheduler(
+            project=project,
+            version=version,
+            module=_module,
+            workdir=workdir,
+            src_dir=src_dir,
+            dataset_uris=dataset_uris,
+            steps=_jobs[job_name],
+            **kw,
+        )
+
+        if typ == EvalTaskType.ALL:
+            _scheduler.schedule()
+        elif typ == EvalTaskType.SINGLE:
+            _scheduler.schedule_single_task(step, task_index)
+
+        console.print(f"job info:{_jobs}")
+        console.print(":clap: finish run")
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
@@ -283,7 +332,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self, workdir: Path, yaml_name: str = DefaultYAMLName.MODEL, **kw: t.Any
     ) -> None:
         _mp = workdir / yaml_name
-        _model_config = self._load_model_config(_mp)
+        _model_config = self.load_model_config(_mp)
+
+        logger.debug(f"build workdir:{workdir}")
 
         operations = [
             (self._gen_version, 5, "gen version"),
@@ -294,10 +345,18 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "copy src",
                 dict(workdir=workdir, yaml_name=yaml_name, model_config=_model_config),
             ),
+            # todo 20220725 add step parse for job
+            (
+                self._gen_steps,
+                5,
+                "generate execute steps",
+                dict(typ=_model_config.run.typ, ppl=_model_config.run.ppl),
+            ),
             (
                 self._render_manifest,
                 5,
                 "render manifest",
+                # dict(user_raw_config=_model_config.as_dict()),
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
             (self._make_latest_tag, 5, "make latest tag"),
@@ -305,7 +364,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         run_with_progress_bar("model bundle building...", operations)
 
     @classmethod
-    def _load_model_config(cls, yaml_path: Path) -> ModelConfig:
+    def load_model_config(cls, yaml_path: Path) -> ModelConfig:
         cls._do_validate_yaml(yaml_path)
         _config = ModelConfig.create_by_yaml(yaml_path)
 

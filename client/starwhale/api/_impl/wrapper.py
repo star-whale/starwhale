@@ -72,6 +72,15 @@ class Evaluation(Logger):
             [data_store.TableDesc(self._results_table_name)]
         )
 
+    def get_metrics(self) -> Dict[str, Any]:
+        for metrics in self._data_store.scan_tables(
+            [data_store.TableDesc(self._summary_table_name)]
+        ):
+            if metrics["id"] == self.eval_id:
+                return metrics
+
+        return {}
+
 
 class Dataset(Logger):
     def __init__(self, dataset_id: str, project: str = "") -> None:

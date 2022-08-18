@@ -8,6 +8,7 @@ from torchvision import transforms
 
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
+from starwhale.api.job import Context
 
 from .model import Net
 
@@ -17,8 +18,8 @@ ONE_IMAGE_SIZE = IMAGE_WIDTH * IMAGE_WIDTH
 
 
 class MNISTInference(PipelineHandler):
-    def __init__(self, device="cpu") -> None:
-        super().__init__(merge_label=True, ignore_error=True)
+    def __init__(self, context: Context, device="cpu") -> None:
+        super().__init__(context=context, merge_label=True, ignore_error=True)
         self.device = torch.device(device)
         self.model = self._load_model(self.device)
 
@@ -40,6 +41,7 @@ class MNISTInference(PipelineHandler):
     def cmp(self, _data_loader):
         _result, _label, _pr = [], [], []
         for _data in _data_loader:
+            # logger.debug(f"cmp data:{_data}")
             _label.extend([int(l) for l in _data[self._label_field]])
             # unpack data according to the return value of function ppl
             (pred, pr) = _data[self._ppl_data_field]

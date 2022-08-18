@@ -3,17 +3,19 @@ import json
 import base64
 import typing as t
 import sysconfig
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
 import jsonlines
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.consts import SWDSBackendType
+from starwhale.consts import DEFAULT_PROJECT, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, DataFormatType, ObjectStoreType
 from starwhale.consts.env import SWEnv
+from starwhale.api._impl.job import Context
 from starwhale.api._impl.model import _RunConfig, PipelineHandler
 from starwhale.api._impl.loader import (
     get_data_loader,
@@ -21,6 +23,7 @@ from starwhale.api._impl.loader import (
     UserRawDataLoader,
 )
 from starwhale.api._impl.dataset import TabularDatasetRow
+from starwhale.api._impl.wrapper import Evaluation
 from starwhale.core.dataset.dataset import DatasetSummary
 
 from .. import ROOT_DIR
@@ -43,9 +46,11 @@ class TestModelPipelineHandler(TestCase):
         self.setUpPyfakefs()
         self.root = "/home/starwhale/model_test"
 
+        self.project = DEFAULT_PROJECT
+        self.eval_id = "mm3wky3dgbqt"
+
         self.status_dir = os.path.join(self.root, "status")
         self.log_dir = os.path.join(self.root, "log")
-        self.result_dir = os.path.join(self.root, "result")
         self.config_dir = os.path.join(self.root, "config")
 
         ensure_dir(self.config_dir)
@@ -104,8 +109,6 @@ class TestModelPipelineHandler(TestCase):
 
         os.environ[SWEnv.status_dir] = self.status_dir
         os.environ[SWEnv.log_dir] = self.log_dir
-        os.environ[SWEnv.result_dir] = self.result_dir
-        os.environ[SWEnv.input_config] = config_json_path
 
         with SimpleHandler() as _handler:
             ppl_result_path = os.path.join(ppl_result_dir, "current")
@@ -127,15 +130,15 @@ class TestModelPipelineHandler(TestCase):
         assert os.path.exists(status_file_path)
         assert "success" in open(status_file_path).read()
         assert os.path.exists(os.path.join(self.status_dir, "timeline"))
-        result_file_path = os.path.join(self.result_dir, "current")
-        assert os.path.exists(result_file_path)
 
-        with jsonlines.open(result_file_path) as reader:
-            lines = [_l for _l in reader]
-            assert len(lines) == 1
-            assert lines[0]["summary"] == {"a": 1}
-            assert lines[0]["kind"] == "test"
+        # TODO: use datastore results
+        # with jsonlines.open(result_file_path) as reader:
+        #     lines = [_l for _l in reader]
+        #     assert len(lines) == 1
+        #     assert lines[0]["summary"] == {"a": 1}
+        #     assert lines[0]["kind"] == "test"
 
+    @pytest.mark.skip(reason="wait job scheduler feature, ppl will use datastore")
     @patch("starwhale.api._impl.loader.TabularDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_ppl(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
@@ -147,9 +150,10 @@ class TestModelPipelineHandler(TestCase):
             label_byte_size=1,
             data_byte_size=10,
         )
+        os.environ[SWEnv.instance_uri] = "local"
+        os.environ[SWEnv.project] = self.project
         os.environ[SWEnv.status_dir] = self.status_dir
         os.environ[SWEnv.log_dir] = self.log_dir
-        os.environ[SWEnv.result_dir] = self.result_dir
         os.environ[SWEnv.dataset_uri] = "mnist/version/latest"
         os.environ[SWEnv.dataset_row_start] = "0"
         os.environ[SWEnv.dataset_row_end] = "1"
@@ -165,8 +169,16 @@ class TestModelPipelineHandler(TestCase):
             )
             for i in range(0, 1)
         ]
-
-        with SimpleHandler() as _handler:
+        _eval_store = Evaluation(eval_id=self.eval_id)
+        with SimpleHandler(
+            context=Context(
+                workdir=Path(),
+                src_dir=Path(),
+                project=self.project,
+                version=self.eval_id,
+                dataset_uris=["mnist/version/latest"],
+            )
+        ) as _handler:
             _handler._starwhale_internal_run_ppl()
 
         status_file_path = os.path.join(self.status_dir, "current")
@@ -174,18 +186,23 @@ class TestModelPipelineHandler(TestCase):
         assert "success" in open(status_file_path).read()
         assert os.path.exists(os.path.join(self.status_dir, "timeline"))
 
-        result_file_path = os.path.join(self.result_dir, "current")
-        assert os.path.exists(result_file_path)
+        # TODO: use datastore results
+        _ppl_results = list(_eval_store.get_results())
+        assert len(_ppl_results) == 1
+        with SimpleHandler(
+            context=Context(
+                workdir=Path(),
+                src_dir=Path(),
+                project=self.project,
+                version=self.eval_id,
+            )
+        ) as _handler:
+            _result = _handler.deserialize_fields(_ppl_results[0])
 
-        with open(result_file_path) as reader:
-            lines = reader.readlines()
-            assert len(lines) == 1
-            with SimpleHandler() as _handler:
-                line = _handler.deserialize(lines[0].encode("utf-8"))
-            (result, pr) = line["ppl"]
-            assert result == [1, 2]
-            assert pr == 0.1
-            assert line["index"] == 0
+        (result, pr) = _result["result"]
+        assert result == [1, 2]
+        assert pr == 0.1
+        assert result["id"] == 0
 
     @pytest.mark.skip(reason="wait job scheduler feature, cmp will use datastore")
     def test_deserializer(self) -> None:

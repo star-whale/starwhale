@@ -5,7 +5,6 @@ import click
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.type import EvalTaskType
 from starwhale.consts.env import SWEnv
-from starwhale.core.job.view import JobTermView
 
 from .view import get_term_view, ModelTermView
 
@@ -117,7 +116,7 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     ModelTermView(model).extract(force, target_dir)
 
 
-@model_cmd.command("ppl")
+@model_cmd.command("eval")
 @click.argument("target")
 @click.option(
     "-f",
@@ -125,24 +124,25 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     default=DefaultYAMLName.MODEL,
     help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
+# TODO: Used to distinguish remote or local mode?
 @click.option(
-    "--status-dir",
-    envvar=SWEnv.status_dir,
-    default="/tmp/starwhale/ppl/status",
-    help=f"PPL status dir, env is {SWEnv.status_dir}",
+    "--project",
+    envvar=SWEnv.project,
+    default="self",
+    help=f"project name, env is {SWEnv.project}",
+)
+@click.option("--name", help="Job name")
+@click.option(
+    "--version", envvar=SWEnv.eval_version, default=None, help="Evaluation job version"
 )
 @click.option(
-    "--log-dir",
-    envvar=SWEnv.log_dir,
-    default="/tmp/starwhale/ppl/log",
-    help=f"PPL log dir, env is {SWEnv.log_dir}",
+    "--type",
+    type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE]),
+    default=EvalTaskType.ALL,
+    help="Evaluation run type",
 )
-@click.option(
-    "--result-dir",
-    envvar=SWEnv.result_dir,
-    default="/tmp/starwhale/ppl/result",
-    help=f"PPL result dir, env is {SWEnv.result_dir}",
-)
+@click.option("--step", default="", help="Evaluation run step")
+@click.option("--task-index", default=0, help="Index of tasks in the current step")
 @click.option("--runtime", default="", help="runtime uri")
 @click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 @click.option("--dataset", envvar=SWEnv.dataset_uri, help="dataset uri")
@@ -160,134 +160,35 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     default=-1,
     help="dataset row end index",
 )
-def _ppl(
+def _eval(
+    project: str,
     target: str,
     model_yaml: str,
-    status_dir: str,
-    log_dir: str,
-    result_dir: str,
+    name: str,
+    version: str,
+    dataset: str,
+    type: str,
+    step: str,
+    task_index: int,
     runtime: str,
     runtime_restore: bool,
-    dataset: str,
     dataset_row_start: int,
     dataset_row_end: int,
 ) -> None:
     """
-    [ONLY Standalone]Run PPL
-
-    TARGET: model uri or model workdir path, in Starwhale agent docker environment, only support workdir path.
-    """
-    # TODO: support render fuse json for cmp test
-
-    ModelTermView.eval(
-        target=target,
-        yaml_name=model_yaml,
-        typ=EvalTaskType.PPL,
-        runtime_uri=runtime,
-        runtime_restore=runtime_restore,
-        kw={
-            "status_dir": status_dir,
-            "log_dir": log_dir,
-            "result_dir": result_dir,
-            "dataset_uri": dataset,
-            "dataset_row_start": dataset_row_start,
-            "dataset_row_end": dataset_row_end,
-        },
-    )
-
-
-@model_cmd.command("cmp")
-@click.argument("target")
-@click.option(
-    "-f",
-    "--model-yaml",
-    default=DefaultYAMLName.MODEL,
-    help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
-)
-@click.option(
-    "--status-dir",
-    envvar=SWEnv.status_dir,
-    default="/tmp/starwhale/cmp/status",
-    help=f"CMP status dir, env is {SWEnv.status_dir}",
-)
-@click.option(
-    "--log-dir",
-    envvar=SWEnv.log_dir,
-    default="/tmp/starwhale/cmp/log",
-    help=f"CMP log dir, env is {SWEnv.log_dir}",
-)
-@click.option(
-    "--result-dir",
-    envvar=SWEnv.result_dir,
-    default="/tmp/starwhale/cmp/result",
-    help=f"CMP result dir, env is {SWEnv.result_dir}",
-)
-@click.option("--runtime", default="", help="runtime uri")
-@click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
-def _cmp(
-    target: str,
-    model_yaml: str,
-    status_dir: str,
-    log_dir: str,
-    result_dir: str,
-    runtime: str,
-    runtime_restore: bool,
-) -> None:
-    """
-    [ONLY Standalone]Run CMP, compare inference output with label, then generate result jsonline file.
+    [ONLY Standalone]Run evaluation processing with root dir of {target}.
 
     TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
     ModelTermView.eval(
+        project=project,
         target=target,
+        version=version,
         yaml_name=model_yaml,
-        typ=EvalTaskType.CMP,
+        typ=type,
         runtime_uri=runtime,
         runtime_restore=runtime_restore,
-        kw={
-            "status_dir": status_dir,
-            "log_dir": log_dir,
-            "result_dir": result_dir,
-        },
-    )
-
-
-@model_cmd.command("eval")
-@click.argument("model")
-@click.option(
-    "--dataset",
-    required=True,
-    multiple=True,
-    help="Dataset URI, one or more",
-)
-@click.option("--name", help="Job name")
-@click.option("--desc", help="Job description")
-@click.option("-p", "--project", default="", help="Project URI")
-@click.option("--runtime", default="", help="runtime uri")
-@click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
-def _eval(
-    model: str,
-    dataset: t.List[str],
-    name: str,
-    desc: str,
-    project: str,
-    runtime: str,
-    runtime_restore: bool,
-) -> None:
-    """
-    [ONLY Standalone]Create as new job for model evaluation
-
-    MODEL: model uri or model workdir path
-    """
-    JobTermView.create(
-        project_uri=project,
-        model_uri=model,
-        dataset_uris=dataset,
-        runtime_uri=runtime,
-        name=name,
-        desc=desc,
-        use_docker=False,
-        gencmd=False,
-        phase=EvalTaskType.ALL,
-        runtime_restore=runtime_restore,
+        step=step,
+        task_index=task_index,
+        dataset_uris=[dataset],
     )

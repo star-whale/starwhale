@@ -14,6 +14,10 @@ ENV_SW_LOCAL_STORAGE = "SW_LOCAL_STORAGE"
 
 DEFAULT_STARWHALE_API_VERSION = "1.0"
 DEFAULT_MANIFEST_NAME = "_manifest.yaml"
+DEFAULT_EVALUATION_JOB_NAME = "default"
+DEFAULT_EVALUATION_RESOURCE = "cpu=1"
+DEFAULT_EVALUATION_JOBS_FNAME = "eval_jobs.yaml"
+DEFAULT_EVALUATION_PIPELINE = "starwhale.core.model.default_handler"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
 LOCAL_FUSE_JSON_NAME = "local_fuse.json"
 DEFAULT_INPUT_JSON_FNAME = "input.json"
@@ -87,10 +91,20 @@ class SWDSBackendType:
     FUSE = "fuse"
 
 
+class EvalHandlerType:
+    DEFAULT = "default"
+    CUSTOM = "custom"
+
+
 class DataLoaderKind:
     SWDS = "swds"
     JSONL = "jsonl"
     RAW = "raw"
+
+
+class EvaluationResultKind:
+    RESULT = "result"
+    METRIC = "metric"
 
 
 class SWDSSubFileType:

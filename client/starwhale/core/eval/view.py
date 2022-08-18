@@ -2,6 +2,7 @@ import sys
 import typing as t
 
 from rich import box
+from loguru import logger
 from rich.tree import Tree
 from rich.table import Table
 from rich.pretty import Pretty
@@ -17,15 +18,16 @@ from starwhale.base.uri import URI
 from starwhale.base.type import URIType, EvalTaskType, InstanceType, JobOperationType
 from starwhale.base.view import BaseTermView
 
-from .model import Job
+from .model import EvaluationJob
 
 
 class JobTermView(BaseTermView):
     def __init__(self, job_uri: str) -> None:
         super().__init__()
         self.raw_uri = job_uri
-        self.uri = URI(job_uri, expected_type=URIType.JOB)
-        self.job = Job.get_job(self.uri)
+        self.uri = URI(job_uri, expected_type=URIType.EVALUATION)
+        logger.debug(f"eval job:{self.raw_uri}")
+        self.job = EvaluationJob.get_job(self.uri)
         self._action_run_map = {
             JobOperationType.CANCEL: self.job.cancel,
             JobOperationType.RESUME: self.job.resume,
@@ -63,8 +65,8 @@ class JobTermView(BaseTermView):
 
         jobs = []
         for _u in job_uris:
-            _uri = URI(_u, expected_type=URIType.JOB)
-            jobs.append(Job.get_job(_uri))
+            _uri = URI(_u, expected_type=URIType.EVALUATION)
+            jobs.append(EvaluationJob.get_job(_uri))
 
         rt = self.job.compare(jobs)
         table = Table(
@@ -158,6 +160,7 @@ class JobTermView(BaseTermView):
         )
         console.print(table)
 
+    # TODO: use new result format
     def _render_job_report(self, report: t.Dict[str, t.Any]) -> None:
         if not report:
             console.print(":turtle: no report")
@@ -227,33 +230,39 @@ class JobTermView(BaseTermView):
         _print_confusion_matrix()
 
     @classmethod
-    def create(
+    def run(
         cls,
         project_uri: str,
         model_uri: str,
         dataset_uris: t.List[str],
         runtime_uri: str,
+        version: str = "",
         name: str = "",
         desc: str = "",
         resource: str = "",
         gencmd: bool = False,
         use_docker: bool = False,
-        phase: str = EvalTaskType.ALL,
+        typ: str = EvalTaskType.ALL,
+        step: str = "",
+        task_index: int = 0,
         runtime_restore: bool = False,
     ) -> None:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
-        ok, reason = Job.create(
+        ok, reason = EvaluationJob.run(
             _project_uri,
             model_uri,
             dataset_uris,
             runtime_uri,
+            version=version,
             name=name,
             desc=desc,
-            phase=phase,
+            typ=typ,
             resource=resource,
             gencmd=gencmd,
             use_docker=use_docker,
             runtime_restore=runtime_restore,
+            step=step,
+            task_index=task_index,
         )
 
         # TODO: show report in standalone mode directly
@@ -282,7 +291,7 @@ class JobTermView(BaseTermView):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
-        jobs, pager = Job.list(
+        jobs, pager = EvaluationJob.list(
             URI(project_uri, expected_type=URIType.PROJECT), page, size
         )
         jobs = sort_obj_list(jobs, [Order("manifest.created_at", True)])

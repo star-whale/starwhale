@@ -13,6 +13,8 @@ from sklearn.metrics import (  # type: ignore
     multilabel_confusion_matrix,
 )
 
+from starwhale.utils.flatten import do_flatten_dict
+
 
 class MetricKind:
     MultiClassification = "multi_classification"
@@ -49,6 +51,7 @@ def multi_classification(
                 y_true, y_pred, labels=all_labels, normalize=confusion_matrix_normalize
             )
             mcm = multilabel_confusion_matrix(y_true, y_pred, labels=all_labels)
+
             _r["confusion_matrix"] = {
                 "binarylabel": cm.tolist(),
                 "multilabel": mcm.tolist(),
@@ -64,7 +67,7 @@ def multi_classification(
                     _r["roc_auc"][_label] = _calculate_roc_auc(
                         y_true, y_pr, _label, _idx
                     )
-            return _r
+            return do_flatten_dict(_r)
 
         return _wrapper
 

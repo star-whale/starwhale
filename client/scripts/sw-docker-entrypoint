@@ -9,6 +9,7 @@ PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
 _MANIFEST_RUNTIME=$(cat ${WORKDIR}/_manifest.yaml| grep "python:" | awk '{print $2}' | awk -F '.' '{print $1"."$2}') || true
 _MODEL_RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}') || true
 VERBOSE="-vvvv"
+TASK_INDEX=${SW_TASK_INDEX:=0}
 
 _update_python_alter() {
     echo "--> set python/python3 to $1 ..."
@@ -59,11 +60,6 @@ pre_check() {
         echo "${WORKDIR} is not starwhale target dir, will exit"
         exit 1
     fi
-
-    if [ ! -f "${SW_TASK_INPUT_CONFIG}" ]; then
-        echo "${SW_TASK_INPUT_CONFIG} not found, please set env and volume file into container"
-        exit 1
-    fi
 }
 
 set_python() {
@@ -80,7 +76,7 @@ set_python() {
         _update_python_alter "python3.8"
     fi
 }
-
+# TODO:restore when processing evaluation(eval run use param: 'runtime URI', and it can be uri or dir path )
 restore_activate_runtime() {
     echo '--> restore python env ...'
     export PYTHONWARNINGS="ignore:Unverified HTTPS request"
@@ -91,14 +87,14 @@ restore_activate_runtime() {
     eval "$(./activate.sw)"
 }
 
-run_ppl() {
-    echo "--> start to run swmp ppl, use $(which swcli) cli..."
-    swcli ${VERBOSE} model ppl ${WORKDIR}/src
+run_all() {
+    echo "--> start to run swmp all, use $(which swcli) cli..."
+    swcli ${VERBOSE} model eval ${WORKDIR} --type=all --dataset=${SW_DATASET_URI} --version=${SW_EVALUATION_VERSION}
 }
 
-run_cmp() {
-    echo "--> start to run swmp cmp, use $(which swcli) cli..."
-    swcli ${VERBOSE} model cmp ${WORKDIR}/src
+run_single() {
+    echo "--> start to run swmp single, use $(which swcli) cli..."
+    swcli ${VERBOSE} model eval ${WORKDIR} --type=single --dataset=${SW_DATASET_URI} --step=${SW_TASK_STEP} --task-index=${TASK_INDEX} --version=${SW_EVALUATION_VERSION}
 }
 
 welcome() {
@@ -124,11 +120,11 @@ case "$1" in
     pre_config)
         pre_config
         ;;
-    cmp)
-        eval_task_prepare $1 && run_cmp
+    run_all)
+        eval_task_prepare $1 && run_all
         ;;
-    ppl)
-        eval_task_prepare $1 && run_ppl
+    run_single)
+        eval_task_prepare $1 && run_single
         ;;
     *)
         exec "$@"

@@ -126,6 +126,7 @@ class TabularDataset:
         self.name = name
         self.version = version
         self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
+        logger.debug(f"dataset table name:{self.table_name}")
         self._ds_wrapper = DatastoreWrapperDataset(self.table_name, project)
 
         self.start = start

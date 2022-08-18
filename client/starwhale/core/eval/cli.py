@@ -7,13 +7,15 @@ from starwhale.base.type import EvalTaskType
 from .view import JobTermView, get_term_view, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
-@click.group("job", help="Job management, create/list/info/compare evaluation job")
+@click.group(
+    "eval", help="Evaluation management, create/list/info/compare evaluation job"
+)
 @click.pass_context
-def job_cmd(ctx: click.Context) -> None:
+def eval_job_cmd(ctx: click.Context) -> None:
     ctx.obj = get_term_view(ctx.obj)
 
 
-@job_cmd.command("list", help="List all jobs in the current project")
+@eval_job_cmd.command("list", help="List all jobs in the current project")
 @click.option("-p", "--project", default="", help="Project URI")
 @click.option("--fullname", is_flag=True, help="Show fullname of swmp version")
 @click.option("--show-removed", is_flag=True, help="Show removed dataset")
@@ -37,17 +39,20 @@ def _list(
     )
 
 
-@job_cmd.command("create", help="Create job")
+@eval_job_cmd.command("run", help="Run job")
 @click.argument("project", default="")
+@click.option("--version", default=None, help="Evaluation job version")
 @click.option("--model", required=True, help="model uri or model.yaml dir path")
+# TODO:support multi dataset
 @click.option(
     "--dataset",
     required=True,
-    multiple=True,
+    # multiple=True,
     help="dataset uri, one or more",
 )
 @click.option("--runtime", default="", help="runtime uri")
-@click.option("--name", help="job name")
+@click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
+@click.option("--name", default="default", help="job name")
 @click.option("--desc", help="job description")
 @click.option(
     "--resource",
@@ -62,45 +67,48 @@ def _list(
 )
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
 @click.option(
-    "--phase",
-    type=click.Choice([EvalTaskType.ALL, EvalTaskType.PPL]),
+    "--type",
+    type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE]),
     default=EvalTaskType.ALL,
-    help="[ONLY Standalone]evaluation run phase",
+    help="Evaluation run type",
 )
-@click.option(
-    "--runtime-restore",
-    is_flag=True,
-    help="[ONLY Standalone]force to restore runtime in the non-docker environment",
-)
-def _create(
+@click.option("--step", default="", help="Evaluation run step")
+@click.option("--task-index", default=0, help="Index of tasks in the current step")
+def _run(
     project: str,
+    version: str,
     model: str,
-    dataset: t.List[str],
+    dataset: str,
     runtime: str,
+    runtime_restore: bool,
     name: str,
     desc: str,
     resource: str,
     use_docker: bool,
     gencmd: bool,
-    phase: str,
-    runtime_restore: bool,
+    type: str,
+    step: str,
+    task_index: int,
 ) -> None:
-    JobTermView.create(
+    JobTermView.run(
         project_uri=project,
+        version=version,
         model_uri=model,
-        dataset_uris=dataset,
+        dataset_uris=[dataset],
         runtime_uri=runtime,
         name=name,
         desc=desc,
         resource=resource,
         gencmd=gencmd,
-        phase=phase,
+        typ=type,
         use_docker=use_docker,
+        step=step,
+        task_index=task_index,
         runtime_restore=runtime_restore,
     )
 
 
-@job_cmd.command("remove", help="Remove job")
+@eval_job_cmd.command("remove", help="Remove job")
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="Force to remove")
 def _remove(job: str, force: bool) -> None:
@@ -108,14 +116,14 @@ def _remove(job: str, force: bool) -> None:
     JobTermView(job).remove(force)
 
 
-@job_cmd.command("recover", help="Recover removed job")
+@eval_job_cmd.command("recover", help="Recover removed job")
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="Force to recover")
 def _recover(job: str, force: bool) -> None:
     JobTermView(job).recover(force)
 
 
-@job_cmd.command("pause", help="Pause job")
+@eval_job_cmd.command("pause", help="Pause job")
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="Force to pause")
 def _pause(job: str, force: bool) -> None:
@@ -123,14 +131,14 @@ def _pause(job: str, force: bool) -> None:
     JobTermView(job).pause(force)
 
 
-@job_cmd.command("resume", help="Resume job")
+@eval_job_cmd.command("resume", help="Resume job")
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="Force to resume")
 def _resume(job: str, force: bool) -> None:
     JobTermView(job).resume(force)
 
 
-@job_cmd.command("cancel", help="Cancel job")
+@eval_job_cmd.command("cancel", help="Cancel job")
 @click.argument("job")
 @click.option("-f", "--force", is_flag=True, help="Force to cancel")
 def _cancel(job: str, force: bool) -> None:
@@ -138,7 +146,7 @@ def _cancel(job: str, force: bool) -> None:
     JobTermView(job).cancel(force)
 
 
-@job_cmd.command("info", help="Inspect job details")
+@eval_job_cmd.command("info", help="Inspect job details")
 @click.argument("job")
 @click.option(
     "--page", type=int, default=DEFAULT_PAGE_IDX, help="Page number for tasks list"
@@ -151,7 +159,7 @@ def _info(view: t.Type[JobTermView], job: str, page: int, size: int) -> None:
     view(job).info(page, size)
 
 
-@job_cmd.command("compare")
+@eval_job_cmd.command("compare")
 @click.argument("base_job", nargs=1)
 @click.argument("job", nargs=-1)
 def _compare(base_job: str, job: t.List[str]) -> None:

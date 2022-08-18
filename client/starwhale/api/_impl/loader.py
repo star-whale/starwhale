@@ -136,6 +136,23 @@ class DataField(t.NamedTuple):
     ext_attr: t.Dict[str, t.Any]
 
 
+class ResultLoader:
+    def __init__(
+        self,
+        data: t.List[t.Any],
+        deserializer: t.Optional[t.Callable] = None,
+    ) -> None:
+        self.data = data
+        self.deserializer = deserializer
+
+    def __iter__(self) -> t.Any:
+        for _data in self.data:
+            if self.deserializer:
+                yield self.deserializer(_data)
+                continue
+            yield _data
+
+
 class DataLoader(metaclass=ABCMeta):
     def __init__(
         self,

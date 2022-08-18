@@ -15,9 +15,11 @@ import numpy as np
 import pyarrow as pa  # type: ignore
 import requests
 import pyarrow.parquet as pq  # type: ignore
+from loguru import logger
 from typing_extensions import Protocol
 
 from starwhale.utils.fs import ensure_dir
+from starwhale.consts.env import SWEnv
 from starwhale.utils.config import SWCliConfigMixed
 
 try:
@@ -714,7 +716,7 @@ class LocalDataStore:
 
     def __init__(self, root_path: str) -> None:
         self.root_path = root_path
-        self.name_pattern = re.compile(r"^[A-Za-z0-9-_/]+$")
+        self.name_pattern = re.compile(r"^[A-Za-z0-9-_/ ]+$")
         self.tables: Dict[str, MemoryTable] = {}
 
     def update_table(
@@ -778,6 +780,7 @@ class LocalDataStore:
                 self.columns = columns
                 self.keep_none = keep_none
 
+        logger.debug(f"scan enter, table size:{len(tables)}")
         infos: List[TableInfo] = []
         for table_desc in tables:
             table = self.tables.get(table_desc.table_name, None)
@@ -837,6 +840,7 @@ class LocalDataStore:
                         )
                     )
             else:
+                logger.debug(f"scan by disk table{info.name}")
                 iters.append(
                     _scan_table(
                         table_path,
@@ -851,7 +855,9 @@ class LocalDataStore:
             yield record
 
     def dump(self) -> None:
-        for table in self.tables.values():
+        logger.debug(f"start dump, tables size:{len(self.tables.values())}")
+        for table in list(self.tables.values()):
+            logger.debug(f"dump {table.table_name} to {self.root_path}")
             table.dump(self.root_path)
 
 
@@ -977,17 +983,19 @@ class DataStore(Protocol):
 
 
 def get_data_store() -> DataStore:
-    instance = os.getenv("SW_INSTANCE")
-    if instance is None or instance == "local":
+    instance_uri = os.getenv(SWEnv.instance_uri)
+    if instance_uri is None:
+        instance_uri = SWCliConfigMixed()._current_instance_obj["uri"]
+    if instance_uri == "local":
         return LocalDataStore.get_instance()
     else:
-        return RemoteDataStore(instance)
+        return RemoteDataStore(instance_uri)
 
 
 def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
     def _new(key_prefix: str, src: Dict[str, Any], dest: Dict[str, Any]) -> None:
         for k, v in src.items():
-            k = key_prefix + k
+            k = key_prefix + str(k)
             if type(v) is dict:
                 _new(k + "/", v, dest)
             dest[k] = v
@@ -1031,7 +1039,13 @@ class TableWriter(threading.Thread):
         record = _flatten(record)
         for k in record:
             for ch in k:
-                if not ch.isalnum() and ch != "-" and ch != "_" and ch != "/":
+                if (
+                    not ch.isalnum()
+                    and ch != "-"
+                    and ch != "_"
+                    and ch != "/"
+                    and not ch.isspace()
+                ):
                     raise RuntimeError(f"invalid field {k}")
         self._insert(record)
 

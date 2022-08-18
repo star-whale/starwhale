@@ -14,7 +14,7 @@ class URIType:
     MODEL = "model"
     DATASET = "dataset"
     RUNTIME = "runtime"
-    JOB = "job"
+    EVALUATION = "evaluation"
     UNKNOWN = "unknown"
 
 
@@ -24,18 +24,17 @@ class JobType:
 
 class EvalTaskType:
     ALL = "all"
-    PPL = "ppl"
-    CMP = "cmp"
+    # PPL = "ppl"
+    # CMP = "cmp"
+    # CUSTOM = "custom"
+    SINGLE = "single"
 
 
 class RunSubDirType:
-    RESULT = "result"
     DATASET = "dataset"
-    PPL_RESULT = "ppl_result"
     STATUS = "status"
     LOG = "log"
     SWMP = "swmp"
-    CONFIG = "config"
 
 
 class JobOperationType:
