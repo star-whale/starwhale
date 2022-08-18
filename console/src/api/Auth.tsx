@@ -12,7 +12,11 @@ type IAuthContext = {
     onLogin: (data: ILoginUserSchema) => Promise<string>
     onLogout: () => void
 }
-export const AuthContext = React.createContext<IAuthContext>({ token: null, onLogin: () => P, onLogout: () => {} })
+export const AuthContext = React.createContext<IAuthContext>({
+    token: null,
+    onLogin: () => Promise.resolve(''),
+    onLogout: () => {},
+})
 
 export const useAuth = () => {
     return React.useContext(AuthContext)
@@ -27,7 +31,7 @@ export const AuthProvider = ({ children }: any) => {
     const userInfo = useQuery('currentUser', fetchCurrentUser, { refetchOnWindowFocus: false })
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const { currentUser, setCurrentUser } = useCurrentUser()
+    const { setCurrentUser } = useCurrentUser()
 
     useEffect(() => {
         if (userInfo.isSuccess) {
@@ -60,7 +64,7 @@ export const AuthProvider = ({ children }: any) => {
         simulationJump('/logout')
     }
 
-    console.log('raw:', !!getToken(), 'new:', !!currentToken, currentUser)
+    // console.log('raw:', !!getToken(), 'new:', !!currentToken, currentUser)
 
     const value = {
         token: currentToken,
