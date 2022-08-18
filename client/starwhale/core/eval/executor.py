@@ -210,7 +210,7 @@ class EvalExecutor:
     def _gen_run_container_cmd(self, typ: str, step: str, task_index: int) -> str:
         if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
             raise Exception(f"no support {typ} to gen docker cmd")
-
+        _entrypoint = "run_all"
         _run_dir = self._workdir
 
         cmd = [
@@ -242,6 +242,7 @@ class EvalExecutor:
         ]
 
         if typ == EvalTaskType.SINGLE:
+            _entrypoint = "run_single"
             cmd.extend(["-e", f"SW_TASK_STEP={step}"])
             cmd.extend(["-e", f"SW_TASK_INDEX={task_index}"])
 
@@ -270,7 +271,7 @@ class EvalExecutor:
                 continue
             cmd.extend(["-e", f"{_ee}={_env[_ee]}"])
 
-        cmd += [self.baseimage, typ]
+        cmd += [self.baseimage, _entrypoint]
         return " ".join(cmd)
 
     def _render_manifest(self) -> None:

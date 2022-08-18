@@ -120,10 +120,10 @@ case "$1" in
     pre_config)
         pre_config
         ;;
-    all)
+    run_all)
         eval_task_prepare $1 && run_all
         ;;
-    single)
+    run_single)
         eval_task_prepare $1 && run_single
         ;;
     *)
