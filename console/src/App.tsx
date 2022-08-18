@@ -12,6 +12,7 @@ import { ToasterContainer } from 'baseui/toast'
 import { ConfirmCtxProvider } from '@/components/Modal/confirm'
 import '@/assets/fonts/iconfont.css'
 import Routes from './routes'
+import { AuthProvider } from './api/Auth'
 
 apiInit()
 const engine = new Styletron()
@@ -26,12 +27,14 @@ export default function App(): any {
         <QueryClientProvider client={queryClient}>
             <StyletronProvider value={engine}>
                 <BaseProvider theme={theme}>
-                    <ToasterContainer autoHideDuration={3000} />
-                    <ConfirmCtxProvider>
-                        <SidebarContext.Provider value={sidebarData}>
-                            <Routes />
-                        </SidebarContext.Provider>
-                    </ConfirmCtxProvider>
+                    <AuthProvider>
+                        <ToasterContainer autoHideDuration={3000} />
+                        <ConfirmCtxProvider>
+                            <SidebarContext.Provider value={sidebarData}>
+                                <Routes />
+                            </SidebarContext.Provider>
+                        </ConfirmCtxProvider>
+                    </AuthProvider>
                 </BaseProvider>
             </StyletronProvider>
         </QueryClientProvider>

@@ -184,6 +184,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                             borderLeftWidth: '0',
                             backgroundImage: 'none',
                             backgroundColor: 'none',
+                            marginBottom: '10px',
                         },
                     },
                     NavItem: {

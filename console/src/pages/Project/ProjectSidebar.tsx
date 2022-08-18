@@ -19,6 +19,18 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
 
         return [
             {
+                title: t('Overview'),
+                path: `/projects/${projectId}/overview`,
+                icon: <IconFont type='overview' size={16} />,
+                activePathPattern: /\/(overview)\/?/,
+            },
+            {
+                title: t('Evaluations'),
+                path: `/projects/${projectId}/evaluations`,
+                activePathPattern: /\/(evaluations|new_job)\/?/,
+                icon: <IconFont type='evaluation' size={16} />,
+            },
+            {
                 title: t('Models'),
                 path: `/projects/${projectId}/models`,
                 icon: <IconFont type='model' size={16} />,
@@ -42,12 +54,6 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
             //     activePathPattern: /\/(jobs|new_job)\/?/,
             //     icon: <IconFont type='job' kind='white' size={20} />,
             // },
-            {
-                title: t('Evaluations'),
-                path: `/projects/${projectId}/evaluations`,
-                activePathPattern: /\/(evaluations|new_job)\/?/,
-                icon: <IconFont type='job' size={16} />,
-            },
         ]
     }, [project, projectId, t])
     return (
