@@ -156,6 +156,7 @@ class TestModelPipelineHandler(TestCase):
                 src_dir=Path(),
                 project=self.project,
                 version=self.eval_id,
+                dataset_uris=["mnist/version/latest"]
             )
         ) as _handler:
             _handler._starwhale_internal_run_ppl()
