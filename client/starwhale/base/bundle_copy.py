@@ -1,4 +1,5 @@
 import os.path
+from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
 
@@ -193,7 +194,7 @@ class BundleCopy(CloudRequestMixed):
         ) as progress:
             if self.src_uri.instance_type == InstanceType.STANDALONE:
                 if self.typ == URIType.DATASET:
-                    self._do_upload_bundle_dir(progress)
+                    self._do_upload_bundle_dir(progress, add_data_uri_header=True)
                 else:
                     self._do_upload_bundle_tar(progress)
             else:
@@ -202,7 +203,9 @@ class BundleCopy(CloudRequestMixed):
                 else:
                     self._do_download_bundle_tar(progress)
 
-    def _do_upload_bundle_dir(self, progress: Progress) -> None:
+    def _do_upload_bundle_dir(
+        self, progress: Progress, add_data_uri_header: bool = False
+    ) -> None:
         _workdir: Path = self._get_target_path(self.src_uri)
         _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
         _key = _query_param_map[self.typ]
@@ -236,9 +239,13 @@ class BundleCopy(CloudRequestMixed):
         _manifest = load_yaml(_manifest_path)
 
         # TODO: add retry deco
-        def _upload_blob(_fp: Path, _tid: TaskID) -> None:
+        def _upload_blob(_fp: Path, _tid: TaskID, _data_uri: str = "") -> None:
             if not _fp.exists():
                 raise NotFoundError(f"{_fp} not found")
+
+            _upload_headers = deepcopy(_headers)
+            if add_data_uri_header and _data_uri:
+                _upload_headers["X-SW-UPLOAD-DATA-URI"] = _data_uri
 
             self.do_multipart_upload_file(
                 url_path=_url_path,
@@ -248,28 +255,34 @@ class BundleCopy(CloudRequestMixed):
                     _key: _name,
                     "phase": _UploadPhase.BLOB,
                 },
-                headers=_headers,
+                headers=_upload_headers,
                 use_raise=True,
                 progress=progress,
                 task_id=_tid,
             )
 
         try:
-
             _p_map = {}
-            for _p in [_workdir / "data" / n for n in _manifest["signature"]] + [
-                _workdir / ARCHIVED_SWDS_META_FNAME,
-                _workdir / DUMPED_SWDS_META_FNAME,
-            ]:
+
+            for _data_uri in _manifest["signature"]:
+                _path = _workdir / "data" / _data_uri
                 _tid = progress.add_task(
-                    f":arrow_up: {_p.name}",
-                    total=_p.stat().st_size,
+                    f":arrow_up: {_path.name}",
+                    total=_path.stat().st_size,
                 )
-                _p_map[_tid] = _p
+                _p_map[_tid] = (_path, _data_uri)
 
-            for _tid, _p in _p_map.items():
-                _upload_blob(_p, _tid)
+            for _meta_name in [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]:
+                _path = _workdir / _meta_name
+                _tid = progress.add_task(
+                    f":arrow_up: {_path.name}",
+                    total=_path.stat().st_size,
+                )
+                _p_map[_tid] = (_path, "")
 
+            # TODO: parallel upload
+            for _tid, (_p, _data_uri) in _p_map.items():
+                _upload_blob(_p, _tid, _data_uri)
         except Exception as e:
             console.print(
                 f":confused_face: when upload blobs, we meet Exception{e}, will cancel upload"
