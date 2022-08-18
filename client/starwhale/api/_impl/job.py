@@ -162,7 +162,7 @@ class Parser:
         """
         Parser.set_parse_stage(True)
         # parse DAG
-        logger.debug("parse @step for module:{}", module)
+        logger.debug(f"parse @step for module:{module}")
         load_module(module, path)
         _jobs = Parser.get_jobs().copy()
         Parser.clear_config()
@@ -185,7 +185,7 @@ class Parser:
             ensure_file(target_file, yaml.safe_dump(_jobs, default_flow_style=False))
             logger.debug("generator DAG success!")
         else:
-            logger.error("generator DAG error! reason:{}", "check is failed.")
+            logger.error("generator DAG error! reason: check is failed.")
 
     @staticmethod
     def check(jobs: t.Dict[str, t.List[t.Dict]]) -> bool:
@@ -200,10 +200,10 @@ class Parser:
                 for d in _step["needs"]:
                     if d:
                         needs.append(d)
-            logger.debug("all steps:{}, length:{}", all_steps, len(all_steps))
+            logger.debug(f"all steps:{all_steps}, length:{len(all_steps)}")
             _check = all(item in all_steps for item in needs)
             if not _check:
-                logger.error("job:{} check error!", job[0])
+                logger.error(f"job:{job[0]} check error!")
             checks.append(_check)
         # all is ok
         return all(checks)
