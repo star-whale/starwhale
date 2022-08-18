@@ -31,7 +31,14 @@ export default function ThirdPartyLoginButton({ isLogin, vendorName, vendor, ico
             startEnhancer={icon}
             kind='secondary'
             endEnhancer={<IconFont type='arrow_right' />}
-            overrides={{ BaseButton: { style: { justifyContent: 'space-between', paddingLeft: '20px' } } }}
+            overrides={{
+                BaseButton: {
+                    style: { justifyContent: 'space-between', paddingLeft: '20px' },
+                    // make a button type, prevent triggering click event when we press enter in from
+                    // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#implicit-submission
+                    props: { type: 'button' },
+                },
+            }}
             onClick={handleClick}
         >
             {t(isLogin ? 'Log In With' : 'Sign Up With', [vendorName])}

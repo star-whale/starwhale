@@ -7,7 +7,7 @@ from pathlib import Path
 
 from starwhale.utils import load_yaml, convert_to_bytes
 from starwhale.consts import DEFAULT_STARWHALE_API_VERSION
-from starwhale.base.type import ObjectStoreType, RawDataFormatType
+from starwhale.base.type import DataFormatType, ObjectStoreType
 from starwhale.utils.error import NoSupportError
 
 
@@ -23,18 +23,27 @@ D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
 class DatasetSummary:
     def __init__(
         self,
-        rows: int,
-        increased_rows: int,
-        data_format: RawDataFormatType,
-        object_store_type: ObjectStoreType,
-        label_byte_size: int,
-        data_byte_size: int,
+        rows: int = 0,
+        increased_rows: int = 0,
+        data_format_type: t.Union[DataFormatType, str] = DataFormatType.UNDEFINED,
+        object_store_type: t.Union[ObjectStoreType, str] = ObjectStoreType.UNDEFINED,
+        label_byte_size: int = 0,
+        data_byte_size: int = 0,
+        **kw: t.Any,
     ) -> None:
         self.rows = rows
         self.increased_rows = increased_rows
         self.unchanged_rows = rows - increased_rows
-        self.data_format_type = data_format
-        self.object_store_type = object_store_type
+        self.data_format_type: DataFormatType = (
+            DataFormatType(data_format_type)
+            if isinstance(data_format_type, str)
+            else data_format_type
+        )
+        self.object_store_type: ObjectStoreType = (
+            ObjectStoreType(object_store_type)
+            if isinstance(object_store_type, str)
+            else object_store_type
+        )
         self.label_byte_size = label_byte_size
         self.data_byte_size = data_byte_size
 
@@ -42,8 +51,18 @@ class DatasetSummary:
         d = deepcopy(self.__dict__)
         for k, v in d.items():
             if isinstance(v, Enum):
-                d[k] = v.name
+                d[k] = v.value
         return d
+
+    def __str__(self) -> str:
+        return f"Dataset Summary: rows({self.rows}), data_format({self.data_format_type}), object_store({self.object_store_type})"
+
+    def __repr__(self) -> str:
+        return (
+            f"Dataset Summary: rows({self.rows}, increased: {self.increased_rows}), "
+            f"data_format({self.data_format_type}), object_store({self.object_store_type}),"
+            f"size(data:{self.data_byte_size}, label: {self.label_byte_size})"
+        )
 
 
 # TODO: use attr to tune code

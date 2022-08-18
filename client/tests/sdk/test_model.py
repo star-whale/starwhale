@@ -13,13 +13,18 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.consts import DEFAULT_PROJECT, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType
+from starwhale.base.type import URIType, DataFormatType, ObjectStoreType
 from starwhale.consts.env import SWEnv
 from starwhale.api._impl.job import Context
 from starwhale.api._impl.model import _RunConfig, PipelineHandler
-from starwhale.api._impl.loader import get_data_loader, S3StorageBackend
+from starwhale.api._impl.loader import (
+    get_data_loader,
+    S3StorageBackend,
+    UserRawDataLoader,
+)
 from starwhale.api._impl.dataset import TabularDatasetRow
 from starwhale.api._impl.wrapper import Evaluation
+from starwhale.core.dataset.dataset import DatasetSummary
 
 from .. import ROOT_DIR
 
@@ -57,11 +62,17 @@ class TestModelPipelineHandler(TestCase):
         os.environ.pop("SW_S3_BUCKET", "")
 
     @patch("starwhale.api._impl.loader.boto3")
-    def test_s3_loader(self, m_resource: MagicMock) -> None:
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    def test_s3_loader(self, m_summary: MagicMock, m_resource: MagicMock) -> None:
+        m_summary.return_value = DatasetSummary(
+            data_format_type=DataFormatType.USER_RAW
+        )
+
         _loader = get_data_loader(
             dataset_uri=URI("mnist/version/latest", URIType.DATASET),
             backend=SWDSBackendType.S3,
         )
+        assert isinstance(_loader, UserRawDataLoader)
         assert isinstance(_loader.storage.backend, S3StorageBackend)
 
     def test_set_run_env(self) -> None:
@@ -129,7 +140,16 @@ class TestModelPipelineHandler(TestCase):
 
     @pytest.mark.skip(reason="wait job scheduler feature, ppl will use datastore")
     @patch("starwhale.api._impl.loader.TabularDataset.scan")
-    def test_ppl(self, m_scan: MagicMock) -> None:
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    def test_ppl(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
+        m_summary.return_value = DatasetSummary(
+            rows=1,
+            increased_rows=1,
+            data_format_type=DataFormatType.SWDS_BIN,
+            object_store_type=ObjectStoreType.LOCAL,
+            label_byte_size=1,
+            data_byte_size=10,
+        )
         os.environ[SWEnv.instance_uri] = "local"
         os.environ[SWEnv.project] = self.project
         os.environ[SWEnv.status_dir] = self.status_dir

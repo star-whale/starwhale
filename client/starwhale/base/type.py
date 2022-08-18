@@ -77,18 +77,20 @@ def get_bundle_type_by_uri(uri_type: str) -> str:
 
 
 @unique
-class RawDataFormatType(Enum):
-    SWDS_BIN = "s"
-    USER = "u"
+class DataFormatType(Enum):
+    SWDS_BIN = "swds_bin"
+    USER_RAW = "user_raw"
+    UNDEFINED = "undefined"
 
 
 @unique
 class ObjectStoreType(Enum):
-    LOCAL = "l"
-    REMOTE = "r"
+    LOCAL = "local"
+    REMOTE = "remote"
+    UNDEFINED = "undefined"
 
 
 @unique
 class DataOriginType(Enum):
-    NEW = "n"
-    INHERIT = "i"
+    NEW = "+"
+    INHERIT = "~"

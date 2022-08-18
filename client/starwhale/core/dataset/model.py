@@ -58,7 +58,7 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         return f"Starwhale Dataset: {self.uri}"
 
     @abstractmethod
-    def summary(self) -> t.Dict[str, t.Any]:
+    def summary(self) -> DatasetSummary:
         raise NotImplementedError
 
     @classmethod
@@ -203,9 +203,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
 
-    def summary(self) -> t.Dict[str, t.Any]:
+    def summary(self) -> DatasetSummary:
         _manifest = self.store.manifest
-        return _manifest.get("dataset_summary", {})
+        return DatasetSummary(**_manifest.get("dataset_summary", {}))
 
     @classmethod
     def list(
@@ -283,7 +283,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         run_with_progress_bar("swds building...", operations)
 
     def _call_make_swds(self, workdir: Path, swds_config: DatasetConfig) -> None:
-        from starwhale.api._impl.dataset import BuildExecutor
+        from starwhale.api._impl.dataset import BaseBuildExecutor
 
         logger.info("[step:swds]try to gen swds...")
         self._manifest["dataset_attr"] = swds_config.attr.as_dict()
@@ -292,7 +292,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
         # TODO: add more import format support, current is module:class
         logger.info(f"[info:swds]try to import {swds_config.process} @ {workdir}")
-        _cls = import_cls(workdir, swds_config.process, BuildExecutor)
+        _cls = import_cls(workdir, swds_config.process, BaseBuildExecutor)
 
         with _cls(
             dataset_name=self.uri.object.name,
@@ -414,7 +414,7 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
         crm = CloudRequestMixed()
         return crm._fetch_bundle_all_list(project_uri, URIType.DATASET, page, size)
 
-    def summary(self) -> t.Dict[str, t.Any]:
+    def summary(self) -> DatasetSummary:
         r = self.do_http_request(
             f"/project/{self.uri.project}/{self.uri.object.typ}/{self.uri.object.name}",
             method=HTTPMethod.GET,
@@ -422,7 +422,7 @@ class CloudDataset(CloudBundleModelMixin, Dataset):
             params={"versionUrl": self.uri.object.version},
         ).json()
         _manifest: t.Dict[str, t.Any] = yaml.safe_load(r["data"].get("versionMeta", {}))
-        return _manifest.get("dataset_summary", {})
+        return DatasetSummary(**_manifest.get("dataset_summary", {}))
 
     def buildImpl(self, workdir: Path, yaml_name: str, **kw: t.Any) -> None:
         raise NoSupportError("no support build dataset in the cloud instance")

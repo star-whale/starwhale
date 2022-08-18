@@ -1,11 +1,24 @@
-import math
 import struct
 from pathlib import Path
 
-from starwhale.api.dataset import BuildExecutor
+from starwhale.api.dataset import SWDSBinBuildExecutor, UserRawBuildExecutor
 
 
-class DataSetProcessExecutor(BuildExecutor):
+def _do_iter_label_slice(path: str):
+    fpath = Path(path)
+
+    with fpath.open("rb") as f:
+        _, number = struct.unpack(">II", f.read(8))
+        print(f">label({fpath.name}) split {number} group")
+
+        while True:
+            content = f.read(1)
+            if not content:
+                break
+            yield content
+
+
+class DataSetProcessExecutor(SWDSBinBuildExecutor):
     def iter_data_slice(self, path: str):
         fpath = Path(path)
 
@@ -20,28 +33,21 @@ class DataSetProcessExecutor(BuildExecutor):
                 yield content
 
     def iter_label_slice(self, path: str):
+        return _do_iter_label_slice(path)
+
+
+class RawDataSetProcessExecutor(UserRawBuildExecutor):
+    def iter_data_slice(self, path: str):
         fpath = Path(path)
 
         with fpath.open("rb") as f:
-            _, number = struct.unpack(">II", f.read(8))
-            print(f">label({fpath.name}) split {number} group")
+            _, number, height, width = struct.unpack(">IIII", f.read(16))
+            size = height * width
+            offset = 16
 
-            while True:
-                content = f.read(1)
-                if not content:
-                    break
-                yield content
+            for _ in range(number):
+                yield offset, size
+                offset += size
 
-
-if __name__ == "__main__":
-    with DataSetProcessExecutor(
-        dataset_name="mnist",
-        dataset_version="11223344",
-        project_name="self",
-        data_dir=Path(__file__) / "data",
-        data_filter="*images*",
-        label_filter="*labels*",
-        alignment_bytes_size=4 * 1024,
-        volume_bytes_size=4 * 1024 * 1024,
-    ) as executor:
-        executor.make_swds()
+    def iter_label_slice(self, path: str):
+        return _do_iter_label_slice(path)

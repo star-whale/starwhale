@@ -97,6 +97,7 @@ class EvalHandlerType:
 class DataLoaderKind:
     SWDS = "swds"
     JSONL = "jsonl"
+    RAW = "raw"
 
 
 class EvaluationResultKind:

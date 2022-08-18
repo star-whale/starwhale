@@ -4,7 +4,7 @@ import io
 import os
 import sys
 import typing as t
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from pathlib import Path
 
 import boto3
@@ -13,17 +13,25 @@ from loguru import logger as _logger
 from botocore.client import Config as S3Config
 from typing_extensions import Protocol
 
-from starwhale.consts import DataLoaderKind, SWDSBackendType
+from starwhale.consts import SWDSBackendType
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType
+from starwhale.base.type import URIType, InstanceType, DataFormatType
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.store import DatasetStorage
 
-from .dataset import TabularDataset
+from .dataset import TabularDataset, TabularDatasetRow
 
 # TODO: config chunk size
 _CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 _FILE_END_POS = -1
+
+
+class FileLikeObj(Protocol):
+    def readline(self) -> bytes:
+        ...
+
+    def read(self, size: int) -> t.Union[bytes, memoryview]:
+        ...
 
 
 class ObjectStoreS3Connection:
@@ -128,37 +136,6 @@ class DataField(t.NamedTuple):
     ext_attr: t.Dict[str, t.Any]
 
 
-class DataLoader(metaclass=ABCMeta):
-    def __init__(
-        self,
-        storage: DatasetObjectStore,
-        dataset: TabularDataset,
-        logger: t.Optional[loguru.Logger] = None,
-        kind: str = DataLoaderKind.SWDS,
-        deserializer: t.Optional[t.Callable] = None,
-    ):
-        self.storage = storage
-        self.dataset = dataset
-        self.logger = logger or _logger
-        self.kind = kind
-        self.deserializer = deserializer
-
-        self._do_validate()
-
-    def _do_validate(self) -> None:
-        if self.kind != DataLoaderKind.SWDS:
-            raise Exception(f"{self.kind} no support")
-
-    def __iter__(self) -> t.Any:
-        raise NotImplementedError
-
-    def __str__(self) -> str:
-        return f"DataLoader for {self.storage.backend}"
-
-    def __repr__(self) -> str:
-        return f"DataLoader for {self.storage.backend}, extra:{self.storage.conn}"
-
-
 class ResultLoader:
     def __init__(
         self,
@@ -176,14 +153,18 @@ class ResultLoader:
             yield _data
 
 
-class SWDSDataLoader(DataLoader):
+class DataLoader(metaclass=ABCMeta):
     def __init__(
         self,
         storage: DatasetObjectStore,
         dataset: TabularDataset,
         logger: t.Union[loguru.Logger, None] = None,
-    ) -> None:
-        super().__init__(storage, dataset, logger, DataLoaderKind.SWDS)
+        deserializer: t.Optional[t.Callable] = None,
+    ):
+        self.storage = storage
+        self.dataset = dataset
+        self.logger = logger or _logger
+        self.deserializer = deserializer
 
     def __iter__(self) -> t.Generator[t.Tuple[DataField, DataField], None, None]:
         _attr = {"ds_name": self.dataset.name, "ds_version": self.dataset.version}
@@ -198,34 +179,68 @@ class SWDSDataLoader(DataLoader):
             _key_compose = (
                 f"{_data_uri}:{row.data_offset}:{row.data_offset + row.data_size - 1}"
             )
-            for data in self._do_iter(_key_compose, _attr):
+            self.logger.info(f"@{self.storage.bucket}/{_key_compose}")
+            _file = self.storage.backend._make_file(self.storage.bucket, _key_compose)
+            for data_content, data_size in self._do_iter(_file, row):
                 label = DataField(
                     idx=row.id,
                     data_size=len(row.label),
                     data=row.label,
                     ext_attr=_attr,
                 )
+                data = DataField(
+                    idx=row.id, data_size=data_size, data=data_content, ext_attr=_attr
+                )
+
                 yield data, label
 
+    @abstractmethod
     def _do_iter(
-        self, key_compose: str, attr: t.Dict[str, str]
-    ) -> t.Iterator[DataField]:
-        from .dataset import _header_size, _header_struct
+        self, file: FileLikeObj, row: TabularDatasetRow
+    ) -> t.Generator[t.Tuple[bytes, int], None, None]:
+        raise NotImplementedError
 
-        # self.logger.info(f"@{self.storage.bucket}/{key_compose}")
-        _file = self.storage.backend._make_file(self.storage.bucket, key_compose)
-        while True:
-            header: bytes = _file.read(_header_size)
-            if not header:
-                break
-            _, _, idx, size, padding_size, _, _ = _header_struct.unpack(header)
-            data = _file.read(size + padding_size)
-            yield DataField(
-                idx,
-                size,
-                data[:size].tobytes() if isinstance(data, memoryview) else data[:size],
-                attr,
-            )
+    def __str__(self) -> str:
+        return f"[{self.kind.name}]DataLoader for {self.storage.backend}"
+
+    def __repr__(self) -> str:
+        return f"[{self.kind.name}]DataLoader for {self.storage.backend}, extra:{self.storage.conn}"
+
+    @abstractproperty
+    def kind(self) -> DataFormatType:
+        raise NotImplementedError
+
+
+class UserRawDataLoader(DataLoader):
+    @property
+    def kind(self) -> DataFormatType:
+        return DataFormatType.USER_RAW
+
+    def _do_iter(
+        self,
+        file: FileLikeObj,
+        row: TabularDatasetRow,
+    ) -> t.Generator[t.Tuple[bytes, int], None, None]:
+        data: bytes = file.read(row.data_size)
+        yield data, row.data_size
+
+
+class SWDSBinDataLoader(DataLoader):
+    @property
+    def kind(self) -> DataFormatType:
+        return DataFormatType.SWDS_BIN
+
+    def _do_iter(
+        self, file: FileLikeObj, row: TabularDatasetRow
+    ) -> t.Generator[t.Tuple[bytes, int], None, None]:
+        from .dataset import _header_size, _header_struct
+        size: int
+        padding_size: int
+        header: bytes = file.read(_header_size)
+        _, _, _, size, padding_size, _, _ = _header_struct.unpack(header)
+        data: bytes = file.read(size + padding_size)
+        data = data[:size].tobytes() if isinstance(data, memoryview) else data[:size]
+        yield data, size
 
 
 class StorageBackend(metaclass=ABCMeta):
@@ -305,14 +320,6 @@ class FuseStorageBackend(StorageBackend):
         with (bucket_path / _key).open("rb") as f:
             f.seek(_start)
             return io.BytesIO(f.read(_end - _start + 1))
-
-
-class FileLikeObj(Protocol):
-    def readline(self) -> bytes:
-        ...
-
-    def read(self, size: int) -> t.Union[bytes, memoryview]:
-        ...
 
 
 # TODO: add mock test
@@ -407,15 +414,19 @@ def get_data_loader(
     start: int = 0,
     end: int = sys.maxsize,
     backend: str = "",
-    kind: str = DataLoaderKind.SWDS,
     logger: t.Union[loguru.Logger, None] = None,
 ) -> DataLoader:
+    from starwhale.core.dataset import model
+
     logger = logger or _logger
     object_store = DatasetObjectStore(dataset_uri, backend)
-    dataset = TabularDataset.from_uri(dataset_uri, start=start, end=end)
+    # TODO: refactor dataset, tabular_dataset and standalone dataset module
+    tabular_dataset = TabularDataset.from_uri(dataset_uri, start=start, end=end)
+    df_type = model.Dataset.get_dataset(dataset_uri).summary().data_format_type
 
-    # TODO: support user raw data format
-    if kind == DataLoaderKind.SWDS:
-        return SWDSDataLoader(object_store, dataset, logger)
+    if df_type == DataFormatType.SWDS_BIN:
+        return SWDSBinDataLoader(object_store, tabular_dataset, logger)
+    elif df_type == DataFormatType.USER_RAW:
+        return UserRawDataLoader(object_store, tabular_dataset, logger)
     else:
-        raise NoSupportError(f"{kind} data loader, no support")
+        raise NoSupportError(f"cannot get data format type({df_type}) data loader")

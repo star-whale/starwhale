@@ -1,7 +1,9 @@
 import React from 'react'
+import _ from 'lodash'
 
 import projectSvg from '@/assets/fonts/project.svg'
 import settingSvg from '@/assets/fonts/setting.svg'
+import googleSvg from '@/assets/fonts/google.svg'
 
 const iconTypes = [
     'arrow2_down',
@@ -44,9 +46,12 @@ const iconTypes = [
     'a-sortasc',
     'a-sortdesc',
     'email',
+    'warning',
     'Facebook',
     'Twitter',
     'Instagram',
+    'google',
+    'Github',
 ]
 
 interface IIconFontProps {
@@ -54,6 +59,12 @@ interface IIconFontProps {
     size?: number
     kind?: 'inherit' | 'white' | 'gray' | 'white2' | 'primary'
     type: typeof iconTypes[number]
+}
+
+const hijacked = {
+    project: projectSvg,
+    setting2: settingSvg,
+    google: googleSvg,
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {
@@ -78,9 +89,9 @@ export default function IconFont({ size = 14, type = 'user', kind = 'inherit', s
                 ...style,
             }}
         >
-            {type === 'project' && <img src={projectSvg} alt={type} width={20} />}
-            {type === 'setting2' && <img src={settingSvg} alt={type} width={20} />}
-            {!['project', 'setting2'].includes(type) && (
+            {type in hijacked ? (
+                <img src={_.get(hijacked, type)} alt={type} width={20} />
+            ) : (
                 <span className={`iconfont icon-${type}`} style={{ fontSize: size }} />
             )}
         </div>

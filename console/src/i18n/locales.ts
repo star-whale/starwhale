@@ -13,7 +13,7 @@ const locales0 = {
         en: '{{0}} Name',
     },
     'sth required': {
-        en: '{{0}} is required',
+        en: '{{0}} required',
     },
     'Model': {
         en: 'Model',
@@ -537,6 +537,27 @@ const locales0 = {
     },
     'agreePolicy': {
         en: 'I agree to <1>Terms of Service</1> and <3>Privacy Policy</3>',
+    },
+    'Should Check the ToS': {
+        en: 'Please read and check the ToS',
+    },
+    'User Not Registered': {
+        en: 'User not registered',
+    },
+    'Check Your Email': {
+        en: 'Check your email',
+    },
+    'Please verify the email send from Starwhale': {
+        en: 'Please verify the email send from Starwhale',
+    },
+    'Resend Email': {
+        en: 'Resend Email',
+    },
+    'Send Email Success': {
+        en: 'Send email success',
+    },
+    'Already Verified': {
+        en: 'Already Verified',
     },
     'alreadyHaveAccount': {
         en: 'Already have an account?',

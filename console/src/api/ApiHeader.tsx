@@ -45,7 +45,11 @@ export default function ApiHeader() {
                     } else {
                         redirect = '/'
                     }
-                    if (!location.pathname.startsWith('/login')) {
+
+                    const shouldRedirect =
+                        ['/login', '/signup', '/create-account'].filter((uri) => location.pathname.startsWith(uri))
+                            .length === 0
+                    if (shouldRedirect) {
                         window.location.href = `${window.location.protocol}//${
                             window.location.host
                         }/login?redirect=${encodeURIComponent(redirect)}`
