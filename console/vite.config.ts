@@ -16,7 +16,7 @@ export default defineConfig({
                     (process.env.PROXY ?? '').replace('https', 'wss').replace('http', 'ws') || 'ws://127.0.0.1:8082',
                 ws: true,
             },
-            '/api': {
+            '^(/api|/swcloud)': {
                 target: process.env.PROXY || 'http://127.0.0.1:8082',
                 changeOrigin: true,
                 secure: false,

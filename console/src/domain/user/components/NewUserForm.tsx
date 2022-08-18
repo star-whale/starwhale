@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { Input } from 'baseui/input'
 import { Button } from 'baseui/button'
 import useTranslation from '@/hooks/useTranslation'
 import { createForm } from '@/components/Form'
@@ -7,6 +6,7 @@ import { INewUserSchema } from '@user/schemas/user'
 import { RadioGroup, Radio } from 'baseui/radio'
 import { shouldBeEqual, minLength } from '@/components/Form/validators'
 import { passwordMinLength } from '@/consts'
+import Input from '@/components/Input'
 
 export interface INewUserFormProps {
     onSubmit: (data: INewUserSchema) => Promise<void>
