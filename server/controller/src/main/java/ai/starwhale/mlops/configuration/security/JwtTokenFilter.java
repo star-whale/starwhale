@@ -25,6 +25,7 @@ import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import cn.hutool.core.util.StrUtil;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;
 import java.util.List;
@@ -92,13 +93,13 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             role -> role.getAuthority().equals("OWNER")).collect(Collectors.toSet());
         // Get project roles
         String projectUrl = httpServletRequest.getParameter("project");
-        if(projectUrl == null) {
+        if(StrUtil.isEmpty(projectUrl)) {
             projectUrl = httpServletRequest.getParameter("projectUrl");
         }
-        if(projectUrl == null) {
+        if(StrUtil.isEmpty(projectUrl)) {
             projectUrl = HttpUtil.getResourceUrlFromPath(httpServletRequest.getRequestURI(), Resources.PROJECT);
         }
-        if(projectUrl == null) {
+        if(StrUtil.isEmpty(projectUrl)) {
             projectUrl = "0";
         }
         try {
