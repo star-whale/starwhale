@@ -36,6 +36,7 @@ function RowIndexCell(props) {
 
 function RowIndexColumn(): RowIndexColumnT {
     return Column({
+        // @ts-ignore
         kind: COLUMNS.ROW_INDEX,
         buildFilter: () => () => true,
         cellBlockAlign: 'start', // how to configure?

@@ -91,7 +91,7 @@ function ViewList(props: ViewListPropsT, ref: React.Ref<any>) {
                         backgroundColor: 'var(--color-brandTableHeaderBackground)',
                         fontWeight: 'bold',
                         borderBottomWidth: 0,
-                        fontSize: 14,
+                        fontSize: '14px',
                         lineHeight: '16px',
                         paddingTop: '15px',
                         paddingBottom: '15px',
