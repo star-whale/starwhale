@@ -2,25 +2,24 @@ import time
 import typing as t
 import threading
 import concurrent.futures
-from abc import ABCMeta, abstractmethod
 from queue import Queue
 from pathlib import Path
 
 from loguru import logger
+from typing_extensions import Protocol
 
 from starwhale.api._impl.job import Step, Context
 from starwhale.core.job.model import Task, STATUS
 
 
-class Callback(metaclass=ABCMeta):
-    @abstractmethod
+class Callback(Protocol):
     def callback(
         self, step: Step, tasks: t.List[Task], res: bool, exec_time: float
     ) -> t.Any:
-        raise NotImplementedError
+        ...
 
 
-class StepCallback(Callback):
+class StepCallback:
     def callback(
         self, step: Step, tasks: t.List[Task], res: bool, exec_time: float
     ) -> t.Any:
@@ -31,13 +30,6 @@ class StepCallback(Callback):
             step.status = STATUS.FAILED
             logger.error(f"step:{step} failed, run time:{exec_time}")
             # TODO: whether break process?
-
-
-class SingleTaskCallback(Callback):
-    def callback(
-        self, step: Step, tasks: t.List[Task], res: bool, exec_time: float
-    ) -> t.Any:
-        logger.debug(f"task:{tasks[0]} finished, status:{res}, run time:{exec_time}")
 
 
 class Executor:
