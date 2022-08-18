@@ -36,8 +36,20 @@ public class DataStoreTest {
                                 new ColumnSchemaDesc("x", "INT32"))),
                 List.of(Map.of("k", "3", "x", "2")));
         this.dataStore.update("t1",
+            null,
+            List.of(Map.of("k", "0", "a", "5"), Map.of("k", "4", "-", "1")));
+        assertThat("t1",
+            this.dataStore.scan(DataStoreScanRequest.builder()
+                    .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .columns(Map.of("k", "k", "a", "a"))
+                        .build()))
+                    .build())
+                .getRecords(),
+            is(List.of(Map.of("k", "0", "a", "5"),Map.of("k", "1", "a", "2"))));
+        this.dataStore.update("t1",
                 null,
-                List.of(Map.of("k", "0", "-", "1"), Map.of("k", "4", "-", "1")));
+                List.of(Map.of("k", "0", "-", "anyString"), Map.of("k", "4", "-", "1")));
         assertThat("t1",
                 this.dataStore.scan(DataStoreScanRequest.builder()
                                 .tables(List.of(DataStoreScanRequest.TableInfo.builder()
