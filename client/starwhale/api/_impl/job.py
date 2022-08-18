@@ -3,9 +3,12 @@ import typing as t
 from pathlib import Path
 
 import yaml
+from yamlable import YamlAble, yaml_info
 from loguru import logger
 
 from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME, DEFAULT_EVALUATION_RESOURCE
+from starwhale.utils import load_yaml
+from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
 
 
@@ -74,7 +77,8 @@ class Context:
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
 
 
-class Step:
+@yaml_info(yaml_tag_ns='step')
+class Step(YamlAble):
     def __init__(
         self,
         job_name: str,
@@ -83,6 +87,7 @@ class Step:
         needs: t.List[str],
         concurrency: int = 1,
         task_num: int = 1,
+        status: str = ""
     ):
         self.job_name = job_name
         self.step_name = step_name
@@ -90,13 +95,12 @@ class Step:
         self.concurrency = concurrency
         self.task_num = task_num
         self.needs = needs
-        self.status = ""
+        self.status = status
 
     def __repr__(self) -> str:
-        return (
-            f"job_name:{self.job_name}, step_name:{self.step_name}, "
-            f"needs:{self.needs}, status: {self.status}"
-        )
+        return "%s(job_name=%r, step_name=%r, resources=%r, needs=%r, concurrency=%r, task_num=%r, status=%r)" % (
+            self.__class__.__name__,
+            self.job_name, self.step_name, self.resources, self.needs, self.concurrency, self.task_num, self.status)
 
 
 class ParseConfig:
@@ -170,9 +174,7 @@ class Parser:
         logger.debug("generate DAG")
         if Parser.check(_jobs):
             # dump to target
-            # ensure_file(target_file, yaml.safe_dump(_jobs, default_flow_style=False))
-            with open(target_file, "w") as file:
-                yaml.dump(_jobs, file)
+            ensure_file(target_file, yaml.safe_dump(_jobs, default_flow_style=False))
             logger.debug("generator DAG success!")
         else:
             logger.error("generator DAG error! reason:{}", "check is failed.")
@@ -196,13 +198,8 @@ class Parser:
                 logger.error("job:{} check error!", job[0])
             checks.append(_check)
         # all is ok
-        if all(checks):
-            logger.debug("check success! \n{}", yaml.dump(jobs))
-            return True
-        else:
-            return False
+        return all(checks)
 
     @staticmethod
     def parse_job_from_yaml(file_path: str) -> t.Any:
-        with open(file_path, "r") as file:
-            return yaml.unsafe_load(file)
+        return load_yaml(file_path)

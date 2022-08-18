@@ -263,7 +263,7 @@ class PipelineHandler(metaclass=ABCMeta):
             _ppl_results = list(self.evaluation.get_results())
             self._sw_logger.debug("cmp input data size:{}", len(_ppl_results))
             _data_loader = ResultLoader(
-                datas=_ppl_results, deserializer=self.deserialize_fields
+                data=_ppl_results, deserializer=self.deserialize_fields
             )
             output = self.cmp(_data_loader)
         except Exception as e:

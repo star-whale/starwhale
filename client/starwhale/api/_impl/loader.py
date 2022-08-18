@@ -139,14 +139,14 @@ class DataField(t.NamedTuple):
 class ResultLoader:
     def __init__(
         self,
-        datas: t.List[t.Any],
+        data: t.List[t.Any],
         deserializer: t.Optional[t.Callable] = None,
     ) -> None:
-        self.datas = datas
+        self.data = data
         self.deserializer = deserializer
 
     def __iter__(self) -> t.Any:
-        for _data in self.datas:
+        for _data in self.data:
             if self.deserializer:
                 yield self.deserializer(_data)
                 continue
