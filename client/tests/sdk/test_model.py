@@ -127,7 +127,7 @@ class TestModelPipelineHandler(TestCase):
         #     assert lines[0]["summary"] == {"a": 1}
         #     assert lines[0]["kind"] == "test"
 
-    # @pytest.mark.skip(reason="wait job scheduler feature, ppl will use datastore")
+    @pytest.mark.skip(reason="wait job scheduler feature, ppl will use datastore")
     @patch("starwhale.api._impl.loader.TabularDataset.scan")
     def test_ppl(self, m_scan: MagicMock) -> None:
         os.environ[SWEnv.instance_uri] = "local"
