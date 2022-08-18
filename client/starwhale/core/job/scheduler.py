@@ -182,23 +182,25 @@ class Producer(threading.Thread):
             time.sleep(1)
             _wait_steps = []
             _finished_step_names = []
+            _failed = False
             for _step in self.steps:
                 if _step.status == STATUS.FAILED:
                     # todo break processing
+                    logger.error(f"step:{_step.step_name} failed, now exited.")
+                    _failed = True
                     pass
                 if _step.status == STATUS.SUCCESS:
                     _finished_step_names.append(_step.step_name)
                 if _step.status == STATUS.INIT or not _step.status:
                     _wait_steps.append(_step)
             # judge whether a step's dependency all in finished
-            if len(_wait_steps) == 0:
+            if len(_wait_steps) == 0 or _failed:
                 self.queue.put(None)
                 break
             for _wait in _wait_steps:
                 if all(d in _finished_step_names for d in _wait.dependency if d):
                     logger.debug(f"produce a step:{_wait}")
                     _wait.status = STATUS.RUNNING
-                    logger.debug(f"all  step:{self.steps}")
                     _executor = Executor(
                         _wait.concurrency,
                         _wait,
@@ -214,7 +216,7 @@ class Consumer(threading.Thread):
         self.queue = queue
 
     def run(self) -> None:
-        print("Consumer starting")
+        logger.debug("Consumer starting")
         # process items from the queue
         while True:
             # get a step from the queue
@@ -222,15 +224,16 @@ class Consumer(threading.Thread):
             # check for signal that we are done
             if executor is None:
                 break
-            print(f".consumer got {executor.step}")
             start_time = time.time()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=executor.step.concurrency) as pool:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=executor.step.concurrency
+            ) as pool:
                 futures = [pool.submit(task.execute) for task in executor.tasks]
                 res = all(
                     future.result()
                     for future in concurrent.futures.as_completed(futures)
                 )
-            print(f"执行结果{res}")
+            logger.debug(f"execute step:{executor.step.step_name}, res:{res}")
             if res:
                 executor.final(
                     res=res,
@@ -240,4 +243,4 @@ class Consumer(threading.Thread):
                 self.queue.task_done()
         # mark the signal as processed
         self.queue.task_done()
-        print("Consumer finished")
+        logger.debug("Consumer finished")

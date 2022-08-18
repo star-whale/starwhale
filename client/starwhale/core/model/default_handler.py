@@ -25,20 +25,14 @@ def _get_cls(src_dir: Path) -> Any:
 
 
 def setup(context: Context) -> None:
-    from starwhale.api._impl.model import _RunConfig
-
     _run_dir = context.workdir / context.step / str(context.index)
     ensure_dir(_run_dir)
 
     for _w in (_run_dir,):
         for _n in (RunSubDirType.STATUS, RunSubDirType.LOG):
             ensure_dir(_w / _n)
-    _RunConfig.set_env(
-        {
-            "status_dir": _run_dir / RunSubDirType.STATUS,
-            "log_dir": _run_dir / RunSubDirType.LOG,
-        }
-    )
+    context.kw["status_dir"] = _run_dir / RunSubDirType.STATUS
+    context.kw["log_dir"] = _run_dir / RunSubDirType.LOG
 
 
 @step(concurrency=3, task_num=6)

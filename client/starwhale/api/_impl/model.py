@@ -110,12 +110,12 @@ class PipelineHandler(metaclass=ABCMeta):
         ignore_error: bool = False,
     ) -> None:
         self.context = context
+        self.status_dir = self.context.kw["status_dir"]
+        self.log_dir = self.context.kw["log_dir"]
         # TODO: add args for compare result and label directly
         self.merge_label = merge_label
         self.output_type = output_type
         self.ignore_error = ignore_error
-
-        self.config = _RunConfig.create_by_env()
 
         self.logger, self._sw_logger = self._init_logger()
         self._stdout_changed = False
@@ -124,7 +124,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self._orig_stderr = sys.stderr
 
         # TODO: split status/result files
-        self._timeline_writer = _jl_writer(self.config.status_dir / "timeline")  # type: ignore
+        self._timeline_writer = _jl_writer(self.status_dir / "timeline")  # type: ignore
 
         self._ppl_data_field = "result"
         self._label_field = "label"
@@ -143,7 +143,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
         # TODO: configure log rotation size
         _logger.add(
-            self.config.log_dir / "{time}.log",
+            self.log_dir / "{time}.log",
             rotation="500MB",
             backtrace=True,
             diagnose=True,
@@ -151,8 +151,8 @@ class PipelineHandler(metaclass=ABCMeta):
         )
         _logger.bind(
             type=_LogType.USER,
-            task_id=os.environ.get("SW_TASK_ID", ""),
-            job_id=os.environ.get("SW_JOB_ID", ""),
+            task_id=self.context.index,  # os.environ.get("SW_TASK_ID", ""),
+            job_id=self.context.version,  # os.environ.get("SW_JOB_ID", ""),
         )
         _sw_logger = _logger.bind(type=_LogType.SW)
         return _logger, _sw_logger
@@ -171,10 +171,7 @@ class PipelineHandler(metaclass=ABCMeta):
             self._stderr_changed = True
 
     def __str__(self) -> str:
-        return (
-            f"PipelineHandler status@{self.config.status_dir}, "
-            f"log@{self.config.log_dir}"
-        )
+        return f"PipelineHandler status@{self.status_dir}, " f"log@{self.log_dir}"
 
     def __enter__(self) -> PipelineHandler:
         return self
@@ -388,5 +385,5 @@ class PipelineHandler(metaclass=ABCMeta):
         self._update_status(self.STATUS.RUNNING)
 
     def _update_status(self, status: str) -> None:
-        fpath = self.config.status_dir / CURRENT_FNAME
+        fpath = self.status_dir / CURRENT_FNAME
         ensure_file(fpath, status)

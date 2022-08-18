@@ -1,3 +1,4 @@
+import copy
 import typing as t
 from pathlib import Path
 
@@ -53,7 +54,7 @@ class Context:
         self.dataset_uris = dataset_uris
         self.workdir = workdir
         self.src_dir = src_dir
-        self.kw = kw
+        self.kw = copy.deepcopy(kw)
 
     def get_param(self, name: str) -> t.Any:
         return self.kw.get(name)
