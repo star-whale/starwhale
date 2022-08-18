@@ -17,11 +17,12 @@
 package ai.starwhale.mlops.api.protocol.swds;
 
 import ai.starwhale.mlops.api.protocol.StorageFileVO;
+import ai.starwhale.mlops.storage.fs.FileStorageEnv;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
@@ -42,6 +43,18 @@ public class SWDatasetInfoVO implements Serializable {
     @JsonProperty("versionName")
     private String versionName;
 
+    /**
+     * the table name for index in DataStore
+     */
+    String indexTable;
+
+    /**
+     * the necessary information to access to file storages
+     * key: storage name
+     * value: envs
+     */
+    Map<String, FileStorageEnv> fileStorageEnvs;
+
     @JsonProperty("versionTag")
     private String versionTag;
 
@@ -54,9 +67,5 @@ public class SWDatasetInfoVO implements Serializable {
     @JsonProperty("files")
     @Valid
     private List<StorageFileVO> files;
-
-    public static SWDatasetInfoVO empty() {
-        return new SWDatasetInfoVO("", "", "", "", "", 0L , new ArrayList<>());
-    }
 
 }

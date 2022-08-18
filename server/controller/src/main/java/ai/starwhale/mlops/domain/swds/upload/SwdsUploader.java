@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.swds.upload;
 import static ai.starwhale.mlops.domain.swds.upload.SWDSVersionWithMetaConverter.EMPTY_YAML;
 
 import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
-import ai.starwhale.mlops.common.util.Blake2bUtil;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
@@ -28,6 +27,8 @@ import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
+import ai.starwhale.mlops.domain.swds.datastore.DSRHelper;
+import ai.starwhale.mlops.domain.swds.datastore.IndexWriter;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
@@ -43,6 +44,7 @@ import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.storage.LargeFileInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,8 +59,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -94,13 +98,20 @@ public class SwdsUploader {
     final HotJobHolder jobHolder;
     final ProjectManager projectManager;
 
+    final DSRHelper dsrHelper;
+
+    final IndexWriter indexWriter;
+
+    static final String INDEX_FILE_NAME="_meta.jsonl";
+
     public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
         SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,
         StorageAccessService storageAccessService, UserService userService,
         ProjectMapper projectMapper,
         @Qualifier("yamlMapper") ObjectMapper yamlMapper,
         HotJobHolder jobHolder,
-        ProjectManager projectManager) {
+        ProjectManager projectManager, DSRHelper dsrHelper,
+        IndexWriter indexWriter) {
         this.hotSwdsHolder = hotSwdsHolder;
         this.swdsMapper = swdsMapper;
         this.swdsVersionMapper = swdsVersionMapper;
@@ -111,6 +122,8 @@ public class SwdsUploader {
         this.yamlMapper = yamlMapper;
         this.jobHolder = jobHolder;
         this.projectManager = projectManager;
+        this.dsrHelper = dsrHelper;
+        this.indexWriter = indexWriter;
     }
 
     public void cancel(String uploadId){
@@ -139,36 +152,25 @@ public class SwdsUploader {
         }
     }
 
-    public void uploadBody(String uploadId, MultipartFile file){
+    public void uploadBody(String uploadId, MultipartFile file,String uri){
         final SWDSVersionWithMeta swDatasetVersionWithMeta = getSwdsVersion(uploadId);
         String filename = file.getOriginalFilename();
-        byte[] fileBytes;
         try (InputStream inputStream = file.getInputStream()){
-            fileBytes = inputStream.readAllBytes();
+            if(INDEX_FILE_NAME.equals(filename)){
+                CloseShieldInputStream csis = CloseShieldInputStream.wrap(inputStream);
+                indexWriter.writeToStore(swDatasetVersionWithMeta.getSwDatasetVersionEntity().getIndexTable(),csis);
+            }
+            InputStream is = inputStream;
+            if(file.getSize() >= Integer.MAX_VALUE){
+                is = new LargeFileInputStream(inputStream,file.getSize());
+            }
+            final String storagePath = String.format(FORMATTER_STORAGE_PATH, swDatasetVersionWithMeta.getSwDatasetVersionEntity().getStoragePath(),
+                StringUtils.hasText(uri)?uri:filename);
+            storageAccessService.put(storagePath,is);
         } catch (IOException e) {
             log.error("read swds failed {}", filename,e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.NETWORK),
                 HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        final SWDatasetVersionEntity swDatasetVersionEntity = swDatasetVersionWithMeta.getSwDatasetVersionEntity();
-        synchronized (swDatasetVersionEntity){
-            String digest = Blake2bUtil.digest(fileBytes);
-            digestCheckWithManifest(swDatasetVersionWithMeta, filename, digest);
-            if(fileUploaded(swDatasetVersionWithMeta, filename, digest)){
-                log.info("file for {} {} already uploaded",uploadId,filename);
-                return;
-            }
-            Map<String, String> uploadedFileBlake2bs = swDatasetVersionWithMeta.getVersionMeta()
-                .getUploadedFileBlake2bs();
-            uploadedFileBlake2bs.put(filename,digest);
-            try {
-                swDatasetVersionEntity.setFilesUploaded(yamlMapper.writeValueAsString(uploadedFileBlake2bs));
-                swdsVersionMapper.updateFilesUploaded(swDatasetVersionEntity);
-            } catch (JsonProcessingException e) {
-                log.error("wirte map to string failed",e);
-                throw new SWProcessException(ErrorType.DB).tip("write map to string failed");
-            }
-            uploadSwdsFileToStorage(filename, fileBytes, swDatasetVersionEntity);
         }
 
     }
@@ -308,6 +310,8 @@ public class SwdsUploader {
             .storagePath(storagePathCoordinator.generateSwdsPath(swDatasetEntity.getDatasetName(),manifest.getVersion()))
             .versionMeta(manifest.getRawYaml())
             .versionName(manifest.getVersion())
+            .size(manifest.getSize())
+            .indexTable(dsrHelper.tableNameOf(manifest.getName(),manifest.getVersion()))
             .filesUploaded(EMPTY_YAML)
             .build();
     }
@@ -338,7 +342,8 @@ public class SwdsUploader {
     }
 
     final static String SWDS_MANIFEST="_manifest.yaml";
-    public byte[] pull(String project, String name, String version, String partName) {
+
+    public void pull(String project, String name, String version, String partName, HttpServletResponse httpResponse) {
         Long projectId = projectManager.getProjectId(project);
         SWDatasetEntity datasetEntity = swdsMapper.findByName(name, projectId);
         if(null == datasetEntity){
@@ -352,11 +357,20 @@ public class SwdsUploader {
         if(!StringUtils.hasText(partName)){
             partName = SWDS_MANIFEST;
         }
-        try(InputStream inputStream = storageAccessService.get(datasetVersionEntity.getStoragePath() + "/" + partName.trim())){
-            return inputStream.readAllBytes();
+        try(InputStream inputStream = storageAccessService.get(datasetVersionEntity.getStoragePath() + "/" + partName.trim());
+            ServletOutputStream outputStream = httpResponse.getOutputStream()){
+            long length = inputStream.transferTo(outputStream);
+            httpResponse.addHeader("Content-Disposition","attachment; filename=\""+fileNameFromUri(partName)+"\"");
+            httpResponse.addHeader("Content-Length", String.valueOf(length));
+            outputStream.flush();
         } catch (IOException e) {
             log.error("pull file from storage failed",e);
             throw new SWProcessException(ErrorType.STORAGE).tip("pull file from storage failed: "+ e.getMessage());
         }
+    }
+
+    String fileNameFromUri(String uri){
+        String[] split = uri.split("/");
+        return split[split.length-1];
     }
 }

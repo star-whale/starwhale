@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
+import ai.starwhale.mlops.domain.swds.converter.SWDSBOConverter;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
@@ -49,27 +50,25 @@ public class JobBoConverter {
 
     final RuntimeVersionMapper runtimeVersionMapper;
 
+    final SWDSBOConverter swdsboConverter;
+
     final String image = "ghcr.io/star-whale/starwhale:latest";//todo(renyanda): replace with runtime meta
 
     public JobBoConverter(JobSWDSVersionMapper jobSWDSVersionMapper,
-                          SWModelPackageMapper swModelPackageMapper,
-                          RuntimeMapper runtimeMapper,
-                          RuntimeVersionMapper runtimeVersionMapper) {
+        SWModelPackageMapper swModelPackageMapper,
+        RuntimeMapper runtimeMapper,
+        RuntimeVersionMapper runtimeVersionMapper,
+        SWDSBOConverter swdsboConverter) {
         this.jobSWDSVersionMapper = jobSWDSVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
+        this.swdsboConverter = swdsboConverter;
     }
 
     public Job fromEntity(JobEntity jobEntity){
         List<SWDataSet> swDataSets = jobSWDSVersionMapper.listSWDSVersionsByJobId(jobEntity.getId())
-            .stream().map(swDatasetVersionEntity -> SWDataSet.builder()
-                .id(swDatasetVersionEntity.getId())
-                .indexPath(getIndexPath(swDatasetVersionEntity))
-                .path(swDatasetVersionEntity.getStoragePath())
-                .version(swDatasetVersionEntity.getVersionName())
-                .name(swDatasetVersionEntity.getDatasetName())
-                .build())
+            .stream().map(swdsboConverter::fromEntity)
             .collect(Collectors.toList());
         SWModelPackageEntity modelPackageEntity = swModelPackageMapper.findSWModelPackageById(
             jobEntity.getSwmpVersion().getSwmpId());

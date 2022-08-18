@@ -143,7 +143,7 @@ public class DatasetController implements DatasetApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<UploadResult>> uploadDS(String uploadId,
+    public ResponseEntity<ResponseMessage<UploadResult>> uploadDS(String uploadId,String uri,
         String projectUrl, String datasetUrl, String versionUrl,
         MultipartFile dsFile, UploadRequest uploadRequest) {
         uploadRequest.setProject(projectUrl);
@@ -163,7 +163,7 @@ public class DatasetController implements DatasetApi{
                 return ResponseEntity.ok(Code.success.asResponse(new UploadResult(swdsUploader.create(text,dsFile.getOriginalFilename(),uploadRequest))));
             case BLOB:
                 //get ds path and upload to the dest path
-                swdsUploader.uploadBody(uploadId,dsFile);
+                swdsUploader.uploadBody(uploadId,dsFile,uri);
                 return ResponseEntity.ok(Code.success.asResponse(new UploadResult(uploadId)));
             case CANCEL:
                 swdsUploader.cancel(uploadId);
@@ -183,14 +183,7 @@ public class DatasetController implements DatasetApi{
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
                 .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
         }
-        byte[] res = swdsUploader.pull(projectUrl, datasetUrl, versionUrl, partName);
-        httpResponse.addHeader("Content-Length", String.valueOf(res.length));
-        try (ServletOutputStream outputStream = httpResponse.getOutputStream()){
-            outputStream.write(res);
-            outputStream.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        swdsUploader.pull(projectUrl, datasetUrl, versionUrl, partName,httpResponse);
     }
 
     @Override

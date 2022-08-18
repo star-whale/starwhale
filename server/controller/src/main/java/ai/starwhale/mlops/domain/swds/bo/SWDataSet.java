@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.swds.bo;
 
+import ai.starwhale.mlops.storage.fs.FileStorageEnv;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,16 +41,17 @@ public class SWDataSet {
      * The total amount data pairs of the DS
      * One data pair contains a piece of Raw Data and a piece of Label Data
      */
-    Integer size;
+    Long size;
 
     /**
-     * The storage path of the DS, it could be a directory or a single file
+     * The storage path prefix or directory of the DS
      */
     String path;
 
     /**
      * The storage path of the DS index, it could be a directory or a single file
      */
+    @Deprecated
     String indexPath;
 
     /**
@@ -60,4 +63,16 @@ public class SWDataSet {
      * the version for the data set
      */
     String version;
+
+    /**
+     * the table name for index in DataStore
+     */
+    String indexTable;
+
+    /**
+     * the necessary information to access to file storages
+     * key: storage name
+     * value: envs
+     */
+    Map<String,FileStorageEnv> fileStorageEnvs;
 }
