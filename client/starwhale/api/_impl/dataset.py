@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import sys
 import json
+import shutil
 import struct
 import typing as t
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 from copy import deepcopy
 from types import TracebackType
 from pathlib import Path
@@ -21,12 +22,13 @@ from starwhale.consts import (
     DUMPED_SWDS_META_FNAME,
 )
 from starwhale.base.uri import URI
+from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import (
     URIType,
     InstanceType,
+    DataFormatType,
     DataOriginType,
     ObjectStoreType,
-    RawDataFormatType,
 )
 from starwhale.utils.error import (
     NotFoundError,
@@ -56,7 +58,7 @@ class TabularDatasetRow:
         id: int,
         data_uri: str,
         label: t.Union[str, bytes],
-        data_format: RawDataFormatType = RawDataFormatType.SWDS_BIN,
+        data_format: DataFormatType = DataFormatType.SWDS_BIN,
         object_store_type: ObjectStoreType = ObjectStoreType.LOCAL,
         data_offset: int = 0,
         data_size: int = 0,
@@ -85,7 +87,7 @@ class TabularDatasetRow:
         if not self.data_uri:
             raise FieldTypeOrValueError("no raw_data_uri field")
 
-        if self.data_format not in RawDataFormatType:
+        if self.data_format not in DataFormatType:
             raise NoSupportError(f"data format: {self.data_format}")
 
         if self.data_origin not in DataOriginType:
@@ -154,7 +156,7 @@ class TabularDataset:
         _end = min(end + self.start, self.end)
 
         _map_types = {
-            "data_format": RawDataFormatType,
+            "data_format": DataFormatType,
             "data_origin": DataOriginType,
             "object_store_type": ObjectStoreType,
         }
@@ -256,26 +258,10 @@ class StandaloneTabularDataset(TabularDataset):
                 self.put(row)
 
 
-class BuildExecutor(metaclass=ABCMeta):
-    """
-    BuildExecutor can build swds.
+_BDType = t.TypeVar("_BDType", bound="BaseBuildExecutor")
 
-    swds_bin format:
-        header_magic    uint32  I
-        crc             uint32  I
-        idx             uint64  Q
-        size            uint32  I
-        padding_size    uint32  I
-        header_version  uint32  I
-        data_magic      uint32  I --> above 32 bytes
-        data bytes...
-        padding bytes...        --> default 4K padding
-    """
 
-    # TODO: add more docstring for class
-
-    _DATA_FMT = SWDS_DATA_FNAME_FMT
-
+class BaseBuildExecutor(metaclass=ABCMeta):
     def __init__(
         self,
         dataset_name: str,
@@ -310,7 +296,7 @@ class BuildExecutor(metaclass=ABCMeta):
     def _prepare(self) -> None:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def __enter__(self) -> BuildExecutor:
+    def __enter__(self: _BDType) -> _BDType:
         return self
 
     def __exit__(
@@ -329,6 +315,78 @@ class BuildExecutor(metaclass=ABCMeta):
 
         print("cleanup done.")
 
+    @abstractmethod
+    def make_swds(self) -> DatasetSummary:
+        raise NotImplementedError
+
+    def _iter_files(
+        self, filter: str, sort_key: t.Optional[t.Any] = None
+    ) -> t.Generator[Path, None, None]:
+        _key = sort_key
+        if _key is not None and not callable(_key):
+            raise Exception(f"data_sort_func({_key}) is not callable.")
+
+        _files = sorted(self.data_dir.rglob(filter), key=_key)
+        for p in _files:
+            if not p.is_file():
+                continue
+            yield p
+
+    def iter_data_files(self) -> t.Generator[Path, None, None]:
+        return self._iter_files(self.data_filter, self.data_sort_func())
+
+    def iter_label_files(self) -> t.Generator[Path, None, None]:
+        return self._iter_files(self.label_filter, self.label_sort_func())
+
+    def iter_all_dataset_slice(self) -> t.Generator[t.Any, None, None]:
+        for p in self.iter_data_files():
+            for d in self.iter_data_slice(str(p.absolute())):
+                yield p, d
+
+    def iter_all_label_slice(self) -> t.Generator[t.Any, None, None]:
+        for p in self.iter_label_files():
+            for d in self.iter_label_slice(str(p.absolute())):
+                yield p, d
+
+    @abstractmethod
+    def iter_data_slice(self, path: str) -> t.Generator[t.Any, None, None]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def iter_label_slice(self, path: str) -> t.Generator[t.Any, None, None]:
+        raise NotImplementedError
+
+    @abstractproperty
+    def data_format_type(self) -> DataFormatType:
+        raise NotImplementedError
+
+    def data_sort_func(self) -> t.Any:
+        return None
+
+    def label_sort_func(self) -> t.Any:
+        return None
+
+
+class SWDSBinBuildExecutor(BaseBuildExecutor):
+    """
+    SWDSBinBuildExecutor can build swds_bin.
+
+    swds_bin format:
+        header_magic    uint32  I
+        crc             uint32  I
+        idx             uint64  Q
+        size            uint32  I
+        padding_size    uint32  I
+        header_version  uint32  I
+        data_magic      uint32  I --> above 32 bytes
+        data bytes...
+        padding bytes...        --> default 4K padding
+    """
+
+    # TODO: add more docstring for class
+
+    _DATA_FMT = SWDS_DATA_FNAME_FMT
+
     def _write(self, writer: t.Any, idx: int, data: bytes) -> t.Tuple[int, int]:
         size = len(data)
         crc = crc32(data)  # TODO: crc is right?
@@ -346,16 +404,19 @@ class BuildExecutor(metaclass=ABCMeta):
         remain = (size + _header_size) % self.alignment_bytes_size
         return 0 if remain == 0 else (self.alignment_bytes_size - remain)
 
+    @property
+    def data_format_type(self) -> DataFormatType:
+        return DataFormatType.SWDS_BIN
+
     def make_swds(self) -> DatasetSummary:
         # TODO: add lock
         fno, wrote_size = 0, 0
         dwriter = (self.output_dir / self._DATA_FMT.format(index=fno)).open("wb")
-        data_format = RawDataFormatType.SWDS_BIN
         object_store_type = ObjectStoreType.LOCAL
         rows, increased_rows = 0, 0
         total_label_size, total_data_size = 0, 0
 
-        for idx, (data, label) in enumerate(
+        for idx, ((_, data), (_, label)) in enumerate(
             zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())
         ):
             # TODO: support inherit data from old dataset version
@@ -366,7 +427,7 @@ class BuildExecutor(metaclass=ABCMeta):
                     id=idx,
                     data_uri=self._DATA_FMT.format(index=fno),
                     label=label,
-                    data_format=RawDataFormatType.SWDS_BIN,
+                    data_format=self.data_format_type,
                     object_store_type=ObjectStoreType.LOCAL,
                     data_offset=data_offset,
                     data_size=data_size,
@@ -399,58 +460,87 @@ class BuildExecutor(metaclass=ABCMeta):
         summary = DatasetSummary(
             rows=rows,
             increased_rows=increased_rows,
-            data_format=data_format,
+            data_format_type=self.data_format_type,
             object_store_type=object_store_type,
             label_byte_size=total_label_size,
             data_byte_size=total_data_size,
         )
         return summary
 
-    def _iter_files(
-        self, filter: str, sort_key: t.Optional[t.Any] = None
-    ) -> t.Generator[Path, None, None]:
-        _key = sort_key
-        if _key is not None and not callable(_key):
-            raise Exception(f"data_sort_func({_key}) is not callable.")
-
-        _files = sorted(self.data_dir.rglob(filter), key=_key)
-        for p in _files:
-            if not p.is_file():
-                continue
-            yield p
-
-    def iter_data_files(self) -> t.Generator[Path, None, None]:
-        return self._iter_files(self.data_filter, self.data_sort_func())
-
-    def iter_label_files(self) -> t.Generator[Path, None, None]:
-        return self._iter_files(self.label_filter, self.label_sort_func())
-
-    def iter_all_dataset_slice(self) -> t.Generator[t.Any, None, None]:
-        for p in self.iter_data_files():
-            for d in self.iter_data_slice(str(p.absolute())):
-                yield d
-
-    def iter_all_label_slice(self) -> t.Generator[t.Any, None, None]:
-        for p in self.iter_label_files():
-            for d in self.iter_label_slice(str(p.absolute())):
-                yield d
-
-    @abstractmethod
     def iter_data_slice(self, path: str) -> t.Generator[t.Any, None, None]:
-        raise NotImplementedError
+        with Path(path).open() as f:
+            yield f.read()
 
-    @abstractmethod
     def iter_label_slice(self, path: str) -> t.Generator[t.Any, None, None]:
-        raise NotImplementedError
-
-    def data_sort_func(self) -> t.Any:
-        return None
-
-    def label_sort_func(self) -> t.Any:
-        return None
+        yield Path(path).name
 
 
-class MNISTBuildExecutor(BuildExecutor):
+BuildExecutor = SWDSBinBuildExecutor
+
+
+class UserRawBuildExecutor(BaseBuildExecutor):
+    def make_swds(self) -> DatasetSummary:
+        rows, increased_rows = 0, 0
+        total_label_size, total_data_size = 0, 0
+        object_store_type = ObjectStoreType.LOCAL
+        ds_copy_candidates = {}
+
+        for idx, ((data_path, data), (_, label)) in enumerate(
+            zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())
+        ):
+            data_origin = DataOriginType.NEW
+            data_offset, data_size = data
+
+            relative_path = str(Path(data_path).relative_to(self.data_dir))
+            ds_copy_candidates[relative_path] = data_path
+
+            self.tabular_dataset.put(
+                TabularDatasetRow(
+                    id=idx,
+                    data_uri=str(relative_path),
+                    label=label,
+                    data_format=self.data_format_type,
+                    object_store_type=object_store_type,
+                    data_offset=data_offset,
+                    data_size=data_size,
+                    data_origin=data_origin,
+                )
+            )
+
+            total_data_size += data_size
+            total_label_size += len(label)
+
+            rows += 1
+            if data_origin == DataOriginType.NEW:
+                increased_rows += 1
+
+        for fname, src in ds_copy_candidates.items():
+            dest = self.output_dir / fname
+            ensure_dir(dest.parent)
+            shutil.copyfile(str(src.absolute()), str(dest.absolute()))
+
+        summary = DatasetSummary(
+            rows=rows,
+            increased_rows=increased_rows,
+            data_format_type=self.data_format_type,
+            object_store_type=object_store_type,
+            label_byte_size=total_label_size,
+            data_byte_size=total_data_size,
+        )
+        return summary
+
+    def iter_data_slice(self, path: str) -> t.Generator[t.Any, None, None]:
+        yield 0, Path(path).stat().st_size
+
+    def iter_label_slice(self, path: str) -> t.Generator[t.Any, None, None]:
+        yield Path(path).name
+
+    @property
+    def data_format_type(self) -> DataFormatType:
+        return DataFormatType.USER_RAW
+
+
+class MNISTBuildExecutor(SWDSBinBuildExecutor):
     def iter_data_slice(self, path: str) -> t.Generator[bytes, None, None]:
         fpath = Path(path)
 
