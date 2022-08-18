@@ -45,7 +45,9 @@ export default function Logo({ expanded = true, className, kind = 'white', style
             <>
                 <img
                     style={{
-                        width: 140,
+                        width: 128,
+                        position: 'relative',
+                        left: '-10px',
                         display: expanded ? 'inline' : 'none',
                     }}
                     src={normals[kind]}
@@ -63,8 +65,19 @@ export default function Logo({ expanded = true, className, kind = 'white', style
         )
     }, [expanded, kind])
 
-    if (currentUser) {
-        return <div>{logo}</div>
+    if (!currentUser) {
+        return (
+            <div
+                className={classNames(styles.logoWrapper, className)}
+                style={{
+                    width: expanded ? sidebarExpandedWidth : sidebarFoldedWidth,
+                    transition: 'all .2s ease',
+                    ...style,
+                }}
+            >
+                {logo}
+            </div>
+        )
     }
 
     return (

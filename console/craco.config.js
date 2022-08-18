@@ -31,6 +31,9 @@ module.exports = {
                 test: /react-spring/,
                 sideEffects: true,
             })
+            webpackConfig.optimization.minimize = false
+            webpackConfig.optimization.chunkIds = 'named'
+            webpackConfig.optimization.concatenateModules = false
             return webpackConfig
         },
     },

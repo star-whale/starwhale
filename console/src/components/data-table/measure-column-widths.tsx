@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from 'react'
 
 import { useStyletron } from 'baseui'
 
+import _ from 'lodash'
 import HeaderCell from './header-cell'
 import type { ColumnT, RowT } from './types'
 import usePrevious from '../../hooks/usePrevious'

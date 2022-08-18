@@ -50,7 +50,7 @@ export default function TaskListCard({ header, onAction }: ITaskListCardProps) {
                             task.taskStatus,
                             <StyledLink
                                 key={task.uuid}
-                                onClick={(e) => {
+                                onClick={(e: any) => {
                                     // eslint-disalbe-next-line no-unused-expressions
                                     const trDom = e.currentTarget.closest('tr')
                                     const trDoms = trDom?.parentElement?.children

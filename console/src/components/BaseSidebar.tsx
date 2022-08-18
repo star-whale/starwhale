@@ -178,7 +178,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                     },
                     NavItemContainer: {
                         style: {
-                            height: 38,
+                            height: '38px',
                             padding: '5px 8px',
                             boxSizing: 'border-box',
                             borderLeftWidth: '0',

@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite'
-import svgrPlugin from 'vite-plugin-svgr'
 import path from 'path'
-import { visualizer } from 'rollup-plugin-visualizer'
 import react from '@vitejs/plugin-react'
-import dns from 'dns'
-dns.setDefaultResultOrder('verbatim')
+import eslint from 'vite-plugin-eslint'
+
+// import mpa from '../../vite-plugin-mpa'
+// import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -18,7 +18,6 @@ export default defineConfig({
             },
             '/api': {
                 target: process.env.PROXY || 'http://127.0.0.1:8082',
-                // pathRewrite: {'/api/v1': '/'},
                 changeOrigin: true,
                 secure: false,
             },
@@ -26,9 +25,7 @@ export default defineConfig({
     },
     build: {
         outDir: 'build',
-        rollupOptions: {
-            // plugins: [visualizer()],
-        },
+        manifest: true,
     },
     resolve: {
         alias: {
@@ -43,14 +40,10 @@ export default defineConfig({
         },
     },
     plugins: [
+        eslint(),
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),
-        svgrPlugin({
-            svgrOptions: {
-                icon: true,
-                // ...svgr options (https://react-svgr.com/docs/options/)
-            },
-        }),
+        // mpa(),
     ],
 })

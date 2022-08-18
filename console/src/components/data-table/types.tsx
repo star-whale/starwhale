@@ -65,6 +65,7 @@ export type RenderFilterT<ValueT, FilterParamsT> = React.Component<{
 
 // flowlint-next-line unclear-type:off
 export type ColumnT<ValueT = any, FilterParamsT = any> = {
+    // @ts-ignore
     kind: ColumnsT
     sortable: boolean
     renderCell: RenderCellT<ValueT>
