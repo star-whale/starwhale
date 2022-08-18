@@ -3,11 +3,11 @@ import typing as t
 from pathlib import Path
 
 import yaml
-from yamlable import YamlAble, yaml_info
 from loguru import logger
+from yamlable import YamlAble, yaml_info
 
-from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME, DEFAULT_EVALUATION_RESOURCE
 from starwhale.utils import load_yaml
+from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME, DEFAULT_EVALUATION_RESOURCE
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
 
@@ -77,7 +77,7 @@ class Context:
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
 
 
-@yaml_info(yaml_tag_ns='step')
+@yaml_info(yaml_tag_ns="step")
 class Step(YamlAble):
     def __init__(
         self,
@@ -87,7 +87,7 @@ class Step(YamlAble):
         needs: t.List[str],
         concurrency: int = 1,
         task_num: int = 1,
-        status: str = ""
+        status: str = "",
     ):
         self.job_name = job_name
         self.step_name = step_name
@@ -98,9 +98,19 @@ class Step(YamlAble):
         self.status = status
 
     def __repr__(self) -> str:
-        return "%s(job_name=%r, step_name=%r, resources=%r, needs=%r, concurrency=%r, task_num=%r, status=%r)" % (
-            self.__class__.__name__,
-            self.job_name, self.step_name, self.resources, self.needs, self.concurrency, self.task_num, self.status)
+        return (
+            "%s(job_name=%r, step_name=%r, resources=%r, needs=%r, concurrency=%r, task_num=%r, status=%r)"
+            % (
+                self.__class__.__name__,
+                self.job_name,
+                self.step_name,
+                self.resources,
+                self.needs,
+                self.concurrency,
+                self.task_num,
+                self.status,
+            )
+        )
 
 
 class ParseConfig:
