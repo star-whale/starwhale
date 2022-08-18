@@ -304,9 +304,6 @@ class StandaloneEvaluationJob(EvaluationJob):
 
 
 class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
-    def __init__(self, uri: URI) -> None:
-        super().__init__(uri)
-
     @classmethod
     def run(
         cls,
