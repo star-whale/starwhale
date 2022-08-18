@@ -224,7 +224,7 @@ class Consumer(threading.Thread):
                 break
             print(f".consumer got {executor.step}")
             start_time = time.time()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=executor.step.concurrency) as pool:
                 futures = [pool.submit(task.execute) for task in executor.tasks]
                 res = all(
                     future.result()
