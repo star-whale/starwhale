@@ -9,10 +9,10 @@ import { getToken, setToken } from '@/api'
 
 type IAuthContext = {
     token: string | null
-    onLogin: (data: ILoginUserSchema) => string
+    onLogin: (data: ILoginUserSchema) => Promise<string>
     onLogout: () => void
 }
-export const AuthContext = React.createContext<IAuthContext>({ token: null, onLogin: () => '', onLogout: () => {} })
+export const AuthContext = React.createContext<IAuthContext>({ token: null, onLogin: () => P, onLogout: () => {} })
 
 export const useAuth = () => {
     return React.useContext(AuthContext)
@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }: any) => {
 
     const userInfo = useQuery('currentUser', fetchCurrentUser, { refetchOnWindowFocus: false })
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser, setCurrentUser } = useCurrentUser()
 
     useEffect(() => {

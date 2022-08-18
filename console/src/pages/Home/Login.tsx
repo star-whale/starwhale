@@ -31,7 +31,8 @@ export default function Login() {
                 setIsLoading(false)
             }
         },
-        [history, location.search]
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [history, location.search, onLogin]
     )
 
     return (
