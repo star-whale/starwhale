@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 
 from starwhale.utils.fs import ensure_dir
-from starwhale.base.type import DataFormatType, ObjectStoreType
 from starwhale.api._impl.dataset import (
     _data_magic,
     _header_size,
@@ -48,7 +47,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         super().setUp()
 
         self.raw_data = os.path.join(self.local_storage, ".user", "data")
-        self.output_data = os.path.join(self.local_storage, ".user", "output")
+        self.workdir = os.path.join(self.local_storage, ".user", "workdir")
 
         ensure_dir(self.raw_data)
         with open(os.path.join(self.raw_data, "mnist-data-0"), "wb") as f:
@@ -63,7 +62,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
             dataset_version="332211",
             project_name="self",
             data_dir=Path(self.raw_data),
-            output_dir=Path(self.output_data),
+            workdir=Path(self.workdir),
             data_filter="mnist-data-*",
             label_filter="mnist-data-*",
             alignment_bytes_size=64,
@@ -72,9 +71,9 @@ class TestDatasetBuildExecutor(BaseTestCase):
             summary = e.make_swds()
 
         assert summary.rows == 10
-        assert summary.data_format_type == DataFormatType.USER_RAW
-        assert summary.object_store_type == ObjectStoreType.LOCAL
-        data_path = Path(self.output_data, "mnist-data-0")
+        assert summary.include_user_raw
+        assert not summary.include_link
+        data_path = Path(self.workdir, "data", "mnist-data-0")
 
         assert data_path.exists()
         assert data_path.stat().st_size == 28 * 28 * summary.rows + 16
@@ -90,7 +89,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
             dataset_version="112233",
             project_name="self",
             data_dir=Path(self.raw_data),
-            output_dir=Path(self.output_data),
+            workdir=Path(self.workdir),
             data_filter="mnist-data-*",
             label_filter="mnist-data-*",
             alignment_bytes_size=64,
@@ -103,13 +102,13 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert summary.rows == 10
         assert summary.increased_rows == 10
         assert summary.unchanged_rows == 0
-        assert summary.data_format_type == DataFormatType.SWDS_BIN
-        assert summary.object_store_type == ObjectStoreType.LOCAL
+        assert not summary.include_user_raw
+        assert not summary.include_link
 
-        data_path = Path(self.output_data, "data_ubyte_0.swds_bin")
+        data_path = Path(self.workdir, "data", "data_ubyte_0.swds_bin")
 
         for i in range(0, 5):
-            assert Path(self.output_data) / f"data_ubyte_{i}.swds_bin"
+            assert Path(self.workdir) / "data" / f"data_ubyte_{i}.swds_bin"
 
         data_content = data_path.read_bytes()
         _parser = _header_struct.unpack(data_content[:_header_size])

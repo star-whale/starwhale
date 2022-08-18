@@ -1,7 +1,13 @@
 import struct
 from pathlib import Path
 
-from starwhale.api.dataset import SWDSBinBuildExecutor, UserRawBuildExecutor
+from starwhale.api.dataset import (
+    Link,
+    MIMEType,
+    S3LinkAuth,
+    SWDSBinBuildExecutor,
+    UserRawBuildExecutor,
+)
 
 
 def _do_iter_label_slice(path: str):
@@ -51,3 +57,26 @@ class RawDataSetProcessExecutor(UserRawBuildExecutor):
 
     def iter_label_slice(self, path: str):
         return _do_iter_label_slice(path)
+
+
+class LinkRawDataSetProcessExecutor(RawDataSetProcessExecutor):
+    _auth = S3LinkAuth(name="mnist", access_key="minioadmin", secret="minioadmin")
+    _endpoint = "10.131.0.1:9000"
+    _bucket = "users"
+
+    def iter_all_dataset_slice(self):
+        offset = 16
+        size = 28 * 28
+        uri = (
+            f"s3://{self._endpoint}@{self._bucket}/dataset/mnist/t10k-images-idx3-ubyte"
+        )
+        for _ in range(10000):
+            link = Link(
+                f"{uri}",
+                self._auth,
+                offset=offset,
+                size=size,
+                mime_type=MIMEType.GRAYSCALE,
+            )
+            yield link
+            offset += size
