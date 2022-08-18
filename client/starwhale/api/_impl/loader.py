@@ -234,6 +234,7 @@ class SWDSBinDataLoader(DataLoader):
         self, file: FileLikeObj, row: TabularDatasetRow
     ) -> t.Generator[t.Tuple[bytes, int], None, None]:
         from .dataset import _header_size, _header_struct
+
         size: int
         padding_size: int
         header: bytes = file.read(_header_size)
