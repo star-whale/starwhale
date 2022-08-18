@@ -2,13 +2,14 @@ import Card from '@/components/Card'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
 import { ILoginUserSchema } from '@user/schemas/user'
-import { loginUser } from '@user/services/user'
+// import { loginUser } from '@user/services/user'
 import { Input } from 'baseui/input'
-import qs from 'qs'
+// import qs from 'qs'
 import React, { useCallback, useState } from 'react'
 import { useHistory, useLocation } from 'react-router-dom'
 import Button from '@/components/Button'
 import IconFont from '@/components/IconFont'
+import { useAuth } from '@/api/Auth'
 import LoginLayout from './LoginLayout'
 
 const { Form, FormItem } = createForm<ILoginUserSchema>()
@@ -18,19 +19,13 @@ export default function Login() {
     const location = useLocation()
     const history = useHistory()
     const [isLoading, setIsLoading] = useState(false)
+    const { onLogin } = useAuth()
 
     const handleFinish = useCallback(
         async (data: ILoginUserSchema) => {
             setIsLoading(true)
             try {
-                await loginUser(data)
-                const search = qs.parse(location.search, { ignoreQueryPrefix: true })
-                let { redirect } = search
-                if (redirect && typeof redirect === 'string') {
-                    redirect = decodeURI(redirect)
-                } else {
-                    redirect = '/'
-                }
+                const redirect = await onLogin(data)
                 history.push(redirect)
             } finally {
                 setIsLoading(false)

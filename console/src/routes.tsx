@@ -39,12 +39,13 @@ import EvaluationOverviewLayout from '@/pages/Evaluation/EvaluationOverviewLayou
 import EvaluationResults from '@/pages/Evaluation/EvaluationResults'
 import Header from '@/components/Header'
 import LoginLayout from '@/pages/Home/LoginLayout'
-import { getToken } from '@/api'
 import CreateAccount from '@/pages/Home/CreateAccount'
 import ResetPassword from '@/pages/Home/ResetPassword'
 import { CreateAccountPageUri } from '@/consts'
 import CenterLayout from './pages/CenterLayout'
 import ProjectOverview from './pages/Project/Overview'
+import Pending from './pages/Home/Pending'
+import { useAuth } from './api/Auth'
 
 const LoginNew = React.lazy(() => import('@/pages/Home/LoginNew'))
 
@@ -70,10 +71,9 @@ const Routes = () => {
     const themeType = useCurrentThemeType()
     const [, theme] = useStyletron()
     const styles = useStyles({ theme, themeType })
-    // eslint-disable-next-line  react-hooks/exhaustive-deps
-    // const { currentUser } = useCurrentUser()
+    const { token } = useAuth()
 
-    if (!getToken()) {
+    if (!token) {
         return (
             <React.Suspense fallback={<>...</>}>
                 <BrowserRouter>
@@ -99,7 +99,7 @@ const Routes = () => {
     }
 
     return (
-        <React.Suspense fallback={<>...</>}>
+        <React.Suspense fallback={<Pending />}>
             <BrowserRouter>
                 <div className={styles.root}>
                     <ApiHeader />

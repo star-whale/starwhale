@@ -1,9 +1,11 @@
 import { useProject, useProjectLoading } from '@project/hooks/useProject'
 import React, { useEffect } from 'react'
 import { useQuery } from 'react-query'
-import { useParams } from 'react-router-dom'
+import { Redirect, useParams } from 'react-router-dom'
 import { fetchProject } from '@project/services/project'
 import BaseSubLayout from '@/pages/BaseSubLayout'
+import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import { toaster } from 'baseui/toast'
 
 export interface IProjectLayoutProps {
     children: React.ReactNode
@@ -17,13 +19,22 @@ export default function ProjectLayout({ children }: IProjectLayoutProps) {
     useEffect(() => {
         setProjectLoading(projectInfo.isLoading)
         if (projectInfo.isSuccess) {
-            if (projectInfo.data.id !== project?.id) {
+            if (projectInfo.data?.id !== project?.id) {
                 setProject(projectInfo.data)
             }
         } else if (projectInfo.isLoading) {
             setProject(undefined)
         }
     }, [project?.id, projectInfo.data, projectInfo.isLoading, projectInfo.isSuccess, setProject, setProjectLoading])
+
+    if (projectInfo.isLoading) {
+        return <BusyPlaceholder />
+    }
+
+    if (projectInfo.isSuccess && !projectInfo.data) {
+        toaster.negative('project no access', { autoHideDuration: 2000 })
+        return <Redirect to='/' />
+    }
 
     return <BaseSubLayout>{children}</BaseSubLayout>
 }
