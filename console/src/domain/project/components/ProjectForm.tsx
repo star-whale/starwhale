@@ -89,9 +89,10 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { currentUser } = useCurrentUser()
     const [values, setValues] = useState<ICreateProjectSchema | undefined>({
-        owner: currentUser?.id,
-        projectName: '',
-        visibility: 'public',
+        ownerId: currentUser?.id,
+        projectName: project?.name ?? '',
+        privacy: project?.privacy ?? 'public',
+        description: project?.description ?? '',
     })
 
     useEffect(() => {
@@ -123,19 +124,43 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
 
     return (
         <Form initialValues={values} onFinish={handleFinish} onValuesChange={handleValuesChange}>
-            <FormItem name='owner' label={t('Owner')} required>
-                <Owner />
-            </FormItem>
-            <FormItem name='projectName' label={t('sth name', [t('Project')])} required>
-                <Input size='compact' />
-            </FormItem>
-            <FormItem name='visibility'>
+            <div
+                style={{
+                    display: 'flex',
+                    alignContent: 'stretch',
+                    alignItems: 'flex-end',
+                }}
+            >
+                <FormItem
+                    key='ownerId'
+                    name='ownerId'
+                    label={t('Owner')}
+                    required
+                    style={{
+                        flexBasis: '160px',
+                        marginBottom: 0,
+                    }}
+                >
+                    <Owner />
+                </FormItem>
+                <div
+                    style={{
+                        margin: '0 6px 23px',
+                    }}
+                >
+                    /
+                </div>
+                <FormItem key='projectName' name='projectName' label={t('sth name', [t('Project')])} required>
+                    <Input size='compact' />
+                </FormItem>
+            </div>
+            <FormItem name='privacy' key='privacy'>
                 <Visibility />
             </FormItem>
-            <FormItem name='description' label={t('Description')}>
+            <FormItem name='description' key='description' label={t('Description')}>
                 <Textarea />
             </FormItem>
-            <FormItem>
+            <FormItem key='submit'>
                 <div style={{ display: 'flex' }}>
                     <div style={{ flexGrow: 1 }} />
                     <Button size='compact' isLoading={loading} disabled={!isModified(project, values)}>

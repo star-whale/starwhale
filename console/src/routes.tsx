@@ -44,6 +44,7 @@ import CreateAccount from '@/pages/Home/CreateAccount'
 import ResetPassword from '@/pages/Home/ResetPassword'
 import { CreateAccountPageUri } from '@/consts'
 import CenterLayout from './pages/CenterLayout'
+import ProjectOverview from './pages/Project/Overview'
 
 const LoginNew = React.lazy(() => import('@/pages/Home/LoginNew'))
 
@@ -133,7 +134,8 @@ const Routes = () => {
                                     <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
                                     <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
                                     <Route exact path='/projects/:projectId/members' component={ProjectMembers} />
-                                    <Redirect from='/projects/:projectId' to='/projects/:projectId/models' />
+                                    <Route exact path='/projects/:projectId/overview' component={ProjectOverview} />
+                                    <Redirect from='/projects/:projectId' to='/projects/:projectId/overview' />
                                 </Switch>
                             </ProjectLayout>
                         </Route>

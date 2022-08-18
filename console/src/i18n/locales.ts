@@ -6,6 +6,9 @@ const locales0 = {
     'create sth': {
         en: 'Create {{0}}',
     },
+    'edit sth': {
+        en: 'Edit {{0}}',
+    },
     'select sth': {
         en: 'Select {{0}}',
     },
@@ -351,6 +354,9 @@ const locales0 = {
     'overview': {
         en: 'overview',
     },
+    'Overview': {
+        en: 'Overview',
+    },
     'TP': {
         en: 'tp',
     },
@@ -564,6 +570,12 @@ const locales0 = {
     },
     'Manage Member': {
         en: 'Manage Member',
+    },
+    'Privacy': {
+        en: 'Privacy',
+    },
+    'Member': {
+        en: 'Member',
     },
 }
 

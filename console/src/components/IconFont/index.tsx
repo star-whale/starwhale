@@ -54,6 +54,9 @@ const iconTypes = [
     'Instagram',
     'google',
     'Github',
+    'a-managemember',
+    'overview',
+    'evaluation',
 ]
 
 interface IIconFontProps {

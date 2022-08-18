@@ -20,9 +20,10 @@ import { IProjectSchema } from '../../domain/project/schemas/project'
 
 type IProjectCardProps = {
     project: IProjectSchema
+    onEdit?: () => void
 }
 
-const ProjectCard = ({ project }: IProjectCardProps) => {
+const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
     const [css] = useStyletron()
     const [t] = useTranslation()
 
@@ -112,7 +113,7 @@ const ProjectCard = ({ project }: IProjectCardProps) => {
                 })}
             >
                 <StatefulTooltip content='desc' placement='bottom'>
-                    desc
+                    {project.description ?? ''}
                 </StatefulTooltip>
             </div>
             <div
@@ -122,30 +123,63 @@ const ProjectCard = ({ project }: IProjectCardProps) => {
                 })}
             >
                 <div />
-                <StatefulTooltip content={t('Manage Member')} placement='bottom'>
-                    <Link
-                        key={project.id}
-                        to={`/projects/${project.id}/members`}
-                        className={cn(
-                            'flex-row-center',
-                            css({
-                                'display': 'flex',
-                                'fontSize': '12px',
-                                'background': '#F4F5F7',
-                                'borderRadius': '2px',
-                                'width': '20px',
-                                'height': '20px',
-                                'textDecoration': 'none',
-                                'color': 'gray !important',
-                                ':hover span': {
-                                    color: ' #5181E0  !important',
+                <div
+                    style={{
+                        display: 'flex',
+                        gap: '12px',
+                    }}
+                >
+                    <StatefulTooltip content={t('Manage Member')} placement='bottom'>
+                        <Link
+                            key={project.id}
+                            to={`/projects/${project.id}/members`}
+                            className={cn(
+                                'flex-row-center',
+                                css({
+                                    'display': 'flex',
+                                    'fontSize': '12px',
+                                    'background': '#F4F5F7',
+                                    'borderRadius': '2px',
+                                    'width': '20px',
+                                    'height': '20px',
+                                    'textDecoration': 'none',
+                                    'color': 'gray !important',
+                                    ':hover span': {
+                                        color: ' #5181E0  !important',
+                                    },
+                                })
+                            )}
+                        >
+                            <IconFont type='setting' size={12} />
+                        </Link>
+                    </StatefulTooltip>
+                    <StatefulTooltip content={t('edit sth', [t('Project')])} placement='bottom'>
+                        <Button
+                            onClick={onEdit}
+                            size='compact'
+                            kind='secondary'
+                            overrides={{
+                                BaseButton: {
+                                    style: {
+                                        'display': 'flex',
+                                        'fontSize': '12px',
+                                        'background': '#F4F5F7',
+                                        'borderRadius': '2px',
+                                        'width': '20px',
+                                        'height': '20px',
+                                        'textDecoration': 'none',
+                                        'color': 'gray !important',
+                                        ':hover span': {
+                                            color: ' #5181E0  !important',
+                                        },
+                                    },
                                 },
-                            })
-                        )}
-                    >
-                        <IconFont type='setting' size={12} />
-                    </Link>
-                </StatefulTooltip>
+                            }}
+                        >
+                            <IconFont type='edit' size={12} />
+                        </Button>
+                    </StatefulTooltip>
+                </div>
             </div>
         </div>
     )
@@ -165,6 +199,7 @@ export default function ProjectListCard() {
         [projectsInfo]
     )
     const [data, setData] = useState<IProjectSchema[]>([])
+    const [editProject, setEditProject] = useState<IProjectSchema>()
     const [css] = useStyletron()
     const [t] = useTranslation()
     // eslintd-disable-next-line react-hooks/exhaustive-deps
@@ -183,7 +218,16 @@ export default function ProjectListCard() {
             return <BusyPlaceholder type='empty' />
         }
         return data.map((project) => {
-            return <ProjectCard key={project.id} project={project} />
+            return (
+                <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onEdit={() => {
+                        setEditProject(project)
+                        setIsCreateProjectOpen(true)
+                    }}
+                />
+            )
         })
     }, [data, filter])
 
@@ -195,7 +239,10 @@ export default function ProjectListCard() {
                 <Button
                     startEnhancer={<IconFont type='add' kind='white' />}
                     size={ButtonSize.compact}
-                    onClick={() => setIsCreateProjectOpen(true)}
+                    onClick={() => {
+                        setEditProject(undefined)
+                        setIsCreateProjectOpen(true)
+                    }}
                 >
                     {t('create')}
                 </Button>
@@ -232,7 +279,7 @@ export default function ProjectListCard() {
             >
                 <ModalHeader>{t('create sth', [t('Project')])}</ModalHeader>
                 <ModalBody>
-                    <ProjectForm onSubmit={handleCreateProject} />
+                    <ProjectForm project={editProject} onSubmit={handleCreateProject} />
                 </ModalBody>
             </Modal>
         </Card>

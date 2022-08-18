@@ -4,6 +4,8 @@ import { IUserSchema, IUserRoleSchema } from '@user/schemas/user'
 export interface IProjectSchema extends IResourceSchema {
     name: string
     owner?: IUserSchema
+    privacy?: string
+    description?: string
 }
 
 export interface IUpdateProjectSchema {
@@ -11,9 +13,9 @@ export interface IUpdateProjectSchema {
 }
 
 export interface ICreateProjectSchema {
-    owner?: string
+    ownerId?: string
     projectName: string
-    visibility?: string
+    privacy?: string
     description?: string
 }
 
