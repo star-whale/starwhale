@@ -53,16 +53,10 @@ public class ProjectManager implements ProjectAccessor{
         "time", "project_created_time",
         "createdTime", "project_created_time");
 
-    public List<ProjectEntity> listProjects(Project project, User owner, OrderParams orderParams) {
-        if(owner != null && owner.getId() != null) {
-            return projectMapper.listProjectsByOwner(owner.getId(), orderParams.getOrderSQL(SORT_MAP), project.getDeleteInt());
-        } else if (owner != null && StringUtils.hasText(owner.getName())) {
-            return projectMapper.listProjectsByOwnerName(owner.getName(), orderParams.getOrderSQL(SORT_MAP), project.getDeleteInt());
-        }
-
-        return projectMapper.listProjects(project.getName(), orderParams.getOrderSQL(SORT_MAP), project.getDeleteInt());
-
+    public List<ProjectEntity> listProjects(String projectName, Long userId, OrderParams orderParams) {
+        return projectMapper.listProjects(projectName, orderParams.getOrderSQL(SORT_MAP), 0, userId);
     }
+
 
     public ProjectEntity findDefaultProject(Long userId) {
         ProjectEntity defaultProject = projectMapper.findDefaultProject(userId);

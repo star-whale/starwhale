@@ -55,11 +55,6 @@ public interface ProjectApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(
         @RequestParam(value = "projectName", required = false) String projectName,
-        @Valid @RequestParam(value = "isDeleted", required = false, defaultValue = "false") Boolean isDeleted,
-        @Parameter(in = ParameterIn.QUERY, description = "Id of the project owner", schema = @Schema())
-        @Valid @RequestParam(value = "ownerId", required = false) String ownerId,
-        @Parameter(in = ParameterIn.QUERY, description = "Name of the project owner", schema = @Schema())
-        @Valid @RequestParam(value = "ownerName", required = false) String ownerName,
         @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
         @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize,
         @Valid @RequestParam(value = "sort", required = false) String sort,
