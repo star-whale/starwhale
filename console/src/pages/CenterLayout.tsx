@@ -1,24 +1,26 @@
 import React from 'react'
 import { useStyletron } from 'baseui'
-import BaseLayout from '../BaseLayout'
+import BaseLayout from './BaseLayout'
 
 export interface ILoginLayoutProps {
     children: React.ReactNode
     style?: React.CSSProperties
 }
 
-export default function LoginLayout({ children, style }: ILoginLayoutProps) {
+export default function CenterLayout({ children, style }: ILoginLayoutProps) {
     const [, theme] = useStyletron()
 
     return (
         <BaseLayout
+            sidebar={() => <></>}
             contentStyle={{
                 height: '100%',
+                maxWidth: '1400px',
+                width: '100%',
+                alignSelf: 'center',
             }}
             style={{
-                background: 'var(--color-brandLoginBackground)',
                 color: theme.colors.contentPrimary,
-                justifyContent: 'center',
                 ...style,
             }}
         >

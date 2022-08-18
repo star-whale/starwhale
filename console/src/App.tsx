@@ -5,13 +5,13 @@ import { Provider as StyletronProvider } from 'styletron-react'
 import { BaseProvider } from 'baseui'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import { useSidebar } from '@/hooks/useSidebar'
-import Routes from '@/routes'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import themes from '@/theme'
 import { apiInit } from '@/api'
 import { ToasterContainer } from 'baseui/toast'
 import { ConfirmCtxProvider } from '@/components/Modal/confirm'
 import '@/assets/fonts/iconfont.css'
+import Routes from './routes'
 
 apiInit()
 const engine = new Styletron()

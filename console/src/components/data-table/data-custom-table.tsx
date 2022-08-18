@@ -566,7 +566,7 @@ function Headers({ width }: { width: number }) {
                             borderLeft: 'none',
                             boxSizing: 'border-box',
                             display: 'flex',
-                            height: HEADER_ROW_HEIGHT,
+                            height: `${HEADER_ROW_HEIGHT}px`,
                         })}
                         style={{ width: ctx.widths[columnIndex] }}
                     >

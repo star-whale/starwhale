@@ -35,6 +35,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             },
                         },
                     },
+                    // @ts-ignore
                     TableHeadCell: {
                         style: {
                             backgroundColor: 'var(--color-brandTableHeaderBackground)',

@@ -47,7 +47,7 @@ export default function ProjectMembers() {
                 </Button>
             }
         >
-            <div className={css({ marginBottom: '20px' })}>
+            <div className={css({ marginBottom: '20px', width: '280px' })}>
                 <QueryInput
                     onChange={(val: string) => {
                         setFilter(val.trim())

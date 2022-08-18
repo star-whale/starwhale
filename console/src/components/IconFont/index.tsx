@@ -3,6 +3,8 @@ import _ from 'lodash'
 
 import projectSvg from '@/assets/fonts/project.svg'
 import settingSvg from '@/assets/fonts/setting.svg'
+import emptySvg from '@/assets/empty.svg'
+import searchEmptySvg from '@/assets/search-empty.svg'
 import googleSvg from '@/assets/fonts/google.svg'
 
 const iconTypes = [
@@ -65,6 +67,8 @@ const hijacked = {
     project: projectSvg,
     setting2: settingSvg,
     google: googleSvg,
+    empty: emptySvg,
+    searchEmpty: searchEmptySvg,
 }
 
 export default function IconFont({ size = 14, type = 'user', kind = 'inherit', style = {} }: IIconFontProps) {

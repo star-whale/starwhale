@@ -98,6 +98,7 @@ function ViewEdit(props: ViewListPropsT, ref: React.Ref<any>) {
                     />
                     <RadioGroup
                         value={sortDirection}
+                        // @ts-ignore
                         onChange={(e) => setSortDirection(e.currentTarget.value)}
                         name='number'
                         align={ALIGN.horizontal}

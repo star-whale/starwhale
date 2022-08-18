@@ -37,7 +37,7 @@ const useHeaderStyles = createUseStyles({
 
 const useStyles = createUseStyles({
     systemWrapper: {
-        'margin-left': '12px',
+        'padding-left': '20px',
         'position': 'relative',
         'cursor': 'pointer',
         'display': 'flex',
@@ -46,6 +46,27 @@ const useStyles = createUseStyles({
         '&:hover': {
             '& $systemMenu': {
                 display: 'flex',
+            },
+        },
+        '&:before': {
+            position: 'absolute',
+            content: '""',
+            borderLeft: '1px solid #264480',
+            left: 0,
+            height: '24px',
+        },
+        '& a': {
+            '&:link': {
+                'color': '#fff',
+                'text-decoration': 'none',
+            },
+            '&:hover': {
+                'color': '#fff',
+                'text-decoration': 'none',
+            },
+            '&:visited': {
+                'color': '#fff',
+                'text-decoration': 'none',
             },
         },
     },
@@ -207,9 +228,10 @@ export default function Header() {
     return (
         <header className={headerStyles.headerWrapper}>
             <Logo expanded={ctx.expanded} />
+
             {currentUser && (
                 <div className={styles.systemWrapper}>
-                    <Link to='/projects'>{t}</Link>
+                    <Link to='/projects'>{t('Project')}</Link>
                 </div>
             )}
             <div style={{ flexGrow: 1 }} />

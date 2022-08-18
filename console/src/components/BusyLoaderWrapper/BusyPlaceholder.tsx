@@ -1,11 +1,10 @@
 import React from 'react'
 // eslint-disable-next-line baseui/deprecated-component-api
 import { Spinner, SIZE } from 'baseui/spinner'
-
-import { MdQueryStats } from 'react-icons/md'
+import IconFont from '../IconFont'
 
 interface IBusyPlaceholderProps {
-    type?: 'spinner' | 'loading' | 'notfound'
+    type?: 'spinner' | 'loading' | 'notfound' | 'empty'
 }
 
 export default function BusyPlaceholder({ type }: IBusyPlaceholderProps) {
@@ -20,9 +19,17 @@ export default function BusyPlaceholder({ type }: IBusyPlaceholderProps) {
             children = (
                 <>
                     <div style={{ alignSelf: 'center', fontSize: '50px' }}>
-                        <MdQueryStats />
+                        <IconFont type='searchEmpty' />
                     </div>
-                    <div style={{ alignSelf: 'center' }}>Not Found</div>
+                </>
+            )
+            break
+        case 'empty':
+            children = (
+                <>
+                    <div style={{ alignSelf: 'center', fontSize: '50px' }}>
+                        <IconFont type='empty' />
+                    </div>
                 </>
             )
             break
