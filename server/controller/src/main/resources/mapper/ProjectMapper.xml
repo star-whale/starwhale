@@ -9,8 +9,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="ai.starwhale.mlops.domain.project.mapper.ProjectMapper">
     <insert id="createProject" parameterType="ai.starwhale.mlops.domain.project.po.ProjectEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into project_info(project_name, owner_id, project_description)
-        values (#{project.projectName}, #{project.ownerId}, #{project.description})
+        insert into project_info(project_name, owner_id, privacy, project_description)
+        values (#{project.projectName}, #{project.ownerId}, #{project.privacy}, #{project.description})
     </insert>
 
     <update id="deleteProject" parameterType="java.lang.Long">
@@ -35,7 +35,10 @@
                 project_description = #{project.description},
             </if>
             <if test="project.ownerId != null">
-                owner_id = #{project.ownerId}
+                owner_id = #{project.ownerId},
+            </if>
+            <if test="project.privacy != null">
+                privacy = #{project.privacy}
             </if>
         </set>
         where id = #{project.id}
@@ -45,6 +48,7 @@
         select p.id as project_id,
                p.project_name,
                p.owner_id,
+               p.privacy as project_privacy,
                p.project_description,
                p.is_deleted as project_is_deleted,
                p.is_default as project_is_default,
@@ -64,6 +68,9 @@
         and p.is_deleted = #{isDeleted}
         <if test="projectName != null and projectName != ''">
             and p.project_name like concat(#{projectName}, '%')
+        </if>
+        <if test="userId != null" >
+            and (p.privacy = 1 or (p.id in (select project_id from user_role_rel where user_id = #{userId})))
         </if>
         <if test="order != null and order != ''">
             order by ${order}
@@ -109,6 +116,7 @@
     <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.po.ProjectEntity">
         <id property="id" column="project_id" />
         <result property="projectName" column="project_name"/>
+        <result property="privacy" column="project_privacy" />
         <result property="description" column="project_description" />
         <result property="isDeleted" column="project_is_deleted"/>
         <result property="isDefault" column="project_is_default"/>

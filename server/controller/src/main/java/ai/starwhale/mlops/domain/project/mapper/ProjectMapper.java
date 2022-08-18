@@ -29,7 +29,7 @@ public interface ProjectMapper {
 
     int recoverProject(@Param("id") Long id);
 
-    List<ProjectEntity> listProjects(@Param("projectName") String projectName, @Param("order") String order, @Param("isDeleted") Integer isDeleted);
+    List<ProjectEntity> listProjects(@Param("projectName") String projectName, @Param("order") String order, @Param("isDeleted") Integer isDeleted, @Param("userId") Long userId);
 
     List<ProjectEntity> listProjectsByOwner(@Param("userId") Long userId, @Param("order") String order, @Param("isDeleted") Integer isDeleted);
 
