@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 23.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="null1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 64 64" style="enable-background:new 0 0 64 64;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill-rule:evenodd;clip-rule:evenodd;fill:#CDDBF7;}
+	.st1{fill-rule:evenodd;clip-rule:evenodd;fill:#BED0F1;}
+	.st2{fill-rule:evenodd;clip-rule:evenodd;fill:#ADC1E5;}
+	.st3{fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer8_1_);}
+	.st4{fill-rule:evenodd;clip-rule:evenodd;fill:#DFE8FB;}
+	.st5{fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer6_1_);}
+	.st6{fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer5_1_);}
+	.st7{fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer4_1_);}
+	.st8{fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer3_1_);}
+	.st9{fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer2_1_);}
+	.st10{fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer1_1_);}
+	.st11{fill-rule:evenodd;clip-rule:evenodd;fill:url(#layer_1_);}
+</style>
+<path id="layer11" class="st0" d="M15.3,19h33.4c0.8,0,1.5,0.5,1.8,1.2L60,42l0,0v7H4v-7l9.5-21.8C13.8,19.5,14.5,19,15.3,19z"/>
+<path id="layer10" class="st1" d="M14.5,19.2V39h35V19.2c0.4,0.2,0.8,0.6,1,1L60,42v7H4v-7l9.5-21.8C13.7,19.7,14.1,19.4,14.5,19.2z
+	"/>
+<path id="layer9" class="st2" d="M15.2,34h33.6c0.4,0,0.8,0.3,0.9,0.7L55,49l0,0H9l5.3-14.3C14.4,34.3,14.8,34,15.2,34z"/>
+<radialGradient id="layer8_1_" cx="-2317.0771" cy="319.095" r="0.7016" gradientTransform="matrix(6 0 0 -6 13938 1956)" gradientUnits="userSpaceOnUse">
+	<stop  offset="6.555944e-04" style="stop-color:#FFFFFF"/>
+	<stop  offset="1" style="stop-color:#AAC9FF"/>
+</radialGradient>
+<circle id="layer8" class="st3" cx="36" cy="42" r="3"/>
+<path id="layer7" class="st4" d="M4,42h13.1c0.6,0,1.2,0.3,1.5,0.7l3.8,4.6c0.4,0.5,0.9,0.7,1.5,0.7H40c0.6,0,1.2-0.3,1.5-0.7
+	l3.8-4.6c0.4-0.5,0.9-0.7,1.5-0.7H60l0,0v19c0,1.7-1.3,3-3,3H7c-1.7,0-3-1.3-3-3V42L4,42z"/>
+<linearGradient id="layer6_1_" gradientUnits="userSpaceOnUse" x1="-2664.625" y1="192.75" x2="-2664.625" y2="191.75" gradientTransform="matrix(24 0 0 -4 63983 823)">
+	<stop  offset="0" style="stop-color:#ADC1E5"/>
+	<stop  offset="1" style="stop-color:#ADC1E5"/>
+</linearGradient>
+<path id="layer6" class="st5" d="M22,52h20c1.1,0,2,0.9,2,2l0,0c0,1.1-0.9,2-2,2H22c-1.1,0-2-0.9-2-2l0,0C20,52.9,20.9,52,22,52z"/>
+<radialGradient id="layer5_1_" cx="-2317.0771" cy="319.095" r="0.7016" gradientTransform="matrix(6 0 0 -6 13905 1936)" gradientUnits="userSpaceOnUse">
+	<stop  offset="6.555944e-04" style="stop-color:#FFFFFF"/>
+	<stop  offset="1" style="stop-color:#AAC9FF"/>
+</radialGradient>
+<circle id="layer5" class="st6" cx="3" cy="22" r="3"/>
+<radialGradient id="layer4_1_" cx="-2224.377" cy="268.395" r="0.7016" gradientTransform="matrix(5 0 0 -5 11183 1370)" gradientUnits="userSpaceOnUse">
+	<stop  offset="6.555944e-04" style="stop-color:#FFFFFF"/>
+	<stop  offset="1" style="stop-color:#AAC9FF"/>
+</radialGradient>
+<circle id="layer4" class="st7" cx="61.5" cy="28.5" r="2.5"/>
+<linearGradient id="layer3_1_" gradientUnits="userSpaceOnUse" x1="-2085.25" y1="517.6786" x2="-2085.25" y2="518.6786" gradientTransform="matrix(4 0 0 -28 8384 14531)">
+	<stop  offset="0" style="stop-color:#E0EDFF;stop-opacity:0"/>
+	<stop  offset="1" style="stop-color:#E0EDFF"/>
+</linearGradient>
+<path id="layer3" class="st8" d="M43,8c1.1,0,2,0.9,2,2v26l0,0h-4V10C41,8.9,41.9,8,43,8z"/>
+<radialGradient id="layer2_1_" cx="-2317.0771" cy="319.095" r="0.7016" gradientTransform="matrix(6 0 0 -6 13945 1917)" gradientUnits="userSpaceOnUse">
+	<stop  offset="6.555944e-04" style="stop-color:#FFFFFF"/>
+	<stop  offset="1" style="stop-color:#AAC9FF"/>
+</radialGradient>
+<circle id="layer2" class="st9" cx="43" cy="3" r="3"/>
+<linearGradient id="layer1_1_" gradientUnits="userSpaceOnUse" x1="-1853.5" y1="508.625" x2="-1853.5" y2="509.625" gradientTransform="matrix(3 0 0 -24 5589 12254)">
+	<stop  offset="0" style="stop-color:#E0EDFF;stop-opacity:0"/>
+	<stop  offset="1" style="stop-color:#E0EDFF"/>
+</linearGradient>
+<path id="layer1" class="st10" d="M28.5,23c0.8,0,1.5,0.7,1.5,1.5V47l0,0h-3V24.5C27,23.7,27.7,23,28.5,23z"/>
+<linearGradient id="layer_1_" gradientUnits="userSpaceOnUse" x1="-1853.5" y1="508.625" x2="-1853.5" y2="509.625" gradientTransform="matrix(3 0 0 -24 5580 12243)">
+	<stop  offset="0" style="stop-color:#E0EDFF;stop-opacity:0"/>
+	<stop  offset="1" style="stop-color:#E0EDFF"/>
+</linearGradient>
+<path id="layer" class="st11" d="M19.5,12c0.8,0,1.5,0.7,1.5,1.5V36l0,0h-3V13.5C18,12.7,18.7,12,19.5,12z"/>
+</svg>

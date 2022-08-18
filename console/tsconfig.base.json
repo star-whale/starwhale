@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ESNext",
     "lib": [
       "dom",
       "dom.iterable",
@@ -21,7 +21,8 @@
     "typeRoots": [
       "./types",
       "./node_modules/@types",
-    ]
+    ],
+    "types": ["vite/client", "vite-plugin-svgr/client"],
   },
   "include": [
     "src",

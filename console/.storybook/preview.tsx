@@ -10,7 +10,6 @@ import { ToasterContainer } from 'baseui/toast'
 import { createUseStyles } from 'react-jss'
 
 import '@/styles/_global.scss'
-import '@/assets/fonts/iconfont'
 
 const engine = new Styletron()
 const queryClient = new QueryClient()

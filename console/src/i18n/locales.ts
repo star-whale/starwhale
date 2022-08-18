@@ -562,6 +562,9 @@ const locales0 = {
     'alreadyHaveAccount': {
         en: 'Already have an account?',
     },
+    'Manage Member': {
+        en: 'Manage Member',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

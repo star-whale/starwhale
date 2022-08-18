@@ -1,13 +1,13 @@
 import useTranslation from '@/hooks/useTranslation'
 import React, { useMemo } from 'react'
 import BaseSidebar, { IComposedSidebarProps, INavItem } from '@/components/BaseSidebar'
-import { useParams } from 'react-router'
+import { useParams } from 'react-router-dom'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import IconFont from '@/components/IconFont'
 
 export default function ProjectSidebar({ style }: IComposedSidebarProps) {
     const [t] = useTranslation()
-    const { projectId } = useParams<{ modelId: string; projectId: string }>()
+    const { projectId } = useParams<{ projectId: string }>()
     const projectInfo = useFetchProject(projectId)
     const project = projectInfo?.data
     const projectName = project?.name || t('PROJECT')

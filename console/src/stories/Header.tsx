@@ -7,14 +7,14 @@ type User = {
     name: string
 }
 
-interface IHeaderProps {
+interface HeaderProps {
     user?: User
     onLogin: () => void
     onLogout: () => void
     onCreateAccount: () => void
 }
 
-export const Header = ({ user, onLogin, onLogout, onCreateAccount }: IHeaderProps) => (
+export const Header = ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps) => (
     <header>
         <div className='wrapper'>
             <div>

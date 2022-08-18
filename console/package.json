@@ -1,5 +1,5 @@
 {
-  "name": "Starwhale",
+  "name": "starwhale",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -11,23 +11,19 @@
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
-    "@types/axios": "^0.14.0",
-    "@types/classnames": "^2.3.1",
     "@types/color": "^3.0.2",
     "@types/jest": "^26.0.15",
-    "@types/js-base64": "^3.3.1",
     "@types/js-yaml": "^4.0.5",
     "@types/lodash": "^4.14.172",
-    "@types/moment": "^2.13.0",
-    "@types/node": "^12.0.0",
+    "@types/node": "^18.6.4",
     "@types/qs": "^6.9.7",
     "@types/react": "^17.0.0",
     "@types/react-copy-to-clipboard": "^5.0.2",
     "@types/react-dom": "^17.0.0",
     "@types/react-grid-layout": "^1.3.2",
-    "@types/react-jss": "^10.0.0",
     "@types/react-lazylog": "^4.5.1",
     "@types/react-plotly.js": "^2.5.0",
+    "@types/react-router": "^5.1.18",
     "@types/react-router-dom": "^5.1.8",
     "@types/react-syntax-highlighter": "^13.5.2",
     "@types/react-virtualized-auto-sizer": "^1.0.1",
@@ -42,7 +38,8 @@
     "baseui": "11.0.0",
     "classnames": "^2.3.1",
     "color": "^3.1.3",
-    "craco-alias": "^3.0.1",
+    "d3": "^7.6.1",
+    "date-fns": "^2.29.1",
     "generate-password": "^1.7.0",
     "i18next": "^20.3.5",
     "i18next-browser-languagedetector": "^6.1.2",
@@ -73,14 +70,15 @@
     "react-hooks-global-state": "^1.0.1",
     "react-i18next": "^11.11.4",
     "react-icons": "^4.2.0",
+    "react-is": ">= 16.8.0",
     "react-json-tree": "^0.16.2",
     "react-jss": "^10.7.1",
     "react-lazylog": "^4.5.3",
     "react-plotly.js": "^2.5.1",
     "react-query": "^3.19.6",
+    "react-refresh": "^0.14.0",
     "react-router": "5.2.1",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "4.0.3",
     "react-syntax-highlighter": "^15.4.5",
     "react-uid": "^2.3.2",
     "react-use": "^17.3.2",
@@ -97,6 +95,9 @@
     "tsconfig-paths-webpack-plugin": "^3.5.2",
     "typescript": "^4.6.4",
     "uuid": "^8.3.2",
+    "vite": "^3.0.4",
+    "vite-plugin-multi-pages": "^0.0.8",
+    "vite-plugin-svgr": "^2.2.1",
     "web-vitals": "^1.0.1",
     "xterm": "^4.14.1",
     "xterm-addon-fit": "^0.5.0",
@@ -104,22 +105,31 @@
     "zustand": "^4.0.0-rc.1"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "craco build ",
-    "test": "craco test",
-    "eject": "craco eject",
     "typecheck": "tsc --noEmit -p ./tsconfig.json",
     "lint": "eslint -c .eslintrc.js './src/**/*.{ts,tsx}'",
     "lint:fix": "eslint --fix -c .eslintrc.js './src/**/*.{ts,tsx}'",
     "storybook": "start-storybook -p 6006 -s public",
     "build-storybook": "build-storybook -s public",
     "cy:run": "cypress run",
-    "cy:open": "cypress open"
+    "cy:open": "cypress open",
+    "start": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "serve": "vite preview"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "**/*.stories.*"
+        ],
+        "rules": {
+          "import/no-anonymous-default-export": "off"
+        }
+      }
     ]
   },
   "browserslist": {
@@ -135,20 +145,20 @@
     ]
   },
   "devDependencies": {
-    "@craco/craco": "^6.2.0",
+    "@babel/core": ">=7.13.0 <8.0.0",
     "@simbathesailor/use-what-changed": "^2.0.0",
-    "@storybook/addon-actions": "^6.5.4",
-    "@storybook/addon-essentials": "^6.5.4",
-    "@storybook/addon-interactions": "^6.5.4",
-    "@storybook/addon-links": "^6.5.4",
-    "@storybook/node-logger": "^6.5.4",
+    "@storybook/addon-actions": "^6.5.10",
+    "@storybook/addon-essentials": "^6.5.10",
+    "@storybook/addon-interactions": "^6.5.10",
+    "@storybook/addon-links": "^6.5.10",
+    "@storybook/builder-vite": "^0.2.2",
+    "@storybook/node-logger": "^6.5.10",
     "@storybook/preset-create-react-app": "^3.2.0",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
     "@typescript-eslint/typescript-estree": "^5.23.0",
     "@vitejs/plugin-react": "^2.0.0",
     "babel-eslint": "^10.1.0",
-    "craco-esbuild": "^0.3.3",
     "cypress": "^9.6.1",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-typescript": "^12.3.1",
@@ -165,16 +175,18 @@
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-hooks": "^4.2.0",
     "eslint-plugin-storybook": "^0.5.12",
+    "highlight.js": ">=9",
     "http-proxy-middleware": "^2.0.1",
     "prettier": "^2.3.2",
+    "rollup": "^2.0.0",
+    "rollup-plugin-visualizer": "^5.7.1",
     "sass": "^1.49.0",
-    "simple-progress-webpack-plugin": "^2.0.0",
     "swagger-typescript-api": "^9.3.1",
-    "webpack-bundle-analyzer": "^4.5.0"
+    "vite-plugin-eslint": "^1.8.1",
+    "vite-plugin-mpa": "^1.1.4",
+    "webpack": ">=4.43.0 <6.0.0"
   },
   "resolutions": {
-    "babel-loader": "8.1.0",
-    "webpack": "4.44.2",
     "react-error-overlay": "6.0.9",
     "node-forge": "^1.3.0",
     "ansi-html": "^0.0.8",
@@ -187,6 +199,7 @@
     "trim": "^0.0.3",
     "async": "2.6.4",
     "ejs": "3.1.7",
-    "framer-motion": "4.1.17"
+    "framer-motion": "4.1.17",
+    "react-virtualized": "git+https://git@github.com/remorses/react-virtualized-fixed-import.git#9.22.3"
   }
 }

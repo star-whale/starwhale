@@ -12,7 +12,6 @@ export default {
     },
 } as ComponentMeta<typeof Page>
 
-/* eslint-disable react/jsx-props-no-spreading */
 const Template: ComponentStory<typeof Page> = (args) => <Page {...args} />
 
 export const LoggedOut = Template.bind({})

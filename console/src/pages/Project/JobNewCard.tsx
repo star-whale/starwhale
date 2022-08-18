@@ -4,7 +4,7 @@ import useTranslation from '@/hooks/useTranslation'
 import JobForm from '@job/components/JobForm'
 import { ICreateJobSchema } from '@job/schemas/job'
 import { createJob } from '@job/services/job'
-import { useParams } from 'react-router'
+import { useParams } from 'react-router-dom'
 
 export default function JobNewCard() {
     const { projectId } = useParams<{ projectId: string }>()
