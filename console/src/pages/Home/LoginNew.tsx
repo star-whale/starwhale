@@ -2,7 +2,7 @@ import Card from '@/components/Card'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
 import { ICloudLoginRespSchema, ISignupUserSchema } from '@user/schemas/user'
-import { loginUserWithEmail, signupWithEmail, resendEmail } from '@user/services/user'
+import { loginUserWithEmail, signupWithEmail, resendEmail, sendResetPasswordEmail } from '@user/services/user'
 import React, { useCallback, useState } from 'react'
 import { Link, useHistory, useLocation } from 'react-router-dom'
 import Button from '@/components/Button'
@@ -26,6 +26,7 @@ import {
 import { setToken } from '@/api'
 import { toaster } from 'baseui/toast'
 import EmailConfirm from '@user/components/EmailConfirm'
+import SendResetPasswordEmailForm from '@user/components/SendResetPasswordEmailForm'
 import LoginLayout from './LoginLayout'
 
 const { Form, FormItem } = createForm<ISignupUserSchema>()
@@ -36,6 +37,7 @@ export default function LoginNew() {
     const history = useHistory()
     const [isLoading, setIsLoading] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
+    const [showSendResetEmail, setShowSendResetEmail] = useState(false)
     const [userLoginData, setUserLoginData] = useState<ISignupUserSchema>()
     const isLogin = location.pathname.includes('login')
     const step = useSearchParam('step')
@@ -64,13 +66,20 @@ export default function LoginNew() {
         handleStep(step)
     }
 
-    const addCallback = (data: ISignupUserSchema, extraUri?: string): ISignupUserSchema => {
+    const genUrlWithHost = useCallback((uri: string): string => {
         const base = `${window.location.protocol}//${window.location.host}`
-        const uri = extraUri ?? CreateAccountPageUri
-        const resp = data
-        resp.callback = `${base}${uri}`
-        return resp
-    }
+        return `${base}${uri}`
+    }, [])
+
+    const addCallback = useCallback(
+        (data: ISignupUserSchema, extraUri?: string): ISignupUserSchema => {
+            const uri = extraUri ?? CreateAccountPageUri
+            const resp = data
+            resp.callback = genUrlWithHost(uri)
+            return resp
+        },
+        [genUrlWithHost]
+    )
 
     const handleSignup = useCallback(
         async (data?: ISignupUserSchema) => {
@@ -92,7 +101,7 @@ export default function LoginNew() {
                 setIsLoading(false)
             }
         },
-        [setIsLoading, t]
+        [setIsLoading, t, addCallback]
     )
 
     const handleLogin = useCallback(
@@ -110,7 +119,7 @@ export default function LoginNew() {
                 setIsLoading(false)
             }
         },
-        [handleStep, setIsLoading]
+        [handleStep, setIsLoading, addCallback]
     )
 
     const navItems: INavItem[] = React.useMemo(() => {
@@ -258,15 +267,22 @@ export default function LoginNew() {
                                 <FormItem name='userPwd' required>
                                     <Input
                                         startEnhancer={<IconFont type='password' kind='gray' />}
-                                        overrides={{
-                                            MaskToggleHideIcon: () => <IconFont type='eye_off' kind='gray' />,
-                                            MaskToggleShowIcon: () => <IconFont type='eye' kind='gray' />,
-                                        }}
                                         type='password'
                                         placeholder={t('passwordPlaceholder')}
                                     />
                                 </FormItem>
-                                {isLogin || (
+                                {isLogin ? (
+                                    <Button
+                                        as='link'
+                                        overrides={{ BaseButton: { style: { color: 'gray', fontSize: '12px' } } }}
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            setShowSendResetEmail(true)
+                                        }}
+                                    >
+                                        {t('Do Not Remember Your Password')}
+                                    </Button>
+                                ) : (
                                     <div
                                         style={{
                                             display: 'flex',
@@ -330,6 +346,15 @@ export default function LoginNew() {
                 </div>
             </div>
             <Confirm />
+            <SendResetPasswordEmailForm
+                show={showSendResetEmail}
+                onSubmit={async (email: string) => {
+                    await sendResetPasswordEmail(email, genUrlWithHost('/reset'))
+                    toaster.positive(t('Reset Password Email Send Success'), { autoHideDuration: 3000 })
+                    setShowSendResetEmail(false)
+                }}
+                cancel={() => setShowSendResetEmail(false)}
+            />
         </LoginLayout>
     )
 }

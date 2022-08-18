@@ -1,6 +1,7 @@
 import { Input as BaseInput, InputProps, SIZE } from 'baseui/input'
 import React from 'react'
 import { mergeOverrides } from '@/utils/baseui'
+import IconFont from '@/components/IconFont'
 
 export interface IInputProps extends InputProps {
     overrides?: InputProps['overrides']
@@ -26,6 +27,11 @@ export default function Input({ size = 'compact', ...props }: IInputProps) {
         },
         props.overrides
     )
+
+    if (props.type === 'password') {
+        overrides.MaskToggleShowIcon = () => <IconFont type='eye' kind='gray' />
+        overrides.MaskToggleHideIcon = () => <IconFont type='eye_off' kind='gray' />
+    }
 
     // eslint-disable-next-line  react/jsx-props-no-spreading
     return <BaseInput size={size} {...props} overrides={overrides} />

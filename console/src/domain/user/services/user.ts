@@ -139,3 +139,25 @@ export async function signupWithEmail(data: ISignupUserSchema): Promise<ICloudLo
 export async function resendEmail(data: ISignupUserSchema): Promise<ICloudLoginRespSchema> {
     return signupWithEmail(data)
 }
+
+export async function sendResetPasswordEmail(email: string, callback: string) {
+    const resp = await axios({
+        method: 'post',
+        url: '/swcloud/api/v1/register/account/password/email',
+        data: JSON.stringify({ email, callback }),
+        headers: { 'Content-Type': 'application/json' },
+    })
+
+    return resp.data
+}
+
+export async function resetPassword(password: string, verification: string) {
+    const resp = await axios({
+        method: 'put',
+        url: '/swcloud/api/v1/register/account/password',
+        data: JSON.stringify({ password, verification }),
+        headers: { 'Content-Type': 'application/json' },
+    })
+
+    return resp.data
+}
