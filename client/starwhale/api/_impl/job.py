@@ -5,25 +5,29 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
+from starwhale.consts import DEFAULT_EVALUATION_RESOURCE, DEFAULT_EVALUATION_JOB_NAME
 from starwhale.utils.load import load_module
 
 
 def step(
-    job_name: str = "default",
-    resources: str = "cpu=1",
+    job_name: str = DEFAULT_EVALUATION_JOB_NAME,
+    resources: t.Optional[t.List[str]] = None,
     concurrency: int = 1,
     task_num: int = 1,
-    dependency: str = "",
+    dependency: t.Optional[t.List[str]] = None,
 ) -> t.Any:
+    _resources = resources or [DEFAULT_EVALUATION_RESOURCE, ]
+    _dependency = dependency or []
+
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
             _step = Step(
-                job_name,
-                func.__qualname__,
-                resources,
-                concurrency,
-                task_num,
-                dependency,
+                job_name=job_name,
+                step_name=func.__qualname__,
+                resources=_resources,
+                concurrency=concurrency,
+                task_num=task_num,
+                dependency=_dependency,
             )
             Parser.add_job(job_name, _step)
 
@@ -73,23 +77,22 @@ class Step:
         self,
         job_name: str,
         step_name: str,
-        resources: str = "cpu=1",
+        resources: t.List[str],
+        dependency: t.List[str],
         concurrency: int = 1,
         task_num: int = 1,
-        dependency: str = "",
     ):
         self.job_name = job_name
         self.step_name = step_name
-        self.resources = resources.strip().split(",")
+        self.resources = resources
         self.concurrency = concurrency
         self.task_num = task_num
-        self.dependency = dependency.strip().split(",")
+        self.dependency = dependency
         self.status = ""
 
     def __repr__(self) -> str:
-        return "step_name:{0}, dependency:{1}, status: {2}".format(
-            self.step_name, self.dependency, self.status
-        )
+        return f"job_name:{self.job_name}, step_name:{self.step_name}, " \
+               f"dependency:{self.dependency}, status: {self.status}"
 
 
 class ParseConfig:
@@ -174,15 +177,16 @@ class Parser:
     def check(jobs: t.Dict[str, t.List[Step]]) -> bool:
         # check
         checks = []
+        logger.debug(f"jobs:{jobs}")
         for job in jobs.items():
             all_steps = []
             dependencies = []
-            for step in job[1]:
-                all_steps.append(step.step_name)
-                for d in step.dependency:
+            for _step in job[1]:
+                all_steps.append(_step.step_name)
+                for d in _step.dependency:
                     if d:
                         dependencies.append(d)
-            logger.debug("all steps:{},{}", all_steps[0], len(all_steps))
+            logger.debug("all steps:{}, length:{}", all_steps, len(all_steps))
             _check = all(item in all_steps for item in dependencies)
             if not _check:
                 logger.error("job:{} check error!", job[0])
