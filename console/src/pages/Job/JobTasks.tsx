@@ -159,7 +159,7 @@ export default function JobTasks() {
                                     height: '800px',
                                     paddingBottom: '0px',
                                     paddingTop: '0px',
-                                    backgroundColor: 'var(--color-brandBgSecondory)',
+                                    backgroundColor: 'var(--color-brandBgSecondary)',
                                 },
                             },
                             PanelContainer: {

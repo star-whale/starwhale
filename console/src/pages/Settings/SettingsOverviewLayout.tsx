@@ -24,7 +24,7 @@ function SettingsOverviewLayout({ children }: IJobLayoutProps) {
         <Card
             style={{
                 fontSize: '16px',
-                background: 'var(--color-brandBgSecondory4)',
+                background: 'var(--color-brandBgSecondary4)',
                 padding: '12px 20px',
                 marginBottom: '10px',
             }}
@@ -38,7 +38,7 @@ function SettingsOverviewLayout({ children }: IJobLayoutProps) {
                 <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
                     <div
                         style={{
-                            background: 'var(--color-brandBgSecondory)',
+                            background: 'var(--color-brandBgSecondary)',
                             lineHeight: '24px',
                             padding: '0 12px',
                             borderRadius: '4px',

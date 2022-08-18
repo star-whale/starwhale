@@ -39,7 +39,7 @@ export default function RuntimeOverview() {
         <Card
             style={{
                 fontSize: '14px',
-                background: 'var(--color-brandBgSecondory4)',
+                background: 'var(--color-brandBgSecondary4)',
                 padding: '12px 20px',
                 marginBottom: '10px',
             }}
@@ -53,7 +53,7 @@ export default function RuntimeOverview() {
                 <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
                     <div
                         style={{
-                            background: 'var(--color-brandBgSecondory)',
+                            background: 'var(--color-brandBgSecondary)',
                             lineHeight: '24px',
                             padding: '0 12px',
                             borderRadius: '4px',
