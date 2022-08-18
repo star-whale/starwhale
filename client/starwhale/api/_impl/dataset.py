@@ -5,7 +5,7 @@ import json
 import shutil
 import struct
 import typing as t
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from types import TracebackType
 from pathlib import Path
@@ -356,7 +356,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
     def iter_label_slice(self, path: str) -> t.Generator[t.Any, None, None]:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
     def data_format_type(self) -> DataFormatType:
         raise NotImplementedError
 

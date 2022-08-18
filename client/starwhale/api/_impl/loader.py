@@ -4,7 +4,7 @@ import io
 import os
 import sys
 import typing as t
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
 import boto3
@@ -189,7 +189,7 @@ class DataLoader(metaclass=ABCMeta):
     def __repr__(self) -> str:
         return f"[{self.kind.name}]DataLoader for {self.storage.backend}, extra:{self.storage.conn}"
 
-    @abstractproperty
+    @property
     def kind(self) -> DataFormatType:
         raise NotImplementedError
 

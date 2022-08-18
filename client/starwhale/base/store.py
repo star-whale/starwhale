@@ -1,6 +1,6 @@
 import typing as t
 import tempfile
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from pathlib import Path
 
 import yaml
@@ -42,7 +42,7 @@ class BaseStorage(metaclass=ABCMeta):
     def _guess(self) -> t.Tuple[Path, str]:
         raise NotImplementedError
 
-    @abstractproperty
+    @property
     def recover_loc(self) -> Path:
         raise NotImplementedError
 
