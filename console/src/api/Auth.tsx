@@ -4,14 +4,15 @@ import { useCurrentUser } from '@/hooks/useCurrentUser'
 import React, { useEffect } from 'react'
 import { useQuery } from 'react-query'
 import qs from 'qs'
-import { getToken } from '.'
+import { simulationJump } from '@/utils'
+import { getToken, setToken } from '@/api'
 
 type IAuthContext = {
     token: string | null
     onLogin: (data: ILoginUserSchema) => string
-    onLoginOut: () => void
+    onLogout: () => void
 }
-export const AuthContext = React.createContext<IAuthContext>({ token: null, onLogin: () => '', onLoginOut: () => {} })
+export const AuthContext = React.createContext<IAuthContext>({ token: null, onLogin: () => '', onLogout: () => {} })
 
 export const useAuth = () => {
     return React.useContext(AuthContext)
@@ -21,7 +22,7 @@ export const useAuth = () => {
 const location = window.location
 
 export const AuthProvider = ({ children }: any) => {
-    const [token, setToken] = React.useState(getToken())
+    const [currentToken, setCurrentToken] = React.useState(getToken())
 
     const userInfo = useQuery('currentUser', fetchCurrentUser, { refetchOnWindowFocus: false })
 
@@ -31,7 +32,7 @@ export const AuthProvider = ({ children }: any) => {
         if (userInfo.isSuccess) {
             setCurrentUser(userInfo.data)
             if (userInfo.data) {
-                setToken(getToken())
+                setCurrentToken(getToken())
             }
         }
     }, [userInfo, setCurrentUser])
@@ -48,18 +49,20 @@ export const AuthProvider = ({ children }: any) => {
             redirect = '/'
         }
 
-        setToken(getToken())
+        setCurrentToken(getToken())
         return redirect
     }
 
     const handleLogout = () => {
-        setToken(null)
+        setToken(undefined)
+        // setCurrentToken(null)
+        simulationJump('/logout')
     }
 
-    console.log('raw:', !!getToken(), 'new:', !!token, currentUser)
+    console.log('raw:', !!getToken(), 'new:', !!currentToken, currentUser)
 
     const value = {
-        token,
+        token: currentToken,
         onLogin: handleLogin,
         onLogout: handleLogout,
     }

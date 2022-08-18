@@ -1,6 +1,5 @@
 import React, { useCallback, useState, useContext } from 'react'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import { setToken } from '@/api'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import { useStyletron } from 'baseui'
 import { headerHeight } from '@/consts'
@@ -8,7 +7,6 @@ import useTranslation from '@/hooks/useTranslation'
 import { createUseStyles } from 'react-jss'
 import { IThemedStyleProps } from '@/theme'
 import { useCurrentThemeType } from '@/hooks/useCurrentThemeType'
-import { simulationJump } from '@/utils'
 import { BsChevronDown } from 'react-icons/bs'
 import { Link, useHistory } from 'react-router-dom'
 import PasswordForm from '@user/components/PasswordForm'
@@ -17,6 +15,7 @@ import { changePassword } from '@user/services/user'
 import { SidebarContext } from '@/contexts/SidebarContext'
 import { toaster } from 'baseui/toast'
 import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
+import { useAuth } from '@/api/Auth'
 import IconFont from '../IconFont'
 import Logo from './Logo'
 
@@ -202,6 +201,7 @@ export default function Header() {
 
     const [t] = useTranslation()
     const history = useHistory()
+    const { onLogout } = useAuth()
 
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
     const handleChangePassword = useCallback(
@@ -270,15 +270,7 @@ export default function Header() {
                             <IconFont type='a-passwordresets' />
                             <span>{t('Change Password')}</span>
                         </div>
-                        <div
-                            role='button'
-                            tabIndex={0}
-                            className={styles.userMenuItem}
-                            onClick={() => {
-                                setToken(undefined)
-                                simulationJump('/logout')
-                            }}
-                        >
+                        <div role='button' tabIndex={0} className={styles.userMenuItem} onClick={onLogout}>
                             <IconFont type='logout' />
                             <span>{t('Logout')}</span>
                         </div>
