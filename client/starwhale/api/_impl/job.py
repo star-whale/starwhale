@@ -196,7 +196,7 @@ class Parser:
                 logger.error("job:{} check error!", job[0])
             checks.append(_check)
         # all is ok
-        if all(c is True for c in checks):
+        if all(checks):
             logger.debug("check success! \n{}", yaml.dump(jobs))
             return True
         else:
