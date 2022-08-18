@@ -277,7 +277,9 @@ export default function ProjectListCard() {
                 animate
                 autoFocus
             >
-                <ModalHeader>{t('create sth', [t('Project')])}</ModalHeader>
+                <ModalHeader>
+                    {editProject ? t('edit sth', [t('Project')]) : t('create sth', [t('Project')])}
+                </ModalHeader>
                 <ModalBody>
                     <ProjectForm project={editProject} onSubmit={handleCreateProject} />
                 </ModalBody>
