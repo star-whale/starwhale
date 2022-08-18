@@ -46,7 +46,7 @@ def ppl(context: Context) -> None:
     console.print(f":clap: finish run {context.step}-{context.index}: {_obj}")
 
 
-@step(dependency=["ppl"])
+@step(needs=["ppl"])
 def cmp(context: Context) -> None:
     setup(context)
     _cls = _get_cls(context.src_dir)

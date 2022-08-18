@@ -14,12 +14,12 @@ def step(
     resources: t.Optional[t.List[str]] = None,
     concurrency: int = 1,
     task_num: int = 1,
-    dependency: t.Optional[t.List[str]] = None,
+    needs: t.Optional[t.List[str]] = None,
 ) -> t.Any:
     _resources = resources or [
         DEFAULT_EVALUATION_RESOURCE,
     ]
-    _dependency = dependency or []
+    _needs = needs or []
 
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
@@ -29,7 +29,7 @@ def step(
                 resources=_resources,
                 concurrency=concurrency,
                 task_num=task_num,
-                dependency=_dependency,
+                needs=_needs,
             )
             Parser.add_job(job_name, _step)
 
@@ -80,7 +80,7 @@ class Step:
         job_name: str,
         step_name: str,
         resources: t.List[str],
-        dependency: t.List[str],
+        needs: t.List[str],
         concurrency: int = 1,
         task_num: int = 1,
     ):
@@ -89,13 +89,13 @@ class Step:
         self.resources = resources
         self.concurrency = concurrency
         self.task_num = task_num
-        self.dependency = dependency
+        self.needs = needs
         self.status = ""
 
     def __repr__(self) -> str:
         return (
             f"job_name:{self.job_name}, step_name:{self.step_name}, "
-            f"dependency:{self.dependency}, status: {self.status}"
+            f"needs:{self.needs}, status: {self.status}"
         )
 
 
@@ -184,14 +184,14 @@ class Parser:
         logger.debug(f"jobs:{jobs}")
         for job in jobs.items():
             all_steps = []
-            dependencies = []
+            needs = []
             for _step in job[1]:
                 all_steps.append(_step.step_name)
-                for d in _step.dependency:
+                for d in _step.needs:
                     if d:
-                        dependencies.append(d)
+                        needs.append(d)
             logger.debug("all steps:{}, length:{}", all_steps, len(all_steps))
-            _check = all(item in all_steps for item in dependencies)
+            _check = all(item in all_steps for item in needs)
             if not _check:
                 logger.error("job:{} check error!", job[0])
             checks.append(_check)

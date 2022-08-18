@@ -190,7 +190,7 @@ class Producer(threading.Thread):
                 self.queue.put(None)
                 break
             for _wait in _wait_steps:
-                if all(d in _finished_step_names for d in _wait.dependency if d):
+                if all(d in _finished_step_names for d in _wait.needs if d):
                     logger.debug(f"produce a step:{_wait}")
                     _wait.status = STATUS.RUNNING
                     _executor = Executor(
