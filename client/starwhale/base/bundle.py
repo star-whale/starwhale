@@ -132,7 +132,7 @@ class LocalStorageBundleMixin:
 
         self.uri.object.version = self._version  # type:ignore
         self._manifest["version"] = self._version  # type: ignore
-        self._manifest["created_at"] = now_str()  # type: ignore
+        self._manifest["created_at"] = now_str()
         logger.info(f"[step:version]version: {self._version}")
         console.print(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
 

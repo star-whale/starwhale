@@ -145,7 +145,9 @@ class ProjectTermViewRich(ProjectTermView):
             "location": cls.place_holder_for_empty(),
             "owner": cls.place_holder_for_empty(),
         }
-        custom_row = lambda row: {"style": "magenta"} if row["in_use"] else None
+        custom_row: t.Callable[[t.Dict[str, t.Any]], t.Optional[t.Dict[str, str]]] = (
+            lambda row: {"style": "magenta"} if row["in_use"] else None
+        )
         cls.print_table(
             title, projects, custom_column=custom_column, custom_row=custom_row
         )

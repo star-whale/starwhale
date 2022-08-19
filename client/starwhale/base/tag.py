@@ -48,7 +48,7 @@ class StandaloneTag:
             return load_yaml(self._manifest_path)  # type: ignore
 
     def _save_manifest(self, _manifest: t.Dict[str, t.Any]) -> None:
-        _manifest["updated_at"] = now_str()  # type: ignore
+        _manifest["updated_at"] = now_str()
         _manifest["name"] = self.uri.object.name
         _manifest["typ"] = self.uri.object.typ
 

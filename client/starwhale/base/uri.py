@@ -241,9 +241,9 @@ class URI:
         obj_name: str = "",
         obj_ver: str = "",
     ) -> str:
-        _fmt = lambda x: x.strip().strip("/").lower()
+        _fmt: t.Callable[[str], str] = lambda x: x.strip().strip("/").lower()
 
-        _rt = f"{_fmt(instance)}"  # type: ignore
+        _rt = f"{_fmt(instance)}"
         if project:
             _rt = f"{_rt}/project/{project}"
         else:
