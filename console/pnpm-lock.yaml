@@ -69,6 +69,7 @@ specifiers:
   cypress: ^9.6.1
   d3: ^7.6.1
   date-fns: ^2.29.1
+  dnd-core: ^16.0.1
   eslint: ^7.32.0
   eslint-config-airbnb-typescript: ^12.3.1
   eslint-config-prettier: ^8.3.0
@@ -196,6 +197,7 @@ dependencies:
   color: 3.2.1
   d3: 7.6.1
   date-fns: 2.29.1
+  dnd-core: 16.0.1
   generate-password: 1.7.0
   i18next: 20.6.1
   i18next-browser-languagedetector: 6.1.4

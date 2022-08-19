@@ -24,6 +24,15 @@ import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import EvaluationListCompare from './EvaluationListCompare'
 
+const gridLayout = [
+    // RIGHT:
+    '0px 10px 1fr',
+    // MIDDLE:
+    '1fr 10px 1fr',
+    // LEFT:
+    '1fr 10px 0px',
+]
+
 export default function EvaluationListCard() {
     const [css] = useStyletron()
     const { expandedWidth, expanded } = useDrawer()
@@ -46,16 +55,6 @@ export default function EvaluationListCard() {
     )
 
     const store = useEvaluationStore()
-
-    // const handleAction = useCallback(
-    //     async (jobId, type: JobActionType) => {
-    //         await doJobAction(projectId, jobId, type)
-    //         toaster.positive(t('job action done'), { autoHideDuration: 2000 })
-    //         await evaluationsInfo.refetch()
-    //         setIsCreateJobOpen(false)
-    //     },
-    //     [evaluationsInfo, projectId, t]
-    // )
 
     // TODO
     // 1. column key should be equal with eva attr field
@@ -211,16 +210,6 @@ export default function EvaluationListCard() {
         [evaluationsInfo.data]
     )
 
-    const gridLayout = useMemo(() => {
-        return [
-            // RIGHT:
-            '0px 10px 1fr',
-            // MIDDLE:
-            '1fr 10px 1fr',
-            // LEFT:
-            '1fr 10px 0px',
-        ]
-    }, [])
     const [gridMode, setGridMode] = useState(1)
     const resizeRef = React.useRef<HTMLDivElement>(null)
     const gridRef = React.useRef<HTMLDivElement>(null)
@@ -356,7 +345,6 @@ export default function EvaluationListCard() {
                     flexShrink: 1,
                     minWidth: '440px',
                     marginBottom: 0,
-                    // gridColumn:
                 }}
                 extra={
                     <Button
