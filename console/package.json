@@ -40,6 +40,7 @@
     "color": "^3.1.3",
     "d3": "^7.6.1",
     "date-fns": "^2.29.1",
+    "dnd-core": "^16.0.1",
     "generate-password": "^1.7.0",
     "i18next": "^20.3.5",
     "i18next-browser-languagedetector": "^6.1.2",
