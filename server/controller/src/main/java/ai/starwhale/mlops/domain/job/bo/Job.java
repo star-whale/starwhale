@@ -20,6 +20,7 @@ import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import java.util.List;
@@ -41,6 +42,8 @@ public class Job extends TimeConcern {
     Long id;
 
     String uuid;
+
+    Project project;
 
     String evalJobDDL;
 

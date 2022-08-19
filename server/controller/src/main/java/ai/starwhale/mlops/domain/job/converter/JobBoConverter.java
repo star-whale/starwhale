@@ -21,6 +21,7 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
@@ -78,6 +79,10 @@ public class JobBoConverter {
             runtimeVersionEntity.getRuntimeId());
         return Job.builder()
             .id(jobEntity.getId())
+            .project(Project.builder()
+                .id(jobEntity.getProjectId())
+                .name(jobEntity.getProject().getProjectName())
+                .build())
             .jobRuntime(JobRuntime.builder()
                 .name(runtimeEntity.getRuntimeName())
                 .version(runtimeVersionEntity.getVersionName())

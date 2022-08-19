@@ -29,6 +29,7 @@ import java.util.List;
 @NoArgsConstructor
 public class TaskRequest {
     String jobId;
+    String project;
     Integer index;
     Integer total;
     String stepName;

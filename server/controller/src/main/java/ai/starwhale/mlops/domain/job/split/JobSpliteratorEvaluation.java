@@ -149,6 +149,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 taskEntities.add(TaskEntity.builder()
                     .stepId(stepEntity.getId())
                     .taskRequest(JSONUtil.toJsonStr(TaskRequest.builder()
+                        .project(job.getProject().getName())
                         .jobId(job.getUuid())
                         .stepName(stepEntity.getName())
                         .total(stepEntity.getTaskNum())

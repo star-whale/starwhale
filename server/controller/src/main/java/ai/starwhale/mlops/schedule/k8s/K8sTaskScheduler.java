@@ -124,7 +124,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         // TODO:datastore
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
 //        coreContainerEnvs.put("SW_INSTANCE", );
-//        coreContainerEnvs.put("SW_PROJECT", );
+        coreContainerEnvs.put("SW_PROJECT", task.getTaskRequest().getProject());
         try {
             // cmd（all、single[step、taskIndex]）
             String cmd = "run_single";
