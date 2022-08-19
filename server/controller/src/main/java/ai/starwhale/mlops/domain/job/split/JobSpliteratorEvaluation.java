@@ -32,18 +32,17 @@ import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.swds.bo.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import cn.hutool.json.JSONUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
@@ -122,7 +121,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         Map<String, StepEntity> nameMapping = new HashMap<>();
 
         for (StepMetaData stepMetaData : stepMetaDatas) {
-            boolean isReady = CollectionUtils.isEmpty(stepMetaData.getDependency());
+            boolean isReady = CollectionUtils.isEmpty(stepMetaData.getNeeds());
 
             StepEntity stepEntity = StepEntity.builder()
                 .uuid(UUID.randomUUID().toString())
@@ -133,7 +132,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 .status(isReady ? StepStatus.READY : StepStatus.CREATED)
                 .build();
             stepEntities.add(stepEntity);
-            allDependencies.put(stepMetaData.getStepName(), stepMetaData.getDependency());
+            allDependencies.put(stepMetaData.getStepName(), stepMetaData.getNeeds());
             nameMapping.put(stepMetaData.getStepName(), stepEntity);
         }
 
@@ -144,31 +143,25 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 stepEntity.setLastStepId(nameMapping.get(dependency).getId());
             }
             // TODO: replace this implement with only send ds uri and task index to container
-            final List<SWDataSet> swDataSets = job.getSwDataSets();
-            final Map<Integer, List<SWDSBlockVO>> swdsBlocks = swDataSets.parallelStream()
-                .map(this::extractSWDS)
-                .flatMap(Collection::stream)
-                .collect(Collectors.groupingBy(blk -> ThreadLocalRandom.current().nextInt(stepEntity.getTaskNum())));//one block on task
             List<TaskEntity> taskEntities = new LinkedList<>();
-            try {
-                var index = 0;
-                for (Entry<Integer, List<SWDSBlockVO>> entry : swdsBlocks.entrySet()) {
-                    final String taskUuid = UUID.randomUUID().toString();
-                    taskEntities.add(TaskEntity.builder()
-                        .stepId(stepEntity.getId())
-                        // .taskIndex(index) TODO: store with task request
-                        .resultPath(storagePath(job.getUuid(), taskUuid))
-                        .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
-                        .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
-                        .taskUuid(taskUuid)
-                        //.taskType(TaskType.PPL)
-                        .build());
-                    index++;
-                }
-            } catch (JsonProcessingException e) {
-                log.error("error swds index  ", e);
-                throw new SWValidationException(ValidSubject.SWDS);
+            for (int i = 0; i < stepEntity.getTaskNum(); i++) {
+                final String taskUuid = UUID.randomUUID().toString();
+                taskEntities.add(TaskEntity.builder()
+                    .stepId(stepEntity.getId())
+                    .taskRequest(JSONUtil.toJsonStr(TaskRequest.builder()
+                        .jobId(job.getUuid())
+                        .stepName(stepEntity.getName())
+                        .total(stepEntity.getTaskNum())
+                        .datasetUris(job.getSwDataSets().stream()
+                            .map(ds -> String.format("%s/version/%s", ds.getName(), ds.getVersion()))
+                            .collect(Collectors.toList()))
+                        .index(i))
+                    )
+                    .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
+                    .taskUuid(taskUuid)
+                    .build());
             }
+
             // save step and tasks
             stepMapper.save(stepEntity);
             BatchOperateHelper.doBatch(taskEntities, ts -> taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())), MAX_MYSQL_INSERTION_SIZE);

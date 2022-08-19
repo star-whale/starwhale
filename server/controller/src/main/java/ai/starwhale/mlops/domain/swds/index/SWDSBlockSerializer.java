@@ -27,6 +27,7 @@ import java.util.List;
 /**
  * serialize & deserialize SWDSBlocks
  */
+@Deprecated
 @Component
 public class SWDSBlockSerializer {
 

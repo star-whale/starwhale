@@ -74,12 +74,8 @@ public class ObjectMockHolder {
         return new LocalDateTimeConvertor();
     }
 
-    public static SWDSBlockSerializer swdsBlockSerializer(){
-        return  new SWDSBlockSerializer(jsonMapper());
-    }
-
     public static TaskBoConverter taskBoConverter(){
-        return new TaskBoConverter(swdsBlockSerializer(),agentConverter(),localDateTimeConvertor());
+        return new TaskBoConverter(agentConverter(),localDateTimeConvertor());
     }
 
     public static StorageAccessService storageAccessService(){

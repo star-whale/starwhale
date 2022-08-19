@@ -18,7 +18,6 @@ package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
@@ -93,32 +92,51 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         Map<String, String> initContainerEnvs = new HashMap<>();
         List<String> downloads = new ArrayList<>();
 
-        String prefix = "s3://"+storageProperties.getS3Config().getBucket()+"/";
-        downloads.add(prefix + task.getSwModelPackage().getPath()+";/opt/starwhale/swmp/");
-        downloads.add(prefix + task.getSwrt().getPath()+";/opt/starwhale/swrt/");
+        String prefix = "s3://" + storageProperties.getS3Config().getBucket() + "/";
+        downloads.add(prefix + task.getSwModelPackage().getPath() + ";/opt/starwhale/swmp/");
+        downloads.add(prefix + task.getSwrt().getPath() + ";/opt/starwhale/swrt/");
         initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
         String input = generateConfigFile(task);
         initContainerEnvs.put("INPUT", input);
-        initContainerEnvs.put("ENDPOINT_URL",storageProperties.getS3Config().getEndpoint());
-        initContainerEnvs.put("AWS_ACCESS_KEY_ID",storageProperties.getS3Config().getAccessKey());
-        initContainerEnvs.put("AWS_SECRET_ACCESS_KEY",storageProperties.getS3Config().getSecretKey());
-        initContainerEnvs.put("AWS_S3_REGION",storageProperties.getS3Config().getRegion());
-        // TODO
+        initContainerEnvs.put("ENDPOINT_URL", storageProperties.getS3Config().getEndpoint());
+        initContainerEnvs.put("AWS_ACCESS_KEY_ID", storageProperties.getS3Config().getAccessKey());
+        initContainerEnvs.put("AWS_SECRET_ACCESS_KEY", storageProperties.getS3Config().getSecretKey());
+        initContainerEnvs.put("AWS_S3_REGION", storageProperties.getS3Config().getRegion());
+        // task container envs
         Map<String, String> coreContainerEnvs = new HashMap<>();
+        coreContainerEnvs.put("SW_TASK_STEP", task.getTaskRequest().getStepName());
+        // TODO: support multi dataset uris
+        coreContainerEnvs.put("SW_DATASET_URI", task.getTaskRequest().getDatasetUris().get(0));
+        coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
+        coreContainerEnvs.put("SW_EVALUATION_VERSION", task.getTaskRequest().getJobId());
+        // TODO:oss
+//        coreContainerEnvs.put("SW_S3_ENDPOINT", );
+//        coreContainerEnvs.put("SW_S3_ACCESS_KEY", );
+//        coreContainerEnvs.put("SW_S3_SECRET", );
+//        coreContainerEnvs.put("SW_S3_REGION", );
+//        coreContainerEnvs.put("SW_S3_BUCKET", );
+//        coreContainerEnvs.put("SW_OBJECT_STORE_KEY_PREFIX", );
+//        coreContainerEnvs.put("SW_S3_CONNECT_TIMEOUT", );
+//        coreContainerEnvs.put("SW_S3_READ_TIMEOUT", );
+//        coreContainerEnvs.put("SW_S3_TOTAL_MAX_ATTEMPTS", );
+        // TODO:datastore
+//        coreContainerEnvs.put("SW_TOKEN", );
+//        coreContainerEnvs.put("SW_INSTANCE", );
+//        coreContainerEnvs.put("SW_PROJECT", );
         try {
             // cmd（all、single[step、taskIndex]）
-            String cmd = "single";
+            String cmd = "run_single";
             // TODO: use task's resource needs
             V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(task.getDeviceClass(),
                 task.getDeviceAmount().toString()).getResourceSelector();
             V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), initContainerEnvs, resourceRequirements);
             // set result upload path
 
-            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix+ task.getResultPath().resultDir())
-                ,new V1EnvVar().name("ENDPOINT_URL").value(storageProperties.getS3Config().getEndpoint())
-                ,new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
-                ,new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
-                ,new V1EnvVar().name("AWS_SECRET_ACCESS_KEY").value(storageProperties.getS3Config().getSecretKey())
+            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + task.getResultPath().resultDir())
+                    , new V1EnvVar().name("ENDPOINT_URL").value(storageProperties.getS3Config().getEndpoint())
+                    , new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
+                    , new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
+                    , new V1EnvVar().name("AWS_SECRET_ACCESS_KEY").value(storageProperties.getS3Config().getSecretKey())
                 )
             );
             client.deploy(job);
