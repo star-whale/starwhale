@@ -17,11 +17,13 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
+import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
+import ai.starwhale.mlops.storage.fs.FileStorageEnv;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
@@ -53,11 +55,15 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     final StorageProperties storageProperties;
 
+    final JobTokenConfig jobTokenConfig;
+
     public K8sTaskScheduler(K8sClient k8sClient,
-                            TaskBoConverter taskConvertor, StorageProperties storageProperties) {
+        TaskBoConverter taskConvertor, StorageProperties storageProperties,
+        JobTokenConfig jobTokenConfig) {
         this.k8sClient = k8sClient;
         this.taskConvertor = taskConvertor;
         this.storageProperties = storageProperties;
+        this.jobTokenConfig = jobTokenConfig;
     }
 
     @Override
@@ -110,17 +116,13 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", task.getTaskRequest().getJobId());
         // TODO:oss
-//        coreContainerEnvs.put("SW_S3_ENDPOINT", );
-//        coreContainerEnvs.put("SW_S3_ACCESS_KEY", );
-//        coreContainerEnvs.put("SW_S3_SECRET", );
-//        coreContainerEnvs.put("SW_S3_REGION", );
-//        coreContainerEnvs.put("SW_S3_BUCKET", );
-//        coreContainerEnvs.put("SW_OBJECT_STORE_KEY_PREFIX", );
+        Map<String, FileStorageEnv> stringFileStorageEnvMap = storageProperties.toFileStorageEnvs();
+        stringFileStorageEnvMap.values().forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs()));
 //        coreContainerEnvs.put("SW_S3_CONNECT_TIMEOUT", );
 //        coreContainerEnvs.put("SW_S3_READ_TIMEOUT", );
 //        coreContainerEnvs.put("SW_S3_TOTAL_MAX_ATTEMPTS", );
         // TODO:datastore
-//        coreContainerEnvs.put("SW_TOKEN", );
+        coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
 //        coreContainerEnvs.put("SW_INSTANCE", );
 //        coreContainerEnvs.put("SW_PROJECT", );
         try {
