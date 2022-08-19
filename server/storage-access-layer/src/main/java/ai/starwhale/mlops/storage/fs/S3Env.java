@@ -23,9 +23,9 @@ public class S3Env extends FileStorageEnv {
 
     public static final String ENV_BUCKET="SW_S3_BUCKET";
 
-    public static final String ENV_SECRET_KEY="SW_S3_SECRET_KEY";
+    public static final String ENV_SECRET_KEY="SW_S3_SECRET";
 
-    public static final String ENV_SECRET_ID="SW_S3_SECRET_ID";
+    public static final String ENV_SECRET_ID="SW_S3_ACCESS_KEY";
 
     public static final String ENV_REGION="SW_S3_REGION";
 
