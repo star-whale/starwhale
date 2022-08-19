@@ -126,7 +126,7 @@ public class RuntimeService {
 
     public PageInfo<RuntimeVO> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(runtimeQuery.getProjectUrl());
+        Long projectId = projectManager.getProject(runtimeQuery.getProjectUrl()).getId();
         List<RuntimeEntity> entities = runtimeMapper.listRuntimes(projectId, runtimeQuery.getNamePrefix());
 
         return PageUtil.toPageInfo(entities, rt -> {
@@ -246,7 +246,7 @@ public class RuntimeService {
 
     public List<RuntimeInfoVO> listRuntimeInfo(String project, String name) {
         if(StringUtils.hasText(name)){
-            Long projectId = projectManager.getProjectId(project);
+            Long projectId = projectManager.getProject(project).getId();
             RuntimeEntity rt = runtimeMapper.findByName(name, projectId);
             if(rt == null) {
                 throw new SWValidationException(ValidSubject.RUNTIME)
@@ -285,11 +285,12 @@ public class RuntimeService {
 
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}", startTime);
-        Long projectId = projectManager.getProjectId(uploadRequest.getProject());
+        ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
+        Long projectId = projectEntity.getId();
         RuntimeEntity entity = runtimeMapper.findByNameForUpdate(uploadRequest.name(), projectId);
         if (null == entity) {
             //create
-            ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(), userService.currentUserDetail().getIdTableKey());
+            projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(), userService.currentUserDetail().getIdTableKey());
             entity = RuntimeEntity.builder().isDeleted(0)
                 .ownerId(userService.currentUserDetail().getId())
                 .projectId(null == projectEntity ? null : projectEntity.getId())
@@ -317,7 +318,7 @@ public class RuntimeService {
         log.debug("Runtime version checked time use {}",System.currentTimeMillis() - startTime);
         //upload to storage
         final String runtimePath = entityExists ? runtimeVersionEntity.getStoragePath()
-            : storagePathCoordinator.generateRuntimePath(uploadRequest.name(), uploadRequest.version());
+            : storagePathCoordinator.generateRuntimePath(projectEntity.getProjectName(), uploadRequest.name(), uploadRequest.version());
 
         try(final InputStream inputStream = dsFile.getInputStream()){
             InputStream is = inputStream;
@@ -344,7 +345,7 @@ public class RuntimeService {
     }
 
     public void pull(String projectUrl, String runtimeUrl, String versionUrl, HttpServletResponse httpResponse) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         RuntimeEntity runtimeEntity = runtimeMapper.findByName(runtimeUrl, projectId);
         if(null == runtimeEntity){
             throw new SWValidationException(ValidSubject.RUNTIME).tip("Runtime not found");
@@ -379,7 +380,7 @@ public class RuntimeService {
     }
 
     public String query(String projectUrl, String runtimeUrl, String versionUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         RuntimeEntity entity = runtimeMapper.findByName(runtimeUrl, projectId);
         if(null == entity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME),HttpStatus.NOT_FOUND);

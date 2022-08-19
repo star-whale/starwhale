@@ -122,7 +122,7 @@ public class SWModelPackageService {
 
     public PageInfo<SWModelPackageVO> listSWMP(SWMPQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(query.getProjectUrl());
+        Long projectId = projectManager.getProject(query.getProjectUrl()).getId();
         List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackages(projectId, query.getNamePrefix());
         return PageUtil.toPageInfo(entities, swmpConvertor::convert);
     }
@@ -144,7 +144,7 @@ public class SWModelPackageService {
     public List<SWModelPackageInfoVO> listSWMPInfo(String project, String name) {
 
         if(StringUtils.hasText(name)){
-            Long projectId = projectManager.getProjectId(project);
+            Long projectId = projectManager.getProject(project).getId();
             SWModelPackageEntity swmp = swmpMapper.findByName(name, projectId);
             if(swmp == null) {
                 throw new SWValidationException(ValidSubject.SWMP)
@@ -302,14 +302,16 @@ public class SWModelPackageService {
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}",startTime);
         Long projectId = null;
+        ProjectEntity projectEntity = null;
         if(!StrUtil.isEmpty(uploadRequest.getProject())) {
-            projectId = projectManager.getProjectId(uploadRequest.getProject());
+            projectEntity = projectManager.getProject(uploadRequest.getProject());
+            projectId = projectEntity.getId();
         }
         SWModelPackageEntity entity = swmpMapper.findByNameForUpdate(uploadRequest.name(), projectId);
         if (null == entity) {
             //create
             if(projectId == null) {
-                ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(), userService.currentUserDetail().getIdTableKey());
+                projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(), userService.currentUserDetail().getIdTableKey());
                 projectId = projectEntity.getId();
             }
             entity = SWModelPackageEntity.builder().isDeleted(0)
@@ -339,7 +341,7 @@ public class SWModelPackageService {
         log.debug("swmp version checked time use {}",System.currentTimeMillis() - startTime);
         //upload to storage
         final String swmpPath = entityExists ? swModelPackageVersionEntity.getStoragePath()
-            : storagePathCoordinator.generateSwmpPath(uploadRequest.name(), uploadRequest.version());
+            : storagePathCoordinator.generateSwmpPath(projectEntity.getProjectName(),uploadRequest.name(), uploadRequest.version());
         String jobContent = "";
         try(final InputStream inputStream = dsFile.getInputStream()){
             InputStream is = inputStream;
@@ -387,7 +389,7 @@ public class SWModelPackageService {
     }
 
     public void pull(String projectUrl, String modelUrl, String versionUrl, HttpServletResponse httpResponse) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         SWModelPackageEntity swModelPackageEntity = swmpMapper.findByName(modelUrl, projectId);
         if(null == swModelPackageEntity){
             throw new SWValidationException(ValidSubject.SWMP).tip("swmp not found");
@@ -424,7 +426,7 @@ public class SWModelPackageService {
     }
 
     public String query(String projectUrl, String modelUrl, String versionUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         SWModelPackageEntity entity = swmpMapper.findByName(modelUrl, projectId);
         if(null == entity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP),HttpStatus.NOT_FOUND);

@@ -72,7 +72,7 @@ public class ProjectService {
      * @return Optional of a ProjectVO object.
      */
     public ProjectVO findProject(String projectUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         ProjectEntity projectEntity = projectMapper.findProject(projectId);
         if(projectEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
@@ -126,7 +126,7 @@ public class ProjectService {
      */
     @Transactional
     public Boolean deleteProject(String projectUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         ProjectEntity entity = projectMapper.findProject(projectId);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
@@ -188,7 +188,7 @@ public class ProjectService {
     }
 
     public Boolean modifyProject(String projectUrl, String projectName, String description, Long userId) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         ProjectEntity entity = ProjectEntity.builder()
             .id(projectId)
             .projectName(projectName)
@@ -201,7 +201,7 @@ public class ProjectService {
     }
 
     public List<ProjectRoleVO> listProjectRoles(String projectUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         List<ProjectRoleEntity> entities = projectRoleMapper.listProjectRoles(projectId);
         return entities.stream()
             .map(projectRoleConvertor::convert)
@@ -209,7 +209,7 @@ public class ProjectService {
     }
 
     public Boolean addProjectRole(String projectUrl, Long userId, Long roleId) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         ProjectRoleEntity entity = ProjectRoleEntity.builder()
             .userId(userId)
             .roleId(roleId)
