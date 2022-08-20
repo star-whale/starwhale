@@ -235,7 +235,7 @@ class BaseTermView(SWCliConfigMixed):
         return sort_obj_list(result, order_keys)
 
     @staticmethod
-    def place_holder_for_empty(place_holder: str = "--") -> t.Callable:
+    def place_holder_for_empty(place_holder: str = "--") -> t.Callable[[str], str]:
         return lambda x: x or place_holder
 
     @staticmethod

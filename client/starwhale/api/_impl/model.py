@@ -31,8 +31,10 @@ from . import wrapper
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
-_p = lambda p, sub: Path(p) if p else Path(_TASK_ROOT_DIR) / sub
 _ptype = t.Union[str, None, Path]
+_p: t.Callable[[_ptype, str], Path] = (
+    lambda p, sub: Path(p) if p else Path(_TASK_ROOT_DIR) / sub
+)
 
 
 class _LogType:
@@ -40,7 +42,9 @@ class _LogType:
     USER = "user"
 
 
-_jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
+_jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
+    str((p).resolve()), mode="w"
+)
 
 
 class _RunConfig:
@@ -52,8 +56,8 @@ class _RunConfig:
         status_dir: _ptype = "",
         log_dir: _ptype = "",
     ) -> None:
-        self.status_dir = _p(status_dir, "status")  # type: ignore
-        self.log_dir = _p(log_dir, "log")  # type: ignore
+        self.status_dir = _p(status_dir, "status")
+        self.log_dir = _p(log_dir, "log")
         # TODO: refactor dataset arguments
         self.dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
         self.dataset_row_end = dataset_row_end
@@ -124,7 +128,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self._orig_stderr = sys.stderr
 
         # TODO: split status/result files
-        self._timeline_writer = _jl_writer(self.status_dir / "timeline")  # type: ignore
+        self._timeline_writer = _jl_writer(self.status_dir / "timeline")
 
         self._ppl_data_field = "result"
         self._label_field = "label"
@@ -258,7 +262,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def _starwhale_internal_run_cmp(self) -> None:
         self._sw_logger.debug("enter cmp func...")
         self._update_status(self.STATUS.START)
-        now = now_str()  # type: ignore
+        now = now_str()
         try:
             _ppl_results = list(self.evaluation.get_results())
             self._sw_logger.debug("cmp input data size:{}", len(_ppl_results))
@@ -347,7 +351,7 @@ class PipelineHandler(metaclass=ABCMeta):
         *args: t.Any,
     ) -> None:
         _timeline = {
-            "time": now_str(),  # type: ignore
+            "time": now_str(),
             "status": exception is None,
             "exception": str(exception),
             "index": data.idx,

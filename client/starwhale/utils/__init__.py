@@ -20,7 +20,9 @@ from starwhale.consts import FMT_DATETIME, SW_DEV_DUMMY_VERSION
 from starwhale.utils.error import NoSupportError
 
 console = Console(soft_wrap=True)
-now_str = lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
+now_str: t.Callable[[], str] = (
+    lambda: datetime.now().astimezone().strftime(FMT_DATETIME)
+)
 
 
 def timestamp_to_datatimestr(timestamp: float) -> str:
