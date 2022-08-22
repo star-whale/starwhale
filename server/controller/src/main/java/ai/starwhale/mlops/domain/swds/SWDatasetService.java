@@ -111,7 +111,7 @@ public class SWDatasetService {
 
     public PageInfo<DatasetVO> listSWDataset(SWDSQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProject(query.getProjectUrl()).getId();
+        Long projectId = projectManager.getProjectId(query.getProjectUrl());
         List<SWDatasetEntity> entities = swdsMapper.listDatasets(projectId,
             query.getNamePrefix());
 
@@ -244,7 +244,7 @@ public class SWDatasetService {
 
     public List<SWDatasetInfoVO> listDS(String project, String name) {
         if(StringUtils.hasText(name)){
-            Long projectId = projectManager.getProject(project).getId();
+            Long projectId = projectManager.getProjectId(project);
             SWDatasetEntity ds = swdsMapper.findByName(name, projectId);
             if(null == ds){
                 throw new SWValidationException(ValidSubject.SWDS)
@@ -275,7 +275,7 @@ public class SWDatasetService {
     }
 
     public String query(String projectUrl, String datasetUrl, String versionUrl) {
-        Long projectId = projectManager.getProject(projectUrl).getId();
+        Long projectId = projectManager.getProjectId(projectUrl);
         SWDatasetEntity entity = swdsMapper.findByName(datasetUrl, projectId);
         if(null == entity) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS), HttpStatus.NOT_FOUND);

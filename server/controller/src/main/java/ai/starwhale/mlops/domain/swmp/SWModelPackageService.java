@@ -122,7 +122,7 @@ public class SWModelPackageService {
 
     public PageInfo<SWModelPackageVO> listSWMP(SWMPQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProject(query.getProjectUrl()).getId();
+        Long projectId = projectManager.getProjectId(query.getProjectUrl());
         List<SWModelPackageEntity> entities = swmpMapper.listSWModelPackages(projectId, query.getNamePrefix());
         return PageUtil.toPageInfo(entities, swmpConvertor::convert);
     }
@@ -144,7 +144,7 @@ public class SWModelPackageService {
     public List<SWModelPackageInfoVO> listSWMPInfo(String project, String name) {
 
         if(StringUtils.hasText(name)){
-            Long projectId = projectManager.getProject(project).getId();
+            Long projectId = projectManager.getProjectId(project);
             SWModelPackageEntity swmp = swmpMapper.findByName(name, projectId);
             if(swmp == null) {
                 throw new SWValidationException(ValidSubject.SWMP)
@@ -389,7 +389,7 @@ public class SWModelPackageService {
     }
 
     public void pull(String projectUrl, String modelUrl, String versionUrl, HttpServletResponse httpResponse) {
-        Long projectId = projectManager.getProject(projectUrl).getId();
+        Long projectId = projectManager.getProjectId(projectUrl);
         SWModelPackageEntity swModelPackageEntity = swmpMapper.findByName(modelUrl, projectId);
         if(null == swModelPackageEntity){
             throw new SWValidationException(ValidSubject.SWMP).tip("swmp not found");
@@ -426,7 +426,7 @@ public class SWModelPackageService {
     }
 
     public String query(String projectUrl, String modelUrl, String versionUrl) {
-        Long projectId = projectManager.getProject(projectUrl).getId();
+        Long projectId = projectManager.getProjectId(projectUrl);
         SWModelPackageEntity entity = swmpMapper.findByName(modelUrl, projectId);
         if(null == entity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWMP),HttpStatus.NOT_FOUND);
