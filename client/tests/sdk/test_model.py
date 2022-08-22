@@ -16,7 +16,7 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, DataFormatType, ObjectStoreType
 from starwhale.consts.env import SWEnv
 from starwhale.api._impl.job import Context
-from starwhale.api._impl.model import _RunConfig, PipelineHandler
+from starwhale.api._impl.model import PipelineHandler
 from starwhale.api._impl.loader import (
     get_data_loader,
     S3StorageBackend,
@@ -74,18 +74,6 @@ class TestModelPipelineHandler(TestCase):
         )
         assert isinstance(_loader, UserRawDataLoader)
         assert isinstance(_loader.storage.backend, S3StorageBackend)
-
-    def test_set_run_env(self) -> None:
-        _RunConfig.set_env(
-            {
-                "status_dir": "status",
-                "log_dir": "log",
-                "result_dir": "result",
-                "dataset_uri": "mnist/version/latest",
-            }
-        )
-        assert os.environ.get(SWEnv.status_dir) == "status"
-        assert os.environ.get(SWEnv.dataset_uri) == "mnist/version/latest"
 
     @pytest.mark.skip(reason="wait job scheduler feature, cmp will use datastore")
     def test_cmp(self) -> None:
