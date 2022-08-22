@@ -99,7 +99,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self._monkey_patch()
 
     def _init_dir(self) -> None:
-        _run_dir = self.context.workdir / self.context.step / str(self.context.index)
+        _run_dir = self.context.workdir / "runlog" / self.context.step / str(self.context.index)
         ensure_dir(_run_dir)
 
         for _w in (_run_dir,):
