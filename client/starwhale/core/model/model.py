@@ -195,7 +195,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> str:
         _mp = workdir / yaml_name
         _model_config = cls.load_model_config(_mp)
-        if _model_config.run.typ is EvalHandlerType.DEFAULT:
+        if _model_config.run.typ == EvalHandlerType.DEFAULT:
             return DEFAULT_EVALUATION_PIPELINE
         return _model_config.run.ppl
 
