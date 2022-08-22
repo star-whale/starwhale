@@ -57,8 +57,10 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         return _cls(uri)
 
     @classmethod
-    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
-        bc = BundleCopy(src_uri, dest_uri, URIType.DATASET, force)
+    def copy(
+        cls, src_uri: str, dest_uri: str, force: bool = False, with_auth: bool = False
+    ) -> None:
+        bc = BundleCopy(src_uri, dest_uri, URIType.DATASET, force, with_auth=with_auth)
         if bc.src_uri.instance_type == InstanceType.STANDALONE:
             with StandaloneTabularDataset.from_uri(bc.src_uri) as tds:
                 tds.dump_meta(force)
