@@ -25,9 +25,9 @@ from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
 from starwhale.api._impl.job import Context
 from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
+from starwhale.core.dataset.model import Dataset
 
 from . import wrapper
-from starwhale.core.dataset.model import Dataset
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
@@ -99,7 +99,12 @@ class PipelineHandler(metaclass=ABCMeta):
         self._monkey_patch()
 
     def _init_dir(self) -> None:
-        _run_dir = self.context.workdir / "runlog" / self.context.step / str(self.context.index)
+        _run_dir = (
+            self.context.workdir
+            / "runlog"
+            / self.context.step
+            / str(self.context.index)
+        )
         ensure_dir(_run_dir)
 
         for _w in (_run_dir,):

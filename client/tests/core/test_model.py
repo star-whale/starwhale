@@ -11,7 +11,8 @@ from starwhale.consts import (
     HTTPMethod,
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
-    DEFAULT_MANIFEST_NAME, DEFAULT_EVALUATION_JOBS_FNAME,
+    DEFAULT_MANIFEST_NAME,
+    DEFAULT_EVALUATION_JOBS_FNAME,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -34,9 +35,7 @@ class StandaloneModelTestCase(TestCase):
 
     @patch("starwhale.core.model.model.copy_file")
     @patch("starwhale.core.model.model.copy_fs")
-    def test_build_workflow(
-        self, m_copy_fs: MagicMock, m_copy_file: MagicMock
-    ) -> None:
+    def test_build_workflow(self, m_copy_fs: MagicMock, m_copy_file: MagicMock) -> None:
         sw = SWCliConfigMixed()
 
         workdir = "/home/starwhale/myproject"
