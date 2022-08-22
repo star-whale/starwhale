@@ -120,7 +120,7 @@ release-nodejs:
 	$(call push-image,nodejs,${FIXED_VERSION_NODEJS_IMAGE})
 
 build-console:
-	docker run --rm -it -v $(ROOT_DIR)console:/app -w /app ${DH_NODEJS_IMAGE} bash -c "yarn install && yarn build"
+	docker run --rm -v $(ROOT_DIR)console:/app -w /app ${DH_NODEJS_IMAGE} bash -c "yarn install && yarn build"
 
 build-jar:
 	docker volume create --name maven-repo; docker run --rm -it -v maven-repo:/root/.m2 -v $(ROOT_DIR):/app -w /app maven:3.8.5-openjdk-11 mvn clean package -f server/pom.xml -DskipTests;

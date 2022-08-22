@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
@@ -44,6 +45,7 @@ import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -56,19 +58,26 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     final StorageProperties storageProperties;
 
+    final RunTimeProperties runTimeProperties;
+
     final JobTokenConfig jobTokenConfig;
 
     final StoragePathCoordinator storagePathCoordinator;
 
+    @Value("${sw.instance-uri}")
+    String instanceUri;
+
     public K8sTaskScheduler(K8sClient k8sClient,
         TaskBoConverter taskConvertor, StorageProperties storageProperties,
         JobTokenConfig jobTokenConfig,
-        StoragePathCoordinator storagePathCoordinator) {
+        StoragePathCoordinator storagePathCoordinator,
+        RunTimeProperties runTimeProperties) {
         this.k8sClient = k8sClient;
         this.taskConvertor = taskConvertor;
         this.storageProperties = storageProperties;
         this.jobTokenConfig = jobTokenConfig;
         this.storagePathCoordinator = storagePathCoordinator;
+        this.runTimeProperties = runTimeProperties;
     }
 
     @Override
@@ -107,12 +116,15 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         downloads.add(prefix + task.getSwModelPackage().getPath() + ";/opt/starwhale/swmp/");
         downloads.add(prefix + task.getSwrt().getPath() + ";/opt/starwhale/swrt/");
         initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
-        String input = generateConfigFile(task);
+        String input = ""; //generateConfigFile(task);
         initContainerEnvs.put("INPUT", input);
         initContainerEnvs.put("ENDPOINT_URL", storageProperties.getS3Config().getEndpoint());
         initContainerEnvs.put("AWS_ACCESS_KEY_ID", storageProperties.getS3Config().getAccessKey());
         initContainerEnvs.put("AWS_SECRET_ACCESS_KEY", storageProperties.getS3Config().getSecretKey());
         initContainerEnvs.put("AWS_S3_REGION", storageProperties.getS3Config().getRegion());
+        initContainerEnvs.put("SW_PYPI_INDEX_URL",runTimeProperties.getPypi().getIndexUrl());
+        initContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL",runTimeProperties.getPypi().getExtraIndexUrl());
+        initContainerEnvs.put("SW_PYPI_TRUSTED_HOST",runTimeProperties.getPypi().getTrustedHost());
         // task container envs
         Map<String, String> coreContainerEnvs = new HashMap<>();
         coreContainerEnvs.put("SW_TASK_STEP", task.getTaskRequest().getStepName());
@@ -120,23 +132,25 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         coreContainerEnvs.put("SW_DATASET_URI", task.getTaskRequest().getDatasetUris().get(0));
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", task.getTaskRequest().getJobId());
-        // TODO:oss
+        // oss env
         Map<String, FileStorageEnv> stringFileStorageEnvMap = storageProperties.toFileStorageEnvs();
         stringFileStorageEnvMap.values().forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs()));
+
         coreContainerEnvs.put(FileStorageEnv.ENV_KEY_PREFIX, storagePathCoordinator.getSwdsPathNamedFormatter());
 //        coreContainerEnvs.put("SW_S3_READ_TIMEOUT", );
 //        coreContainerEnvs.put("SW_S3_TOTAL_MAX_ATTEMPTS", );
-        // TODO:datastore
+
+        // datastore env
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
-//        coreContainerEnvs.put("SW_INSTANCE", );
+        coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
         coreContainerEnvs.put("SW_PROJECT", task.getTaskRequest().getProject());
         try {
             // cmd（all、single[step、taskIndex]）
             String cmd = "run_single";
             // TODO: use task's resource needs
             V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(task.getDeviceClass(),
-                task.getDeviceAmount().toString()).getResourceSelector();
-            V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), initContainerEnvs, resourceRequirements);
+                task.getDeviceAmount().toString()+"m").getResourceSelector();
+            V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), coreContainerEnvs, initContainerEnvs, resourceRequirements);
             // set result upload path
 
             job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + task.getResultPath().resultDir())
@@ -144,6 +158,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
                     , new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
                     , new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
                     , new V1EnvVar().name("AWS_SECRET_ACCESS_KEY").value(storageProperties.getS3Config().getSecretKey())
+                    , new V1EnvVar().name("SW_PYPI_INDEX_URL").value(runTimeProperties.getPypi().getIndexUrl())
+                    , new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(runTimeProperties.getPypi().getExtraIndexUrl())
+                    , new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(runTimeProperties.getPypi().getTrustedHost())
                 )
             );
             client.deploy(job);

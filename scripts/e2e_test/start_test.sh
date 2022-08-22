@@ -24,20 +24,27 @@ fi
 declare_env() {
   export PYPI_RELEASE_VERSION="${PYPI_RELEASE_VERSION:=100.0.0}"
   export RELEASE_VERSION="${RELEASE_VERSION:=0.0.0-dev}"
-  export NEXUS_HOSTNAME="${NEXUS_HOSTNAME:=host.nexus}"
+  export NEXUS_HOSTNAME="${NEXUS_HOSTNAME:=host.minikube.internal}"
   export NEXUS_IMAGE="${NEXUS_IMAGE:=sonatype/nexus3:3.40.1}"
   export NEXUS_USER_NAME="${NEXUS_USER_NAME:=admin}"
   export NEXUS_USER_PWD="${NEXUS_USER_PWD:=admin123}"
   export PORT_NEXUS="${PORT_NEXUS:=8081}"
   export PORT_CONTROLLER="${PORT_CONTROLLER:=8082}"
-  export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=9001}"
-  export IP_DOCKER_COMPOSE_BRIDGE="${IP_DOCKER_COMPOSE_BRIDGE:=172.18.0.1}"
-  export SW_IMAGE_REPO="${SW_IMAGE_REPO:=host.nexus:9001}"
+  export PORT_NEXUS_DOCKER="${PORT_NEXUS_DOCKER:=8083}"
+  export IP_MINIKUBE_BRIDGE="${IP_MINIKUBE_BRIDGE:=192.168.49.1}"
+  export SW_IMAGE_REPO="${SW_IMAGE_REPO:=host.minikube.internal:8083}"
   export IP_DOCKER_BRIDGE="${IP_DOCKER_BRIDGE:=172.17.0.1}"
-  export IP_DOCKER_COMPOSE_BRIDGE_RANGE="${IP_DOCKER_COMPOSE_BRIDGE_RANGE:=172.0.0.0/8}"
+  export IP_MINIKUBE_BRIDGE_RANGE="${IP_MINIKUBE_BRIDGE_RANGE:=192.0.0.0/8}"
   export REPO_NAME_DOCKER="${REPO_NAME_DOCKER:=docker-hosted}"
   export REPO_NAME_PYPI="${REPO_NAME_PYPI:=pypi-hosted}"
   export PYTHON_VERSION="${PYTHON_VERSION:=3.9}"
+}
+
+start_minikube() {
+    minikube start -p sw-e2e-test --insecure-registry "$IP_MINIKUBE_BRIDGE_RANGE"
+    minikube addons enable ingress -p sw-e2e-test
+    minikube addons enable ingress-dns -p sw-e2e-test
+    kubectl describe node
 }
 
 start_nexus() {
@@ -59,43 +66,20 @@ build_swcli() {
   popd
 }
 
-build_server_image() {
-  pushd ../../server
-  make build-package
-  pushd ../docker
-  docker build -t server -f Dockerfile.server .
-  docker tag server $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
-  override_docker_compose
-  popd
+build_console() {
+  pushd ../../docker
+  make build-console
   popd
 }
 
-override_docker_compose() {
-  cp compose/compose.override.yaml compose/compose.override.yaml.bak_e2e
-  cat > compose/compose.override.yaml << EOF
-services:
-  controller:
-    image: $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
-
-  agent:
-    image: $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
-    environment:
-      - SW_PYPI_INDEX_URL=http://$IP_DOCKER_COMPOSE_BRIDGE:$PORT_NEXUS/$REPO_NAME_PYPI/simple
-      - SW_PYPI_EXTRA_INDEX_URL=$SW_PYPI_EXTRA_INDEX_URL
-      - SW_PYPI_TRUSTED_HOST=$IP_DOCKER_COMPOSE_BRIDGE
-      - SW_TASK_USE_HOST_NETWORK=1
-    extra_hosts:
-      - $NEXUS_HOSTNAME:$IP_DOCKER_COMPOSE_BRIDGE
-  taskset:
-    volumes:
-      - agent_data:/opt/starwhale
-      - taskset_dind_data:/var/lib/docker
-      - /tmp/docker-daemon.json:/etc/docker/daemon.json
-    extra_hosts:
-      - $NEXUS_HOSTNAME:$IP_DOCKER_COMPOSE_BRIDGE
-
-EOF
-
+build_server_image() {
+  pushd ../../server
+  make build-package
+  popd
+  pushd ../../docker
+  docker build -t server -f Dockerfile.server .
+  docker tag server $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
+  popd
 }
 
 overwrite_pypirc() {
@@ -138,11 +122,6 @@ EOF
   cat $HOME/.pip/pip.conf
 }
 
-create_daemon_json_for_taskset() {
-  echo "{\"hosts\":[\"tcp://0.0.0.0:2376\",\"unix:///var/run/docker.sock\"],\"insecure-registries\":[\"10.0.0.0/8\",\"127.0.0.0/8\",\"$IP_DOCKER_COMPOSE_BRIDGE_RANGE\",\"192.0.0.0/8\"],\"live-restore\":true,\"max-concurrent-downloads\":20,\"max-concurrent-uploads\":20,\"registry-mirrors\":[\"http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER\"],\"mtu\":1450,\"runtimes\":{\"nvidia\":{\"path\":\"nvidia-container-runtime\",\"runtimeArgs\":[]}},\"storage-driver\":\"overlay2\"}" > /tmp/docker-daemon.json
-}
-
-
 create_service_check_file() {
   cp service_wait.sh /tmp/service_wait.sh
 }
@@ -167,28 +146,42 @@ upload_pypi_to_nexus() {
 buid_runtime_image() {
   pushd ../../docker
   docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$IP_DOCKER_BRIDGE --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
-  docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
+  docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
   popd
 }
 
 push_images_to_nexus() {
   docker login http://$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER -u $NEXUS_USER_NAME -p $NEXUS_USER_PWD
-  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
-  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
+  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
+  docker push $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
 }
 
-start_docker_compose() {
-  pushd ../../docker/compose
-  if ! type "$docker-compose" > /dev/null; then
-    docker compose up -d
-  else
-    docker-compose up -d
-  fi
+start_starwhale() {
+  pushd ../../docker/charts
+  helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "resources.controller.requests.memory=4G,resources.controller.requests.cpu=400m,resources.controller.limits.cpu=1000m,mysql.primary.resources.requests.cpu=100m,mysql.primary.resources.limits.cpu=250m,minio.resources.requests.cpu=100m,minio.resources.limits.cpu=250m,controller.taskSplitSize=1,minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION,mirror.pypi.indexUrl= http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple,mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL,mirror.pypi.trustedHost=$NEXUS_HOSTNAME"
   popd
 }
 
 check_controller_service() {
-  chmod u+x /tmp/service_wait.sh && /tmp/service_wait.sh http://$NEXUS_HOSTNAME:$PORT_CONTROLLER
+    while true
+    do
+      started=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.containerStatuses[0].started'`
+            if [[ "$started" == "true" ]]; then
+                    echo "controller started"
+                    break
+            else
+              echo "controller is starting"
+              kubectl get pods --namespace starwhale
+  #            kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status'
+  #            ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.phase'`
+  #            if [[ "$ready" == "Running" ]]; then
+  #              name=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].metadata.name'`
+  #              kubectl describe pod $name --namespace starwhale
+  #            fi
+            fi
+            sleep 15
+    done
+    nohup kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082 &
 }
 
 standalone_test() {
@@ -199,16 +192,20 @@ standalone_test() {
   rm -rf venv*
   pushd ../
   scripts/run_demo.sh
-  export WORK_DIR=`cat WORK_DIR`
-  export LOCAL_DATA_DIR=`cat LOCAL_DATA_DIR`
-  scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
-  scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
   popd
   popd
 
 }
 
 api_test() {
+  pushd ../../
+  export WORK_DIR=`cat WORK_DIR`
+  if ! in_github_action; then
+    export LOCAL_DATA_DIR=`cat LOCAL_DATA_DIR`
+  fi
+  scripts/e2e_test/copy_artifacts_to_server.sh 127.0.0.1:$PORT_CONTROLLER
+  scripts/e2e_test/test_job_run.sh 127.0.0.1:$PORT_CONTROLLER
+  popd
   pushd ../apitest/pytest
   python3 -m pip install -r requirements.txt
   pytest --host 127.0.0.1 --port $PORT_CONTROLLER
@@ -217,25 +214,17 @@ api_test() {
 
 restore_env() {
   rm -rf venve2e
-  mv ~/.pypirc.bak_e2e ~/.pypirc
-  mv ~/.pip/pip.conf.bak_e2e ~/.pip/pip.conf
-  sudo mv /etc/hosts.bak_e2e /etc/hosts
-  rm /tmp/service_wait.sh
   docker kill nexus
   docker container rm nexus
   docker image rm starwhale
-  docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
-  docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/server
+  docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
+  docker image rm $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/server:$PYPI_RELEASE_VERSION
   docker image rm server
+  mv ~/.pypirc.bak_e2e ~/.pypirc
+  mv ~/.pip/pip.conf.bak_e2e ~/.pip/pip.conf
+  rm /tmp/service_wait.sh
   script_dir="$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")"
-  cd $script_dir/../../docker/compose
-  mv compose.override.yaml.bak_e2e compose.override.yaml
-  dc=`which docker-compose`
-  if [ -z $dc ]; then
-      docker compose down
-  else
-      docker-compose down
-  fi
+  minikube delete -p sw-e2e-test
   cd $script_dir/../../
   WORK_DIR=`cat WORK_DIR`
   if test -n $WORK_DIR ; then
@@ -245,28 +234,35 @@ restore_env() {
   rm LOCAL_DATA_DIR
   echo 'cleanup'
 }
-if ! in_github_action; then
-  trap restore_env EXIT
-fi
 
 main() {
   declare_env
+  if ! in_github_action; then
+    trap restore_env EXIT
+  fi
   start_nexus
+  start_minikube
   overwrite_pip_config
   overwrite_pypirc
   build_swcli
+  build_console
   build_server_image
-  create_daemon_json_for_taskset
   create_service_check_file
   check_nexus_service
   create_repository_in_nexus
   upload_pypi_to_nexus
   buid_runtime_image
   push_images_to_nexus
-  start_docker_compose
-  check_controller_service
+  start_starwhale
   standalone_test
+  check_controller_service
   api_test
 }
 
-main
+declare_env
+if test -z $1; then
+  main
+else
+  $1
+fi
+
