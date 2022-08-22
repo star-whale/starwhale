@@ -75,8 +75,10 @@ class DatasetTermView(BaseTermView):
         _ds.build(Path(workdir), yaml_name)
 
     @classmethod
-    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
-        Dataset.copy(src_uri, dest_uri, force)
+    def copy(
+        cls, src_uri: str, dest_uri: str, force: bool = False, with_auth: bool = False
+    ) -> None:
+        Dataset.copy(src_uri, dest_uri, force, with_auth)
         console.print(":clap: copy done")
 
     @classmethod
