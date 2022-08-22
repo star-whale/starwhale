@@ -43,6 +43,7 @@ import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -56,6 +57,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
     final StorageProperties storageProperties;
 
     final JobTokenConfig jobTokenConfig;
+
+    @Value("${sw.instance-uri}")
+    String instanceUri;
 
     public K8sTaskScheduler(K8sClient k8sClient,
         TaskBoConverter taskConvertor, StorageProperties storageProperties,
@@ -102,7 +106,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         downloads.add(prefix + task.getSwModelPackage().getPath() + ";/opt/starwhale/swmp/");
         downloads.add(prefix + task.getSwrt().getPath() + ";/opt/starwhale/swrt/");
         initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
-        String input = generateConfigFile(task);
+        String input = ""; //generateConfigFile(task);
         initContainerEnvs.put("INPUT", input);
         initContainerEnvs.put("ENDPOINT_URL", storageProperties.getS3Config().getEndpoint());
         initContainerEnvs.put("AWS_ACCESS_KEY_ID", storageProperties.getS3Config().getAccessKey());
@@ -115,15 +119,13 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         coreContainerEnvs.put("SW_DATASET_URI", task.getTaskRequest().getDatasetUris().get(0));
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", task.getTaskRequest().getJobId());
-        // TODO:oss
+        // oss env
         Map<String, FileStorageEnv> stringFileStorageEnvMap = storageProperties.toFileStorageEnvs();
         stringFileStorageEnvMap.values().forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs()));
-//        coreContainerEnvs.put("SW_S3_CONNECT_TIMEOUT", );
-//        coreContainerEnvs.put("SW_S3_READ_TIMEOUT", );
-//        coreContainerEnvs.put("SW_S3_TOTAL_MAX_ATTEMPTS", );
-        // TODO:datastore
+
+        // datastore env
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
-//        coreContainerEnvs.put("SW_INSTANCE", );
+        coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
         coreContainerEnvs.put("SW_PROJECT", task.getTaskRequest().getProject());
         try {
             // cmd（all、single[step、taskIndex]）
@@ -131,7 +133,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             // TODO: use task's resource needs
             V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(task.getDeviceClass(),
                 task.getDeviceAmount().toString()).getResourceSelector();
-            V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), initContainerEnvs, resourceRequirements);
+            V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), coreContainerEnvs, initContainerEnvs, resourceRequirements);
             // set result upload path
 
             job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + task.getResultPath().resultDir())

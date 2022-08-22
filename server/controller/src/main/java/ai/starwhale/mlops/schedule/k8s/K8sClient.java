@@ -108,7 +108,7 @@ public class K8sClient {
      * @param cmd
      * @return
      */
-    public V1Job renderJob(String template, String name, String coreContainerName, String image, List<String> cmd, Map<String, String> env,V1ResourceRequirements resources) {
+    public V1Job renderJob(String template, String name, String coreContainerName, String image, List<String> cmd, Map<String, String> coreEnv, Map<String, String> env,V1ResourceRequirements resources) {
         V1Job job = Yaml.loadAs(template, V1Job.class);
         job.getMetadata().name(name);
         HashMap<String, String> labels = new HashMap<>();
@@ -131,6 +131,11 @@ public class K8sClient {
         }
         if(null != resources){
             coreContainer.resources(resources);
+        }
+        if (!coreEnv.isEmpty()) {
+            List<V1EnvVar> ee = new ArrayList<>();
+            env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
+            coreContainer.env(ee);
         }
         if (!env.isEmpty()) {
             List<V1EnvVar> ee = new ArrayList<>();
