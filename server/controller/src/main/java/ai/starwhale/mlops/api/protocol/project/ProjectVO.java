@@ -42,11 +42,15 @@ public class ProjectVO implements Serializable {
 
     private UserVO owner;
 
+    private StatisticsVO statistics;
+
     public static ProjectVO empty() {
-        return new ProjectVO("", "", "", Privacy.PRIVATE.toString(), -1L, UserVO.empty());
+        return new ProjectVO("", "", "",
+            Privacy.PRIVATE.toString(), -1L, UserVO.empty(), StatisticsVO.empty());
     }
 
     public static ProjectVO system() {
-        return new ProjectVO("0", "SYSTEM", "System", Privacy.PUBLIC.toString(), -1L, UserVO.empty());
+        return new ProjectVO("0", "SYSTEM", "System",
+            Privacy.PUBLIC.toString(), -1L, UserVO.empty(), StatisticsVO.empty());
     }
 }

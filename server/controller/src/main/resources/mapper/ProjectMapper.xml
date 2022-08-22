@@ -112,6 +112,34 @@
         and p.is_default = 1
     </select>
 
+    <select id="listObjectCounts" resultType="ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity">
+        select p.id as project_id,
+               c1.count_model,
+               c2.count_dataset,
+               c3.count_member,
+               c4.count_jobs
+        from project_info as p
+        left join
+            (select count(*) as count_model, project_id from swmp_info group by project_id) as c1
+                on p.id = c1.project_id
+        left join
+            (select count(*) as count_dataset, project_id from dataset_info group by project_id) as c2
+                on p.id = c2.project_id
+        left join
+            (select count(*) as count_member, project_id from user_role_rel group by project_id) as c3
+                on p.id = c3.project_id
+        left join
+            (select count(*) as count_jobs, project_id from job_info where job_status = 'SUCCESS' group by project_id) as c4
+                on p.id = c4.project_id
+        <if test="projectIds != null">
+            where p.id in
+            <foreach item="item" index="index" collection="projectIds"
+              open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
 
     <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.po.ProjectEntity">
         <id property="id" column="project_id" />

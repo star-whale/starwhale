@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.project.mapper;
 
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.apache.ibatis.annotations.Param;
@@ -42,4 +43,6 @@ public interface ProjectMapper {
     ProjectEntity findDefaultProject(@Param("userId") Long userId);
 
     int modifyProject(@Param("project")ProjectEntity project);
+
+    List<ProjectObjectCountEntity> listObjectCounts(@Param("projectIds")List<Long> projectIds);
 }

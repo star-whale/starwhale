@@ -21,6 +21,7 @@ import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -28,6 +29,7 @@ import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -84,6 +86,13 @@ public class ProjectManager implements ProjectAccessor{
     public Boolean existProject(String projectName) {
         ProjectEntity existProject = projectMapper.findProjectByName(projectName);
         return existProject != null;
+    }
+
+    public Map<Long, ProjectObjectCountEntity> getObjectCountsOfProjects(List<Long> projectIds) {
+        List<ProjectObjectCountEntity> counts = projectMapper.listObjectCounts(
+            projectIds);
+        return counts.stream()
+            .collect(Collectors.toMap(ProjectObjectCountEntity::getProjectId, entity -> entity));
     }
 
     @Override

@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.api.protocol.project.StatisticsVO;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
@@ -57,6 +58,7 @@ public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
             .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
             .privacy(Privacy.fromValue(entity.getPrivacy()).name())
             .description(entity.getDescription())
+            .statistics(StatisticsVO.empty())
             .build();
     }
 

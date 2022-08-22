@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.api.protocol.project.StatisticsVO;
 import ai.starwhale.mlops.api.protocol.user.ProjectRoleVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
@@ -27,6 +28,7 @@ import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.mapper.ProjectRoleMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
@@ -35,9 +37,13 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.util.StrUtil;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.Page.Function;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -106,8 +112,23 @@ public class ProjectService {
 
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<ProjectEntity> entities = projectManager.listProjects(projectName, userId, orderParams);
+        List<Long> ids = entities.stream().map(ProjectEntity::getId).collect(Collectors.toList());
+        Map<Long, ProjectObjectCountEntity> countMap = projectManager.getObjectCountsOfProjects(
+            ids);
 
-        return PageUtil.toPageInfo(entities, projectConvertor::convert);
+        return PageUtil.toPageInfo(entities, entity -> {
+            ProjectVO vo = projectConvertor.convert(entity);
+            ProjectObjectCountEntity count = countMap.get(entity.getId());
+            if (count != null) {
+                vo.setStatistics(StatisticsVO.builder()
+                        .modelCounts(Optional.ofNullable(count.getCountModel()).orElse(0))
+                        .datasetCounts(Optional.ofNullable(count.getCountDataset()).orElse(0))
+                        .memberCounts(Optional.ofNullable(count.getCountMember()).orElse(0))
+                        .evaluationCounts(Optional.ofNullable(count.getCountJobs()).orElse(0))
+                        .build());
+            }
+            return vo;
+        });
     }
 
     /**
