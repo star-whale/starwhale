@@ -592,6 +592,24 @@ const locales0 = {
     'Member': {
         en: 'Member',
     },
+    'Version and Files': {
+        en: 'Version and Files',
+    },
+    'Metadata': {
+        en: 'Metadata',
+    },
+    'Version Full Name': {
+        en: 'Version Full Name',
+    },
+    'Created At': {
+        en: 'Created At',
+    },
+    'Aliases': {
+        en: 'Aliases',
+    },
+    'History': {
+        en: 'History',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

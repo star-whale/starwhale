@@ -45,7 +45,7 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
                 {
                     TabHighlight: {
                         style: {
-                            background: 'var(--color-brandPrimary)',
+                            backgroundColor: 'var(--color-brandPrimary)',
                         },
                     },
                 },
@@ -60,7 +60,11 @@ export function BaseNavTabs({ navItems, fill = 'intrinsic', tabsOverrides, tabOv
                             {
                                 TabPanel: {
                                     style: {
-                                        padding: '0px !important',
+                                        // padding: '0px !important',
+                                        paddingLeft: '0',
+                                        paddingRight: '0',
+                                        paddingBottom: '0',
+                                        paddingTop: 0,
                                     },
                                 },
                                 Tab: {
