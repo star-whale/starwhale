@@ -42,7 +42,6 @@ import ai.starwhale.mlops.domain.swds.bo.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersionQuery;
 import ai.starwhale.mlops.domain.swds.converter.SWDSVOConvertor;
 import ai.starwhale.mlops.domain.swds.converter.SWDSVersionConvertor;
-import ai.starwhale.mlops.domain.swds.datastore.DSRHelper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
@@ -112,7 +111,7 @@ public class SWDatasetService {
 
     public PageInfo<DatasetVO> listSWDataset(SWDSQuery query, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(query.getProjectUrl());
+        Long projectId = projectManager.getProject(query.getProjectUrl()).getId();
         List<SWDatasetEntity> entities = swdsMapper.listDatasets(projectId,
             query.getNamePrefix());
 
@@ -245,7 +244,7 @@ public class SWDatasetService {
 
     public List<SWDatasetInfoVO> listDS(String project, String name) {
         if(StringUtils.hasText(name)){
-            Long projectId = projectManager.getProjectId(project);
+            Long projectId = projectManager.getProject(project).getId();
             SWDatasetEntity ds = swdsMapper.findByName(name, projectId);
             if(null == ds){
                 throw new SWValidationException(ValidSubject.SWDS)
@@ -276,7 +275,7 @@ public class SWDatasetService {
     }
 
     public String query(String projectUrl, String datasetUrl, String versionUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         SWDatasetEntity entity = swdsMapper.findByName(datasetUrl, projectId);
         if(null == entity) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS), HttpStatus.NOT_FOUND);

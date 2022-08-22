@@ -126,7 +126,7 @@ public class JobService {
 
     public PageInfo<JobVO> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         List<JobEntity> jobEntities = jobMapper.listJobs(projectId, swmpId);
         return PageUtil.toPageInfo(jobEntities, jobConvertor::convert);
     }
@@ -200,7 +200,7 @@ public class JobService {
         String deviceType, int deviceCount, String comment) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
         Long runtimeVersionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, null);
         Long modelVersionId = swmpManager.getSWMPVersionId(modelVersionUrl, null);
         Integer deviceValue = getDeviceClazz(deviceType).getValue();

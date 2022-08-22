@@ -47,7 +47,7 @@ public class BundleManager {
             return idConvertor.revert(bundleUrl);
         }
 
-        Long projectId = projectAccessor.getProjectId(projectUrl);
+        Long projectId = projectAccessor.getProject(projectUrl).getId();
         BundleEntity entity = bundleAccessor.findByName(bundleUrl, projectId);
         if(entity == null) {
             throw new StarWhaleApiException(new SWValidationException(validSubject)

@@ -103,7 +103,7 @@ public class UserService implements UserDetailsService {
     }
 
     public List<Role> getProjectRolesOfUser(User user, String projectUrl) {
-        Long projectId = projectManager.getProjectId(projectUrl);
+        Long projectId = projectManager.getProject(projectUrl).getId();
 
         List<RoleEntity> projectRolesOfUser = roleMapper.getRolesOfProject(
             user.getId(), projectId);
@@ -230,7 +230,7 @@ public class UserService implements UserDetailsService {
     public List<UserRoleVO> listUserRoles(Long userId, String projectUrl) {
         Long projectId = null;
         if(!StrUtil.isEmpty(projectUrl)) {
-            projectId = projectManager.getProjectId(projectUrl);
+            projectId = projectManager.getProject(projectUrl).getId();
         }
 
         List<ProjectRoleEntity> entities = projectRoleMapper.listUserRoles(userId,

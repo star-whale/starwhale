@@ -20,6 +20,7 @@ import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
+import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
@@ -61,17 +62,21 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     final JobTokenConfig jobTokenConfig;
 
+    final StoragePathCoordinator storagePathCoordinator;
+
     @Value("${sw.instance-uri}")
     String instanceUri;
 
     public K8sTaskScheduler(K8sClient k8sClient,
         TaskBoConverter taskConvertor, StorageProperties storageProperties,
         JobTokenConfig jobTokenConfig,
+        StoragePathCoordinator storagePathCoordinator,
         RunTimeProperties runTimeProperties) {
         this.k8sClient = k8sClient;
         this.taskConvertor = taskConvertor;
         this.storageProperties = storageProperties;
         this.jobTokenConfig = jobTokenConfig;
+        this.storagePathCoordinator = storagePathCoordinator;
         this.runTimeProperties = runTimeProperties;
     }
 
@@ -130,6 +135,10 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         // oss env
         Map<String, FileStorageEnv> stringFileStorageEnvMap = storageProperties.toFileStorageEnvs();
         stringFileStorageEnvMap.values().forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs()));
+
+        coreContainerEnvs.put(FileStorageEnv.ENV_KEY_PREFIX, storagePathCoordinator.getSwdsPathNamedFormatter());
+//        coreContainerEnvs.put("SW_S3_READ_TIMEOUT", );
+//        coreContainerEnvs.put("SW_S3_TOTAL_MAX_ATTEMPTS", );
 
         // datastore env
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
