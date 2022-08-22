@@ -25,9 +25,8 @@ from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
 from starwhale.api._impl.job import Context
 from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
+from starwhale.api._impl.wrapper import Evaluation
 from starwhale.core.dataset.model import Dataset
-
-from . import wrapper
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 
@@ -105,18 +104,16 @@ class PipelineHandler(metaclass=ABCMeta):
             / self.context.step
             / str(self.context.index)
         )
-        ensure_dir(_run_dir)
 
-        for _w in (_run_dir,):
-            for _n in (RunSubDirType.STATUS, RunSubDirType.LOG):
-                ensure_dir(_w / _n)
         self.status_dir = _run_dir / RunSubDirType.STATUS
         self.log_dir = _run_dir / RunSubDirType.LOG
+        ensure_dir(self.status_dir)
+        ensure_dir(self.log_dir)
 
-    def _init_datastore(self) -> wrapper.Evaluation:
+    def _init_datastore(self) -> Evaluation:
         os.environ["SW_PROJECT"] = self.context.project
         os.environ["SW_EVAL_ID"] = self.context.version
-        return wrapper.Evaluation()
+        return Evaluation()
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
         # TODO: remove logger first?
@@ -260,61 +257,58 @@ class PipelineHandler(metaclass=ABCMeta):
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
         self._update_status(self.STATUS.START)
-        if self.context.dataset_uris:
-            # TODO: support multi dataset uris
-            _dataset_uri = URI(
-                self.context.dataset_uris[0], expected_type=URIType.DATASET
-            )
-            _dataset = Dataset.get_dataset(_dataset_uri)
-            dataset_row_start, dataset_row_end = calculate_index(
-                _dataset.summary().rows, self.context.total, self.context.index
-            )
-
-            _data_loader = get_data_loader(
-                dataset_uri=_dataset_uri,
-                start=dataset_row_start,
-                end=dataset_row_end,
-                logger=self._sw_logger,
-            )
-            for data, label in _data_loader:
-                if data.idx != label.idx:
-                    msg = (
-                        f"data index[{data.idx}] is not equal label index [{label.idx}], "
-                        f"{'ignore error' if self.ignore_error else ''}"
-                    )
-                    self._sw_logger.error(msg)
-                    if not self.ignore_error:
-                        raise Exception(msg)
-
-                pred: t.Any = b""
-                exception = None
-                try:
-                    # TODO: inspect profiling
-                    pred = self.ppl(
-                        data.data,
-                        data_index=data.idx,
-                        data_size=data.data_size,
-                        label_content=label.data,
-                        label_size=label.data_size,
-                        label_index=label.idx,
-                        ds_name=data.ext_attr.get("ds_name", ""),
-                        ds_version=data.ext_attr.get("ds_version", ""),
-                    )
-                except Exception as e:
-                    exception = e
-                    self._sw_logger.exception(f"[{data.idx}] data handle -> failed")
-                    if not self.ignore_error:
-                        self._update_status(self.STATUS.FAILED)
-                        raise
-                else:
-                    exception = None
-
-                self._do_record(data, label, exception, *pred)
-            self._sw_logger.debug(
-                f"ppl result:{len([item for item in self.evaluation.get_results()])}"
-            )
-        else:
+        if not self.context.dataset_uris:
             raise RuntimeError("no dataset uri!")
+        # TODO: support multi dataset uris
+        _dataset_uri = URI(self.context.dataset_uris[0], expected_type=URIType.DATASET)
+        _dataset = Dataset.get_dataset(_dataset_uri)
+        dataset_row_start, dataset_row_end = calculate_index(
+            _dataset.summary().rows, self.context.total, self.context.index
+        )
+
+        _data_loader = get_data_loader(
+            dataset_uri=_dataset_uri,
+            start=dataset_row_start,
+            end=dataset_row_end,
+            logger=self._sw_logger,
+        )
+        for data, label in _data_loader:
+            if data.idx != label.idx:
+                msg = (
+                    f"data index[{data.idx}] is not equal label index [{label.idx}], "
+                    f"{'ignore error' if self.ignore_error else ''}"
+                )
+                self._sw_logger.error(msg)
+                if not self.ignore_error:
+                    raise Exception(msg)
+
+            pred: t.Any = b""
+            exception = None
+            try:
+                # TODO: inspect profiling
+                pred = self.ppl(
+                    data.data,
+                    data_index=data.idx,
+                    data_size=data.data_size,
+                    label_content=label.data,
+                    label_size=label.data_size,
+                    label_index=label.idx,
+                    ds_name=data.ext_attr.get("ds_name", ""),
+                    ds_version=data.ext_attr.get("ds_version", ""),
+                )
+            except Exception as e:
+                exception = e
+                self._sw_logger.exception(f"[{data.idx}] data handle -> failed")
+                if not self.ignore_error:
+                    self._update_status(self.STATUS.FAILED)
+                    raise
+            else:
+                exception = None
+
+            self._do_record(data, label, exception, *pred)
+        self._sw_logger.debug(
+            f"ppl result:{len([item for item in self.evaluation.get_results()])}"
+        )
 
     def _do_record(
         self,
