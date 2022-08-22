@@ -17,7 +17,6 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType, JobOperationType
 from starwhale.base.view import BaseTermView
-
 from starwhale.core.eval.model import EvaluationJob
 
 

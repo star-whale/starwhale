@@ -19,7 +19,13 @@ class STATUS:
 
 
 class Task:
-    def __init__(self, context: Context, status: str, module: str, workdir: Path,):
+    def __init__(
+        self,
+        context: Context,
+        status: str,
+        module: str,
+        workdir: Path,
+    ):
         self.context = context
         self.status = status
         self.module = module

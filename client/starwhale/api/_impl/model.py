@@ -23,12 +23,12 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
+from starwhale.consts.env import SWEnv
 from starwhale.api._impl.job import Context
 from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
 from starwhale.core.dataset.model import Dataset
 
 from . import wrapper
-from starwhale.consts.env import SWEnv
 
 _TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
 

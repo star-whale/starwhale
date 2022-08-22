@@ -5,9 +5,8 @@ from pathlib import Path
 from starwhale.utils import console, pretty_bytes, in_production
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, EvalTaskType, InstanceType
+from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
-from starwhale.utils.error import NoSupportError
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.runtime.process import Process as RuntimeProcess
 

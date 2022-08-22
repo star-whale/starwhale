@@ -108,12 +108,11 @@ class Scheduler:
                 index=task_index,
                 dataset_uris=self.dataset_uris,
                 workdir=self.workdir,
-                src_dir=self.src_dir,
                 **self.kw,
             ),
             status=STATUS.INIT,
             module=self.module,
-            src_dir=self.src_dir,
+            workdir=self.workdir,
         )
         _task.execute()
 

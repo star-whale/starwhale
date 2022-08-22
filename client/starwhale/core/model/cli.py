@@ -4,7 +4,6 @@ import click
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.consts.env import SWEnv
-
 from starwhale.core.model.view import get_term_view, ModelTermView
 
 

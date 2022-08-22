@@ -3,8 +3,9 @@ import re
 import threading
 from typing import Any, Dict, List, Union, Iterator, Optional
 
-from . import data_store
 from starwhale.consts.env import SWEnv
+
+from . import data_store
 
 
 class Logger:

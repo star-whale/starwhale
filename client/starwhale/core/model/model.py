@@ -25,19 +25,18 @@ from starwhale.consts import (
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir
-from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
+from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
+from starwhale.consts.env import SWEnv
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
+from starwhale.utils.config import SWCliConfigMixed
+from starwhale.api._impl.job import Parser
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
-from starwhale.core.job.scheduler import Scheduler
-
 from starwhale.core.model.store import ModelStorage
-from starwhale.api._impl.job import Parser
-from starwhale.consts.env import SWEnv
-from starwhale.utils.config import SWCliConfigMixed
+from starwhale.core.job.scheduler import Scheduler
 
 
 class ModelRunConfig:
@@ -230,7 +229,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             else:
                 _ppl = _model_config.run.ppl
             logger.debug(f"job ppl is {_ppl}")
-            Parser.generate_job_yaml(_ppl, workdir, workdir / DEFAULT_EVALUATION_JOBS_FNAME)
+            Parser.generate_job_yaml(
+                _ppl, workdir, workdir / DEFAULT_EVALUATION_JOBS_FNAME
+            )
 
         logger.debug(f"parse job from yaml:{_yaml_path}")
 
