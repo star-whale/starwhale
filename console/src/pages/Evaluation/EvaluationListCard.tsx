@@ -271,7 +271,7 @@ export default function EvaluationListCard() {
             grdiModeRef.current = next
             setGridMode(next)
         },
-        [gridMode, setGridMode, grdiModeRef, gridLayout]
+        [gridMode, setGridMode, grdiModeRef]
     )
 
     React.useEffect(() => {

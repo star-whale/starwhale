@@ -42,7 +42,7 @@ export async function fetchDatasetVersion(
     datasetVersionId: string
 ): Promise<any> {
     const resp = await axios.get<IDatasetVersionDetailSchema>(
-        `/api/v1/project/${projectId}/dataset/${datasetId}/version/${datasetVersionId}`
+        `/api/v1/project/${projectId}/dataset/${datasetId}?versionUrl=${datasetVersionId}`
     )
     return resp.data
 }
