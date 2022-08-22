@@ -11,7 +11,7 @@ from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
-from starwhale.utils import console, load_yaml
+from starwhale.utils import console, load_yaml, gen_uniq_version
 from starwhale.consts import (
     DefaultYAMLName,
     EvalHandlerType,
@@ -214,7 +214,8 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> None:
 
         _model_config = cls.load_model_config(workdir / model_yaml_name)
-
+        if not version:
+            version = gen_uniq_version()
         if _model_config.run.typ == EvalHandlerType.DEFAULT:
             _module = DEFAULT_EVALUATION_PIPELINE
         else:
@@ -385,7 +386,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         for _fpath in _config.model + _config.config:
             if not (yaml_path.parent / _fpath).exists():
-                raise FileFormatError(f"model - {_fpath} is not existed")
+                raise FileFormatError(
+                    f"model - {yaml_path.parent / _fpath} is not existed"
+                )
 
         # TODO: add more model.yaml section validation
         # TODO: add 'swcli model check' cmd

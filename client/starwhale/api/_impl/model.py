@@ -23,6 +23,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
+from starwhale.consts.env import SWEnv
 from starwhale.api._impl.job import Context
 from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
 from starwhale.api._impl.wrapper import Evaluation
@@ -88,7 +89,6 @@ class PipelineHandler(metaclass=ABCMeta):
         self._stderr_changed = False
         self._orig_stdout = sys.stdout
         self._orig_stderr = sys.stderr
-
         # TODO: split status/result files
         self._timeline_writer = _jl_writer(self.status_dir / "timeline")
 
@@ -110,8 +110,8 @@ class PipelineHandler(metaclass=ABCMeta):
         ensure_dir(self.log_dir)
 
     def _init_datastore(self) -> Evaluation:
-        os.environ["SW_PROJECT"] = self.context.project
-        os.environ["SW_EVAL_ID"] = self.context.version
+        os.environ[SWEnv.project] = self.context.project
+        os.environ[SWEnv.eval_version] = self.context.version
         return Evaluation()
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:

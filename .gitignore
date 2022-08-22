@@ -46,6 +46,7 @@ example/mnist/runtime.yaml
 example/mnist/eval_jobs.yaml
 example/mnist/sw_output
 example/mnist/test/task_volume
+example/mnist/runlog/
 example/cifar10/data/
 example/PennFudanPed/data/
 example/PennFudanPed/models/

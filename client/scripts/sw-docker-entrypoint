@@ -9,6 +9,7 @@ PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
 _MANIFEST_RUNTIME=$(cat ${WORKDIR}/_manifest.yaml| grep "python:" | awk '{print $2}' | awk -F '.' '{print $1"."$2}') || true
 _MODEL_RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}') || true
 VERBOSE="-vvvv"
+STEP=${SW_TASK_STEP:}
 TASK_INDEX=${SW_TASK_INDEX:=0}
 
 _update_python_alter() {
@@ -87,14 +88,9 @@ restore_activate_runtime() {
     eval "$(./activate.sw)"
 }
 
-run_all() {
-    echo "--> start to run swmp all, use $(which swcli) cli..."
-    swcli ${VERBOSE} model eval ${WORKDIR} --type=all --dataset=${SW_DATASET_URI} --version=${SW_EVALUATION_VERSION}
-}
-
-run_single() {
-    echo "--> start to run swmp single, use $(which swcli) cli..."
-    swcli ${VERBOSE} model eval ${WORKDIR} --type=single --dataset=${SW_DATASET_URI} --step=${SW_TASK_STEP} --task-index=${TASK_INDEX} --version=${SW_EVALUATION_VERSION}
+run() {
+    echo "--> start to run swmp ${STEP}, use $(which swcli) cli..."
+    swcli ${VERBOSE} model eval ${WORKDIR} --dataset=${SW_DATASET_URI}/src --step=${STEP} --task-index=${TASK_INDEX} --version=${SW_EVALUATION_VERSION}
 }
 
 welcome() {
@@ -120,11 +116,8 @@ case "$1" in
     pre_config)
         pre_config
         ;;
-    run_all)
-        eval_task_prepare $1 && run_all
-        ;;
-    run_single)
-        eval_task_prepare $1 && run_single
+    run)
+        eval_task_prepare $1 && run
         ;;
     *)
         exec "$@"
