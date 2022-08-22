@@ -18,7 +18,7 @@ if in_github_action; then
     export SW_PYPI_EXTRA_INDEX_URL='https://pypi.org/simple'
 else
     SW_PYPI_EXTRA_INDEX_URL='https://pypi.doubanio.com/simple/'
-    export PARENT_CLEAN=true
+    export PARENT_CLEAN="${PARENT_CLEAN:=true}"
 fi
 
 declare_env() {
@@ -158,7 +158,7 @@ push_images_to_nexus() {
 
 start_starwhale() {
   pushd ../../docker/charts
-  helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "resources.controller.requests.memory=4G,resources.controller.requests.cpu=400m,resources.controller.limits.cpu=1000m,mysql.primary.resources.requests.cpu=100m,mysql.primary.resources.limits.cpu=250m,minio.resources.requests.cpu=100m,minio.resources.limits.cpu=250m,controller.taskSplitSize=1,minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION,mirror.pypi.indexUrl= http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple,mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL,mirror.pypi.trustedHost=$NEXUS_HOSTNAME"
+  helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "resources.controller.requests.memory=4G,resources.controller.requests.cpu=1000m,resources.controller.limits.cpu=1000m,minio.resources.requests.cpu=1000m,minio.resources.limits.cpu=2000m,controller.taskSplitSize=1,minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION,mirror.pypi.indexUrl= http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple,mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL,mirror.pypi.trustedHost=$NEXUS_HOSTNAME"
   popd
 }
 
