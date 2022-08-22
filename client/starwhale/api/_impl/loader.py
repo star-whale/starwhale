@@ -153,7 +153,6 @@ class DatasetObjectStore:
         **kw: t.Any,
     ) -> None:
         self.bucket = bucket
-        self.conn: t.Optional[ObjectStoreS3Connection]
 
         self.backend: StorageBackend
         if backend == SWDSBackendType.S3:
@@ -163,6 +162,12 @@ class DatasetObjectStore:
             self.backend = FuseStorageBackend()
 
         self.key_prefix = key_prefix or os.environ.get("SW_OBJECT_STORE_KEY_PREFIX", "")
+
+    def __str__(self) -> str:
+        return f"DatasetObjectStore backend:{self.backend}"
+
+    def __repr__(self) -> str:
+        return f"DatasetObjectStore backend:{self.backend}, bucket:{self.bucket}, key_prefix:{self.key_prefix}"
 
     @classmethod
     def from_data_link_uri(cls, data_uri: str, auth_name: str) -> DatasetObjectStore:

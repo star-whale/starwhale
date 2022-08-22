@@ -13,6 +13,7 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.api.model import PipelineHandler
 from starwhale.base.type import URIType
 from starwhale.consts.env import SWEnv
 from starwhale.api._impl.job import Context

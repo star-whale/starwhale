@@ -17,26 +17,17 @@ import dill
 import loguru
 import jsonlines
 
-from starwhale.utils import now_str, in_production
+from starwhale.utils import now_str
 from starwhale.consts import CURRENT_FNAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
-from starwhale.consts.env import SWEnv
 from starwhale.utils.error import FieldTypeOrValueError
->>>>>>> b7cacdca... support Link type for dataset
 from starwhale.api._impl.job import Context
 from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
 from starwhale.api._impl.wrapper import Evaluation
 from starwhale.core.dataset.model import Dataset
-
-_TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
-
-_ptype = t.Union[str, None, Path]
-_p: t.Callable[[_ptype, str], Path] = (
-    lambda p, sub: Path(p) if p else Path(_TASK_ROOT_DIR) / sub
-)
 
 
 class _LogType:

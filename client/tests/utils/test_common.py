@@ -1,6 +1,13 @@
 import os
+import typing as t
+from pathlib import Path
+from unittest.mock import patch
 
-from starwhale.utils import validate_obj_name
+import pytest
+from pyfakefs.fake_filesystem import FakeFilesystem
+from pyfakefs.fake_filesystem_unittest import Patcher
+
+from starwhale.utils import load_dotenv, validate_obj_name
 from starwhale.consts import ENV_LOG_LEVEL
 from starwhale.utils.debug import init_logger
 
@@ -24,3 +31,29 @@ def test_logger() -> None:
 
     init_logger(3)
     assert os.environ[ENV_LOG_LEVEL] == "DEBUG"
+
+
+@pytest.fixture
+def fake_fs() -> t.Generator[t.Optional[FakeFilesystem], None, None]:
+    with Patcher() as patcher:
+        yield patcher.fs
+
+
+@patch.dict(os.environ, {"TEST_ENV": "1"}, clear=True)
+def test_load_dotenv(fake_fs: FakeFilesystem) -> None:
+    content = """
+    # this is a comment line
+    A=1
+    B = 2
+    c =
+    ddd
+    """
+    fpath = "/home/starwhale/test/.auth_env"
+    fake_fs.create_file(fpath, contents=content)
+    assert os.environ["TEST_ENV"] == "1"
+    load_dotenv(Path(fpath))
+    assert os.environ["A"] == "1"
+    assert os.environ["B"] == "2"
+    assert not os.environ["c"]
+    assert "ddd" not in os.environ
+    assert len(os.environ) == 4

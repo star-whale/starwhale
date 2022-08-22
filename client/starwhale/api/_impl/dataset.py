@@ -174,13 +174,8 @@ class S3LinkAuth(LinkAuth):
         _secret_name = cls._SECRET_FMT.format(name=_name)
         _access_name = cls._ACCESS_KEY_FMT.format(name=_name)
 
-        _secret = _env(_secret_name)
-        _access = _env(_access_name)
-        if not _secret or not _access:
-            raise FieldTypeOrValueError(
-                f"cannot find secret[{_secret_name}] or access[{_access_name}] key env"
-            )
-
+        _secret = _env(_secret_name, "")
+        _access = _env(_access_name, "")
         return cls(
             name,
             _access,
