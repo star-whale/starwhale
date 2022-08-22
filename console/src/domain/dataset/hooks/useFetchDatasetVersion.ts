@@ -13,7 +13,7 @@ export function useFetchDatasetVersion(projectId: string, datasetId: string, dat
         if (datasetVersionId) {
             datasetVersionsInfo.refetch()
         }
-    }, [datasetVersionId])
+    }, [datasetVersionId, datasetVersionsInfo])
 
     return datasetVersionsInfo
 }

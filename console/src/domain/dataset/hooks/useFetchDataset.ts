@@ -13,7 +13,7 @@ export function useFetchDataset(projectId: string, datasetId: string) {
         if (datasetId) {
             datasetInfo.refetch()
         }
-    }, [datasetId])
+    }, [datasetId, datasetInfo])
 
     return datasetInfo
 }
