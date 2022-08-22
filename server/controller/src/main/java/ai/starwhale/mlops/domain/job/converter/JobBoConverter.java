@@ -31,6 +31,10 @@ import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
+import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
+import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -50,20 +54,30 @@ public class JobBoConverter {
 
     final RuntimeVersionMapper runtimeVersionMapper;
 
+    final ResourcePoolMapper resourcePoolMapper;
+
+    final ResourcePoolConverter resourcePoolConverter;
+
     final SWDSBOConverter swdsboConverter;
 
     final String image = "ghcr.io/star-whale/starwhale:latest";//todo(renyanda): replace with runtime meta
 
-    public JobBoConverter(JobSWDSVersionMapper jobSWDSVersionMapper,
+    public JobBoConverter(
+        JobSWDSVersionMapper jobSWDSVersionMapper,
         SWModelPackageMapper swModelPackageMapper,
         RuntimeMapper runtimeMapper,
         RuntimeVersionMapper runtimeVersionMapper,
-        SWDSBOConverter swdsboConverter) {
+        SWDSBOConverter swdsboConverter,
+        ResourcePoolMapper resourcePoolMapper,
+        ResourcePoolConverter resourcePoolConverter
+    ) {
         this.jobSWDSVersionMapper = jobSWDSVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.swdsboConverter = swdsboConverter;
+        this.resourcePoolMapper = resourcePoolMapper;
+        this.resourcePoolConverter = resourcePoolConverter;
     }
 
     public Job fromEntity(JobEntity jobEntity){
@@ -76,6 +90,8 @@ public class JobBoConverter {
             jobEntity.getRuntimeVersionId());
         RuntimeEntity runtimeEntity = runtimeMapper.findRuntimeById(
             runtimeVersionEntity.getRuntimeId());
+        ResourcePoolEntity resourcePoolEntity = resourcePoolMapper.findById(jobEntity.getResourcePoolId());
+        ResourcePool resourcePool = resourcePoolConverter.toResourcePool(resourcePoolEntity);
         return Job.builder()
             .id(jobEntity.getId())
             .jobRuntime(JobRuntime.builder()
@@ -98,6 +114,7 @@ public class JobBoConverter {
             .swDataSets(swDataSets)
             .resultDir(jobEntity.getResultOutputPath())
             .uuid(jobEntity.getJobUuid())
+            .resourcePool(resourcePool)
             .build();
     }
 

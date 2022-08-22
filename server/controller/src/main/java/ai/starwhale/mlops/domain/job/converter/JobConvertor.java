@@ -27,6 +27,8 @@ import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
+import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import ai.starwhale.mlops.exception.SWProcessException;
@@ -56,6 +58,9 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
     @Resource
     private JobSWDSVersionMapper jobSWDSVersionMapper;
 
+    @Resource
+    private ResourcePoolMapper resourcePoolMapper;
+
     @Override
     public JobVO convert(JobEntity jobEntity) throws ConvertException {
         List<RuntimeVO> runtimeByVersionIds = runtimeService.findRuntimeByVersionIds(
@@ -69,6 +74,8 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
         List<String> idList = dsvEntities.stream()
             .map(SWDatasetVersionEntity::getVersionName)
             .collect(Collectors.toList());
+
+        ResourcePoolEntity resourcePoolEntity = resourcePoolMapper.findById(jobEntity.getResourcePoolId());
 
         return JobVO.builder()
             .id(idConvertor.convert(jobEntity.getId()))
@@ -84,6 +91,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
             .jobStatus(jobEntity.getJobStatus())
             .stopTime(localDateTimeConvertor.convert(jobEntity.getFinishedTime()))
             .comment(jobEntity.getComment())
+            .resourcePool(resourcePoolEntity.getLabel())
             .build();
     }
 

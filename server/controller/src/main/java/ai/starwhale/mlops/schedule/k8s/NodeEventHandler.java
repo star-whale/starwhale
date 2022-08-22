@@ -19,11 +19,14 @@ package ai.starwhale.mlops.schedule.k8s;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
 import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import ai.starwhale.mlops.domain.system.agent.bo.Node;
+import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolCache;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1NodeSpec;
 import io.kubernetes.client.openapi.models.V1NodeStatus;
 import java.math.BigDecimal;
+import java.util.Map;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -31,18 +34,30 @@ public class NodeEventHandler implements ResourceEventHandler<V1Node> {
 
     final AgentCache agentCache;
 
-    public NodeEventHandler(AgentCache agentCache) {
+    final ResourcePoolCache resourcePoolCache;
+
+    final K8sResourcePoolConverter resourcePoolConverter;
+
+    public NodeEventHandler(AgentCache agentCache, ResourcePoolCache resourcePoolCache, K8sResourcePoolConverter resourcePoolConverter) {
         this.agentCache = agentCache;
+        this.resourcePoolCache = resourcePoolCache;
+        this.resourcePoolConverter = resourcePoolConverter;
     }
 
     @Override
     public void onAdd(V1Node obj) {
         agentCache.nodeReport(k8sNodeToSWNode(obj));
+        if (obj.getMetadata() != null) {
+            labelReport(obj.getMetadata().getLabels());
+        }
     }
 
     @Override
     public void onUpdate(V1Node oldObj, V1Node newObj) {
         agentCache.nodeReport(k8sNodeToSWNode(newObj));
+        if (newObj.getMetadata() != null) {
+            labelReport(newObj.getMetadata().getLabels());
+        }
     }
 
     @Override
@@ -66,5 +81,10 @@ public class NodeEventHandler implements ResourceEventHandler<V1Node> {
         n.setStatus(unschedulable? AgentStatus.OFFLINE:AgentStatus.ONLINE);
         n.setAgentVersion("KUBELET:"+status.getNodeInfo().getKubeletVersion());
         return n;
+    }
+
+    private void labelReport(Map<String, String> labels) {
+        var pools  = resourcePoolConverter.toResourcePools(labels);
+        resourcePoolCache.labelReport(pools);
     }
 }

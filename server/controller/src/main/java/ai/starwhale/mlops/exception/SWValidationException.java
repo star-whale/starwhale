@@ -56,7 +56,8 @@ public class SWValidationException extends StarWhaleException {
         SWMP("006", "StarWhale ModelPackage"),
         PROJECT("007", "PROJECT"),
         RUNTIME("008", "StarWhale Runtime"),
-        DATASTORE("009", "StarWhale Internal DataStore");
+        DATASTORE("009", "StarWhale Internal DataStore"),
+        RESOURCE_POOL("010", "Resource Pool");
         final String code;
         final String tipSubject;
 

@@ -22,12 +22,14 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import java.util.List;
-import java.util.Objects;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -76,6 +78,8 @@ public class Job extends TimeConcern {
     String resultDir;
 
     List<Step> steps;
+
+    ResourcePool resourcePool;
 
     @Override
     public boolean equals(Object o) {
