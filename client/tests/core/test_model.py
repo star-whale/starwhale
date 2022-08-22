@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from unittest import skip
 from unittest.mock import patch, MagicMock
 
 from requests_mock import Mocker
@@ -13,6 +12,7 @@ from starwhale.consts import (
     DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
+    DEFAULT_EVALUATION_JOBS_FNAME,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -33,16 +33,10 @@ class StandaloneModelTestCase(TestCase):
         self.setUpPyfakefs()
         sw_config._config = {}
 
-    @skip
     @patch("starwhale.core.model.model.copy_file")
     @patch("starwhale.core.model.model.copy_fs")
-    def test_build_workflow(
-        self, m_import: MagicMock, m_copy_fs: MagicMock, m_copy_file: MagicMock
-    ) -> None:
+    def test_build_workflow(self, m_copy_fs: MagicMock, m_copy_file: MagicMock) -> None:
         sw = SWCliConfigMixed()
-
-        m_cls = MagicMock()
-        m_import.return_value = m_cls
 
         workdir = "/home/starwhale/myproject"
         name = "mnist"
@@ -83,6 +77,7 @@ class StandaloneModelTestCase(TestCase):
 
         assert snapshot_workdir.exists()
         assert (snapshot_workdir / "src").exists()
+        assert (snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME).exists()
 
         _manifest = load_yaml(snapshot_workdir / DEFAULT_MANIFEST_NAME)
         assert _manifest["name"] == name

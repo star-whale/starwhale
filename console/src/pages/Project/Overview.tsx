@@ -155,7 +155,7 @@ export default function ProjectOverview() {
         if (projectInfo.data) {
             setProject(projectInfo.data)
         }
-    }, [projectInfo])
+    }, [projectInfo, setProject])
 
     const [t] = useTranslation()
 
