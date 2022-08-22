@@ -15,10 +15,10 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, EvalTaskType, InstanceType, JobOperationType
+from starwhale.base.type import URIType, InstanceType, JobOperationType
 from starwhale.base.view import BaseTermView
 
-from .model import EvaluationJob
+from starwhale.core.eval.model import EvaluationJob
 
 
 class JobTermView(BaseTermView):
@@ -242,7 +242,6 @@ class JobTermView(BaseTermView):
         resource: str = "",
         gencmd: bool = False,
         use_docker: bool = False,
-        typ: str = EvalTaskType.ALL,
         step: str = "",
         task_index: int = 0,
         runtime_restore: bool = False,
@@ -256,7 +255,6 @@ class JobTermView(BaseTermView):
             version=version,
             name=name,
             desc=desc,
-            typ=typ,
             resource=resource,
             gencmd=gencmd,
             use_docker=use_docker,

@@ -40,11 +40,21 @@ class EvalExecutor:
         name: str = "",
         job_name: str = "default",
         desc: str = "",
+        step: str = "",
+        task_index: int = 0,
         gencmd: bool = False,
         use_docker: bool = False,
     ) -> None:
         self.name = name
         self.job_name = job_name
+
+        if step:
+            self.type = EvalTaskType.SINGLE
+        else:
+            self.type = EvalTaskType.ALL
+        self.step = step
+        self.task_index = task_index
+
         self.desc = desc
         self.model_uri = model_uri
         self.project_uri = project_uri
@@ -101,11 +111,9 @@ class EvalExecutor:
     def __repr__(self) -> str:
         return f"Evaluation Executor: name -> {self.name}, version -> {self._version}"
 
-    def run(
-        self, typ: str = EvalTaskType.ALL, step: str = "", task_index: int = 0
-    ) -> str:
+    def run(self) -> str:
         try:
-            self._do_run(typ, step, task_index)
+            self._do_run()
         except Exception as e:
             self._manifest["status"] = _STATUS.FAILED
             self._manifest["error_message"] = str(e)
@@ -115,32 +123,21 @@ class EvalExecutor:
 
         return self._version
 
-    def _do_run(self, typ: str, step: str, task_index: int) -> None:
-        self._manifest["type"] = typ
+    def _do_run(self) -> None:
+        self._manifest["type"] = self.type
         self._manifest["status"] = _STATUS.RUNNING
-        if typ != EvalTaskType.ALL:
-            if not step:
-                raise FieldTypeOrValueError("step is none")
-            self._manifest["step"] = step
-            self._manifest["task_index"] = task_index
+        if self.type != EvalTaskType.ALL:
+            self._manifest["step"] = self.step
+            self._manifest["task_index"] = self.task_index
 
         operations = [
             (self._prepare_workdir, 5, "prepare workdir"),
             (self._extract_swmp, 15, "extract model"),
             (self._extract_swrt, 15, "extract runtime"),
-            (self._do_run_eval_job, 70, "run eval job"),
+            (self._do_run_cmd, 70, "run eval job"),
         ]
 
         run_with_progress_bar("eval run in local...", operations)
-
-    def _do_run_eval_job(self) -> None:
-        _type = self._manifest["type"]
-        if _type != EvalTaskType.ALL:
-            _step = self._manifest["step"]
-            _task_index = self._manifest["task_index"]
-            self._do_run_cmd(_type, _step, _task_index)
-        else:
-            self._do_run_cmd(_type, "", 0)
 
     def _prepare_workdir(self) -> None:
         logger.info("[step:prepare]create eval workdir...")
@@ -177,31 +174,28 @@ class EvalExecutor:
         else:
             self._runtime_dir = Path()
 
-    def _do_run_cmd(self, typ: str, step: str, task_index: int) -> None:
+    def _do_run_cmd(self) -> None:
         if self.use_docker:
-            self._do_run_cmd_in_container(typ, step, task_index)
+            self._do_run_cmd_in_container()
         else:
-            self._do_run_cmd_in_host(typ, step, task_index)
+            self._do_run_cmd_in_host()
 
-    def _do_run_cmd_in_host(self, typ: str, step: str, task_index: int) -> None:
+    def _do_run_cmd_in_host(self) -> None:
         StandaloneModel.eval_user_handler(
-            project=self.project_uri.project,
             version=self._version,
-            typ=typ,
-            src_dir=self._model_dir,
-            workdir=self._workdir,
+            workdir=self._model_dir,
             dataset_uris=[u.full_uri for u in self.dataset_uris],
-            step=step,
-            task_index=task_index,
+            step=self.step,
+            task_index=self.task_index,
             kw={},
         )
 
-    def _do_run_cmd_in_container(self, typ: str, step: str, task_index: int) -> None:
-        cmd = self._gen_run_container_cmd(typ, step, task_index)
-        console.rule(f":elephant: {typ} docker cmd", align="left")
+    def _do_run_cmd_in_container(self) -> None:
+        cmd = self._gen_run_container_cmd(self.type, self.step, self.task_index)
+        console.rule(f":elephant: {self.type} docker cmd", align="left")
         console.print(f"{cmd}\n")
         console.print(
-            f":fish: eval run:{typ} dir @ [green blink]{self._workdir}/{typ}[/]"
+            f":fish: eval run:{self.type} dir @ [green blink]{self._workdir}/{self.type}[/]"
         )
         if not self.gencmd:
             check_call(f"docker pull {self.baseimage}", shell=True)

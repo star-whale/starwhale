@@ -52,12 +52,10 @@ class ModelTermView(BaseTermView):
     @classmethod
     def eval(
         cls,
-        project: str,
         target: str,
         dataset_uris: t.List[str],
         version: str = "",
         yaml_name: str = DefaultYAMLName.MODEL,
-        typ: str = "",
         step: str = "",
         task_index: int = 0,
         runtime_uri: str = "",
@@ -71,43 +69,32 @@ class ModelTermView(BaseTermView):
             _store = ModelStorage(_uri)
             workdir = _store.loc
 
-        if typ in (EvalTaskType.ALL, EvalTaskType.SINGLE):
-            console.print(f":golfer: try to eval {typ} @ {workdir}...")
-
-            if not in_production() and runtime_uri:
-                RuntimeProcess.from_runtime_uri(
-                    uri=runtime_uri,
-                    target=StandaloneModel.eval_user_handler,
-                    args=(
-                        project,
-                        version,
-                        typ,
-                        workdir / "src",
-                        workdir,
-                        dataset_uris,
-                        DefaultYAMLName.MODEL,
-                        "default",
-                        step,
-                        task_index,
-                    ),
-                    kwargs={"yaml_name": yaml_name, "kw": kw},
-                    runtime_restore=runtime_restore,
-                ).run()
-            else:
-                StandaloneModel.eval_user_handler(
-                    project=project,
-                    version=version,
-                    typ=typ,
-                    src_dir=workdir / "src",
-                    workdir=workdir,
-                    dataset_uris=dataset_uris,
-                    step=step,
-                    task_index=task_index,
-                    model_yaml_name=yaml_name,
-                    **kw,
-                )
+        if not in_production() and runtime_uri:
+            RuntimeProcess.from_runtime_uri(
+                uri=runtime_uri,
+                target=StandaloneModel.eval_user_handler,
+                args=(
+                    version,
+                    workdir,
+                    dataset_uris,
+                    DefaultYAMLName.MODEL,
+                    "default",
+                    step,
+                    task_index,
+                ),
+                kwargs={"yaml_name": yaml_name, "kw": kw},
+                runtime_restore=runtime_restore,
+            ).run()
         else:
-            raise NoSupportError(f"eval {typ}")
+            StandaloneModel.eval_user_handler(
+                version=version,
+                workdir=workdir,
+                dataset_uris=dataset_uris,
+                step=step,
+                task_index=task_index,
+                model_yaml_name=yaml_name,
+                **kw,
+            )
 
     @classmethod
     def list(

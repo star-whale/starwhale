@@ -5,8 +5,6 @@ from loguru import logger
 
 from starwhale.utils import console
 from starwhale.consts import DefaultYAMLName
-from starwhale.utils.fs import ensure_dir
-from starwhale.base.type import RunSubDirType
 from starwhale.utils.load import import_cls
 from starwhale.api._impl.job import step, Context
 from starwhale.core.model.model import StandaloneModel
@@ -24,22 +22,10 @@ def _get_cls(src_dir: Path) -> Any:
     return _cls
 
 
-def setup(context: Context) -> None:
-    _run_dir = context.workdir / context.step / str(context.index)
-    ensure_dir(_run_dir)
-
-    for _w in (_run_dir,):
-        for _n in (RunSubDirType.STATUS, RunSubDirType.LOG):
-            ensure_dir(_w / _n)
-    context.kw["status_dir"] = _run_dir / RunSubDirType.STATUS
-    context.kw["log_dir"] = _run_dir / RunSubDirType.LOG
-
-
 @step(concurrency=3, task_num=6)
 def ppl(context: Context) -> None:
-    setup(context)
-    logger.debug(f"src : {context.src_dir}")
-    _cls = _get_cls(context.src_dir)
+    logger.debug(f"workdir : {context.workdir}")
+    _cls = _get_cls(context.workdir)
     with _cls(context=context) as _obj:
         _obj._starwhale_internal_run_ppl()
 
@@ -48,8 +34,7 @@ def ppl(context: Context) -> None:
 
 @step(needs=["ppl"])
 def cmp(context: Context) -> None:
-    setup(context)
-    _cls = _get_cls(context.src_dir)
+    _cls = _get_cls(context.workdir)
     with _cls(context=context) as _obj:
         _obj._starwhale_internal_run_cmp()
 

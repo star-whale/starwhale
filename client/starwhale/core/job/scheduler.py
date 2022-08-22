@@ -58,7 +58,6 @@ class Scheduler:
         version: str,
         module: str,
         workdir: Path,
-        src_dir: Path,
         dataset_uris: t.List[str],
         steps: t.List[Step],
         kw: t.Dict[str, t.Any] = {},
@@ -68,7 +67,6 @@ class Scheduler:
         self.dataset_uris = dataset_uris
         self.module = module
         self.workdir = workdir
-        self.src_dir = src_dir
         self.version = version
         self.kw = kw
         self._lock = threading.Lock()
@@ -82,7 +80,6 @@ class Scheduler:
             dataset_uris=self.dataset_uris,
             module=self.module,
             workdir=self.workdir,
-            src_dir=self.src_dir,
             version=self.version,
             **self.kw,
         )
@@ -129,7 +126,6 @@ class Producer(threading.Thread):
         version: str,
         module: str,
         workdir: Path,
-        src_dir: Path,
         dataset_uris: t.List[str],
         steps: t.List[Step],
         kw: t.Dict[str, t.Any] = {},
@@ -141,7 +137,6 @@ class Producer(threading.Thread):
         self.dataset_uris = dataset_uris
         self.module = module
         self.workdir = workdir
-        self.src_dir = src_dir
         self.version = version
         self.kw = kw
 
@@ -152,19 +147,17 @@ class Producer(threading.Thread):
                 Task(
                     context=Context(
                         project=self.project,
-                        # todo:use id or version
                         version=self.version,
                         step=step.step_name,
                         total=step.task_num,
                         index=index,
                         dataset_uris=self.dataset_uris,
                         workdir=self.workdir,
-                        src_dir=self.src_dir,
                         **self.kw,
                     ),
                     status=STATUS.INIT,
                     module=self.module,
-                    src_dir=self.src_dir,
+                    workdir=self.workdir,
                 )
             )
         return _tasks
@@ -226,13 +219,13 @@ class Consumer(threading.Thread):
                     for future in concurrent.futures.as_completed(futures)
                 )
             logger.debug(f"execute step:{executor.step.step_name}, res:{res}")
-            if res:
-                executor.final(
-                    res=res,
-                    exec_time=time.time() - start_time,
-                )
-                # mark the unit of work as processed
-                self.queue.task_done()
+
+            executor.final(
+                res=res,
+                exec_time=time.time() - start_time,
+            )
+            # mark the unit of work as processed
+            self.queue.task_done()
         # mark the signal as processed
         self.queue.task_done()
         logger.debug("Consumer finished")

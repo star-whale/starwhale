@@ -3,10 +3,9 @@ import typing as t
 import click
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
-from starwhale.base.type import EvalTaskType
 from starwhale.consts.env import SWEnv
 
-from .view import get_term_view, ModelTermView
+from starwhale.core.model.view import get_term_view, ModelTermView
 
 
 @click.group("model", help="Model management, build/copy/ppl/cmp/eval/extract...")
@@ -124,22 +123,8 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     default=DefaultYAMLName.MODEL,
     help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
-# TODO: Used to distinguish remote or local mode?
-@click.option(
-    "--project",
-    envvar=SWEnv.project,
-    default="self",
-    help=f"project name, env is {SWEnv.project}",
-)
-@click.option("--name", help="Job name")
 @click.option(
     "--version", envvar=SWEnv.eval_version, default=None, help="Evaluation job version"
-)
-@click.option(
-    "--type",
-    type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE]),
-    default=EvalTaskType.ALL,
-    help="Evaluation run type",
 )
 @click.option("--step", default="", help="Evaluation run step")
 @click.option("--task-index", default=0, help="Index of tasks in the current step")
@@ -161,13 +146,10 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     help="dataset row end index",
 )
 def _eval(
-    project: str,
     target: str,
     model_yaml: str,
-    name: str,
     version: str,
     dataset: str,
-    type: str,
     step: str,
     task_index: int,
     runtime: str,
@@ -181,11 +163,9 @@ def _eval(
     TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
     ModelTermView.eval(
-        project=project,
         target=target,
         version=version,
         yaml_name=model_yaml,
-        typ=type,
         runtime_uri=runtime,
         runtime_restore=runtime_restore,
         step=step,

@@ -34,8 +34,10 @@ from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
 from starwhale.core.job.scheduler import Scheduler
 
-from .store import ModelStorage
-from ...api._impl.job import Parser
+from starwhale.core.model.store import ModelStorage
+from starwhale.api._impl.job import Parser
+from starwhale.consts.env import SWEnv
+from starwhale.utils.config import SWCliConfigMixed
 
 
 class ModelRunConfig:
@@ -195,17 +197,14 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> str:
         _mp = workdir / yaml_name
         _model_config = cls.load_model_config(_mp)
-        if _model_config.run.typ is EvalHandlerType.DEFAULT:
+        if _model_config.run.typ == EvalHandlerType.DEFAULT:
             return DEFAULT_EVALUATION_PIPELINE
         return _model_config.run.ppl
 
     @classmethod
     def eval_user_handler(
         cls,
-        project: str,
         version: str,
-        typ: str,
-        src_dir: Path,
         workdir: Path,
         dataset_uris: t.List[str],
         model_yaml_name: str = DefaultYAMLName.MODEL,
@@ -215,13 +214,23 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
 
-        if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
-            raise NoSupportError(typ)
+        _model_config = cls.load_model_config(workdir / model_yaml_name)
 
-        _module = StandaloneModel.get_pipeline_handler(
-            workdir=src_dir, yaml_name=model_yaml_name
-        )
-        _yaml_path = str(src_dir / DEFAULT_EVALUATION_JOBS_FNAME)
+        if _model_config.run.typ == EvalHandlerType.DEFAULT:
+            _module = DEFAULT_EVALUATION_PIPELINE
+        else:
+            _module = _model_config.run.ppl
+
+        _yaml_path = str(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
+        #
+        if not os.path.exists(_yaml_path):
+            # search model
+            if _model_config.run.typ == EvalHandlerType.DEFAULT:
+                _ppl = DEFAULT_EVALUATION_PIPELINE
+            else:
+                _ppl = _model_config.run.ppl
+            logger.debug(f"job ppl is {_ppl}")
+            Parser.generate_job_yaml(_ppl, workdir, workdir / DEFAULT_EVALUATION_JOBS_FNAME)
 
         logger.debug(f"parse job from yaml:{_yaml_path}")
 
@@ -230,20 +239,23 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         if job_name not in _jobs:
             raise RuntimeError(f"job:{job_name} not found")
 
+        project = os.getenv(SWEnv.project)
+        if project is None:
+            project = SWCliConfigMixed().current_project
+
         _scheduler = Scheduler(
             project=project,
             version=version,
             module=_module,
             workdir=workdir,
-            src_dir=src_dir,
             dataset_uris=dataset_uris,
             steps=_jobs[job_name],
             **kw,
         )
 
-        if typ == EvalTaskType.ALL:
+        if not step:
             _scheduler.schedule()
-        elif typ == EvalTaskType.SINGLE:
+        else:
             _scheduler.schedule_single_task(step, task_index)
 
         console.print(f"job info:{_jobs}")
@@ -345,7 +357,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "copy src",
                 dict(workdir=workdir, yaml_name=yaml_name, model_config=_model_config),
             ),
-            # todo 20220725 add step parse for job
             (
                 self._gen_steps,
                 5,

@@ -22,8 +22,9 @@ from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
 from starwhale.core.runtime.process import Process as RuntimeProcess
 
-from .store import EvaluationStorage
-from .executor import EvalExecutor
+from starwhale.core.eval.store import EvaluationStorage
+from starwhale.core.eval.executor import EvalExecutor
+from starwhale.consts.env import SWEnv
 
 _device_id_map = {"cpu": 1, "gpu": 2}
 
@@ -45,6 +46,8 @@ class EvaluationJob(metaclass=ABCMeta):
         version: str = "",
         name: str = "",
         desc: str = "",
+        step: str = "",
+        task_index: int = 0,
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         _cls = cls._get_job_cls(project_uri)
@@ -56,6 +59,8 @@ class EvaluationJob(metaclass=ABCMeta):
             version=version,
             name=name,
             desc=desc,
+            step=step,
+            task_index=task_index,
             **kw,
         )
 
@@ -136,12 +141,11 @@ class StandaloneEvaluationJob(EvaluationJob):
         version: str = "",
         name: str = "",
         desc: str = "",
+        step: str = "",
+        task_index: int = 0,
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         use_docker = kw.get("use_docker", False)
-        typ = kw.get("typ", EvalTaskType.ALL)
-        step = kw.get("step", "")
-        task_index = kw.get("task_index", 0)
 
         ee = EvalExecutor(
             model_uri=model_uri,
@@ -151,6 +155,8 @@ class StandaloneEvaluationJob(EvaluationJob):
             version=version,
             name=name,
             desc=desc,
+            step=step,
+            task_index=task_index,
             gencmd=kw.get("gencmd", False),
             use_docker=use_docker,
         )
@@ -158,17 +164,17 @@ class StandaloneEvaluationJob(EvaluationJob):
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
                 target=ee.run,
-                args=(typ, step, task_index),
+                args=(),
                 runtime_restore=kw.get("runtime_restore", False),
             ).run()
         else:
-            ee.run(typ, step, task_index)
+            ee.run()
 
         return True, ee._version
 
     def _get_report(self) -> t.Dict[str, t.Any]:
-        os.environ["SW_PROJECT"] = self.sw_config.current_project
-        os.environ["SW_EVAL_ID"] = self.store.id
+        os.environ[SWEnv.project] = self.sw_config.current_project
+        os.environ[SWEnv.eval_version] = self.store.id
         logger.debug(
             f"datastore path:{str(self.sw_config.datastore_dir)}, eval_id:{self.store.id}"
         )

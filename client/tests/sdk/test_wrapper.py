@@ -1,6 +1,7 @@
 import os
 
 from starwhale.api._impl import wrapper, data_store
+from starwhale.consts.env import SWEnv
 
 from .test_base import BaseTestCase
 
@@ -8,8 +9,8 @@ from .test_base import BaseTestCase
 class TestEvaluation(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
-        os.environ["SW_PROJECT"] = "test"
-        os.environ["SW_EVAL_ID"] = "tt"
+        os.environ[SWEnv.project] = "test"
+        os.environ[SWEnv.eval_version] = "tt"
 
     def test_log_results_and_scan(self) -> None:
         eval = wrapper.Evaluation("test")
@@ -44,7 +45,7 @@ class TestEvaluation(BaseTestCase):
 class TestDataset(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
-        os.environ["SW_PROJECT"] = "test"
+        os.environ[SWEnv.project] = "test"
 
     def test_put_and_scan(self) -> None:
         dataset = wrapper.Dataset("dt")
