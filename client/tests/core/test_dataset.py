@@ -1,5 +1,4 @@
 import os
-import json
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -127,11 +126,6 @@ class StandaloneDatasetTestCase(TestCase):
         _list, _ = StandaloneDataset.list(URI(""))
         assert not _list[name][0]["is_removed"]
 
-        _fuse_json_path = StandaloneDataset.render_fuse_json(snapshot_workdir, True)
-        _fuse_json = json.load(open(_fuse_json_path))
-        assert _fuse_json["backend"] == "fuse"
-        assert _fuse_json["kind"] == "swds"
-
         DatasetTermView(name).info()
         DatasetTermView(name).history()
         fname = f"{name}/version/{build_version}"
@@ -141,7 +135,6 @@ class StandaloneDatasetTestCase(TestCase):
         DatasetTermView(fname).recover()
         DatasetTermView.list()
 
-        DatasetTermView.render_fuse_json(fname, force=True)
         DatasetTermView.build(workdir, "self")
 
         # make sure tmp dir is empty
