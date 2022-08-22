@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -56,6 +57,8 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     final StorageProperties storageProperties;
 
+    final RunTimeProperties runTimeProperties;
+
     final JobTokenConfig jobTokenConfig;
 
     @Value("${sw.instance-uri}")
@@ -63,11 +66,13 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     public K8sTaskScheduler(K8sClient k8sClient,
         TaskBoConverter taskConvertor, StorageProperties storageProperties,
-        JobTokenConfig jobTokenConfig) {
+        JobTokenConfig jobTokenConfig,
+        RunTimeProperties runTimeProperties) {
         this.k8sClient = k8sClient;
         this.taskConvertor = taskConvertor;
         this.storageProperties = storageProperties;
         this.jobTokenConfig = jobTokenConfig;
+        this.runTimeProperties = runTimeProperties;
     }
 
     @Override
@@ -112,6 +117,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         initContainerEnvs.put("AWS_ACCESS_KEY_ID", storageProperties.getS3Config().getAccessKey());
         initContainerEnvs.put("AWS_SECRET_ACCESS_KEY", storageProperties.getS3Config().getSecretKey());
         initContainerEnvs.put("AWS_S3_REGION", storageProperties.getS3Config().getRegion());
+        initContainerEnvs.put("SW_PYPI_INDEX_URL",runTimeProperties.getPypi().getIndexUrl());
+        initContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL",runTimeProperties.getPypi().getExtraIndexUrl());
+        initContainerEnvs.put("SW_PYPI_TRUSTED_HOST",runTimeProperties.getPypi().getTrustedHost());
         // task container envs
         Map<String, String> coreContainerEnvs = new HashMap<>();
         coreContainerEnvs.put("SW_TASK_STEP", task.getTaskRequest().getStepName());
@@ -132,7 +140,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             String cmd = "run_single";
             // TODO: use task's resource needs
             V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(task.getDeviceClass(),
-                task.getDeviceAmount().toString()).getResourceSelector();
+                task.getDeviceAmount().toString()+"m").getResourceSelector();
             V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), coreContainerEnvs, initContainerEnvs, resourceRequirements);
             // set result upload path
 
@@ -141,6 +149,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
                     , new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
                     , new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
                     , new V1EnvVar().name("AWS_SECRET_ACCESS_KEY").value(storageProperties.getS3Config().getSecretKey())
+                    , new V1EnvVar().name("SW_PYPI_INDEX_URL").value(runTimeProperties.getPypi().getIndexUrl())
+                    , new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(runTimeProperties.getPypi().getExtraIndexUrl())
+                    , new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(runTimeProperties.getPypi().getTrustedHost())
                 )
             );
             client.deploy(job);

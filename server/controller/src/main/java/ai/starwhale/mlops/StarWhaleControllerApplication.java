@@ -17,6 +17,7 @@
 package ai.starwhale.mlops;
 
 import ai.starwhale.mlops.configuration.ControllerProperties;
+import ai.starwhale.mlops.configuration.RunTimeProperties;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -26,7 +27,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @MapperScan({"ai.starwhale.mlops.domain.*.mapper","ai.starwhale.mlops.domain.job.step.mapper"})
-@EnableConfigurationProperties(ControllerProperties.class)
+@EnableConfigurationProperties({ControllerProperties.class, RunTimeProperties.class})
 public class StarWhaleControllerApplication {
     public static void main(String[] args) {
         new SpringApplicationBuilder(StarWhaleControllerApplication.class).run(args);

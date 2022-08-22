@@ -28,7 +28,7 @@ job_id=`curl -X 'POST' \
   "datasetVersionUrls": "1",
   "runtimeVersionUrl": "1",
   "device": "1",
-  "deviceAmount": 1,
+  "deviceAmount": 1000,
   "comment": "string"
 }' | jq -r '.data'`
 
@@ -39,10 +39,10 @@ fi
 
 while true
 do
-  curl -X 'GET' \
+  if curl -X 'GET' \
     "http://$1/api/v1/project/1/job/$job_id" \
     -H 'accept: application/json' \
-    -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus
+    -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus ; then echo "8082 well"; else  kubectl logs --tail=10 -l starwhale.ai/role=controller -n starwhale; continue; fi
   job_status=`cat jobStatus`
   if [ "$job_status" == "null" ] ; then
     echo "Error! job_status id is null"  1>&2
@@ -56,7 +56,15 @@ do
         break
   else
     echo "job status for " "$job_id" "is" "$job_status"
-    sleep 1
+#    kubectl logs --tail=10 -l job-name=1 -n starwhale -c data-provider
+#    kubectl logs --tail=10 -l job-name=1 -n starwhale -c untar
+#    kubectl logs --tail=10 -l job-name=1 -n starwhale -c worker
+#    kubectl logs --tail=10 -l job-name=1 -n starwhale -c result-uploader
+
+#    kubectl logs -f -l starwhale.ai/role=controller -n starwhale
+#    kubectl describe pod -l "job-name in (1,2,3,4,5,6,7,8,9,10)" -n starwhale
+#    kubectl describe node
+    sleep 10
   fi
 done
 
