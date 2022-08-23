@@ -1,4 +1,3 @@
-import os
 import typing as t
 from pathlib import Path
 
@@ -9,7 +8,6 @@ from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZ
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
-from starwhale.core.dataset.store import DatasetStorage
 
 from .model import Dataset
 
@@ -78,18 +76,6 @@ class DatasetTermView(BaseTermView):
     def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
         Dataset.copy(src_uri, dest_uri, force)
         console.print(":clap: copy done")
-
-    @classmethod
-    def render_fuse_json(cls, target: str, force: bool = False) -> None:
-        if os.path.exists(target) and os.path.isdir(target):
-            workdir = Path(target)
-        else:
-            uri = URI(target, URIType.DATASET)
-            store = DatasetStorage(uri)
-            workdir = store.loc
-
-        console.print(f":crown: try to render fuse json@{workdir}...")
-        Dataset.render_fuse_json(workdir, force)
 
     @BaseTermView._header
     def tag(self, tags: t.List[str], remove: bool = False, quiet: bool = False) -> None:

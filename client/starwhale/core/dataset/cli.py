@@ -2,12 +2,7 @@ import typing as t
 
 import click
 
-from starwhale.consts import (
-    DefaultYAMLName,
-    DEFAULT_PAGE_IDX,
-    DEFAULT_PAGE_SIZE,
-    LOCAL_FUSE_JSON_NAME,
-)
+from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 from .view import get_term_view, DatasetTermView
 
@@ -112,25 +107,6 @@ def _history(
 @click.pass_obj
 def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
     view(dataset).summary()
-
-
-@dataset_cmd.command("render-fuse")
-@click.argument("target")
-@click.option(
-    "-f",
-    "--force",
-    is_flag=True,
-    help=f"Force to render, if {LOCAL_FUSE_JSON_NAME} was already existed",
-)
-@click.pass_obj
-def _render_fuse(view: t.Type[DatasetTermView], target: str, force: bool) -> None:
-    """
-    [ONLY Standalone]Render Dataset fuse input.json for standalone ppl
-
-    TARGET: dataset uri or dataset workdir path
-    """
-
-    view.render_fuse_json(target, force)
 
 
 @dataset_cmd.command("copy", help="Copy dataset, standalone <--> cloud")

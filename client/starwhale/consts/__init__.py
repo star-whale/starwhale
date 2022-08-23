@@ -19,8 +19,6 @@ DEFAULT_EVALUATION_RESOURCE = "cpu=1"
 DEFAULT_EVALUATION_JOBS_FNAME = "eval_jobs.yaml"
 DEFAULT_EVALUATION_PIPELINE = "starwhale.core.model.default_handler"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
-LOCAL_FUSE_JSON_NAME = "local_fuse.json"
-DEFAULT_INPUT_JSON_FNAME = "input.json"
 LOCAL_CONFIG_VERSION = "2.0"
 
 # used by the versions before 2.0
@@ -113,7 +111,6 @@ class SWDSSubFileType:
 
 
 SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDSSubFileType.BIN
-SWDS_LABEL_FNAME_FMT = "label_ubyte_{index}.%s" % SWDSSubFileType.BIN
 ARCHIVED_SWDS_META_FNAME = "archive.%s" % SWDSSubFileType.META
 DUMPED_SWDS_META_FNAME = "_meta.jsonl"
 
