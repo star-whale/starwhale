@@ -71,7 +71,7 @@ def render_default_swcli_config(fpath: str) -> t.Dict[str, t.Any]:
                 user_name=_CURRENT_SHELL_USERNAME,
                 current_project=DEFAULT_PROJECT,
                 type=InstanceType.STANDALONE,
-                updated_at=now_str(),  # type: ignore
+                updated_at=now_str(),
             )
         },
         current_instance=DEFAULT_INSTANCE,
@@ -226,7 +226,7 @@ class SWCliConfigMixed:
             user_role=user_role,
             sw_token=sw_token,
             type=InstanceType.CLOUD,
-            updated_at=now_str(),  # type: ignore
+            updated_at=now_str(),
         )
 
         update_swcli_config(**self._config)

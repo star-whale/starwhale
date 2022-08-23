@@ -17,23 +17,33 @@
 package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.api.protocol.project.StatisticsVO;
 import ai.starwhale.mlops.api.protocol.user.ProjectRoleVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.project.bo.Project;
+import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.mapper.ProjectRoleMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
+import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.domain.user.bo.Role;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.util.StrUtil;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.Page.Function;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +74,9 @@ public class ProjectService {
     @Resource
     private IDConvertor idConvertor;
 
+    @Resource
+    private UserService userService;
+
     private static final String DELETE_SUFFIX = ".deleted";
 
     /**
@@ -83,15 +96,39 @@ public class ProjectService {
 
     /**
      * Get the list of projects.
-     * @param project Search by project name prefix if the project name is set.
+     * @param projectName Search by project name prefix if the project name is set.
      * @param pageParams Paging parameters.
      * @return A list of ProjectVO objects
      */
-    public PageInfo<ProjectVO> listProject(Project project, PageParams pageParams, OrderParams orderParams) {
-        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        List<ProjectEntity> entities = projectManager.listProjects(project, project.getOwner(), orderParams);
+    public PageInfo<ProjectVO> listProject(String projectName, PageParams pageParams, OrderParams orderParams, User user) {
+        Long userId = user.getId();
+        List<Role> sysRoles = userService.getProjectRolesOfUser(user, "0");
+        for (Role sysRole : sysRoles) {
+            if(sysRole.getAuthority().equals("OWNER")) {
+                userId = null;
+                break;
+            }
+        }
 
-        return PageUtil.toPageInfo(entities, projectConvertor::convert);
+        PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
+        List<ProjectEntity> entities = projectManager.listProjects(projectName, userId, orderParams);
+        List<Long> ids = entities.stream().map(ProjectEntity::getId).collect(Collectors.toList());
+        Map<Long, ProjectObjectCountEntity> countMap = projectManager.getObjectCountsOfProjects(
+            ids);
+
+        return PageUtil.toPageInfo(entities, entity -> {
+            ProjectVO vo = projectConvertor.convert(entity);
+            ProjectObjectCountEntity count = countMap.get(entity.getId());
+            if (count != null) {
+                vo.setStatistics(StatisticsVO.builder()
+                        .modelCounts(Optional.ofNullable(count.getCountModel()).orElse(0))
+                        .datasetCounts(Optional.ofNullable(count.getCountDataset()).orElse(0))
+                        .memberCounts(Optional.ofNullable(count.getCountMember()).orElse(0))
+                        .evaluationCounts(Optional.ofNullable(count.getCountJobs()).orElse(0))
+                        .build());
+            }
+            return vo;
+        });
     }
 
     /**
@@ -110,6 +147,7 @@ public class ProjectService {
         ProjectEntity entity = ProjectEntity.builder()
             .projectName(project.getName())
             .ownerId(project.getOwner().getId())
+            .privacy(project.getPrivacy().getValue())
             .description(project.getDescription())
             .isDefault(project.isDefault() ? 1 : 0)
             .build();
@@ -160,7 +198,7 @@ public class ProjectService {
             entity.setProjectName(projectName);
         } else {
             // To restore projects by name, need to check whether there are duplicate names
-            List<ProjectEntity> deletedProjects = projectMapper.listProjects(projectName + DELETE_SUFFIX, null, 1);
+            List<ProjectEntity> deletedProjects = projectMapper.listProjects(projectName + DELETE_SUFFIX, null, 1, null);
             if(deletedProjects.size() > 1) {
                 throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                     .tip(StrUtil.format("Recover project error. Duplicate names [%s] of deleted project. ", projectName)),
@@ -187,13 +225,14 @@ public class ProjectService {
         return id;
     }
 
-    public Boolean modifyProject(String projectUrl, String projectName, String description, Long userId) {
+    public Boolean modifyProject(String projectUrl, String projectName, String description, Long userId, String privacy) {
         Long projectId = projectManager.getProject(projectUrl).getId();
         ProjectEntity entity = ProjectEntity.builder()
             .id(projectId)
             .projectName(projectName)
             .description(description)
             .ownerId(userId)
+            .privacy(Privacy.fromName(privacy).getValue())
             .build();
         int res = projectMapper.modifyProject(entity);
         log.info("Project has been modified ID={}", entity.getId());

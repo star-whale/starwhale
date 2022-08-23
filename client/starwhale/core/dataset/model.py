@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import typing as t
 import tarfile
 from abc import ABCMeta, abstractmethod
@@ -15,18 +14,10 @@ from fs.copy import copy_fs, copy_file
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     HTTPMethod,
-    JSON_INDENT,
-    DataLoaderKind,
     DefaultYAMLName,
-    SWDSBackendType,
-    SWDSSubFileType,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
-    VERSION_PREFIX_CNT,
-    SWDS_DATA_FNAME_FMT,
     DEFAULT_COPY_WORKERS,
-    LOCAL_FUSE_JSON_NAME,
-    SWDS_LABEL_FNAME_FMT,
     DEFAULT_MANIFEST_NAME,
     ARCHIVED_SWDS_META_FNAME,
 )
@@ -35,7 +26,6 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import (
     move_dir,
     ensure_dir,
-    ensure_file,
     blake2b_file,
     BLAKE2B_SIGNATURE_ALGO,
 )
@@ -47,10 +37,10 @@ from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
-from starwhale.api._impl.dataset import StandaloneTabularDataset
 
+from .type import DatasetConfig, DSProcessMode, DatasetSummary
 from .store import DatasetStorage
-from .dataset import DatasetConfig, DSProcessMode, DatasetSummary
+from .tabular import StandaloneTabularDataset
 
 
 class Dataset(BaseBundle, metaclass=ABCMeta):
@@ -62,17 +52,15 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
         raise NotImplementedError
 
     @classmethod
-    def render_fuse_json(cls, workdir: Path, force: bool = False) -> str:
-        return StandaloneDataset.render_fuse_json(workdir, force)
-
-    @classmethod
     def get_dataset(cls, uri: URI) -> Dataset:
         _cls = cls._get_cls(uri)
         return _cls(uri)
 
     @classmethod
-    def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:
-        bc = BundleCopy(src_uri, dest_uri, URIType.DATASET, force)
+    def copy(
+        cls, src_uri: str, dest_uri: str, force: bool = False, with_auth: bool = False
+    ) -> None:
+        bc = BundleCopy(src_uri, dest_uri, URIType.DATASET, force, with_auth=with_auth)
         if bc.src_uri.instance_type == InstanceType.STANDALONE:
             with StandaloneTabularDataset.from_uri(bc.src_uri) as tds:
                 tds.dump_meta(force)
@@ -115,57 +103,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
     def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.remove(tags, quiet)
-
-    @classmethod
-    def render_fuse_json(cls, workdir: Path, force: bool = False) -> str:
-        _mf = workdir / DEFAULT_MANIFEST_NAME
-        if not _mf.exists():
-            raise Exception(f"need {DEFAULT_MANIFEST_NAME} @ {workdir}")
-
-        _manifest = load_yaml(_mf)
-        _fuse = dict(
-            backend=SWDSBackendType.FUSE,
-            kind=DataLoaderKind.SWDS,
-            swds=[],
-        )
-
-        ds_name = _manifest["name"]
-        ds_version = _manifest["version"]
-        swds_bins = [
-            _k
-            for _k in _manifest["signature"].keys()
-            if _k.startswith("data_") and _k.endswith(SWDSSubFileType.BIN)
-        ]
-
-        bucket = workdir.parent.parent.parent
-        path_prefix = f"{ds_name}/{ds_version[:VERSION_PREFIX_CNT]}/{ds_version}{BundleType.DATASET}/data"
-        for idx in range(0, len(swds_bins)):
-            _fuse["swds"].append(  # type: ignore
-                dict(
-                    bucket=str(bucket.resolve()),
-                    key=dict(
-                        data=f"{path_prefix}/{SWDS_DATA_FNAME_FMT.format(index=idx)}",
-                        label=f"{path_prefix}/{SWDS_LABEL_FNAME_FMT.format(index=idx)}",
-                        # TODO: add extra_attr ds_name, ds_version
-                    ),
-                    ext_attr=dict(
-                        ds_name=ds_name,
-                        ds_version=ds_version,
-                    ),
-                )
-            )
-
-        _f = workdir / LOCAL_FUSE_JSON_NAME
-        if _f.exists() and not force:
-            console.print(f":joy_cat: {LOCAL_FUSE_JSON_NAME} existed, skip render")
-        else:
-            ensure_file(_f, json.dumps(_fuse, indent=JSON_INDENT))
-            console.print(
-                f":clap: render swds {ds_name}:{ds_version} {LOCAL_FUSE_JSON_NAME}"
-            )
-
-        console.print(f":mag: {_f}")
-        return str(_f.resolve())
 
     def history(
         self,
@@ -283,7 +220,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         run_with_progress_bar("swds building...", operations)
 
     def _call_make_swds(self, workdir: Path, swds_config: DatasetConfig) -> None:
-        from starwhale.api._impl.dataset import BaseBuildExecutor
+        from starwhale.api._impl.dataset.builder import BaseBuildExecutor
 
         logger.info("[step:swds]try to gen swds...")
         self._manifest["dataset_attr"] = swds_config.attr.as_dict()
@@ -299,7 +236,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             dataset_version=self._version,
             project_name=self.uri.project,
             data_dir=workdir / swds_config.data_dir,
-            output_dir=self.store.data_dir,
+            workdir=self.store.snapshot_workdir,
             data_filter=swds_config.data_filter,
             label_filter=swds_config.label_filter,
             alignment_bytes_size=swds_config.attr.alignment_size,

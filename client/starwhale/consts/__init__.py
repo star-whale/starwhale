@@ -19,8 +19,6 @@ DEFAULT_EVALUATION_RESOURCE = "cpu=1"
 DEFAULT_EVALUATION_JOBS_FNAME = "eval_jobs.yaml"
 DEFAULT_EVALUATION_PIPELINE = "starwhale.core.model.default_handler"
 DEFAULT_LOCAL_SW_CONTROLLER_ADDR = "localhost:7827"
-LOCAL_FUSE_JSON_NAME = "local_fuse.json"
-DEFAULT_INPUT_JSON_FNAME = "input.json"
 LOCAL_CONFIG_VERSION = "2.0"
 
 # used by the versions before 2.0
@@ -88,7 +86,7 @@ VERSION_PREFIX_CNT = 2
 
 class SWDSBackendType:
     S3 = "s3"
-    FUSE = "fuse"
+    LocalFS = "local_fs"
 
 
 class EvalHandlerType:
@@ -113,7 +111,6 @@ class SWDSSubFileType:
 
 
 SWDS_DATA_FNAME_FMT = "data_ubyte_{index}.%s" % SWDSSubFileType.BIN
-SWDS_LABEL_FNAME_FMT = "label_ubyte_{index}.%s" % SWDSSubFileType.BIN
 ARCHIVED_SWDS_META_FNAME = "archive.%s" % SWDSSubFileType.META
 DUMPED_SWDS_META_FNAME = "_meta.jsonl"
 
@@ -146,3 +143,4 @@ DEFAULT_CUDA_VERSION = "11.4.0"
 DEFAULT_CONDA_CHANNEL = "conda-forge"
 
 WHEEL_FILE_EXTENSION = ".whl"
+AUTH_ENV_FNAME = ".auth_env"

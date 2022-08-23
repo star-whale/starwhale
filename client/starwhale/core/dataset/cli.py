@@ -2,12 +2,7 @@ import typing as t
 
 import click
 
-from starwhale.consts import (
-    DefaultYAMLName,
-    DEFAULT_PAGE_IDX,
-    DEFAULT_PAGE_SIZE,
-    LOCAL_FUSE_JSON_NAME,
-)
+from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 from .view import get_term_view, DatasetTermView
 
@@ -114,32 +109,20 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
     view(dataset).summary()
 
 
-@dataset_cmd.command("render-fuse")
-@click.argument("target")
-@click.option(
-    "-f",
-    "--force",
-    is_flag=True,
-    help=f"Force to render, if {LOCAL_FUSE_JSON_NAME} was already existed",
-)
-@click.pass_obj
-def _render_fuse(view: t.Type[DatasetTermView], target: str, force: bool) -> None:
-    """
-    [ONLY Standalone]Render Dataset fuse input.json for standalone ppl
-
-    TARGET: dataset uri or dataset workdir path
-    """
-
-    view.render_fuse_json(target, force)
-
-
 @dataset_cmd.command("copy", help="Copy dataset, standalone <--> cloud")
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force copy dataset")
+@click.option(
+    "--with-auth",
+    is_flag=True,
+    help="Copy dataset with .auth_env file that is from Link data type",
+)
 @click.pass_obj
-def _copy(view: t.Type[DatasetTermView], src: str, dest: str, force: bool) -> None:
-    view.copy(src, dest, force)
+def _copy(
+    view: t.Type[DatasetTermView], src: str, dest: str, force: bool, with_auth: bool
+) -> None:
+    view.copy(src, dest, force, with_auth)
 
 
 @dataset_cmd.command("tag", help="Dataset tag management, add or remove")

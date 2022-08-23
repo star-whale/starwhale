@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.project.mapper;
 
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.apache.ibatis.annotations.Param;
@@ -29,7 +30,7 @@ public interface ProjectMapper {
 
     int recoverProject(@Param("id") Long id);
 
-    List<ProjectEntity> listProjects(@Param("projectName") String projectName, @Param("order") String order, @Param("isDeleted") Integer isDeleted);
+    List<ProjectEntity> listProjects(@Param("projectName") String projectName, @Param("order") String order, @Param("isDeleted") Integer isDeleted, @Param("userId") Long userId);
 
     List<ProjectEntity> listProjectsByOwner(@Param("userId") Long userId, @Param("order") String order, @Param("isDeleted") Integer isDeleted);
 
@@ -42,4 +43,6 @@ public interface ProjectMapper {
     ProjectEntity findDefaultProject(@Param("userId") Long userId);
 
     int modifyProject(@Param("project")ProjectEntity project);
+
+    List<ProjectObjectCountEntity> listObjectCounts(@Param("projectIds")List<Long> projectIds);
 }

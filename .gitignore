@@ -98,6 +98,4 @@ docs/.docusaurus
 docker/charts/index.yaml
 docker/charts/starwhale-*.tgz
 
-# ansible
-bootstrap/inventory
 /client/.idea/

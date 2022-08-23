@@ -1,10 +1,10 @@
 import useGlobalState from '@/hooks/global'
 
 export const useDatasetVersion = () => {
-    const [datasetVerson, setDatasetVersion] = useGlobalState('datasetVersion')
+    const [datasetVersion, setDatasetVersion] = useGlobalState('datasetVersion')
 
     return {
-        datasetVerson,
+        datasetVersion,
         setDatasetVersion,
     }
 }

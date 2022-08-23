@@ -24,7 +24,10 @@ import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.configuration.security.SWPasswordEncoder;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.bo.Project.Privacy;
+import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.mapper.ProjectRoleMapper;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
@@ -73,6 +76,9 @@ public class UserService implements UserDetailsService {
     private ProjectRoleMapper projectRoleMapper;
 
     @Resource
+    private ProjectMapper projectMapper;
+
+    @Resource
     private ProjectManager projectManager;
 
     @Resource
@@ -108,12 +114,20 @@ public class UserService implements UserDetailsService {
         List<RoleEntity> projectRolesOfUser = roleMapper.getRolesOfProject(
             user.getId(), projectId);
 
-        return projectRolesOfUser.stream()
+        List<Role> list = projectRolesOfUser.stream()
             .map(entity -> Role.builder()
                 .roleName(entity.getRoleName())
                 .roleCode(entity.getRoleCode())
                 .build())
             .collect(Collectors.toList());
+        if(projectId != 0) {
+            ProjectEntity project = projectMapper.findProject(projectId);
+            if(project != null && project.getPrivacy() == Privacy.PUBLIC.getValue()) {
+                list.add(Role.builder().roleName("Guest").roleCode("GUEST").build());
+            }
+        }
+
+        return list;
     }
 
     public UserVO currentUser() {

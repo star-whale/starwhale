@@ -4,6 +4,7 @@ import shutil
 import typing as t
 import hashlib
 import tarfile
+from enum import IntEnum
 from pathlib import Path
 
 from starwhale.utils import console, timestamp_to_datatimestr
@@ -12,6 +13,11 @@ from starwhale.utils.process import check_call
 
 BLAKE2B_SIGNATURE_ALGO = "blake2b"
 _MIN_GUESS_NAME_LENGTH = 5
+
+
+class FilePosition(IntEnum):
+    START = 0
+    END = -1
 
 
 def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> None:

@@ -17,22 +17,17 @@ import dill
 import loguru
 import jsonlines
 
-from starwhale.utils import now_str, in_production
+from starwhale.utils import now_str
 from starwhale.consts import CURRENT_FNAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType
+from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
-from starwhale.consts.env import SWEnv
+from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import Context
-from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
-
-from . import wrapper
-
-_TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
-
-_p = lambda p, sub: Path(p) if p else Path(_TASK_ROOT_DIR) / sub
-_ptype = t.Union[str, None, Path]
+from starwhale.api._impl.dataset import DataField, get_data_loader
+from starwhale.api._impl.wrapper import Evaluation
+from starwhale.core.dataset.model import Dataset
 
 
 class _LogType:
@@ -40,55 +35,37 @@ class _LogType:
     USER = "user"
 
 
-_jl_writer = lambda p: jsonlines.open(str((p).resolve()), mode="w")
+_jl_writer: t.Callable[[Path], jsonlines.Writer] = lambda p: jsonlines.open(
+    str((p).resolve()), mode="w"
+)
 
 
-class _RunConfig:
+def calculate_index(
+    data_size: int, task_num: int, task_index: int
+) -> t.Tuple[int, int]:
+    _batch_size = 1
+    if data_size > task_num:
+        _batch_size = math.ceil(data_size / task_num)
+    _start_index = min(_batch_size * task_index, data_size - 1)
+    _end_index = min(_batch_size * (task_index + 1) - 1, data_size - 1)
+    return _start_index, _end_index
+
+
+class ResultLoader:
     def __init__(
         self,
-        dataset_uri: str = "",
-        dataset_row_start: int = 0,
-        dataset_row_end: int = -1,
-        status_dir: _ptype = "",
-        log_dir: _ptype = "",
+        data: t.List[t.Any],
+        deserializer: t.Optional[t.Callable] = None,
     ) -> None:
-        self.status_dir = _p(status_dir, "status")  # type: ignore
-        self.log_dir = _p(log_dir, "log")  # type: ignore
-        # TODO: refactor dataset arguments
-        self.dataset_uri = URI(dataset_uri, expected_type=URIType.DATASET)
-        self.dataset_row_end = dataset_row_end
-        self.dataset_row_start = dataset_row_start
+        self.data = data
+        self.deserializer = deserializer
 
-        # TODO: graceful method
-        self._prepare()
-
-    def _prepare(self) -> None:
-        ensure_dir(self.log_dir)
-        ensure_dir(self.status_dir)
-
-    @classmethod
-    def create_by_env(cls) -> _RunConfig:
-        _env = os.environ.get
-        return _RunConfig(
-            status_dir=_env(SWEnv.status_dir),
-            log_dir=_env(SWEnv.log_dir),
-            dataset_uri=_env(SWEnv.dataset_uri, ""),
-            dataset_row_start=int(_env(SWEnv.dataset_row_start, 0)),
-            dataset_row_end=int(_env(SWEnv.dataset_row_end, -1)),
-        )
-
-    @classmethod
-    def set_env(cls, _config: t.Dict[str, t.Any] = {}) -> None:
-        def _set(_k: str, _e: str) -> None:
-            _v = _config.get(_k)
-            if _v:
-                os.environ[_e] = str(_v)
-
-        _set("status_dir", SWEnv.status_dir)
-        _set("log_dir", SWEnv.log_dir)
-        _set("dataset_uri", SWEnv.dataset_uri)
-        _set("dataset_row_start", SWEnv.dataset_row_start)
-        _set("dataset_row_end", SWEnv.dataset_row_end)
+    def __iter__(self) -> t.Any:
+        for _data in self.data:
+            if self.deserializer:
+                yield self.deserializer(_data)
+                continue
+            yield _data
 
 
 class PipelineHandler(metaclass=ABCMeta):
@@ -110,8 +87,8 @@ class PipelineHandler(metaclass=ABCMeta):
         ignore_error: bool = False,
     ) -> None:
         self.context = context
-        self.status_dir = self.context.kw["status_dir"]
-        self.log_dir = self.context.kw["log_dir"]
+        self._init_dir()
+
         # TODO: add args for compare result and label directly
         self.merge_label = merge_label
         self.output_type = output_type
@@ -124,17 +101,31 @@ class PipelineHandler(metaclass=ABCMeta):
         self._orig_stderr = sys.stderr
 
         # TODO: split status/result files
-        self._timeline_writer = _jl_writer(self.status_dir / "timeline")  # type: ignore
+        self._timeline_writer = _jl_writer(self.status_dir / "timeline")
 
         self._ppl_data_field = "result"
         self._label_field = "label"
         self.evaluation = self._init_datastore()
+
         self._monkey_patch()
 
-    def _init_datastore(self) -> wrapper.Evaluation:
+    def _init_dir(self) -> None:
+        _run_dir = (
+            self.context.workdir
+            / "runlog"
+            / self.context.step
+            / str(self.context.index)
+        )
+
+        self.status_dir = _run_dir / RunSubDirType.STATUS
+        self.log_dir = _run_dir / RunSubDirType.LOG
+        ensure_dir(self.status_dir)
+        ensure_dir(self.log_dir)
+
+    def _init_datastore(self) -> Evaluation:
         os.environ["SW_PROJECT"] = self.context.project
         os.environ["SW_EVAL_ID"] = self.context.version
-        return wrapper.Evaluation()
+        return Evaluation()
 
     def _init_logger(self) -> t.Tuple[loguru.Logger, loguru.Logger]:
         # TODO: remove logger first?
@@ -258,7 +249,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def _starwhale_internal_run_cmp(self) -> None:
         self._sw_logger.debug("enter cmp func...")
         self._update_status(self.STATUS.START)
-        now = now_str()  # type: ignore
+        now = now_str()
         try:
             _ppl_results = list(self.evaluation.get_results())
             self._sw_logger.debug("cmp input data size:{}", len(_ppl_results))
@@ -275,28 +266,20 @@ class PipelineHandler(metaclass=ABCMeta):
             self._sw_logger.debug(f"cmp result:{output}")
             self.evaluation.log_metrics(output)
 
-    def calculate_index(
-        self, data_size: int, task_num: int, task_index: int
-    ) -> t.Tuple[int, int]:
-        _batch_size = 1
-        if data_size > task_num:
-            _batch_size = math.ceil(data_size / task_num)
-        _start_index = min(_batch_size * task_index, data_size - 1)
-        _end_index = min(_batch_size * (task_index + 1) - 1, data_size - 1)
-        return _start_index, _end_index
-
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
         self._update_status(self.STATUS.START)
-        if self.context.dataset_uris:
-            _dataset_uri = self.context.dataset_uris[0]
-        # TODO: use dataset.size() and support multi dataset uris
-        dataset_row_start, dataset_row_end = self.calculate_index(
-            150, self.context.total, self.context.index
+        if not self.context.dataset_uris:
+            raise FieldTypeOrValueError("context.dataset_uris is empty")
+        # TODO: support multi dataset uris
+        _dataset_uri = URI(self.context.dataset_uris[0], expected_type=URIType.DATASET)
+        _dataset = Dataset.get_dataset(_dataset_uri)
+        dataset_row_start, dataset_row_end = calculate_index(
+            _dataset.summary().rows, self.context.total, self.context.index
         )
-        # TODO: use datastore when dataset complete
+
         _data_loader = get_data_loader(
-            dataset_uri=URI(_dataset_uri, expected_type=URIType.DATASET),
+            dataset_uri=_dataset_uri,
             start=dataset_row_start,
             end=dataset_row_end,
             logger=self._sw_logger,
@@ -347,7 +330,7 @@ class PipelineHandler(metaclass=ABCMeta):
         *args: t.Any,
     ) -> None:
         _timeline = {
-            "time": now_str(),  # type: ignore
+            "time": now_str(),
             "status": exception is None,
             "exception": str(exception),
             "index": data.idx,

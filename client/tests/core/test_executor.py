@@ -112,7 +112,6 @@ class StandaloneEvalExecutor(TestCase):
         _input_json_path = job_dir / "config" / "input.json"
         assert _input_json_path.exists()
         _input_json = json.load(_input_json_path.open())
-        assert _input_json["backend"] == "fuse"
         assert _input_json["kind"] == "swds"
         assert _input_json["swds"][0]["bucket"] == "/opt/starwhale/dataset"
         assert _input_json["swds"][0]["ext_attr"]["ds_name"] == "mnist"

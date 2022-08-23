@@ -75,8 +75,33 @@ helm delete starwhale
 In minikube mode, you can easy to build an all-in-one starwhale. Run command example:
 
 ```bash
-helm upgrade --install starwhale starwhale/starwhale --namespace starwhale --create-namespace --set minikube.enabled=true
+export SWNAME=starwhale
+export SWNS=starwhale
+helm upgrade --install $SWNAME starwhale/starwhale --namespace $SWNS --create-namespace --set minikube.enabled=true --set mysql.primary.persistence.storageClass=$SWNAME-mysql --set minio.persistence.storageClass=$SWNAME-minio
 ```
+
+### dev mode
+| Name                        | Description                                              | Default Value    |
+|-----------------------------|----------------------------------------------------------|------------------|
+| `devMode.createPV.enabled`  | enable auto create PV                                    | `false`          |
+| `devMode.createPV.host`     | Node selector matchExpressions in kubernetes.io/hostname | ""               |
+| `devMode.createPV.rootPath` | Local path for test PV                                   | `/var/starwhale` |
+
+Dev mode support creating local path PV automatically when devMode.createPV.enabled sets to `true`
+
+e.g.
+
+```bash
+export SWNAME=starwhale
+export SWNS=starwhale
+helm install $SWNAME . -n $SWNS --create-namespace \
+	--set devMode.createPV.enabled=true \
+	--set devMode.createPV.host=pv-host \
+	--set devMode.createPV.rootPath=/path/to/pv-storage \
+	--set mysql.primary.persistence.storageClass=$SWNAME-mysql \
+	--set minio.persistence.storageClass=$SWNAME-minio
+```
+
 
 ## Community
 - Report a bug or feature request, use [Github Issues](https://github.com/star-whale/starwhale/issues/new/choose).

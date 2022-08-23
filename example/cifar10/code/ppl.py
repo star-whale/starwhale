@@ -82,21 +82,3 @@ class CIFAR10Inference(PipelineHandler):
         model.eval()
         print("load cifar_net model, start to inference...")
         return model
-
-
-def load_test_env(fuse=True):
-    _p = lambda p: str((ROOTDIR / "test" / p).resolve())
-
-    os.environ["SW_TASK_STATUS_DIR"] = _p("task_volume/status")
-    os.environ["SW_TASK_LOG_DIR"] = _p("task_volume/log")
-    os.environ["SW_TASK_RESULT_DIR"] = _p("task_volume/result")
-
-    fname = "swds_fuse.json" if fuse else "swds_s3.json"
-    # fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
-    os.environ["SW_TASK_INPUT_CONFIG"] = _p(fname)
-
-
-if __name__ == "__main__":
-    load_test_env(fuse=False)
-    cifar10 = CIFAR10Inference()
-    cifar10._starwhale_internal_run_ppl()

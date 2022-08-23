@@ -135,7 +135,15 @@ table { border-collapse: separate; }
   flex-direction: column;
 
 }
+.flex-column {
+  display: flex;
+  flex-direction: column;
 
+}
+.flex-row{
+  display: flex;
+  justify-content: center;
+}
 .flex-row-center{
   display: flex;
   align-items: center;
