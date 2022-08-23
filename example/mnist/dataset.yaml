@@ -8,7 +8,7 @@ process: mnist.process:RawDataSetProcessExecutor
 
 desc: MNIST data and label test dataset
 tag:
- - bin
+  - bin
 
 attr:
   alignment_size: 4k

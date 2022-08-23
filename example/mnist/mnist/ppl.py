@@ -6,11 +6,14 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
+from starwhale.api.job import Context
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
-from starwhale.api.job import Context
 
-from .model import Net
+try:
+    from .model import Net
+except ImportError:
+    from model import Net
 
 ROOTDIR = Path(__file__).parent.parent
 IMAGE_WIDTH = 28
@@ -41,7 +44,6 @@ class MNISTInference(PipelineHandler):
     def cmp(self, _data_loader):
         _result, _label, _pr = [], [], []
         for _data in _data_loader:
-            # logger.debug(f"cmp data:{_data}")
             _label.extend([int(l) for l in _data[self._label_field]])
             # unpack data according to the return value of function ppl
             (pred, pr) = _data[self._ppl_data_field]
@@ -72,19 +74,19 @@ class MNISTInference(PipelineHandler):
         return model
 
 
-def load_test_env(fuse=True):
-    _p = lambda p: str((ROOTDIR / "test" / p).resolve())
-
-    os.environ["SW_TASK_STATUS_DIR"] = _p("task_volume/status")
-    os.environ["SW_TASK_LOG_DIR"] = _p("task_volume/log")
-    os.environ["SW_TASK_RESULT_DIR"] = _p("task_volume/result")
-
-    fname = "swds_fuse.json" if fuse else "swds_s3.json"
-    # fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
-    os.environ["SW_TASK_INPUT_CONFIG"] = _p(fname)
-
-
 if __name__ == "__main__":
-    load_test_env(fuse=False)
-    mnist = MNISTInference()
+    from starwhale.api.job import Context
+
+    context = Context(
+        workdir=Path("."),
+        src_dir=Path("."),
+        dataset_uris=["mnist/version/latest"],
+        project="self",
+        version="latest",
+        kw={
+            "status_dir": "/tmp/mnist/status",
+            "log_dir": "/tmp/mnist/log",
+        },
+    )
+    mnist = MNISTInference(context)
     mnist._starwhale_internal_run_ppl()

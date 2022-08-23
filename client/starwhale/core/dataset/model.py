@@ -299,7 +299,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             dataset_version=self._version,
             project_name=self.uri.project,
             data_dir=workdir / swds_config.data_dir,
-            output_dir=self.store.data_dir,
+            workdir=self.store.snapshot_workdir,
             data_filter=swds_config.data_filter,
             label_filter=swds_config.label_filter,
             alignment_bytes_size=swds_config.attr.alignment_size,

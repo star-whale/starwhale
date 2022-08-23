@@ -17,23 +17,17 @@ import dill
 import loguru
 import jsonlines
 
-from starwhale.utils import now_str, in_production
+from starwhale.utils import now_str
 from starwhale.consts import CURRENT_FNAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
+from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import Context
 from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
 from starwhale.api._impl.wrapper import Evaluation
 from starwhale.core.dataset.model import Dataset
-
-_TASK_ROOT_DIR = "/var/starwhale" if in_production() else "/tmp/starwhale"
-
-_ptype = t.Union[str, None, Path]
-_p: t.Callable[[_ptype, str], Path] = (
-    lambda p, sub: Path(p) if p else Path(_TASK_ROOT_DIR) / sub
-)
 
 
 class _LogType:
@@ -95,6 +89,7 @@ class PipelineHandler(metaclass=ABCMeta):
         self._ppl_data_field = "result"
         self._label_field = "label"
         self.evaluation = self._init_datastore()
+
         self._monkey_patch()
 
     def _init_dir(self) -> None:
@@ -258,7 +253,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def _starwhale_internal_run_ppl(self) -> None:
         self._update_status(self.STATUS.START)
         if not self.context.dataset_uris:
-            raise RuntimeError("no dataset uri!")
+            raise FieldTypeOrValueError("context.dataset_uris is empty")
         # TODO: support multi dataset uris
         _dataset_uri = URI(self.context.dataset_uris[0], expected_type=URIType.DATASET)
         _dataset = Dataset.get_dataset(_dataset_uri)

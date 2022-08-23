@@ -7,7 +7,6 @@ from pathlib import Path
 
 from starwhale.utils import load_yaml, convert_to_bytes
 from starwhale.consts import DEFAULT_STARWHALE_API_VERSION
-from starwhale.base.type import DataFormatType, ObjectStoreType
 from starwhale.utils.error import NoSupportError
 
 
@@ -25,27 +24,19 @@ class DatasetSummary:
         self,
         rows: int = 0,
         increased_rows: int = 0,
-        data_format_type: t.Union[DataFormatType, str] = DataFormatType.UNDEFINED,
-        object_store_type: t.Union[ObjectStoreType, str] = ObjectStoreType.UNDEFINED,
         label_byte_size: int = 0,
         data_byte_size: int = 0,
+        include_link: bool = False,
+        include_user_raw: bool = False,
         **kw: t.Any,
     ) -> None:
         self.rows = rows
         self.increased_rows = increased_rows
         self.unchanged_rows = rows - increased_rows
-        self.data_format_type: DataFormatType = (
-            DataFormatType(data_format_type)
-            if isinstance(data_format_type, str)
-            else data_format_type
-        )
-        self.object_store_type: ObjectStoreType = (
-            ObjectStoreType(object_store_type)
-            if isinstance(object_store_type, str)
-            else object_store_type
-        )
         self.label_byte_size = label_byte_size
         self.data_byte_size = data_byte_size
+        self.include_link = include_link
+        self.include_user_raw = include_user_raw
 
     def as_dict(self) -> t.Dict[str, t.Any]:
         d = deepcopy(self.__dict__)
@@ -55,12 +46,12 @@ class DatasetSummary:
         return d
 
     def __str__(self) -> str:
-        return f"Dataset Summary: rows({self.rows}), data_format({self.data_format_type}), object_store({self.object_store_type})"
+        return f"Dataset Summary: rows({self.rows}), include user-raw({self.include_user_raw}), include link({self.include_link})"
 
     def __repr__(self) -> str:
         return (
             f"Dataset Summary: rows({self.rows}, increased: {self.increased_rows}), "
-            f"data_format({self.data_format_type}), object_store({self.object_store_type}),"
+            f"include user-raw({self.include_user_raw}), include link({self.include_link}),"
             f"size(data:{self.data_byte_size}, label: {self.label_byte_size})"
         )
 

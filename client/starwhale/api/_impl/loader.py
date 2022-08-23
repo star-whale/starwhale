@@ -6,6 +6,7 @@ import sys
 import typing as t
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
+from urllib.parse import urlparse
 
 import boto3
 import loguru
@@ -13,17 +14,21 @@ from loguru import logger as _logger
 from botocore.client import Config as S3Config
 from typing_extensions import Protocol
 
-from starwhale.consts import SWDSBackendType
+from starwhale.utils import load_dotenv
+from starwhale.consts import AUTH_ENV_FNAME, SWDSBackendType
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, InstanceType, DataFormatType
-from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
+from starwhale.utils.fs import FilePosition
+from starwhale.base.type import URIType, InstanceType, DataFormatType, ObjectStoreType
+from starwhale.utils.error import FormatError, NoSupportError, FieldTypeOrValueError
 from starwhale.core.dataset.store import DatasetStorage
 
-from .dataset import TabularDataset, TabularDatasetRow
+from .dataset import S3LinkAuth, TabularDataset, TabularDatasetRow
 
 # TODO: config chunk size
 _CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
-_FILE_END_POS = -1
+_DEFAULT_S3_REGION = "local"
+_DEFAULT_S3_ENDPOINT = "localhost:9000"
+_DEFAULT_S3_BUCKET = "starwhale"
 
 
 class FileLikeObj(Protocol):
@@ -34,6 +39,13 @@ class FileLikeObj(Protocol):
         ...
 
 
+class S3Uri(t.NamedTuple):
+    bucket: str
+    key: str
+    protocol: str = "s3"
+    endpoint: str = _DEFAULT_S3_ENDPOINT
+
+
 class ObjectStoreS3Connection:
     def __init__(
         self,
@@ -41,14 +53,19 @@ class ObjectStoreS3Connection:
         access_key: str,
         secret_key: str,
         region: str = "",
+        bucket: str = "",
         connect_timeout: float = 10.0,
         read_timeout: float = 50.0,
         total_max_attempts: int = 6,
     ) -> None:
-        self.endpoint = endpoint
+        self.endpoint = endpoint.strip()
+        if self.endpoint and not self.endpoint.startswith(("http://", "https://")):
+            self.endpoint = f"http://{self.endpoint}"
+
         self.access_key = access_key
         self.secret_key = secret_key
         self.region = region
+        self.bucket = bucket
         self.connect_timeout = float(
             os.environ.get("SW_S3_CONNECT_TIMEOUT", connect_timeout)
         )
@@ -63,70 +80,127 @@ class ObjectStoreS3Connection:
     __repr__ = __str__
 
     @classmethod
-    def create_from_env(cls) -> ObjectStoreS3Connection:
+    def from_uri(cls, uri: str, auth_name: str) -> ObjectStoreS3Connection:
+        """make S3 Connection by uri
+
+        uri:
+            - s3://username:password@127.0.0.1:8000@bucket/key
+            - s3://127.0.0.1:8000@bucket/key
+            - s3://bucket/key
+        """
+        uri = uri.strip()
+        if not uri or not uri.startswith("s3://"):
+            raise NoSupportError(
+                f"s3 connection only support s3:// prefix, the actual uri is {uri}"
+            )
+
+        r = urlparse(uri)
+        netloc = r.netloc
+
+        link_auth = S3LinkAuth.from_env(auth_name)
+        access = link_auth.access_key
+        secret = link_auth.secret
+        region = link_auth.region
+
+        _nl = netloc.split("@")
+        if len(_nl) == 1:
+            endpoint = link_auth.endpoint
+            bucket = _nl[0]
+        elif len(_nl) == 2:
+            endpoint, bucket = _nl
+        elif len(_nl) == 3:
+            _key, endpoint, bucket = _nl
+            access, secret = _key.split(":", 1)
+        else:
+            raise FormatError(netloc)
+
+        if not endpoint:
+            raise FieldTypeOrValueError("endpoint is empty")
+
+        if not access or not secret:
+            raise FieldTypeOrValueError("no access_key or secret_key")
+
+        if not bucket:
+            raise FieldTypeOrValueError("bucket is empty")
+
+        return cls(
+            endpoint=endpoint,
+            access_key=access,
+            secret_key=secret,
+            region=region or _DEFAULT_S3_REGION,
+            bucket=bucket,
+        )
+
+    @classmethod
+    def from_env(cls) -> ObjectStoreS3Connection:
         # TODO: support multi s3 backend servers
+        _env = os.environ.get
         return ObjectStoreS3Connection(
-            endpoint=os.environ.get("SW_S3_ENDPOINT", "127.0.0.1:9000"),
-            access_key=os.environ.get("SW_S3_ACCESS_KEY", "foo"),
-            secret_key=os.environ.get("SW_S3_SECRET", "bar"),
-            region=os.environ.get("SW_S3_REGION", "local"),
+            endpoint=_env("SW_S3_ENDPOINT", _DEFAULT_S3_ENDPOINT),
+            access_key=_env("SW_S3_ACCESS_KEY", ""),
+            secret_key=_env("SW_S3_SECRET", ""),
+            region=_env("SW_S3_REGION", _DEFAULT_S3_REGION),
+            bucket=_env("SW_S3_BUCKET", _DEFAULT_S3_BUCKET),
         )
 
 
 class DatasetObjectStore:
     def __init__(
         self,
-        uri: URI,
-        backend: str = "",
-        conn: t.Optional[ObjectStoreS3Connection] = None,
-        bucket: str = "",
+        backend: str,
+        bucket: str,
         key_prefix: str = "",
+        **kw: t.Any,
     ) -> None:
-        self.uri = uri
-        _backend = backend or self._get_default_backend()
+        self.bucket = bucket
 
-        self.conn: t.Optional[ObjectStoreS3Connection]
         self.backend: StorageBackend
-
-        _env_bucket = os.environ.get("SW_S3_BUCKET", "")
-
-        if _backend == SWDSBackendType.S3:
-            self.conn = conn or ObjectStoreS3Connection.create_from_env()
-            self.bucket = bucket or _env_bucket
-            self.backend = S3StorageBackend(self.conn)
+        if backend == SWDSBackendType.S3:
+            conn = kw.get("conn") or ObjectStoreS3Connection.from_env()
+            self.backend = S3StorageBackend(conn)
         else:
-            self.conn = None
-            self.bucket = bucket or _env_bucket or self._get_bucket_by_uri()
             self.backend = FuseStorageBackend()
 
         self.key_prefix = key_prefix or os.environ.get("SW_OBJECT_STORE_KEY_PREFIX", "")
 
-        self._do_validate()
+    def __str__(self) -> str:
+        return f"DatasetObjectStore backend:{self.backend}"
 
-    def _do_validate(self) -> None:
-        if self.uri.object.typ != URIType.DATASET:
-            raise NoSupportError(f"{self.uri} is not dataset uri")
+    def __repr__(self) -> str:
+        return f"DatasetObjectStore backend:{self.backend}, bucket:{self.bucket}, key_prefix:{self.key_prefix}"
 
-        if not self.bucket:
-            raise FieldTypeOrValueError("no bucket field")
+    @classmethod
+    def from_data_link_uri(cls, data_uri: str, auth_name: str) -> DatasetObjectStore:
+        data_uri = data_uri.strip()
+        if not data_uri:
+            raise FieldTypeOrValueError("data_uri is empty")
 
-    def _get_default_backend(self) -> str:
-        _type = self.uri.instance_type
-
-        if _type == InstanceType.STANDALONE:
-            return SWDSBackendType.FUSE
-        elif _type == InstanceType.CLOUD:
-            return SWDSBackendType.S3
+        # TODO: support other uri type
+        if data_uri.startswith("s3://"):
+            backend = SWDSBackendType.S3
+            conn = ObjectStoreS3Connection.from_uri(data_uri, auth_name)
+            bucket = conn.bucket
         else:
-            raise NoSupportError(
-                f"get object store backend by the instance type({_type})"
-            )
+            backend = SWDSBackendType.FUSE
+            bucket = ""
+            conn = None
 
-    def _get_bucket_by_uri(self) -> str:
-        if self.uri.instance_type == InstanceType.CLOUD:
-            raise NoSupportError(f"{self.uri} to fetch bucket")
+        return cls(backend=backend, bucket=bucket, conn=conn)
 
-        return str(DatasetStorage(self.uri).data_dir.absolute())
+    @classmethod
+    def from_dataset_uri(cls, dataset_uri: URI) -> DatasetObjectStore:
+        if dataset_uri.object.typ != URIType.DATASET:
+            raise NoSupportError(f"{dataset_uri} is not dataset uri")
+
+        _type = dataset_uri.instance_type
+        if _type == InstanceType.STANDALONE:
+            backend = SWDSBackendType.FUSE
+            bucket = str(DatasetStorage(dataset_uri).data_dir.absolute())
+        else:
+            backend = SWDSBackendType.S3
+            bucket = os.environ.get("SW_S3_BUCKET", _DEFAULT_S3_BUCKET)
+
+        return cls(backend=backend, bucket=bucket)
 
 
 class DataField(t.NamedTuple):
@@ -156,31 +230,74 @@ class ResultLoader:
 class DataLoader(metaclass=ABCMeta):
     def __init__(
         self,
-        storage: DatasetObjectStore,
-        dataset: TabularDataset,
+        dataset_uri: URI,
+        start: int = 0,
+        end: int = sys.maxsize,
         logger: t.Union[loguru.Logger, None] = None,
-        deserializer: t.Optional[t.Callable] = None,
     ):
-        self.storage = storage
-        self.dataset = dataset
+        self.dataset_uri = dataset_uri
+        self.start = start
+        self.end = end
         self.logger = logger or _logger
-        self.deserializer = deserializer
+        # TODO: refactor TabularDataset with dataset_uri
+        # TODO: refactor dataset, tabular_dataset and standalone dataset module
+        self.tabular_dataset = TabularDataset.from_uri(
+            dataset_uri, start=start, end=end
+        )
+        self._stores: t.Dict[str, DatasetObjectStore] = {}
+
+        self._load_dataset_auth_env()
+
+    def _load_dataset_auth_env(self) -> None:
+        # TODO: support multi datasets
+        if self.dataset_uri.instance_type == InstanceType.STANDALONE:
+            auth_env_fpath = (
+                DatasetStorage(self.dataset_uri).snapshot_workdir / AUTH_ENV_FNAME
+            )
+            load_dotenv(auth_env_fpath)
+
+    def _get_store(self, row: TabularDatasetRow) -> DatasetObjectStore:
+        _k = f"{row.object_store_type.value}.{row.auth_name}"
+        _store = self._stores.get(_k)
+        if _store:
+            return _store
+
+        if row.object_store_type == ObjectStoreType.REMOTE:
+            _store = DatasetObjectStore.from_data_link_uri(row.data_uri, row.auth_name)
+        else:
+            _store = DatasetObjectStore.from_dataset_uri(self.dataset_uri)
+
+        self._stores[_k] = _store
+        return _store
+
+    def _get_key_compose(
+        self, row: TabularDatasetRow, store: DatasetObjectStore
+    ) -> str:
+        if row.object_store_type == ObjectStoreType.REMOTE:
+            data_uri = urlparse(row.data_uri).path
+        else:
+            data_uri = row.data_uri
+            if store.key_prefix:
+                data_uri = os.path.join(store.key_prefix, data_uri.lstrip("/"))
+
+        _key_compose = (
+            f"{data_uri}:{row.data_offset}:{row.data_offset + row.data_size - 1}"
+        )
+        return _key_compose
 
     def __iter__(self) -> t.Generator[t.Tuple[DataField, DataField], None, None]:
-        _attr = {"ds_name": self.dataset.name, "ds_version": self.dataset.version}
-        for row in self.dataset.scan():
+        _attr = {
+            "ds_name": self.tabular_dataset.name,
+            "ds_version": self.tabular_dataset.version,
+        }
+        for row in self.tabular_dataset.scan():
             # TODO: tune performance by fetch in batch
             # TODO: remove ext_attr field
+            _store = self._get_store(row)
+            _key_compose = self._get_key_compose(row, _store)
 
-            _data_uri = row.data_uri
-            if self.storage.key_prefix:
-                _data_uri = os.path.join(self.storage.key_prefix, _data_uri.lstrip("/"))
-
-            _key_compose = (
-                f"{_data_uri}:{row.data_offset}:{row.data_offset + row.data_size - 1}"
-            )
-            self.logger.info(f"@{self.storage.bucket}/{_key_compose}")
-            _file = self.storage.backend._make_file(self.storage.bucket, _key_compose)
+            self.logger.info(f"@{_store.bucket}/{_key_compose}")
+            _file = _store.backend._make_file(_store.bucket, _key_compose)
             for data_content, data_size in self._do_iter(_file, row):
                 label = DataField(
                     idx=row.id,
@@ -201,10 +318,10 @@ class DataLoader(metaclass=ABCMeta):
         raise NotImplementedError
 
     def __str__(self) -> str:
-        return f"[{self.kind.name}]DataLoader for {self.storage.backend}"
+        return f"[{self.kind.name}]DataLoader for {self.dataset_uri}"
 
     def __repr__(self) -> str:
-        return f"[{self.kind.name}]DataLoader for {self.storage.backend}, extra:{self.storage.conn}"
+        return f"[{self.kind.name}]DataLoader for {self.dataset_uri}, start:{self.start}, end:{self.end}"
 
     @property
     def kind(self) -> DataFormatType:
@@ -261,9 +378,9 @@ class StorageBackend(metaclass=ABCMeta):
         # TODO: add start end normalize
         _r = key.split(":")
         if len(_r) == 1:
-            return _r[0], 0, _FILE_END_POS
+            return _r[0], 0, FilePosition.END
         elif len(_r) == 2:
-            return _r[0], int(_r[1]), _FILE_END_POS
+            return _r[0], int(_r[1]), FilePosition.END
         else:
             return _r[0], int(_r[1]), int(_r[2])
 
@@ -388,7 +505,7 @@ class S3BufferedFileLike:
 
     def _next_data(self) -> t.Tuple[bytes, int]:
         end = _CHUNK_SIZE + self._current_s3_start - 1
-        end = end if self.end == _FILE_END_POS else min(self.end, end)
+        end = end if self.end == FilePosition.END else min(self.end, end)
 
         data, length = self._do_fetch_data(self._current_s3_start, end)
         self._current_s3_start += length
@@ -397,7 +514,7 @@ class S3BufferedFileLike:
 
     def _do_fetch_data(self, _start: int, _end: int) -> t.Tuple[bytes, int]:
         # TODO: add more exception handle
-        if self._s3_eof or (_end != _FILE_END_POS and _end < _start):
+        if self._s3_eof or (_end != FilePosition.END and _end < _start):
             return b"", 0
 
         resp = self.obj.get(Range=f"bytes={_start}-{_end}")
@@ -406,7 +523,7 @@ class S3BufferedFileLike:
         out = resp["Body"].read()
         body.close()
 
-        self._s3_eof = _end == _FILE_END_POS or (_end - _start + 1) > length
+        self._s3_eof = _end == FilePosition.END or (_end - _start + 1) > length
         return out, length
 
 
@@ -414,20 +531,11 @@ def get_data_loader(
     dataset_uri: URI,
     start: int = 0,
     end: int = sys.maxsize,
-    backend: str = "",
     logger: t.Union[loguru.Logger, None] = None,
 ) -> DataLoader:
     from starwhale.core.dataset import model
 
-    logger = logger or _logger
-    object_store = DatasetObjectStore(dataset_uri, backend)
-    # TODO: refactor dataset, tabular_dataset and standalone dataset module
-    tabular_dataset = TabularDataset.from_uri(dataset_uri, start=start, end=end)
-    df_type = model.Dataset.get_dataset(dataset_uri).summary().data_format_type
-
-    if df_type == DataFormatType.SWDS_BIN:
-        return SWDSBinDataLoader(object_store, tabular_dataset, logger)
-    elif df_type == DataFormatType.USER_RAW:
-        return UserRawDataLoader(object_store, tabular_dataset, logger)
-    else:
-        raise NoSupportError(f"cannot get data format type({df_type}) data loader")
+    summary = model.Dataset.get_dataset(dataset_uri).summary()
+    include_user_raw = summary.include_user_raw
+    _cls = UserRawDataLoader if include_user_raw else SWDSBinDataLoader
+    return _cls(dataset_uri, start, end, logger or _logger)

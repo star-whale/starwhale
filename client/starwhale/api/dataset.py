@@ -1,4 +1,7 @@
 from ._impl.dataset import (
+    Link,
+    MIMEType,
+    S3LinkAuth,
     BuildExecutor,
     MNISTBuildExecutor,
     SWDSBinBuildExecutor,
@@ -12,4 +15,7 @@ __all__ = [
     "MNISTBuildExecutor",
     "UserRawBuildExecutor",
     "SWDSBinBuildExecutor",
+    "S3LinkAuth",
+    "Link",
+    "MIMEType",
 ]
