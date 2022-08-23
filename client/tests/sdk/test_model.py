@@ -10,21 +10,17 @@ import pytest
 import jsonlines
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.consts import DEFAULT_PROJECT, SWDSBackendType
+from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType, DataFormatType, ObjectStoreType
+from starwhale.api.model import PipelineHandler
+from starwhale.base.type import URIType
 from starwhale.consts.env import SWEnv
+from starwhale.api.dataset import get_data_loader, UserRawDataLoader
 from starwhale.api._impl.job import Context
-from starwhale.api._impl.model import PipelineHandler
-from starwhale.api._impl.loader import (
-    get_data_loader,
-    S3StorageBackend,
-    UserRawDataLoader,
-)
-from starwhale.api._impl.dataset import TabularDatasetRow
 from starwhale.api._impl.wrapper import Evaluation
-from starwhale.core.dataset.dataset import DatasetSummary
+from starwhale.core.dataset.type import DatasetSummary
+from starwhale.core.dataset.tabular import TabularDatasetRow
 
 from .. import ROOT_DIR
 
@@ -61,19 +57,18 @@ class TestModelPipelineHandler(TestCase):
         super().tearDown()
         os.environ.pop("SW_S3_BUCKET", "")
 
-    @patch("starwhale.api._impl.loader.boto3")
+    @patch("starwhale.core.dataset.store.boto3")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_s3_loader(self, m_summary: MagicMock, m_resource: MagicMock) -> None:
         m_summary.return_value = DatasetSummary(
-            data_format_type=DataFormatType.USER_RAW
+            include_user_raw=True,
         )
 
         _loader = get_data_loader(
             dataset_uri=URI("mnist/version/latest", URIType.DATASET),
-            backend=SWDSBackendType.S3,
         )
         assert isinstance(_loader, UserRawDataLoader)
-        assert isinstance(_loader.storage.backend, S3StorageBackend)
+        assert not _loader._stores
 
     @pytest.mark.skip(reason="wait job scheduler feature, cmp will use datastore")
     def test_cmp(self) -> None:
@@ -82,7 +77,6 @@ class TestModelPipelineHandler(TestCase):
 
         config_json_path = os.path.join(self.config_dir, "input.json")
         local_ppl_result_config = {
-            "backend": "fuse",
             "kind": "jsonl",
             "swds": [
                 {
@@ -127,14 +121,14 @@ class TestModelPipelineHandler(TestCase):
         #     assert lines[0]["kind"] == "test"
 
     @pytest.mark.skip(reason="wait job scheduler feature, ppl will use datastore")
-    @patch("starwhale.api._impl.loader.TabularDataset.scan")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_ppl(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
         m_summary.return_value = DatasetSummary(
             rows=1,
             increased_rows=1,
-            data_format_type=DataFormatType.SWDS_BIN,
-            object_store_type=ObjectStoreType.LOCAL,
+            include_user_raw=False,
+            include_link=False,
             label_byte_size=1,
             data_byte_size=10,
         )
@@ -222,7 +216,6 @@ class TestModelPipelineHandler(TestCase):
 
         config_json_path = os.path.join(self.config_dir, "input.json")
         local_swds_config = {
-            "backend": "fuse",
             "kind": "swds",
             "swds": [
                 {
@@ -248,7 +241,6 @@ class TestModelPipelineHandler(TestCase):
         assert os.path.exists(result_file_path)
 
         local_swds_config = {
-            "backend": "fuse",
             "kind": "jsonl",
             "swds": [
                 {

@@ -197,3 +197,17 @@ def make_dir_gitignore(d: Path) -> None:
 
     ensure_dir(d)
     ensure_file(d / ".gitignore", "*")
+
+
+def load_dotenv(fpath: Path) -> None:
+    if not fpath.exists():
+        return
+
+    with fpath.open("r") as f:
+        for line in f.readlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            k, v = line.split("=", 1)
+            os.environ[k.strip()] = v.strip()

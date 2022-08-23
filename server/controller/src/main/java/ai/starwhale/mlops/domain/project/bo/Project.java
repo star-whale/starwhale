@@ -21,11 +21,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Slf4j
 public class Project {
 
     private Long id;
@@ -33,6 +35,8 @@ public class Project {
     private String name;
 
     private String description;
+
+    private Privacy privacy;
 
     private User owner;
 
@@ -42,5 +46,36 @@ public class Project {
 
     public Integer getDeleteInt() {
         return isDeleted ? 1 : 0;
+    }
+
+    public enum Privacy {
+        PUBLIC( 1),
+        PRIVATE(0);
+
+        private final int value;
+
+        Privacy(int value) {
+            this.value = value;
+        }
+        public int getValue() {
+            return value;
+        }
+
+        public static Privacy fromName(String name) {
+            try {
+                return Privacy.valueOf(name.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.error("Privacy parse error. ", e);
+                return PRIVATE;
+            }
+        }
+        public static Privacy fromValue(int value) {
+            for (Privacy privacy : Privacy.values()) {
+                if(privacy.getValue() == value) {
+                    return privacy;
+                }
+            }
+            return PRIVATE;
+        }
     }
 }
