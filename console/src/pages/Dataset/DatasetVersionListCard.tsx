@@ -6,7 +6,6 @@ import { ICreateDatasetVersionSchema } from '@dataset/schemas/datasetVersion'
 import DatasetVersionForm from '@dataset/components/DatasetVersionForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
@@ -17,9 +16,9 @@ import { JSONTree } from 'react-json-tree'
 
 // eslint-disable-next-line
 import yaml from 'js-yaml'
-import IconFont from '@/components/IconFont'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
+import Button from '@/components/Button'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -56,35 +55,19 @@ export default function DatasetVersionListCard() {
     }, [drawerData])
 
     return (
-        <div
-            style={{
-                width: '100%',
-                height: 'auto',
-            }}
-            ref={cardRef}
-        >
-            <Card
-                title={t('dataset versions')}
-                extra={
-                    <Button
-                        startEnhancer={<IconFont type='add' kind='white' />}
-                        size={ButtonSize.compact}
-                        onClick={() => setIsCreateDatasetVersionOpen(true)}
-                    >
-                        {t('create')}
-                    </Button>
-                }
-            >
+        <>
+            <Card>
                 <Table
                     isLoading={datasetVersionsInfo.isLoading}
-                    columns={[t('Meta'), t('Created'), t('Owner'), t('Action')]}
+                    columns={[t('sth name'), t('Meta'), t('Created'), t('Owner'), t('Action')]}
                     data={
                         datasetVersionsInfo.data?.list.map((datasetVersion) => {
                             return [
+                                datasetVersion.name,
                                 <Button
                                     key={datasetVersion.id}
-                                    size='mini'
-                                    startEnhancer={<IconFont type='show' kind='white' />}
+                                    size='compact'
+                                    as='link'
                                     onClick={() => {
                                         setDrawerData(datasetVersion.meta)
                                         setIsOpen(true)
@@ -102,7 +85,6 @@ export default function DatasetVersionListCard() {
                                         handleAction(datasetVersion.id)
                                     }}
                                 >
-                                    <IconFont type='revert' kind='primary' />
                                     {t('Revert')}
                                 </StyledLink>,
                             ]
@@ -130,6 +112,7 @@ export default function DatasetVersionListCard() {
                     </ModalBody>
                 </Modal>
             </Card>
+
             {cardRef.current && (
                 <Drawer
                     size='50%'
@@ -154,6 +137,6 @@ export default function DatasetVersionListCard() {
                     </div>
                 </Drawer>
             )}
-        </div>
+        </>
     )
 }

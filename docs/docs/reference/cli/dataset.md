@@ -26,7 +26,6 @@ swcli [GLOBAL OPTIONS] dataset [OPTIONS] COMMAND [ARGS]...
   |list|✅|✅|
   |recover|✅|✅|
   |remove|✅|✅|
-  |render-fuse|✅|❌|
   |tag|✅|❌|
 
 ## Build a dataset
@@ -178,29 +177,6 @@ swcli dataset tag [OPTIONS] DATASET TAGS
 
     ```bash
     ❯ swcli dataset tag mnist/version/hfsdmyrtgzst v1 test
-    ```
-
-## Render dataset's fuse input.json
-
-```bash
-swcli dataset render-fuse [OPTIONS] TARGET
-```
-
-- This command renders an `input.json` with fuse storage backend, which can be used as the `swcli model ppl --input-json` option for debugging.
-- The `TARGET` argument is required. `Dataset URI` or dataset working dir is ok for the `TARGET` argument.
-- Options:
-
-    |Option|Alias Option|Required|Type|Default|Description|
-    |------|--------|-------|-----------|-----|-----------|
-    |`--force`|`-f`|❌|Boolean|False|Force to render input.json|
-
-- Example:
-
-    ```bash
-    ❯ swcli dataset render-fuse mnist/version/latest
-    👑 try to render fuse json@/home/liutianwei/.cache/starwhale/self/dataset/mnist/gv/gvsgemdbhazwknrtmftdgyjzoaygynq.swds...
-    👏 render swds mnist:gvsgemdbhazwknrtmftdgyjzoaygynq local_fuse.json
-    🔍 /home/liutianwei/.cache/starwhale/self/dataset/mnist/gv/gvsgemdbhazwknrtmftdgyjzoaygynq.swds/local_fuse.json
     ```
 
 ## Copy a dataset

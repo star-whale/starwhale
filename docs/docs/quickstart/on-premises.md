@@ -16,8 +16,6 @@ Starwhale provides two ways to install an On-Premises instance in your private c
   - Minikube: You should have minikube and docker installed on your machine.
   - For more deployment details of Kubernetes, you can refer to this [doc](../cloud/helm-charts.md).
 
-- For Bare Metal: You should have these components installed: docker(>=19.03), nvidia-docker-plugin(optional). You can get more details from this [doc](../cloud/ansible.md).
-
 :::notes
 In this tutorial, minikube is used instead of the standard Kubernetes cluster
 :::

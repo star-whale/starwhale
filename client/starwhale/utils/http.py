@@ -19,12 +19,12 @@ def wrap_sw_error_resp(
 ) -> None:
 
     if silent:
-        _rprint = lambda x: x
+        _rprint: t.Callable = lambda x: x
     else:
         _rprint = rprint
 
     if r.status_code == HTTPStatus.OK:
-        _rprint(f":clap: {header} success")  # type: ignore
+        _rprint(f":clap: {header} success")
         return
 
     msg = f":disappointed_face: url:{r.url}\n:dog: http status code: {r.status_code} \n"

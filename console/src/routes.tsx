@@ -18,9 +18,7 @@ import ProjectJobs from '@/pages/Project/Jobs'
 import ModelVersionListCard from '@/pages/Model/ModelVersionListCard'
 import ModelVersionLayout from '@/pages/Model/ModelVersionLayout'
 import DatasetVersionListCard from '@/pages/Dataset/DatasetVersionListCard'
-import DatasetVersionLayout from '@/pages/Dataset/DatasetVersionLayout'
-import DatasetLayout from '@/pages/Dataset/DatasetLayout'
-import DatasetOverview from '@/pages/Dataset/Overview'
+import DatasetOverviewLayout from '@/pages/Dataset/DatasetOverviewLayout'
 import JobNewCard from '@/pages/Project/JobNewCard'
 import ApiHeader from '@/api/ApiHeader'
 import JobTasks from '@/pages/Job/JobTasks'
@@ -46,6 +44,9 @@ import CenterLayout from './pages/CenterLayout'
 import ProjectOverview from './pages/Project/Overview'
 import Pending from './pages/Home/Pending'
 import { useAuth } from './api/Auth'
+import DatasetVersionOverview from './pages/Dataset/DatasetVersionOverview'
+import DatasetVersionOverviewMeta from './pages/Dataset/DatasetVersionOverviewMeta'
+import DatasetVersionOverviewFiles from './pages/Dataset/DatasetVersionOverviewFiles'
 
 const LoginNew = React.lazy(() => import('@/pages/Home/LoginNew'))
 
@@ -184,27 +185,32 @@ const Routes = () => {
                             </JobOverviewLayout>
                         </Route>
                         {/* datasets */}
-                        <Route exact path='/projects/:projectId/datasets/:datasetId/versions'>
-                            <DatasetVersionLayout>
-                                <Switch>
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/datasets/:datasetId/versions'
-                                        component={DatasetVersionListCard}
-                                    />
-                                </Switch>
-                            </DatasetVersionLayout>
-                        </Route>
-                        <Route exact path='/projects/:projectId/datasets/:datasetId/:path?/:path?'>
-                            <DatasetLayout>
+                        <Route exact path='/projects/:projectId/datasets/:datasetId/:path?/:datasetVersionId?/:path?'>
+                            <DatasetOverviewLayout>
                                 <Switch>
                                     <Route
                                         exact
                                         path='/projects/:projectId/datasets/:datasetId'
-                                        component={DatasetOverview}
+                                        component={DatasetVersionListCard}
                                     />
+                                    <Route
+                                        exact
+                                        path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/overview'
+                                        component={DatasetVersionOverview}
+                                    />
+                                    <Route
+                                        exact
+                                        path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/meta'
+                                        component={DatasetVersionOverviewMeta}
+                                    />
+                                    <Route
+                                        exact
+                                        path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/files'
+                                        component={DatasetVersionOverviewFiles}
+                                    />
+                                    <Redirect to='/projects/:projectId/datasets/:datasetId' />
                                 </Switch>
-                            </DatasetLayout>
+                            </DatasetOverviewLayout>
                         </Route>
                         {/* runtime */}
                         <Route exact path='/projects/:projectId/runtimes/:runtimeId/versions'>

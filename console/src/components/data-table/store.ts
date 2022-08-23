@@ -1,5 +1,6 @@
 import create, { StateCreator } from 'zustand'
-import { devtools, persist, subscribeWithSelector } from 'zustand/middleware'
+// persist
+import { devtools, subscribeWithSelector } from 'zustand/middleware'
 import produce from 'immer'
 import { v4 as uuid } from 'uuid'
 import _ from 'lodash'
@@ -45,9 +46,10 @@ export type ITableState = IViewState &
     IRowState &
     ICompareState
 
+// , ['zustand/persist', unknown]
 export type IStateCreator<T> = StateCreator<
     ITableState,
-    [['zustand/subscribeWithSelector', never], ['zustand/devtools', never], ['zustand/persist', unknown]],
+    [['zustand/subscribeWithSelector', never], ['zustand/devtools', never]],
     [],
     T
 >
@@ -248,19 +250,19 @@ export function createCustomStore(key: string, initState: Partial<ITableState> =
     const useStore = create<ITableState>()(
         subscribeWithSelector(
             devtools(
-                persist(
-                    (...a) => ({
-                        ...createTableStateInitSlice(...a),
-                        ...createViewSlice(...a),
-                        ...createCurrentViewSlice(...a),
-                        ...createViewInteractiveSlice(...a),
-                        ...createRowSlice(...a),
-                        ...createCompareSlice(...a),
-                        ...initState,
-                        key: name,
-                    }),
-                    { name }
-                ),
+                // persist(
+                (...a) => ({
+                    ...createTableStateInitSlice(...a),
+                    ...createViewSlice(...a),
+                    ...createCurrentViewSlice(...a),
+                    ...createViewInteractiveSlice(...a),
+                    ...createRowSlice(...a),
+                    ...createCompareSlice(...a),
+                    ...initState,
+                    key: name,
+                }),
+                //     { name }
+                // ),
                 { name }
             )
         )

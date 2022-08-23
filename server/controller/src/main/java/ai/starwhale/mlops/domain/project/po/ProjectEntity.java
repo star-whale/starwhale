@@ -39,6 +39,8 @@ public class ProjectEntity extends BaseEntity {
 
     private UserEntity owner;
 
+    private Integer privacy;
+
     private String description;
 
     private Integer isDeleted;

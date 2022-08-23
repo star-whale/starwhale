@@ -1,11 +1,26 @@
 {{ if .Values.minikube.enabled}}
 
-{{if .Values.minio.enabled }}
+{{ if .Values.minio.enabled }}
 {{ include "chart.minikubePV" (merge (dict "backend" "minio") . )}}
 {{ end }}
 
-{{if .Values.mysql.enabled }}
+{{ if .Values.mysql.enabled }}
 {{ include "chart.minikubePV" (merge (dict "backend" "mysql") . )}}
+{{ end }}
+
+{{ end }}
+
+
+{{ if .Values.devMode.createPV.enabled }}
+
+{{ $params := (merge (dict "rootPath" .Values.devMode.createPV.rootPath) . ) }}
+
+{{ if .Values.minio.enabled }}
+{{ include "chart.createPV" (merge (dict "backend" "minio" "storage" .Values.minio.persistence.size) $params) }}
+{{ end }}
+
+{{ if .Values.mysql.enabled }}
+{{ include "chart.createPV" (merge (dict "backend" "mysql" "storage" .Values.mysql.primary.persistence.size) $params) }}
 {{ end }}
 
 {{ end }}

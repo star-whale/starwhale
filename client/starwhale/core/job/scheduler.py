@@ -226,13 +226,13 @@ class Consumer(threading.Thread):
                     for future in concurrent.futures.as_completed(futures)
                 )
             logger.debug(f"execute step:{executor.step.step_name}, res:{res}")
-            if res:
-                executor.final(
-                    res=res,
-                    exec_time=time.time() - start_time,
-                )
-                # mark the unit of work as processed
-                self.queue.task_done()
+
+            executor.final(
+                res=res,
+                exec_time=time.time() - start_time,
+            )
+            # mark the unit of work as processed
+            self.queue.task_done()
         # mark the signal as processed
         self.queue.task_done()
         logger.debug("Consumer finished")

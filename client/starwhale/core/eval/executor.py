@@ -291,7 +291,7 @@ class EvalExecutor:
                 datasets=[u.full_uri for u in self.dataset_uris],
                 runtime=self.runtime_uri,
                 status=_STATUS.SUCCESS if _status else _STATUS.FAILED,
-                finished_at=now_str(),  # type: ignore
+                finished_at=now_str(),
             )
         )
         _f = self._workdir / DEFAULT_MANIFEST_NAME
