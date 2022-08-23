@@ -91,7 +91,7 @@ class FileLikeObj(Protocol):
         ...
 
 
-class ObjectStoreS3Connection:
+class S3Connection:
     def __init__(
         self,
         endpoint: str,
@@ -125,7 +125,7 @@ class ObjectStoreS3Connection:
     __repr__ = __str__
 
     @classmethod
-    def from_uri(cls, uri: str, auth_name: str) -> ObjectStoreS3Connection:
+    def from_uri(cls, uri: str, auth_name: str) -> S3Connection:
         """make S3 Connection by uri
 
         uri:
@@ -177,10 +177,10 @@ class ObjectStoreS3Connection:
         )
 
     @classmethod
-    def from_env(cls) -> ObjectStoreS3Connection:
+    def from_env(cls) -> S3Connection:
         # TODO: support multi s3 backend servers
         _env = os.environ.get
-        return ObjectStoreS3Connection(
+        return S3Connection(
             endpoint=_env("SW_S3_ENDPOINT", _DEFAULT_S3_ENDPOINT),
             access_key=_env("SW_S3_ACCESS_KEY", ""),
             secret_key=_env("SW_S3_SECRET", ""),
@@ -189,7 +189,7 @@ class ObjectStoreS3Connection:
         )
 
 
-class DatasetObjectStore:
+class ObjectStore:
     def __init__(
         self,
         backend: str,
@@ -201,7 +201,7 @@ class DatasetObjectStore:
 
         self.backend: StorageBackend
         if backend == SWDSBackendType.S3:
-            conn = kw.get("conn") or ObjectStoreS3Connection.from_env()
+            conn = kw.get("conn") or S3Connection.from_env()
             self.backend = S3StorageBackend(conn)
         else:
             self.backend = LocalFSStorageBackend()
@@ -209,13 +209,13 @@ class DatasetObjectStore:
         self.key_prefix = key_prefix or os.environ.get("SW_OBJECT_STORE_KEY_PREFIX", "")
 
     def __str__(self) -> str:
-        return f"DatasetObjectStore backend:{self.backend}"
+        return f"ObjectStore backend:{self.backend}"
 
     def __repr__(self) -> str:
-        return f"DatasetObjectStore backend:{self.backend}, bucket:{self.bucket}, key_prefix:{self.key_prefix}"
+        return f"ObjectStored:{self.backend}, bucket:{self.bucket}, key_prefix:{self.key_prefix}"
 
     @classmethod
-    def from_data_link_uri(cls, data_uri: str, auth_name: str) -> DatasetObjectStore:
+    def from_data_link_uri(cls, data_uri: str, auth_name: str) -> ObjectStore:
         data_uri = data_uri.strip()
         if not data_uri:
             raise FieldTypeOrValueError("data_uri is empty")
@@ -223,7 +223,7 @@ class DatasetObjectStore:
         # TODO: support other uri type
         if data_uri.startswith("s3://"):
             backend = SWDSBackendType.S3
-            conn = ObjectStoreS3Connection.from_uri(data_uri, auth_name)
+            conn = S3Connection.from_uri(data_uri, auth_name)
             bucket = conn.bucket
         else:
             backend = SWDSBackendType.LocalFS
@@ -233,7 +233,7 @@ class DatasetObjectStore:
         return cls(backend=backend, bucket=bucket, conn=conn)
 
     @classmethod
-    def from_dataset_uri(cls, dataset_uri: URI) -> DatasetObjectStore:
+    def from_dataset_uri(cls, dataset_uri: URI) -> ObjectStore:
         if dataset_uri.object.typ != URIType.DATASET:
             raise NoSupportError(f"{dataset_uri} is not dataset uri")
 
@@ -279,7 +279,7 @@ class StorageBackend(metaclass=ABCMeta):
 class S3StorageBackend(StorageBackend):
     def __init__(
         self,
-        conn: ObjectStoreS3Connection,
+        conn: S3Connection,
     ):
         super().__init__(kind=SWDSBackendType.S3)
 

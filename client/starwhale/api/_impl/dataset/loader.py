@@ -14,7 +14,7 @@ from starwhale.consts import AUTH_ENV_FNAME
 from starwhale.base.uri import URI
 from starwhale.base.type import InstanceType, DataFormatType, ObjectStoreType
 from starwhale.core.dataset.type import DataField
-from starwhale.core.dataset.store import FileLikeObj, DatasetStorage, DatasetObjectStore
+from starwhale.core.dataset.store import FileLikeObj, ObjectStore, DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 
 
@@ -35,7 +35,7 @@ class DataLoader(metaclass=ABCMeta):
         self.tabular_dataset = TabularDataset.from_uri(
             dataset_uri, start=start, end=end
         )
-        self._stores: t.Dict[str, DatasetObjectStore] = {}
+        self._stores: t.Dict[str, ObjectStore] = {}
 
         self._load_dataset_auth_env()
 
@@ -47,23 +47,21 @@ class DataLoader(metaclass=ABCMeta):
             )
             load_dotenv(auth_env_fpath)
 
-    def _get_store(self, row: TabularDatasetRow) -> DatasetObjectStore:
+    def _get_store(self, row: TabularDatasetRow) -> ObjectStore:
         _k = f"{row.object_store_type.value}.{row.auth_name}"
         _store = self._stores.get(_k)
         if _store:
             return _store
 
         if row.object_store_type == ObjectStoreType.REMOTE:
-            _store = DatasetObjectStore.from_data_link_uri(row.data_uri, row.auth_name)
+            _store = ObjectStore.from_data_link_uri(row.data_uri, row.auth_name)
         else:
-            _store = DatasetObjectStore.from_dataset_uri(self.dataset_uri)
+            _store = ObjectStore.from_dataset_uri(self.dataset_uri)
 
         self._stores[_k] = _store
         return _store
 
-    def _get_key_compose(
-        self, row: TabularDatasetRow, store: DatasetObjectStore
-    ) -> str:
+    def _get_key_compose(self, row: TabularDatasetRow, store: ObjectStore) -> str:
         if row.object_store_type == ObjectStoreType.REMOTE:
             data_uri = urlparse(row.data_uri).path
         else:
