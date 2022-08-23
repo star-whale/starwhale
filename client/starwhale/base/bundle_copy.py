@@ -1,3 +1,4 @@
+import typing as t
 import os.path
 from copy import deepcopy
 from http import HTTPStatus
@@ -17,6 +18,7 @@ from rich.progress import (
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     HTTPMethod,
+    AUTH_ENV_FNAME,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
     DUMPED_SWDS_META_FNAME,
@@ -50,7 +52,12 @@ class _UploadPhase:
 
 class BundleCopy(CloudRequestMixed):
     def __init__(
-        self, src_uri: str, dest_uri: str, typ: str, force: bool = False
+        self,
+        src_uri: str,
+        dest_uri: str,
+        typ: str,
+        force: bool = False,
+        **kw: t.Any,
     ) -> None:
         self.src_uri = URI(src_uri, expected_type=typ)
         self.dest_uri = URI(dest_uri, expected_type=URIType.PROJECT)
@@ -59,6 +66,8 @@ class BundleCopy(CloudRequestMixed):
 
         self.bundle_name = self.src_uri.object.name
         self.bundle_version = self._guess_bundle_version()
+
+        self.kw = kw
 
         self._sw_config = SWCliConfigMixed()
         self._do_validate()
@@ -272,8 +281,12 @@ class BundleCopy(CloudRequestMixed):
                 )
                 _p_map[_tid] = (_path, _data_uri)
 
-            for _meta_name in [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]:
-                _path = _workdir / _meta_name
+            _meta_names = [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]
+            if self.kw.get("with_auth") and (_workdir / AUTH_ENV_FNAME).exists():
+                _meta_names.append(AUTH_ENV_FNAME)
+
+            for _name in _meta_names:
+                _path = _workdir / _name
                 _tid = progress.add_task(
                     f":arrow_up: {_path.name}",
                     total=_path.stat().st_size,
@@ -317,7 +330,6 @@ class BundleCopy(CloudRequestMixed):
 
     def _do_download_bundle_dir(self, progress: Progress) -> None:
         _workdir = self._get_target_path(self.dest_uri)
-        ensure_dir(_workdir)
         ensure_dir(_workdir / "data")
 
         def _download(_target: Path, _part: str, _tid: TaskID) -> None:
@@ -346,6 +358,7 @@ class BundleCopy(CloudRequestMixed):
             _tid = progress.add_task(f":arrow_down: {_k}")
             _p_map[_tid] = {"path": _workdir / "data" / _k, "part": _k}
 
+        # FIXME: copy .auth_env from controller? security issue
         for _f in [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]:
             _tid = progress.add_task(f":arrow_down: {_f}")
             _p_map[_tid] = {"path": _workdir / _f, "part": _f}

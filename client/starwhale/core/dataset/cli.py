@@ -113,9 +113,16 @@ def _summary(view: t.Type[DatasetTermView], dataset: str) -> None:
 @click.argument("src")
 @click.argument("dest")
 @click.option("-f", "--force", is_flag=True, help="Force copy dataset")
+@click.option(
+    "--with-auth",
+    is_flag=True,
+    help="Copy dataset with .auth_env file that is from Link data type",
+)
 @click.pass_obj
-def _copy(view: t.Type[DatasetTermView], src: str, dest: str, force: bool) -> None:
-    view.copy(src, dest, force)
+def _copy(
+    view: t.Type[DatasetTermView], src: str, dest: str, force: bool, with_auth: bool
+) -> None:
+    view.copy(src, dest, force, with_auth)
 
 
 @dataset_cmd.command("tag", help="Dataset tag management, add or remove")
