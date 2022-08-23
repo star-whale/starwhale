@@ -15,10 +15,9 @@ from starwhale.consts import (
     DEFAULT_MANIFEST_NAME,
 )
 from starwhale.base.uri import URI
-from starwhale.base.type import URIType, EvalTaskType, InstanceType, JobOperationType
+from starwhale.base.type import URIType, InstanceType, JobOperationType
 from starwhale.base.view import BaseTermView
-
-from .model import EvaluationJob
+from starwhale.core.eval.model import EvaluationJob
 
 
 class JobTermView(BaseTermView):
@@ -242,7 +241,6 @@ class JobTermView(BaseTermView):
         resource: str = "",
         gencmd: bool = False,
         use_docker: bool = False,
-        typ: str = EvalTaskType.ALL,
         step: str = "",
         task_index: int = 0,
         runtime_restore: bool = False,
@@ -256,7 +254,6 @@ class JobTermView(BaseTermView):
             version=version,
             name=name,
             desc=desc,
-            typ=typ,
             resource=resource,
             gencmd=gencmd,
             use_docker=use_docker,
@@ -277,10 +274,12 @@ class JobTermView(BaseTermView):
                 _job_uri = f"{reason[:SHORT_VERSION_CNT]}"
 
             console.print(
-                f":bird: run cmd to fetch job info: [bold green]swcli job info {_job_uri}[/]"
+                f":bird: run cmd to fetch eval info: [bold green]swcli eval info {_job_uri}[/]"
             )
         else:
-            console.print(f":collision: failed to create job, notice: [red]{reason}[/]")
+            console.print(
+                f":collision: failed to create eval job, notice: [red]{reason}[/]"
+            )
 
     @classmethod
     def list(

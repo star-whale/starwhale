@@ -42,3 +42,15 @@ class EvaluationStorage(BaseStorage):
         _job_dir = sw.rootdir / project_uri.project / URIType.EVALUATION
         for _path in _job_dir.glob(f"**/**/{DEFAULT_MANIFEST_NAME}"):
             yield _path, RECOVER_DIRNAME in _path.parts
+
+    @staticmethod
+    def local_run_dir(project_name: str, version: str) -> Path:
+        # TODO: tune SWCliConfigMixed
+        sw = SWCliConfigMixed()
+        return (
+            sw.rootdir
+            / project_name
+            / URIType.EVALUATION
+            / version[:VERSION_PREFIX_CNT]
+            / version
+        )

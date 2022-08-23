@@ -3,6 +3,8 @@ import re
 import threading
 from typing import Any, Dict, List, Union, Iterator, Optional
 
+from starwhale.consts.env import SWEnv
+
 from . import data_store
 
 
@@ -31,7 +33,7 @@ class Logger:
 class Evaluation(Logger):
     def __init__(self, eval_id: Optional[str] = None):
         if eval_id is None:
-            eval_id = os.getenv("SW_EVAL_ID", None)
+            eval_id = os.getenv(SWEnv.eval_version, None)
         if eval_id is None:
             raise RuntimeError("eval id should not be None")
         if re.match(r"^[A-Za-z0-9-_]+$", eval_id) is None:
@@ -39,9 +41,9 @@ class Evaluation(Logger):
                 f"invalid eval id {eval_id}, only letters(A-Z, a-z), digits(0-9), hyphen('-'), and underscore('_') are allowed"
             )
         self.eval_id = eval_id
-        self.project = os.getenv("SW_PROJECT")
+        self.project = os.getenv(SWEnv.project)
         if self.project is None:
-            raise RuntimeError("SW_PROJECT is not set")
+            raise RuntimeError(f"{SWEnv.project} is not set")
         self._results_table_name = f"project/{self.project}/eval/{self.eval_id}/results"
         self._summary_table_name = f"project/{self.project}/eval/summary"
         self._init_writers([self._results_table_name, self._summary_table_name])
@@ -88,7 +90,7 @@ class Dataset(Logger):
             raise RuntimeError("id should not be None")
 
         self.dataset_id = dataset_id
-        self.project = project or os.getenv("SW_PROJECT")
+        self.project = project or os.getenv(SWEnv.project)
         if not self.project:
             raise RuntimeError("project is not set")
 

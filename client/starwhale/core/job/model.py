@@ -13,17 +13,24 @@ from starwhale.api._impl.job import Context
 
 class STATUS:
     INIT = "init"
+    START = "start"
     RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
 
 
 class Task:
-    def __init__(self, context: Context, status: str, module: str, src_dir: Path):
+    def __init__(
+        self,
+        context: Context,
+        status: str,
+        module: str,
+        workdir: Path,
+    ):
         self.context = context
         self.status = status
         self.module = module
-        self.src_dir = src_dir
+        self.work_dir = workdir
 
     def execute(self) -> bool:
         """
@@ -32,7 +39,7 @@ class Task:
         """
         logger.debug("execute step:{} start.", self.context)
 
-        _module = load_module(self.module, self.src_dir)
+        _module = load_module(self.module, self.work_dir)
 
         try:
             # instance method

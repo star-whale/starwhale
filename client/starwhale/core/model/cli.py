@@ -3,10 +3,8 @@ import typing as t
 import click
 
 from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
-from starwhale.base.type import EvalTaskType
 from starwhale.consts.env import SWEnv
-
-from .view import get_term_view, ModelTermView
+from starwhale.core.model.view import get_term_view, ModelTermView
 
 
 @click.group("model", help="Model management, build/copy/ppl/cmp/eval/extract...")
@@ -124,56 +122,30 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     default=DefaultYAMLName.MODEL,
     help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
-# TODO: Used to distinguish remote or local mode?
 @click.option(
     "--project",
     envvar=SWEnv.project,
-    default="self",
+    default="",
     help=f"project name, env is {SWEnv.project}",
 )
-@click.option("--name", help="Job name")
 @click.option(
     "--version", envvar=SWEnv.eval_version, default=None, help="Evaluation job version"
-)
-@click.option(
-    "--type",
-    type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE]),
-    default=EvalTaskType.ALL,
-    help="Evaluation run type",
 )
 @click.option("--step", default="", help="Evaluation run step")
 @click.option("--task-index", default=0, help="Index of tasks in the current step")
 @click.option("--runtime", default="", help="runtime uri")
 @click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 @click.option("--dataset", envvar=SWEnv.dataset_uri, help="dataset uri")
-@click.option(
-    "--dataset-row-start",
-    envvar=SWEnv.dataset_row_start,
-    type=int,
-    default=0,
-    help="dataset row start index",
-)
-@click.option(
-    "--dataset-row-end",
-    envvar=SWEnv.dataset_row_end,
-    type=int,
-    default=-1,
-    help="dataset row end index",
-)
 def _eval(
     project: str,
     target: str,
     model_yaml: str,
-    name: str,
     version: str,
     dataset: str,
-    type: str,
     step: str,
     task_index: int,
     runtime: str,
     runtime_restore: bool,
-    dataset_row_start: int,
-    dataset_row_end: int,
 ) -> None:
     """
     [ONLY Standalone]Run evaluation processing with root dir of {target}.
@@ -185,7 +157,6 @@ def _eval(
         target=target,
         version=version,
         yaml_name=model_yaml,
-        typ=type,
         runtime_uri=runtime,
         runtime_restore=runtime_restore,
         step=step,
