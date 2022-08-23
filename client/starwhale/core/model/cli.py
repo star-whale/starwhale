@@ -123,6 +123,12 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
     help="Model yaml filename, default use ${MODEL_DIR}/model.yaml file",
 )
 @click.option(
+    "--project",
+    envvar=SWEnv.project,
+    default="",
+    help=f"project name, env is {SWEnv.project}",
+)
+@click.option(
     "--version", envvar=SWEnv.eval_version, default=None, help="Evaluation job version"
 )
 @click.option("--step", default="", help="Evaluation run step")
@@ -130,21 +136,8 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--runtime", default="", help="runtime uri")
 @click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 @click.option("--dataset", envvar=SWEnv.dataset_uri, help="dataset uri")
-@click.option(
-    "--dataset-row-start",
-    envvar=SWEnv.dataset_row_start,
-    type=int,
-    default=0,
-    help="dataset row start index",
-)
-@click.option(
-    "--dataset-row-end",
-    envvar=SWEnv.dataset_row_end,
-    type=int,
-    default=-1,
-    help="dataset row end index",
-)
 def _eval(
+    project: str,
     target: str,
     model_yaml: str,
     version: str,
@@ -153,8 +146,6 @@ def _eval(
     task_index: int,
     runtime: str,
     runtime_restore: bool,
-    dataset_row_start: int,
-    dataset_row_end: int,
 ) -> None:
     """
     [ONLY Standalone]Run evaluation processing with root dir of {target}.
@@ -162,6 +153,7 @@ def _eval(
     TARGET: model uri or model workdir path, in Starwhale Agent Docker Environment, only support workdir path.
     """
     ModelTermView.eval(
+        project=project,
         target=target,
         version=version,
         yaml_name=model_yaml,

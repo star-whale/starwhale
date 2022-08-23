@@ -25,6 +25,8 @@ from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.api._impl.job import Context
+from starwhale.core.job.model import STATUS
+from starwhale.core.eval.store import EvaluationStorage
 from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
 from starwhale.api._impl.wrapper import Evaluation
 from starwhale.core.dataset.model import Dataset
@@ -59,21 +61,10 @@ def calculate_index(
 
 
 class PipelineHandler(metaclass=ABCMeta):
-    class ResultOutputType:
-        JSONL = "jsonline"
-        PLAIN = "plain"
-
-    class STATUS:
-        START = "start"
-        RUNNING = "running"
-        SUCCESS = "success"
-        FAILED = "failed"
-
     def __init__(
         self,
         context: Context,
         merge_label: bool = True,
-        output_type: str = ResultOutputType.JSONL,
         ignore_error: bool = False,
     ) -> None:
         self.context = context
@@ -81,7 +72,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
         # TODO: add args for compare result and label directly
         self.merge_label = merge_label
-        self.output_type = output_type
+
         self.ignore_error = ignore_error
 
         self.logger, self._sw_logger = self._init_logger()
@@ -98,11 +89,11 @@ class PipelineHandler(metaclass=ABCMeta):
         self._monkey_patch()
 
     def _init_dir(self) -> None:
+        _logdir = EvaluationStorage.local_run_dir(
+            self.context.project, self.context.version
+        )
         _run_dir = (
-            self.context.workdir
-            / "runlog"
-            / self.context.step
-            / str(self.context.index)
+            _logdir / RunSubDirType.RUNLOG / self.context.step / str(self.context.index)
         )
         self.status_dir = _run_dir / RunSubDirType.STATUS
         self.log_dir = _run_dir / RunSubDirType.LOG
@@ -219,15 +210,15 @@ class PipelineHandler(metaclass=ABCMeta):
         def _wrapper(*args: t.Any, **kwargs: t.Any) -> None:
             self: PipelineHandler = args[0]
             self._sw_logger.info(f"start to run {func}...")
-            self._update_status(self.STATUS.RUNNING)
+            self._update_status(STATUS.RUNNING)
             try:
                 func(*args, **kwargs)  # type: ignore
             except Exception as e:
-                self._update_status(self.STATUS.FAILED)
+                self._update_status(STATUS.FAILED)
                 self._sw_logger.exception(f"{func} abort, exception: {e}")
                 raise
             else:
-                self._update_status(self.STATUS.SUCCESS)
+                self._update_status(STATUS.SUCCESS)
                 self._sw_logger.info("finish.")
 
         return _wrapper
@@ -235,7 +226,7 @@ class PipelineHandler(metaclass=ABCMeta):
     @_record_status  # type: ignore
     def _starwhale_internal_run_cmp(self) -> None:
         self._sw_logger.debug("enter cmp func...")
-        self._update_status(self.STATUS.START)
+        self._update_status(STATUS.START)
         now = now_str()
         try:
             _ppl_results = list(self.evaluation.get_results())
@@ -255,7 +246,7 @@ class PipelineHandler(metaclass=ABCMeta):
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
-        self._update_status(self.STATUS.START)
+        self._update_status(STATUS.START)
 
         if not self.context.dataset_uris:
             raise RuntimeError("no dataset uri!")
@@ -300,7 +291,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 exception = e
                 self._sw_logger.exception(f"[{data.idx}] data handle -> failed")
                 if not self.ignore_error:
-                    self._update_status(self.STATUS.FAILED)
+                    self._update_status(STATUS.FAILED)
                     raise
             else:
                 exception = None
@@ -342,7 +333,7 @@ class PipelineHandler(metaclass=ABCMeta):
             except Exception as e:
                 self._sw_logger.exception(f"{label.data!r} label handle exception:{e}")
                 if not self.ignore_error:
-                    self._update_status(self.STATUS.FAILED)
+                    self._update_status(STATUS.FAILED)
                     raise
                 else:
                     _label = ""
@@ -353,7 +344,7 @@ class PipelineHandler(metaclass=ABCMeta):
             data_size=data.data_size,
             label=_label,
         )
-        self._update_status(self.STATUS.RUNNING)
+        self._update_status(STATUS.RUNNING)
 
     def _update_status(self, status: str) -> None:
         fpath = self.status_dir / CURRENT_FNAME

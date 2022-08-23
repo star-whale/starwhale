@@ -7,33 +7,35 @@ from copy import deepcopy
 from pathlib import Path
 from collections import defaultdict
 
+import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
-from starwhale.utils import console, load_yaml, gen_uniq_version
+from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
 from starwhale.consts import (
     DefaultYAMLName,
     EvalHandlerType,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     DEFAULT_COPY_WORKERS,
+    DEFAULT_MANIFEST_NAME,
     DEFAULT_EVALUATION_PIPELINE,
     DEFAULT_EVALUATION_JOBS_FNAME,
     DEFAULT_STARWHALE_API_VERSION,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, ensure_dir
+from starwhale.utils.fs import move_dir, ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
-from starwhale.consts.env import SWEnv
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
-from starwhale.utils.config import SWCliConfigMixed
 from starwhale.api._impl.job import Parser
+from starwhale.core.job.model import STATUS
 from starwhale.utils.progress import run_with_progress_bar
+from starwhale.core.eval.store import EvaluationStorage
 from starwhale.base.bundle_copy import BundleCopy
 from starwhale.core.model.store import ModelStorage
 from starwhale.core.job.scheduler import Scheduler
@@ -203,6 +205,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     @classmethod
     def eval_user_handler(
         cls,
+        project: str,
         version: str,
         workdir: Path,
         dataset_uris: t.List[str],
@@ -212,56 +215,95 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         task_index: int = 0,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
-
+        # init manifest
+        _manifest: t.Dict[str, t.Any] = {
+            "status": STATUS.START,
+            "step": step,
+            "task_index": task_index,
+        }
+        # load model config by yaml
         _model_config = cls.load_model_config(workdir / model_yaml_name)
+
         if not version:
             version = gen_uniq_version()
+            _manifest["created_at"] = now_str()
+
+        _project_uri = URI(project, expected_type=URIType.PROJECT)
+        _run_dir = EvaluationStorage.local_run_dir(_project_uri.project, version)
+        ensure_dir(_run_dir)
+
         if _model_config.run.typ == EvalHandlerType.DEFAULT:
             _module = DEFAULT_EVALUATION_PIPELINE
         else:
             _module = _model_config.run.ppl
 
         _yaml_path = str(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
-        #
+
+        # generate if not exists
         if not os.path.exists(_yaml_path):
-            # search model
             if _model_config.run.typ == EvalHandlerType.DEFAULT:
                 _ppl = DEFAULT_EVALUATION_PIPELINE
             else:
                 _ppl = _model_config.run.ppl
-            logger.debug(f"job ppl is {_ppl}")
-            Parser.generate_job_yaml(
-                _ppl, workdir, workdir / DEFAULT_EVALUATION_JOBS_FNAME
-            )
 
+            _new_yaml_path = _run_dir / DEFAULT_EVALUATION_JOBS_FNAME
+            Parser.generate_job_yaml(_ppl, workdir, _new_yaml_path)
+            _yaml_path = str(_new_yaml_path)
+
+        # parse job steps from yaml
         logger.debug(f"parse job from yaml:{_yaml_path}")
-
         _jobs = Parser.parse_job_from_yaml(_yaml_path)
 
         if job_name not in _jobs:
             raise RuntimeError(f"job:{job_name} not found")
 
-        project = os.getenv(SWEnv.project)
-        if project is None:
-            project = SWCliConfigMixed().current_project
+        _steps = _jobs[job_name]
 
-        _scheduler = Scheduler(
-            project=project,
-            version=version,
-            module=_module,
-            workdir=workdir,
-            dataset_uris=dataset_uris,
-            steps=_jobs[job_name],
-            **kw,
-        )
+        console.print(":hourglass_not_done: start to evaluation...")
 
-        if not step:
-            _scheduler.schedule()
-        else:
-            _scheduler.schedule_single_task(step, task_index)
+        try:
+            _scheduler = Scheduler(
+                project=_project_uri.project,
+                version=version,
+                module=_module,
+                workdir=workdir,
+                dataset_uris=dataset_uris,
+                steps=_steps,
+                kw=kw,
+            )
+            if not step:
+                _scheduler.schedule()
+            else:
+                _scheduler.schedule_single_task(step, task_index)
+        except Exception as e:
+            _manifest["status"] = STATUS.FAILED
+            _manifest["error_message"] = str(e)
+            raise
+        finally:
+            _status = True
+            for _step in _steps:
+                _status = _status and _step.status == STATUS.SUCCESS
+            _manifest.update(
+                {
+                    **dict(
+                        version=version,
+                        project=_project_uri.project,
+                        model=_model_config.model[0],
+                        model_dir=str(workdir),
+                        datasets=list(dataset_uris),
+                        status=STATUS.SUCCESS if _status else STATUS.FAILED,
+                        finished_at=now_str(),
+                    ),
+                    **kw,
+                }
+            )
+            _f = _run_dir / DEFAULT_MANIFEST_NAME
+            ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
-        console.print(f"job info:{_jobs}")
-        console.print(":clap: finish run")
+            logger.debug(f"job info:{_jobs}")
+            console.print(
+                f":100: finish run, {STATUS.SUCCESS if _status else STATUS.FAILED}!"
+            )
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()

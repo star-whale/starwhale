@@ -13,6 +13,7 @@ from starwhale.api._impl.job import Context
 
 class STATUS:
     INIT = "init"
+    START = "start"
     RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"

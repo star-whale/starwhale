@@ -274,10 +274,12 @@ class JobTermView(BaseTermView):
                 _job_uri = f"{reason[:SHORT_VERSION_CNT]}"
 
             console.print(
-                f":bird: run cmd to fetch job info: [bold green]swcli job info {_job_uri}[/]"
+                f":bird: run cmd to fetch eval info: [bold green]swcli eval info {_job_uri}[/]"
             )
         else:
-            console.print(f":collision: failed to create job, notice: [red]{reason}[/]")
+            console.print(
+                f":collision: failed to create eval job, notice: [red]{reason}[/]"
+            )
 
     @classmethod
     def list(

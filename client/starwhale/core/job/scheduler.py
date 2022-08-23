@@ -81,7 +81,7 @@ class Scheduler:
             module=self.module,
             workdir=self.workdir,
             version=self.version,
-            **self.kw,
+            kw=self.kw,
         )
         p.start()
         c = Consumer(queue)
@@ -152,7 +152,7 @@ class Producer(threading.Thread):
                         index=index,
                         dataset_uris=self.dataset_uris,
                         workdir=self.workdir,
-                        **self.kw,
+                        kw=self.kw,
                     ),
                     status=STATUS.INIT,
                     module=self.module,
