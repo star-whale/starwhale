@@ -39,6 +39,9 @@ public class ProjectRequest implements Serializable {
     @JsonProperty("ownerId")
     private String ownerId;
 
+    @JsonProperty("privacy")
+    private String privacy;
+
     @JsonProperty("description")
     private String description;
 

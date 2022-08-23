@@ -27,4 +27,16 @@ public class Role implements GrantedAuthority {
 
     public static final String NAME_GUEST = "Guest";
 
+    @Override
+    public boolean equals(Object o) {
+        if(this == o) {
+            return true;
+        }
+        if(o instanceof Role) {
+            Role r = (Role)o;
+            return r.getAuthority().equals(((Role) o).getAuthority());
+        }
+        return false;
+    }
+
 }

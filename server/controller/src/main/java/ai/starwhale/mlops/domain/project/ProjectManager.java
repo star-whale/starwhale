@@ -21,6 +21,7 @@ import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
+import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
@@ -28,6 +29,7 @@ import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -53,16 +55,10 @@ public class ProjectManager implements ProjectAccessor{
         "time", "project_created_time",
         "createdTime", "project_created_time");
 
-    public List<ProjectEntity> listProjects(Project project, User owner, OrderParams orderParams) {
-        if(owner != null && owner.getId() != null) {
-            return projectMapper.listProjectsByOwner(owner.getId(), orderParams.getOrderSQL(SORT_MAP), project.getDeleteInt());
-        } else if (owner != null && StringUtils.hasText(owner.getName())) {
-            return projectMapper.listProjectsByOwnerName(owner.getName(), orderParams.getOrderSQL(SORT_MAP), project.getDeleteInt());
-        }
-
-        return projectMapper.listProjects(project.getName(), orderParams.getOrderSQL(SORT_MAP), project.getDeleteInt());
-
+    public List<ProjectEntity> listProjects(String projectName, Long userId, OrderParams orderParams) {
+        return projectMapper.listProjects(projectName, orderParams.getOrderSQL(SORT_MAP), 0, userId);
     }
+
 
     public ProjectEntity findDefaultProject(Long userId) {
         ProjectEntity defaultProject = projectMapper.findDefaultProject(userId);
@@ -90,6 +86,13 @@ public class ProjectManager implements ProjectAccessor{
     public Boolean existProject(String projectName) {
         ProjectEntity existProject = projectMapper.findProjectByName(projectName);
         return existProject != null;
+    }
+
+    public Map<Long, ProjectObjectCountEntity> getObjectCountsOfProjects(List<Long> projectIds) {
+        List<ProjectObjectCountEntity> counts = projectMapper.listObjectCounts(
+            projectIds);
+        return counts.stream()
+            .collect(Collectors.toMap(ProjectObjectCountEntity::getProjectId, entity -> entity));
     }
 
     @Override
