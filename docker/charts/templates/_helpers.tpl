@@ -85,30 +85,37 @@ Config mirror environment
 {{- end}}
 
 {{/*
-Create PV for minikube local environment
+Create PV for dev mode
 */}}
-{{- define "chart.minikubePV" -}}
+{{- define "chart.createPV" -}}
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ include "common.names.fullname" . }}-pv-{{ .backend }}
+  name: {{ .Release.Name }}-pv-{{ .backend }}
   namespace: {{ .Release.Namespace }}
 spec:
   capacity:
-    storage: {{ .Values.minikube.pv.storage }}
+    storage: {{ .storage }}
   volumeMode: Filesystem
   accessModes:
   - ReadWriteOnce
   hostPath:
-    path: {{ .Values.minikube.pv.rootPath }}/{{ .backend }}
+    path: {{ .rootPath }}/{{ .backend }}
     type: DirectoryOrCreate
-  storageClassName: local-storage-{{ .backend }}
+  storageClassName: {{ .Release.Name }}-{{ .backend }}
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: local-storage-{{ .backend }}
+  name: {{ .Release.Name }}-{{ .backend }}
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
+{{- end}}
+
+{{/*
+Create PV for minikube local environment
+*/}}
+{{- define "chart.minikubePV" -}}
+{{ include "chart.createPV" (merge (dict "backend" .backend "storage" .Values.minikube.pv.storage "rootPath" .Values.minikube.pv.rootPath) . )}}
 {{- end}}
