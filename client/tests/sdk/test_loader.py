@@ -77,7 +77,7 @@ class TestDataLoader(TestCase):
         assert loader.kind == DataFormatType.USER_RAW
         assert list(loader._stores.keys()) == ["local."]
         assert loader._stores["local."].bucket == str(data_dir)
-        assert loader._stores["local."].backend.kind == SWDSBackendType.FUSE
+        assert loader._stores["local."].backend.kind == SWDSBackendType.LocalFS
         assert not loader._stores["local."].key_prefix
 
     @patch.dict(os.environ, {})
@@ -297,7 +297,7 @@ class TestDataLoader(TestCase):
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     @patch("starwhale.api._impl.loader.TabularDataset.scan")
-    def test_swds_bin_fuse(self, m_scan: MagicMock, m_summary: MagicMock) -> None:
+    def test_swds_bin_local_fs(self, m_scan: MagicMock, m_summary: MagicMock) -> None:
         m_summary.return_value = DatasetSummary(
             include_user_raw=False,
             include_link=False,
@@ -354,6 +354,6 @@ class TestDataLoader(TestCase):
         assert _data.ext_attr == {"ds_name": "mnist", "ds_version": "1122334455667788"}
 
         assert list(loader._stores.keys()) == ["local."]
-        assert loader._stores["local."].backend.kind == SWDSBackendType.FUSE
+        assert loader._stores["local."].backend.kind == SWDSBackendType.LocalFS
         assert loader._stores["local."].bucket == str(data_dir)
         assert not loader._stores["local."].key_prefix
