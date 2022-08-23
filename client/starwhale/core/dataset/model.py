@@ -37,10 +37,10 @@ from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
-from starwhale.api._impl.dataset import StandaloneTabularDataset
 
+from .type import DatasetConfig, DSProcessMode, DatasetSummary
 from .store import DatasetStorage
-from .dataset import DatasetConfig, DSProcessMode, DatasetSummary
+from .tabular import StandaloneTabularDataset
 
 
 class Dataset(BaseBundle, metaclass=ABCMeta):
@@ -220,7 +220,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         run_with_progress_bar("swds building...", operations)
 
     def _call_make_swds(self, workdir: Path, swds_config: DatasetConfig) -> None:
-        from starwhale.api._impl.dataset import BaseBuildExecutor
+        from starwhale.api._impl.dataset.builder import BaseBuildExecutor
 
         logger.info("[step:swds]try to gen swds...")
         self._manifest["dataset_attr"] = swds_config.attr.as_dict()

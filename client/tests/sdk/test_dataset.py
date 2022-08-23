@@ -3,14 +3,13 @@ import json
 from pathlib import Path
 
 from starwhale.utils.fs import ensure_dir
-from starwhale.api._impl.dataset import (
+from starwhale.api.dataset import MNISTBuildExecutor, UserRawBuildExecutor
+from starwhale.core.dataset.tabular import TabularDataset
+from starwhale.api._impl.dataset.builder import (
     _data_magic,
     _header_size,
     _header_magic,
     _header_struct,
-    TabularDataset,
-    MNISTBuildExecutor,
-    UserRawBuildExecutor,
 )
 
 from .. import ROOT_DIR

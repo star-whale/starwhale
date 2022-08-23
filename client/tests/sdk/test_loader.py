@@ -8,14 +8,16 @@ from starwhale.consts import AUTH_ENV_FNAME, SWDSBackendType
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, DataFormatType, DataOriginType, ObjectStoreType
-from starwhale.api._impl.loader import (
+from starwhale.api.dataset import (
+    MIMEType,
+    S3LinkAuth,
     get_data_loader,
     SWDSBinDataLoader,
     UserRawDataLoader,
 )
-from starwhale.api._impl.dataset import MIMEType, S3LinkAuth, TabularDatasetRow
+from starwhale.core.dataset.type import DatasetSummary
 from starwhale.core.dataset.store import DatasetStorage
-from starwhale.core.dataset.dataset import DatasetSummary
+from starwhale.core.dataset.tabular import TabularDatasetRow
 
 from .. import ROOT_DIR
 
@@ -28,7 +30,7 @@ class TestDataLoader(TestCase):
         self.fs.add_real_directory(self.swds_dir)
 
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
-    @patch("starwhale.api._impl.loader.TabularDataset.scan")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_user_raw_local_store(
         self, m_scan: MagicMock, m_summary: MagicMock
     ) -> None:
@@ -81,9 +83,9 @@ class TestDataLoader(TestCase):
         assert not loader._stores["local."].key_prefix
 
     @patch.dict(os.environ, {})
-    @patch("starwhale.api._impl.loader.boto3.resource")
+    @patch("starwhale.core.dataset.store.boto3.resource")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
-    @patch("starwhale.api._impl.loader.TabularDataset.scan")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_user_raw_remote_store(
         self,
         m_scan: MagicMock,
@@ -208,9 +210,9 @@ class TestDataLoader(TestCase):
         assert loader._stores["remote.server1"].bucket == "starwhale"
 
     @patch.dict(os.environ, {})
-    @patch("starwhale.api._impl.loader.boto3.resource")
+    @patch("starwhale.core.dataset.store.boto3.resource")
     @patch("starwhale.core.dataset.model.CloudDataset.summary")
-    @patch("starwhale.api._impl.loader.TabularDataset.scan")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_swds_bin_s3(
         self, m_scan: MagicMock, m_summary: MagicMock, m_boto3: MagicMock
     ) -> None:
@@ -296,7 +298,7 @@ class TestDataLoader(TestCase):
 
     @patch.dict(os.environ, {})
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
-    @patch("starwhale.api._impl.loader.TabularDataset.scan")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     def test_swds_bin_local_fs(self, m_scan: MagicMock, m_summary: MagicMock) -> None:
         m_summary.return_value = DatasetSummary(
             include_user_raw=False,

@@ -16,11 +16,11 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.api.model import PipelineHandler
 from starwhale.base.type import URIType
 from starwhale.consts.env import SWEnv
+from starwhale.api.dataset import get_data_loader, UserRawDataLoader
 from starwhale.api._impl.job import Context
-from starwhale.api._impl.loader import get_data_loader, UserRawDataLoader
-from starwhale.api._impl.dataset import TabularDatasetRow
 from starwhale.api._impl.wrapper import Evaluation
-from starwhale.core.dataset.dataset import DatasetSummary
+from starwhale.core.dataset.type import DatasetSummary
+from starwhale.core.dataset.tabular import TabularDatasetRow
 
 from .. import ROOT_DIR
 
@@ -57,7 +57,7 @@ class TestModelPipelineHandler(TestCase):
         super().tearDown()
         os.environ.pop("SW_S3_BUCKET", "")
 
-    @patch("starwhale.api._impl.loader.boto3")
+    @patch("starwhale.core.dataset.store.boto3")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_s3_loader(self, m_summary: MagicMock, m_resource: MagicMock) -> None:
         m_summary.return_value = DatasetSummary(
@@ -121,7 +121,7 @@ class TestModelPipelineHandler(TestCase):
         #     assert lines[0]["kind"] == "test"
 
     @pytest.mark.skip(reason="wait job scheduler feature, ppl will use datastore")
-    @patch("starwhale.api._impl.loader.TabularDataset.scan")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_ppl(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
         m_summary.return_value = DatasetSummary(
