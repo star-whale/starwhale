@@ -1,21 +1,16 @@
-from ._impl.dataset import (
+from starwhale.core.dataset.type import (
     Link,
     LinkType,
     MIMEType,
+    DataField,
     S3LinkAuth,
-    BuildExecutor,
-    get_data_loader,
     LocalFSLinkAuth,
     DefaultS3LinkAuth,
-    SWDSBinDataLoader,
-    UserRawDataLoader,
-    MNISTBuildExecutor,
-    SWDSBinBuildExecutor,
-    UserRawBuildExecutor,
 )
 
-# TODO: add dataset build/push/list/info api
-
+from .mnist import MNISTBuildExecutor
+from .loader import get_data_loader, SWDSBinDataLoader, UserRawDataLoader
+from .builder import BuildExecutor, SWDSBinBuildExecutor, UserRawBuildExecutor
 
 __all__ = [
     "get_data_loader",
@@ -25,6 +20,7 @@ __all__ = [
     "S3LinkAuth",
     "MIMEType",
     "LinkType",
+    "DataField",
     "BuildExecutor",  # SWDSBinBuildExecutor alias
     "UserRawBuildExecutor",
     "SWDSBinBuildExecutor",

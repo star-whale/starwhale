@@ -25,7 +25,7 @@ from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import Context
-from starwhale.api._impl.loader import DataField, ResultLoader, get_data_loader
+from starwhale.api._impl.dataset import DataField, get_data_loader
 from starwhale.api._impl.wrapper import Evaluation
 from starwhale.core.dataset.model import Dataset
 
@@ -49,6 +49,23 @@ def calculate_index(
     _start_index = min(_batch_size * task_index, data_size - 1)
     _end_index = min(_batch_size * (task_index + 1) - 1, data_size - 1)
     return _start_index, _end_index
+
+
+class ResultLoader:
+    def __init__(
+        self,
+        data: t.List[t.Any],
+        deserializer: t.Optional[t.Callable] = None,
+    ) -> None:
+        self.data = data
+        self.deserializer = deserializer
+
+    def __iter__(self) -> t.Any:
+        for _data in self.data:
+            if self.deserializer:
+                yield self.deserializer(_data)
+                continue
+            yield _data
 
 
 class PipelineHandler(metaclass=ABCMeta):
