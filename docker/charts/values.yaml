@@ -29,6 +29,8 @@ mysql:
       port: 3306
     persistence:
       enabled: true
+      # can not dynamically render when devMode.createPV=true
+      # see: https://github.com/helm/helm/issues/2492
       storageClass: local-storage-mysql
       size: 8Gi
     resources:
@@ -172,3 +174,12 @@ mirror:
     indexUrl: "http://10.131.0.1:3141/root/pypi-douban/+simple/"
     extraIndexUrl: "https://pypi.tuna.tsinghua.edu.cn/simple/"
     trustedHost: "10.131.0.1 pypi.tuna.tsinghua.edu.cn"
+
+devMode:
+  # Automatically create PV when enabled
+  createPV:
+    enabled: false
+    # Node selector matchExpressions in kubernetes.io/hostname
+    host: ""
+    # Local path for test PV
+    rootPath: /var/starwhale
