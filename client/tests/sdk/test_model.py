@@ -77,7 +77,6 @@ class TestModelPipelineHandler(TestCase):
 
         config_json_path = os.path.join(self.config_dir, "input.json")
         local_ppl_result_config = {
-            "backend": "fuse",
             "kind": "jsonl",
             "swds": [
                 {
@@ -217,7 +216,6 @@ class TestModelPipelineHandler(TestCase):
 
         config_json_path = os.path.join(self.config_dir, "input.json")
         local_swds_config = {
-            "backend": "fuse",
             "kind": "swds",
             "swds": [
                 {
@@ -243,7 +241,6 @@ class TestModelPipelineHandler(TestCase):
         assert os.path.exists(result_file_path)
 
         local_swds_config = {
-            "backend": "fuse",
             "kind": "jsonl",
             "swds": [
                 {

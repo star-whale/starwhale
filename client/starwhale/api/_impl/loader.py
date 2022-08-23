@@ -159,7 +159,7 @@ class DatasetObjectStore:
             conn = kw.get("conn") or ObjectStoreS3Connection.from_env()
             self.backend = S3StorageBackend(conn)
         else:
-            self.backend = FuseStorageBackend()
+            self.backend = LocalFSStorageBackend()
 
         self.key_prefix = key_prefix or os.environ.get("SW_OBJECT_STORE_KEY_PREFIX", "")
 
@@ -181,7 +181,7 @@ class DatasetObjectStore:
             conn = ObjectStoreS3Connection.from_uri(data_uri, auth_name)
             bucket = conn.bucket
         else:
-            backend = SWDSBackendType.FUSE
+            backend = SWDSBackendType.LocalFS
             bucket = ""
             conn = None
 
@@ -194,7 +194,7 @@ class DatasetObjectStore:
 
         _type = dataset_uri.instance_type
         if _type == InstanceType.STANDALONE:
-            backend = SWDSBackendType.FUSE
+            backend = SWDSBackendType.LocalFS
             bucket = str(DatasetStorage(dataset_uri).data_dir.absolute())
         else:
             backend = SWDSBackendType.S3
@@ -425,9 +425,9 @@ class S3StorageBackend(StorageBackend):
         )
 
 
-class FuseStorageBackend(StorageBackend):
+class LocalFSStorageBackend(StorageBackend):
     def __init__(self) -> None:
-        super().__init__(kind=SWDSBackendType.FUSE)
+        super().__init__(kind=SWDSBackendType.LocalFS)
 
     def _make_file(self, bucket: str, key_compose: str) -> FileLikeObj:
         _key, _start, _end = self._parse_key(key_compose)

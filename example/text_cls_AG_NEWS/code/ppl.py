@@ -62,32 +62,3 @@ class TextClassificationHandler(PipelineHandler):
         dictionary = torch.load(vocab_path)
         tokenizer = get_tokenizer("basic_english")
         return _model, dictionary, tokenizer
-
-
-def load_test_env_cmp(fuse=True):
-
-    os.environ["SW_TASK_STATUS_DIR"] = "status/cmp"
-    os.environ["SW_TASK_LOG_DIR"] = "log/cmp"
-    os.environ["SW_TASK_RESULT_DIR"] = "result/cmp"
-
-    # fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
-    os.environ["SW_TASK_INPUT_CONFIG"] = "input.json"
-
-
-def load_test_env_ppl(fuse=True):
-    os.environ["SW_TASK_STATUS_DIR"] = "status"
-    os.environ["SW_TASK_LOG_DIR"] = "log"
-    os.environ["SW_TASK_RESULT_DIR"] = "result"
-
-    # fname = "swds_fuse_simple.json" if fuse else "swds_s3_simple.json"
-    os.environ[
-        "SW_TASK_INPUT_CONFIG"
-    ] = "/home/anda/.cache/starwhale/self/dataset/ag_news/ga/gaygmnztgq2wgmrsmuydgy3enayhmzy.swds/local_fuse.json"
-
-
-if __name__ == "__main__":
-    # load_test_env_ppl(fuse=True)
-    load_test_env_cmp(fuse=True)
-    text_cls = TextClassificationHandler()
-    text_cls._starwhale_internal_run_cmp()
-    # text_cls._starwhale_internal_run_ppl()

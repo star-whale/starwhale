@@ -59,7 +59,7 @@ _header_version = 0
 
 @unique
 class LinkType(Enum):
-    FUSE = "fuse"
+    LocalFS = "local_fs"
     S3 = "s3"
     UNDEFINED = "undefined"
     # TODO: support hdfs, http, ssh link type
@@ -185,7 +185,7 @@ class S3LinkAuth(LinkAuth):
         )
 
 
-FuseLinkAuth = partial(LinkAuth, ltype=LinkType.FUSE)
+LocalFSLinkAuth = partial(LinkAuth, ltype=LinkType.LocalFS)
 DefaultS3LinkAuth = S3LinkAuth()
 
 

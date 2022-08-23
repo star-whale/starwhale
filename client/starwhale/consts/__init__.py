@@ -86,7 +86,7 @@ VERSION_PREFIX_CNT = 2
 
 class SWDSBackendType:
     S3 = "s3"
-    FUSE = "fuse"
+    LocalFS = "local_fs"
 
 
 class EvalHandlerType:
