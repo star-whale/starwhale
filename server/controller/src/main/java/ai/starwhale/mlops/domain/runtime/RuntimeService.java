@@ -126,7 +126,7 @@ public class RuntimeService {
 
     public PageInfo<RuntimeVO> listRuntime(RuntimeQuery runtimeQuery, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProject(runtimeQuery.getProjectUrl()).getId();
+        Long projectId = projectManager.getProjectId(runtimeQuery.getProjectUrl());
         List<RuntimeEntity> entities = runtimeMapper.listRuntimes(projectId, runtimeQuery.getNamePrefix());
 
         return PageUtil.toPageInfo(entities, rt -> {
@@ -246,7 +246,7 @@ public class RuntimeService {
 
     public List<RuntimeInfoVO> listRuntimeInfo(String project, String name) {
         if(StringUtils.hasText(name)){
-            Long projectId = projectManager.getProject(project).getId();
+            Long projectId = projectManager.getProjectId(project);
             RuntimeEntity rt = runtimeMapper.findByName(name, projectId);
             if(rt == null) {
                 throw new SWValidationException(ValidSubject.RUNTIME)
@@ -345,7 +345,7 @@ public class RuntimeService {
     }
 
     public void pull(String projectUrl, String runtimeUrl, String versionUrl, HttpServletResponse httpResponse) {
-        Long projectId = projectManager.getProject(projectUrl).getId();
+        Long projectId = projectManager.getProjectId(projectUrl);
         RuntimeEntity runtimeEntity = runtimeMapper.findByName(runtimeUrl, projectId);
         if(null == runtimeEntity){
             throw new SWValidationException(ValidSubject.RUNTIME).tip("Runtime not found");
@@ -380,7 +380,7 @@ public class RuntimeService {
     }
 
     public String query(String projectUrl, String runtimeUrl, String versionUrl) {
-        Long projectId = projectManager.getProject(projectUrl).getId();
+        Long projectId = projectManager.getProjectId(projectUrl);
         RuntimeEntity entity = runtimeMapper.findByName(runtimeUrl, projectId);
         if(null == entity){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME),HttpStatus.NOT_FOUND);

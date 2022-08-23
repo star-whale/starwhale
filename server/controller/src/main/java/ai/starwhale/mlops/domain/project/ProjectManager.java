@@ -114,4 +114,16 @@ public class ProjectManager implements ProjectAccessor{
         return projectEntity;
     }
 
+    public Long getProjectId(@NotNull String projectUrl) {
+        if(idConvertor.isID(projectUrl)) {
+            return idConvertor.revert(projectUrl);
+        }
+        ProjectEntity projectEntity = projectMapper.findProjectByName(projectUrl);
+        if(projectEntity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
+        }
+        return projectEntity.getId();
+    }
+
 }

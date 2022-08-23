@@ -306,7 +306,7 @@ public class SwdsUploader {
             .storagePath(storagePathCoordinator.generateSwdsPath(projectName,swDatasetEntity.getDatasetName(),manifest.getVersion()))
             .versionMeta(manifest.getRawYaml())
             .versionName(manifest.getVersion())
-            .size(manifest.getSize())
+            .size(manifest.getDatasetSummary().getRows())
             .indexTable(dsrHelper.tableNameOf(manifest.getName(),manifest.getVersion()))
             .filesUploaded(EMPTY_YAML)
             .build();

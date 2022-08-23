@@ -29,7 +29,7 @@ public class RecoverManager {
     }
 
     public Boolean recoverBundle(BundleURL bundleURL) throws RecoverException{
-        Long projectId = projectAccessor.getProject(bundleURL.getProjectUrl()).getId();
+        Long projectId = projectAccessor.getProjectId(bundleURL.getProjectUrl());
         String name = bundleURL.getBundleUrl();
         Long id;
         if(idConvertor.isID(name)) {

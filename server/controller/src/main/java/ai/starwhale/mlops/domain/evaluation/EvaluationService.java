@@ -94,7 +94,7 @@ public class EvaluationService {
 
     public ConfigVO getViewConfig(ConfigQuery configQuery) {
         Long userId = userService.currentUserDetail().getId();
-        Long projectId = projectManager.getProject(configQuery.getProjectUrl()).getId();
+        Long projectId = projectManager.getProjectId(configQuery.getProjectUrl());
 
         ViewConfigEntity viewConfig = viewConfigMapper.findViewConfig(userId, projectId,
             configQuery.getName());
@@ -106,7 +106,7 @@ public class EvaluationService {
 
     public Boolean createViewConfig(String projectUrl, ConfigRequest configRequest) {
         Long userId = userService.currentUserDetail().getId();
-        Long projectId = projectManager.getProject(projectUrl).getId();
+        Long projectId = projectManager.getProjectId(projectUrl);
         ViewConfigEntity entity = ViewConfigEntity.builder()
             .ownerId(userId)
             .projectId(projectId)
@@ -120,7 +120,7 @@ public class EvaluationService {
     public PageInfo<SummaryVO> listEvaluationSummary(String projectUrl,
         SummaryFilter summaryFilter, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
-        Long projectId = projectManager.getProject(projectUrl).getId();
+        Long projectId = projectManager.getProjectId(projectUrl);
         List<JobEntity> jobEntities = jobMapper.listJobsByStatus(projectId, null,
             JobStatus.SUCCESS);
         return PageUtil.toPageInfo(jobEntities, this::toSummary);
