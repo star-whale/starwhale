@@ -21,6 +21,8 @@ import java.util.Map;
 public interface MemoryTable {
     TableSchema getSchema();
 
+    void updateFromWal(Wal.WalEntry entry);
+
     void update(TableSchemaDesc schema, List<Map<String, String>> records);
 
     RecordList query(Map<String, String> columns,

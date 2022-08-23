@@ -15,14 +15,18 @@
  */
 package ai.starwhale.mlops.memory.impl;
 
-import ai.starwhale.mlops.memory.BufferManager;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import ai.starwhale.mlops.memory.SwBufferManager;
+import ai.starwhale.mlops.memory.SwBuffer;
+import org.springframework.stereotype.Component;
 
-@Configuration
-public class BufferManagerConfig {
-    @Bean
-    BufferManager getBufferManager() {
-        return new ByteBufferManager();
+@Component
+public class SwByteBufferManager implements SwBufferManager {
+    @Override
+    public SwBuffer allocate(int capacity) {
+        return new SwByteBuffer(capacity);
+    }
+
+    @Override
+    public void release(SwBuffer buffer) {
     }
 }

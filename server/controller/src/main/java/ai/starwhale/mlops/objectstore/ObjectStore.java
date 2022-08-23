@@ -18,9 +18,14 @@ package ai.starwhale.mlops.objectstore;
 import ai.starwhale.mlops.memory.SwBuffer;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 public interface ObjectStore {
+    Iterator<String> list(String prefix) throws IOException;
+
     void put(String name, SwBuffer buffer) throws IOException;
 
     SwBuffer get(String name) throws IOException;
+
+    void delete(String name) throws IOException;
 }

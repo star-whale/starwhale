@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ai.starwhale.mlops.datastore;
 
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -9,6 +24,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -115,7 +131,7 @@ public class TableSchemaTest {
     public void testGetColumnSchemaByName() {
         assertThat("common",
                 this.schema.getColumnSchemaByName("k"),
-                is(new ColumnSchema(new ColumnSchemaDesc("k", "STRING"))));
+                is(new ColumnSchema(new ColumnSchemaDesc("k", "STRING"), 0)));
         assertThat("null", this.schema.getColumnSchemaByName("x"), nullValue());
     }
 
@@ -123,8 +139,8 @@ public class TableSchemaTest {
     public void testGetColumnSchemas() {
         var columnSchemas = this.schema.getColumnSchemas();
         assertThat("equals", columnSchemas, containsInAnyOrder(
-                new ColumnSchema(new ColumnSchemaDesc("k", "STRING")),
-                new ColumnSchema(new ColumnSchemaDesc("a", "INT32"))));
+                new ColumnSchema(new ColumnSchemaDesc("k", "STRING"), 0),
+                new ColumnSchema(new ColumnSchemaDesc("a", "INT32"), 1)));
         assertThrows(UnsupportedOperationException.class, columnSchemas::clear, "read only");
     }
 
@@ -146,41 +162,64 @@ public class TableSchemaTest {
                                 new ColumnSchemaDesc("a", "STRING")))),
                 "conflicting type 2");
 
-        this.schema.merge(new TableSchemaDesc("k", List.of(
+        var diff = this.schema.merge(new TableSchemaDesc("k", List.of(
                 new ColumnSchemaDesc("k", "STRING"),
                 new ColumnSchemaDesc("b", "FLOAT32"))));
         assertThat("new column", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING")),
-                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32")),
-                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32"))));
+                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING"), 0),
+                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32"), 1),
+                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32"), 2)));
+        assertThat("new column", diff, containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32"), 2)));
 
-        this.schema.merge(new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "UNKNOWN"))));
+        diff = this.schema.merge(new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "UNKNOWN"))));
         assertThat("new unknown column", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING")),
-                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32")),
-                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32")),
-                        new ColumnSchema(new ColumnSchemaDesc("x", "UNKNOWN"))));
+                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING"), 0),
+                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32"), 1),
+                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32"), 2),
+                        new ColumnSchema(new ColumnSchemaDesc("x", "UNKNOWN"), 3)));
+        assertThat("new unknown column",
+                diff,
+                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("x", "UNKNOWN"), 3)));
 
-        this.schema.merge(new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("k", "UNKNOWN"))));
+        diff = this.schema.merge(new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("k", "UNKNOWN"))));
         assertThat("merge unknown to existing", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING")),
-                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32")),
-                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32")),
-                        new ColumnSchema(new ColumnSchemaDesc("x", "UNKNOWN"))));
+                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING"), 0),
+                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32"), 1),
+                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32"), 2),
+                        new ColumnSchema(new ColumnSchemaDesc("x", "UNKNOWN"), 3)));
+        assertThat("merge unknown to existing", diff, empty());
 
-        this.schema.merge(new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "UNKNOWN"))));
+        diff = this.schema.merge(new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "UNKNOWN"))));
         assertThat("merge unknown to unknown", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING")),
-                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32")),
-                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32")),
-                        new ColumnSchema(new ColumnSchemaDesc("x", "UNKNOWN"))));
+                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING"), 0),
+                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32"), 1),
+                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32"), 2),
+                        new ColumnSchema(new ColumnSchemaDesc("x", "UNKNOWN"), 3)));
+        assertThat("merge unknown to unknown", diff, empty());
 
-        this.schema.merge(new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "INT32"))));
+        diff = this.schema.merge(new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "INT32"))));
         assertThat("merge other to unknown", this.schema.getColumnSchemas(),
-                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING")),
-                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32")),
-                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32")),
-                        new ColumnSchema(new ColumnSchemaDesc("x", "INT32"))));
+                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING"), 0),
+                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32"), 1),
+                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32"), 2),
+                        new ColumnSchema(new ColumnSchemaDesc("x", "INT32"), 3)));
+        assertThat("merge other to unknown",
+                diff,
+                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("x", "INT32"), 3)));
+
+        diff = this.schema.merge(new TableSchemaDesc(null,
+                List.of(new ColumnSchemaDesc("y", "STRING"), new ColumnSchemaDesc("z", "BYTES"))));
+        assertThat("merge multiple", this.schema.getColumnSchemas(),
+                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("k", "STRING"), 0),
+                        new ColumnSchema(new ColumnSchemaDesc("a", "INT32"), 1),
+                        new ColumnSchema(new ColumnSchemaDesc("b", "FLOAT32"), 2),
+                        new ColumnSchema(new ColumnSchemaDesc("x", "INT32"), 3),
+                        new ColumnSchema(new ColumnSchemaDesc("y", "STRING"), 4),
+                        new ColumnSchema(new ColumnSchemaDesc("z", "BYTES"), 5)));
+        assertThat("merge multiple",
+                diff,
+                containsInAnyOrder(new ColumnSchema(new ColumnSchemaDesc("y", "STRING"), 4),
+                        new ColumnSchema(new ColumnSchemaDesc("z", "BYTES"), 5)));
     }
 
     @Test

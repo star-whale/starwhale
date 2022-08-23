@@ -31,6 +31,12 @@ public class SWValidationException extends StarWhaleException {
         this.tip = PREFIX_TIP + validSubject.tipSubject;
     }
 
+    public SWValidationException(ValidSubject validSubject, String tip) {
+        super(PREFIX_TIP + validSubject.tipSubject + "\n" + tip);
+        this.code = PREFIX_CODE + validSubject.tipSubject;
+        this.tip = PREFIX_TIP + validSubject.tipSubject + "\n" + tip;
+    }
+
     @Override
     public String getCode() {
         return this.code;

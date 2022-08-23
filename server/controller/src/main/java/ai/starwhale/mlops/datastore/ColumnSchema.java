@@ -25,10 +25,11 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 public class ColumnSchema {
-    private String name;
-    private ColumnType type;
+    private final String name;
+    private final ColumnType type;
+    private final int index;
 
-    public ColumnSchema(@NonNull ColumnSchemaDesc schema) {
+    public ColumnSchema(@NonNull ColumnSchemaDesc schema, int index) {
         if (schema.getName() == null) {
             throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
                     "column name should not be null");
@@ -44,5 +45,6 @@ public class ColumnSchema {
             throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
                     "invalid column type " + schema.getType());
         }
+        this.index = index;
     }
 }
