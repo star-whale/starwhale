@@ -215,24 +215,24 @@ class BundleCopy(CloudRequestMixed):
     def _do_upload_bundle_dir(
         self, progress: Progress, add_data_uri_header: bool = False
     ) -> None:
-        _workdir: Path = self._get_target_path(self.src_uri)
-        _manifest_path = _workdir / DEFAULT_MANIFEST_NAME
-        _key = _query_param_map[self.typ]
-        _name = f"{self.bundle_name}:{self.bundle_version}"
-        _url_path = self._get_remote_instance_rc_url()
+        workdir: Path = self._get_target_path(self.src_uri)
+        manifest_path = workdir / DEFAULT_MANIFEST_NAME
+        key = _query_param_map[self.typ]
+        name = f"{self.bundle_name}:{self.bundle_version}"
+        url_path = self._get_remote_instance_rc_url()
 
         task_id = progress.add_task(
-            f":arrow_up: {_manifest_path.name}",
-            total=_manifest_path.stat().st_size,
+            f":arrow_up: {manifest_path.name}",
+            total=manifest_path.stat().st_size,
         )
 
         # TODO: use rich progress
         r = self.do_multipart_upload_file(
-            url_path=_url_path,
-            file_path=_manifest_path,
+            url_path=url_path,
+            file_path=manifest_path,
             instance_uri=self.dest_uri,
             fields={
-                _key: _name,
+                key: name,
                 "phase": _UploadPhase.MANIFEST,
                 "project": self.dest_uri.project,
                 "force": "1" if self.force else "0",
@@ -245,7 +245,7 @@ class BundleCopy(CloudRequestMixed):
         if not upload_id:
             raise Exception("get invalid upload_id")
         _headers = {"X-SW-UPLOAD-ID": str(upload_id)}
-        _manifest = load_yaml(_manifest_path)
+        _manifest = load_yaml(manifest_path)
 
         # TODO: add retry deco
         def _upload_blob(_fp: Path, _tid: TaskID, _data_uri: str = "") -> None:
@@ -255,13 +255,14 @@ class BundleCopy(CloudRequestMixed):
             _upload_headers = deepcopy(_headers)
             if add_data_uri_header and _data_uri:
                 _upload_headers["X-SW-UPLOAD-DATA-URI"] = _data_uri
+                _upload_headers["X-SW-UPLOAD-OBJECT-HASH"] = _data_uri
 
             self.do_multipart_upload_file(
-                url_path=_url_path,
+                url_path=url_path,
                 file_path=_fp,
                 instance_uri=self.dest_uri,
                 fields={
-                    _key: _name,
+                    key: name,
                     "phase": _UploadPhase.BLOB,
                 },
                 headers=_upload_headers,
@@ -273,20 +274,23 @@ class BundleCopy(CloudRequestMixed):
         try:
             _p_map = {}
 
-            for _data_uri in _manifest["signature"]:
-                _path = _workdir / "data" / _data_uri
+            for _k in _manifest["signature"]:
+                _size, _, _hash = _k.split(":")
+
+                # TODO: head object by hash name at first
+                _path = workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]
                 _tid = progress.add_task(
                     f":arrow_up: {_path.name}",
-                    total=_path.stat().st_size,
+                    total=float(_size),
                 )
-                _p_map[_tid] = (_path, _data_uri)
+                _p_map[_tid] = (_path, _hash)
 
             _meta_names = [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]
-            if self.kw.get("with_auth") and (_workdir / AUTH_ENV_FNAME).exists():
+            if self.kw.get("with_auth") and (workdir / AUTH_ENV_FNAME).exists():
                 _meta_names.append(AUTH_ENV_FNAME)
 
-            for _name in _meta_names:
-                _path = _workdir / _name
+            for _n in _meta_names:
+                _path = workdir / _n
                 _tid = progress.add_task(
                     f":arrow_up: {_path.name}",
                     total=_path.stat().st_size,
@@ -301,12 +305,12 @@ class BundleCopy(CloudRequestMixed):
                 f":confused_face: when upload blobs, we meet Exception{e}, will cancel upload"
             )
             self.do_http_request(
-                path=_url_path,
+                path=url_path,
                 method=HTTPMethod.POST,
                 instance_uri=self.dest_uri,
                 headers=_headers,
                 data={
-                    _key: _name,
+                    key: name,
                     "project": self.dest_uri.project,
                     "phase": _UploadPhase.CANCEL,
                 },
@@ -315,12 +319,12 @@ class BundleCopy(CloudRequestMixed):
             )
         else:
             self.do_http_request(
-                path=_url_path,
+                path=url_path,
                 method=HTTPMethod.POST,
                 instance_uri=self.dest_uri,
                 headers=_headers,
                 data={
-                    _key: _name,
+                    key: name,
                     "project": self.dest_uri.project,
                     "phase": _UploadPhase.END,
                 },
@@ -352,16 +356,25 @@ class BundleCopy(CloudRequestMixed):
         _download(_manifest_path, DEFAULT_MANIFEST_NAME, _tid)
         _manifest = load_yaml(_manifest_path)
 
-        _p_map = {}
-        for _k in _manifest.get("signature", {}):
+        for _k in _manifest.get("signature", []):
             # TODO: parallel download
-            _tid = progress.add_task(f":arrow_down: {_k}")
-            _p_map[_tid] = {"path": _workdir / "data" / _k, "part": _k}
+            _size, _algo, _hash = _k.split(":")
+            if _algo != DatasetStorage.object_hash_algo:
+                raise NoSupportError(f"download file hash algorithm {_algo}")
+
+            _tid = progress.add_task(
+                f":arrow_down: {_hash[:DatasetStorage.short_sign_cnt]}",
+                total=float(_size),
+            )
+
+            _dest = DatasetStorage._get_object_store_path(_hash)
+            if not _dest.exists() or self.force:
+                _download(_dest, _hash, _tid)
+            Path(_workdir / "data" / _hash[: DatasetStorage.short_sign_cnt]).symlink_to(
+                _dest
+            )
 
         # FIXME: copy .auth_env from controller? security issue
         for _f in [ARCHIVED_SWDS_META_FNAME, DUMPED_SWDS_META_FNAME]:
             _tid = progress.add_task(f":arrow_down: {_f}")
-            _p_map[_tid] = {"path": _workdir / _f, "part": _f}
-
-        for _tid, _info in _p_map.items():
-            _download(_info["path"], _info["part"], _tid)
+            _download(_workdir / _f, _f, _tid)

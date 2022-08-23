@@ -23,12 +23,7 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import (
-    move_dir,
-    ensure_dir,
-    blake2b_file,
-    BLAKE2B_SIGNATURE_ALGO,
-)
+from starwhale.utils.fs import move_dir, ensure_dir
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
@@ -255,28 +250,20 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         console.print(f"[step:swds]finish gen swds @ {self.store.data_dir}")
 
     def _calculate_signature(self) -> None:
-        _algo = BLAKE2B_SIGNATURE_ALGO
-        _sign = dict()
+        algo = self.store.object_hash_algo
+        sign_info = list()
         total_size = 0
 
-        logger.info(
-            f"[step:signature]try to calculate signature with {_algo} @ {self.store.data_dir}"
-        )
-        console.print(":robot: calculate signature...")
-
         # TODO: _cal(self._snapshot_workdir / ARCHIVED_SWDS_META_FNAME) # add meta sign into _manifest.yaml
-        for f in self.store.data_dir.iterdir():
-            if not f.is_file():
-                continue
-
-            _size = f.stat().st_size
+        for fpath in self.store.get_all_data_files():
+            _size = fpath.stat().st_size
             total_size += _size
-            _sign[f.name] = f"{_size}:{_algo}:{blake2b_file(f)}"
+            sign_info.append(f"{_size}:{algo}:{fpath.name}")
 
         self._manifest["dataset_byte_size"] = total_size
-        self._manifest["signature"] = _sign
-        logger.info(
-            f"[step:signature]finish calculate signature with {_algo} for {len(_sign)} files"
+        self._manifest["signature"] = sign_info
+        console.print(
+            f":robot: calculate signature with {algo} for {len(sign_info)} files"
         )
 
     def _make_swds_meta_tar(self) -> None:

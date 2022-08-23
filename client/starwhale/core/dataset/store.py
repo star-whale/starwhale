@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import shutil
 import typing as t
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
@@ -14,10 +15,22 @@ from typing_extensions import Protocol
 
 from starwhale.consts import SWDSBackendType, VERSION_PREFIX_CNT, DEFAULT_MANIFEST_NAME
 from starwhale.base.uri import URI
-from starwhale.utils.fs import FilePosition
+from starwhale.utils.fs import (
+    ensure_dir,
+    blake2b_file,
+    FilePosition,
+    BLAKE2B_SIGNATURE_ALGO,
+)
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.store import BaseStorage
-from starwhale.utils.error import FormatError, NoSupportError, FieldTypeOrValueError
+from starwhale.utils.error import (
+    FormatError,
+    NotFoundError,
+    NoSupportError,
+    InvalidObjectName,
+    FieldTypeOrValueError,
+)
+from starwhale.utils.config import SWCliConfigMixed
 
 from .type import S3LinkAuth
 
@@ -31,6 +44,9 @@ _CHUNK_SIZE = 8 * 1024 * 1024  # 8MB
 
 
 class DatasetStorage(BaseStorage):
+    object_hash_algo = BLAKE2B_SIGNATURE_ALGO
+    short_sign_cnt = 16
+
     def _guess(self) -> t.Tuple[Path, str]:
         return self._guess_for_bundle()
 
@@ -74,6 +90,59 @@ class DatasetStorage(BaseStorage):
     @property
     def dataset_rootdir(self) -> Path:
         return self.project_dir / URIType.DATASET
+
+    @classmethod
+    def save_data_file(
+        cls, src: Path, force: bool = False, remove_src: bool = False
+    ) -> t.Tuple[str, Path]:
+        if not src.exists():
+            raise NotFoundError(f"data origin file: {src}")
+
+        if not src.is_file():
+            raise NoSupportError(f"{src} is not file type")
+
+        sign_name = blake2b_file(src)
+        dest = cls._get_object_store_path(sign_name)
+        if dest.exists() and not force:
+            return sign_name, dest
+
+        ensure_dir(dest.parent)
+
+        _src, _dest = str(src.absolute()), str(dest.absolute())
+        if remove_src:
+            shutil.move(_src, _dest)
+        else:
+            shutil.copyfile(_src, _dest)
+        return sign_name, dest
+
+    @classmethod
+    def _get_object_store_path(cls, hash_name: str) -> Path:
+        _prefix_cnt = 2
+        hash_name = hash_name.strip()
+        if len(hash_name) < _prefix_cnt:
+            raise InvalidObjectName(f"hash name({hash_name}) is too short")
+
+        return (
+            SWCliConfigMixed().object_store_dir
+            / cls.object_hash_algo
+            / hash_name[:_prefix_cnt]
+            / hash_name
+        )
+
+    def get_data_file(self, name: str) -> Path:
+        path = self._get_object_store_path(name)
+        if path.exists():
+            return path
+
+        return self.data_dir / name
+
+    def get_all_data_files(self) -> t.List[Path]:
+        files = []
+        for f in self.data_dir.rglob("*"):
+            if not f.is_symlink():
+                continue
+            files.append(f.resolve().absolute())
+        return files
 
 
 class S3Uri(t.NamedTuple):
@@ -322,7 +391,11 @@ class LocalFSStorageBackend(StorageBackend):
             Path(bucket).expanduser() if bucket.startswith("~/") else Path(bucket)
         )
         # TODO: tune reopen file performance, merge files
-        with (bucket_path / _key).open("rb") as f:
+        data_path = bucket_path / _key[: DatasetStorage.short_sign_cnt]
+        if not data_path.exists():
+            data_path = bucket_path / _key
+
+        with data_path.open("rb") as f:
             f.seek(_start)
             return io.BytesIO(f.read(_end - _start + 1))
 

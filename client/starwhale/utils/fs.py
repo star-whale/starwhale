@@ -20,7 +20,11 @@ class FilePosition(IntEnum):
     END = -1
 
 
-def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> None:
+def ensure_file(
+    path: t.Union[str, Path],
+    content: str,
+    mode: int = 0o644,
+) -> None:
     p = Path(path)
     try:
         with p.open("r") as f:
@@ -31,7 +35,7 @@ def ensure_file(path: t.Union[str, Path], content: str, mode: int = 0o644) -> No
             _saved = ""
         else:
             raise
-    if _saved != content:
+    if _saved != content or not p.exists():
         # TODO: add timestamp for tmp file
         _tmp_f = p.parent / f".{p.name}.tmp"
         _tmp_f.write_text(content)
@@ -102,7 +106,7 @@ def blake2b_file(fpath: t.Union[str, Path]) -> str:
     _chunk_size = 8192
     fpath = Path(fpath)
     # blake2b is more faster and better than md5,sha1,sha2
-    _hash = hashlib.blake2b()
+    _hash = hashlib.blake2b(digest_size=64)
 
     with fpath.open("rb") as f:
         _chunk = f.read(_chunk_size)
