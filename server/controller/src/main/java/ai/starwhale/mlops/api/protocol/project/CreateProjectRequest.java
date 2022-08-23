@@ -26,25 +26,24 @@ import org.springframework.validation.annotation.Validated;
 
 @Data
 @Validated
-public class ProjectRequest implements Serializable {
+public class CreateProjectRequest implements Serializable {
 
 
     @JsonProperty("projectName")
+    @NotNull
     @Pattern(regexp = RegExps.PROJECT_NAME_REGEX, message = "Project name is invalid.")
     private String projectName;
 
-    @JsonProperty("projectId")
-    private String projectId;
-
+    @NotNull
     @JsonProperty("ownerId")
     private String ownerId;
 
+    @NotNull
     @JsonProperty("privacy")
     private String privacy;
 
+    @NotNull
     @JsonProperty("description")
     private String description;
 
-    @JsonProperty(value = "recover", defaultValue = "false", required = true)
-    private Boolean recover;
 }

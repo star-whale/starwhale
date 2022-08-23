@@ -17,13 +17,12 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.project.ProjectRequest;
+import ai.starwhale.mlops.api.protocol.project.CreateProjectRequest;
+import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
 import ai.starwhale.mlops.api.protocol.user.ProjectRoleVO;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -67,7 +66,7 @@ public interface ProjectApi {
     @PostMapping(value = "/project")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> createProject(
-        @Valid @RequestBody ProjectRequest projectRequest);
+        @Valid @RequestBody CreateProjectRequest createProjectRequest);
 
 
     @Operation(summary = "Delete a project by Url")
@@ -81,10 +80,10 @@ public interface ProjectApi {
     @Operation(summary = "Recover a project")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
-    @PutMapping(value = "/project/{projectUrl}/recover")
+    @PutMapping(value = "/project/{projectId}/recover")
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverProject(
-        @Valid @PathVariable("projectUrl") String projectUrl);
+        @Valid @PathVariable("projectId") String projectId);
 
 
     @Operation(summary = "Get a project by Url", description = "Returns a single project object.")
@@ -105,7 +104,7 @@ public interface ProjectApi {
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> updateProject(
         @PathVariable("projectUrl") String projectId,
-        @Valid @RequestBody ProjectRequest projectRequest);
+        @Valid @RequestBody UpdateProjectRequest updateProjectRequest);
 
 
     @Operation(summary = "List project roles")

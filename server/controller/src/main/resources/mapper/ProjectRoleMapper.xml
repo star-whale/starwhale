@@ -33,6 +33,7 @@
             view.*,
             p.project_name,
             p.is_deleted,
+            p.privacy as project_privacy,
             p.created_time as project_created_time,
             p.modified_time as project_modified_time
         from (select rel.id            as project_role_id,
@@ -62,6 +63,7 @@
             view.*,
             p.project_name,
             p.is_deleted,
+            p.privacy as project_privacy,
             p.created_time as project_created_time,
             p.modified_time as project_modified_time
         from (select rel.id            as project_role_id,
@@ -113,6 +115,7 @@
     <resultMap id="projectResultMap" type="ai.starwhale.mlops.domain.project.po.ProjectEntity">
         <id property="id" column="project_id" />
         <result property="projectName" column="project_name"/>
+        <result property="privacy" column="project_privacy"/>
         <result property="createdTime" column="project_created_time"/>
         <result property="modifiedTime" column="project_modified_time"/>
     </resultMap>
