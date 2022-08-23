@@ -217,6 +217,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
     ) -> None:
         # init manifest
         _manifest: t.Dict[str, t.Any] = {
+            "created_at": now_str(),
             "status": STATUS.START,
             "step": step,
             "task_index": task_index,
@@ -226,7 +227,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         if not version:
             version = gen_uniq_version()
-            _manifest["created_at"] = now_str()
 
         _project_uri = URI(project, expected_type=URIType.PROJECT)
         _run_dir = EvaluationStorage.local_run_dir(_project_uri.project, version)

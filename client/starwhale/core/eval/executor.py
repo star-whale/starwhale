@@ -4,7 +4,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from starwhale.utils import console, is_darwin, gen_uniq_version
+from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import (
     DefaultYAMLName,
     DEFAULT_MANIFEST_NAME,
@@ -173,6 +173,7 @@ class EvalExecutor:
                 model_dir=str(self._model_dir),
                 datasets=[u.full_uri for u in self.dataset_uris],
                 runtime=self.runtime_uri,
+                created_at=now_str(),
             ),
         )
 

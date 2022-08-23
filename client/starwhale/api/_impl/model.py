@@ -24,6 +24,7 @@ from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, RunSubDirType
 from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
+from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import Context
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
