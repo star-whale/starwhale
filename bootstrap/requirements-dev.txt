@@ -1,6 +1,0 @@
-ansible-lint
-twine == 4.0.0
-wheel >= 0.35.0
-black==22.3.0
-flake8==4.0.1
-isort >= 5.10.1

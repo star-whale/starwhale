@@ -1,4 +1,0 @@
----
-title: BareMetal Ansible Installation
----
-
