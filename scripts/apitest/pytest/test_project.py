@@ -6,7 +6,8 @@ from common import httputil as hu
 
 
 def get_project(host, port, name):
-    res = requests.get(url=hu.url(host, port) + '/project/' + name,
+    url = '{api}/project/{project}'
+    res = requests.get(url=url.format(api=hu.url(host, port), project=name),
                        headers=hu.header())
     return res
 
@@ -16,7 +17,8 @@ class TestProject:
         hu.login(host, port)
 
     def test_list(self, host, port):
-        res = requests.get(url=hu.url(host, port) + '/project',
+        url = '{api}/project'
+        res = requests.get(url=url.format(api=hu.url(host, port)),
                            headers=hu.header())
         response = res.json()
 
@@ -27,10 +29,11 @@ class TestProject:
         print('Test project list ok.')
 
     def test_create(self, host, port):
+        url = '{api}/project'
         sec = str(int(time.time()))
         project_name = 'pytest' + sec
         os.environ['project_name'] = project_name
-        res = requests.post(url=hu.url(host, port) + '/project',
+        res = requests.post(url=url.format(api=hu.url(host, port)),
                             json={'projectName': project_name,
                                   'privacy': 'public',
                                   'ownerId': 1,
@@ -56,11 +59,22 @@ class TestProject:
 
         print('Test Project get information ok.')
 
+    def test_project_role(self, host, port):
+        url = '{api}/project/{project}/role'
+        project_name = os.getenv('project_name')
+        res = requests.get(url=url.format(api=hu.url(host, port),
+                                          project=project_name),
+                           headers=hu.header())
+        response = res.json()
+        assert res.status_code == 200
+        assert len(response['data']) > 0
+
     def test_modify(self, host, port):
+        url = '{api}/project/{project}'
         project_name = os.getenv('project_name')
         project_name_modified = project_name + "_modified"
-        res = requests.put(url=hu.url(host, port) + '/project/'
-                                                  + project_name,
+        res = requests.put(url=url.format(api=hu.url(host, port),
+                                          project=project_name),
                            json={'projectName': project_name_modified,
                                  'privacy': 'private',
                                  'description': 'modified description'},
@@ -82,9 +96,10 @@ class TestProject:
         print('Test Project Modify ok.')
 
     def test_remove(self, host, port):
+        url = '{api}/project/{project}'
         project_name_modified = os.getenv('project_name') + "_modified"
-        res = requests.delete(url=hu.url(host, port) + '/project/'
-                                                     + project_name_modified,
+        res = requests.delete(url=url.format(api=hu.url(host, port),
+                                             project=project_name_modified),
                               headers=hu.header())
         response = res.json()
 
@@ -97,8 +112,9 @@ class TestProject:
         print('Test Project Remove ok.')
 
     def test_recover(self, host, port):
+        url = '{api}/project'
         project_name_recover = os.getenv('project_name') + "_recover"
-        res = requests.post(url=hu.url(host, port) + '/project',
+        res = requests.post(url=url.format(api=hu.url(host, port)),
                             json={'projectName': project_name_recover,
                                   'privacy': 'private',
                                   'ownerId': 1,
@@ -107,12 +123,14 @@ class TestProject:
         response = res.json()
         pid = response['data']
 
-        requests.delete(url=hu.url(host, port) + '/project/' + pid,
+        url = '{api}/project/{project}'
+        requests.delete(url=url.format(api=hu.url(host, port),
+                                       project=pid),
                         headers=hu.header())
 
-        res = requests.put(url=hu.url(host, port) + '/project/'
-                                                  + pid
-                                                  + '/recover',
+        url = '{api}/project/{project}/recover'
+        res = requests.put(url=url.format(api=hu.url(host, port),
+                                          project=pid),
                            headers=hu.header())
         response = res.json()
 
@@ -122,7 +140,9 @@ class TestProject:
         res = get_project(host, port, pid)
         assert res.status_code == 200
 
-        requests.delete(url=hu.url(host, port) + '/project/' + pid,
+        url = '{api}/project/{project}'
+        requests.delete(url=url.format(api=hu.url(host, port),
+                                       project=pid),
                         headers=hu.header())
 
         print('Test Project Recover ok.')
