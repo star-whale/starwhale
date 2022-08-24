@@ -89,7 +89,7 @@ public class SwdsUploaderTest {
         when(userService.currentUserDetail()).thenReturn(User.builder().idTableKey(1L).build());
         ProjectMapper projectMapper = mock(ProjectMapper.class);
         ProjectManager projectManager = mock(ProjectManager.class);
-        when(projectManager.getProject(anyString())).thenReturn(new ProjectEntity(1l,"pname",null,null,null,null,null));
+        when(projectManager.getProject(anyString())).thenReturn(new ProjectEntity(1l,"pname",null,null,null,null,null,0));
 
         HotJobHolder hotJobHolder = new HotJobHolderImpl();
 
