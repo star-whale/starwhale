@@ -59,12 +59,4 @@ public class HttpUtil {
             return null;
         }
     }
-
-    public static void main(String[] args) {
-        System.out.println(getResourceUrlFromPath("/api/v1/project/project_test_1", Resources.PROJECT));
-        System.out.println(getResourceUrlFromPath("/api/v1/project/project_test_1/model/1", Resources.PROJECT));
-        System.out.println(getResourceUrlFromPath("/project/project_test_1?pageSize=1", Resources.PROJECT));
-        System.out.println(getResourceUrlFromPath("/project/project_test_1?pageSize=1", Resources.RUNTIME));
-        System.out.println(getResourceUrlFromPath("/api/v1/project/project_test_1/model/1", Resources.MODEL));
-    }
 }

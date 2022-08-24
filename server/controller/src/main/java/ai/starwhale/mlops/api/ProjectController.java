@@ -18,8 +18,9 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.project.ProjectRequest;
+import ai.starwhale.mlops.api.protocol.project.CreateProjectRequest;
 import ai.starwhale.mlops.api.protocol.project.ProjectVO;
+import ai.starwhale.mlops.api.protocol.project.UpdateProjectRequest;
 import ai.starwhale.mlops.api.protocol.user.ProjectRoleVO;
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
@@ -75,26 +76,18 @@ public class ProjectController implements ProjectApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> createProject(ProjectRequest projectRequest) {
-        Long projectId;
-        if(Boolean.TRUE.equals(projectRequest.getRecover())) {
-            String projectUrl = projectRequest.getProjectId();
-            if(projectUrl == null) {
-                projectUrl = projectRequest.getProjectName();
-            }
-            projectId = projectService.recoverProject(projectUrl);
-        } else {
-            projectId = projectService
+    public ResponseEntity<ResponseMessage<String>> createProject(
+        CreateProjectRequest createProjectRequest) {
+        Long projectId = projectService
                 .createProject(Project.builder()
-                    .name(projectRequest.getProjectName())
+                    .name(createProjectRequest.getProjectName())
                     .owner(User.builder()
-                        .id(idConvertor.revert(projectRequest.getOwnerId()))
+                        .id(idConvertor.revert(createProjectRequest.getOwnerId()))
                         .build())
                     .isDefault(false)
-                    .privacy(Privacy.fromName(projectRequest.getPrivacy()))
-                    .description(projectRequest.getDescription())
+                    .privacy(Privacy.fromName(createProjectRequest.getPrivacy()))
+                    .description(createProjectRequest.getDescription())
                     .build());
-        }
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(projectId)));
 
@@ -111,8 +104,8 @@ public class ProjectController implements ProjectApi{
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<String>> recoverProject(String projectUrl) {
-        projectService.recoverProject(projectUrl);
+    public ResponseEntity<ResponseMessage<String>> recoverProject(String projectId) {
+        projectService.recoverProject(projectId);
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
@@ -124,12 +117,12 @@ public class ProjectController implements ProjectApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> updateProject(String projectUrl,
-        ProjectRequest projectRequest) {
+        UpdateProjectRequest updateProjectRequest) {
         Boolean res = projectService.modifyProject(projectUrl,
-            projectRequest.getProjectName(),
-            projectRequest.getDescription(),
-            idConvertor.revert(projectRequest.getOwnerId()),
-            projectRequest.getPrivacy()
+            updateProjectRequest.getProjectName(),
+            updateProjectRequest.getDescription(),
+            idConvertor.revert(updateProjectRequest.getOwnerId()),
+            updateProjectRequest.getPrivacy()
         );
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update project failed."),
