@@ -46,7 +46,6 @@ class Context:
     def __init__(
         self,
         workdir: Path,
-        src_dir: Path,
         step: str = "",
         total: int = 1,
         index: int = 0,
@@ -62,7 +61,6 @@ class Context:
         self.index = index
         self.dataset_uris = dataset_uris
         self.workdir = workdir
-        self.src_dir = src_dir
         self.kw = copy.deepcopy(kw)
 
     def get_param(self, name: str) -> t.Any:

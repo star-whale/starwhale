@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.datastore.ColumnDesc;
@@ -15,13 +30,16 @@ import ai.starwhale.mlops.datastore.DataStore;
 import ai.starwhale.mlops.datastore.OrderByDesc;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
+import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.exception.SWValidationException;
 import brave.internal.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +48,7 @@ import java.util.Objects;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.BDDMockito.given;
 
 public class DataStoreControllerTest {
     private DataStoreController controller;
@@ -37,7 +56,9 @@ public class DataStoreControllerTest {
     @BeforeEach
     public void setUp() {
         this.controller = new DataStoreController();
-        this.controller.setDataStore(new DataStore());
+        var walManager = Mockito.mock(WalManager.class);
+        given(walManager.readAll()).willReturn(Collections.emptyIterator());
+        this.controller.setDataStore(new DataStore(walManager));
     }
 
     @Test
@@ -744,7 +765,7 @@ public class DataStoreControllerTest {
                     setValues(List.of(new RecordValueDesc() {{
                         setKey("k");
                         setValue("2");
-                    }},new RecordValueDesc() {{
+                    }}, new RecordValueDesc() {{
                         setKey("a");
                     }}));
                 }}));

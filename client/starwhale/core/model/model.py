@@ -7,35 +7,38 @@ from copy import deepcopy
 from pathlib import Path
 from collections import defaultdict
 
+import yaml
 from fs import open_fs
 from loguru import logger
 from fs.copy import copy_fs, copy_file
 
-from starwhale.utils import console, load_yaml
+from starwhale.utils import console, now_str, load_yaml, gen_uniq_version
 from starwhale.consts import (
     DefaultYAMLName,
     EvalHandlerType,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
     DEFAULT_COPY_WORKERS,
+    DEFAULT_MANIFEST_NAME,
     DEFAULT_EVALUATION_PIPELINE,
     DEFAULT_EVALUATION_JOBS_FNAME,
     DEFAULT_STARWHALE_API_VERSION,
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, ensure_dir
-from starwhale.base.type import URIType, BundleType, EvalTaskType, InstanceType
+from starwhale.utils.fs import move_dir, ensure_dir, ensure_file
+from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
+from starwhale.api._impl.job import Parser
+from starwhale.core.job.model import STATUS
 from starwhale.utils.progress import run_with_progress_bar
+from starwhale.core.eval.store import EvaluationStorage
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.core.model.store import ModelStorage
 from starwhale.core.job.scheduler import Scheduler
-
-from .store import ModelStorage
-from ...api._impl.job import Parser
 
 
 class ModelRunConfig:
@@ -204,8 +207,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         cls,
         project: str,
         version: str,
-        typ: str,
-        src_dir: Path,
         workdir: Path,
         dataset_uris: t.List[str],
         model_yaml_name: str = DefaultYAMLName.MODEL,
@@ -214,40 +215,95 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         task_index: int = 0,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
+        # init manifest
+        _manifest: t.Dict[str, t.Any] = {
+            "created_at": now_str(),
+            "status": STATUS.START,
+            "step": step,
+            "task_index": task_index,
+        }
+        # load model config by yaml
+        _model_config = cls.load_model_config(workdir / model_yaml_name)
 
-        if typ not in (EvalTaskType.ALL, EvalTaskType.SINGLE):
-            raise NoSupportError(typ)
+        if not version:
+            version = gen_uniq_version()
 
-        _module = StandaloneModel.get_pipeline_handler(
-            workdir=src_dir, yaml_name=model_yaml_name
-        )
-        _yaml_path = str(src_dir / DEFAULT_EVALUATION_JOBS_FNAME)
+        _project_uri = URI(project, expected_type=URIType.PROJECT)
+        _run_dir = EvaluationStorage.local_run_dir(_project_uri.project, version)
+        ensure_dir(_run_dir)
 
+        if _model_config.run.typ == EvalHandlerType.DEFAULT:
+            _module = DEFAULT_EVALUATION_PIPELINE
+        else:
+            _module = _model_config.run.ppl
+
+        _yaml_path = str(workdir / DEFAULT_EVALUATION_JOBS_FNAME)
+
+        # generate if not exists
+        if not os.path.exists(_yaml_path):
+            if _model_config.run.typ == EvalHandlerType.DEFAULT:
+                _ppl = DEFAULT_EVALUATION_PIPELINE
+            else:
+                _ppl = _model_config.run.ppl
+
+            _new_yaml_path = _run_dir / DEFAULT_EVALUATION_JOBS_FNAME
+            Parser.generate_job_yaml(_ppl, workdir, _new_yaml_path)
+            _yaml_path = str(_new_yaml_path)
+
+        # parse job steps from yaml
         logger.debug(f"parse job from yaml:{_yaml_path}")
-
         _jobs = Parser.parse_job_from_yaml(_yaml_path)
 
         if job_name not in _jobs:
             raise RuntimeError(f"job:{job_name} not found")
 
-        _scheduler = Scheduler(
-            project=project,
-            version=version,
-            module=_module,
-            workdir=workdir,
-            src_dir=src_dir,
-            dataset_uris=dataset_uris,
-            steps=_jobs[job_name],
-            **kw,
-        )
+        _steps = _jobs[job_name]
 
-        if typ == EvalTaskType.ALL:
-            _scheduler.schedule()
-        elif typ == EvalTaskType.SINGLE:
-            _scheduler.schedule_single_task(step, task_index)
+        console.print(":hourglass_not_done: start to evaluation...")
 
-        console.print(f"job info:{_jobs}")
-        console.print(":clap: finish run")
+        try:
+            _scheduler = Scheduler(
+                project=_project_uri.project,
+                version=version,
+                module=_module,
+                workdir=workdir,
+                dataset_uris=dataset_uris,
+                steps=_steps,
+                kw=kw,
+            )
+            if not step:
+                _scheduler.schedule()
+            else:
+                _scheduler.schedule_single_task(step, task_index)
+        except Exception as e:
+            _manifest["status"] = STATUS.FAILED
+            _manifest["error_message"] = str(e)
+            raise
+        finally:
+            _status = True
+            for _step in _steps:
+                _status = _status and _step.status == STATUS.SUCCESS
+            _manifest.update(
+                {
+                    **dict(
+                        version=version,
+                        project=_project_uri.project,
+                        model=_model_config.model[0],
+                        model_dir=str(workdir),
+                        datasets=list(dataset_uris),
+                        status=STATUS.SUCCESS if _status else STATUS.FAILED,
+                        finished_at=now_str(),
+                    ),
+                    **kw,
+                }
+            )
+            _f = _run_dir / DEFAULT_MANIFEST_NAME
+            ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
+
+            logger.debug(f"job info:{_jobs}")
+            console.print(
+                f":100: finish run, {STATUS.SUCCESS if _status else STATUS.FAILED}!"
+            )
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
@@ -345,7 +401,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 "copy src",
                 dict(workdir=workdir, yaml_name=yaml_name, model_config=_model_config),
             ),
-            # todo 20220725 add step parse for job
             (
                 self._gen_steps,
                 5,
@@ -373,7 +428,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         for _fpath in _config.model + _config.config:
             if not (yaml_path.parent / _fpath).exists():
-                raise FileFormatError(f"model - {_fpath} is not existed")
+                raise FileFormatError(
+                    f"model - {yaml_path.parent / _fpath} is not existed"
+                )
 
         # TODO: add more model.yaml section validation
         # TODO: add 'swcli model check' cmd

@@ -40,6 +40,12 @@ sw:
   controller:
     apiPrefix: /api/v1
     whiteList: /api/v1/report
+  datastore:
+    fsRootDir: ${SW_DATA_STORE_FS_ROOT_DIR:.}
+    walFileSize: ${SW_DATASTORE_WAL_FILE_SIZE:65536}
+    walMaxFileSize: ${SW_DATASTORE_WAL_MAX_FILE_SIZE:67108864}
+    walPrefix: ${SW_DATASTORE_WAL_LOG_PREFIX:wal/}
+    walWaitIntervalMillis: ${SW_DATASTORE_WAL_WAIT_INTERVAL_MILLIS:500}
 ---
 #Development
 spring:

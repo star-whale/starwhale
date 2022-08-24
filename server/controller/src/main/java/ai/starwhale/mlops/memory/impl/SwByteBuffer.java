@@ -19,12 +19,17 @@ import ai.starwhale.mlops.memory.SwBuffer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 
-public class SwBytesBuffer implements SwBuffer {
-    private ByteBuffer buf;
+public class SwByteBuffer implements SwBuffer {
+    private final ByteBuffer buf;
 
-    protected SwBytesBuffer(int capacity) {
+    protected SwByteBuffer(int capacity) {
         this.buf = ByteBuffer.allocate(capacity);
+    }
+
+    private SwByteBuffer(ByteBuffer buf) {
+        this.buf = buf;
     }
 
     @Override
@@ -89,26 +94,34 @@ public class SwBytesBuffer implements SwBuffer {
 
     @Override
     public String getString(int index, int count) {
-        return new String(this.getBytes(index, count), StandardCharsets.UTF_8);
+        var b = new byte[count];
+        if (this.getBytes(index, b, 0, count) != count) {
+            throw new IllegalArgumentException(
+                    MessageFormat.format("not enough data. index={0} count={1}", index, count));
+        }
+        return new String(b, StandardCharsets.UTF_8);
     }
 
     @Override
     public void setString(int index, String value) {
-        this.setBytes(index, value.getBytes(StandardCharsets.UTF_8));
+        var b = value.getBytes(StandardCharsets.UTF_8);
+        this.setBytes(index, b, 0, b.length);
     }
 
     @Override
-    public byte[] getBytes(int index, int count) {
-        byte[] data = new byte[count];
+    public int getBytes(int index, byte[] b, int offset, int len) {
         this.buf.position(index);
-        this.buf.get(data);
-        return data;
+        if (len > this.buf.remaining()) {
+            len = this.buf.remaining();
+        }
+        this.buf.get(b, offset, len);
+        return len;
     }
 
     @Override
-    public void setBytes(int index, byte[] value) {
+    public void setBytes(int index, byte[] b, int offset, int len) {
         this.buf.position(index);
-        this.buf.put(value);
+        this.buf.put(b, offset, len);
     }
 
     @Override
@@ -117,12 +130,23 @@ public class SwBytesBuffer implements SwBuffer {
     }
 
     @Override
+    public SwBuffer slice(int offset, int len) {
+        this.buf.position(offset);
+        this.buf.limit(offset + len);
+        var buf = new SwByteBuffer(this.buf.slice());
+        this.buf.limit(this.buf.capacity());
+        return buf;
+    }
+
+    @Override
     public void copyTo(SwBuffer buf) {
-        buf.setBytes(0, this.buf.array());
+        buf.setBytes(0, this.buf.array(), 0, this.buf.limit());
     }
 
     @Override
     public ByteBuffer asByteBuffer() {
-        return this.buf;
+        var buf = this.buf.duplicate();
+        buf.clear();
+        return buf;
     }
 }

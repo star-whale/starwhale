@@ -16,14 +16,14 @@ from starwhale.utils.fs import move_dir
 from starwhale.api._impl import wrapper
 from starwhale.base.type import EvalTaskType, InstanceType, JobOperationType
 from starwhale.base.cloud import CloudRequestMixed
+from starwhale.consts.env import SWEnv
 from starwhale.utils.http import ignore_error
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.utils.process import check_call
+from starwhale.core.eval.store import EvaluationStorage
+from starwhale.core.eval.executor import EvalExecutor
 from starwhale.core.runtime.process import Process as RuntimeProcess
-
-from .store import EvaluationStorage
-from .executor import EvalExecutor
 
 _device_id_map = {"cpu": 1, "gpu": 2}
 
@@ -139,7 +139,6 @@ class StandaloneEvaluationJob(EvaluationJob):
         **kw: t.Any,
     ) -> t.Tuple[bool, str]:
         use_docker = kw.get("use_docker", False)
-        typ = kw.get("typ", EvalTaskType.ALL)
         step = kw.get("step", "")
         task_index = kw.get("task_index", 0)
 
@@ -151,6 +150,8 @@ class StandaloneEvaluationJob(EvaluationJob):
             version=version,
             name=name,
             desc=desc,
+            step=step,
+            task_index=task_index,
             gencmd=kw.get("gencmd", False),
             use_docker=use_docker,
         )
@@ -158,17 +159,17 @@ class StandaloneEvaluationJob(EvaluationJob):
             RuntimeProcess.from_runtime_uri(
                 uri=runtime_uri,
                 target=ee.run,
-                args=(typ, step, task_index),
+                args=(),
                 runtime_restore=kw.get("runtime_restore", False),
             ).run()
         else:
-            ee.run(typ, step, task_index)
+            ee.run()
 
         return True, ee._version
 
     def _get_report(self) -> t.Dict[str, t.Any]:
-        os.environ["SW_PROJECT"] = self.sw_config.current_project
-        os.environ["SW_EVAL_ID"] = self.store.id
+        os.environ[SWEnv.project] = self.sw_config.current_project
+        os.environ[SWEnv.eval_version] = self.store.id
         logger.debug(
             f"datastore path:{str(self.sw_config.datastore_dir)}, eval_id:{self.store.id}"
         )

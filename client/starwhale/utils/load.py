@@ -40,7 +40,7 @@ def import_cls(
 
     try:
         module_name, cls_name = mc.split(":", 1)
-        logger.debug(f"cmp import module:{module_name}, cls:{cls_name}")
+        logger.debug(f"import module:{module_name}, cls:{cls_name}")
         _module = importlib.import_module(module_name, package=workdir_path)
         _cls = getattr(_module, cls_name, None)
         if not _cls or not issubclass(_cls, parentClass):

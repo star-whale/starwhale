@@ -2,8 +2,6 @@ import typing as t
 
 import click
 
-from starwhale.base.type import EvalTaskType
-
 from .view import JobTermView, get_term_view, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 
 
@@ -66,12 +64,6 @@ def _list(
     help="[ONLY Standalone]use docker to run evaluation job",
 )
 @click.option("--gencmd", is_flag=True, help="[ONLY Standalone]gen docker run command")
-@click.option(
-    "--type",
-    type=click.Choice([EvalTaskType.ALL, EvalTaskType.SINGLE]),
-    default=EvalTaskType.ALL,
-    help="Evaluation run type",
-)
 @click.option("--step", default="", help="Evaluation run step")
 @click.option("--task-index", default=0, help="Index of tasks in the current step")
 def _run(
@@ -86,7 +78,6 @@ def _run(
     resource: str,
     use_docker: bool,
     gencmd: bool,
-    type: str,
     step: str,
     task_index: int,
 ) -> None:
@@ -100,7 +91,6 @@ def _run(
         desc=desc,
         resource=resource,
         gencmd=gencmd,
-        typ=type,
         use_docker=use_docker,
         step=step,
         task_index=task_index,

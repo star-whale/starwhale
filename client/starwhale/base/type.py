@@ -24,15 +24,13 @@ class JobType:
 
 class EvalTaskType:
     ALL = "all"
-    # PPL = "ppl"
-    # CMP = "cmp"
-    # CUSTOM = "custom"
     SINGLE = "single"
 
 
 class RunSubDirType:
     DATASET = "dataset"
     STATUS = "status"
+    RUNLOG = "runlog"
     LOG = "log"
     SWMP = "swmp"
 

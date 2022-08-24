@@ -17,24 +17,28 @@ def _get_cls(src_dir: Path) -> Any:
     _model_config = StandaloneModel.load_model_config(_mp)
     _handler = _model_config.run.ppl
 
-    console.print(f"try to import {_handler}@{src_dir}...")
+    logger.debug(f"try to import {_handler}@{src_dir}...")
     _cls = import_cls(src_dir, _handler)
     return _cls
 
 
-@step(concurrency=3, task_num=6)
+@step()
 def ppl(context: Context) -> None:
-    logger.debug(f"src : {context.src_dir}")
-    _cls = _get_cls(context.src_dir)
+    logger.debug(f"workdir : {context.workdir}")
+    _cls = _get_cls(context.workdir)
+    console.print(f":zap: start run {context.step}-{context.index}...")
     with _cls(context=context) as _obj:
         _obj._starwhale_internal_run_ppl()
 
-    console.print(f":clap: finish run {context.step}-{context.index}: {_obj}")
+    console.print(
+        f":clap: finish run {context.step}-{context.index}, more details can see:{_obj}"
+    )
 
 
 @step(needs=["ppl"])
 def cmp(context: Context) -> None:
-    _cls = _get_cls(context.src_dir)
+    _cls = _get_cls(context.workdir)
+    console.print(f":zap: start run {context.step}-{context.index}...")
     with _cls(context=context) as _obj:
         _obj._starwhale_internal_run_cmp()
 
