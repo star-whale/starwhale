@@ -33,6 +33,7 @@ import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.swds.bo.SWDSIndex;
 import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
+import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -138,7 +139,6 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         }
 
 
-
         for (StepEntity stepEntity : stepEntities) {
             List<String> dependencies = allDependencies.get(stepEntity.getName());
             for (String dependency : dependencies) {
@@ -151,15 +151,18 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 final String taskUuid = UUID.randomUUID().toString();
                 taskEntities.add(TaskEntity.builder()
                     .stepId(stepEntity.getId())
-                    .taskRequest(JSONUtil.toJsonStr(TaskRequest.builder()
-                        .project(job.getProject().getName())
-                        .jobId(job.getUuid())
-                        .stepName(stepEntity.getName())
-                        .total(stepEntity.getTaskNum())
-                        .datasetUris(job.getSwDataSets().stream()
-                            .map(ds -> String.format("%s/version/%s", ds.getName(), ds.getVersion()))
-                            .collect(Collectors.toList()))
-                        .index(i))
+                    .taskRequest(JSONUtil.toJsonStr(
+                            TaskRequest.builder()
+                                .project(job.getProject().getName())
+                                .jobId(job.getUuid())
+                                .stepName(stepEntity.getName())
+                                .total(stepEntity.getTaskNum())
+                                .datasetUris(job.getSwDataSets().stream()
+                                    .map(ds -> String.format("%s/version/%s", ds.getName(), ds.getVersion()))
+                                    .collect(Collectors.toList()))
+                                .index(i)
+                                .build()
+                        )
                     )
                     .taskStatus(TaskStatus.valueOf(stepEntity.getStatus().name()))
                     .taskUuid(taskUuid)
@@ -206,5 +209,10 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
 
     private String storagePath(String jobId, String taskId) {
         return storagePathCoordinator.generateTaskResultPath(jobId, taskId);
+    }
+
+    public static void main(String[] args) {
+        String s = JSONUtil.toJsonStr(TaskRequest.builder().project("p").datasetUris(List.of("rwe")).jobId("1l").build());
+        System.out.println(s);
     }
 }

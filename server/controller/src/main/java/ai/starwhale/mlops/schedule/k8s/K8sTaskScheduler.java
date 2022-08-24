@@ -160,7 +160,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), coreContainerEnvs, initContainerEnvs, resourceRequirements);
             // set result upload path
 
-            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + task.getResultPath().resultDir())
+            log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
+            // TODO:remove dst
+            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + "")
                     , new V1EnvVar().name("ENDPOINT_URL").value(storageProperties.getS3Config().getEndpoint())
                     , new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
                     , new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
