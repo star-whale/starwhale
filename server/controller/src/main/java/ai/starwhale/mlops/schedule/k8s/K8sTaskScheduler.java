@@ -146,7 +146,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         coreContainerEnvs.put("SW_PROJECT", task.getTaskRequest().getProject());
         try {
             // cmd（all、single[step、taskIndex]）
-            String cmd = "run_single";
+            String cmd = "run";
             // TODO: use task's resource needs
             V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(task.getDeviceClass(),
                 task.getDeviceAmount().toString()+"m").getResourceSelector();
