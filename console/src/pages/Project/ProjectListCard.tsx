@@ -204,7 +204,7 @@ export default function ProjectListCard() {
             await projectsInfo.refetch()
             setIsCreateProjectOpen(false)
         },
-        [projectsInfo]
+        [projectsInfo, editProject]
     )
 
     const [data, setData] = useState<IProjectSchema[]>([])
