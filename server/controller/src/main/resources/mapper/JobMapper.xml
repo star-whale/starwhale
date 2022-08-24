@@ -25,6 +25,7 @@
                               j.device_amount,
                               j.result_output_path as job_result_output_path,
                               j.job_comment,
+                              j.resource_pool_id,
                               j.is_deleted as job_is_deleted,
                               p.project_name,
                               u.id as user_id,
@@ -166,7 +167,8 @@
                              swrt_version_id,
                              device_type,
                              device_amount,
-                             result_output_path)
+                             result_output_path,
+                             resource_pool_id)
         values (#{job.jobUuid},
                 #{job.projectId},
                 #{job.swmpVersionId},
@@ -179,7 +181,8 @@
                 #{job.runtimeVersionId},
                 #{job.deviceType},
                 #{job.deviceAmount},
-                #{job.resultOutputPath}
+                #{job.resultOutputPath},
+                #{job.resourcePoolId}
                 )
     </insert>
 
@@ -201,6 +204,7 @@
         <result property="comment" column="job_comment"/>
         <result property="isDeleted" column="job_is_deleted"/>
         <result property="runtimeVersionId" column="swrt_version_id"/>
+        <result property="resourcePoolId" column="resource_pool_id"/>
         <association property="project" resultMap="ai.starwhale.mlops.domain.project.mapper.ProjectMapper.projectResultMap"/>
         <association property="swmpVersion" resultMap="ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper.swmpVersionResultMap" />
         <association property="owner" resultMap="ai.starwhale.mlops.domain.user.mapper.UserMapper.userResultMap" />

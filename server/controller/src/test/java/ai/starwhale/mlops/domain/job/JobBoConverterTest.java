@@ -39,6 +39,11 @@ import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
 import java.util.List;
 import java.util.UUID;
+
+import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
+import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -63,6 +68,7 @@ public class JobBoConverterTest {
             .resultOutputPath("job_result")
             .jobUuid(UUID.randomUUID().toString())
             .runtimeVersionId(1L)
+            .resourcePoolId(7L)
             .build();
         JobSWDSVersionMapper jobSWDSVersionMapper = mock(JobSWDSVersionMapper.class);
         when(jobSWDSVersionMapper.listSWDSVersionsByJobId(jobEntity.getId())).thenReturn(List.of(
@@ -87,9 +93,16 @@ public class JobBoConverterTest {
         when(runtimeMapper.findRuntimeById(
             runtimeVersionEntity.getRuntimeId())).thenReturn(runtimeEntity);
 
+        ResourcePoolMapper resourcePoolMapper = mock(ResourcePoolMapper.class);
+        ResourcePoolEntity resourcePoolEntity = ResourcePoolEntity.builder().id(7L).label("foo").build();
+        when(resourcePoolMapper.findById(7L)).thenReturn(resourcePoolEntity);
+        ResourcePoolConverter resourcePoolConverter = mock(ResourcePoolConverter.class);
+        ResourcePool resourcePool = ResourcePool.builder().label(resourcePoolEntity.getLabel()).build();
+        when(resourcePoolConverter.toResourcePool(resourcePoolEntity)).thenReturn(resourcePool);
+
 
         JobBoConverter jobBoConverter = new JobBoConverter(jobSWDSVersionMapper,swModelPackageMapper,runtimeMapper,runtimeVersionMapper,
-            swdsboConverter);
+            swdsboConverter, resourcePoolMapper, resourcePoolConverter);
 
         Job job = jobBoConverter.fromEntity(jobEntity);
         Assertions.assertEquals(jobEntity.getJobStatus(),job.getStatus());
@@ -115,6 +128,9 @@ public class JobBoConverterTest {
         List<SWDataSet> swDataSets = job.getSwDataSets();
         Assertions.assertNotNull(swDataSets);
         Assertions.assertEquals(2, swDataSets.size());
+
+        Assertions.assertEquals(jobEntity.getResourcePoolId(), resourcePoolEntity.getId());
+        Assertions.assertEquals(job.getResourcePool(), resourcePool);
     }
 
 }

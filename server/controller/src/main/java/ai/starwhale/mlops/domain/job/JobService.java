@@ -37,6 +37,7 @@ import ai.starwhale.mlops.domain.runtime.RuntimeManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.SwdsManager;
 import ai.starwhale.mlops.domain.swmp.SwmpManager;
+import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolManager;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -124,6 +125,9 @@ public class JobService {
     @Resource
     private RuntimeManager runtimeManager;
 
+    @Resource
+    private ResourcePoolManager resourcePoolManager;
+
     public PageInfo<JobVO> listJobs(String projectUrl, Long swmpId, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long projectId = projectManager.getProjectId(projectUrl);
@@ -197,13 +201,14 @@ public class JobService {
     }
     public Long createJob(String projectUrl,
         String modelVersionUrl, String datasetVersionUrls, String runtimeVersionUrl,
-        String deviceType, int deviceCount, String comment) {
+        String deviceType, int deviceCount, String comment, String resourcePool) {
         User user = userService.currentUserDetail();
         String jobUuid = IdUtil.simpleUUID();
         Long projectId = projectManager.getProjectId(projectUrl);
         Long runtimeVersionId = runtimeManager.getRuntimeVersionId(runtimeVersionUrl, null);
         Long modelVersionId = swmpManager.getSWMPVersionId(modelVersionUrl, null);
         Integer deviceValue = getDeviceClazz(deviceType).getValue();
+        Long resourcePoolId = resourcePoolManager.getResourcePoolId(resourcePool);
         JobEntity jobEntity = JobEntity.builder()
             .ownerId(user.getId())
             .jobUuid(jobUuid)
@@ -219,6 +224,7 @@ public class JobService {
             .resultOutputPath(storagePathCoordinator.generateResultMetricsPath(jobUuid))
             .jobStatus(JobStatus.CREATED)
             .type(JobType.EVALUATION)
+            .resourcePoolId(resourcePoolId)
             .build();
 
         jobMapper.addJob(jobEntity);

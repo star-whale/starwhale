@@ -18,7 +18,6 @@ package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
@@ -52,13 +51,18 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     final TaskBoConverter taskConvertor;
 
+    final K8sResourcePoolConverter resourcePoolConverter;
+
     final StorageProperties storageProperties;
 
     public K8sTaskScheduler(K8sClient k8sClient,
-                            TaskBoConverter taskConvertor, StorageProperties storageProperties) {
+                            TaskBoConverter taskConvertor,
+                            StorageProperties storageProperties,
+                            K8sResourcePoolConverter resourcePoolConverter) {
         this.k8sClient = k8sClient;
         this.taskConvertor = taskConvertor;
         this.storageProperties = storageProperties;
+        this.resourcePoolConverter = resourcePoolConverter;
     }
 
     @Override
@@ -66,7 +70,10 @@ public class K8sTaskScheduler implements SWTaskScheduler {
                       Clazz deviceClass) {
 
         tasks.parallelStream().forEach(task -> {
-            this.deployTaskToK8s(k8sClient, task.getStep().getJob().getJobRuntime().getImage(), taskConvertor.toTaskTrigger(task));
+            var job = task.getStep().getJob();
+            var image = job.getJobRuntime().getImage();
+            var label = this.resourcePoolConverter.toK8sLabel(job.getResourcePool());
+            this.deployTaskToK8s(k8sClient, image, taskConvertor.toTaskTrigger(task), label);
         });
     }
 
@@ -88,7 +95,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
      * @param image
      * @param task
      */
-    private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task) {
+    private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task, Map<String, String> nodeSelector) {
         log.debug("deploying task to k8s {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
         Map<String, String> initContainerEnvs = new HashMap<>();
         List<String> downloads = new ArrayList<>();
@@ -121,6 +128,16 @@ public class K8sTaskScheduler implements SWTaskScheduler {
                 ,new V1EnvVar().name("AWS_SECRET_ACCESS_KEY").value(storageProperties.getS3Config().getSecretKey())
                 )
             );
+            // update node selector
+            if (nodeSelector != null) {
+                var selector = job.getSpec().getTemplate().getSpec().getNodeSelector();
+                if (selector == null) {
+                    selector = nodeSelector;
+                } else {
+                    selector.putAll(nodeSelector);
+                }
+                job.getSpec().getTemplate().getSpec().nodeSelector(selector);
+            }
             client.deploy(job);
         } catch (Exception e) {
             throw new RuntimeException(e);

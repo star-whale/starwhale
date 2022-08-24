@@ -75,6 +75,9 @@ public class JobVO implements Serializable {
     @JsonProperty("comment")
     private String comment;
 
+    @JsonProperty("resourcePool")
+    private String resourcePool;
+
     @JsonProperty("duration")
     public Long getDuration(){
         if(null == stopTime || stopTime <=0){

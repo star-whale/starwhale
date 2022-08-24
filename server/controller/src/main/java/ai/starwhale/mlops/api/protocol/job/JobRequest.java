@@ -48,4 +48,7 @@ public class JobRequest implements Serializable {
 
     @JsonProperty("comment")
     private String comment;
+
+    @JsonProperty("resourcePool")
+    private String resourcePool;
 }
