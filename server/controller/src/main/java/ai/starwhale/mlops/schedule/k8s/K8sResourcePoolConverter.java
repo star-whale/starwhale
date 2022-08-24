@@ -36,7 +36,7 @@ public class K8sResourcePoolConverter {
     private static final String enabledLabelValue = "true";
 
     /**
-     * @param pool ResourcePoolEntity
+     * @param pool ResourcePool
      * @return K8s label which can applied to the node selector
      */
     public Map<String, String> toK8sLabel(ResourcePool pool) {
@@ -58,7 +58,7 @@ public class K8sResourcePoolConverter {
 
     /**
      * @param k8sLabels K8s label to parse
-     * @return list of ResourcePoolEntity
+     * @return list of ResourcePool
      */
     public List<ResourcePool> toResourcePools(Map<String, String> k8sLabels) {
         var ret = new ArrayList<ResourcePool>();
