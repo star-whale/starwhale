@@ -166,8 +166,8 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                     .build());
             }
 
-            // save step and tasks
-            stepMapper.save(stepEntity);
+            // update step's lastStepId and save tasks
+            stepMapper.updateLastStep(stepEntity.getId(), stepEntity.getLastStepId());
             BatchOperateHelper.doBatch(taskEntities, ts -> taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())), MAX_MYSQL_INSERTION_SIZE);
         }
         // update job status

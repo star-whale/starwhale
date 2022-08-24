@@ -28,6 +28,8 @@ public interface StepMapper {
 
     List<StepEntity> findByJobId(@Param("jobId") Long jobId);
 
+    void updateLastStep(@Param("stepId")Long stepId,@Param("lastStepId") Long lastStepId);
+
     void updateStatus(@Param("stepIds") List<Long> stepIds,@Param("status") StepStatus stepNewStatus);
 
     void updateFinishedTime(@Param("stepId")Long stepId,@Param("finishedTime")  LocalDateTime finishedTime);
