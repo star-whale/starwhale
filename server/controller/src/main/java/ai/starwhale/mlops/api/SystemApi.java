@@ -18,6 +18,7 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.agent.AgentVO;
+import ai.starwhale.mlops.api.protocol.system.ResourcePoolVO;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVO;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO;
 import com.github.pagehelper.PageInfo;
@@ -32,11 +33,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
 
 @Tag(name = "System")
 @Validated
@@ -67,6 +69,20 @@ public interface SystemApi {
         @Valid
         @RequestParam(value = "pageSize", required = false, defaultValue = "10")
             Integer pageSize);
+
+    @Operation(summary = "Get the list of resource pool")
+    @ApiResponses(
+        value = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "ok",
+                content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = List.class)))
+        })
+    @GetMapping(value = "/system/resourcePool")
+    ResponseEntity<ResponseMessage<List<ResourcePoolVO>>> listResourcePools();
 
     @Operation(summary = "Upgrade system version or cancel upgrade")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
