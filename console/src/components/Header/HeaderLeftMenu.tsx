@@ -56,21 +56,23 @@ export default function HeaderLeftMenu() {
                     />
                 )}
             >
-                <Button
-                    overrides={{
-                        BaseButton: {
-                            style: {
-                                'backgroundColor': 'transparent',
-                                ':hover': {
-                                    backgroundColor: 'transparent',
+                <p>
+                    <Button
+                        overrides={{
+                            BaseButton: {
+                                style: {
+                                    'backgroundColor': 'transparent',
+                                    ':hover': {
+                                        backgroundColor: 'transparent',
+                                    },
                                 },
                             },
-                        },
-                    }}
-                    endEnhancer={() => <AiFillCaretDown size={24} />}
-                >
-                    {t('PROJECT')}
-                </Button>
+                        }}
+                        endEnhancer={() => <AiFillCaretDown size={24} />}
+                    >
+                        {t('PROJECT')}
+                    </Button>
+                </p>
             </StatefulPopover>
             {/* <StatefulPopover
                 placement={PLACEMENT.bottomLeft}

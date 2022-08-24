@@ -34,14 +34,14 @@ const Visibility = ({ value, onChange }: IVisibilityProps) => {
     const [t] = useTranslation()
     const visPublic: IVisibilityItemProps = useMemo(
         () => ({
-            name: 'public',
+            name: 'PUBLIC',
             desc: t('Public Project Desc'),
         }),
         [t]
     )
     const visPrivate: IVisibilityItemProps = useMemo(
         () => ({
-            name: 'private',
+            name: 'PRIVATE',
             desc: t('Private Project Desc'),
         }),
         [t]
@@ -91,7 +91,7 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
     const [values, setValues] = useState<ICreateProjectSchema | undefined>({
         ownerId: currentUser?.id,
         projectName: project?.name ?? '',
-        privacy: project?.privacy ?? 'public',
+        privacy: project?.privacy ?? 'PUBLIC',
         description: project?.description ?? '',
     })
 
@@ -128,7 +128,7 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
                 style={{
                     display: 'flex',
                     alignContent: 'stretch',
-                    alignItems: 'flex-end',
+                    alignItems: 'flex-start',
                 }}
             >
                 <FormItem
@@ -145,7 +145,7 @@ export default function ProjectForm({ project, onSubmit }: IProjectFormProps) {
                 </FormItem>
                 <div
                     style={{
-                        margin: '0 6px 23px',
+                        margin: '38px 6px 0px',
                     }}
                 >
                     /
