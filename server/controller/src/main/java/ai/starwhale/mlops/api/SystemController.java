@@ -19,6 +19,7 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.agent.AgentVO;
+import ai.starwhale.mlops.api.protocol.system.ResourcePoolVO;
 import ai.starwhale.mlops.api.protocol.system.SystemVersionVO;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO;
 import ai.starwhale.mlops.api.protocol.system.UpgradeProgressVO.PhaseEnum;
@@ -29,6 +30,8 @@ import javax.annotation.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("${sw.controller.apiPrefix}")
@@ -43,6 +46,11 @@ public class SystemController implements SystemApi{
         PageParams pageParams = PageParams.builder().pageNum(pageNum).pageSize(pageSize).build();
         PageInfo<AgentVO> pageInfo = systemService.listAgents(ip, pageParams);
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
+    }
+
+    @Override
+    public ResponseEntity<ResponseMessage<List<ResourcePoolVO>>> listResourcePools() {
+        return ResponseEntity.ok(Code.success.asResponse(systemService.listResourcePools()));
     }
 
     @Override
