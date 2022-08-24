@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2022.1-2022
+  ~ StarWhale.ai All right reserved. This software is the confidential and proprietary information of
+  ~ StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
+  ~ in accordance with the terms of the license agreement you entered into with StarWhale.ai.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper">
+
+    <sql id="select_resource_pools">
+        select id,
+               label,
+               name,
+               description,
+               created_time  as resource_pool_created_time,
+               modified_time as resource_pool_modified_time
+        from resource_pool as a
+        where 1 = 1
+    </sql>
+    <delete id="deleteById" parameterType="long">
+        delete
+        from resource_pool
+        where id = #{id}
+    </delete>
+
+    <select id="listResourcePools" resultMap="resourcePoolResultMap">
+        <include refid="select_resource_pools"/>
+        order by id asc
+    </select>
+
+    <insert id="add" parameterType="ai.starwhale.mlops.domain.system.po.ResourcePoolEntity" useGeneratedKeys="true"
+            keyProperty="id" keyColumn="id">
+        insert into resource_pool(label, name, description)
+        values (#{resourcePoolEntity.label}, #{resourcePoolEntity.name}, #{resourcePoolEntity.description})
+    </insert>
+
+    <update id="update">
+        <foreach item="item" index="index" collection="resourcePoolEntities"
+                 open=" " separator=";" close=" ">
+            update resource_pool set label = #{item.label},
+            name = #{item.name},
+            description = #{item.description}
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+    <select id="findByLabel" parameterType="java.lang.String" resultMap="resourcePoolResultMap">
+        <include refid="select_resource_pools"/>
+        and label = #{label}
+    </select>
+
+    <select id="findById" resultMap="resourcePoolResultMap">
+        <include refid="select_resource_pools"/>
+        and id = #{id}
+    </select>
+
+    <resultMap id="resourcePoolResultMap" type="ai.starwhale.mlops.domain.system.po.ResourcePoolEntity">
+        <id property="id" column="id"/>
+        <result property="label" column="label"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+    </resultMap>
+</mapper>

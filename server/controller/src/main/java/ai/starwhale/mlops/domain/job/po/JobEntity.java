@@ -75,4 +75,6 @@ public class JobEntity extends BaseEntity {
     private Integer isDeleted;
 
     private JobType type;
+
+    private Long resourcePoolId;
 }

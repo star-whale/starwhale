@@ -17,11 +17,14 @@
 package ai.starwhale.mlops.domain.system;
 
 import ai.starwhale.mlops.api.protocol.agent.AgentVO;
+import ai.starwhale.mlops.api.protocol.system.ResourcePoolVO;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
+import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
@@ -42,6 +45,12 @@ public class SystemService {
     @Resource
     private AgentConverter agentConverter;
 
+    @Resource
+    private ResourcePoolMapper resourcePoolMapper;
+
+    @Resource
+    private ResourcePoolConverter resourcePoolConverter;
+
     @Value("${sw.version}")
     private String controllerVersion;
 
@@ -54,6 +63,11 @@ public class SystemService {
 
     public String controllerVersion(){
         return controllerVersion;
+    }
+
+    public List<ResourcePoolVO>listResourcePools()  {
+        var entities = resourcePoolMapper.listResourcePools();
+        return entities.stream().map(resourcePoolConverter::toResourcePoolVO).collect(Collectors.toList());
     }
 
 }

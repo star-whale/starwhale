@@ -232,7 +232,7 @@ public class ProjectService {
             .projectName(projectName)
             .description(description)
             .ownerId(userId)
-            .privacy(Privacy.fromName(privacy).getValue())
+            .privacy(privacy == null ? null : Privacy.fromName(privacy).getValue())
             .build();
         int res = projectMapper.modifyProject(entity);
         log.info("Project has been modified ID={}", entity.getId());

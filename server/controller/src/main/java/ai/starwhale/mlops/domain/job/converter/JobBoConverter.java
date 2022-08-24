@@ -33,6 +33,10 @@ import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
 import org.springframework.beans.factory.annotation.Value;
+import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
+import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
+import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
+import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -52,22 +56,32 @@ public class JobBoConverter {
 
     final RuntimeVersionMapper runtimeVersionMapper;
 
+    final ResourcePoolMapper resourcePoolMapper;
+
+    final ResourcePoolConverter resourcePoolConverter;
+
     final SWDSBOConverter swdsboConverter;
 
     final String defaultRuntimeImage ;
 
-    public JobBoConverter(JobSWDSVersionMapper jobSWDSVersionMapper,
+    public JobBoConverter(
+        JobSWDSVersionMapper jobSWDSVersionMapper,
         SWModelPackageMapper swModelPackageMapper,
         RuntimeMapper runtimeMapper,
         RuntimeVersionMapper runtimeVersionMapper,
         SWDSBOConverter swdsboConverter,
-        @Value("${sw.runtime.image-default}") String defaultImage) {
+        @Value("${sw.runtime.image-default}") String defaultImage,
+        ResourcePoolMapper resourcePoolMapper,
+        ResourcePoolConverter resourcePoolConverter
+    ) {
         this.jobSWDSVersionMapper = jobSWDSVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.swdsboConverter = swdsboConverter;
         this.defaultRuntimeImage = defaultImage;//todo(renyanda): replace with runtime meta
+        this.resourcePoolMapper = resourcePoolMapper;
+        this.resourcePoolConverter = resourcePoolConverter;
     }
 
     public Job fromEntity(JobEntity jobEntity){
@@ -80,6 +94,8 @@ public class JobBoConverter {
             jobEntity.getRuntimeVersionId());
         RuntimeEntity runtimeEntity = runtimeMapper.findRuntimeById(
             runtimeVersionEntity.getRuntimeId());
+        ResourcePoolEntity resourcePoolEntity = resourcePoolMapper.findById(jobEntity.getResourcePoolId());
+        ResourcePool resourcePool = resourcePoolConverter.toResourcePool(resourcePoolEntity);
         return Job.builder()
             .id(jobEntity.getId())
             .project(Project.builder()
@@ -106,6 +122,7 @@ public class JobBoConverter {
             .swDataSets(swDataSets)
             .resultDir(jobEntity.getResultOutputPath())
             .uuid(jobEntity.getJobUuid())
+            .resourcePool(resourcePool)
             .build();
     }
 
