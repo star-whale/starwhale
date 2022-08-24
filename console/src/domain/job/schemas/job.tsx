@@ -64,6 +64,7 @@ export interface ICreateJobFormSchema extends ICreateJobSchema {
     datasetId: string
     datasetVersionId: string
     datasetVersionIdsArr?: Array<string>
+    resourcePool: string
 }
 
 export type IJobResultSchema = any
