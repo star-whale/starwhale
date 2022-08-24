@@ -131,10 +131,13 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 .concurrency(stepMetaData.getConcurrency())
                 .status(isReady ? StepStatus.READY : StepStatus.CREATED)
                 .build();
+            stepMapper.save(stepEntity);
             stepEntities.add(stepEntity);
             allDependencies.put(stepMetaData.getStepName(), stepMetaData.getNeeds());
             nameMapping.put(stepMetaData.getStepName(), stepEntity);
         }
+
+
 
         for (StepEntity stepEntity : stepEntities) {
             List<String> dependencies = allDependencies.get(stepEntity.getName());
