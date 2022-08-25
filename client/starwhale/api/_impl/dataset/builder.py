@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import shutil
 import struct
 import typing as t
+import tempfile
 from abc import ABCMeta, abstractmethod
 from types import TracebackType
 from pathlib import Path
@@ -11,7 +11,7 @@ from binascii import crc32
 import jsonlines
 
 from starwhale.consts import AUTH_ENV_FNAME, SWDS_DATA_FNAME_FMT
-from starwhale.utils.fs import ensure_dir
+from starwhale.utils.fs import empty_dir, ensure_dir
 from starwhale.base.type import DataFormatType, DataOriginType, ObjectStoreType
 from starwhale.utils.error import FormatError
 from starwhale.core.dataset.type import (
@@ -21,6 +21,7 @@ from starwhale.core.dataset.type import (
     D_ALIGNMENT_SIZE,
     D_FILE_VOLUME_SIZE,
 )
+from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset, TabularDatasetRow
 
 # TODO: tune header size
@@ -52,8 +53,15 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         self.data_dir = data_dir
         self.data_filter = data_filter
         self.label_filter = label_filter
+
         self.workdir = workdir
         self.data_output_dir = workdir / "data"
+        ensure_dir(self.data_output_dir)
+        _tmpdir = tempfile.mkdtemp(
+            prefix=".data-tmp-", dir=str(self.workdir.absolute())
+        )
+        self.data_tmpdir = Path(_tmpdir)
+
         self.alignment_bytes_size = alignment_bytes_size
         self.volume_bytes_size = volume_bytes_size
 
@@ -65,10 +73,6 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         )
 
         self._index_writer: t.Optional[jsonlines.Writer] = None
-        self._prepare()
-
-    def _prepare(self) -> None:
-        ensure_dir(self.data_output_dir)
 
     def __enter__(self: _BDType) -> _BDType:
         return self
@@ -86,6 +90,11 @@ class BaseBuildExecutor(metaclass=ABCMeta):
             self.tabular_dataset.close()
         except Exception as e:
             print(f"tabular dataset close exception: {e}")
+
+        try:
+            empty_dir(self.data_tmpdir)
+        except Exception as e:
+            print(f"empty {self.data_tmpdir} exception: {e}")
 
         print("cleanup done.")
 
@@ -184,8 +193,13 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
     def make_swds(self) -> DatasetSummary:
         # TODO: add lock
+        ds_copy_candidates: t.Dict[int, Path] = {}
         fno, wrote_size = 0, 0
-        dwriter = (self.data_output_dir / self._DATA_FMT.format(index=fno)).open("wb")
+
+        dwriter_path = self.data_tmpdir / str(fno)
+        dwriter = dwriter_path.open("wb")
+        ds_copy_candidates[fno] = dwriter_path
+
         rows, increased_rows = 0, 0
         total_label_size, total_data_size = 0, 0
 
@@ -201,7 +215,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
-                    data_uri=self._DATA_FMT.format(index=fno),
+                    data_uri=str(fno),
                     label=label,
                     data_format=self.data_format_type,
                     object_store_type=ObjectStoreType.LOCAL,
@@ -220,9 +234,9 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                 fno += 1
 
                 dwriter.close()
-                dwriter = (
-                    self.data_output_dir / self._DATA_FMT.format(index=fno)
-                ).open("wb")
+                dwriter_path = self.data_tmpdir / str(fno)
+                dwriter = (dwriter_path).open("wb")
+                ds_copy_candidates[fno] = dwriter_path
 
             rows += 1
             if data_origin == DataOriginType.NEW:
@@ -233,6 +247,8 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
         except Exception as e:
             print(f"data write close exception: {e}")
 
+        self._copy_files(ds_copy_candidates, rows)
+
         summary = DatasetSummary(
             rows=rows,
             increased_rows=increased_rows,
@@ -242,6 +258,27 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             include_link=False,
         )
         return summary
+
+    def _copy_files(
+        self,
+        ds_copy_candidates: t.Dict[int, Path],
+        rows_cnt: int,
+    ) -> None:
+        map_fno_sign: t.Dict[int, str] = {}
+        for _fno, _src_path in ds_copy_candidates.items():
+            _sign_name, _obj_path = DatasetStorage.save_data_file(
+                _src_path, remove_src=True
+            )
+            # TODO: use relative symlink or fix link command for datastore dir moving
+            (
+                self.data_output_dir / _sign_name[: DatasetStorage.short_sign_cnt]
+            ).symlink_to(_obj_path.absolute())
+            map_fno_sign[_fno] = _sign_name
+
+        for row in self.tabular_dataset.scan(0, rows_cnt):
+            self.tabular_dataset.update(
+                row_id=row.id, data_uri=map_fno_sign[int(row.data_uri)]
+            )
 
     def iter_data_slice(self, path: str) -> t.Generator[t.Any, None, None]:
         with Path(path).open() as f:
@@ -258,9 +295,10 @@ class UserRawBuildExecutor(BaseBuildExecutor):
     def make_swds(self) -> DatasetSummary:
         rows, increased_rows = 0, 0
         total_label_size, total_data_size = 0, 0
-        ds_copy_candidates = {}
         auth_candidates = {}
         include_link = False
+
+        map_path_sign: t.Dict[str, t.Tuple[str, Path]] = {}
 
         for idx, (data, (_, label)) in enumerate(
             zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())
@@ -277,9 +315,10 @@ class UserRawBuildExecutor(BaseBuildExecutor):
                 include_link = True
             elif isinstance(data, (tuple, list)):
                 data_path, (data_offset, data_size) = data
+                if data_path not in map_path_sign:
+                    map_path_sign[data_path] = DatasetStorage.save_data_file(data_path)
+                data_uri, _ = map_path_sign[data_path]
                 auth = ""
-                data_uri = str(Path(data_path).relative_to(self.data_dir))
-                ds_copy_candidates[data_uri] = data_path
                 object_store_type = ObjectStoreType.LOCAL
             else:
                 raise FormatError(f"data({data}) type error, no list, tuple or Link")
@@ -289,7 +328,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
-                    data_uri=str(data_uri),
+                    data_uri=data_uri,
                     label=label,
                     data_format=self.data_format_type,
                     object_store_type=object_store_type,
@@ -307,7 +346,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             if data_origin == DataOriginType.NEW:
                 increased_rows += 1
 
-        self._copy_files(ds_copy_candidates)
+        self._copy_files(map_path_sign)
         self._copy_auth(auth_candidates)
 
         summary = DatasetSummary(
@@ -320,11 +359,12 @@ class UserRawBuildExecutor(BaseBuildExecutor):
         )
         return summary
 
-    def _copy_files(self, ds_copy_candidates: t.Dict[str, Path]) -> None:
-        for fname, src in ds_copy_candidates.items():
-            dest = self.data_output_dir / fname
-            ensure_dir(dest.parent)
-            shutil.copyfile(str(src.absolute()), str(dest.absolute()))
+    def _copy_files(self, map_path_sign: t.Dict[str, t.Tuple[str, Path]]) -> None:
+        for sign, obj_path in map_path_sign.values():
+            # TODO: use relative symlink or fix link command for datastore dir moving
+            (self.data_output_dir / sign[: DatasetStorage.short_sign_cnt]).symlink_to(
+                obj_path.absolute()
+            )
 
     def _copy_auth(self, auth_candidates: t.Dict[str, LinkAuth]) -> None:
         if not auth_candidates:
