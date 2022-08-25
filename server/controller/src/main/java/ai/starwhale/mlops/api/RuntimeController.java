@@ -187,7 +187,16 @@ public class RuntimeController implements RuntimeApi {
     }
 
     @Override
-    public void headRuntime(String projectUrl, String runtimeUrl, String versionUrl) {
-        runtimeService.query(projectUrl, runtimeUrl, versionUrl);
+    public ResponseEntity<?> headRuntime(String projectUrl, String runtimeUrl, String versionUrl) {
+        try {
+            runtimeService.query(projectUrl, runtimeUrl, versionUrl);
+            return ResponseEntity.ok().build();
+        } catch (StarWhaleApiException e) {
+            if(e.getHttpStatus() == HttpStatus.NOT_FOUND) {
+                log.info("Head runtime result: NOT FOUND");
+                return ResponseEntity.notFound().build();
+            }
+            throw e;
+        }
     }
 }
