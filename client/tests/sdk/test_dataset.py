@@ -2,8 +2,9 @@ import os
 import json
 from pathlib import Path
 
-from starwhale.utils.fs import ensure_dir
+from starwhale.utils.fs import ensure_dir, blake2b_file
 from starwhale.api.dataset import MNISTBuildExecutor, UserRawBuildExecutor
+from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset
 from starwhale.api._impl.dataset.builder import (
     _data_magic,
@@ -45,12 +46,18 @@ class TestDatasetBuildExecutor(BaseTestCase):
     def setUp(self) -> None:
         super().setUp()
 
+        self.object_store_dir = os.path.join(
+            self.local_storage, ".objectstore", DatasetStorage.object_hash_algo
+        )
         self.raw_data = os.path.join(self.local_storage, ".user", "data")
         self.workdir = os.path.join(self.local_storage, ".user", "workdir")
 
+        self.data_fpath = os.path.join(self.raw_data, "mnist-data-0")
         ensure_dir(self.raw_data)
-        with open(os.path.join(self.raw_data, "mnist-data-0"), "wb") as f:
+        with open(self.data_fpath, "wb") as f:
             f.write(_mnist_data)
+
+        self.data_file_sign = blake2b_file(self.data_fpath)
 
         with open(os.path.join(self.raw_data, "mnist-label-0"), "wb") as f:
             f.write(_mnist_label)
@@ -72,15 +79,26 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert summary.rows == 10
         assert summary.include_user_raw
         assert not summary.include_link
-        data_path = Path(self.workdir, "data", "mnist-data-0")
 
+        link_path = (
+            Path(self.workdir)
+            / "data"
+            / self.data_file_sign[: DatasetStorage.short_sign_cnt]
+        )
+        assert link_path.exists()
+
+        data_path = (
+            Path(self.object_store_dir) / self.data_file_sign[:2] / self.data_file_sign
+        )
+
+        assert link_path.resolve() == data_path
         assert data_path.exists()
         assert data_path.stat().st_size == 28 * 28 * summary.rows + 16
         tdb = TabularDataset(name="mnist", version="332211", project="self")
         meta = list(tdb.scan(0, 1))[0]
         assert meta.id == 0
         assert meta.data_offset == 16
-        assert meta.data_uri == "mnist-data-0"
+        assert meta.data_uri == self.data_file_sign
 
     def test_swds_bin_workflow(self) -> None:
         with MNISTBuildExecutor(
@@ -94,7 +112,16 @@ class TestDatasetBuildExecutor(BaseTestCase):
             alignment_bytes_size=64,
             volume_bytes_size=100,
         ) as e:
+            assert e.data_tmpdir.exists()
             summary = e.make_swds()
+
+        assert not e.data_tmpdir.exists()
+
+        data_files_sign = []
+        for f in e.data_output_dir.iterdir():
+            if not f.is_symlink():
+                continue
+            data_files_sign.append(f.resolve().name)
 
         summary_content = json.dumps(summary.as_dict())
         assert summary_content
@@ -104,15 +131,25 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert not summary.include_user_raw
         assert not summary.include_link
 
-        data_path = Path(self.workdir, "data", "data_ubyte_0.swds_bin")
+        assert len(data_files_sign) == 11
 
-        for i in range(0, 5):
-            assert Path(self.workdir) / "data" / f"data_ubyte_{i}.swds_bin"
+        for _sign in data_files_sign:
+            _sign_fpath = Path(self.object_store_dir) / _sign[:2] / _sign
+            assert _sign_fpath.exists()
+            assert _sign == blake2b_file(_sign_fpath)
+            assert (
+                _sign_fpath
+                == (
+                    e.data_output_dir / _sign[: DatasetStorage.short_sign_cnt]
+                ).resolve()
+            )
 
+        data_path = (
+            Path(self.object_store_dir) / data_files_sign[0][:2] / data_files_sign[0]
+        )
         data_content = data_path.read_bytes()
         _parser = _header_struct.unpack(data_content[:_header_size])
         assert _parser[0] == _header_magic
-        assert _parser[2] == 0
         assert _parser[3] == 28 * 28
         assert _parser[6] == _data_magic
         assert len(data_content) == _header_size + _parser[3] + _parser[4]
@@ -121,4 +158,4 @@ class TestDatasetBuildExecutor(BaseTestCase):
         meta = list(tdb.scan(0, 1))[0]
         assert meta.id == 0
         assert meta.data_offset == 0
-        assert meta.data_uri == "data_ubyte_0.swds_bin"
+        assert meta.data_uri in data_files_sign

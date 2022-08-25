@@ -140,6 +140,9 @@ class TabularDataset:
 
     __repr__ = __str__
 
+    def update(self, row_id: int, **kw: t.Union[int, str, bytes]) -> None:
+        self._ds_wrapper.put(row_id, **kw)
+
     def put(self, row: TabularDatasetRow) -> None:
         self._ds_wrapper.put(row.id, **row.asdict())
 

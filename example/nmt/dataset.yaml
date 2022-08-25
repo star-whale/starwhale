@@ -1,7 +1,5 @@
 name: nmt
 
-mode: generate
-
 data_dir: data
 data_filter: "test_eng-fra.txt"
 label_filter: "test_eng-fra.txt"

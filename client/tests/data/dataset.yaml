@@ -6,7 +6,6 @@ dataset_attr:
   alignment_size: 4096
   volume_size: 2097152
 dataset_byte_size: 9033838
-mode: generate
 name: mnist
 process: mnist.process:DataSetProcessExecutor
 signature:

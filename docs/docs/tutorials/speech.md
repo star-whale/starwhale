@@ -276,7 +276,6 @@ Here is some descriptive information needed for Starwhale to build a Starwhale D
 
 ```yaml
 name: SpeechCommands
-mode: generate
 data_dir: data/SpeechCommands/speech_commands_v0.02
 data_filter: "testing_list.txt"
 label_filter: "testing_list.txt"

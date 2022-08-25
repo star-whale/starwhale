@@ -5,11 +5,17 @@ from requests_mock import Mocker
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.utils import config as sw_config
-from starwhale.consts import HTTPMethod, DEFAULT_MANIFEST_NAME, ARCHIVED_SWDS_META_FNAME
+from starwhale.consts import (
+    HTTPMethod,
+    DEFAULT_MANIFEST_NAME,
+    DUMPED_SWDS_META_FNAME,
+    ARCHIVED_SWDS_META_FNAME,
+)
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed, get_swcli_config_path
 from starwhale.base.bundle_copy import BundleCopy
+from starwhale.core.dataset.store import DatasetStorage
 
 from .. import get_predefined_config_yaml
 
@@ -100,14 +106,19 @@ class TestBundleCopy(TestCase):
         )
         ensure_dir(dataset_dir)
 
-        ensure_file(dataset_dir / DEFAULT_MANIFEST_NAME, " ")
+        hash_name = "27a43c91b7a1a9a9c8e51b1d796691dd"
+        ensure_file(dataset_dir / ARCHIVED_SWDS_META_FNAME, " ")
+        ensure_file(dataset_dir / DUMPED_SWDS_META_FNAME, " ")
         ensure_file(
-            dataset_dir / ARCHIVED_SWDS_META_FNAME,
-            json.dumps({"signature": ["1", "2"]}),
+            dataset_dir / DEFAULT_MANIFEST_NAME,
+            json.dumps(
+                {"signature": [f"1:{DatasetStorage.object_hash_algo}:{hash_name}"]}
+            ),
         )
         ensure_dir(dataset_dir / "data")
-        ensure_file(dataset_dir / "data" / "1", " ")
-        ensure_file(dataset_dir / "data" / "2", " ")
+        data_path = DatasetStorage._get_object_store_path(hash_name)
+        ensure_dir(data_path.parent)
+        ensure_file(data_path, "")
 
         bc = BundleCopy(
             src_uri="mnist/version/abcde",
@@ -119,6 +130,8 @@ class TestBundleCopy(TestCase):
 
     @Mocker()
     def test_download_bundle_dir(self, rm: Mocker) -> None:
+        hash_name1 = "bfa8805ddc2d43df098e43832c24e494ad"
+        hash_name2 = "f954056e4324495ae5bec4e8e5e6d18f1b"
         rm.request(
             HTTPMethod.HEAD,
             "http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/latest",
@@ -128,7 +141,12 @@ class TestBundleCopy(TestCase):
         rm.request(
             HTTPMethod.GET,
             "http://1.1.1.1:8182/api/v1/project/1/dataset/mnist/version/latest/file",
-            json={"signature": ["1", "2"]},
+            json={
+                "signature": [
+                    f"1:{DatasetStorage.object_hash_algo}:{hash_name1}",
+                    f"2:{DatasetStorage.object_hash_algo}:{hash_name2}",
+                ]
+            },
         )
         bc = BundleCopy(
             src_uri="cloud://pre-bare/project/1/dataset/mnist/version/latest",
@@ -147,5 +165,10 @@ class TestBundleCopy(TestCase):
         )
         assert (dataset_dir / DEFAULT_MANIFEST_NAME).exists()
         assert (dataset_dir / ARCHIVED_SWDS_META_FNAME).exists()
-        assert (dataset_dir / "data" / "1").exists()
-        assert (dataset_dir / "data" / "2").exists()
+
+        link1 = dataset_dir / "data" / hash_name1[: DatasetStorage.short_sign_cnt]
+        link2 = dataset_dir / "data" / hash_name2[: DatasetStorage.short_sign_cnt]
+
+        assert link1.is_symlink() and link2.is_symlink()
+        assert link1.resolve() == DatasetStorage._get_object_store_path(hash_name1)
+        assert link2.resolve() == DatasetStorage._get_object_store_path(hash_name2)
