@@ -306,7 +306,7 @@ public interface DatasetApi {
         produces = {"application/json"},
         method = RequestMethod.HEAD)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    void headDataset(@Parameter(
+    ResponseEntity<?> headDataset(@Parameter(
             in = ParameterIn.PATH,
             description = "Project url",
             schema = @Schema())

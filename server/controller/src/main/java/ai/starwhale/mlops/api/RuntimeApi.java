@@ -287,7 +287,7 @@ public interface RuntimeApi {
         produces = {"application/json"},
         method = RequestMethod.HEAD)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    void headRuntime(
+    ResponseEntity<?> headRuntime(
         @Parameter(
             in = ParameterIn.PATH,
             description = "Project url",

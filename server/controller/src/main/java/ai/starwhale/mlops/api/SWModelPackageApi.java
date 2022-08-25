@@ -310,7 +310,7 @@ public interface SWModelPackageApi {
         produces = {"application/json"},
         method = RequestMethod.HEAD)
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    void headModel(
+    ResponseEntity<?> headModel(
         @Parameter(
             in = ParameterIn.PATH,
             description = "Project url",
