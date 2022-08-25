@@ -199,28 +199,6 @@ public class SwdsUploader {
         return digest.equals(uploadedFileBlake2bs.get(filename));
     }
 
-    private void digestCheckWithManifest(SWDSVersionWithMeta swdsVersionWithMeta, String filename,
-        String digest) {
-        VersionMeta versionMeta = swdsVersionWithMeta.getVersionMeta();
-        Map<String, String> signatures = versionMeta.getManifest().getSignature();
-        String fileSignatureRaw = signatures.get(filename);
-        if(null == fileSignatureRaw){
-            log.warn("unexpected file uploaded {}",filename);
-            return;
-        }
-        Matcher matcher = PATTERN_SIGNATURE.matcher(fileSignatureRaw);
-        if(matcher.matches()){
-            String fileSig = matcher.group(1);
-            if(!fileSig.equals(digest)){
-                log.error("signature matching failed for file {} expected {} actual {}",filename,fileSig,digest);
-                throw new SWValidationException(ValidSubject.SWDS).tip("signature validation with file failed: " + filename);
-            }
-        }else {
-            throw new SWValidationException(ValidSubject.SWDS).tip("signature pattern validation failed \\d+:blake2b:(.*)");
-        }
-
-    }
-
     SWDSVersionWithMeta getSwdsVersion(String uploadId) {
         final Optional<SWDSVersionWithMeta> swDatasetVersionEntityOpt = hotSwdsHolder.of(uploadId);
         return swDatasetVersionEntityOpt
