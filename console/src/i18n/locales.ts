@@ -267,6 +267,9 @@ const locales0 = {
     'Device Amount': {
         en: 'Device Amount',
     },
+    'Resource Pool': {
+        en: 'Resource Pool',
+    },
     'Runtime': {
         en: 'Runtime',
     },
