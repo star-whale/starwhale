@@ -70,7 +70,8 @@
         <include refid="select_jobs"/>
         <where>
             and job_is_deleted = 0
-            and job_status = #{jobStatus}
+            # TODO: remove at debug stage
+            # and job_status = #{jobStatus}
             and project_id = #{projectId}
         </where>
         <if test="swmpId != null and swmpId != ''">
