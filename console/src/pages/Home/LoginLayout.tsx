@@ -1,5 +1,6 @@
 import React from 'react'
 import { useStyletron } from 'baseui'
+import bg from '@/assets/bg.jpg'
 import BaseLayout from '../BaseLayout'
 
 export interface ILoginLayoutProps {
@@ -16,7 +17,11 @@ export default function LoginLayout({ children, style }: ILoginLayoutProps) {
                 height: '100%',
             }}
             style={{
-                background: 'var(--color-brandLoginBackground)',
+                backgroundColor: 'var(--color-brandLoginBackground)',
+                backgroundImage: `url(${bg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
                 color: theme.colors.contentPrimary,
                 justifyContent: 'center',
                 ...style,

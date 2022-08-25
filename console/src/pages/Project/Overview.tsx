@@ -47,9 +47,7 @@ const useCardStyles = createUseStyles({
     tag: {
         fontSize: '12px',
         color: '#00B368',
-        // private
-        // color: '#4848B3',
-        background: '#E6FFF4',
+        backgroundColor: '#E6FFF4',
         borderRadius: '9px',
         padding: '3px 10px',
     },
@@ -67,7 +65,7 @@ const useCardStyles = createUseStyles({
         height: '34px',
         display: 'grid',
         placeItems: 'center',
-        background: 'rgba(38,68,128,0.4)',
+        backgroundColor: 'rgba(38,68,128,0.4)',
         borderRadius: '50%',
         color: '#fff',
     },
@@ -97,14 +95,21 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
             <div className={styles.row}>
                 <div className={styles.rowKey}>{t('Privacy')}: </div>
                 <div className={styles.rowValue}>
-                    <p className={styles.tag}>public</p>
+                    <p
+                        className={styles.tag}
+                        style={{
+                            color: project?.privacy === 'PRIVATE' ? '#4848B3' : '#00B368',
+                        }}
+                    >
+                        {project.privacy}
+                    </p>
                 </div>
             </div>
             <div className={styles.row}>
                 <div className={styles.rowKey}>{t('Description')}</div>
                 <div className={styles.rowValue}>
                     <StatefulTooltip content='desc' placement='bottom'>
-                        &nbsp;
+                        {project.description ?? ' '}
                     </StatefulTooltip>
                 </div>
             </div>

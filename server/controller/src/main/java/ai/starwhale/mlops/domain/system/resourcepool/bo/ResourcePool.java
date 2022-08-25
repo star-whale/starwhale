@@ -49,4 +49,7 @@ public class ResourcePool {
     public int hashCode() {
         return Objects.hash(label);
     }
+    public static ResourcePool empty() {
+        return new ResourcePool("default");
+    }
 }
