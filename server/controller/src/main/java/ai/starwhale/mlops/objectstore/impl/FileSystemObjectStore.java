@@ -60,6 +60,7 @@ public class FileSystemObjectStore implements ObjectStore {
         var temp = File.createTempFile("sw_tmp", null);
         try (var channel = new FileOutputStream(temp).getChannel()) {
             channel.write(buf.asByteBuffer());
+            channel.close();
             Files.move(temp.toPath(), f.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } finally {
             //noinspection ResultOfMethodCallIgnored
