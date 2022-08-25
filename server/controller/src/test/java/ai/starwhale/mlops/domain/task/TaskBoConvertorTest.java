@@ -61,19 +61,18 @@ public class TaskBoConvertorTest {
             .id(1L)
             .agent(AgentEntity.builder().connectTime(LocalDateTime.now()).id(1L).serialNumber("serial1").build())
             .taskStatus(TaskStatus.RUNNING)
-            .resultPath("path_task1")
+            .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"ppl\"}")
             .startedTime(LocalDateTime.now())
             .taskRequest(SWDSIndexLoaderImplTest.INDEX_CONTENT)
             .taskUuid(UUID.randomUUID().toString())
-            .taskType(TaskType.PPL).build();
+            .build();
         TaskEntity cmpTask = TaskEntity.builder()
             .id(2L)
             .agent(null)
             .taskStatus(TaskStatus.CREATED)
-            .taskRequest("a\nb\nc")
-            .resultPath("path_task2")
+            .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}")
             .taskUuid(UUID.randomUUID().toString())
-            .taskType(TaskType.CMP).build();
+            .build();
         Task task1 = taskBoConverter.transformTask(step, pplTask);
         Task task2 = taskBoConverter.transformTask(step, cmpTask);
         TaskTrigger taskTrigger1 = taskBoConverter.toTaskTrigger(task1);
@@ -109,14 +108,7 @@ public class TaskBoConvertorTest {
         Assertions.assertEquals(entity.getId(), task.getId());
         Assertions.assertTrue(step == task.getStep());
         Assertions.assertEquals(entity.getTaskStatus(), task.getStatus());
-        Assertions.assertEquals(entity.getResultPath(), task.getResultRootPath().getRoot());
         Assertions.assertEquals(entity.getTaskUuid(), task.getUuid());
-        Assertions.assertEquals(entity.getTaskType(), task.getTaskType());
-        if(entity.getTaskType() == TaskType.PPL){
-            Assertions.assertTrue(task.getTaskRequest() instanceof PPLRequest);
-        }else {
-            Assertions.assertTrue(task.getTaskRequest() instanceof CMPRequest);
-        }
 
         AgentEntity agentEntity = entity.getAgent();
         if(null != agentEntity){

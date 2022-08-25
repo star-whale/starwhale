@@ -41,9 +41,37 @@ public class Manifest{
     String process;
     String version;
     String name;
+    @JsonProperty("dataset_summary")
+    DatasetSummary datasetSummary;
     Map<String,String> signature;
     String rawYaml;
-    Long size;
+
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class DatasetSummary{
+
+        @JsonProperty("data_byte_size")
+        Long dataByteSize;
+
+        @JsonProperty("data_format_type")
+        String dataFormatType;
+
+        @JsonProperty("increased_rows")
+        Long increasedRows;
+
+        @JsonProperty("label_byte_size")
+        Long labelByteSize;
+
+        @JsonProperty("object_store_type")
+        String objectStoreType;
+
+        @JsonProperty("rows")
+        Long rows;
+
+        @JsonProperty("unchanged_rows")
+        Long unchangedRows;
+    }
     @Data
     public static class Extra{
         String desc;

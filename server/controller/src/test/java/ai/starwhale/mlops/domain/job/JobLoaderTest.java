@@ -99,7 +99,7 @@ public class JobLoaderTest {
 
         when(taskMapper.findByStepId(2L)).thenReturn(List.of(
             TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
-                .taskType(TaskType.CMP).taskRequest("a\nb\nc").taskStatus(TaskStatus.CREATED)
+                .taskType(TaskType.CMP).taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}").taskStatus(TaskStatus.CREATED)
                 .build()
         ));
 
@@ -168,7 +168,7 @@ public class JobLoaderTest {
 
         when(taskMapper.findByStepId(2L)).thenReturn(List.of(
             TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
-                .taskType(TaskType.CMP).taskRequest("a\nb\nc").taskStatus(TaskStatus.CREATED)
+                .taskType(TaskType.CMP).taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}").taskStatus(TaskStatus.CREATED)
                 .build()
         ));
 
@@ -245,7 +245,7 @@ public class JobLoaderTest {
 
         when(taskMapper.findByStepId(2L)).thenReturn(List.of(
             TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
-                .taskType(TaskType.CMP).taskRequest("a\nb\nc").taskStatus(TaskStatus.CREATED)
+                .taskType(TaskType.CMP).taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}").taskStatus(TaskStatus.CREATED)
                 .build()
         ));
 
@@ -322,7 +322,7 @@ public class JobLoaderTest {
 
         when(taskMapper.findByStepId(2L)).thenReturn(List.of(
             TaskEntity.builder().id(3L).taskUuid(UUID.randomUUID().toString())
-                .taskType(TaskType.CMP).taskRequest("a\nb\nc").taskStatus(TaskStatus.CREATED)
+                .taskType(TaskType.CMP).taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}").taskStatus(TaskStatus.CREATED)
                 .build()
         ));
 
@@ -352,5 +352,5 @@ public class JobLoaderTest {
 
     }
 
-    final static String TASK_REQUEST = "{\"id\":99,\"dsName\":\"cifar10\",\"dsVersion\":\"g4ytezbqgfrtmodche3wcnrupfwta5a\",\"batch\":50,\"label\":{\"offset\":4064,\"size\":4064,\"file\":\"StarWhale/controller/swds/cifar10/g4ytezbqgfrtmodche3wcnrupfwta5a/label_ubyte_7.swds_bin\"},\"data\":{\"offset\":155616,\"size\":155616,\"file\":\"StarWhale/controller/swds/cifar10/g4ytezbqgfrtmodche3wcnrupfwta5a/data_ubyte_7.swds_bin\"}}";
+    final static String TASK_REQUEST = "{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"ppl\"}";
 }

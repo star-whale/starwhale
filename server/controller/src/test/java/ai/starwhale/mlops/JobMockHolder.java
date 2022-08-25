@@ -47,13 +47,13 @@ public class JobMockHolder {
 
         String jobuuid= UUID.randomUUID().toString();
         String jobDir = storagePathCoordinator.generateResultMetricsPath(jobuuid);
-        String swdsPath = storagePathCoordinator.generateSwdsPath("swds1", "versionswds1");
+        String swdsPath = storagePathCoordinator.generateSwdsPath("projectname1","swds1", "versionswds1");
         List<Step> steps = new LinkedList<>();
         Job job = Job.builder()
             .id(atomicLong.incrementAndGet())
             .uuid(UUID.randomUUID().toString())
             .jobRuntime(JobRuntime.builder().name("runtime1").version("version1").deviceAmount(1).storagePath(jobDir).deviceClass(Clazz.CPU).build())
-            .swmp(SWModelPackage.builder().id(1L).name("swmp1").version("versionsmp1").path(storagePathCoordinator.generateSwmpPath("swmp1","versionsmp1")).build())
+            .swmp(SWModelPackage.builder().id(1L).name("swmp1").version("versionsmp1").path(storagePathCoordinator.generateSwmpPath("project1","swmp1","versionsmp1")).build())
             .swDataSets(List.of(SWDataSet.builder().id(1L).name("swds1").version("versionswds1").path(
                 swdsPath).indexPath(swdsPath+"/index").size(1024L).build()))
             .status(JobStatus.RUNNING)

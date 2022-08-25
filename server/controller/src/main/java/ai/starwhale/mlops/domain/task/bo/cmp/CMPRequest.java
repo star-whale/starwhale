@@ -16,13 +16,14 @@
 
 package ai.starwhale.mlops.domain.task.bo.cmp;
 
-import ai.starwhale.mlops.domain.task.bo.TaskRequest;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Deprecated
 @AllArgsConstructor
 @NoArgsConstructor
 public class CMPRequest extends TaskRequest {

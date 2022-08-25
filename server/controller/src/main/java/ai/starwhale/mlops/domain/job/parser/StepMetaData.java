@@ -38,7 +38,7 @@ public class StepMetaData {
     @JsonProperty("step_name")
     private String stepName;
     private Integer concurrency = 1;
-    private List<String> dependency;
+    private List<String> needs;
     @JsonDeserialize(contentConverter = ResourceConverter.class)
     private List<Resource> resources;
     @JsonProperty("task_num")

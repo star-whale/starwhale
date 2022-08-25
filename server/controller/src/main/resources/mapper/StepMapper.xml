@@ -36,6 +36,10 @@
         values(#{step.name}, #{step.jobId}, #{step.lastStepId}, #{step.status}, #{step.uuid}, #{step.concurrency}, #{step.taskNum})
     </insert>
 
+    <update id="updateLastStep">
+        update step set last_step_id = #{lastStepId} WHERE id = #{stepId}
+    </update>
+
     <update id="updateStatus">
         update step set step_status = #{status} WHERE id in
         <foreach item="item" index="index" collection="stepIds"

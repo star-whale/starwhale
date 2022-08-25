@@ -16,31 +16,25 @@
 
 package ai.starwhale.mlops.domain.task.converter;
 
-import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
-import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
-import ai.starwhale.mlops.domain.task.bo.TaskRequest;
-import ai.starwhale.mlops.domain.task.bo.ppl.PPLRequest;
-import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import cn.hutool.json.JSONUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 /**
  * convert task objects
@@ -49,16 +43,12 @@ import org.springframework.stereotype.Service;
 @Service
 public class TaskBoConverter {
 
-    final SWDSBlockSerializer swdsBlockSerializer;
-
     final AgentConverter agentConverter;
 
     final LocalDateTimeConvertor localDateTimeConvertor;
 
-    public TaskBoConverter(SWDSBlockSerializer swdsBlockSerializer,
-        AgentConverter agentConverter,
+    public TaskBoConverter(AgentConverter agentConverter,
         ai.starwhale.mlops.common.LocalDateTimeConvertor localDateTimeConvertor) {
-        this.swdsBlockSerializer = swdsBlockSerializer;
         this.agentConverter = agentConverter;
         this.localDateTimeConvertor = localDateTimeConvertor;
     }
@@ -69,42 +59,17 @@ public class TaskBoConverter {
     }
 
     public Task transformTask(Step step, TaskEntity entity) {
-        try {
-            TaskRequest taskRequest;
-            TaskType taskType = entity.getTaskType();
-            switch (taskType){
-                case PPL:
-                    taskRequest = new PPLRequest(swdsBlockSerializer.fromString(entity.getTaskRequest())) ;
-                    break;
-                case CMP:
-                    if(null != entity.getTaskRequest()){
-                        taskRequest = new CMPRequest(entity.getTaskRequest()) ;
-                    }else {
-                        taskRequest = null;
-                    }
-
-                    break;
-                case UNKNOWN:
-                default:
-                    throw new SWValidationException(ValidSubject.TASK).tip("unknown task type "+entity.getTaskType());
-            }
-            Task task = Task.builder()
-                .id(entity.getId())
-                .step(step)
-                .agent(agentConverter.fromEntity(entity.getAgent()))
-                .status(entity.getTaskStatus())
-                .resultRootPath(new ResultPath(entity.getResultPath()))
-                .uuid(entity.getTaskUuid())
-                .taskRequest(taskRequest)
-                .taskType(taskType)
-                .build();
-            task.setStartTime(localDateTimeConvertor.convert(entity.getStartedTime()));
-            task.setFinishTime(localDateTimeConvertor.convert(entity.getFinishedTime()));
-            return task;
-        } catch (JsonProcessingException e) {
-            log.error("read swds blocks or resultPath from db failed ",e);
-            throw new SWValidationException(ValidSubject.TASK);
-        }
+        Task task = Task.builder()
+            .id(entity.getId())
+            .step(step)
+            .agent(agentConverter.fromEntity(entity.getAgent()))
+            .status(entity.getTaskStatus())
+            .uuid(entity.getTaskUuid())
+            .taskRequest(JSONUtil.toBean(entity.getTaskRequest(), TaskRequest.class))
+            .build();
+        task.setStartTime(localDateTimeConvertor.convert(entity.getStartedTime()));
+        task.setFinishTime(localDateTimeConvertor.convert(entity.getFinishedTime()));
+        return task;
     }
 
     public List<TaskTrigger> toTaskTrigger(List<Task> tasks){
@@ -115,35 +80,15 @@ public class TaskBoConverter {
     public TaskTrigger toTaskTrigger(Task t){
         Job job = t.getStep().getJob();
         JobRuntime jobRuntime = job.getJobRuntime();
-        switch (t.getTaskType()){
-            case PPL:
-                return TaskTrigger.builder()
-                    .id(t.getId())
-                    .swrt(SWRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
-                        jobRuntime.getStoragePath()).build())
-                    .resultPath(t.getResultRootPath())
-                    .swdsBlocks(((PPLRequest)t.getTaskRequest()).getSwdsBlocks())
-                    .deviceAmount(jobRuntime.getDeviceAmount())
-                    .deviceClass(jobRuntime.getDeviceClass())
-                    .taskType(t.getTaskType())
-                    .swModelPackage(job.getSwmp()).build();
-            case CMP:
-                return TaskTrigger.builder()
-                    .id(t.getId())
-                    .resultPath(t.getResultRootPath())
-                    .cmpInputFilePaths(((CMPRequest)t.getTaskRequest()).getPplResultPaths())
-                    .taskType(t.getTaskType())
-                    .deviceAmount(1)
-                    .deviceClass(jobRuntime.getDeviceClass())
-                    .swrt(SWRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
-                        jobRuntime.getStoragePath()).build())
-                    .swModelPackage(job.getSwmp()).build();
-            case UNKNOWN:
-            default:
-                throw new SWValidationException(ValidSubject.TASK).tip("task type unknown "+t.getTaskType());
-        }
-
-
+        return TaskTrigger.builder()
+            .id(t.getId())
+            .swrt(SWRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
+                jobRuntime.getStoragePath()).build())
+            .taskRequest(t.getTaskRequest())
+            // TODO:use task' resources
+            .deviceAmount(jobRuntime.getDeviceAmount())
+            .deviceClass(jobRuntime.getDeviceClass())
+            .swModelPackage(job.getSwmp()).build();
     }
 
     public List<TaskCommand> toTaskCommand(List<Task> tasks) {

@@ -26,6 +26,7 @@ import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
@@ -59,6 +60,8 @@ public class JobBoConverterTest {
 
         JobEntity jobEntity = JobEntity.builder()
             .id(1L)
+            .projectId(1L)
+            .project(ProjectEntity.builder().id(1L).projectName("test-project").build())
             .deviceAmount(1)
             .deviceType(Clazz.CPU.getValue())
             .jobStatus(JobStatus.RUNNING)
@@ -102,7 +105,7 @@ public class JobBoConverterTest {
 
 
         JobBoConverter jobBoConverter = new JobBoConverter(jobSWDSVersionMapper,swModelPackageMapper,runtimeMapper,runtimeVersionMapper,
-            swdsboConverter, resourcePoolMapper, resourcePoolConverter);
+            swdsboConverter,"ghcr.io/star-whale/starwhale:latest", resourcePoolMapper, resourcePoolConverter);
 
         Job job = jobBoConverter.fromEntity(jobEntity);
         Assertions.assertEquals(jobEntity.getJobStatus(),job.getStatus());

@@ -22,6 +22,7 @@ import ai.starwhale.mlops.configuration.security.JwtProperties;
 import ai.starwhale.mlops.domain.user.bo.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -40,13 +41,20 @@ public class JwtTokenUtil {
     private final JwtProperties jwtProperties;
 
     public String generateAccessToken(User user) {
-        return Jwts.builder()
-                .setSubject(format("%s,%s", user.getId(), user.getUsername()))
-                .setIssuer(jwtProperties.getIssuer())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + (long)jwtProperties.getExpireMinutes() * 60 * 1000)) // 1 week
-                .signWith(SignatureAlgorithm.HS512, jwtProperties.getSecret())
-                .compact();
+        return generateAccessToken(user,jwtProperties.getExpireMinutes() * 60 * 1000);//1 weak
+    }
+
+    public String generateAccessToken(User user, Long expireMilliSeconds) {
+        JwtBuilder jwtBuilder = Jwts.builder()
+            .setSubject(format("%s,%s", user.getId(), user.getUsername()))
+            .setIssuer(jwtProperties.getIssuer())
+            .setIssuedAt(new Date())
+            .signWith(SignatureAlgorithm.HS512, jwtProperties.getSecret());
+        if(null != expireMilliSeconds){
+            jwtBuilder.setExpiration(new Date(System.currentTimeMillis()
+                + expireMilliSeconds));
+        }
+        return jwtBuilder.compact();
     }
 
     // Sample method to validate and read the JWT

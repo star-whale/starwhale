@@ -302,14 +302,16 @@ public class SWModelPackageService {
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}",startTime);
         Long projectId = null;
+        ProjectEntity projectEntity = null;
         if(!StrUtil.isEmpty(uploadRequest.getProject())) {
-            projectId = projectManager.getProjectId(uploadRequest.getProject());
+            projectEntity = projectManager.getProject(uploadRequest.getProject());
+            projectId = projectEntity.getId();
         }
         SWModelPackageEntity entity = swmpMapper.findByNameForUpdate(uploadRequest.name(), projectId);
         if (null == entity) {
             //create
             if(projectId == null) {
-                ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(), userService.currentUserDetail().getIdTableKey());
+                projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(), userService.currentUserDetail().getIdTableKey());
                 projectId = projectEntity.getId();
             }
             entity = SWModelPackageEntity.builder().isDeleted(0)
@@ -339,7 +341,7 @@ public class SWModelPackageService {
         log.debug("swmp version checked time use {}",System.currentTimeMillis() - startTime);
         //upload to storage
         final String swmpPath = entityExists ? swModelPackageVersionEntity.getStoragePath()
-            : storagePathCoordinator.generateSwmpPath(uploadRequest.name(), uploadRequest.version());
+            : storagePathCoordinator.generateSwmpPath(projectEntity.getProjectName(),uploadRequest.name(), uploadRequest.version());
         String jobContent = "";
         try(final InputStream inputStream = dsFile.getInputStream()){
             InputStream is = inputStream;

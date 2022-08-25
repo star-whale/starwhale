@@ -40,11 +40,13 @@ public class TaskTrigger {
      */
     Long id;
 
+    @Deprecated
     TaskType taskType;
 
     /**
      * input information at resulting stage: CMP file path
      */
+    @Deprecated
     List<String> cmpInputFilePaths;
 
     /**
@@ -60,7 +62,10 @@ public class TaskTrigger {
     /**
      * blocks may come from different SWDS
      */
+    @Deprecated
     private List<SWDSBlockVO> swdsBlocks;
+
+    private TaskRequest taskRequest;
 
     private Integer deviceAmount;
 
@@ -69,6 +74,7 @@ public class TaskTrigger {
     /**
      * storage directory where task result is uploaded
      */
+    @Deprecated
     private ResultPath resultPath;
 
 

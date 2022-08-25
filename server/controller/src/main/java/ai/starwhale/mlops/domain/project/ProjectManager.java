@@ -83,6 +83,10 @@ public class ProjectManager implements ProjectAccessor{
         return findDefaultProject(userId);
     }
 
+    public ProjectEntity findById(Long projectId){
+        return  projectMapper.findProject(projectId);
+    }
+
     public Boolean existProject(String projectName) {
         ProjectEntity existProject = projectMapper.findProjectByName(projectName);
         return existProject != null;
@@ -96,6 +100,20 @@ public class ProjectManager implements ProjectAccessor{
     }
 
     @Override
+    public ProjectEntity getProject(@NotNull String projectUrl) {
+        ProjectEntity projectEntity;
+        if(idConvertor.isID(projectUrl)) {
+            projectEntity = projectMapper.findProject(Long.valueOf(projectUrl));
+        }else {
+            projectEntity = projectMapper.findProjectByName(projectUrl);
+        }
+        if(projectEntity == null) {
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
+                .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
+        }
+        return projectEntity;
+    }
+
     public Long getProjectId(@NotNull String projectUrl) {
         if(idConvertor.isID(projectUrl)) {
             return idConvertor.revert(projectUrl);

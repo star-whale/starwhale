@@ -24,7 +24,6 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
-import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.swds.datastore.DSRHelper;
@@ -86,8 +85,6 @@ public class SwdsUploader {
 
     final UserService userService;
 
-    final ProjectMapper projectMapper;
-
     /**
      * prefix + / + fileName
      */
@@ -107,7 +104,6 @@ public class SwdsUploader {
     public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
         SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,
         StorageAccessService storageAccessService, UserService userService,
-        ProjectMapper projectMapper,
         @Qualifier("yamlMapper") ObjectMapper yamlMapper,
         HotJobHolder jobHolder,
         ProjectManager projectManager, DSRHelper dsrHelper,
@@ -118,7 +114,6 @@ public class SwdsUploader {
         this.storagePathCoordinator = storagePathCoordinator;
         this.storageAccessService = storageAccessService;
         this.userService = userService;
-        this.projectMapper = projectMapper;
         this.yamlMapper = yamlMapper;
         this.jobHolder = jobHolder;
         this.projectManager = projectManager;
@@ -257,7 +252,8 @@ public class SwdsUploader {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS).tip("name or version is required in manifest "),
                 HttpStatus.BAD_REQUEST);
         }
-        Long projectId = projectManager.getProjectId(uploadRequest.getProject());
+        ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
+        Long projectId = projectEntity.getId();
         SWDatasetEntity swDatasetEntity = swdsMapper.findByName(manifest.getName(), projectId);
         if(null == swDatasetEntity){
             //create
@@ -268,7 +264,7 @@ public class SwdsUploader {
             .findByDSIdAndVersionNameForUpdate(swDatasetEntity.getId(), manifest.getVersion());
         if(null == swDatasetVersionEntity){
             //create
-            swDatasetVersionEntity = from(swDatasetEntity,manifest);
+            swDatasetVersionEntity = from(projectEntity.getProjectName(),swDatasetEntity,manifest);
             swdsVersionMapper.addNewVersion(swDatasetVersionEntity);
             uploadManifest(swDatasetVersionEntity,fileName,yamlContent.getBytes(StandardCharsets.UTF_8));
         }else{
@@ -304,13 +300,13 @@ public class SwdsUploader {
     }
 
 
-    private SWDatasetVersionEntity from(SWDatasetEntity swDatasetEntity, Manifest manifest) {
+    private SWDatasetVersionEntity from(String projectName,SWDatasetEntity swDatasetEntity, Manifest manifest) {
         return SWDatasetVersionEntity.builder().datasetId(swDatasetEntity.getId())
             .ownerId(getOwner())
-            .storagePath(storagePathCoordinator.generateSwdsPath(swDatasetEntity.getDatasetName(),manifest.getVersion()))
+            .storagePath(storagePathCoordinator.generateSwdsPath(projectName,swDatasetEntity.getDatasetName(),manifest.getVersion()))
             .versionMeta(manifest.getRawYaml())
             .versionName(manifest.getVersion())
-            .size(manifest.getSize())
+            .size(manifest.getDatasetSummary().getRows())
             .indexTable(dsrHelper.tableNameOf(manifest.getName(),manifest.getVersion()))
             .filesUploaded(EMPTY_YAML)
             .build();
@@ -344,7 +340,7 @@ public class SwdsUploader {
     final static String SWDS_MANIFEST="_manifest.yaml";
 
     public void pull(String project, String name, String version, String partName, HttpServletResponse httpResponse) {
-        Long projectId = projectManager.getProjectId(project);
+        Long projectId = projectManager.getProject(project).getId();
         SWDatasetEntity datasetEntity = swdsMapper.findByName(name, projectId);
         if(null == datasetEntity){
             throw new SWValidationException(ValidSubject.SWDS).tip("dataset name doesn't exists");

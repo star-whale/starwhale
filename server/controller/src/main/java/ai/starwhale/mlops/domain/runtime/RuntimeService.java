@@ -285,11 +285,12 @@ public class RuntimeService {
 
         long startTime = System.currentTimeMillis();
         log.debug("access received at {}", startTime);
-        Long projectId = projectManager.getProjectId(uploadRequest.getProject());
+        ProjectEntity projectEntity = projectManager.getProject(uploadRequest.getProject());
+        Long projectId = projectEntity.getId();
         RuntimeEntity entity = runtimeMapper.findByNameForUpdate(uploadRequest.name(), projectId);
         if (null == entity) {
             //create
-            ProjectEntity projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(), userService.currentUserDetail().getIdTableKey());
+            projectEntity = projectManager.findByNameOrDefault(uploadRequest.getProject(), userService.currentUserDetail().getIdTableKey());
             entity = RuntimeEntity.builder().isDeleted(0)
                 .ownerId(userService.currentUserDetail().getId())
                 .projectId(null == projectEntity ? null : projectEntity.getId())
@@ -317,7 +318,7 @@ public class RuntimeService {
         log.debug("Runtime version checked time use {}",System.currentTimeMillis() - startTime);
         //upload to storage
         final String runtimePath = entityExists ? runtimeVersionEntity.getStoragePath()
-            : storagePathCoordinator.generateRuntimePath(uploadRequest.name(), uploadRequest.version());
+            : storagePathCoordinator.generateRuntimePath(projectEntity.getProjectName(), uploadRequest.name(), uploadRequest.version());
 
         try(final InputStream inputStream = dsFile.getInputStream()){
             InputStream is = inputStream;
