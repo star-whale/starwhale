@@ -19,6 +19,7 @@ from starwhale.consts import (
     DEFAULT_PAGE_SIZE,
 )
 from starwhale.base.uri import URI
+from starwhale.utils.fs import ensure_dir
 from starwhale.utils.http import ignore_error, wrap_sw_error_resp
 from starwhale.utils.error import NoSupportError
 
@@ -51,6 +52,7 @@ class CloudRequestMixed:
             **kw,
         )
         total = float(r.headers.get("content-length", 0))
+        ensure_dir(dest_path.parent)
         with dest_path.open("wb") as f:
             for chunk in r.iter_content(chunk_size=_TMP_FILE_BUFSIZE):
                 if progress:
@@ -79,7 +81,7 @@ class CloudRequestMixed:
                 progress.update(task_id, completed=monitor.bytes_read)
 
         _headers = deepcopy(headers)
-        fpath = Path(file_path)
+        fpath = Path(file_path).resolve().absolute()
 
         with fpath.open("rb") as f:
             fields["file"] = (fpath.name, f, "text/plain")

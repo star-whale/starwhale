@@ -113,6 +113,10 @@ class SWCliConfigMixed:
         return self.rootdir / ".datastore"
 
     @property
+    def object_store_dir(self) -> Path:
+        return self.rootdir / ".objectstore"
+
+    @property
     def sw_remote_addr(self) -> str:
         addr = self._current_instance_obj.get("uri", "")
         return fmt_http_server(addr)
