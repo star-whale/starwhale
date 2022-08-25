@@ -236,7 +236,6 @@ This example will illustrate how to evaluate a pre-trained nmt model on StarWhal
 
   ```yaml
   name: nmt
-  mode: generate
   data_dir: data
   data_filter: "test_eng-fra.txt"
   label_filter: "test_eng-fra.txt"

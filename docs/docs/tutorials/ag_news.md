@@ -230,8 +230,6 @@ Here is some descriptive information needed for Starwhale to build a Starwhale D
 ```yaml
 name: AG_NEWS
 
-mode: generate
-
 data_dir: data
 data_filter: "test.csv"
 label_filter: "test.csv"

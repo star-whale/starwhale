@@ -210,7 +210,6 @@ Starwhale is an MLOps platform. It provides **Instance**, **Project**, **Runtime
 
    ```yaml
     name: mnist
-    mode: generate
     data_dir: data
     data_filter: "t10k-image*"
     label_filter: "t10k-label*"

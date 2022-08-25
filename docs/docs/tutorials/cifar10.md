@@ -218,7 +218,6 @@ Here is some descriptive information needed for Starwhale to build a Starwhale D
 
 ```yaml
 name: cifar10
-mode: generate
 data_dir: data
 data_filter: "test_batch"
 label_filter: "test_batch"

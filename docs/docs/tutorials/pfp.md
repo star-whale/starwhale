@@ -288,7 +288,6 @@ Here is some descriptive information needed for Starwhale to build a Starwhale D
 
 ```yaml
 name: penn_fudan_ped
-mode: generate
 data_dir: data
 data_filter: "PNGImages/*6.png"
 label_filter: "PedMasks/*6_mask.png"
