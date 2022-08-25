@@ -13,6 +13,7 @@
                dsv.owner_id,
                dsv.size as dsv_size,
                dsv.index_table as dsv_index_table,
+               dsv.storage_auths as dsv_storage_auths,
                version_name as dsv_version_name,
                version_tag as dsv_version_tag,
                version_meta as dsv_version_meta,
@@ -120,6 +121,10 @@
         update dataset_version set status = #{status} where id = #{id}
     </update>
 
+    <update id="updateStorageAuths">
+        update dataset_version set storage_auths = #{storageAuths} where id = #{id}
+    </update>
+
     <delete id = "deleteById">
       delete from dataset_version WHERE id = #{id};
    </delete>
@@ -133,6 +138,7 @@
         <result property="datasetName" column="ds_dataset_name" />
         <result property="size" column="dsv_size" />
         <result property="indexTable" column="dsv_index_table" />
+        <result property="storageAuths" column="dsv_storage_auths" />
         <result property="versionTag" column="dsv_version_tag" />
         <result property="versionMeta" column="dsv_version_meta" />
         <result property="storagePath" column="dsv_storage_path" />

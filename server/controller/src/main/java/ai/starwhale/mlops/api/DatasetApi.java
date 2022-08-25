@@ -223,6 +223,23 @@ public interface DatasetApi {
         @RequestParam(name = "part_name",required = false) String partName,
         HttpServletResponse httpResponse);
 
+    @Operation(summary = "Pull SWDS uri file contents",
+        description = "Pull SWDS uri file contents ")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
+    @GetMapping(
+        value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/link",
+        produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
+    void pullLinkContent(
+        @PathVariable(name = "projectUrl") String projectUrl,
+        @PathVariable(name = "datasetUrl") String datasetUrl,
+        @PathVariable(name = "versionUrl") String versionUrl,
+        @Parameter(name = "uri", description = "uri of the link")
+        @RequestParam(name = "uri",required = true) String uri,
+        @Parameter(name = "authName", description = "auth name the link used")
+        @RequestParam(name = "authName",required = false) String authName,
+        HttpServletResponse httpResponse);
+
 
     @Operation(summary = "Set the tag of the dataset version")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
