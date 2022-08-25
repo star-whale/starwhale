@@ -33,7 +33,7 @@ public class StorageAuths {
 
     Map<String, FileStorageEnv> envMap = new HashMap<>();
 
-    static final String NAME_DEFAULT="sw_default_unique_9asdf8239alcms";
+    static final String NAME_DEFAULT="";
 
     static final Pattern LINE_PATTERN=Pattern.compile("^(USER\\.(S3|HDFS|WEBHDFS|LOCALFS|NFS|FTP|SFTP|HTTP|HTTPS)\\.((\\w+)\\.)?(\\w+))=(\\w+)$");
     public StorageAuths(String authsText){
@@ -63,6 +63,10 @@ public class StorageAuths {
             return envMap.get(NAME_DEFAULT);
         }
         return envMap.get(authName);
+    }
+
+    public Map<String, FileStorageEnv> allEnvs(){
+        return envMap;
     }
 
 }
