@@ -37,7 +37,7 @@ import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.datastore.DSRHelper;
+import ai.starwhale.mlops.domain.swds.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.swds.datastore.IndexWriter;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
@@ -53,11 +53,8 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.JobMockHolder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
 import java.util.stream.Stream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -71,7 +68,7 @@ import org.springframework.mock.web.MockMultipartFile;
  */
 public class SwdsUploaderTest {
 
-    final DSRHelper dsrHelper = new DSRHelper();
+    final DataStoreTableNameHelper dataStoreTableNameHelper = new DataStoreTableNameHelper();
 
     final IndexWriter indexWriter = mock(IndexWriter.class);
 
@@ -89,13 +86,15 @@ public class SwdsUploaderTest {
         when(userService.currentUserDetail()).thenReturn(User.builder().idTableKey(1L).build());
         ProjectMapper projectMapper = mock(ProjectMapper.class);
         ProjectManager projectManager = mock(ProjectManager.class);
-        when(projectManager.getProject(anyString())).thenReturn(new ProjectEntity(1l,"pname",null,null,null,null,null,0));
+        when(projectManager.findByNameOrDefault(anyString(), anyLong())).thenReturn(
+            ProjectEntity.builder().id(1L).build());
+        when(projectManager.getProject(anyString())).thenReturn(ProjectEntity.builder().id(1L).build());
 
         HotJobHolder hotJobHolder = new HotJobHolderImpl();
 
         SwdsUploader swdsUploader = new SwdsUploader(hotSwdsHolder, swdsMapper, swdsVersionMapper,
-            storagePathCoordinator, storageAccessService, userService,  yamlMapper,
-            hotJobHolder, projectManager, dsrHelper, indexWriter);
+            storagePathCoordinator, storageAccessService, userService, yamlMapper,
+            hotJobHolder, projectManager, dataStoreTableNameHelper, indexWriter);
 
         swdsUploader.create(HotSwdsHolderTest.MANIFEST,"_manifest.yaml", new UploadRequest());
         String dsVersionId = "mizwkzrqgqzdemjwmrtdmmjummzxczi3";
@@ -123,7 +122,7 @@ public class SwdsUploaderTest {
         verify(storageAccessService,times(0)).delete("c");
 
 
-        when(swdsMapper.findByName(eq(dsName),anyLong())).thenReturn(SWDatasetEntity.builder().id(1L).build());
+        when(swdsMapper.findByName(eq(dsName),anyLong())).thenReturn(SWDatasetEntity.builder().id(1L).projectId(1L).build());
         SWDatasetVersionEntity mockedEntity = SWDatasetVersionEntity.builder()
             .id(1L)
             .versionName("testversion")
