@@ -191,11 +191,6 @@ class Link:
         return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, mime type:{self.mime_type}"
 
 
-class DSProcessMode:
-    DEFINE = "define"
-    GENERATE = "generate"
-
-
 class DatasetSummary:
     def __init__(
         self,
@@ -259,7 +254,6 @@ class DatasetConfig:
         name: str,
         data_dir: str,
         process: str,
-        mode: str = DSProcessMode.GENERATE,
         data_filter: str = "",
         label_filter: str = "",
         runtime: str = "",
@@ -272,7 +266,6 @@ class DatasetConfig:
         **kw: t.Any,
     ) -> None:
         self.name = name
-        self.mode = mode
         self.data_dir = str(data_dir)
         self.data_filter = data_filter
         self.label_filter = label_filter
@@ -289,9 +282,6 @@ class DatasetConfig:
         self._validator()
 
     def _validator(self) -> None:
-        if self.mode not in (DSProcessMode.DEFINE, DSProcessMode.GENERATE):
-            raise NoSupportError(f"{self.mode} mode no support")
-
         if ":" not in self.process:
             raise Exception(
                 f"please use module:class format, current is: {self.process}"
@@ -303,7 +293,7 @@ class DatasetConfig:
         return f"DataSet Config {self.name}"
 
     def __repr__(self) -> str:
-        return f"DataSet Config {self.name}, mode:{self.mode}, data:{self.data_dir}"
+        return f"DataSet Config {self.name}, data:{self.data_dir}"
 
     def as_dict(self) -> t.Dict[str, t.Any]:
         _r = deepcopy(self.__dict__)

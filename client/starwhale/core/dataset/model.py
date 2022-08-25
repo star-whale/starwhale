@@ -33,7 +33,7 @@ from starwhale.utils.error import NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
 
-from .type import DatasetConfig, DSProcessMode, DatasetSummary
+from .type import DatasetConfig, DatasetSummary
 from .store import DatasetStorage
 from .tabular import StandaloneTabularDataset
 
@@ -219,7 +219,6 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
         logger.info("[step:swds]try to gen swds...")
         self._manifest["dataset_attr"] = swds_config.attr.as_dict()
-        self._manifest["mode"] = swds_config.mode
         self._manifest["process"] = swds_config.process
 
         # TODO: add more import format support, current is module:class
@@ -240,12 +239,8 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             console.print(
                 f":ghost: import [red]{swds_config.process}@{workdir.resolve()}[/] to make swds..."
             )
-            if swds_config.mode == DSProcessMode.GENERATE:
-                logger.info("[info:swds]do make swds_bin job...")
-                _summary: DatasetSummary = _obj.make_swds()
-                self._manifest["dataset_summary"] = _summary.as_dict()
-            else:
-                logger.info("[info:swds]skip make swds_bin")
+            _summary: DatasetSummary = _obj.make_swds()
+            self._manifest["dataset_summary"] = _summary.as_dict()
 
         console.print(f"[step:swds]finish gen swds @ {self.store.data_dir}")
 
