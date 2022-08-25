@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Card from '@/components/Card'
-import { createProject } from '@project/services/project'
+import { changeProject, createProject } from '@project/services/project'
 import { usePage } from '@/hooks/usePage'
 import { ICreateProjectSchema } from '@project/schemas/project'
 import ProjectForm from '@project/components/ProjectForm'
@@ -51,7 +51,6 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                 className={css({
                     display: 'flex',
                     justifyContent: 'space-between',
-                    flex: 1,
                     flexGrow: 0,
                     lineHeight: '18px',
                 })}
@@ -92,16 +91,14 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                             css({
                                 display: 'flex',
                                 fontSize: '12px',
-                                color: '#00B368',
-                                // private
-                                // color: '#4848B3',
-                                background: '#E6FFF4',
+                                color: project?.privacy === 'PRIVATE' ? '#4848B3' : '#00B368',
+                                backgroundColor: '#E6FFF4',
                                 borderRadius: '9px',
                                 padding: '3px 10px',
                             })
                         )}
                     >
-                        public
+                        {project.privacy?.toLowerCase()}
                     </p>
                 </div>
             </div>
@@ -138,7 +135,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                                 css({
                                     'display': 'flex',
                                     'fontSize': '12px',
-                                    'background': '#F4F5F7',
+                                    'backgroundColor': '#F4F5F7',
                                     'borderRadius': '2px',
                                     'width': '20px',
                                     'height': '20px',
@@ -163,8 +160,8 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                                     style: {
                                         'display': 'flex',
                                         'fontSize': '12px',
-                                        'background': '#F4F5F7',
-                                        'borderRadius': '2px',
+                                        'backgroundColor': '#F4F5F7',
+                                        // 'borderRadius': '2px',
                                         'width': '20px',
                                         'height': '20px',
                                         'textDecoration': 'none',
@@ -190,6 +187,8 @@ export default function ProjectListCard() {
     const projectsInfo = useFetchProjects({ ...page, pageNum: 1, pageSize: 10000 })
     const [filter, setFilter] = useState('')
     const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
+    const [editProject, setEditProject] = useState<IProjectSchema>()
+
     const handleCreateProject = useCallback(
         async (data: ICreateProjectSchema) => {
             await createProject(data)
@@ -198,8 +197,17 @@ export default function ProjectListCard() {
         },
         [projectsInfo]
     )
+    const handleEditProject = useCallback(
+        async (data: ICreateProjectSchema) => {
+            if (!editProject) return
+            await changeProject(editProject.id, data)
+            await projectsInfo.refetch()
+            setIsCreateProjectOpen(false)
+        },
+        [projectsInfo, editProject]
+    )
+
     const [data, setData] = useState<IProjectSchema[]>([])
-    const [editProject, setEditProject] = useState<IProjectSchema>()
     const [css] = useStyletron()
     const [t] = useTranslation()
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -281,7 +289,10 @@ export default function ProjectListCard() {
                     {editProject ? t('edit sth', [t('Project')]) : t('create sth', [t('Project')])}
                 </ModalHeader>
                 <ModalBody>
-                    <ProjectForm project={editProject} onSubmit={handleCreateProject} />
+                    <ProjectForm
+                        project={editProject}
+                        onSubmit={editProject ? handleEditProject : handleCreateProject}
+                    />
                 </ModalBody>
             </Modal>
         </Card>

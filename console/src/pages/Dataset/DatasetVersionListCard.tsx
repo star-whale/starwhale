@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useMemo } from 'react'
+import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
 import { createDatasetVersion, revertDatasetVersion } from '@dataset/services/datasetVersion'
 import { usePage } from '@/hooks/usePage'
@@ -9,22 +9,14 @@ import useTranslation from '@/hooks/useTranslation'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
-import { Drawer } from 'baseui/drawer'
-import { JSONTree } from 'react-json-tree'
-
-// eslint-disable-next-line
-import yaml from 'js-yaml'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
-import Button from '@/components/Button'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
     const { datasetId, projectId } = useParams<{ datasetId: string; projectId: string }>()
-    const [isOpen, setIsOpen] = useState(false)
-    const [drawerData, setDrawerData] = useState('')
     const [t] = useTranslation()
 
     const datasetVersionsInfo = useFetchDatasetVersions(projectId, datasetId, page)
@@ -47,34 +39,32 @@ export default function DatasetVersionListCard() {
         [datasetVersionsInfo, projectId, datasetId, t]
     )
 
-    const cardRef = useRef(null)
-
-    const jsonData = useMemo(() => {
-        if (!drawerData) return {}
-        return yaml.load(drawerData)
-    }, [drawerData])
-
     return (
         <>
             <Card>
                 <Table
                     isLoading={datasetVersionsInfo.isLoading}
-                    columns={[t('sth name'), t('Meta'), t('Created'), t('Owner'), t('Action')]}
+                    columns={[t('sth name'), t('Created'), t('Owner'), t('Action')]}
                     data={
                         datasetVersionsInfo.data?.list.map((datasetVersion) => {
                             return [
-                                datasetVersion.name,
-                                <Button
-                                    key={datasetVersion.id}
-                                    size='compact'
-                                    as='link'
-                                    onClick={() => {
-                                        setDrawerData(datasetVersion.meta)
-                                        setIsOpen(true)
-                                    }}
+                                <Link
+                                    key={datasetId}
+                                    to={`/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/overview`}
                                 >
-                                    {t('show meta')}
-                                </Button>,
+                                    {datasetVersion.name}
+                                </Link>,
+                                // <Button
+                                //     key={datasetVersion.id}
+                                //     size='compact'
+                                //     as='link'
+                                //     onClick={() => {
+                                //         setDrawerData(datasetVersion.meta)
+                                //         setIsOpen(true)
+                                //     }}
+                                // >
+                                //     {t('show meta')}
+                                // </Button>,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
                                 <StyledLink
@@ -113,7 +103,7 @@ export default function DatasetVersionListCard() {
                 </Modal>
             </Card>
 
-            {cardRef.current && (
+            {/* {cardRef.current && (
                 <Drawer
                     size='50%'
                     isOpen={isOpen}
@@ -136,7 +126,7 @@ export default function DatasetVersionListCard() {
                         <JSONTree data={jsonData} hideRoot shouldExpandNode={() => true} />
                     </div>
                 </Drawer>
-            )}
+            )} */}
         </>
     )
 }

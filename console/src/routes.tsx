@@ -37,9 +37,7 @@ import EvaluationOverviewLayout from '@/pages/Evaluation/EvaluationOverviewLayou
 import EvaluationResults from '@/pages/Evaluation/EvaluationResults'
 import Header from '@/components/Header'
 import LoginLayout from '@/pages/Home/LoginLayout'
-import CreateAccount from '@/pages/Home/CreateAccount'
 import ResetPassword from '@/pages/Home/ResetPassword'
-import { CreateAccountPageUri } from '@/consts'
 import CenterLayout from './pages/CenterLayout'
 import ProjectOverview from './pages/Project/Overview'
 import Pending from './pages/Home/Pending'
@@ -47,8 +45,6 @@ import { useAuth } from './api/Auth'
 import DatasetVersionOverview from './pages/Dataset/DatasetVersionOverview'
 import DatasetVersionOverviewMeta from './pages/Dataset/DatasetVersionOverviewMeta'
 import DatasetVersionOverviewFiles from './pages/Dataset/DatasetVersionOverviewFiles'
-
-const LoginNew = React.lazy(() => import('@/pages/Home/LoginNew'))
 
 const useStyles = createUseStyles({
     root: ({ theme }: IThemedStyleProps) => ({
@@ -83,12 +79,8 @@ const Routes = () => {
                         <Route>
                             <LoginLayout>
                                 <Switch>
-                                    <Route exact path={CreateAccountPageUri} component={CreateAccount} />
-                                    <Route exact path='/create-account' component={CreateAccount} />
                                     <Route exact path='/reset' component={ResetPassword} />
                                     <Route exact path='/login' component={Login} />
-                                    <Route exact path='/loginnew' component={LoginNew} />
-                                    <Route exact path='/signup' component={LoginNew} />
                                     <Redirect path='/' to='/login' />
                                 </Switch>
                             </LoginLayout>

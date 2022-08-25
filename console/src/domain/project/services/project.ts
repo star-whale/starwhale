@@ -18,6 +18,11 @@ export async function createProject(data: ICreateProjectSchema): Promise<IProjec
     return resp.data
 }
 
+export async function changeProject(projectId: string, data: ICreateProjectSchema): Promise<IProjectSchema> {
+    const resp = await axios.put<IProjectSchema>(`/api/v1/project/${projectId}`, data)
+    return resp.data
+}
+
 export async function listRoles(): Promise<IUserRoleSchema[]> {
     const { data } = await axios.get<IUserRoleSchema[]>('/api/v1/role/enums')
     return data
