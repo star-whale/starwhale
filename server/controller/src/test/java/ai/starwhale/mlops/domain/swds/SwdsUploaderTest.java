@@ -88,6 +88,7 @@ public class SwdsUploaderTest {
         ProjectManager projectManager = mock(ProjectManager.class);
         when(projectManager.findByNameOrDefault(anyString(), anyLong())).thenReturn(
             ProjectEntity.builder().id(1L).build());
+        when(projectManager.getProject(anyString())).thenReturn(ProjectEntity.builder().id(1L).build());
 
         HotJobHolder hotJobHolder = new HotJobHolderImpl();
 
