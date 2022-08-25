@@ -236,7 +236,13 @@ public class DatasetController implements DatasetApi{
     }
 
     @Override
-    public void headDataset(String projectUrl, String datasetUrl, String versionUrl) {
-        swDatasetService.query(projectUrl, datasetUrl, versionUrl);
+    public ResponseEntity<?> headDataset(String projectUrl, String datasetUrl, String versionUrl) {
+        try {
+            swDatasetService.query(projectUrl, datasetUrl, versionUrl);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.info("Head dataset result: NOT FOUND");
+            return ResponseEntity.notFound().build();
+        }
     }
 }
