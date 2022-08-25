@@ -35,7 +35,7 @@ public class StorageAuths {
 
     static final String NAME_DEFAULT="";
 
-    static final Pattern LINE_PATTERN=Pattern.compile("^(USER\\.(S3|HDFS|WEBHDFS|LOCALFS|NFS|FTP|SFTP|HTTP|HTTPS)\\.((\\w+)\\.)?(\\w+))=(\\w+)$");
+    static final Pattern LINE_PATTERN=Pattern.compile("^(USER\\.(S3|HDFS|WEBHDFS|LOCALFS|NFS|FTP|SFTP|HTTP|HTTPS)\\.((\\w+)\\.)?(\\w+))=(\\w*)$");
     public StorageAuths(String authsText){
         String[] lines = authsText.split("\n");
         Stream.of(lines).forEach(line->{
