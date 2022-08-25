@@ -97,7 +97,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
     /**
      * when task amount exceeds 1000, bach insertion will emit an error
      */
-    @Value("${sw.taskSize}")
+    @Value("${sw.task.size}")
     Integer amountOfTasks = 256;
 
     /**

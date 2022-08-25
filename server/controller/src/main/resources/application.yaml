@@ -23,7 +23,9 @@ sw:
     issuer: ${SW_JWT_ISSUER:starWhale}
     expireMinutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
     job-user-id: ${SW_JWT_JOB_USER_ID:1}
-  taskSize: ${SW_TASK_SPLIT_SIZE:1}
+  task:
+    size: ${SW_TASK_SPLIT_SIZE:1}
+    deletionDelayMinutes: ${SW_TASK_DELETION_DELAY_MINUTES:30}
   instance-uri: ${SW_INSTANCE_URI:http://console.pre.intra.starwhale.ai}
   infra:
     k8s:
