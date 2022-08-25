@@ -265,7 +265,7 @@ public class WalManagerTest {
         this.walManager = new WalManager(this.objectStore,
                 this.bufferManager,
                 256,
-                entry1.getSerializedSize() + CodedOutputStream.computeUInt32SizeNoTag(entry1.getSerializedSize()),
+                entry1.getSerializedSize() + CodedOutputStream.computeUInt32SizeNoTag(entry1.getSerializedSize()) + 4,
                 "test/",
                 10);
         builder.addAllRecords(entry2.getRecordsList());
