@@ -83,7 +83,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
     }
 
     @Scheduled(fixedDelay = 30000)
-    private void processTaskDeletion() {
+    public void processTaskDeletion() {
         var task = taskToDeletes.poll();
         List<Long> taskIds = new ArrayList<>();
         while (task != null) {
