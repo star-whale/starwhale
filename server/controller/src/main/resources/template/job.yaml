@@ -13,7 +13,7 @@ spec:
       initContainers:
         - name: data-provider
           imagePullPolicy: IfNotPresent
-          image: anigeo/awscli:latest
+          image: amazon/aws-cli:2.7.25
           volumeMounts:
             - mountPath: /opt/starwhale
               name: data
@@ -56,7 +56,7 @@ spec:
       containers:
         - name: result-uploader
           imagePullPolicy: IfNotPresent
-          image: anigeo/awscli:latest
+          image: amazon/aws-cli:2.7.25
           volumeMounts:
             - mountPath: /opt/starwhale
               name: data
