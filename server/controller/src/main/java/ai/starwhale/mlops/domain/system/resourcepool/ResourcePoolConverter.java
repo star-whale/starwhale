@@ -39,6 +39,10 @@ public class ResourcePoolConverter {
     }
 
     public ResourcePool toResourcePool(ResourcePoolEntity entity) {
+        if (entity == null) {
+            return ResourcePool.empty();
+        }
+
         return ResourcePool.builder().label(entity.getLabel()).build();
     }
 
