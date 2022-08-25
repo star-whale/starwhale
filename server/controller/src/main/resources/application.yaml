@@ -12,11 +12,19 @@ spring:
       static-locations: file:/opt/starwhale.java/static/, classpath:/static/
 sw:
   version: ${SW_VERSION_CONTROLLER:0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52}
+  runtime:
+    image-default: ${SW_RUNTIME_IMAGE_DEFAULT:10.131.0.1/star-whale/starwhale:100.0.0}
+    pypi:
+      index-url: ${SW_PYPI_INDEX_URL:http://10.131.0.1/repository/pypi-hosted/simple/}
+      extra-index-url: ${SW_PYPI_EXTRA_INDEX_URL:https://pypi.doubanio.com/simple}
+      trusted-host: ${SW_PYPI_TRUSTED_HOST:10.131.0.1}
   jwt:
     secret: ${SW_JWT_SECRET:wdxlG3UK66m6uTUgxXFjizli}
     issuer: ${SW_JWT_ISSUER:starWhale}
     expireMinutes: ${SW_JWT_TOKEN_EXPIRE_MINUTES:43200}
-  taskSize: ${SW_TASK_SPLIT_SIZE:3}
+    job-user-id: ${SW_JWT_JOB_USER_ID:1}
+  taskSize: ${SW_TASK_SPLIT_SIZE:1}
+  instance-uri: ${SW_INSTANCE_URI:http://console.pre.intra.starwhale.ai}
   infra:
     k8s:
       name-space: ${SW_K8S_NAME_SPACE:default}
@@ -48,13 +56,13 @@ spring:
     name: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${SW_METADATA_STORAGE_IP:127.0.0.1}:${SW_METADATA_STORAGE_PORT:3306}/starwhale?useUnicode=true&characterEncoding=UTF-8&createDatabaseIfNotExist=true&allowMultiQueries=true
-    username: ${SW_METADATA_STORAGE_USER:root}
+    username: ${SW_METADATA_STORAGE_USER:starwhale}
     password: ${SW_METADATA_STORAGE_PASSWORD:starwhale}
   flyway:
     locations: "classpath:db/migration"
   mvc:
-     view:
-         suffix: .html
+    view:
+      suffix: .html
 
 mybatis:
   configuration:

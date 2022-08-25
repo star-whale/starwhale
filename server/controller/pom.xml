@@ -180,6 +180,7 @@
                                     <includes>
                                         <!-- Specifically, it is configured according to the actual front-end code and directory structure.-->
                                         <include>static/</include>
+                                        <include>assets//</include>
                                         <include>favicon.ico</include>
                                         <include>asset-manifest.json</include>
                                         <include>index.html</include>

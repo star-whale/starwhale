@@ -22,7 +22,7 @@ import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.TaskWrapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskRequest;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 

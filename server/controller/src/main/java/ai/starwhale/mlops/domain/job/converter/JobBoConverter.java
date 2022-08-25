@@ -21,6 +21,7 @@ import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.node.Device;
+import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
@@ -31,6 +32,7 @@ import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
 import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
+import org.springframework.beans.factory.annotation.Value;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
@@ -60,7 +62,7 @@ public class JobBoConverter {
 
     final SWDSBOConverter swdsboConverter;
 
-    final String image = "ghcr.io/star-whale/starwhale:latest";//todo(renyanda): replace with runtime meta
+    final String defaultRuntimeImage ;
 
     public JobBoConverter(
         JobSWDSVersionMapper jobSWDSVersionMapper,
@@ -68,6 +70,7 @@ public class JobBoConverter {
         RuntimeMapper runtimeMapper,
         RuntimeVersionMapper runtimeVersionMapper,
         SWDSBOConverter swdsboConverter,
+        @Value("${sw.runtime.image-default}") String defaultImage,
         ResourcePoolMapper resourcePoolMapper,
         ResourcePoolConverter resourcePoolConverter
     ) {
@@ -76,6 +79,7 @@ public class JobBoConverter {
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.swdsboConverter = swdsboConverter;
+        this.defaultRuntimeImage = defaultImage;//todo(renyanda): replace with runtime meta
         this.resourcePoolMapper = resourcePoolMapper;
         this.resourcePoolConverter = resourcePoolConverter;
     }
@@ -94,13 +98,17 @@ public class JobBoConverter {
         ResourcePool resourcePool = resourcePoolConverter.toResourcePool(resourcePoolEntity);
         return Job.builder()
             .id(jobEntity.getId())
+            .project(Project.builder()
+                .id(jobEntity.getProjectId())
+                .name(jobEntity.getProject().getProjectName())
+                .build())
             .jobRuntime(JobRuntime.builder()
                 .name(runtimeEntity.getRuntimeName())
                 .version(runtimeVersionEntity.getVersionName())
                 .storagePath(runtimeVersionEntity.getStoragePath())
                 .deviceAmount(jobEntity.getDeviceAmount())
                 .deviceClass(Device.Clazz.from(jobEntity.getDeviceType()))
-                .image(image)
+                .image(defaultRuntimeImage)
                 .build())
             .status(jobEntity.getJobStatus())
             .type(jobEntity.getType())

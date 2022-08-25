@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.job.step.trigger.EvalPPLStepTrigger;
+import ai.starwhale.mlops.domain.job.step.trigger.EvalStepTrigger;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
@@ -36,9 +36,9 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.internal.progress.ThreadSafeMockingProgress;
 
 /**
- * a test for {@link EvalPPLStepTrigger}
+ * a test for {@link EvalStepTrigger}
  */
-public class EvalPPLStepTriggerTest {
+public class EvalStepTriggerTest {
 
     static CMPRequest cmpRequest = null;
 
@@ -51,7 +51,7 @@ public class EvalPPLStepTriggerTest {
         when(storageAccessService.list("task_path_a/result")).thenReturn(pplResultPathA.stream());
         when(storageAccessService.list("task_path_b/result")).thenReturn(pplResultPathB.stream());
         TaskMapper taskMapper = mock(TaskMapper.class);
-        EvalPPLStepTrigger evalPPLStepTrigger = new EvalPPLStepTrigger(storageAccessService,taskMapper);
+        EvalStepTrigger evalPPLStepTrigger = new EvalStepTrigger(storageAccessService,taskMapper);
 
         Task task = mock(Task.class);
         long taskId = 123L;
@@ -66,21 +66,9 @@ public class EvalPPLStepTriggerTest {
             .build();
         evalPPLStepTrigger.triggerNextStep(pplStep);
         verify(task).updateStatus(TaskStatus.READY);
-        verify(task).setTaskRequest(matcherCMPRequest());
-        verify(taskMapper).updateTaskRequest(taskId,cmpRequest.toString());
 
     }
 
-    CMPRequest matcherCMPRequest(){
-        ArgumentMatcher<CMPRequest> matcher = arg-> {
-            cmpRequest = arg;
-            return arg.getPplResultPaths().size() == 2
-                && arg.getPplResultPaths().contains("a")
-                && arg.getPplResultPaths().contains("b");
-        };
-        ThreadSafeMockingProgress.mockingProgress().getArgumentMatcherStorage().reportMatcher(matcher);
-        return cmpRequest;
-    }
 
 }
 

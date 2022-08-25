@@ -14,8 +14,24 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.bo;
+package ai.starwhale.mlops.api.protocol.report.resp;
 
-public abstract class TaskRequest {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.util.List;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class TaskRequest {
+    String jobId;
+    String project;
+    Integer index;
+    Integer total;
+    String stepName;
+    List<String> datasetUris;
 }

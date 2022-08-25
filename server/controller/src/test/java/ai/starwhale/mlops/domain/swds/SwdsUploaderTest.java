@@ -35,6 +35,7 @@ import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolderImpl;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.datastore.DSRHelper;
 import ai.starwhale.mlops.domain.swds.datastore.IndexWriter;
@@ -88,11 +89,12 @@ public class SwdsUploaderTest {
         when(userService.currentUserDetail()).thenReturn(User.builder().idTableKey(1L).build());
         ProjectMapper projectMapper = mock(ProjectMapper.class);
         ProjectManager projectManager = mock(ProjectManager.class);
+        when(projectManager.getProject(anyString())).thenReturn(new ProjectEntity(1l,"pname",null,null,null,null,null,0));
 
         HotJobHolder hotJobHolder = new HotJobHolderImpl();
 
         SwdsUploader swdsUploader = new SwdsUploader(hotSwdsHolder, swdsMapper, swdsVersionMapper,
-            storagePathCoordinator, storageAccessService, userService, projectMapper, yamlMapper,
+            storagePathCoordinator, storageAccessService, userService,  yamlMapper,
             hotJobHolder, projectManager, dsrHelper, indexWriter);
 
         swdsUploader.create(HotSwdsHolderTest.MANIFEST,"_manifest.yaml", new UploadRequest());

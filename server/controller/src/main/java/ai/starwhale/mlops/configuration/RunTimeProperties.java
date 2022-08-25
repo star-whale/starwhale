@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.task.bo.ppl;
+package ai.starwhale.mlops.configuration;
 
-import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
-import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
-@Deprecated
-@AllArgsConstructor
-@NoArgsConstructor
-public class PPLRequest extends TaskRequest {
+@ConfigurationProperties(prefix = "sw.runtime")
+public class RunTimeProperties {
 
-    /**
-     * blocks may come from different SWDS
-     */
-    private List<SWDSBlockVO> swdsBlocks;
+    String imageDefault;
+    Pypi pypi;
+
+    @Data
+    public static class Pypi{
+        String indexUrl;
+        String extraIndexUrl;
+        String trustedHost;
+    }
 
 }

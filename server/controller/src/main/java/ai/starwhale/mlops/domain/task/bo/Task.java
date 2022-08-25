@@ -17,6 +17,7 @@
 package ai.starwhale.mlops.domain.task.bo;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
@@ -56,6 +57,7 @@ public class Task extends TimeConcern {
     /**
      * storage directory path of results
      */
+    @Deprecated
     ResultPath resultRootPath;
 
     TaskRequest taskRequest;

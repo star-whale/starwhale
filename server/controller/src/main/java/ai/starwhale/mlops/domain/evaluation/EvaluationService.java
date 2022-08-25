@@ -149,7 +149,8 @@ public class EvaluationService {
             .duration(jobVO.getDuration())
             .attributes(Lists.newArrayList())
             .build();
-        Map<String, Object> result = resultQuerier.flattenResultOfJob(entity.getId());
+        // TODO:remove all of these implements
+        /*Map<String, Object> result = resultQuerier.flattenResultOfJob(entity.getId());
         for (Entry<String, Object> entry : result.entrySet()) {
             String value = String.valueOf(entry.getValue());
             summaryVO.getAttributes().add(AttributeValueVO.builder()
@@ -157,7 +158,7 @@ public class EvaluationService {
                 .type(getAttributeType(value))
                 .value(value)
                 .build());
-        }
+        }*/
         summaryCache.put(entity.getId(), summaryVO);
         return summaryVO;
     }
