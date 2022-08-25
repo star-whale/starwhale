@@ -223,8 +223,8 @@ public interface DatasetApi {
         @RequestParam(name = "part_name",required = false) String partName,
         HttpServletResponse httpResponse);
 
-    @Operation(summary = "Pull SWDS files",
-        description = "Pull SWDS files part by part. ")
+    @Operation(summary = "Pull SWDS uri file contents",
+        description = "Pull SWDS uri file contents ")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(
         value = "/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/link",
