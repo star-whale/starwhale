@@ -211,7 +211,7 @@ const locales0 = {
         en: 'Reset Your Password',
     },
     'LOGIN': {
-        en: 'LOGIN',
+        en: 'Log in',
     },
     'Created': {
         en: 'Created',
@@ -266,6 +266,9 @@ const locales0 = {
     },
     'Device Amount': {
         en: 'Device Amount',
+    },
+    'Resource Pool': {
+        en: 'Resource Pool',
     },
     'Runtime': {
         en: 'Runtime',
@@ -355,7 +358,7 @@ const locales0 = {
         en: 'Create',
     },
     'login': {
-        en: 'login',
+        en: 'Log in',
     },
     'overview': {
         en: 'overview',
@@ -609,6 +612,9 @@ const locales0 = {
     },
     'History': {
         en: 'History',
+    },
+    'or': {
+        en: 'or',
     },
 }
 

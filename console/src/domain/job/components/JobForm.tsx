@@ -18,6 +18,7 @@ import IconFont from '@/components/IconFont'
 import RuntimeVersionSelector from '@/domain/runtime/components/RuntimeVersionSelector'
 import RuntimeSelector from '@/domain/runtime/components/RuntimeSelector'
 import DeviceSelector from '@/domain/setting/components/DeviceSelector'
+import ResourcePoolSelector from '@job/components/ResourcePoolSelector'
 import { ICreateJobFormSchema, ICreateJobSchema, IJobFormSchema } from '../schemas/job'
 
 const { Form, FormItem, useForm } = createForm<ICreateJobFormSchema>()
@@ -222,6 +223,9 @@ export default function JobForm({ job, onSubmit }: IJobFormProps) {
                             },
                         }}
                     />
+                </FormItem>
+                <FormItem label={t('Resource Pool')} name='resourcePool' required initialValue='default'>
+                    <ResourcePoolSelector />
                 </FormItem>
             </div>
 
