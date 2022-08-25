@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.swds.bo.SWDSQuery;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersionQuery;
 import ai.starwhale.mlops.domain.swds.SWDatasetService;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.upload.SwdsUploader;
 import ai.starwhale.mlops.exception.ApiOperationException;
 import ai.starwhale.mlops.exception.SWProcessException;
@@ -184,6 +185,25 @@ public class DatasetController implements DatasetApi{
                 .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
         }
         swdsUploader.pull(projectUrl, datasetUrl, versionUrl, partName,httpResponse);
+    }
+
+    @Override
+    public void pullLinkContent(String projectUrl, String datasetUrl, String versionUrl,
+        String uri,String authName, HttpServletResponse httpResponse) {
+        if(!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl) ){
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
+        }
+        SWDatasetVersionEntity datasetVersionEntity = swDatasetService.query(projectUrl, datasetUrl, versionUrl);
+        try {
+            ServletOutputStream outputStream = httpResponse.getOutputStream();
+            outputStream.write(swDatasetService.dataOf(datasetVersionEntity.getId(),uri,authName));
+            outputStream.flush();
+        } catch (IOException e) {
+            log.error("error write data to response",e);
+            throw new SWProcessException(ErrorType.NETWORK).tip("error write data to response");
+        }
+
     }
 
     @Override

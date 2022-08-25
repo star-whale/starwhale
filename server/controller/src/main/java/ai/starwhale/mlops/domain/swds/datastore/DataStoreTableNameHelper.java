@@ -22,12 +22,18 @@ import org.springframework.stereotype.Component;
  * data store helper for data set
  */
 @Component
-public class DSRHelper {
+public class DataStoreTableNameHelper {
 
-    public static final String FORMATTER_TABLE_NAME="SW_TABLE_DST_%s_%s";
+    final int VERSION_PREFIX_CNT = 2;
 
-    public String tableNameOf(String name,String version){
-        return String.format(FORMATTER_TABLE_NAME,name,version);
+    public static final String FORMATTER_TABLE_NAME_DATASET ="project/%s/dataset/%s/%s/%s/meta";
+
+    public static final String FORMATTER_TABLE_NAME_EVAL_RESULTS ="project/%s/eval/%s/results";
+
+    public static final String FORMATTER_TABLE_NAME_EVAL_SUMMARY ="project/%s/eval/summary";
+
+    public String tableNameOfDataset(String project,String name,String version){
+        return String.format(FORMATTER_TABLE_NAME_DATASET,project,name,version.substring(0,VERSION_PREFIX_CNT),version);
     }
 
 }
