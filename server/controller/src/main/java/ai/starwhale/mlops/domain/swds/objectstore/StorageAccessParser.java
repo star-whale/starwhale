@@ -110,10 +110,10 @@ public class StorageAccessParser {
         String endpoint = StringUtils.hasText(storageUri.getHost()) ? buildEndPoint(storageUri)
             : envs.get(String.format(KEY_ENDPOINT, authName));
         return new S3Config(bucket
-            , envs.get(accessKey)
-            , envs.get(accessSecret)
+            , accessKey
+            , accessSecret
             , envs.get(String.format(KEY_REGION, authName))
-            , envs.get(endpoint));
+            , endpoint);
     }
 
     private String buildEndPoint(StorageUri storageUri) {

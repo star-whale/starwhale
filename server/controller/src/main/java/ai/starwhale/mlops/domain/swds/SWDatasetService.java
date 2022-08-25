@@ -106,6 +106,7 @@ public class SWDatasetService {
     @Resource
     private StorageProperties storageProperties;
 
+    @Resource
     private DSFileGetter dsFileGetter;
 
     private BundleManager bundleManager() {
