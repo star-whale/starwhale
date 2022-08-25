@@ -148,6 +148,8 @@ jobs:
       - name: Yarn Build
         working-directory: ./console
         run: make build-ui
+        env:
+          NODE_OPTIONS: "--max-old-space-size=5120"
 
       # jar build
       - name: Cache local Maven repository
