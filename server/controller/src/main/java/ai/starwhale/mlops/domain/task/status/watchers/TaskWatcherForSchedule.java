@@ -21,9 +21,18 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
+
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -35,24 +44,80 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
 
     final TaskStatusMachine taskStatusMachine;
 
-    public TaskWatcherForSchedule(SWTaskScheduler taskScheduler,
-        TaskStatusMachine taskStatusMachine) {
+    final Long deletionDelayMilliseconds;
+
+    final DelayQueue<TaskToDelete> taskToDeletes;
+
+    public TaskWatcherForSchedule(
+        SWTaskScheduler taskScheduler,
+        TaskStatusMachine taskStatusMachine,
+        @Value("${sw.task.deletionDelayMinutes}") Long deletionDelayMinutes
+    ) {
         this.taskScheduler = taskScheduler;
         this.taskStatusMachine = taskStatusMachine;
+        this.deletionDelayMilliseconds = TimeUnit.MILLISECONDS.convert(deletionDelayMinutes, TimeUnit.MINUTES);
+        this.taskToDeletes = new DelayQueue<>();
     }
 
     @Override
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
-        if(task.getStatus() == TaskStatus.READY){
-            log.debug("task status changed to ready id: {} oldStatus: {}, scheduled",task.getId(),oldStatus);
-            taskScheduler.adopt(List.of(task),task.getStep().getJob().getJobRuntime().getDeviceClass());
-        }else if(task.getStatus() == TaskStatus.PAUSED || taskStatusMachine.isFinal(task.getStatus())){
-            log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled",task.getStatus(),task.getId(),task.getStatus());
-            taskScheduler.remove(List.of(task.getId()));
-        }else {
+        if (task.getStatus() == TaskStatus.READY) {
+            log.debug("task status changed to ready id: {} oldStatus: {}, scheduled", task.getId(), oldStatus);
+            taskScheduler.adopt(List.of(task), task.getStep().getJob().getJobRuntime().getDeviceClass());
+        } else if (task.getStatus() == TaskStatus.PAUSED || taskStatusMachine.isFinal(task.getStatus())) {
+            log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled", task.getStatus(), task.getId(), task.getStatus());
+            if (deletionDelayMilliseconds <= 0) {
+                taskScheduler.remove(List.of(task.getId()));
+            } else {
+                addToDeleteQueue(task);
+            }
+        } else {
             //do nothing
-            log.debug("task {} of status {} do nothing with scheduler ",task.getId(),task.getStatus());
+            log.debug("task {} of status {} do nothing with scheduler ", task.getId(), task.getStatus());
+        }
+    }
+
+    private void addToDeleteQueue(Task task) {
+        var deleteTime = task.getStartTime() + deletionDelayMilliseconds;
+        taskToDeletes.put(new TaskToDelete(task.getId(), deleteTime));
+    }
+
+    @Scheduled(fixedDelay = 30000)
+    public void processTaskDeletion() {
+        var task = taskToDeletes.poll();
+        List<Long> taskIds = new ArrayList<>();
+        while (task != null) {
+            taskIds.add(task.getTaskId());
+            task = taskToDeletes.poll();
+        }
+        taskScheduler.remove(taskIds);
+    }
+
+    static class TaskToDelete implements Delayed {
+        private final Long taskId;
+
+        private final Long deleteTime;
+
+        public TaskToDelete(Long taskId, Long deleteTime) {
+            this.taskId = taskId;
+            this.deleteTime = deleteTime;
         }
 
+        public Long getTaskId() {
+            return taskId;
+        }
+
+        @Override
+        public long getDelay(@NotNull TimeUnit unit) {
+            return unit.convert(deleteTime - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        }
+
+        @Override
+        public int compareTo(@NotNull Delayed o) {
+            long diffMillis = getDelay(TimeUnit.MILLISECONDS) - o.getDelay(TimeUnit.MILLISECONDS);
+            diffMillis = Math.min(diffMillis, 1);
+            diffMillis = Math.max(diffMillis, -1);
+            return (int) diffMillis;
+        }
     }
 }
