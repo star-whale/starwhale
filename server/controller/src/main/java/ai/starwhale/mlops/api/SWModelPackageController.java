@@ -191,7 +191,16 @@ public class SWModelPackageController implements SWModelPackageApi{
     }
 
     @Override
-    public void headModel(String projectUrl, String modelUrl, String versionUrl) {
-        swmpService.query(projectUrl, modelUrl, versionUrl);
+    public ResponseEntity<?> headModel(String projectUrl, String modelUrl, String versionUrl) {
+        try {
+            swmpService.query(projectUrl, modelUrl, versionUrl);
+            return ResponseEntity.ok().build();
+        } catch (StarWhaleApiException e) {
+            if(e.getHttpStatus() == HttpStatus.NOT_FOUND) {
+                log.info("Head model result: NOT FOUND");
+                return ResponseEntity.notFound().build();
+            }
+            throw e;
+        }
     }
 }
