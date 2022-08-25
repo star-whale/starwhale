@@ -2,7 +2,12 @@ import typing as t
 
 import click
 
-from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.consts import (
+    LATEST_TAG,
+    DefaultYAMLName,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+)
 
 from .view import get_term_view, DatasetTermView
 
@@ -22,14 +27,21 @@ def dataset_cmd(ctx: click.Context) -> None:
     default=DefaultYAMLName.DATASET,
     help="Dataset yaml filename, default use ${WORKDIR}/dataset.yaml file",
 )
+@click.option("--append", is_flag=True, help="Only append new data")
+@click.option("--append-from", default=LATEST_TAG, help="Append from dataset version")
 @click.pass_obj
 def _build(
-    view: DatasetTermView, workdir: str, project: str, dataset_yaml: str
+    view: DatasetTermView,
+    workdir: str,
+    project: str,
+    dataset_yaml: str,
+    append: bool,
+    append_from: str,
 ) -> None:
     # TODO: add cmd options for dataset build, another choice for dataset.yaml
     # TODO: add dry-run
     # TODO: add compress args
-    view.build(workdir, project, dataset_yaml)
+    view.build(workdir, project, dataset_yaml, append, append_from)
 
 
 @dataset_cmd.command("list", help="List dataset")

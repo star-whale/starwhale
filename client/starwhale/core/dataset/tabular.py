@@ -118,8 +118,8 @@ class TabularDataset:
     ) -> None:
         self.name = name
         self.version = version
+        self.project = project
         self.table_name = f"{name}/{version[:VERSION_PREFIX_CNT]}/{version}"
-        logger.debug(f"dataset table name:{self.table_name}")
         self._ds_wrapper = DatastoreWrapperDataset(self.table_name, project)
 
         self.start = start
@@ -180,6 +180,20 @@ class TabularDataset:
             logger.warning(f"type:{type}, exception:{value}, traceback:{trace}")
 
         self.close()
+
+    def fork(self, version: str) -> t.Tuple[int, int]:
+        fork_td = TabularDataset(name=self.name, version=version, project=self.project)
+
+        rows = 0
+        last_row_idx = -1
+        # TODO: tune tabular dataset fork performance
+        for _row in fork_td.scan():
+            rows += 1
+            last_row_idx = max(_row.id, last_row_idx)
+            _row.data_origin = DataOriginType.INHERIT
+            self.put(_row)
+
+        return last_row_idx, rows
 
     @classmethod
     def from_uri(
