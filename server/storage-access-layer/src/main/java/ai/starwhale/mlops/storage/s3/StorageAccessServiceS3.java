@@ -46,7 +46,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     final S3Client s3client;
 
-    public StorageAccessServiceS3(S3Config s3Config){
+    public StorageAccessServiceS3(S3Config s3Config) {
         this.s3Config = s3Config;
         AwsBasicCredentials awsCreds = AwsBasicCredentials.create(
             s3Config.getAccessKey(),
@@ -54,7 +54,7 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         S3ClientBuilder s3ClientBuilder = S3Client.builder()
             .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
             .region(Region.of(s3Config.getRegion()));
-        if(s3Config.overWriteEndPoint()){
+        if (s3Config.overWriteEndPoint()) {
             s3ClientBuilder.endpointOverride(URI.create(s3Config.getEndpoint()));
         }
         this.s3client = s3ClientBuilder
@@ -63,22 +63,24 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     @Override
     public StorageObjectInfo head(String path) throws IOException {
-        HeadObjectRequest build = HeadObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build();
-        try{
+        HeadObjectRequest build = HeadObjectRequest.builder().bucket(s3Config.getBucket()).key(path)
+            .build();
+        try {
             HeadObjectResponse headObjectResponse = s3client.headObject(build);
-            return new StorageObjectInfo(true,headObjectResponse.contentLength(),mapToString(headObjectResponse.metadata()));
-        }catch (NoSuchKeyException e){
-            return new StorageObjectInfo(false,0L,null);
+            return new StorageObjectInfo(true, headObjectResponse.contentLength(),
+                mapToString(headObjectResponse.metadata()));
+        } catch (NoSuchKeyException e) {
+            return new StorageObjectInfo(false, 0L, null);
         }
 
     }
 
     private String mapToString(Map<String, String> metadata) {
-        if(metadata == null || metadata.isEmpty()){
+        if (metadata == null || metadata.isEmpty()) {
             return null;
         }
         StringBuilder stringBuilder = new StringBuilder();
-        metadata.forEach((k,v)->{
+        metadata.forEach((k, v) -> {
             stringBuilder.append(k);
             stringBuilder.append(":");
             stringBuilder.append(v);
@@ -88,29 +90,49 @@ public class StorageAccessServiceS3 implements StorageAccessService {
     }
 
     /**
-     * when you are trying to upload a file that is larger than Integer.MAX_VALUE bytes which is about 2G,
-     * you should wrapp the inputStream with a  LargeFileInputStream
+     * when you are trying to upload a file that is larger than Integer.MAX_VALUE bytes which is
+     * about 2G, you should wrapp the inputStream with a  LargeFileInputStream
      */
     @Override
-    public void put(String path,InputStream inputStream) throws IOException {
+    public void put(String path, InputStream inputStream) throws IOException {
         long fileSize;
-        if(inputStream instanceof LargeFileInputStream){
-            fileSize = ((LargeFileInputStream)inputStream).size();
-        }else {
+        if (inputStream instanceof LargeFileInputStream) {
+            fileSize = ((LargeFileInputStream) inputStream).size();
+        } else {
             fileSize = inputStream.available();
         }
-        s3client.putObject(PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),RequestBody.fromInputStream(inputStream, fileSize));
+        s3client.putObject(
+            PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
+            RequestBody.fromInputStream(inputStream, fileSize));
     }
 
     @Override
     public void put(String path, byte[] body) {
-        s3client.putObject(PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),RequestBody.fromBytes(body));
+        s3client.putObject(
+            PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
+            RequestBody.fromBytes(body));
     }
 
     @Override
     public InputStream get(String path) {
         return s3client
             .getObject(GetObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build());
+    }
+
+
+    //bytes=0-10098
+    static final String RANGE_FORMAT = "bytes=%d-%d";
+
+    @Override
+    public InputStream get(String path, Long offset, Long size) throws IOException {
+        if (null == offset || null == size || offset < 0 || size <= 0) {
+            return get(path);
+        }
+
+        return s3client
+            .getObject(
+                GetObjectRequest.builder().range(String.format(RANGE_FORMAT, offset, offset + size - 1))
+                    .bucket(s3Config.getBucket()).key(path).build());
     }
 
     @Override

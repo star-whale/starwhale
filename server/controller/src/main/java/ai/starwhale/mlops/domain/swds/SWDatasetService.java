@@ -291,7 +291,8 @@ public class SWDatasetService {
         return versionEntity;
     }
 
-    public byte[] dataOf(Long datasetId,String uri,String authName){
-        return dsFileGetter.dataOf(datasetId,uri,authName);
+    public byte[] dataOf(Long datasetId, String uri, String authName, Long offset,
+        Long size){
+        return dsFileGetter.dataOf(datasetId,uri,authName,offset,size);
     }
 }
