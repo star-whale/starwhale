@@ -132,17 +132,19 @@ public class K8sClient {
         if(null != resources){
             coreContainer.resources(resources);
         }
-        if (!coreEnv.isEmpty()) {
-            List<V1EnvVar> ee = new ArrayList<>();
-            env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
-            coreContainer.env(ee);
-        }
         if (!env.isEmpty()) {
             List<V1EnvVar> ee = new ArrayList<>();
             env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
             podSpec.getInitContainers().forEach(c -> {
                 c.env(ee);
             });
+        }
+
+        if (!coreEnv.isEmpty()) {
+            List<V1EnvVar> ee = new ArrayList<>();
+            coreEnv.putAll(env);
+            coreEnv.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
+            coreContainer.env(ee);
         }
 
         // replace host path
