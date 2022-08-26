@@ -133,6 +133,148 @@
                 }
             }
         },
+        "/api/v1/user/current/pwd": {
+            "put": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update Current User password",
+                "operationId": "updateCurrentUserPassword",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserUpdatePasswordRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Check Current User password",
+                "operationId": "checkCurrentUserPassword",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserCheckPasswordRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/role/{systemRoleId}": {
+            "put": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update user role of system",
+                "operationId": "updateUserSystemRole",
+                "parameters": [
+                    {
+                        "name": "systemRoleId",
+                        "in": "path",
+                        "description": "System Role ID to update",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserRoleUpdateRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Delete user role of system",
+                "operationId": "deleteUserSystemRole",
+                "parameters": [
+                    {
+                        "name": "systemRoleId",
+                        "in": "path",
+                        "description": "System Role ID to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UserRoleDeleteRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/project/{projectUrl}": {
             "get": {
                 "tags": [
@@ -184,7 +326,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/ProjectRequest"
+                                "$ref": "#/components/schemas/UpdateProjectRequest"
                             }
                         }
                     },
@@ -389,16 +531,69 @@
                 }
             }
         },
-        "/api/v1/project/{projectUrl}/recover": {
+        "/api/v1/project/{projectUrl}/role/{projectRoleId}": {
             "put": {
                 "tags": [
                     "Project"
                 ],
-                "summary": "Recover a project",
-                "operationId": "recoverProject",
+                "summary": "Modify a project role",
+                "operationId": "modifyProjectRole",
                 "parameters": [
                     {
                         "name": "projectUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "projectRoleId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "roleId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Delete a project role",
+                "operationId": "deleteProjectRole",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "projectRoleId",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -471,6 +666,53 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "head": {
+                "tags": [
+                    "Model"
+                ],
+                "summary": "head for swmp info ",
+                "description": "head for swmp info",
+                "operationId": "headModel",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "modelUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
                                 }
                             }
                         }
@@ -758,6 +1000,53 @@
                         }
                     }
                 }
+            },
+            "head": {
+                "tags": [
+                    "Dataset"
+                ],
+                "summary": "head for swds info ",
+                "description": "head for swds info",
+                "operationId": "headDataset",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/tag": {
@@ -850,6 +1139,37 @@
                         "description": "ok",
                         "content": {
                             "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectId}/recover": {
+            "put": {
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Recover a project",
+                "operationId": "recoverProject",
+                "parameters": [
+                    {
+                        "name": "projectId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -978,17 +1298,37 @@
                 }
             }
         },
-        "/api/v1/report": {
+        "/api/v1/role": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "List system role of users",
+                "operationId": "listSystemRoles",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageListSystemRoleVO"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "tags": [
-                    "report-controller"
+                    "User"
                 ],
-                "operationId": "report",
+                "summary": "Add user role of system",
+                "operationId": "addUserSystemRole",
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/ReportRequest"
+                                "$ref": "#/components/schemas/UserRoleAddRequest"
                             }
                         }
                     },
@@ -996,11 +1336,11 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "ok",
                         "content": {
                             "*/*": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageReportResponse"
+                                    "$ref": "#/components/schemas/ResponseMessageString"
                                 }
                             }
                         }
@@ -1019,33 +1359,6 @@
                     {
                         "name": "projectName",
                         "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "isDeleted",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "boolean",
-                            "default": false
-                        }
-                    },
-                    {
-                        "name": "ownerId",
-                        "in": "query",
-                        "description": "Id of the project owner",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "ownerName",
-                        "in": "query",
-                        "description": "Name of the project owner",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -1107,13 +1420,13 @@
                 "tags": [
                     "Project"
                 ],
-                "summary": "Create a new project",
+                "summary": "Create or Recover a new project",
                 "operationId": "createProject",
                 "requestBody": {
                     "content": {
                         "application/json": {
                             "schema": {
-                                "$ref": "#/components/schemas/ProjectRequest"
+                                "$ref": "#/components/schemas/CreateProjectRequest"
                             }
                         }
                     },
@@ -1185,6 +1498,159 @@
                 }
             }
         },
+        "/api/v1/project/{projectUrl}/runtime/{runtimeName}/version/{versionName}/file": {
+            "post": {
+                "tags": [
+                    "SWRuntime"
+                ],
+                "summary": "Create a new runtime version",
+                "description": "Create a new version of the runtime. The data resources can be selected by uploading the file package or entering the server path.",
+                "operationId": "upload",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "runtimeName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "uploadRequest",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ClientRuntimeRequest"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "description": "file detail",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/role": {
+            "get": {
+                "tags": [
+                    "Project"
+                ],
+                "summary": "List project roles",
+                "operationId": "listProjectRole",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageListProjectRoleVO"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Grant project role to a user",
+                "operationId": "addProjectRole",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "roleId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/project/{projectUrl}/model/{modelUrl}/revert": {
             "post": {
                 "tags": [
@@ -1228,6 +1694,83 @@
                         "description": "ok",
                         "content": {
                             "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/model/{modelName}/version/{versionName}/file": {
+            "post": {
+                "tags": [
+                    "Model"
+                ],
+                "summary": "Create a new swmp version",
+                "description": "Create a new version of the swmp. The data resources can be selected by uploading the file package or entering the server path.",
+                "operationId": "upload_1",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "modelName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "uploadRequest",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/ClientSWMPRequest"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "description": "file detail",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ResponseMessageString"
                                 }
@@ -1556,213 +2099,7 @@
                 }
             }
         },
-        "/api/v1/project/runtime/push": {
-            "post": {
-                "tags": [
-                    "SWRuntime"
-                ],
-                "summary": "Create a new runtime version",
-                "description": "Create a new version of the runtime. The data resources can be selected by uploading the file package or entering the server path.",
-                "operationId": "upload",
-                "parameters": [
-                    {
-                        "name": "uploadRequest",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/ClientRuntimeRequest"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "file"
-                                ],
-                                "type": "object",
-                                "properties": {
-                                    "file": {
-                                        "type": "string",
-                                        "description": "file detail",
-                                        "format": "binary"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageString"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/project/model": {
-            "get": {
-                "tags": [
-                    "Model"
-                ],
-                "summary": "Pull SWMP binary ",
-                "description": "Pull SWMP binary",
-                "operationId": "pullModel",
-                "parameters": [
-                    {
-                        "name": "pullRequest",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/ClientSWMPRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok"
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Model"
-                ],
-                "summary": "Create a new swmp version",
-                "description": "Create a new version of the swmp. The data resources can be selected by uploading the file package or entering the server path.",
-                "operationId": "uploadModel",
-                "parameters": [
-                    {
-                        "name": "uploadRequest",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/ClientSWMPRequest"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "file"
-                                ],
-                                "type": "object",
-                                "properties": {
-                                    "file": {
-                                        "type": "string",
-                                        "description": "file detail",
-                                        "format": "binary"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageString"
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "head": {
-                "tags": [
-                    "Model"
-                ],
-                "summary": "head for swmp info ",
-                "description": "head for swmp info",
-                "operationId": "headModel",
-                "parameters": [
-                    {
-                        "name": "queryRequest",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/ClientSWMPRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/project/model/push": {
-            "post": {
-                "tags": [
-                    "Model"
-                ],
-                "summary": "Create a new swmp version",
-                "description": "Create a new version of the swmp. The data resources can be selected by uploading the file package or entering the server path.",
-                "operationId": "upload_1",
-                "parameters": [
-                    {
-                        "name": "uploadRequest",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/ClientSWMPRequest"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "required": [
-                                    "file"
-                                ],
-                                "type": "object",
-                                "properties": {
-                                    "file": {
-                                        "type": "string",
-                                        "description": "file detail",
-                                        "format": "binary"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageString"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/project/dataset/push": {
+        "/api/v1/project/{projectUrl}/dataset/{datasetName}/version/{versionName}/file": {
             "post": {
                 "tags": [
                     "Dataset"
@@ -1775,6 +2112,39 @@
                         "name": "X-SW-UPLOAD-ID",
                         "in": "header",
                         "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-SW-UPLOAD-DATA-URI",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionName",
+                        "in": "path",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -1818,7 +2188,97 @@
                 }
             }
         },
-        "/api/v1/project/runtime": {
+        "/api/v1/datastore/updateTable": {
+            "post": {
+                "tags": [
+                    "data-store-controller"
+                ],
+                "operationId": "updateTable",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateTableRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageString"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/datastore/scanTable": {
+            "post": {
+                "tags": [
+                    "data-store-controller"
+                ],
+                "operationId": "scanTable",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ScanTableRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageRecordListVO"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/datastore/queryTable": {
+            "post": {
+                "tags": [
+                    "data-store-controller"
+                ],
+                "operationId": "queryTable",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QueryTableRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageRecordListVO"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}": {
             "head": {
                 "tags": [
                     "SWRuntime"
@@ -1828,11 +2288,28 @@
                 "operationId": "headRuntime",
                 "parameters": [
                     {
-                        "name": "queryRequest",
-                        "in": "query",
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/ClientRuntimeRequest"
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "runtimeUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 ],
@@ -1842,39 +2319,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/project/dataset": {
-            "head": {
-                "tags": [
-                    "Dataset"
-                ],
-                "summary": "head for swds info ",
-                "description": "head for swds info",
-                "operationId": "headDataset",
-                "parameters": [
-                    {
-                        "name": "uploadRequest",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/UploadRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
+                                    "type": "object"
                                 }
                             }
                         }
@@ -1914,6 +2359,40 @@
                 }
             }
         },
+        "/api/v1/user/token/{userId}": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get arbitrary user token",
+                "description": "Get token of any user for third party system integration, only super admin is allowed to do this",
+                "operationId": "userToken",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "description": "account id of a user",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/current": {
             "get": {
                 "tags": [
@@ -1928,6 +2407,37 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/UserVO"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/current/role": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get the current user roles.",
+                "operationId": "getCurrentUserRoles",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageListUserRoleVO"
                                 }
                             }
                         }
@@ -1999,6 +2509,27 @@
                 }
             }
         },
+        "/api/v1/system/resourcePool": {
+            "get": {
+                "tags": [
+                    "System"
+                ],
+                "summary": "Get the list of resource pool",
+                "operationId": "listResourcePools",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/system/agent": {
             "get": {
                 "tags": [
@@ -2051,36 +2582,6 @@
                         }
                     }
                 }
-            },
-            "delete": {
-                "tags": [
-                    "System"
-                ],
-                "summary": "remove offline agent",
-                "operationId": "deleteAgent",
-                "parameters": [
-                    {
-                        "name": "serialNumber",
-                        "in": "query",
-                        "description": "the serialNumber of the agent to be deleted",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
             }
         },
         "/api/v1/runtime/device": {
@@ -2097,6 +2598,27 @@
                             "application/json": {
                                 "schema": {
                                     "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/role/enums": {
+            "get": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "List role enums",
+                "operationId": "listRoles",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ResponseMessageListRoleVO"
                                 }
                             }
                         }
@@ -2281,7 +2803,7 @@
                         }
                     },
                     {
-                        "name": "vName",
+                        "name": "name",
                         "in": "query",
                         "description": "Runtime version name prefix",
                         "required": false,
@@ -2290,7 +2812,7 @@
                         }
                     },
                     {
-                        "name": "vTag",
+                        "name": "tag",
                         "in": "query",
                         "description": "Runtime version tag",
                         "required": false,
@@ -2331,6 +2853,48 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/file": {
+            "get": {
+                "tags": [
+                    "SWRuntime"
+                ],
+                "summary": "Pull file of a runtime version",
+                "description": "Pull file of a runtime version. ",
+                "operationId": "pull",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "description": "Project url",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "runtimeUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok"
                     }
                 }
             }
@@ -2572,6 +3136,48 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/api/v1/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/file": {
+            "get": {
+                "tags": [
+                    "Model"
+                ],
+                "summary": "Pull file of a model version",
+                "description": "Create a new version of the swmp. ",
+                "operationId": "pull_1",
+                "parameters": [
+                    {
+                        "name": "projectUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "modelUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ok"
                     }
                 }
             }
@@ -2985,7 +3591,7 @@
                         }
                     },
                     {
-                        "name": "vName",
+                        "name": "name",
                         "in": "query",
                         "description": "Dataset version name prefix",
                         "required": false,
@@ -2994,7 +3600,7 @@
                         }
                     },
                     {
-                        "name": "vTag",
+                        "name": "tag",
                         "in": "query",
                         "description": "Dataset version tag",
                         "required": false,
@@ -3039,21 +3645,55 @@
                 }
             }
         },
-        "/api/v1/project/runtime/pull": {
+        "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/link": {
             "get": {
                 "tags": [
-                    "SWRuntime"
+                    "Dataset"
                 ],
-                "summary": "Create a new runtime version",
-                "description": "Create a new version of the runtime. The data resources can be selected by uploading the file package or entering the server path.",
-                "operationId": "pull",
+                "summary": "Pull SWDS uri file contents",
+                "description": "Pull SWDS uri file contents ",
+                "operationId": "pullLinkContent",
                 "parameters": [
                     {
-                        "name": "pullRequest",
-                        "in": "query",
+                        "name": "projectUrl",
+                        "in": "path",
                         "required": true,
                         "schema": {
-                            "$ref": "#/components/schemas/ClientRuntimeRequest"
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "datasetUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "versionUrl",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "uri",
+                        "in": "query",
+                        "description": "uri of the link",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "authName",
+                        "in": "query",
+                        "description": "auth name the link used",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 ],
@@ -3064,116 +3704,7 @@
                 }
             }
         },
-        "/api/v1/project/runtime/list": {
-            "get": {
-                "tags": [
-                    "SWRuntime"
-                ],
-                "summary": "List Runtime versions info",
-                "description": "List Runtime versions info. ",
-                "operationId": "listRuntimeInfo",
-                "parameters": [
-                    {
-                        "name": "project",
-                        "in": "query",
-                        "description": "the project name",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "name",
-                        "in": "query",
-                        "description": "the name of runtime",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "*/*": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListRuntimeInfoVO"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/project/model/pull": {
-            "get": {
-                "tags": [
-                    "Model"
-                ],
-                "summary": "Create a new swmp version",
-                "description": "Create a new version of the swmp. The data resources can be selected by uploading the file package or entering the server path.",
-                "operationId": "pull_1",
-                "parameters": [
-                    {
-                        "name": "pullRequest",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/components/schemas/ClientSWMPRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok"
-                    }
-                }
-            }
-        },
-        "/api/v1/project/model/list": {
-            "get": {
-                "tags": [
-                    "Model"
-                ],
-                "summary": "List SWMP versions",
-                "description": "List SWMP versions. ",
-                "operationId": "listModel_1",
-                "parameters": [
-                    {
-                        "name": "project",
-                        "in": "query",
-                        "description": "the project name",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "name",
-                        "in": "query",
-                        "description": "the name of SWMP",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListSWModelPackageInfoVO"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/project/dataset/pull": {
+        "/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/file": {
             "get": {
                 "tags": [
                     "Dataset"
@@ -3183,27 +3714,24 @@
                 "operationId": "pullDS",
                 "parameters": [
                     {
-                        "name": "project",
-                        "in": "query",
-                        "description": "the name of the project attempt to pull",
+                        "name": "projectUrl",
+                        "in": "path",
                         "required": true,
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "name",
-                        "in": "query",
-                        "description": "the name of the SWDS attempt to pull",
+                        "name": "datasetUrl",
+                        "in": "path",
                         "required": true,
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "version",
-                        "in": "query",
-                        "description": "the version of the SWDS attempt to pull",
+                        "name": "versionUrl",
+                        "in": "path",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -3221,60 +3749,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/octet-stream": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "string",
-                                        "format": "byte"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/project/dataset/list": {
-            "get": {
-                "tags": [
-                    "Dataset"
-                ],
-                "summary": "List SWDS versions",
-                "description": "List SWDS versions. ",
-                "operationId": "listDS",
-                "parameters": [
-                    {
-                        "name": "project",
-                        "in": "query",
-                        "description": "the project name",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "name",
-                        "in": "query",
-                        "description": "the name of SWDS",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ResponseMessageListSWDatasetInfoVO"
-                                }
-                            }
-                        }
+                        "description": "ok"
                     }
                 }
             }
@@ -3384,25 +3859,48 @@
             },
             "UserUpdatePasswordRequest": {
                 "required": [
-                    "userPwd"
+                    "currentUserPwd",
+                    "newPwd"
                 ],
                 "type": "object",
                 "properties": {
-                    "originPwd": {
+                    "currentUserPwd": {
                         "type": "string"
                     },
-                    "userPwd": {
+                    "newPwd": {
                         "type": "string"
                     }
                 }
             },
-            "ProjectRequest": {
+            "UserRoleUpdateRequest": {
                 "required": [
-                    "projectName"
+                    "currentUserPwd",
+                    "roleId"
                 ],
                 "type": "object",
                 "properties": {
+                    "currentUserPwd": {
+                        "type": "string"
+                    },
+                    "roleId": {
+                        "type": "string"
+                    }
+                }
+            },
+            "UpdateProjectRequest": {
+                "type": "object",
+                "properties": {
                     "projectName": {
+                        "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
+                        "type": "string"
+                    },
+                    "ownerId": {
+                        "type": "string"
+                    },
+                    "privacy": {
+                        "type": "string"
+                    },
+                    "description": {
                         "type": "string"
                     }
                 }
@@ -3468,6 +3966,7 @@
                 "type": "object",
                 "properties": {
                     "userName": {
+                        "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,32}$",
                         "type": "string"
                     },
                     "userPwd": {
@@ -3475,302 +3974,57 @@
                     }
                 }
             },
-            "Device": {
+            "UserCheckPasswordRequest": {
+                "required": [
+                    "currentUserPwd"
+                ],
                 "type": "object",
                 "properties": {
-                    "id": {
-                        "type": "string"
-                    },
-                    "clazz": {
-                        "type": "string",
-                        "enum": [
-                            "CPU",
-                            "GPU",
-                            "UNKNOWN"
-                        ]
-                    },
-                    "type": {
-                        "type": "string"
-                    },
-                    "driver": {
-                        "type": "string"
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "idle",
-                            "busy"
-                        ]
-                    }
-                }
-            },
-            "Node": {
-                "type": "object",
-                "properties": {
-                    "agentVersion": {
-                        "type": "string"
-                    },
-                    "serialNumber": {
-                        "type": "string"
-                    },
-                    "ipAddr": {
-                        "type": "string"
-                    },
-                    "memorySizeGB": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
-                    "devices": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/Device"
-                        }
-                    }
-                }
-            },
-            "ReportRequest": {
-                "type": "object",
-                "properties": {
-                    "nodeInfo": {
-                        "$ref": "#/components/schemas/Node"
-                    },
-                    "tasks": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/TaskReport"
-                        }
-                    }
-                }
-            },
-            "TaskLog": {
-                "type": "object",
-                "properties": {
-                    "readerId": {
-                        "type": "string"
-                    },
-                    "log": {
+                    "currentUserPwd": {
                         "type": "string"
                     }
                 }
             },
-            "TaskReport": {
+            "UserRoleAddRequest": {
+                "required": [
+                    "currentUserPwd",
+                    "roleId",
+                    "userId"
+                ],
                 "type": "object",
                 "properties": {
-                    "id": {
-                        "type": "integer",
-                        "format": "int64"
+                    "currentUserPwd": {
+                        "type": "string"
                     },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "PREPARING",
-                            "RUNNING",
-                            "SUCCESS",
-                            "CANCELING",
-                            "CANCELED",
-                            "FAIL"
-                        ]
+                    "userId": {
+                        "type": "string"
                     },
-                    "taskType": {
-                        "type": "string",
-                        "enum": [
-                            "UNKNOWN",
-                            "PPL",
-                            "CMP"
-                        ]
-                    },
-                    "readerLogs": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/TaskLog"
-                        }
-                    }
-                }
-            },
-            "LogReader": {
-                "type": "object",
-                "properties": {
-                    "taskId": {
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    "readerId": {
+                    "roleId": {
                         "type": "string"
                     }
                 }
             },
-            "ReportResponse": {
+            "CreateProjectRequest": {
+                "required": [
+                    "description",
+                    "ownerId",
+                    "privacy",
+                    "projectName"
+                ],
                 "type": "object",
                 "properties": {
-                    "taskIdsToCancel": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer",
-                            "format": "int64"
-                        }
-                    },
-                    "tasksToRun": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/TaskTrigger"
-                        }
-                    },
-                    "logReaders": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/LogReader"
-                        }
-                    }
-                }
-            },
-            "ResponseMessageReportResponse": {
-                "type": "object",
-                "properties": {
-                    "code": {
+                    "projectName": {
+                        "pattern": "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$",
                         "type": "string"
                     },
-                    "message": {
+                    "ownerId": {
                         "type": "string"
                     },
-                    "data": {
-                        "$ref": "#/components/schemas/ReportResponse"
-                    }
-                }
-            },
-            "ResultPath": {
-                "type": "object",
-                "properties": {
-                    "root": {
+                    "privacy": {
                         "type": "string"
                     },
-                    "resultDir": {
+                    "description": {
                         "type": "string"
-                    },
-                    "logDir": {
-                        "type": "string"
-                    }
-                }
-            },
-            "SWDSBlockVO": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    "dsName": {
-                        "type": "string"
-                    },
-                    "dsVersion": {
-                        "type": "string"
-                    },
-                    "batch": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
-                    "label": {
-                        "$ref": "#/components/schemas/SWDSDataLocation"
-                    },
-                    "data": {
-                        "$ref": "#/components/schemas/SWDSDataLocation"
-                    }
-                }
-            },
-            "SWDSDataLocation": {
-                "type": "object",
-                "properties": {
-                    "offset": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
-                    "size": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
-                    "file": {
-                        "type": "string"
-                    }
-                }
-            },
-            "SWModelPackage": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "version": {
-                        "type": "string"
-                    },
-                    "path": {
-                        "type": "string"
-                    }
-                }
-            },
-            "SWRunTime": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string"
-                    },
-                    "version": {
-                        "type": "string"
-                    },
-                    "path": {
-                        "type": "string"
-                    }
-                }
-            },
-            "TaskTrigger": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    "taskType": {
-                        "type": "string",
-                        "enum": [
-                            "UNKNOWN",
-                            "PPL",
-                            "CMP"
-                        ]
-                    },
-                    "cmpInputFilePaths": {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "swrt": {
-                        "$ref": "#/components/schemas/SWRunTime"
-                    },
-                    "swModelPackage": {
-                        "$ref": "#/components/schemas/SWModelPackage"
-                    },
-                    "swdsBlocks": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/SWDSBlockVO"
-                        }
-                    },
-                    "deviceAmount": {
-                        "type": "integer",
-                        "format": "int32"
-                    },
-                    "deviceClass": {
-                        "type": "string",
-                        "enum": [
-                            "CPU",
-                            "GPU",
-                            "UNKNOWN"
-                        ]
-                    },
-                    "resultPath": {
-                        "$ref": "#/components/schemas/ResultPath"
                     }
                 }
             },
@@ -3788,6 +4042,23 @@
                     }
                 }
             },
+            "ClientRuntimeRequest": {
+                "type": "object",
+                "properties": {
+                    "runtime": {
+                        "type": "string"
+                    },
+                    "project": {
+                        "type": "string"
+                    },
+                    "force": {
+                        "type": "string"
+                    },
+                    "manifest": {
+                        "type": "string"
+                    }
+                }
+            },
             "RevertSWMPVersionRequest": {
                 "type": "object",
                 "properties": {
@@ -3798,6 +4069,23 @@
                         "type": "string"
                     },
                     "versionUrl": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ClientSWMPRequest": {
+                "type": "object",
+                "properties": {
+                    "swmp": {
+                        "type": "string"
+                    },
+                    "project": {
+                        "type": "string"
+                    },
+                    "force": {
+                        "type": "string"
+                    },
+                    "manifest": {
                         "type": "string"
                     }
                 }
@@ -3829,6 +4117,9 @@
                         "format": "int32"
                     },
                     "comment": {
+                        "type": "string"
+                    },
+                    "resourcePool": {
                         "type": "string"
                     }
                 }
@@ -3862,44 +4153,9 @@
                     }
                 }
             },
-            "ClientRuntimeRequest": {
-                "type": "object",
-                "properties": {
-                    "runtime": {
-                        "type": "string"
-                    },
-                    "project": {
-                        "type": "string"
-                    },
-                    "force": {
-                        "type": "string"
-                    },
-                    "manifest": {
-                        "type": "string"
-                    }
-                }
-            },
-            "ClientSWMPRequest": {
-                "type": "object",
-                "properties": {
-                    "swmp": {
-                        "type": "string"
-                    },
-                    "project": {
-                        "type": "string"
-                    },
-                    "force": {
-                        "type": "string"
-                    },
-                    "manifest": {
-                        "type": "string"
-                    }
-                }
-            },
             "UploadRequest": {
                 "required": [
-                    "phase",
-                    "swds"
+                    "phase"
                 ],
                 "type": "object",
                 "properties": {
@@ -3941,6 +4197,273 @@
                 "type": "object",
                 "properties": {
                     "upload_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ColumnSchemaDesc": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    }
+                }
+            },
+            "RecordDesc": {
+                "required": [
+                    "values"
+                ],
+                "type": "object",
+                "properties": {
+                    "values": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RecordValueDesc"
+                        }
+                    }
+                }
+            },
+            "RecordValueDesc": {
+                "required": [
+                    "key"
+                ],
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "value": {
+                        "type": "string"
+                    }
+                }
+            },
+            "TableSchemaDesc": {
+                "type": "object",
+                "properties": {
+                    "keyColumn": {
+                        "type": "string"
+                    },
+                    "columnSchemaList": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ColumnSchemaDesc"
+                        }
+                    }
+                }
+            },
+            "UpdateTableRequest": {
+                "type": "object",
+                "properties": {
+                    "tableName": {
+                        "type": "string"
+                    },
+                    "tableSchemaDesc": {
+                        "$ref": "#/components/schemas/TableSchemaDesc"
+                    },
+                    "records": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RecordDesc"
+                        }
+                    }
+                }
+            },
+            "ColumnDesc": {
+                "type": "object",
+                "properties": {
+                    "columnName": {
+                        "type": "string"
+                    },
+                    "alias": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ScanTableRequest": {
+                "type": "object",
+                "properties": {
+                    "tables": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TableDesc"
+                        }
+                    },
+                    "start": {
+                        "type": "string"
+                    },
+                    "startInclusive": {
+                        "type": "boolean"
+                    },
+                    "end": {
+                        "type": "string"
+                    },
+                    "endInclusive": {
+                        "type": "boolean"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "keepNone": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "TableDesc": {
+                "type": "object",
+                "properties": {
+                    "tableName": {
+                        "type": "string"
+                    },
+                    "columns": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ColumnDesc"
+                        }
+                    },
+                    "keepNone": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "RecordListVO": {
+                "type": "object",
+                "properties": {
+                    "columnTypes": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string",
+                            "enum": [
+                                "UNKNOWN",
+                                "BOOL",
+                                "INT8",
+                                "INT16",
+                                "INT32",
+                                "INT64",
+                                "FLOAT32",
+                                "FLOAT64",
+                                "STRING",
+                                "BYTES"
+                            ]
+                        }
+                    },
+                    "records": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "lastKey": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ResponseMessageRecordListVO": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/RecordListVO"
+                    }
+                }
+            },
+            "OrderByDesc": {
+                "type": "object",
+                "properties": {
+                    "columnName": {
+                        "type": "string"
+                    },
+                    "descending": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "QueryTableRequest": {
+                "type": "object",
+                "properties": {
+                    "tableName": {
+                        "type": "string"
+                    },
+                    "columns": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ColumnDesc"
+                        }
+                    },
+                    "orderBy": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrderByDesc"
+                        }
+                    },
+                    "descending": {
+                        "type": "boolean"
+                    },
+                    "filter": {
+                        "$ref": "#/components/schemas/TableQueryFilterDesc"
+                    },
+                    "start": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "TableQueryFilterDesc": {
+                "required": [
+                    "operator"
+                ],
+                "type": "object",
+                "properties": {
+                    "operator": {
+                        "type": "string"
+                    },
+                    "operands": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/TableQueryOperandDesc"
+                        }
+                    }
+                }
+            },
+            "TableQueryOperandDesc": {
+                "type": "object",
+                "properties": {
+                    "filter": {
+                        "$ref": "#/components/schemas/TableQueryFilterDesc"
+                    },
+                    "columnName": {
+                        "type": "string"
+                    },
+                    "boolValue": {
+                        "type": "boolean"
+                    },
+                    "intValue": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "floatValue": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "stringValue": {
+                        "type": "string"
+                    },
+                    "bytesValue": {
                         "type": "string"
                     }
                 }
@@ -4023,22 +4546,6 @@
                     }
                 }
             },
-            "RoleVO": {
-                "title": "User",
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "nameEn": {
-                        "type": "string"
-                    }
-                },
-                "description": "User object"
-            },
             "UserVO": {
                 "title": "User",
                 "type": "object",
@@ -4053,14 +4560,113 @@
                         "type": "integer",
                         "format": "int64"
                     },
-                    "role": {
-                        "$ref": "#/components/schemas/RoleVO"
-                    },
                     "isEnabled": {
                         "type": "boolean"
                     }
                 },
                 "description": "User object"
+            },
+            "ProjectVO": {
+                "title": "Project",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "privacy": {
+                        "type": "string"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "owner": {
+                        "$ref": "#/components/schemas/UserVO"
+                    },
+                    "statistics": {
+                        "$ref": "#/components/schemas/StatisticsVO"
+                    }
+                },
+                "description": "Project object"
+            },
+            "ResponseMessageListUserRoleVO": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/UserRoleVO"
+                        }
+                    }
+                }
+            },
+            "RoleVO": {
+                "title": "User",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                },
+                "description": "User object"
+            },
+            "StatisticsVO": {
+                "type": "object",
+                "properties": {
+                    "modelCounts": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "datasetCounts": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "memberCounts": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "evaluationCounts": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "UserRoleVO": {
+                "title": "Role",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "project": {
+                        "$ref": "#/components/schemas/ProjectVO"
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/RoleVO"
+                    }
+                },
+                "description": "User Role object"
             },
             "SystemVersionVO": {
                 "title": "Version",
@@ -4093,28 +4699,55 @@
                 },
                 "description": "Upgrade progress object"
             },
-            "ProjectVO": {
-                "title": "Project",
+            "ResponseMessageListSystemRoleVO": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SystemRoleVO"
+                        }
+                    }
+                }
+            },
+            "SystemRoleVO": {
+                "title": "Role",
                 "type": "object",
                 "properties": {
                     "id": {
                         "type": "string"
                     },
-                    "name": {
-                        "type": "string"
-                    },
-                    "createdTime": {
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    "owner": {
+                    "user": {
                         "$ref": "#/components/schemas/UserVO"
                     },
-                    "isDefault": {
-                        "type": "boolean"
+                    "role": {
+                        "$ref": "#/components/schemas/RoleVO"
                     }
                 },
-                "description": "Project object"
+                "description": "System Role object"
+            },
+            "ResponseMessageListRoleVO": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RoleVO"
+                        }
+                    }
+                }
             },
             "ResponseMessageRuntimeInfoVO": {
                 "type": "object",
@@ -4299,6 +4932,42 @@
                 },
                 "description": "Runtime version object"
             },
+            "ProjectRoleVO": {
+                "title": "Role",
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/UserVO"
+                    },
+                    "project": {
+                        "$ref": "#/components/schemas/ProjectVO"
+                    },
+                    "role": {
+                        "$ref": "#/components/schemas/RoleVO"
+                    }
+                },
+                "description": "Project Role object"
+            },
+            "ResponseMessageListProjectRoleVO": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProjectRoleVO"
+                        }
+                    }
+                }
+            },
             "SWModelPackageInfoVO": {
                 "title": "ModelInfo",
                 "type": "object",
@@ -4393,6 +5062,9 @@
                         ]
                     },
                     "comment": {
+                        "type": "string"
+                    },
+                    "resourcePool": {
                         "type": "string"
                     },
                     "duration": {
@@ -4597,7 +5269,10 @@
                 "title": "Evaluation",
                 "type": "object",
                 "properties": {
-                    "jobUuid": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "uuid": {
                         "type": "string"
                     },
                     "projectId": {
@@ -4606,7 +5281,10 @@
                     "projectName": {
                         "type": "string"
                     },
-                    "model": {
+                    "modelName": {
+                        "type": "string"
+                    },
+                    "modelVersion": {
                         "type": "string"
                     },
                     "datasets": {
@@ -4615,16 +5293,27 @@
                     "runtime": {
                         "type": "string"
                     },
-                    "duration": {
-                        "type": "integer",
-                        "format": "int64"
-                    },
                     "device": {
                         "type": "string"
                     },
                     "deviceAmount": {
                         "type": "integer",
                         "format": "int32"
+                    },
+                    "createdTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "stopTime": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "owner": {
+                        "type": "string"
+                    },
+                    "duration": {
+                        "type": "integer",
+                        "format": "int64"
                     },
                     "attributes": {
                         "type": "array",
@@ -4696,10 +5385,41 @@
                     }
                 }
             },
+            "FileStorageEnv": {
+                "type": "object",
+                "properties": {
+                    "envs": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    },
+                    "envType": {
+                        "type": "string",
+                        "enum": [
+                            "S3",
+                            "HDFS",
+                            "NFS",
+                            "LOCAL_FS",
+                            "REST_RESOURCE",
+                            "FTP"
+                        ]
+                    }
+                }
+            },
             "SWDatasetInfoVO": {
                 "title": "DatasetInfo",
                 "type": "object",
                 "properties": {
+                    "indexTable": {
+                        "type": "string"
+                    },
+                    "fileStorageEnvs": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "$ref": "#/components/schemas/FileStorageEnv"
+                        }
+                    },
                     "id": {
                         "type": "string"
                     },
@@ -4728,54 +5448,14 @@
                 },
                 "description": "SWDataset information object"
             },
-            "ResponseMessageListRuntimeInfoVO": {
+            "UserRoleDeleteRequest": {
+                "required": [
+                    "currentUserPwd"
+                ],
                 "type": "object",
                 "properties": {
-                    "code": {
+                    "currentUserPwd": {
                         "type": "string"
-                    },
-                    "message": {
-                        "type": "string"
-                    },
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/RuntimeInfoVO"
-                        }
-                    }
-                }
-            },
-            "ResponseMessageListSWModelPackageInfoVO": {
-                "type": "object",
-                "properties": {
-                    "code": {
-                        "type": "string"
-                    },
-                    "message": {
-                        "type": "string"
-                    },
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/SWModelPackageInfoVO"
-                        }
-                    }
-                }
-            },
-            "ResponseMessageListSWDatasetInfoVO": {
-                "type": "object",
-                "properties": {
-                    "code": {
-                        "type": "string"
-                    },
-                    "message": {
-                        "type": "string"
-                    },
-                    "data": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/SWDatasetInfoVO"
-                        }
                     }
                 }
             }
