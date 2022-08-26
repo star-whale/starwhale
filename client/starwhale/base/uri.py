@@ -1,3 +1,4 @@
+import os
 import typing as t
 from pathlib import Path
 from urllib.parse import urlparse
@@ -5,6 +6,7 @@ from urllib.parse import urlparse
 from starwhale.utils import validate_obj_name
 from starwhale.consts import UserRoleType, SW_API_VERSION, VERSION_PREFIX_CNT
 from starwhale.base.type import URIType
+from starwhale.consts.env import SWEnv
 from starwhale.utils.error import URIFormatError
 from starwhale.utils.config import SWCliConfigMixed
 
@@ -218,7 +220,9 @@ class URI:
 
     @property
     def sw_token(self) -> str:
-        return self.sw_instance_config.get("sw_token", "")
+        return self.sw_instance_config.get("sw_token", "") or os.environ.get(
+            SWEnv.instance_token, ""
+        )
 
     @property
     def sw_remote_addr(self) -> str:

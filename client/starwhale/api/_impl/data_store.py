@@ -864,7 +864,7 @@ class LocalDataStore:
 class RemoteDataStore:
     def __init__(self, instance_uri: str) -> None:
         self.instance_uri = instance_uri
-        self.token = os.getenv("SW_TOKEN")
+        self.token = os.getenv(SWEnv.instance_token)
         if self.token is None:
             raise RuntimeError("SW_TOKEN is not found in environment")
 
