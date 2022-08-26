@@ -153,14 +153,14 @@ public class SwdsUploader {
         String filename = file.getOriginalFilename();
         try (InputStream inputStream = file.getInputStream()){
             if(INDEX_FILE_NAME.equals(filename)){
-                try(CloseShieldInputStream csis = CloseShieldInputStream.wrap(inputStream)){
-                    indexWriter.writeToStore(swDatasetVersionWithMeta.getSwDatasetVersionEntity().getIndexTable(),csis);
+                try(InputStream anotherInputStream = file.getInputStream()){
+                    indexWriter.writeToStore(swDatasetVersionWithMeta.getSwDatasetVersionEntity().getIndexTable(),anotherInputStream);
                 }
             }
             if(AUTH_FILE_NAME.equals(filename)){
-                try(CloseShieldInputStream csis = CloseShieldInputStream.wrap(inputStream)){
+                try(InputStream anotherInputStream = file.getInputStream()){
                     swdsVersionMapper.updateStorageAuths(swDatasetVersionWithMeta.getSwDatasetVersionEntity()
-                        .getId(), new String(csis.readAllBytes()));
+                        .getId(), new String(anotherInputStream.readAllBytes()));
                 }
             }
             InputStream is = inputStream;
