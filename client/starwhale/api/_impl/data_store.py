@@ -936,7 +936,7 @@ class RemoteDataStore:
                 timeout=5.0,
             )
             resp.raise_for_status()
-            resp_json: Dict[str, Any] = resp.json()
+            resp_json: Dict[str, Any] = resp.json()["data"]
             records = resp_json.get("records", None)
             if records is None or len(records) == 0:
                 break
