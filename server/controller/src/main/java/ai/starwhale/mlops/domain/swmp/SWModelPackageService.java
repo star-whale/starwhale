@@ -347,19 +347,15 @@ public class SWModelPackageService {
             : storagePathCoordinator.generateSwmpPath(projectEntity.getProjectName(),uploadRequest.name(), uploadRequest.version());
         String jobContent = "";
         try(final InputStream inputStream = dsFile.getInputStream()){
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            inputStream.transferTo(baos);
-            InputStream is = new ByteArrayInputStream(baos.toByteArray());
+            InputStream is= inputStream;
             if(dsFile.getSize() >= Integer.MAX_VALUE){
                 // TODO can not use this large memory, TBD
                 is = new LargeFileInputStream(inputStream,dsFile.getSize());
             }
             // only extract the eval job file content
             jobContent = new String(
-                Objects.requireNonNull(TarFileUtil.getContentFromTarFile(is, "src", "eval_jobs.yaml")));
-
-            InputStream save = new ByteArrayInputStream(baos.toByteArray());
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),save);
+                Objects.requireNonNull(TarFileUtil.getContentFromTarFile(dsFile.getInputStream(), "src", "eval_jobs.yaml")));
+            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),is);
         } catch (IOException e) {
             log.error("upload swmp failed {}",uploadRequest.getSwmp(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),
