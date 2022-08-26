@@ -8,6 +8,18 @@ class TestRolePermission:
     def test_create_user(self, host, port):
         hu.create_tmp_user(host, port)
 
+    def test_get_user_token(self, host, port):
+        url = '{api}/user/token/{user}'
+        res = requests.get(url=url.format(api=hu.url(host, port),
+                                          user=hu.tmp_user_id()),
+                           headers=hu.header())
+        assert res.status_code == 200
+
+        res = requests.get(url=url.format(api=hu.url(host, port),
+                                          user=hu.tmp_user_id()),
+                           headers=hu.tmp_user_header())
+        assert res.status_code == 403
+
     def test_update_user_state(self, host, port):
         url = '{api}/user/{user}/state'
         res = requests.put(url=url.format(api=hu.url(host, port),
@@ -83,18 +95,6 @@ class TestRolePermission:
         assert res.status_code == 200
         assert response['data'][0]['project']['id'] == project_id
         assert response['data'][0]['role']['code'] == 'OWNER'
-
-    def test_check_current_user_password(self, host, port):
-        url = '{api}/user/current/pwd'
-        res = requests.post(url=url.format(api=hu.url(host, port)),
-                            json={'currentUserPwd': hu.tmp_user_password()},
-                            headers=hu.tmp_user_header())
-        assert res.status_code == 200
-
-        res = requests.post(url=url.format(api=hu.url(host, port)),
-                            json={'currentUserPwd': 'wrong_pwd'},
-                            headers=hu.tmp_user_header())
-        assert res.status_code == 403
 
     def test_destroy(self, host, port):
         hu.tmp_user_destroy(host, port)
