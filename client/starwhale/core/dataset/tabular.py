@@ -67,6 +67,9 @@ class TabularDatasetRow(ASDictMixin):
         # TODO: add data uri crc for versioning
         # TODO: support user custom annotations
 
+    def __eq__(self, o: object) -> bool:
+        return self.__dict__ == o.__dict__
+
     def _parse_label(self, label: t.Any) -> str:
         # TODO: add more label type-parse
         # TODO: support user-defined label type
