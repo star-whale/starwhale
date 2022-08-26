@@ -58,6 +58,9 @@ import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -344,16 +347,19 @@ public class SWModelPackageService {
             : storagePathCoordinator.generateSwmpPath(projectEntity.getProjectName(),uploadRequest.name(), uploadRequest.version());
         String jobContent = "";
         try(final InputStream inputStream = dsFile.getInputStream()){
-            InputStream is = inputStream;
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            inputStream.transferTo(baos);
+            InputStream is = new ByteArrayInputStream(baos.toByteArray());
             if(dsFile.getSize() >= Integer.MAX_VALUE){
+                // TODO can not use this large memory, TBD
                 is = new LargeFileInputStream(inputStream,dsFile.getSize());
             }
-            CloseShieldInputStream csis = CloseShieldInputStream.wrap(is);
-
             // only extract the eval job file content
             jobContent = new String(
-                Objects.requireNonNull(TarFileUtil.getContentFromTarFile(csis, "src", "eval_jobs.yaml")));
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),is);
+                Objects.requireNonNull(TarFileUtil.getContentFromTarFile(is, "src", "eval_jobs.yaml")));
+
+            InputStream save = new ByteArrayInputStream(baos.toByteArray());
+            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),save);
         } catch (IOException e) {
             log.error("upload swmp failed {}",uploadRequest.getSwmp(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),

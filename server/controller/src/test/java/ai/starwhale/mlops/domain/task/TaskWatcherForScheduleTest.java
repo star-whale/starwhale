@@ -46,7 +46,7 @@ public class TaskWatcherForScheduleTest {
         SWTaskScheduler taskScheduler = mock(
             SWTaskScheduler.class);
         TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
-            taskStatusMachine);
+            taskStatusMachine, 0L);
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
@@ -65,7 +65,7 @@ public class TaskWatcherForScheduleTest {
         SWTaskScheduler taskScheduler = mock(
             SWTaskScheduler.class);
         TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
-            taskStatusMachine);
+            taskStatusMachine, 0L);
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
@@ -86,7 +86,7 @@ public class TaskWatcherForScheduleTest {
         SWTaskScheduler taskScheduler = mock(
             SWTaskScheduler.class);
         TaskWatcherForSchedule taskWatcherForSchedule = new TaskWatcherForSchedule(taskScheduler,
-            taskStatusMachine);
+            taskStatusMachine, 0L);
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())

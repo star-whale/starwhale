@@ -44,6 +44,7 @@ import ai.starwhale.mlops.domain.swds.converter.SWDSVOConvertor;
 import ai.starwhale.mlops.domain.swds.converter.SWDSVersionConvertor;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.objectstore.DSFileGetter;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.user.UserService;
@@ -104,6 +105,8 @@ public class SWDatasetService {
 
     @Resource
     private StorageProperties storageProperties;
+
+    private DSFileGetter dsFileGetter;
 
     private BundleManager bundleManager() {
         return new BundleManager(idConvertor, projectManager, swdsManager, swdsManager, ValidSubject.SWDS);
@@ -274,7 +277,7 @@ public class SWDatasetService {
             .map(entity -> toSWDatasetInfoVO(ds, entity)).collect(Collectors.toList());
     }
 
-    public String query(String projectUrl, String datasetUrl, String versionUrl) {
+    public SWDatasetVersionEntity query(String projectUrl, String datasetUrl, String versionUrl) {
         Long projectId = projectManager.getProjectId(projectUrl);
         SWDatasetEntity entity = swdsMapper.findByName(datasetUrl, projectId);
         if(null == entity) {
@@ -284,6 +287,10 @@ public class SWDatasetService {
         if(null == versionEntity) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS), HttpStatus.NOT_FOUND);
         }
-        return versionEntity.getName();
+        return versionEntity;
+    }
+
+    public byte[] dataOf(Long datasetId,String uri,String authName){
+        return dsFileGetter.dataOf(datasetId,uri,authName);
     }
 }

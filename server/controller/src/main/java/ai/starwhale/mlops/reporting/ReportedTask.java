@@ -16,14 +16,8 @@
 
 package ai.starwhale.mlops.reporting;
 
-import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
-import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
-import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Map;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 
 /**
  * convert taskReport to

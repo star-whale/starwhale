@@ -32,6 +32,7 @@ import ai.starwhale.mlops.domain.swds.bo.SWDSQuery;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersion;
 import ai.starwhale.mlops.domain.swds.bo.SWDSVersionQuery;
 import ai.starwhale.mlops.domain.swds.SWDatasetService;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.upload.SwdsUploader;
 import ai.starwhale.mlops.exception.ApiOperationException;
 import ai.starwhale.mlops.exception.SWProcessException;
@@ -187,6 +188,25 @@ public class DatasetController implements DatasetApi{
     }
 
     @Override
+    public void pullLinkContent(String projectUrl, String datasetUrl, String versionUrl,
+        String uri,String authName, HttpServletResponse httpResponse) {
+        if(!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl) ){
+            throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
+                .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
+        }
+        SWDatasetVersionEntity datasetVersionEntity = swDatasetService.query(projectUrl, datasetUrl, versionUrl);
+        try {
+            ServletOutputStream outputStream = httpResponse.getOutputStream();
+            outputStream.write(swDatasetService.dataOf(datasetVersionEntity.getId(),uri,authName));
+            outputStream.flush();
+        } catch (IOException e) {
+            log.error("error write data to response",e);
+            throw new SWProcessException(ErrorType.NETWORK).tip("error write data to response");
+        }
+
+    }
+
+    @Override
     public ResponseEntity<ResponseMessage<String>> modifyDatasetVersionInfo(
         String projectUrl, String datasetUrl, String versionUrl, SWDSTagRequest swdsTagRequest) {
         Boolean res = swDatasetService.modifySWDSVersion(projectUrl, datasetUrl, versionUrl,
@@ -236,7 +256,13 @@ public class DatasetController implements DatasetApi{
     }
 
     @Override
-    public void headDataset(String projectUrl, String datasetUrl, String versionUrl) {
-        swDatasetService.query(projectUrl, datasetUrl, versionUrl);
+    public ResponseEntity<?> headDataset(String projectUrl, String datasetUrl, String versionUrl) {
+        try {
+            swDatasetService.query(projectUrl, datasetUrl, versionUrl);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.info("Head dataset result: NOT FOUND");
+            return ResponseEntity.notFound().build();
+        }
     }
 }

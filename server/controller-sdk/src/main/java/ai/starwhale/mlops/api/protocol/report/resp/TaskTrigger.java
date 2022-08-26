@@ -33,6 +33,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Deprecated
 public class TaskTrigger {
 
     /**

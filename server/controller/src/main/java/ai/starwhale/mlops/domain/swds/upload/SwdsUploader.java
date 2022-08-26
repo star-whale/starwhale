@@ -26,7 +26,7 @@ import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
-import ai.starwhale.mlops.domain.swds.datastore.DSRHelper;
+import ai.starwhale.mlops.domain.swds.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.swds.datastore.IndexWriter;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
@@ -95,18 +95,19 @@ public class SwdsUploader {
     final HotJobHolder jobHolder;
     final ProjectManager projectManager;
 
-    final DSRHelper dsrHelper;
+    final DataStoreTableNameHelper dataStoreTableNameHelper;
 
     final IndexWriter indexWriter;
 
     static final String INDEX_FILE_NAME="_meta.jsonl";
+    static final String AUTH_FILE_NAME="auth_env";
 
     public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
         SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,
         StorageAccessService storageAccessService, UserService userService,
         @Qualifier("yamlMapper") ObjectMapper yamlMapper,
         HotJobHolder jobHolder,
-        ProjectManager projectManager, DSRHelper dsrHelper,
+        ProjectManager projectManager, DataStoreTableNameHelper dataStoreTableNameHelper,
         IndexWriter indexWriter) {
         this.hotSwdsHolder = hotSwdsHolder;
         this.swdsMapper = swdsMapper;
@@ -117,7 +118,7 @@ public class SwdsUploader {
         this.yamlMapper = yamlMapper;
         this.jobHolder = jobHolder;
         this.projectManager = projectManager;
-        this.dsrHelper = dsrHelper;
+        this.dataStoreTableNameHelper = dataStoreTableNameHelper;
         this.indexWriter = indexWriter;
     }
 
@@ -152,8 +153,15 @@ public class SwdsUploader {
         String filename = file.getOriginalFilename();
         try (InputStream inputStream = file.getInputStream()){
             if(INDEX_FILE_NAME.equals(filename)){
-                CloseShieldInputStream csis = CloseShieldInputStream.wrap(inputStream);
-                indexWriter.writeToStore(swDatasetVersionWithMeta.getSwDatasetVersionEntity().getIndexTable(),csis);
+                try(CloseShieldInputStream csis = CloseShieldInputStream.wrap(inputStream)){
+                    indexWriter.writeToStore(swDatasetVersionWithMeta.getSwDatasetVersionEntity().getIndexTable(),csis);
+                }
+            }
+            if(AUTH_FILE_NAME.equals(filename)){
+                try(CloseShieldInputStream csis = CloseShieldInputStream.wrap(inputStream)){
+                    swdsVersionMapper.updateStorageAuths(swDatasetVersionWithMeta.getSwDatasetVersionEntity()
+                        .getId(), new String(csis.readAllBytes()));
+                }
             }
             InputStream is = inputStream;
             if(file.getSize() >= Integer.MAX_VALUE){
@@ -189,28 +197,6 @@ public class SwdsUploader {
         Map<String, String> uploadedFileBlake2bs = swdsVersionWithMeta.getVersionMeta()
             .getUploadedFileBlake2bs();
         return digest.equals(uploadedFileBlake2bs.get(filename));
-    }
-
-    private void digestCheckWithManifest(SWDSVersionWithMeta swdsVersionWithMeta, String filename,
-        String digest) {
-        VersionMeta versionMeta = swdsVersionWithMeta.getVersionMeta();
-        Map<String, String> signatures = versionMeta.getManifest().getSignature();
-        String fileSignatureRaw = signatures.get(filename);
-        if(null == fileSignatureRaw){
-            log.warn("unexpected file uploaded {}",filename);
-            return;
-        }
-        Matcher matcher = PATTERN_SIGNATURE.matcher(fileSignatureRaw);
-        if(matcher.matches()){
-            String fileSig = matcher.group(1);
-            if(!fileSig.equals(digest)){
-                log.error("signature matching failed for file {} expected {} actual {}",filename,fileSig,digest);
-                throw new SWValidationException(ValidSubject.SWDS).tip("signature validation with file failed: " + filename);
-            }
-        }else {
-            throw new SWValidationException(ValidSubject.SWDS).tip("signature pattern validation failed \\d+:blake2b:(.*)");
-        }
-
     }
 
     SWDSVersionWithMeta getSwdsVersion(String uploadId) {
@@ -307,7 +293,7 @@ public class SwdsUploader {
             .versionMeta(manifest.getRawYaml())
             .versionName(manifest.getVersion())
             .size(manifest.getDatasetSummary().getRows())
-            .indexTable(dsrHelper.tableNameOf(manifest.getName(),manifest.getVersion()))
+            .indexTable(dataStoreTableNameHelper.tableNameOfDataset(projectName,manifest.getName(),manifest.getVersion()))
             .filesUploaded(EMPTY_YAML)
             .build();
     }

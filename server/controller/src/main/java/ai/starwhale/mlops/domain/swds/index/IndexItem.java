@@ -56,6 +56,12 @@ public class IndexItem {
     @JsonProperty("data_origin")
     String dataOrigin;
 
+    @JsonProperty("object_store_type")
+    String object_store_type;
+
+    @JsonProperty("auth_name")
+    String auth_name;
+
     @JsonProperty("label")
     String label;
 

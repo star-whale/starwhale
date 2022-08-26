@@ -16,11 +16,15 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
+import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
+import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
+import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
@@ -92,7 +96,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             var job = task.getStep().getJob();
             var image = job.getJobRuntime().getImage();
             var label = this.resourcePoolConverter.toK8sLabel(job.getResourcePool());
-            this.deployTaskToK8s(k8sClient, image, taskConvertor.toTaskTrigger(task), label);
+            this.deployTaskToK8s(k8sClient, image, task, label);
         });
     }
 
@@ -114,14 +118,16 @@ public class K8sTaskScheduler implements SWTaskScheduler {
      * @param image
      * @param task
      */
-    private void deployTaskToK8s(K8sClient client, String image, TaskTrigger task, Map<String, String> nodeSelector) {
-        log.debug("deploying task to k8s {} {} {}", task.getId(), task.getResultPath(), task.getTaskType());
+    private void deployTaskToK8s(K8sClient client, String image, Task task, Map<String, String> nodeSelector) {
+        log.debug("deploying task to k8s {} {}", task.getId(),  task.getTaskType());
         Map<String, String> initContainerEnvs = new HashMap<>();
         List<String> downloads = new ArrayList<>();
-
+        Job swJob = task.getStep().getJob();
+        JobRuntime jobRuntime = swJob.getJobRuntime();
         String prefix = "s3://" + storageProperties.getS3Config().getBucket() + "/";
-        downloads.add(prefix + task.getSwModelPackage().getPath() + ";/opt/starwhale/swmp/");
-        downloads.add(prefix + task.getSwrt().getPath() + ";/opt/starwhale/swrt/");
+        downloads.add(prefix + swJob.getSwmp().getPath() + ";/opt/starwhale/swmp/");
+        downloads.add(prefix + SWRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
+            jobRuntime.getStoragePath()).build().getPath() + ";/opt/starwhale/swrt/");
         initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
         String input = ""; //generateConfigFile(task);
         initContainerEnvs.put("INPUT", input);
@@ -140,8 +146,9 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", task.getTaskRequest().getJobId());
         // oss env
-        Map<String, FileStorageEnv> stringFileStorageEnvMap = storageProperties.toFileStorageEnvs();
-        stringFileStorageEnvMap.values().forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs()));
+        List<SWDataSet> swDataSets = swJob.getSwDataSets();
+        swDataSets.forEach(ds -> ds.getFileStorageEnvs().values()
+            .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
 
         coreContainerEnvs.put(FileStorageEnv.ENV_KEY_PREFIX, storagePathCoordinator.getSwdsPathNamedFormatter());
 //        coreContainerEnvs.put("SW_S3_READ_TIMEOUT", );
@@ -155,14 +162,14 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             // cmd（all、single[step、taskIndex]）
             String cmd = "run";
             // TODO: use task's resource needs
-            V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(task.getDeviceClass(),
-                task.getDeviceAmount().toString()+"m").getResourceSelector();
-            V1Job job = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), coreContainerEnvs, initContainerEnvs, resourceRequirements);
+            V1ResourceRequirements resourceRequirements = new K8SSelectorSpec(jobRuntime.getDeviceClass(),
+                jobRuntime.getDeviceAmount().toString()+"m").getResourceSelector();
+            V1Job k8sJob = client.renderJob(getJobTemplate(), task.getId().toString(), "worker", image, List.of(cmd), coreContainerEnvs, initContainerEnvs, resourceRequirements);
             // set result upload path
 
-            log.debug("deploying job to k8s :{}", JSONUtil.toJsonStr(job));
+            log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             // TODO:remove dst
-            job.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + "")
+            k8sJob.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + "")
                     , new V1EnvVar().name("ENDPOINT_URL").value(storageProperties.getS3Config().getEndpoint())
                     , new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
                     , new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
@@ -174,15 +181,15 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             );
             // update node selector
             if (nodeSelector != null) {
-                var selector = job.getSpec().getTemplate().getSpec().getNodeSelector();
+                var selector = k8sJob.getSpec().getTemplate().getSpec().getNodeSelector();
                 if (selector == null) {
                     selector = nodeSelector;
                 } else {
                     selector.putAll(nodeSelector);
                 }
-                job.getSpec().getTemplate().getSpec().nodeSelector(selector);
+                k8sJob.getSpec().getTemplate().getSpec().nodeSelector(selector);
             }
-            client.deploy(job);
+            client.deploy(k8sJob);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

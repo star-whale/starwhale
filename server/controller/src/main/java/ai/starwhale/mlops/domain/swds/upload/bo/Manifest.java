@@ -43,7 +43,7 @@ public class Manifest{
     String name;
     @JsonProperty("dataset_summary")
     DatasetSummary datasetSummary;
-    Map<String,String> signature;
+    List<String> signature;
     String rawYaml;
 
 

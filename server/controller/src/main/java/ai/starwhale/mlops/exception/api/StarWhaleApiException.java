@@ -24,6 +24,7 @@ public class StarWhaleApiException extends RuntimeException {
     StarWhaleException starWhaleException;
     HttpStatus httpStatus;
     public StarWhaleApiException(StarWhaleException starWhaleException,HttpStatus httpStatus) {
+        super(starWhaleException.getTip());
         this.starWhaleException = starWhaleException;
         this.httpStatus = httpStatus;
     }

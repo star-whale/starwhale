@@ -17,11 +17,13 @@
 package ai.starwhale.mlops.domain.swds.converter;
 
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
+import ai.starwhale.mlops.domain.swds.objectstore.StorageAuths;
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv;
 import java.util.Map;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Component
 public class SWDSBOConverter {
@@ -33,7 +35,13 @@ public class SWDSBOConverter {
     }
 
     public SWDataSet fromEntity(SWDatasetVersionEntity swDatasetVersionEntity){
-        Map<String, FileStorageEnv> fileStorageEnvs = storageProperties.toFileStorageEnvs();
+        Map<String, FileStorageEnv> fileStorageEnvs;
+        if(StringUtils.hasText(swDatasetVersionEntity.getStorageAuths())){
+            StorageAuths storageAuths = new StorageAuths(swDatasetVersionEntity.getStorageAuths());
+            fileStorageEnvs = storageAuths.allEnvs();
+        }else {
+            fileStorageEnvs = storageProperties.toFileStorageEnvs();
+        }
         fileStorageEnvs.values().forEach(fileStorageEnv -> fileStorageEnv.add(FileStorageEnv.ENV_KEY_PREFIX,swDatasetVersionEntity.getStoragePath()));
         return SWDataSet.builder()
             .id(swDatasetVersionEntity.getId())
