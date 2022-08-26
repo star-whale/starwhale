@@ -17,6 +17,7 @@ from starwhale.consts import (
     LOCAL_CONFIG_VERSION,
     DEFAULT_SW_LOCAL_STORAGE,
 )
+from starwhale.consts.env import SWEnv
 from starwhale.utils.error import NotFoundError
 
 from . import console, now_str, fmt_http_server
@@ -127,7 +128,9 @@ class SWCliConfigMixed:
 
     @property
     def _sw_token(self) -> str:
-        return self._current_instance_obj.get("sw_token", "")
+        return self._current_instance_obj.get("sw_token", "") or os.environ.get(
+            SWEnv.instance_token, ""
+        )
 
     @property
     def _current_instance_obj(self) -> t.Dict[str, t.Any]:
