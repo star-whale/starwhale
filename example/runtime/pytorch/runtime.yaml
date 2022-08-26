@@ -9,21 +9,21 @@ configs:
     extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple/
     index_url: https://pypi.doubanio.com/simple/
     trusted_host:
-    - mirrors.bfsu.edu.cn
-    - pypi.doubanio.com
+      - mirrors.bfsu.edu.cn
+      - pypi.doubanio.com
 dependencies:
-- pip:
-  - numpy >= 1.21.0
-  - scikit-learn
-- wheels:
-  - dummy-0.0.0-py3-none-any.whl
-- files:
-  - dest: bin/prepare.sh
-    name: prepare
-    post: bash bin/prepare.sh
-    pre: ls bin/prepare.sh
-    src: scripts/prepare.sh
-- requirements-sw-lock.txt
+  - pip:
+      - numpy >= 1.23.2
+      - scikit-learn
+  - wheels:
+      - dummy-0.0.0-py3-none-any.whl
+  - files:
+      - dest: bin/prepare.sh
+        name: prepare
+        post: bash bin/prepare.sh
+        pre: ls bin/prepare.sh
+        src: scripts/prepare.sh
+  - requirements-sw-lock.txt
 environment:
   arch: noarch
   os: ubuntu:20.04
