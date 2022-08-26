@@ -90,7 +90,7 @@ class DataLoader(metaclass=ABCMeta):
             for data_content, data_size in self._do_iter(_file, row):
                 label = DataField(
                     idx=row.id,
-                    data_size=len(row.label),
+                    data_size=sys.getsizeof(row.label),
                     data=row.label,
                     ext_attr=_attr,
                 )

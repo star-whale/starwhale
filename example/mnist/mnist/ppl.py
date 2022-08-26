@@ -32,7 +32,7 @@ class MNISTInference(PipelineHandler):
         return self._post(output)
 
     def handle_label(self, label, **kw):
-        return [int(l) for l in label]
+        return int(label)
 
     @multi_classification(
         confusion_matrix_normalize="all",
@@ -44,11 +44,11 @@ class MNISTInference(PipelineHandler):
     def cmp(self, _data_loader):
         _result, _label, _pr = [], [], []
         for _data in _data_loader:
-            _label.extend([int(l) for l in _data[self._label_field]])
+            _label.append(_data[self._label_field])
             # unpack data according to the return value of function ppl
             (pred, pr) = _data[self._ppl_data_field]
-            _result.extend([int(l) for l in pred])
-            _pr.extend([l for l in pr])
+            _result.extend(pred)
+            _pr.extend(pr)
         return _label, _result, _pr
 
     def _pre(self, input: bytes):
@@ -79,7 +79,6 @@ if __name__ == "__main__":
 
     context = Context(
         workdir=Path("."),
-        src_dir=Path("."),
         dataset_uris=["mnist/version/latest"],
         project="self",
         version="latest",

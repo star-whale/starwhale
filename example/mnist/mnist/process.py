@@ -21,7 +21,7 @@ def _do_iter_label_slice(path: str):
             content = f.read(1)
             if not content:
                 break
-            yield content
+            yield struct.unpack(">B", content)[0]
 
 
 class DataSetProcessExecutor(SWDSBinBuildExecutor):
