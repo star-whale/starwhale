@@ -4,7 +4,12 @@ from pathlib import Path
 from rich.pretty import Pretty
 
 from starwhale.utils import console, pretty_bytes
-from starwhale.consts import DefaultYAMLName, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
+from starwhale.consts import (
+    LATEST_TAG,
+    DefaultYAMLName,
+    DEFAULT_PAGE_IDX,
+    DEFAULT_PAGE_SIZE,
+)
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
@@ -64,13 +69,18 @@ class DatasetTermView(BaseTermView):
 
     @classmethod
     def build(
-        cls, workdir: str, project: str, yaml_name: str = DefaultYAMLName.DATASET
+        cls,
+        workdir: str,
+        project: str,
+        yaml_name: str = DefaultYAMLName.DATASET,
+        append: bool = False,
+        append_from: str = LATEST_TAG,
     ) -> None:
         _dataset_uri = cls.prepare_build_bundle(
             workdir, project, yaml_name, URIType.DATASET
         )
         _ds = Dataset.get_dataset(_dataset_uri)
-        _ds.build(Path(workdir), yaml_name)
+        _ds.build(Path(workdir), yaml_name, append=append, append_from=append_from)
 
     @classmethod
     def copy(

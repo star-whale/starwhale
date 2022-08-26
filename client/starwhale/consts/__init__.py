@@ -124,14 +124,14 @@ DEFAULT_PAGE_IDX = 1
 DEFAULT_PAGE_SIZE = 20
 
 RECOVER_DIRNAME = ".recover"
-
 DEFAULT_PYTHON_VERSION = "3.8"
+LATEST_TAG = "latest"
 
 YAML_TYPES = (".yaml", ".yml")
 
 DEFAULT_IMAGE_REPO = "ghcr.io/star-whale"
 SW_IMAGE_FMT = "{repo}/starwhale:{tag}"
-DEFAULT_SW_TASK_RUN_IMAGE = SW_IMAGE_FMT.format(repo=DEFAULT_IMAGE_REPO, tag="latest")
+DEFAULT_SW_TASK_RUN_IMAGE = SW_IMAGE_FMT.format(repo=DEFAULT_IMAGE_REPO, tag=LATEST_TAG)
 SW_IGNORE_FILE_NAME = ".swignore"
 
 CNTR_DEFAULT_PIP_CACHE_DIR = "/root/.cache/pip"
