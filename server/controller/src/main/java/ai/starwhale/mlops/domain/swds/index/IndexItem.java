@@ -57,10 +57,13 @@ public class IndexItem {
     String dataOrigin;
 
     @JsonProperty("object_store_type")
-    String object_store_type;
+    String objectStoreType;
 
     @JsonProperty("auth_name")
-    String auth_name;
+    String authName;
+
+    @JsonProperty("data_mime_type")
+    String dataMimeType;
 
     @JsonProperty("label")
     String label;
@@ -72,6 +75,9 @@ public class IndexItem {
         , new ColumnSchemaDesc("data_offset", ColumnType.INT64.name())
         , new ColumnSchemaDesc("data_size", ColumnType.INT64.name())
         , new ColumnSchemaDesc("data_origin", ColumnType.STRING.name())
+        , new ColumnSchemaDesc("object_store_type", ColumnType.STRING.name())
+        , new ColumnSchemaDesc("auth_name", ColumnType.STRING.name())
+        , new ColumnSchemaDesc("data_mime_type", ColumnType.STRING.name())
         , new ColumnSchemaDesc("label", ColumnType.STRING.name())
     ));
 
@@ -83,6 +89,9 @@ public class IndexItem {
         ret.add(new RecordValueDesc("data_offset",ColumnType.INT64.encode(dataOffset)));
         ret.add(new RecordValueDesc("data_size",ColumnType.INT64.encode(dataSize)));
         ret.add(new RecordValueDesc("data_origin",dataOrigin));
+        ret.add(new RecordValueDesc("object_store_type",objectStoreType));
+        ret.add(new RecordValueDesc("auth_name",authName));
+        ret.add(new RecordValueDesc("data_mime_type",dataMimeType));
         ret.add(new RecordValueDesc("label",label));
         return new RecordDesc(ret);
     }

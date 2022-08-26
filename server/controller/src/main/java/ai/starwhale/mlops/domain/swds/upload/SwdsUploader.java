@@ -100,7 +100,7 @@ public class SwdsUploader {
     final IndexWriter indexWriter;
 
     static final String INDEX_FILE_NAME="_meta.jsonl";
-    static final String AUTH_FILE_NAME="auth_env";
+    static final String AUTH_FILE_NAME=".auth_env";
 
     public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
         SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,

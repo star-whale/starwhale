@@ -189,7 +189,7 @@ public class DatasetController implements DatasetApi{
 
     @Override
     public void pullLinkContent(String projectUrl, String datasetUrl, String versionUrl,
-        String uri,String authName, HttpServletResponse httpResponse) {
+        String uri,String authName,Long offset,Long size, HttpServletResponse httpResponse) {
         if(!StringUtils.hasText(datasetUrl) || !StringUtils.hasText(versionUrl) ){
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.SWDS)
                 .tip("please provide name and version for the DS "), HttpStatus.BAD_REQUEST);
@@ -197,7 +197,7 @@ public class DatasetController implements DatasetApi{
         SWDatasetVersionEntity datasetVersionEntity = swDatasetService.query(projectUrl, datasetUrl, versionUrl);
         try {
             ServletOutputStream outputStream = httpResponse.getOutputStream();
-            outputStream.write(swDatasetService.dataOf(datasetVersionEntity.getId(),uri,authName));
+            outputStream.write(swDatasetService.dataOf(datasetVersionEntity.getId(),uri,authName,offset,size));
             outputStream.flush();
         } catch (IOException e) {
             log.error("error write data to response",e);

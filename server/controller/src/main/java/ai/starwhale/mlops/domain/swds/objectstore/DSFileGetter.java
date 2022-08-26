@@ -34,10 +34,11 @@ public class DSFileGetter {
         this.storageAccessParser = storageAccessParser;
     }
 
-    public byte[] dataOf(Long datasetId, String uri, String authName) {
+    public byte[] dataOf(Long datasetId, String uri, String authName, Long offset,
+        Long size) {
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
             datasetId, uri, authName);
-        try (InputStream inputStream = storageAccessService.get(new StorageUri(uri).getPath())) {
+        try (InputStream inputStream = storageAccessService.get(new StorageUri(uri).getPath(),offset,size)) {
             return inputStream.readAllBytes();
         } catch (IOException ioException) {
             log.error("error while accessing storage ", ioException);
