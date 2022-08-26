@@ -1,6 +1,6 @@
-numpy==1.21.0
-torch
-torchvision
+numpy==1.23.2
+torch==1.12.1
+torchvision==1.21.1
 Pillow
 scikit-learn
 starwhale
