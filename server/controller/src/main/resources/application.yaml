@@ -13,7 +13,7 @@ spring:
 sw:
   version: ${SW_VERSION_CONTROLLER:0.1.0:8c82767b60686f3e2bfea9dafe8c8cce5dd34f52}
   runtime:
-    image-default: ${SW_RUNTIME_IMAGE_DEFAULT:10.131.0.1/star-whale/starwhale:100.0.0}
+    image-default: ${SW_RUNTIME_IMAGE_DEFAULT:10.131.0.1:8083/star-whale/starwhale:latest}
     pypi:
       index-url: ${SW_PYPI_INDEX_URL:http://10.131.0.1/repository/pypi-hosted/simple/}
       extra-index-url: ${SW_PYPI_EXTRA_INDEX_URL:https://pypi.doubanio.com/simple}
