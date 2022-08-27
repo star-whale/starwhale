@@ -47,6 +47,6 @@ public class JobTokenConfig implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         User user = userService.loadUserById(jobUserId);
-        this.token = jwtTokenUtil.generateAccessToken(user,null);
+        this.token = String.format("Bearer %s",jwtTokenUtil.generateAccessToken(user,null));
     }
 }

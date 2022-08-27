@@ -153,13 +153,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                     .stepId(stepEntity.getId())
                     .taskRequest(JSONUtil.toJsonStr(
                             TaskRequest.builder()
-                                .project(job.getProject().getName())
-                                .jobId(job.getUuid())
-                                .stepName(stepEntity.getName())
                                 .total(stepEntity.getTaskNum())
-                                .datasetUris(job.getSwDataSets().stream()
-                                    .map(ds -> String.format("%s/version/%s", ds.getName(), ds.getVersion()))
-                                    .collect(Collectors.toList()))
                                 .index(i)
                                 .build()
                         )
@@ -211,8 +205,4 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         return storagePathCoordinator.generateTaskResultPath(jobId, taskId);
     }
 
-    public static void main(String[] args) {
-        String s = JSONUtil.toJsonStr(TaskRequest.builder().project("p").datasetUris(List.of("rwe")).jobId("1l").build());
-        System.out.println(s);
-    }
 }
