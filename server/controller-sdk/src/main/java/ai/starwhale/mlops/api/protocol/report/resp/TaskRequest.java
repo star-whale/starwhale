@@ -28,10 +28,6 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TaskRequest {
-    String jobId;
-    String project;
     Integer index;
     Integer total;
-    String stepName;
-    List<String> datasetUris;
 }

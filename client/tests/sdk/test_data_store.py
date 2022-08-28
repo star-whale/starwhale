@@ -1258,32 +1258,34 @@ class TestRemoteDataStore(unittest.TestCase):
     def test_scan_table(self, mock_post: Mock) -> None:
         mock_post.return_value.status_code = 200
         mock_post.return_value.json.return_value = {
-            "columnTypes": {
-                "a": "BOOL",
-                "b": "INT8",
-                "c": "INT16",
-                "d": "INT32",
-                "e": "INT64",
-                "f": "FLOAT16",
-                "g": "FLOAT32",
-                "h": "FLOAT64",
-                "i": "STRING",
-                "j": "BYTES",
-            },
-            "records": [
-                {
-                    "a": "1",
-                    "b": "1",
-                    "c": "1",
-                    "d": "1",
-                    "e": "1",
-                    "f": "3c00",
-                    "g": "3f800000",
-                    "h": "3ff0000000000000",
-                    "i": "1",
-                    "j": "MQ==",
-                }
-            ],
+            "data": {
+                "columnTypes": {
+                    "a": "BOOL",
+                    "b": "INT8",
+                    "c": "INT16",
+                    "d": "INT32",
+                    "e": "INT64",
+                    "f": "FLOAT16",
+                    "g": "FLOAT32",
+                    "h": "FLOAT64",
+                    "i": "STRING",
+                    "j": "BYTES",
+                },
+                "records": [
+                    {
+                        "a": "1",
+                        "b": "1",
+                        "c": "1",
+                        "d": "1",
+                        "e": "1",
+                        "f": "3c00",
+                        "g": "3f800000",
+                        "h": "3ff0000000000000",
+                        "i": "1",
+                        "j": "MQ==",
+                    }
+                ],
+            }
         }
         self.assertEqual(
             [
@@ -1316,20 +1318,27 @@ class TestRemoteDataStore(unittest.TestCase):
         )
         mock_post.return_value.json.side_effect = [
             {
-                "columnTypes": {"a": "INT32"},
-                "records": [{"a": f"{i:x}"} for i in range(1000)],
-                "lastKey": f"{999:x}",
+                "data": {
+                    "columnTypes": {"a": "INT32"},
+                    "records": [{"a": f"{i:x}"} for i in range(1000)],
+                    "lastKey": f"{999:x}",
+                }
             },
             {
-                "columnTypes": {"a": "INT32"},
-                "records": [{"a": f"{i+1000:x}"} for i in range(1000)],
-                "lastKey": f"{1999:x}",
+                "data": {
+                    "columnTypes": {"a": "INT32"},
+                    "records": [{"a": f"{i+1000:x}"} for i in range(1000)],
+                    "lastKey": f"{1999:x}",
+                }
             },
             {
-                "columnTypes": {"a": "INT32"},
-                "records": [{"a": f"{2000:x}"}],
+                "data": {
+                    "columnTypes": {"a": "INT32"},
+                    "records": [{"a": f"{2000:x}"}],
+                }
             },
         ]
+
         self.assertEqual(
             [{"a": i} for i in range(2001)],
             list(self.ds.scan_tables([data_store.TableDesc("t1")])),

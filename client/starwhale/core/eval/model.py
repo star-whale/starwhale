@@ -174,14 +174,12 @@ class StandaloneEvaluationJob(EvaluationJob):
             f"datastore path:{str(self.sw_config.datastore_dir)}, eval_id:{self.store.id}"
         )
         _datastore = wrapper.Evaluation()
-        _labels = list(_datastore.get_results_from_table("labels"))
+        _labels = list(_datastore.get("labels"))
         return dict(
             summary=_datastore.get_metrics(),
             labels={str(i): l for i, l in enumerate(_labels)},
             confusion_matrix=dict(
-                binarylabel=list(
-                    _datastore.get_results_from_table("confusion_matrix/binarylabel")
-                )
+                binarylabel=list(_datastore.get("confusion_matrix/binarylabel"))
             ),
             kind=_datastore.get_metrics()["kind"],
         )

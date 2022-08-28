@@ -1,4 +1,4 @@
 torch
 torchaudio
-numpy==1.21.0
+numpy
 tqdm==4.64.0

@@ -150,6 +150,13 @@ public class K8sClient {
             coreContainer.env(coreEnvs);
         }
 
+        if (!coreEnv.isEmpty()) {
+            List<V1EnvVar> ee = new ArrayList<>();
+            coreEnv.putAll(env);
+            coreEnv.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
+            coreContainer.env(ee);
+        }
+
         // replace host path
         List<V1Volume> volumes = job.getSpec().getTemplate().getSpec().getVolumes();
         volumes.stream().filter(v -> v.getName().equals(pipCacheVolumeName))

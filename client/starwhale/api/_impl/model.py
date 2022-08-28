@@ -215,8 +215,8 @@ class PipelineHandler(metaclass=ABCMeta):
         data[self._label_field] = self.label_data_deserialize(data[self._label_field])
         return data
 
-    def handle_label(self, label: bytes, **kw: t.Any) -> t.Any:
-        return label.decode()
+    def handle_label(self, label: t.Any, **kw: t.Any) -> t.Any:
+        return label
 
     def _record_status(func):  # type: ignore
         @wraps(func)  # type: ignore
@@ -260,18 +260,14 @@ class PipelineHandler(metaclass=ABCMeta):
             self.evaluation.log_metrics({"kind": output["kind"]})
 
             for i, label in output["labels"].items():
-                self.evaluation.log_table("labels", label, id=i)
+                self.evaluation.log("labels", id=i, **label)
 
             _binary_label = output["confusion_matrix"]["binarylabel"]
             for _label, _probability in enumerate(_binary_label):
-                self.evaluation.log_table(
+                self.evaluation.log(
                     "confusion_matrix/binarylabel",
-                    {
-                        **dict(
-                            id=str(_label),
-                        ),
-                        **{str(k): v for k, v in enumerate(_probability)},
-                    },
+                    id=str(_label),
+                    **{str(k): v for k, v in enumerate(_probability)},
                 )
 
             for _label, _roc_auc in output["roc_auc"].items():
@@ -279,9 +275,12 @@ class PipelineHandler(metaclass=ABCMeta):
                 for _fpr, _tpr, _threshold in zip(
                     _roc_auc["fpr"], _roc_auc["tpr"], _roc_auc["thresholds"]
                 ):
-                    self.evaluation.log_table(
+                    self.evaluation.log(
                         f"roc_auc/{_label}",
-                        dict(id=str(_id), fpr=_fpr, tpr=_tpr, threshold=_threshold),
+                        id=str(_id),
+                        fpr=_fpr,
+                        tpr=_tpr,
+                        threshold=_threshold,
                     )
                     _id += 1
                     self.evaluation.log_metrics({f"roc_auc/{_label}": _roc_auc["auc"]})
@@ -320,7 +319,7 @@ class PipelineHandler(metaclass=ABCMeta):
             try:
                 # TODO: inspect profiling
                 pred = self.ppl(
-                    data.data,
+                    data.data if isinstance(data.data, bytes) else data.data.encode(),
                     data_index=data.idx,
                     data_size=data.data_size,
                     label_content=label.data,

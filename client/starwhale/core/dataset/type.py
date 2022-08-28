@@ -20,7 +20,7 @@ D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
 class DataField(t.NamedTuple):
     idx: int
     data_size: int
-    data: bytes
+    data: t.Union[bytes, str]
     ext_attr: t.Dict[str, t.Any]
 
 
@@ -59,6 +59,7 @@ class S3LinkAuth(LinkAuth):
     _REGION_FMT = "USER.S3.{name}REGION"
     _SECRET_FMT = "USER.S3.{name}SECRET"
     _ACCESS_KEY_FMT = "USER.S3.{name}ACCESS_KEY"
+    _DEFAULT_USER_REGION = "local"
     _fmt: t.Callable[[str], str] = (
         lambda x: (f"{x}." if x.strip() else x).strip().upper()
     )
@@ -75,7 +76,7 @@ class S3LinkAuth(LinkAuth):
         self.access_key = access_key
         self.secret = secret
         self.endpoint = endpoint
-        self.region = region
+        self.region = region or self._DEFAULT_USER_REGION
 
     def dump_env(self) -> t.List[str]:
         _name = S3LinkAuth._fmt(self.name)

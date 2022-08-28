@@ -104,7 +104,7 @@ public class SwdsUploaderTest {
         swdsUploader.end(dsVersionId);
 
         verify(storageAccessService).put(anyString(),any(byte[].class));
-        verify(storageAccessService).put(anyString(),any(InputStream.class));
+        verify(storageAccessService).put(anyString(),any(InputStream.class), anyLong());
         verify(swdsVersionMapper).updateStatus(null, STATUS_AVAILABLE);
         verify(swdsVersionMapper).addNewVersion(any(SWDatasetVersionEntity.class));
         String dsName = "testds3";

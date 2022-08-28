@@ -8,7 +8,7 @@ from enum import IntEnum
 from pathlib import Path
 
 from starwhale.utils import console, timestamp_to_datatimestr
-from starwhale.utils.error import ExistedError
+from starwhale.utils.error import FormatError, ExistedError, NotFoundError
 from starwhale.utils.process import check_call
 
 BLAKE2B_SIGNATURE_ALGO = "blake2b"
@@ -173,3 +173,14 @@ def extract_tar(tar_path: Path, dest_dir: Path, force: bool = False) -> None:
 
     with tarfile.open(tar_path, "r") as tar:
         tar.extractall(path=str(dest_dir.absolute()))
+
+
+def copy_file(src: Path, dest: Path) -> None:
+    if not src.exists():
+        raise NotFoundError(src)
+
+    if not src.is_file():
+        raise FormatError(f"{src} is not file type")
+
+    ensure_dir(dest.parent)
+    shutil.copyfile(str(src.absolute()), str(dest.absolute()))

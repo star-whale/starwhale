@@ -92,6 +92,8 @@ spec:
               value: {{ .Release.Namespace }}
             - name: SW_K8S_HOST_PATH_FOR_CACHE
               value: {{ .Values.storage.agentHostPathRoot }}/job
+            - name: SW_INSTANCE_URI
+              value: "http://{{ include "common.names.fullname" . }}-controller:{{ .Values.controller.containerPort }}"
             {{- if .Values.minio.enabled }}
             - name: SW_STORAGE_ENDPOINT
               value: "http://{{ .Release.Name }}-minio:{{ .Values.minio.containerPorts.api }}"

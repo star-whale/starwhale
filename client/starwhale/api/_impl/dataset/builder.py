@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import struct
 import typing as t
 import tempfile
@@ -11,9 +12,11 @@ from binascii import crc32
 import jsonlines
 
 from starwhale.consts import AUTH_ENV_FNAME, SWDS_DATA_FNAME_FMT
+from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir
 from starwhale.base.type import DataFormatType, DataOriginType, ObjectStoreType
 from starwhale.utils.error import FormatError
+from starwhale.core.dataset import model
 from starwhale.core.dataset.type import (
     Link,
     LinkAuth,
@@ -47,6 +50,9 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         label_filter: str = "*",
         alignment_bytes_size: int = D_ALIGNMENT_SIZE,
         volume_bytes_size: int = D_FILE_VOLUME_SIZE,
+        append: bool = False,
+        append_from_version: str = "",
+        append_from_uri: t.Optional[URI] = None,
     ) -> None:
         # TODO: add more docstring for args
         # TODO: validate group upper and lower?
@@ -71,6 +77,17 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         self.tabular_dataset = TabularDataset(
             dataset_name, dataset_version, project_name
         )
+
+        self._forked_summary: t.Optional[DatasetSummary]
+        if append and append_from_uri:
+            self._forked_last_idx, self._forked_rows = self.tabular_dataset.fork(
+                append_from_version
+            )
+            self._forked_summary = model.Dataset.get_dataset(append_from_uri).summary()
+        else:
+            self._forked_last_idx = -1
+            self._forked_rows = 0
+            self._forked_summary = None
 
         self._index_writer: t.Optional[jsonlines.Writer] = None
 
@@ -101,6 +118,18 @@ class BaseBuildExecutor(metaclass=ABCMeta):
     @abstractmethod
     def make_swds(self) -> DatasetSummary:
         raise NotImplementedError
+
+    def _merge_forked_summary(self, s: DatasetSummary) -> DatasetSummary:
+        _fs = self._forked_summary
+        if _fs:
+            s.rows += _fs.rows
+            s.unchanged_rows += _fs.rows
+            s.data_byte_size += _fs.data_byte_size
+            s.label_byte_size += _fs.label_byte_size
+            s.include_link |= _fs.include_link
+            s.include_user_raw |= _fs.include_user_raw
+
+        return s
 
     def _iter_files(
         self, filter: str, sort_key: t.Optional[t.Any] = None
@@ -157,7 +186,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
     swds_bin format:
         header_magic    uint32  I
         crc             uint32  I
-        idx             uint64  Q
+        _reserved       uint64  Q
         size            uint32  I
         padding_size    uint32  I
         header_version  uint32  I
@@ -170,14 +199,15 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
     _DATA_FMT = SWDS_DATA_FNAME_FMT
 
-    def _write(self, writer: t.Any, idx: int, data: bytes) -> t.Tuple[int, int]:
+    def _write(self, writer: t.Any, data: bytes) -> t.Tuple[int, int]:
         size = len(data)
         crc = crc32(data)  # TODO: crc is right?
         start = writer.tell()
         padding_size = self._get_padding_size(size + _header_size)
 
+        # TODO: remove idx field
         _header = _header_struct.pack(
-            _header_magic, crc, idx, size, padding_size, _header_version, _data_magic
+            _header_magic, crc, 0, size, padding_size, _header_version, _data_magic
         )
         _padding = b"\0" * padding_size
         writer.write(_header + data + _padding)
@@ -200,18 +230,17 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
         dwriter = dwriter_path.open("wb")
         ds_copy_candidates[fno] = dwriter_path
 
-        rows, increased_rows = 0, 0
+        increased_rows = 0
         total_label_size, total_data_size = 0, 0
 
         for idx, ((_, data), (_, label)) in enumerate(
-            zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())
+            zip(self.iter_all_dataset_slice(), self.iter_all_label_slice()),
+            start=self._forked_last_idx + 1,
         ):
-            if not isinstance(data, bytes) or not isinstance(label, bytes):
-                raise FormatError("data and label must be bytes type")
+            if not isinstance(data, bytes):
+                raise FormatError("data must be bytes type")
 
-            # TODO: support inherit data from old dataset version
-            data_origin = DataOriginType.NEW
-            data_offset, data_size = self._write(dwriter, idx, data)
+            data_offset, data_size = self._write(dwriter, data)
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
@@ -221,12 +250,12 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                     object_store_type=ObjectStoreType.LOCAL,
                     data_offset=data_offset,
                     data_size=data_size,
-                    data_origin=data_origin,
+                    data_origin=DataOriginType.NEW,
                 )
             )
 
             total_data_size += data_size
-            total_label_size += len(label)
+            total_label_size += sys.getsizeof(label)
 
             wrote_size += data_size
             if wrote_size > self.volume_bytes_size:
@@ -238,44 +267,54 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                 dwriter = (dwriter_path).open("wb")
                 ds_copy_candidates[fno] = dwriter_path
 
-            rows += 1
-            if data_origin == DataOriginType.NEW:
-                increased_rows += 1
+            increased_rows += 1
 
         try:
             dwriter.close()
         except Exception as e:
             print(f"data write close exception: {e}")
 
-        self._copy_files(ds_copy_candidates, rows)
+        self._copy_files(
+            ds_copy_candidates,
+            (self._forked_last_idx + 1, self._forked_last_idx + 1 + increased_rows),
+        )
 
         summary = DatasetSummary(
-            rows=rows,
+            rows=increased_rows,
             increased_rows=increased_rows,
             label_byte_size=total_label_size,
             data_byte_size=total_data_size,
             include_user_raw=False,
             include_link=False,
         )
-        return summary
+        return self._merge_forked_summary(summary)
 
     def _copy_files(
         self,
         ds_copy_candidates: t.Dict[int, Path],
-        rows_cnt: int,
+        row_pos: t.Tuple[int, int],
     ) -> None:
         map_fno_sign: t.Dict[int, str] = {}
         for _fno, _src_path in ds_copy_candidates.items():
             _sign_name, _obj_path = DatasetStorage.save_data_file(
                 _src_path, remove_src=True
             )
-            # TODO: use relative symlink or fix link command for datastore dir moving
-            (
-                self.data_output_dir / _sign_name[: DatasetStorage.short_sign_cnt]
-            ).symlink_to(_obj_path.absolute())
             map_fno_sign[_fno] = _sign_name
 
-        for row in self.tabular_dataset.scan(0, rows_cnt):
+            _dest_path = (
+                self.data_output_dir / _sign_name[: DatasetStorage.short_sign_cnt]
+            )
+            _obj_path = _obj_path.resolve().absolute()
+
+            if _dest_path.exists():
+                if _dest_path.resolve() == _obj_path:
+                    continue
+                else:
+                    _dest_path.unlink(missing_ok=True)
+
+            _dest_path.symlink_to(_obj_path)
+
+        for row in self.tabular_dataset.scan(*row_pos):
             self.tabular_dataset.update(
                 row_id=row.id, data_uri=map_fno_sign[int(row.data_uri)]
             )
@@ -293,7 +332,7 @@ BuildExecutor = SWDSBinBuildExecutor
 
 class UserRawBuildExecutor(BaseBuildExecutor):
     def make_swds(self) -> DatasetSummary:
-        rows, increased_rows = 0, 0
+        increased_rows = 0
         total_label_size, total_data_size = 0, 0
         auth_candidates = {}
         include_link = False
@@ -301,7 +340,8 @@ class UserRawBuildExecutor(BaseBuildExecutor):
         map_path_sign: t.Dict[str, t.Tuple[str, Path]] = {}
 
         for idx, (data, (_, label)) in enumerate(
-            zip(self.iter_all_dataset_slice(), self.iter_all_label_slice())
+            zip(self.iter_all_dataset_slice(), self.iter_all_label_slice()),
+            start=self._forked_last_idx + 1,
         ):
             if isinstance(data, Link):
                 data_uri = data.uri
@@ -323,8 +363,6 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             else:
                 raise FormatError(f"data({data}) type error, no list, tuple or Link")
 
-            data_origin = DataOriginType.NEW
-
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
@@ -334,30 +372,28 @@ class UserRawBuildExecutor(BaseBuildExecutor):
                     object_store_type=object_store_type,
                     data_offset=data_offset,
                     data_size=data_size,
-                    data_origin=data_origin,
+                    data_origin=DataOriginType.NEW,
                     auth_name=auth,
                 )
             )
 
             total_data_size += data_size
-            total_label_size += len(label)
-
-            rows += 1
-            if data_origin == DataOriginType.NEW:
-                increased_rows += 1
+            total_label_size += sys.getsizeof(label)
+            increased_rows += 1
 
         self._copy_files(map_path_sign)
         self._copy_auth(auth_candidates)
 
+        # TODO: provide fine-grained rows/increased rows by dataset pythonic api
         summary = DatasetSummary(
-            rows=rows,
+            rows=increased_rows,
             increased_rows=increased_rows,
             label_byte_size=total_label_size,
             data_byte_size=total_data_size,
             include_link=include_link,
             include_user_raw=True,
         )
-        return summary
+        return self._merge_forked_summary(summary)
 
     def _copy_files(self, map_path_sign: t.Dict[str, t.Tuple[str, Path]]) -> None:
         for sign, obj_path in map_path_sign.values():

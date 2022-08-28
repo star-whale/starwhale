@@ -9,11 +9,12 @@ from collections import defaultdict
 import yaml
 from fs import open_fs
 from loguru import logger
-from fs.copy import copy_fs, copy_file
+from fs.copy import copy_fs
 
 from starwhale.utils import console, load_yaml
 from starwhale.consts import (
     HTTPMethod,
+    LATEST_TAG,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
@@ -23,13 +24,13 @@ from starwhale.consts import (
 )
 from starwhale.base.tag import StandaloneTag
 from starwhale.base.uri import URI
-from starwhale.utils.fs import move_dir, ensure_dir
+from starwhale.utils.fs import move_dir, copy_file, ensure_dir
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
 from starwhale.utils.http import ignore_error
 from starwhale.utils.load import import_cls
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
-from starwhale.utils.error import NoSupportError
+from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.base.bundle_copy import BundleCopy
 
@@ -176,11 +177,24 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
     def buildImpl(
         self, workdir: Path, yaml_name: str = DefaultYAMLName.DATASET, **kw: t.Any
     ) -> None:
-        _dp = workdir / yaml_name
-        _dataset_config = self._load_dataset_config(_dp)
+        dataset_config = self._load_dataset_config(workdir / yaml_name)
 
-        # TODO: design dataset layer mechanism
-        # TODO: design append some new data into existed dataset
+        append = kw.get("append", False)
+        if append:
+            append_from_uri = URI.capsulate_uri(
+                instance=self.uri.instance,
+                project=self.uri.project,
+                obj_type=self.uri.object.typ,
+                obj_name=self.uri.object.name,
+                obj_ver=kw.get("append_from", LATEST_TAG),
+            )
+            append_from_store = DatasetStorage(append_from_uri)
+            if not append_from_store.snapshot_workdir.exists():
+                raise NotFoundError(f"dataset uri: {append_from_uri}")
+        else:
+            append_from_uri = None
+            append_from_store = None
+
         # TODO: design uniq build steps for model build, swmp build
 
         operations = [
@@ -193,15 +207,30 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 dict(
                     workdir=workdir,
                     yaml_name=yaml_name,
-                    pkg_data=_dataset_config.pkg_data,
-                    exclude_pkg_data=_dataset_config.exclude_pkg_data,
+                    pkg_data=dataset_config.pkg_data,
+                    exclude_pkg_data=dataset_config.exclude_pkg_data,
+                ),
+            ),
+            (
+                self._fork_swds,
+                10,
+                "fork swds",
+                dict(
+                    append=append,
+                    append_from_store=append_from_store,
                 ),
             ),
             (
                 self._call_make_swds,
                 30,
                 "make swds",
-                dict(workdir=workdir, swds_config=_dataset_config),
+                dict(
+                    workdir=workdir,
+                    swds_config=dataset_config,
+                    append=append,
+                    append_from_uri=append_from_uri,
+                    append_from_store=append_from_store,
+                ),
             ),
             (self._calculate_signature, 5, "calculate signature"),
             (
@@ -214,12 +243,50 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         ]
         run_with_progress_bar("swds building...", operations)
 
-    def _call_make_swds(self, workdir: Path, swds_config: DatasetConfig) -> None:
+    def _fork_swds(
+        self, append: bool, append_from_store: t.Optional[DatasetStorage]
+    ) -> None:
+        if not append or not append_from_store:
+            return
+
+        console.print(
+            f":articulated_lorry: fork dataset data from {append_from_store.id}"
+        )
+        src_data_dir = append_from_store.data_dir
+        for src in src_data_dir.rglob("*"):
+            if not src.is_symlink():
+                continue
+
+            dest = self.store.data_dir / src.relative_to(src_data_dir)
+            if dest.exists() and dest.resolve() == src.resolve():
+                continue
+
+            dest.symlink_to(src.resolve().absolute())
+
+    def _call_make_swds(
+        self,
+        workdir: Path,
+        swds_config: DatasetConfig,
+        append: bool,
+        append_from_uri: t.Optional[URI],
+        append_from_store: t.Optional[DatasetStorage],
+    ) -> None:
         from starwhale.api._impl.dataset.builder import BaseBuildExecutor
 
         logger.info("[step:swds]try to gen swds...")
-        self._manifest["dataset_attr"] = swds_config.attr.as_dict()
-        self._manifest["process"] = swds_config.process
+        append_from_version = (
+            append_from_store.id if append and append_from_store else ""
+        )
+        self._manifest.update(
+            {
+                "dataset_attr": swds_config.attr.as_dict(),
+                "process": swds_config.process,
+                "from": {
+                    "version": append_from_version,
+                    "append": append,
+                },
+            }
+        )
 
         # TODO: add more import format support, current is module:class
         logger.info(f"[info:swds]try to import {swds_config.process} @ {workdir}")
@@ -235,6 +302,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             label_filter=swds_config.label_filter,
             alignment_bytes_size=swds_config.attr.alignment_size,
             volume_bytes_size=swds_config.attr.volume_size,
+            append=append,
+            append_from_version=append_from_version,
+            append_from_uri=append_from_uri,
         ) as _obj:
             console.print(
                 f":ghost: import [red]{swds_config.process}@{workdir.resolve()}[/] to make swds..."
@@ -293,10 +363,12 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         console.print(":thumbs_up: try to copy source code files...")
         workdir_fs = open_fs(str(workdir.absolute()))
         src_fs = open_fs(str(self.store.src_dir.absolute()))
-        snapshot_fs = open_fs(str(self.store.snapshot_workdir.absolute()))
 
-        copy_file(workdir_fs, yaml_name, src_fs, DefaultYAMLName.DATASET)
-        copy_file(workdir_fs, yaml_name, snapshot_fs, DefaultYAMLName.DATASET)
+        # FIXME: user custom dataset.yaml file name
+        copy_file(workdir / yaml_name, self.store.src_dir / DefaultYAMLName.DATASET)
+        copy_file(
+            workdir / yaml_name, self.store.snapshot_workdir / DefaultYAMLName.DATASET
+        )
         # TODO: tune copy src
         copy_fs(
             workdir_fs,

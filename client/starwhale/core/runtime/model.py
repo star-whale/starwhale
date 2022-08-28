@@ -29,6 +29,7 @@ from starwhale.utils import (
 )
 from starwhale.consts import (
     SupportOS,
+    LATEST_TAG,
     SupportArch,
     PythonRunEnv,
     SW_IMAGE_FMT,
@@ -641,7 +642,7 @@ class StandaloneRuntime(Runtime, LocalStorageBundleMixin):
 
     def _dump_base_image(self, config: RuntimeConfig) -> None:
         _repo = os.environ.get(ENV_SW_IMAGE_REPO, DEFAULT_IMAGE_REPO)
-        _tag = config._starwhale_version or "latest"
+        _tag = config._starwhale_version or LATEST_TAG
         base_image = SW_IMAGE_FMT.format(repo=_repo, tag=_tag)
 
         _cuda = config.environment.cuda

@@ -100,7 +100,7 @@ public class SwdsUploader {
     final IndexWriter indexWriter;
 
     static final String INDEX_FILE_NAME="_meta.jsonl";
-    static final String AUTH_FILE_NAME="auth_env";
+    static final String AUTH_FILE_NAME=".auth_env";
 
     public SwdsUploader(HotSwdsHolder hotSwdsHolder, SWDatasetMapper swdsMapper,
         SWDatasetVersionMapper swdsVersionMapper, StoragePathCoordinator storagePathCoordinator,
@@ -153,14 +153,14 @@ public class SwdsUploader {
         String filename = file.getOriginalFilename();
         try (InputStream inputStream = file.getInputStream()){
             if(INDEX_FILE_NAME.equals(filename)){
-                try(CloseShieldInputStream csis = CloseShieldInputStream.wrap(inputStream)){
-                    indexWriter.writeToStore(swDatasetVersionWithMeta.getSwDatasetVersionEntity().getIndexTable(),csis);
+                try(InputStream anotherInputStream = file.getInputStream()){
+                    indexWriter.writeToStore(swDatasetVersionWithMeta.getSwDatasetVersionEntity().getIndexTable(),anotherInputStream);
                 }
             }
             if(AUTH_FILE_NAME.equals(filename)){
-                try(CloseShieldInputStream csis = CloseShieldInputStream.wrap(inputStream)){
+                try(InputStream anotherInputStream = file.getInputStream()){
                     swdsVersionMapper.updateStorageAuths(swDatasetVersionWithMeta.getSwDatasetVersionEntity()
-                        .getId(), new String(csis.readAllBytes()));
+                        .getId(), new String(anotherInputStream.readAllBytes()));
                 }
             }
             InputStream is = inputStream;
@@ -169,7 +169,7 @@ public class SwdsUploader {
             }
             final String storagePath = String.format(FORMATTER_STORAGE_PATH, swDatasetVersionWithMeta.getSwDatasetVersionEntity().getStoragePath(),
                 StringUtils.hasText(uri)?uri:filename);
-            storageAccessService.put(storagePath,is);
+            storageAccessService.put(storagePath,is, file.getSize());
         } catch (IOException e) {
             log.error("read swds failed {}", filename,e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.NETWORK),

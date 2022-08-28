@@ -14,6 +14,7 @@ from fs.tarfs import TarFS
 from starwhale import __version__
 from starwhale.utils import console, now_str, gen_uniq_version
 from starwhale.consts import (
+    LATEST_TAG,
     YAML_TYPES,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
@@ -137,7 +138,7 @@ class LocalStorageBundleMixin:
         console.print(f":new: version {self._version[:SHORT_VERSION_CNT]}")  # type: ignore
 
     def _make_latest_tag(self) -> None:
-        self.tag.add(["latest"], quiet=True)  # type: ignore
+        self.tag.add([LATEST_TAG], quiet=True)  # type: ignore
 
     def _make_tar(self, ftype: str = "") -> None:
         out = self.store.bundle_dir / f"{self._version}{ftype}"  # type: ignore
