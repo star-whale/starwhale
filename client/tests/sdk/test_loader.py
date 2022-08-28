@@ -49,7 +49,7 @@ class TestDataLoader(TestCase):
                 data_uri=fname,
                 data_offset=16,
                 data_size=784,
-                label=b"0",
+                label=0,
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.UNDEFINED,
                 data_mime_type=MIMEType.UNDEFINED,
@@ -71,7 +71,6 @@ class TestDataLoader(TestCase):
         _data, _label = rows[0]
 
         assert _label.idx == 0
-        assert _label.data_size == 1
         assert _data.ext_attr == {"ds_name": "mnist", "ds_version": "1122334455667788"}
         assert _data.data_size == len(_data.data)
         assert len(_data.data) == 28 * 28
@@ -132,7 +131,7 @@ class TestDataLoader(TestCase):
                 data_uri=f"s3://127.0.0.1:9000@starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
-                label=b"0",
+                label=0,
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.USER_RAW,
                 data_mime_type=MIMEType.GRAYSCALE,
@@ -144,7 +143,7 @@ class TestDataLoader(TestCase):
                 data_uri=f"s3://127.0.0.1:19000@starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
-                label=b"1",
+                label=1,
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.USER_RAW,
                 data_mime_type=MIMEType.GRAYSCALE,
@@ -156,7 +155,7 @@ class TestDataLoader(TestCase):
                 data_uri=f"s3://starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
-                label=b"1",
+                label=1,
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.USER_RAW,
                 data_mime_type=MIMEType.GRAYSCALE,
@@ -168,7 +167,7 @@ class TestDataLoader(TestCase):
                 data_uri=f"s3://username:password@127.0.0.1:29000@starwhale/project/2/dataset/11/{version}",
                 data_offset=16,
                 data_size=784,
-                label=b"1",
+                label=1,
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.USER_RAW,
                 data_mime_type=MIMEType.GRAYSCALE,
@@ -202,7 +201,7 @@ class TestDataLoader(TestCase):
 
         _data, _label = rows[0]
         assert _label.idx == 0
-        assert _label.data == b"0"
+        assert _label.data == "0"
         assert len(_data.data) == 28 * 28
         assert len(_data.data) == _data.data_size
         assert len(loader._stores) == 3
@@ -275,8 +274,7 @@ class TestDataLoader(TestCase):
         assert len(rows) == 1
         _data, _label = rows[0]
         assert _label.idx == 0
-        assert _label.data == b"0"
-        assert _label.data_size == 1
+        assert _label.data == "0"
 
         assert len(_data.data) == _data.data_size
         assert _data.data_size == 10 * 28 * 28
@@ -348,8 +346,7 @@ class TestDataLoader(TestCase):
 
         _data, _label = rows[0]
         assert _label.idx == 0
-        assert _label.data == b"0"
-        assert _label.data_size == 1
+        assert _label.data == "0"
 
         assert len(_data.data) == _data.data_size
         assert _data.data_size == 10 * 28 * 28

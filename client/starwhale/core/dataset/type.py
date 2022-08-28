@@ -20,7 +20,7 @@ D_ALIGNMENT_SIZE = 4 * 1024  # 4k for page cache
 class DataField(t.NamedTuple):
     idx: int
     data_size: int
-    data: bytes
+    data: t.Union[bytes, str]
     ext_attr: t.Dict[str, t.Any]
 
 

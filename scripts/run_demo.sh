@@ -59,7 +59,7 @@ swcli runtime quickstart shell . --python-env=venv --create-env --name pytorch-m
 # shellcheck source=/dev/null
 . .venv/bin/activate
 
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r requirements-sw-lock.txt
 
 echo "install swcli for mnist venv"
 pushd ../../client

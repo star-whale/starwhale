@@ -214,8 +214,8 @@ class PipelineHandler(metaclass=ABCMeta):
         data[self._label_field] = self.label_data_deserialize(data[self._label_field])
         return data
 
-    def handle_label(self, label: bytes, **kw: t.Any) -> t.Any:
-        return label.decode()
+    def handle_label(self, label: t.Any, **kw: t.Any) -> t.Any:
+        return label
 
     def _record_status(func):  # type: ignore
         @wraps(func)  # type: ignore
@@ -290,7 +290,7 @@ class PipelineHandler(metaclass=ABCMeta):
             try:
                 # TODO: inspect profiling
                 pred = self.ppl(
-                    data.data,
+                    data.data if isinstance(data.data, bytes) else data.data.encode(),
                     data_index=data.idx,
                     data_size=data.data_size,
                     label_content=label.data,

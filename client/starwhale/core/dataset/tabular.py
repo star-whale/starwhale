@@ -42,7 +42,7 @@ class TabularDatasetRow:
         self,
         id: int,
         data_uri: str,
-        label: t.Union[str, bytes],
+        label: t.Any,
         data_format: DataFormatType = DataFormatType.SWDS_BIN,
         object_store_type: ObjectStoreType = ObjectStoreType.LOCAL,
         data_offset: int = 0,
@@ -60,12 +60,24 @@ class TabularDatasetRow:
         self.data_origin = data_origin
         self.object_store_type = object_store_type
         self.data_mime_type = data_mime_type
-        self.label = label.encode() if isinstance(label, str) else label
         self.auth_name = auth_name
+        self.label = self._parse_label(label)
 
         # TODO: add non-starwhale object store related fields, such as address, authority
         # TODO: add data uri crc for versioning
         # TODO: support user custom annotations
+
+    def _parse_label(self, label: t.Any) -> str:
+        # TODO: add more label type-parse
+        # TODO: support user-defined label type
+        if isinstance(label, bytes):
+            return label.decode()
+        elif isinstance(label, (int, float, complex)):
+            return str(label)
+        elif isinstance(label, str):
+            return label
+        else:
+            raise NoSupportError(f"label type:{type(label)} {label}")
 
     def _do_validate(self) -> None:
         if self.id < 0:

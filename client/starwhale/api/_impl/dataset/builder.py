@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import struct
 import typing as t
 import tempfile
@@ -236,8 +237,8 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             zip(self.iter_all_dataset_slice(), self.iter_all_label_slice()),
             start=self._forked_last_idx + 1,
         ):
-            if not isinstance(data, bytes) or not isinstance(label, bytes):
-                raise FormatError("data and label must be bytes type")
+            if not isinstance(data, bytes):
+                raise FormatError("data must be bytes type")
 
             data_offset, data_size = self._write(dwriter, data)
             self.tabular_dataset.put(
@@ -254,7 +255,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             )
 
             total_data_size += data_size
-            total_label_size += len(label)
+            total_label_size += sys.getsizeof(label)
 
             wrote_size += data_size
             if wrote_size > self.volume_bytes_size:
