@@ -107,6 +107,7 @@ module.exports = {
         'baseui/no-deep-imports': 'warn',
         '@typescript-eslint/ban-ts-comment': 'off',
         'react/destructuring-assignment': 'off',
+        'import/no-named-as-default': 'off',
     },
     settings: {
         'react': {

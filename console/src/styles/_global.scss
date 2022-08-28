@@ -214,3 +214,23 @@ table { border-collapse: separate; }
   right: 5px;
 
 }
+
+
+.fullsize {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+.unselectable {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.all {
+  -moz-user-select: all;
+  -webkit-user-select: all;
+  -ms-user-select: all;
+  user-select: all;
+}

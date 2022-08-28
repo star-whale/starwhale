@@ -6495,6 +6495,11 @@ core-js@^3.0.4, core-js@^3.6.5, core-js@^3.8.2:
   resolved "https://registry.npmmirror.com/core-js/-/core-js-3.21.1.tgz#f2e0ddc1fc43da6f904706e8e955bc19d06a0d94"
   integrity sha512-FRq5b/VMrWlrmCzwRrpDYNxyHP9BcAZC+xHJaqTgIE5091ZV1NTmyh0sGOg5XqpnHvR0svdy0sv1gWA1zmhxig==
 
+core-js@^3.22.0:
+  version "3.24.1"
+  resolved "https://registry.npmmirror.com/core-js/-/core-js-3.24.1.tgz#cf7724d41724154010a6576b7b57d94c5d66e64f"
+  integrity sha512-0QTBSYSUZ6Gq21utGzkfITDylE8jWC9Ne1D2MrhvlsZBI1x39OdDIVbzSqtgMndIy6BlHxBXpMGqzZmnztg2rg==
+
 core-util-is@1.0.2:
   version "1.0.2"
   resolved "https://registry.npmmirror.com/core-util-is/-/core-util-is-1.0.2.tgz#b5fd54220aa2bc5ab57aab7140c940754503c1a7"
@@ -6807,6 +6812,11 @@ currently-unhandled@^0.4.1:
   integrity sha512-/fITjgjGU50vjQ4FH6eUoYu+iUoUKIXws2hL15JJpIR+BbTxaXQsMuuyjtNh2WqsSBS5nsaZHFsFecyw5CCAng==
   dependencies:
     array-find-index "^1.0.1"
+
+custom-event-polyfill@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.npmmirror.com/custom-event-polyfill/-/custom-event-polyfill-1.0.7.tgz#9bc993ddda937c1a30ccd335614c6c58c4f87aee"
+  integrity sha512-TDDkd5DkaZxZFM8p+1I3yAlvM3rSr1wbrOliG4yJiwinMZN8z/iGL7BTlDkrJcYTmgUSb4ywVCc3ZaUtOtC76w==
 
 cyclist@^1.0.1:
   version "1.0.1"
@@ -8214,15 +8224,25 @@ esbuild-android-arm64@0.14.54:
   resolved "https://registry.npmmirror.com/esbuild-android-arm64/-/esbuild-android-arm64-0.14.54.tgz#8ce69d7caba49646e009968fe5754a21a9871771"
   integrity sha512-F9E+/QDi9sSkLaClO8SOV6etqPd+5DgJje1F9lOWoNncDdOBL2YF59IhsWATSt0TLZbYCf3pNlTHvVV5VfHdvg==
 
-esbuild-darwin-64@0.14.54:
-  version "0.14.54"
-  resolved "https://registry.npmmirror.com/esbuild-darwin-64/-/esbuild-darwin-64-0.14.54.tgz#24ba67b9a8cb890a3c08d9018f887cc221cdda25"
-  integrity sha512-jtdKWV3nBviOd5v4hOpkVmpxsBy90CGzebpbO9beiqUYVMBtSc0AL9zGftFuBon7PNDcdvNCEuQqw2x0wP9yug==
+esbuild-darwin-64@0.14.34:
+  version "0.14.34"
+  resolved "https://registry.npmmirror.com/esbuild-darwin-64/-/esbuild-darwin-64-0.14.34.tgz#a0e4ab7a0cddf76761f1fb5d6bf552a376beb16e"
+  integrity sha512-pLRip2Bh4Ng7Bf6AMgCrSp3pPe/qZyf11h5Qo2mOfJqLWzSVjxrXW+CFRJfrOVP7TCnh/gmZSM2AFdCPB72vtw==
 
-esbuild-darwin-arm64@0.14.54:
-  version "0.14.54"
-  resolved "https://registry.npmmirror.com/esbuild-darwin-arm64/-/esbuild-darwin-arm64-0.14.54.tgz#3f7cdb78888ee05e488d250a2bdaab1fa671bf73"
-  integrity sha512-OPafJHD2oUPyvJMrsCvDGkRrVCar5aVyHfWGQzY1dWnzErjrDuSETxwA2HSsyg2jORLY8yBfzc1MIpUkXlctmw==
+esbuild-darwin-arm64@0.14.34:
+  version "0.14.34"
+  resolved "https://registry.npmmirror.com/esbuild-darwin-arm64/-/esbuild-darwin-arm64-0.14.34.tgz#54c35461f82f83a7f5169d9a6a54201798977b07"
+  integrity sha512-vpidSJEBxx6lf1NWgXC+DCmGqesJuZ5Y8aQVVsaoO4i8tRXbXb0whChRvop/zd3nfNM4dIl5EXAky0knRX5I6w==
+
+esbuild-freebsd-64@0.14.34:
+  version "0.14.34"
+  resolved "https://registry.npmmirror.com/esbuild-freebsd-64/-/esbuild-freebsd-64-0.14.34.tgz#aebb50248f5874d04ffeab2db8ee1ed6037e2654"
+  integrity sha512-m0HBjePhe0hAQJgtMRMNV9kMgIyV4/qSnzPx42kRMQBcPhgjAq1JRu4Il26czC+9FgpMbFkUktb07f/Lwnc6CA==
+
+esbuild-freebsd-arm64@0.14.34:
+  version "0.14.34"
+  resolved "https://registry.npmmirror.com/esbuild-freebsd-arm64/-/esbuild-freebsd-arm64-0.14.34.tgz#09bef288e29f18b38b0c70a9827b6ee718e36c7f"
+  integrity sha512-cpRc2B94L1KvMPPYB4D6G39jLqpKlD3noAMY4/e86iXXXkhUYJJEtTuyNFTa9JRpWM0xCAp4mxjHjoIiLuoCLA==
 
 esbuild-freebsd-64@0.14.54:
   version "0.14.54"
@@ -11916,6 +11936,11 @@ loader-utils@^2.0.0:
     emojis-list "^3.0.0"
     json5 "^2.1.2"
 
+loadjs@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.npmmirror.com/loadjs/-/loadjs-4.2.0.tgz#2a0336376397a6a43edf98c9ec3229ddd5abb6f6"
+  integrity sha512-AgQGZisAlTPbTEzrHPb6q+NYBMD+DP9uvGSIjSUM5uG+0jG15cb8axWpxuOIqrmQjn6scaaH8JwloiP27b2KXA==
+
 locate-path@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmmirror.com/locate-path/-/locate-path-2.0.0.tgz#2b568b265eec944c6d9c0de9c3dbbbca0354cd8e"
@@ -14064,6 +14089,25 @@ plotly.js@^2.11.1:
     webgl-context "^2.2.0"
     world-calendars "^1.0.3"
 
+plyr-react@^5.1.0:
+  version "5.1.0"
+  resolved "https://registry.npmmirror.com/plyr-react/-/plyr-react-5.1.0.tgz#b080261103d2fbf4e8a151e9d25431201e1bec59"
+  integrity sha512-N0qIuN1wZZzpKUXngtNeZwTiWqvOb6qAzqcfMI48rLkRJGM5xM5MRWILd3hW1PWPbVBKsAH4Ged32ZZhkJVbXA==
+  dependencies:
+    plyr "^3.7.2"
+    react-aptor "^2.0.0-alpha.1"
+
+plyr@^3.7.2:
+  version "3.7.2"
+  resolved "https://registry.npmmirror.com/plyr/-/plyr-3.7.2.tgz#183d2397e7401a577700c8319fe133692b4aff54"
+  integrity sha512-I0ZC/OI4oJ0iWG9s2rrnO0YFO6aLyrPiQBq9kum0FqITYljwTPBbYL3TZZu8UJQJUq7tUWN18Q7ACwNCkGKABQ==
+  dependencies:
+    core-js "^3.22.0"
+    custom-event-polyfill "^1.0.7"
+    loadjs "^4.2.0"
+    rangetouch "^2.0.1"
+    url-polyfill "^1.1.12"
+
 pnp-webpack-plugin@1.6.4:
   version "1.6.4"
   resolved "https://registry.npmmirror.com/pnp-webpack-plugin/-/pnp-webpack-plugin-1.6.4.tgz#c9711ac4dc48a685dabafc86f8b6dd9f8df84149"
@@ -14545,6 +14589,11 @@ range-parser@^1.2.1, range-parser@~1.2.1:
   resolved "https://registry.npmmirror.com/range-parser/-/range-parser-1.2.1.tgz#3cf37023d199e1c24d1a55b84800c2f3e6468031"
   integrity sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==
 
+rangetouch@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmmirror.com/rangetouch/-/rangetouch-2.0.1.tgz#c01105110fd3afca2adcb1a580692837d883cb70"
+  integrity sha512-sln+pNSc8NGaHoLzwNBssFSf/rSYkqeBXzX1AtJlkJiUaVSJSbRAWJk+4omsXkN+EJalzkZhWQ3th1m0FpR5xA==
+
 raw-body@2.4.3:
   version "2.4.3"
   resolved "https://registry.npmmirror.com/raw-body/-/raw-body-2.4.3.tgz#8f80305d11c2a0a545c2d9d89d7a0286fcead43c"
@@ -14618,6 +14667,23 @@ rdk@^6.0.2:
     classnames "^2.3.1"
     popper.js "^1.16.1"
     react-scrolllock "^5.0.1"
+
+react-app-polyfill@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmmirror.com/react-app-polyfill/-/react-app-polyfill-2.0.0.tgz#a0bea50f078b8a082970a9d853dc34b6dcc6a3cf"
+  integrity sha512-0sF4ny9v/B7s6aoehwze9vJNWcmCemAUYBVasscVr92+UYiEqDXOxfKjXN685mDaMRNF3WdhHQs76oTODMocFA==
+  dependencies:
+    core-js "^3.6.5"
+    object-assign "^4.1.1"
+    promise "^8.1.0"
+    raf "^3.4.1"
+    regenerator-runtime "^0.13.7"
+    whatwg-fetch "^3.4.1"
+
+react-aptor@^2.0.0-alpha.1:
+  version "2.0.0-alpha.1"
+  resolved "https://registry.npmmirror.com/react-aptor/-/react-aptor-2.0.0-alpha.1.tgz#d3f228c67aaffaf7ac9425dbca0b98fb49d593cd"
+  integrity sha512-FbvxQKsZMUZcLr2WdrQEmxH0kifsN4N+v6YdL1g3At03zouJCEcPXv+o+bhP3Ci3ya4QPvNHK/bpbrCzuKWOMw==
 
 react-base16-styling@^0.9.1:
   version "0.9.1"
@@ -15954,6 +16020,11 @@ run-queue@^1.0.0, run-queue@^1.0.3:
   dependencies:
     aproba "^1.1.1"
 
+rvfc-polyfill@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.npmmirror.com/rvfc-polyfill/-/rvfc-polyfill-1.0.4.tgz#07e11b114c695d3b70c3b05b50d68617fa05afcc"
+  integrity sha512-BemRbBDZiLB8pxoPT+2q6R30ykY1e75XBE/L1A0Ubd/3KdUoCQLqI/z4v4oNFNlN3/Rs93d3b6WoybnXhdebkw==
+
 rw@1, rw@^1.3.3:
   version "1.3.3"
   resolved "https://registry.npmmirror.com/rw/-/rw-1.3.3.tgz#3f862dfa91ab766b14885ef4d01124bfda074fb4"
@@ -17159,20 +17230,27 @@ telejson@^6.0.8:
     lodash "^4.17.21"
     memoizerific "^1.11.3"
 
-terser-webpack-plugin@^1.4.3:
-  version "1.4.5"
-  resolved "https://registry.npmmirror.com/terser-webpack-plugin/-/terser-webpack-plugin-1.4.5.tgz#a217aefaea330e734ffacb6120ec1fa312d6040b"
-  integrity sha512-04Rfe496lN8EYruwi6oPQkG0vo8C+HT49X687FZnpPF0qMAIHONI6HEXYPKDOE8e5HjXTyKfqRd/agHtH0kOtw==
+temp-dir@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmmirror.com/temp-dir/-/temp-dir-1.0.0.tgz#0a7c0ea26d3a39afa7e0ebea9c1fc0bc4daa011d"
+  integrity sha512-xZFXEGbG7SNC3itwBzI3RYjq/cEhBkx2hJuKGIUOcEULmkQExXiHat2z/qkISYsuR+IKumhEfKKbV5qXmhICFQ==
+
+tempy@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.npmmirror.com/tempy/-/tempy-0.3.0.tgz#6f6c5b295695a16130996ad5ab01a8bd726e8bf8"
+  integrity sha512-WrH/pui8YCwmeiAoxV+lpRH9HpRtgBhSR2ViBPgpGb/wnYDzp21R4MN45fsCGvLROvY67o3byhJRYRONJyImVQ==
   dependencies:
-    cacache "^12.0.2"
-    find-cache-dir "^2.1.0"
-    is-wsl "^1.1.0"
-    schema-utils "^1.0.0"
-    serialize-javascript "^4.0.0"
-    source-map "^0.6.1"
-    terser "^4.1.2"
-    webpack-sources "^1.4.0"
-    worker-farm "^1.7.0"
+    temp-dir "^1.0.0"
+    type-fest "^0.3.1"
+    unique-string "^1.0.0"
+
+terminal-link@^2.0.0:
+  version "2.1.1"
+  resolved "https://registry.npmmirror.com/terminal-link/-/terminal-link-2.1.1.tgz#14a64a27ab3c0df933ea546fba55f2d078edc994"
+  integrity sha512-un0FmiRUQNr5PJqy9kP7c40F5BOfpGlYTrxonDChEZB7pzZxRNp/bt+ymiy9/npwXya9KH99nJ/GXFIiUkYGFQ==
+  dependencies:
+    ansi-escapes "^4.2.1"
+    supports-hyperlinks "^2.0.0"
 
 terser-webpack-plugin@^4.2.3:
   version "4.2.3"
@@ -17957,6 +18035,19 @@ url-loader@^4.1.1:
     loader-utils "^2.0.0"
     mime-types "^2.1.27"
     schema-utils "^3.0.0"
+
+url-parse@^1.4.3, url-parse@^1.5.10:
+  version "1.5.10"
+  resolved "https://registry.npmmirror.com/url-parse/-/url-parse-1.5.10.tgz#9d3c2f736c1d75dd3bd2be507dcc111f1e2ea9c1"
+  integrity sha512-WypcfiRhfeUP9vvF0j6rw0J3hrWrw6iZv3+22h6iRMJ/8z1Tj6XfLP4DsUix5MhMPnXpiHDoKyoZ/bdCkwBCiQ==
+  dependencies:
+    querystringify "^2.1.1"
+    requires-port "^1.0.0"
+
+url-polyfill@^1.1.12:
+  version "1.1.12"
+  resolved "https://registry.npmmirror.com/url-polyfill/-/url-polyfill-1.1.12.tgz#6cdaa17f6b022841b3aec0bf8dbd87ac0cd33331"
+  integrity sha512-mYFmBHCapZjtcNHW0MDq9967t+z4Dmg5CJ0KqysK3+ZbyoNOWQHksGCTWwDhxGXllkWlOc10Xfko6v4a3ucM6A==
 
 url@^0.11.0:
   version "0.11.0"

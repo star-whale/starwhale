@@ -42,7 +42,10 @@ export default function MultiTags({ value, placeholder, onChange, getValueLabel 
                                 style: {
                                     'cursor': 'pointer',
                                     'backgroundColor': 'var(--color-brandPrimary)',
-                                    'margin': '2px',
+                                    'marginTop': '2px',
+                                    'marginBottom': '2px',
+                                    'marginRight': '2px',
+                                    'marginLeft': '2px',
 
                                     ':hover': {
                                         backgroundColor: 'var(--color-brandPrimaryHover)',
@@ -51,8 +54,10 @@ export default function MultiTags({ value, placeholder, onChange, getValueLabel 
                             },
                             Text: {
                                 style: {
-                                    font: theme.typography.LabelXSmall,
-                                    lineHeight: '20px',
+                                    font: {
+                                        ...theme.typography.LabelXSmall,
+                                        lineHeight: '20px',
+                                    },
                                 },
                             },
                         },
