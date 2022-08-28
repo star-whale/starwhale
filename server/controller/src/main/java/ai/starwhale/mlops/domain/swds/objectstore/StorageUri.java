@@ -49,7 +49,8 @@ public class StorageUri {
     public StorageUri(String uri){
         Matcher matcher = URI_PATTERN.matcher(uri);
         if(!matcher.matches()){
-            throw new SWValidationException(ValidSubject.SWDS).tip("unsupported data uri: "+uri);
+            this.path=uri;
+            return;
         }
         schema = matcher.group(2);
         String up = matcher.group(4);

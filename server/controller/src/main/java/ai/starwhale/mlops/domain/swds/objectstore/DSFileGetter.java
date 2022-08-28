@@ -16,9 +16,13 @@
 
 package ai.starwhale.mlops.domain.swds.objectstore;
 
+import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
+import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import lombok.extern.slf4j.Slf4j;
@@ -30,15 +34,33 @@ public class DSFileGetter {
 
     final StorageAccessParser storageAccessParser;
 
-    public DSFileGetter(StorageAccessParser storageAccessParser) {
+    final SWDatasetVersionMapper swDatasetVersionMapper;
+
+    public DSFileGetter(StorageAccessParser storageAccessParser,
+        SWDatasetVersionMapper swDatasetVersionMapper) {
         this.storageAccessParser = storageAccessParser;
+        this.swDatasetVersionMapper = swDatasetVersionMapper;
     }
 
-    public byte[] dataOf(Long datasetId, String uri, String authName, Long offset,
-        Long size) {
+    public byte[] dataOf(Long datasetId, String uri, String authName, String offset,
+        String size) {
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
             datasetId, uri, authName);
-        try (InputStream inputStream = storageAccessService.get(new StorageUri(uri).getPath(),offset,size)) {
+        String path = new StorageUri(uri).getPath();
+        StorageObjectInfo objectInfo;
+        try {
+            objectInfo = storageAccessService.head(path);
+        } catch (IOException e) {
+            log.error("error while accessing storage ", e);
+            throw new SWProcessException(ErrorType.STORAGE).tip(
+                String.format("error while accessing storage : %s", e.getMessage()));
+        }
+        if(!objectInfo.isExists()){
+            SWDatasetVersionEntity versionById = swDatasetVersionMapper.getVersionById(datasetId);
+            path =  versionById.getStoragePath()+"/"+ path;
+        }
+        try (InputStream inputStream = storageAccessService.get(path,
+            (long)ColumnType.INT64.decode(offset),(long)ColumnType.INT64.decode(size))) {
             return inputStream.readAllBytes();
         } catch (IOException ioException) {
             log.error("error while accessing storage ", ioException);
