@@ -239,9 +239,9 @@ public interface DatasetApi {
         @Parameter(name = "authName", description = "auth name the link used")
         @RequestParam(name = "authName",required = false) String authName,
         @Parameter(name = "offset", description = "offset in the content")
-        @RequestParam(name = "offset",required = false) Long offset,
+        @RequestParam(name = "offset",required = false) String offset,
         @Parameter(name = "size", description = "data size")
-        @RequestParam(name = "size",required = false) Long size,
+        @RequestParam(name = "size",required = false) String size,
         HttpServletResponse httpResponse);
 
 

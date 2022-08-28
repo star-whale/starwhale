@@ -16,6 +16,8 @@
 
 package ai.starwhale.mlops.domain.swds.objectstore;
 
+import ai.starwhale.mlops.datastore.ColumnSchema;
+import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
@@ -34,11 +36,12 @@ public class DSFileGetter {
         this.storageAccessParser = storageAccessParser;
     }
 
-    public byte[] dataOf(Long datasetId, String uri, String authName, Long offset,
-        Long size) {
+    public byte[] dataOf(Long datasetId, String uri, String authName, String offset,
+        String size) {
         StorageAccessService storageAccessService = storageAccessParser.getStorageAccessServiceFromAuth(
             datasetId, uri, authName);
-        try (InputStream inputStream = storageAccessService.get(new StorageUri(uri).getPath(),offset,size)) {
+        try (InputStream inputStream = storageAccessService.get(new StorageUri(uri).getPath(),
+            (long)ColumnType.INT64.decode(offset),(long)ColumnType.INT64.decode(size))) {
             return inputStream.readAllBytes();
         } catch (IOException ioException) {
             log.error("error while accessing storage ", ioException);
