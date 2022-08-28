@@ -279,7 +279,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
         self._manifest.update(
             {
-                "dataset_attr": swds_config.attr.as_dict(),
+                "dataset_attr": swds_config.attr.asdict(),
                 "process": swds_config.process,
                 "from": {
                     "version": append_from_version,
@@ -313,7 +313,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 f":ghost: import [red]{swds_config.process}@{workdir.resolve()}[/] to make swds..."
             )
             _summary: DatasetSummary = _obj.make_swds()
-            self._manifest["dataset_summary"] = _summary.as_dict()
+            self._manifest["dataset_summary"] = _summary.asdict()
 
         console.print(f"[step:swds]finish gen swds @ {self.store.data_dir}")
 

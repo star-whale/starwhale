@@ -41,7 +41,7 @@ class StandaloneDatasetTestCase(TestCase):
                 "__enter__.return_value": MagicMock(
                     **{
                         "make_swds.return_value": MagicMock(
-                            **{"as_dict.return_value": {}}
+                            **{"asdict.return_value": {}}
                         )
                     }
                 )

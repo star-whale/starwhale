@@ -130,7 +130,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
                 continue
             data_files_sign.append(f.resolve().name)
 
-        summary_content = json.dumps(summary.as_dict())
+        summary_content = json.dumps(summary.asdict())
         assert summary_content
         assert summary.rows == 10
         assert summary.increased_rows == 10

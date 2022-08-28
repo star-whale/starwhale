@@ -189,6 +189,12 @@ class StandaloneRuntimeTestCase(TestCase):
 
         _manifest = load_yaml(os.path.join(runtime_workdir, DEFAULT_MANIFEST_NAME))
 
+        assert _manifest["configs"] == {
+            "conda": {"channels": ["conda-forge"]},
+            "docker": {"image": ""},
+            "pip": {"extra_index_url": [""], "index_url": "", "trusted_host": [""]},
+        }
+
         assert (
             _manifest["base_image"]
             == "ghcr.io/star-whale/starwhale:latest-cuda11.5-cudnn8"
