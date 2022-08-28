@@ -42,6 +42,7 @@ import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;
+import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -132,17 +133,21 @@ public class K8sClient {
         if(null != resources){
             coreContainer.resources(resources);
         }
-        if (!coreEnv.isEmpty()) {
-            List<V1EnvVar> ee = new ArrayList<>();
-            env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
-            coreContainer.env(ee);
-        }
         if (!env.isEmpty()) {
             List<V1EnvVar> ee = new ArrayList<>();
             env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
             podSpec.getInitContainers().forEach(c -> {
                 c.env(ee);
             });
+        }
+        if (!coreEnv.isEmpty()) {
+            List<V1EnvVar> ee = new ArrayList<>();
+            coreEnv.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
+
+            List<V1EnvVar> coreEnvs = coreContainer.getEnv();
+            if(!CollectionUtils.isEmpty(coreEnvs))
+                coreEnvs.addAll(ee);
+            coreContainer.env(coreEnvs);
         }
 
         // replace host path
