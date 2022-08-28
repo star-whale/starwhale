@@ -72,20 +72,25 @@ public class Manifest{
         @JsonProperty("unchanged_rows")
         Long unchangedRows;
     }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
     public static class Extra{
         String desc;
         List<String> tag;
     }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public class Build{
+    public static class Build{
         String os;
         @JsonProperty("sw_version")
         String swVersion;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
-    public class DatasetAttr{
+    public static class DatasetAttr{
 
         @JsonProperty("alignment_size")
         int alignmentSize;
@@ -95,11 +100,13 @@ public class Manifest{
         int volumeSize;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
     public static class Conda{
         boolean use;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
     public static class Dep2{
         @JsonProperty("local_gen_env")
@@ -112,11 +119,13 @@ public class Manifest{
         Venv venv;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
     public static class Venv{
         boolean use;
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
     @Data
     public static class Dep{
         @JsonProperty("local_gen_env")

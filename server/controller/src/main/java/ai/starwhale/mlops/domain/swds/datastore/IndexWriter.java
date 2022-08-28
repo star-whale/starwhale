@@ -18,17 +18,24 @@ package ai.starwhale.mlops.domain.swds.datastore;
 
 import ai.starwhale.mlops.api.DataStoreController;
 import ai.starwhale.mlops.api.protocol.datastore.RecordDesc;
+import ai.starwhale.mlops.api.protocol.datastore.RecordValueDesc;
 import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
-import ai.starwhale.mlops.domain.swds.index.IndexItem;
+import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
+import ai.starwhale.mlops.datastore.ColumnType;
+import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -53,13 +60,18 @@ public class IndexWriter {
         try(BufferedReader br = new BufferedReader(new InputStreamReader(jsonLine))){
             List<RecordDesc> records = new LinkedList<>();
             String strLine;
+            Map<String,ColumnType> tableSchemaMap = null;
             while ((strLine = br.readLine()) != null)   {
-                IndexItem indexItem = objectMapper.readValue(strLine, IndexItem.class);
-                records.add(indexItem.toRecordDesc());
+                if(null == tableSchemaMap){
+                    tableSchemaMap = inferenceTableSchema(strLine);
+                }
+                Map<String,Object> indexItem = objectMapper.readValue(strLine, Map.class);
+                records.add(toRecordDesc(indexItem,tableSchemaMap));
             }
             UpdateTableRequest request = new UpdateTableRequest();
             request.setTableName(tableName);
-            request.setTableSchemaDesc(IndexItem.TABLE_SCHEMA);
+
+            request.setTableSchemaDesc(toSchema(tableSchemaMap));
             request.setRecords(records);
             dataStore.updateTable(request);
         } catch (IOException e) {
@@ -74,6 +86,42 @@ public class IndexWriter {
         }
 
 
+    }
+
+    private TableSchemaDesc toSchema(Map<String, ColumnType> tableSchemaMap) {
+        List<ColumnSchemaDesc> columnSchemaDescs = tableSchemaMap.entrySet().stream()
+            .map(entry -> new ColumnSchemaDesc(entry.getKey(), entry.getValue().name())).collect(
+                Collectors.toList());
+        return new TableSchemaDesc("id",columnSchemaDescs);
+    }
+
+    private RecordDesc toRecordDesc(Map<String, Object> indexItem, Map<String, ColumnType> tableSchemaMap) {
+        List<RecordValueDesc> values =
+        indexItem.entrySet().stream().map(entry->{
+            String k = entry.getKey();
+            Object v = entry.getValue();
+            return new RecordValueDesc(k,tableSchemaMap.get(k).encode(v));
+        }).collect(Collectors.toList());
+        return new RecordDesc(values);
+    }
+
+    private Map<String,ColumnType> inferenceTableSchema(String strLine) throws JsonProcessingException {
+        Map<String,Object> row = objectMapper.readValue(strLine, Map.class);
+        Map<String,ColumnType> ret = new HashMap<>();
+        row.entrySet().forEach(entry->{
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if(value instanceof Long || value instanceof Integer || value instanceof Byte){
+                ret.put(key,ColumnType.INT64);
+            } else if(value instanceof String){
+                ret.put(key,ColumnType.STRING);
+            }else if(value instanceof Float || value instanceof Double){
+                ret.put(key,ColumnType.FLOAT64);
+            }else {
+                ret.put(key,ColumnType.UNKNOWN);
+            }
+        });
+        return ret;
     }
 
 }
