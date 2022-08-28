@@ -133,8 +133,7 @@ class UserRawDataLoader(DataLoader):
         file: FileLikeObj,
         row: TabularDatasetRow,
     ) -> t.Generator[t.Tuple[bytes, int], None, None]:
-        data: bytes = file.read(row.data_size)
-        yield data, row.data_size
+        yield file.read(row.data_size), row.data_size
 
 
 class SWDSBinDataLoader(DataLoader):
@@ -152,8 +151,7 @@ class SWDSBinDataLoader(DataLoader):
         header: bytes = file.read(_header_size)
         _, _, _, size, padding_size, _, _ = _header_struct.unpack(header)
         data: bytes = file.read(size + padding_size)
-        data = data[:size].tobytes() if isinstance(data, memoryview) else data[:size]
-        yield data, size
+        yield data[:size], size
 
 
 def get_data_loader(

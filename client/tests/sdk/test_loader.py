@@ -78,6 +78,7 @@ class TestDataLoader(TestCase):
         assert _data.ext_attr == {"ds_name": "mnist", "ds_version": "1122334455667788"}
         assert _data.data_size == len(_data.data)
         assert len(_data.data) == 28 * 28
+        assert isinstance(_data.data, bytes)
 
         assert loader.kind == DataFormatType.USER_RAW
         assert list(loader._stores.keys()) == ["local."]
@@ -208,6 +209,7 @@ class TestDataLoader(TestCase):
         assert _label.data == "0"
         assert len(_data.data) == 28 * 28
         assert len(_data.data) == _data.data_size
+        assert isinstance(_data.data, bytes)
         assert len(loader._stores) == 3
         assert loader._stores["remote.server1"].backend.kind == SWDSBackendType.S3
         assert loader._stores["remote.server1"].bucket == "starwhale"
@@ -285,6 +287,7 @@ class TestDataLoader(TestCase):
         assert len(_data.data) == _data.data_size
         assert _data.data_size == 10 * 28 * 28
         assert _data.ext_attr == {"ds_name": "mnist", "ds_version": version}
+        assert isinstance(_data.data, bytes)
 
         assert list(loader._stores.keys()) == ["local."]
         backend = loader._stores["local."].backend
@@ -362,6 +365,7 @@ class TestDataLoader(TestCase):
         assert len(_data.data) == _data.data_size
         assert _data.data_size == 10 * 28 * 28
         assert _data.ext_attr == {"ds_name": "mnist", "ds_version": "1122334455667788"}
+        assert isinstance(_data.data, bytes)
 
         assert list(loader._stores.keys()) == ["local."]
         backend = loader._stores["local."].backend
