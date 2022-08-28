@@ -1,10 +1,9 @@
-import React from 'react'
+/* eslint-disable */
+import React, { useEffect } from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
 import Button from '@/components/Button'
 import normalLogoImg from '@/assets/logo_normal_en_white.svg'
-import test from './test.jpg'
 import ZoomWrapper from './ZoomWrapper'
-import { useEffect } from 'react'
 import _, { reject } from 'lodash'
 import Color from 'color'
 import Plyr, { usePlyr } from 'plyr-react'
@@ -13,6 +12,7 @@ import 'plyr-react/plyr.css'
 // import videoUrl3 from './video3.mp4'
 // import videoUrl from './trailer.mp4'
 import { Page } from '@/components/Pages/Page'
+import test from './test.jpg'
 import Card from '../Card'
 import 'rvfc-polyfill'
 
@@ -43,7 +43,7 @@ function getVideoFrames(canvas: HTMLCanvasElement, video: HTMLVideoElement, src:
             return reject(new Error('Canvas not supported'))
         }
         let step = 1
-        let frames: IFrame[] = []
+        const frames: IFrame[] = []
         const drawingLoop = async (now: number, meta: any) => {
             // capture frame by FRAME RATE will accelerate extract process
             if (video.paused) {

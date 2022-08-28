@@ -43,14 +43,14 @@ module.exports = {
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/naming-convention': [
             'error',
-            {
-                selector: 'interface',
-                format: ['PascalCase'],
-                custom: {
-                    regex: '^I[A-Z]',
-                    match: true,
-                },
-            }, // Allow camelCase variables (23.2), PascalCase variables (23.8), and UPPER_CASE variables (23.10)
+            // {
+            //     selector: 'interface',
+            //     format: ['PascalCase'],
+            //     custom: {
+            //         regex: '^I[A-Z]',
+            //         match: true,
+            //     },
+            // }, // Allow camelCase variables (23.2), PascalCase variables (23.8), and UPPER_CASE variables (23.10)
             {
                 selector: 'variable',
                 format: ['camelCase', 'PascalCase', 'UPPER_CASE'],

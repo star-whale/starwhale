@@ -25,9 +25,9 @@ export function tableNameOfDataset(projectId: string, datasetId: string, dataset
 }
 
 export function tableNameOfResult(projectId: string, evaluationId: string) {
-    return `project/${projectId}/eval/${evaluationId}/summary`
+    return `project/${projectId}/eval/${evaluationId}/results`
 }
 
 export function tableNameOfSummary(projectId: string) {
-    return `project/${projectId}/eval/summary`
+    return `/project/${projectId}/eval/summary`
 }

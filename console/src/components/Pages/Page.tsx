@@ -1,3 +1,4 @@
+/* eslint-disable */
 import * as React from 'react'
 import { motion, useMotionValue, MotionValue, HTMLMotionProps, PanInfo } from 'framer-motion'
 import { defaultEffects } from './defaultEffects'
@@ -147,7 +148,7 @@ export const Page = React.forwardRef<HTMLDivElement, PageProps>((props, forwarde
             const origin = isHorizontal ? originOffset.x : originOffset.y
 
             const pages = React.Children.map(children, (child, index) => {
-                let e = typeof effect === 'string' ? defaultEffects[effect] : effect
+                const e = typeof effect === 'string' ? defaultEffects[effect] : effect
 
                 const normalizedOffset = (offset - origin + index * step) / step
 
@@ -287,7 +288,9 @@ export const Page = React.forwardRef<HTMLDivElement, PageProps>((props, forwarde
             rDragging.current = false
 
             const { velocity, offset } = info
-            let vel, off, dim
+            let vel
+            let off
+            let dim
 
             if (isHorizontal) {
                 off = offset.x

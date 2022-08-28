@@ -1,5 +1,3 @@
-import { IResourceSchema } from '@/domain/base/schemas/resource'
-
 export interface ColumnSchemaDesc {
     name?: string
     type?: string

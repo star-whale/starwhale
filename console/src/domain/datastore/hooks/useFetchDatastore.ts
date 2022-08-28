@@ -31,7 +31,8 @@ export function useQueryDatasetList(tableName?: string, page?: IListQuerySchema)
         if (tableName) {
             info.refetch()
         }
-    }, [tableName, page])
+        // eslint-disalbe-next-line react-hooks/exhaustive-deps
+    }, [tableName])
 
     return info
 }

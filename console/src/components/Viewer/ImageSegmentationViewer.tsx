@@ -1,11 +1,11 @@
-import React from 'react'
+/* eslint-disable */
+import React, { useEffect } from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
 import Button from '@/components/Button'
 import normalLogoImg from '@/assets/logo_normal_en_white.svg'
-import ZoomWrapper from './ZoomWrapper'
-import { useEffect } from 'react'
 import _ from 'lodash'
 import Color from 'color'
+import ZoomWrapper from './ZoomWrapper'
 import { COLORS, useImageData, clearCanvas, loadImage, drawSegment, IImageData } from './utils'
 
 export default function ImageSegmentationViewer({ isZoom = true }) {
@@ -33,7 +33,7 @@ export default function ImageSegmentationViewer({ isZoom = true }) {
     React.useEffect(() => {
         if (!originalData) return
         const getImages = async () => {
-            return await Promise.all($masks.map((m) => loadImage(m.label, m.mask)))
+            return Promise.all($masks.map((m) => loadImage(m.label, m.mask)))
         }
         getImages().then((d) => setImgDatas(d))
     }, [$masks, originalData, hiddenLabels])

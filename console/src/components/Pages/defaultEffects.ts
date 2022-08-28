@@ -1,5 +1,6 @@
-import { PageEffectInfo, DefaultEffect, PageEffect } from './Page'
+/* eslint-disable */
 import { transform } from 'framer-motion'
+import { PageEffectInfo, DefaultEffect, PageEffect } from './Page'
 
 export const clamp = (num: number, min: number, max: number) => Math.max(Math.min(num, max), min)
 
