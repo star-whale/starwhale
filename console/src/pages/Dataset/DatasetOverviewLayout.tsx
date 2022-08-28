@@ -4,7 +4,6 @@ import React, { useEffect, useMemo } from 'react'
 import { useHistory, useLocation, useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import Accordion from '@/components/Accordion'
 import { Panel } from 'baseui/accordion'
@@ -30,7 +29,6 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
     const datasetVersionInfo = useFetchDatasetVersion(projectId, datasetId, datasetVersionId)
     const { dataset, setDataset } = useDataset()
 
-    const projectInfo = useFetchProject(projectId)
     const { setDatasetLoading } = useDatasetLoading()
     const history = useHistory()
     const [t] = useTranslation()
@@ -44,14 +42,7 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         } else if (datasetInfo.isLoading) {
             setDataset(undefined)
         }
-    }, [
-        dataset?.versionName,
-        datasetInfo.data,
-        datasetInfo.isLoading,
-        datasetInfo.isSuccess,
-        setDataset,
-        setDatasetLoading,
-    ])
+    }, [dataset?.versionName, datasetInfo, setDataset, setDatasetLoading])
 
     useEffect(() => {
         setDatasetLoading(datasetVersionInfo.isLoading)
@@ -70,22 +61,19 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
         setDatasetLoading,
     ])
 
-    const datasetName = dataset?.versionName ?? '-'
-    const project = projectInfo.data ?? {}
-
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
                 title: t('Datasets'),
-                path: `/projects/${project?.id}/datasets`,
+                path: `/projects/${projectId}/datasets`,
             },
             {
-                title: datasetName,
-                path: `/projects/${project?.id}/datasets/${datasetId}`,
+                title: dataset?.versionName ?? '-',
+                path: `/projects/${projectId}/datasets/${datasetId}`,
             },
         ]
         return items
-    }, [datasetId, project?.id, datasetName, t])
+    }, [datasetId, projectId, dataset, t])
 
     const info = React.useMemo(() => {
         const items = [

@@ -40,7 +40,7 @@ export default defineConfig({
         },
     },
     plugins: [
-        eslint(),
+        // eslint(),
         react({
             exclude: /\.stories\.(t|j)sx?$/,
         }),

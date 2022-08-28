@@ -2,7 +2,6 @@ import { IResourceSchema } from '@/domain/base/schemas/resource'
 import { IUserSchema } from '@user/schemas/user'
 import { IDatasetVersionSchema } from './datasetVersion'
 
-// TODO fix dataset & dataset detail has different attrs
 export interface IDatasetSchema extends IResourceSchema {
     name: string
     owner?: IUserSchema
@@ -17,6 +16,7 @@ export interface IDatasetDetailSchema {
     versionName?: string
     versionTag?: string
     files?: Array<IDatasetFileSchema>
+    indexTable?: string
 }
 
 export interface IDatasetFileSchema {
