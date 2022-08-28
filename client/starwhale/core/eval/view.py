@@ -175,17 +175,20 @@ class JobTermView(BaseTermView):
                     _tree.add(str(_obj))
 
                 for _k, _v in _obj.items():
-                    if _k != "id":
-                        if isinstance(_v, (list, tuple)):
-                            _k = f"{_k}: [green]{'|'.join(_v)}"
-                        elif isinstance(_v, dict) or isinstance(_v, str):
-                            _k = _k
-                        else:
-                            _k = f"{_k}: [green]{_v:.4f}"
+                    if _k == "id":
+                        continue
+                    if isinstance(_v, (list, tuple)):
+                        _k = f"{_k}: [green]{'|'.join(_v)}"
+                    elif isinstance(_v, dict):
+                        _k = _k
+                    elif isinstance(_v, str):
+                        _k = f"{_k}:{_v}"
+                    else:
+                        _k = f"{_k}: [green]{_v:.4f}"
 
-                        _ntree = _tree.add(_k)
-                        if isinstance(_v, dict):
-                            _r(_ntree, _v)
+                    _ntree = _tree.add(_k)
+                    if isinstance(_v, dict):
+                        _r(_ntree, _v)
 
             tree = Tree("Summary")
             _r(tree, report["summary"])
