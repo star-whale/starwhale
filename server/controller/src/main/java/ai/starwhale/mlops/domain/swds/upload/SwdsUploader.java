@@ -169,7 +169,7 @@ public class SwdsUploader {
             }
             final String storagePath = String.format(FORMATTER_STORAGE_PATH, swDatasetVersionWithMeta.getSwDatasetVersionEntity().getStoragePath(),
                 StringUtils.hasText(uri)?uri:filename);
-            storageAccessService.put(storagePath,is);
+            storageAccessService.put(storagePath,is, file.getSize());
         } catch (IOException e) {
             log.error("read swds failed {}", filename,e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.NETWORK),

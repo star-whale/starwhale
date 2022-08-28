@@ -94,16 +94,10 @@ public class StorageAccessServiceS3 implements StorageAccessService {
      * about 2G, you should wrapp the inputStream with a  LargeFileInputStream
      */
     @Override
-    public void put(String path, InputStream inputStream) throws IOException {
-        long fileSize;
-        if (inputStream instanceof LargeFileInputStream) {
-            fileSize = ((LargeFileInputStream) inputStream).size();
-        } else {
-            fileSize = inputStream.available();
-        }
+    public void put(String path, InputStream inputStream, long size) throws IOException {
         s3client.putObject(
             PutObjectRequest.builder().bucket(s3Config.getBucket()).key(path).build(),
-            RequestBody.fromInputStream(inputStream, fileSize));
+            RequestBody.fromInputStream(inputStream, size));
     }
 
     @Override
