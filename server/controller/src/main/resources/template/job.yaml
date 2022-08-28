@@ -29,16 +29,10 @@ spec:
             - sh
             - -c
             - >-
-              cd /opt/starwhale && find ./ -type f \( -name \*.swmp -o -name \*.swrt \) -exec tar -C swmp/ -xf {} \; &&
-              mkdir -p config && echo $INPUT > config/input.json &&
-              rm swmp/dep/python/requirements-lock.txt
+              cd /opt/starwhale && find ./ -type f \( -name \*.swmp -o -name \*.swrt \) -exec tar -C swmp/ -xf {} \;
         - name: 'worker'
           image: 'docker.io/library/busybox'
           imagePullPolicy: IfNotPresent
-          #command:
-          #- sh
-          #- -c
-          #- tail -f /dev/null
           args:
             - ppl
           volumeMounts:
@@ -71,4 +65,4 @@ spec:
             path: /data
             type: DirectoryOrCreate
         - name: data
-          emptyDir: { }
+          emptyDir: {}
