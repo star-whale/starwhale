@@ -177,7 +177,10 @@ const Routes = () => {
                             </JobOverviewLayout>
                         </Route>
                         {/* datasets */}
-                        <Route exact path='/projects/:projectId/datasets/:datasetId/:path?/:datasetVersionId?/:path?'>
+                        <Route
+                            exact
+                            path='/projects/:projectId/datasets/:datasetId/:path?/:datasetVersionId?/:path?/:fileId?'
+                        >
                             <DatasetOverviewLayout>
                                 <Switch>
                                     <Route
@@ -198,6 +201,12 @@ const Routes = () => {
                                     <Route
                                         exact
                                         path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/files'
+                                        component={DatasetVersionOverviewFiles}
+                                    />
+
+                                    <Route
+                                        exact
+                                        path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/files/:fileId?'
                                         component={DatasetVersionOverviewFiles}
                                     />
                                     <Redirect to='/projects/:projectId/datasets/:datasetId' />

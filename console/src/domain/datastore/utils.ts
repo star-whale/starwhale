@@ -9,8 +9,8 @@ export function tableDataLink(
     query: {
         uri: string
         authName: string
-        offset: number
-        size: number
+        offset: string
+        size: string
         Authorization?: string
     }
 ) {

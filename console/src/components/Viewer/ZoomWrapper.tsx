@@ -3,7 +3,7 @@ import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
 import { Button } from '@/components/Button'
 import normalLogoImg from '@/assets/logo_normal_en_white.svg'
 
-export default function ZoomWrapper({ children }: any) {
+export default function ZoomWrapper({ children, isTools }: any) {
     return (
         <TransformWrapper
             wheel={{ disabled: false }}
@@ -17,34 +17,36 @@ export default function ZoomWrapper({ children }: any) {
         >
             {({ zoomIn, zoomOut, resetTransform, centerView }) => (
                 <>
-                    <div
-                        className='flow-tools'
-                        style={{
-                            right: '20px',
-                            bottom: '20px',
-                            position: 'absolute',
-                            display: 'flex',
-                            gap: '20px',
-                            cursor: 'pointer',
-                            zIndex: 10,
-                        }}
-                    >
-                        <Button type='button' onClick={() => zoomIn()}>
-                            Zoom in
-                        </Button>
-                        <Button type='button' onClick={() => zoomOut()}>
-                            Zoom out
-                        </Button>
-                        <Button
-                            type='button'
-                            onClick={() => {
-                                resetTransform()
-                                centerView()
+                    {isTools && (
+                        <div
+                            className='flow-tools'
+                            style={{
+                                right: '20px',
+                                bottom: '20px',
+                                position: 'absolute',
+                                display: 'flex',
+                                gap: '20px',
+                                cursor: 'pointer',
+                                zIndex: 10,
                             }}
                         >
-                            Reset
-                        </Button>
-                    </div>
+                            <Button type='button' onClick={() => zoomIn()}>
+                                Zoom in
+                            </Button>
+                            <Button type='button' onClick={() => zoomOut()}>
+                                Zoom out
+                            </Button>
+                            <Button
+                                type='button'
+                                onClick={() => {
+                                    resetTransform()
+                                    centerView()
+                                }}
+                            >
+                                Reset
+                            </Button>
+                        </div>
+                    )}
                     <TransformComponent
                         wrapperStyle={{
                             width: '100%',

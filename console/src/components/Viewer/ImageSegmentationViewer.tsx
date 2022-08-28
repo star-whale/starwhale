@@ -6,80 +6,8 @@ import ZoomWrapper from './ZoomWrapper'
 import { useEffect } from 'react'
 import _ from 'lodash'
 import Color from 'color'
+import { COLORS, useImageData, clearCanvas, loadImage, drawSegment, IImageData } from './utils'
 
-const COLORS = ['#df672a', '#c1433c', '#3d9e3e', '#ecbb33', '#926ccb', '#6bb59b', '#ad825c', '#c66b9e', '#a7b756'].map(
-    (c) => Color(c).rgb().array() as [number, number, number]
-)
-
-const loadImage = (label: any, url: string) => {
-    const src = url.startsWith('http') || url.startsWith('data:image') ? url : 'data:image/png;base64,' + url
-    return new Promise<{ label: any; img: ImageData }>((resolve, reject) => {
-        const img = new Image()
-        img.onload = () => {
-            const canvas = document.createElement('canvas')
-            canvas.width = img.width
-            canvas.height = img.height
-            const ctx = canvas.getContext('2d')
-            if (ctx) {
-                ctx.drawImage(img, 0, 0)
-                resolve({
-                    label,
-                    img: ctx.getImageData(0, 0, img.width, img.height),
-                })
-            }
-        }
-        img.onerror = () => reject(new Error('Failed to load image'))
-        img.src = src
-    })
-}
-
-const useImageData = (src: string) => {
-    const [imageData, setImageData] = React.useState<ImageData | null>(null)
-
-    useEffect(() => {
-        const img = new Image()
-        img.src = src
-        img.crossOrigin = 'anonymous'
-        img.onload = () => {
-            const canvas = document.createElement('canvas')
-            canvas.width = img.width
-            canvas.height = img.height
-            const ctx = canvas.getContext('2d')
-            if (ctx) {
-                ctx.drawImage(img, 0, 0)
-                setImageData(ctx.getImageData(0, 0, img.width, img.height))
-            }
-        }
-    }, [src])
-
-    return {
-        imageData,
-    }
-}
-
-const clearCanvas = (canvas: HTMLCanvasElement) => {
-    const ctx = canvas.getContext('2d')
-    ctx?.clearRect(0, 0, canvas.width, canvas.height)
-}
-
-const drawSegment = (canvas: HTMLCanvasElement, imgDatas: IImageData[], rawDatas: any[]) => {
-    const ctx = canvas.getContext('2d')
-    const newImageData = new ImageData(canvas.width, canvas.height)
-    for (let i = 0; i < newImageData.data.length; i += 4) {
-        const rawIndex = imgDatas.findIndex((v) => v.img.data[i + 0] > 0)
-        if (rawIndex < 0) continue
-        const [r, g, b, a = 255] = rawDatas[rawIndex]?.color //?? COLORS[rawIndex % COLORS.length]
-        // const isHover = rect ? rect.x + rect.y * imageData.width * 4 === i : false
-        newImageData.data[i] = r
-        newImageData.data[i + 1] = g
-        newImageData.data[i + 2] = b
-        newImageData.data[i + 3] = rawDatas[rawIndex]?.isShow ? a : 0
-    }
-    ctx?.putImageData(newImageData, 0, 0)
-    return newImageData
-}
-
-type IImageData = { label: any; img: ImageData }
 export default function ImageSegmentationViewer({ isZoom = true }) {
     const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
     const [rect, setHoverRect] = React.useState<{ x: number; y: number } | null>(null)
@@ -144,6 +72,8 @@ export default function ImageSegmentationViewer({ isZoom = true }) {
             canvas?.removeEventListener('mouseleave', handleLeave)
         }
     }, [])
+
+    console.log(originalData)
 
     return (
         <div className='flowContainer fullsize'>
