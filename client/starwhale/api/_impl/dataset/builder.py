@@ -378,7 +378,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             )
 
             total_data_size += data_size
-            total_label_size += len(label)
+            total_label_size += sys.getsizeof(label)
             increased_rows += 1
 
         self._copy_files(map_path_sign)
