@@ -6,9 +6,9 @@ public class RegExps {
 
     public static final String USER_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{3,32}$";
 
-    public static final String PROJECT_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$";
+    public static final String PROJECT_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$";
 
-    public static final String BUNDLE_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{3,80}$";
+    public static final String BUNDLE_NAME_REGEX = "^[a-zA-Z][a-zA-Z\\d_-]{2,80}$";
 
 
     public static void main(String[] args) {

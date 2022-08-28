@@ -25,6 +25,7 @@ import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.TagAction;
+import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleURL;
@@ -57,18 +58,24 @@ import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -118,6 +125,10 @@ public class RuntimeService {
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
+
+    @Resource
+    @Qualifier("yamlMapper")
+    private ObjectMapper yamlMapper;
 
     private BundleManager bundleManager() {
         return new BundleManager(idConvertor, projectManager, runtimeManager, runtimeManager, ValidSubject.RUNTIME);
@@ -328,15 +339,35 @@ public class RuntimeService {
         }
         /* create new entity */
         if(!entityExists) {
+            RuntimeManifest runtimeManifestObj = null;
+            try(final InputStream inputStream = dsFile.getInputStream()){
+                // only extract the eval job file content
+                String runtimeManifest = new String(
+                    Objects.requireNonNull(
+                        TarFileUtil.getContentFromTarFile(inputStream, "", "_manifest.yaml")));
+                runtimeManifestObj = yamlMapper.readValue(runtimeManifest,
+                    RuntimeManifest.class);
+            } catch (IOException e) {
+                log.error("upload runtime failed {}",uploadRequest.getRuntime(),e);
+                throw new StarWhaleApiException(new SWProcessException(ErrorType.SYSTEM),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+            }
             runtimeVersionMapper.addNewVersion(RuntimeVersionEntity.builder()
                 .ownerId(userService.currentUserDetail().getId())
                 .storagePath(runtimePath)
                 .runtimeId(entity.getId())
                 .versionName(uploadRequest.version())
                 .versionMeta(uploadRequest.getRuntime())
-                .manifest(uploadRequest.getManifest())
+                .manifest(null == runtimeManifestObj? null : runtimeManifestObj.getBaseImage())
                 .build());
         }
+    }
+
+    @Data
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static final class RuntimeManifest{
+        @JsonProperty("base_image")
+        String baseImage;
     }
 
     public void pull(String projectUrl, String runtimeUrl, String versionUrl, HttpServletResponse httpResponse) {
