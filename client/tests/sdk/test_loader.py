@@ -16,7 +16,11 @@ from starwhale.api.dataset import (
     UserRawDataLoader,
 )
 from starwhale.core.dataset.type import DatasetSummary
-from starwhale.core.dataset.store import DatasetStorage
+from starwhale.core.dataset.store import (
+    DatasetStorage,
+    S3StorageBackend,
+    LocalFSStorageBackend,
+)
 from starwhale.core.dataset.tabular import TabularDatasetRow
 
 from .. import ROOT_DIR
@@ -234,8 +238,10 @@ class TestDataLoader(TestCase):
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
                 data_uri=fname,
-                data_offset=0,
-                data_size=8160,
+                data_offset=32,
+                data_size=784,
+                _swds_bin_offset=0,
+                _swds_bin_size=8160,
                 label=b"0",
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.SWDS_BIN,
@@ -282,6 +288,7 @@ class TestDataLoader(TestCase):
 
         assert list(loader._stores.keys()) == ["local."]
         backend = loader._stores["local."].backend
+        assert isinstance(backend, S3StorageBackend)
         assert backend.kind == SWDSBackendType.S3
         assert backend.s3.Object.call_args[0] == (
             "starwhale",
@@ -314,8 +321,10 @@ class TestDataLoader(TestCase):
                 id=0,
                 object_store_type=ObjectStoreType.LOCAL,
                 data_uri=fname,
-                data_offset=0,
-                data_size=8160,
+                data_offset=32,
+                data_size=784,
+                _swds_bin_offset=0,
+                _swds_bin_size=8160,
                 label=b"0",
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.SWDS_BIN,
@@ -326,8 +335,10 @@ class TestDataLoader(TestCase):
                 id=1,
                 object_store_type=ObjectStoreType.LOCAL,
                 data_uri=fname,
-                data_offset=0,
-                data_size=8160,
+                data_offset=32,
+                data_size=784,
+                _swds_bin_offset=0,
+                _swds_bin_size=8160,
                 label=b"1",
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.SWDS_BIN,
@@ -353,6 +364,8 @@ class TestDataLoader(TestCase):
         assert _data.ext_attr == {"ds_name": "mnist", "ds_version": "1122334455667788"}
 
         assert list(loader._stores.keys()) == ["local."]
-        assert loader._stores["local."].backend.kind == SWDSBackendType.LocalFS
+        backend = loader._stores["local."].backend
+        assert isinstance(backend, LocalFSStorageBackend)
+        assert backend.kind == SWDSBackendType.LocalFS
         assert loader._stores["local."].bucket == str(data_dir)
         assert not loader._stores["local."].key_prefix

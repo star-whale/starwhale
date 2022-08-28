@@ -69,9 +69,15 @@ class DataLoader(metaclass=ABCMeta):
             if store.key_prefix:
                 data_uri = os.path.join(store.key_prefix, data_uri.lstrip("/"))
 
-        _key_compose = (
-            f"{data_uri}:{row.data_offset}:{row.data_offset + row.data_size - 1}"
-        )
+        if self.kind == DataFormatType.SWDS_BIN:
+            offset, size = (
+                int(row.extra_kw["_swds_bin_offset"]),
+                int(row.extra_kw["_swds_bin_size"]),
+            )
+        else:
+            offset, size = row.data_offset, row.data_size
+
+        _key_compose = f"{data_uri}:{offset}:{offset + size - 1}"
         return _key_compose
 
     def __iter__(self) -> t.Generator[t.Tuple[DataField, DataField], None, None]:

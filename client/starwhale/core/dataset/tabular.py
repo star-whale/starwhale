@@ -50,18 +50,19 @@ class TabularDatasetRow:
         data_origin: DataOriginType = DataOriginType.NEW,
         data_mime_type: MIMEType = MIMEType.UNDEFINED,
         auth_name: str = "",
-        **kw: t.Any,
+        **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
         self.data_uri = data_uri.strip()
-        self.data_format = data_format
+        self.data_format = DataFormatType(data_format)
         self.data_offset = data_offset
         self.data_size = data_size
-        self.data_origin = data_origin
-        self.object_store_type = object_store_type
-        self.data_mime_type = data_mime_type
+        self.data_origin = DataOriginType(data_origin)
+        self.object_store_type = ObjectStoreType(object_store_type)
+        self.data_mime_type = MIMEType(data_mime_type)
         self.auth_name = auth_name
         self.label = self._parse_label(label)
+        self.extra_kw = kw
 
         # TODO: add non-starwhale object store related fields, such as address, authority
         # TODO: add data uri crc for versioning
@@ -94,8 +95,7 @@ class TabularDatasetRow:
         if self.data_origin not in DataOriginType:
             raise NoSupportError(f"data origin: {self.data_origin}")
 
-        # TODO: support non-starwhale remote object store, for index-only feature
-        if self.object_store_type != ObjectStoreType.LOCAL:
+        if self.object_store_type not in ObjectStoreType:
             raise NoSupportError(f"object store {self.object_store_type}")
 
     def __str__(self) -> str:
@@ -110,6 +110,8 @@ class TabularDatasetRow:
 
     def asdict(self) -> t.Dict[str, t.Union[str, bytes, int]]:
         d = deepcopy(self.__dict__)
+        d.pop("extra_kw", None)
+        d.update(self.extra_kw)
         for k, v in d.items():
             if isinstance(v, Enum):
                 d[k] = v.value

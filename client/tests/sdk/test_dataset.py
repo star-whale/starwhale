@@ -117,6 +117,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
             label_filter="mnist-data-*",
             alignment_bytes_size=64,
             volume_bytes_size=100,
+            data_mime_type=MIMEType.GRAYSCALE,
         ) as e:
             assert e.data_tmpdir.exists()
             summary = e.make_swds()
@@ -163,5 +164,7 @@ class TestDatasetBuildExecutor(BaseTestCase):
         tdb = TabularDataset(name="mnist", version="112233", project="self")
         meta = list(tdb.scan(0, 1))[0]
         assert meta.id == 0
-        assert meta.data_offset == 0
+        assert meta.data_offset == 32
+        assert meta.extra_kw["_swds_bin_offset"] == 0
         assert meta.data_uri in data_files_sign
+        assert meta.data_mime_type == MIMEType.GRAYSCALE
