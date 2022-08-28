@@ -21,7 +21,11 @@ import ai.starwhale.mlops.api.protocol.swmp.ClientSWMPRequest;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageInfoVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVO;
 import ai.starwhale.mlops.api.protocol.swmp.SWModelPackageVersionVO;
-import ai.starwhale.mlops.common.*;
+import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.common.PageParams;
+import ai.starwhale.mlops.common.TagAction;
+import ai.starwhale.mlops.common.TarFileUtil;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.bundle.BundleManager;
 import ai.starwhale.mlops.domain.bundle.BundleURL;
@@ -53,14 +57,10 @@ import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
-import ai.starwhale.mlops.storage.LargeFileInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -72,7 +72,6 @@ import javax.annotation.Resource;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -347,15 +346,10 @@ public class SWModelPackageService {
             : storagePathCoordinator.generateSwmpPath(projectEntity.getProjectName(),uploadRequest.name(), uploadRequest.version());
         String jobContent = "";
         try(final InputStream inputStream = dsFile.getInputStream()){
-            InputStream is= inputStream;
-            if(dsFile.getSize() >= Integer.MAX_VALUE){
-                // TODO can not use this large memory, TBD
-                is = new LargeFileInputStream(inputStream,dsFile.getSize());
-            }
             // only extract the eval job file content
             jobContent = new String(
                 Objects.requireNonNull(TarFileUtil.getContentFromTarFile(dsFile.getInputStream(), "src", "eval_jobs.yaml")));
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),is, dsFile.getSize());
+            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),inputStream, dsFile.getSize());
         } catch (IOException e) {
             log.error("upload swmp failed {}",uploadRequest.getSwmp(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),

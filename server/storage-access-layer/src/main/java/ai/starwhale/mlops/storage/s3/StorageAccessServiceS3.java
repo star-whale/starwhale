@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.storage.s3;
 
-import ai.starwhale.mlops.storage.LargeFileInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import java.io.IOException;
@@ -89,10 +88,6 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         return stringBuilder.toString();
     }
 
-    /**
-     * when you are trying to upload a file that is larger than Integer.MAX_VALUE bytes which is
-     * about 2G, you should wrapp the inputStream with a  LargeFileInputStream
-     */
     @Override
     public void put(String path, InputStream inputStream, long size) throws IOException {
         s3client.putObject(

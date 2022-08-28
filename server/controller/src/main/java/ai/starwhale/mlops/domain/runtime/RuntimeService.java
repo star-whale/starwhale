@@ -55,7 +55,6 @@ import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
-import ai.starwhale.mlops.storage.LargeFileInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
@@ -321,11 +320,7 @@ public class RuntimeService {
             : storagePathCoordinator.generateRuntimePath(projectEntity.getProjectName(), uploadRequest.name(), uploadRequest.version());
 
         try(final InputStream inputStream = dsFile.getInputStream()){
-            InputStream is = inputStream;
-            if(dsFile.getSize() >= Integer.MAX_VALUE){
-                is = new LargeFileInputStream(inputStream, dsFile.getSize());
-            }
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH, runtimePath, dsFile.getOriginalFilename()), is, dsFile.getSize());
+            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH, runtimePath, dsFile.getOriginalFilename()), inputStream, dsFile.getSize());
         } catch (IOException e) {
             log.error("upload runtime failed {}",uploadRequest.getRuntime(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),

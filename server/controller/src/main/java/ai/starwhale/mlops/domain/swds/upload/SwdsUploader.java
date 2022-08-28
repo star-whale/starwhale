@@ -22,28 +22,26 @@ import ai.starwhale.mlops.api.protocol.swds.upload.UploadRequest;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.cache.HotJobHolder;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.ProjectManager;
+import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.swds.datastore.DataStoreTableNameHelper;
 import ai.starwhale.mlops.domain.swds.datastore.IndexWriter;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetMapper;
 import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
+import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import ai.starwhale.mlops.domain.swds.upload.bo.Manifest;
 import ai.starwhale.mlops.domain.swds.upload.bo.SWDSVersionWithMeta;
-import ai.starwhale.mlops.domain.swds.upload.bo.VersionMeta;
-import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.domain.user.UserService;
+import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SWAuthException;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
-import ai.starwhale.mlops.storage.LargeFileInputStream;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,14 +52,12 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -163,13 +159,9 @@ public class SwdsUploader {
                         .getId(), new String(anotherInputStream.readAllBytes()));
                 }
             }
-            InputStream is = inputStream;
-            if(file.getSize() >= Integer.MAX_VALUE){
-                is = new LargeFileInputStream(inputStream,file.getSize());
-            }
             final String storagePath = String.format(FORMATTER_STORAGE_PATH, swDatasetVersionWithMeta.getSwDatasetVersionEntity().getStoragePath(),
                 StringUtils.hasText(uri)?uri:filename);
-            storageAccessService.put(storagePath,is, file.getSize());
+            storageAccessService.put(storagePath,inputStream, file.getSize());
         } catch (IOException e) {
             log.error("read swds failed {}", filename,e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.NETWORK),
