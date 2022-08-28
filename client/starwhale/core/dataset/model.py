@@ -290,7 +290,9 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
         # TODO: add more import format support, current is module:class
         logger.info(f"[info:swds]try to import {swds_config.process} @ {workdir}")
-        _cls = import_cls(workdir, swds_config.process, BaseBuildExecutor)
+        _cls: t.Type[BaseBuildExecutor] = import_cls(
+            workdir, swds_config.process, BaseBuildExecutor
+        )
 
         with _cls(
             dataset_name=self.uri.object.name,
@@ -305,6 +307,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
             append=append,
             append_from_version=append_from_version,
             append_from_uri=append_from_uri,
+            data_mime_type=swds_config.attr.data_mime_type,
         ) as _obj:
             console.print(
                 f":ghost: import [red]{swds_config.process}@{workdir.resolve()}[/] to make swds..."

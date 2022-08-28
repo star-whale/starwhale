@@ -30,4 +30,4 @@ class MNISTBuildExecutor(SWDSBinBuildExecutor):
                 content = f.read(1)
                 if not content:
                     break
-                yield content
+                yield struct.unpack(">B", content)[0]

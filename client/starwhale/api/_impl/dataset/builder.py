@@ -15,11 +15,12 @@ from starwhale.consts import AUTH_ENV_FNAME, SWDS_DATA_FNAME_FMT
 from starwhale.base.uri import URI
 from starwhale.utils.fs import empty_dir, ensure_dir
 from starwhale.base.type import DataFormatType, DataOriginType, ObjectStoreType
-from starwhale.utils.error import FormatError
+from starwhale.utils.error import FormatError, NoSupportError
 from starwhale.core.dataset import model
 from starwhale.core.dataset.type import (
     Link,
     LinkAuth,
+    MIMEType,
     DatasetSummary,
     D_ALIGNMENT_SIZE,
     D_FILE_VOLUME_SIZE,
@@ -53,6 +54,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
         append: bool = False,
         append_from_version: str = "",
         append_from_uri: t.Optional[URI] = None,
+        data_mime_type: MIMEType = MIMEType.UNDEFINED,
     ) -> None:
         # TODO: add more docstring for args
         # TODO: validate group upper and lower?
@@ -70,6 +72,7 @@ class BaseBuildExecutor(metaclass=ABCMeta):
 
         self.alignment_bytes_size = alignment_bytes_size
         self.volume_bytes_size = volume_bytes_size
+        self.default_data_mime_type = data_mime_type
 
         self.project_name = project_name
         self.dataset_name = dataset_name
@@ -237,10 +240,15 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             zip(self.iter_all_dataset_slice(), self.iter_all_label_slice()),
             start=self._forked_last_idx + 1,
         ):
-            if not isinstance(data, bytes):
-                raise FormatError("data must be bytes type")
+            if isinstance(data, (tuple, list)):
+                _data_content, _data_mime_type = data
+            else:
+                _data_content, _data_mime_type = data, self.default_data_mime_type
 
-            data_offset, data_size = self._write(dwriter, data)
+            if not isinstance(_data_content, bytes):
+                raise FormatError("data content must be bytes type")
+
+            data_offset, data_size = self._write(dwriter, _data_content)
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
@@ -251,6 +259,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                     data_offset=data_offset,
                     data_size=data_size,
                     data_origin=DataOriginType.NEW,
+                    data_mime_type=_data_mime_type or self.default_data_mime_type,
                 )
             )
 
@@ -344,20 +353,32 @@ class UserRawBuildExecutor(BaseBuildExecutor):
             start=self._forked_last_idx + 1,
         ):
             if isinstance(data, Link):
-                data_uri = data.uri
-                data_offset, data_size = data.offset, data.size
-                if data.auth:
-                    auth = data.auth.name
-                    auth_candidates[f"{data.auth.ltype}.{data.auth.name}"] = data.auth
+                _remote_link = data
+                data_uri = _remote_link.uri
+                data_offset, data_size = _remote_link.offset, _remote_link.size
+                if _remote_link.auth:
+                    auth = _remote_link.auth.name
+                    auth_candidates[
+                        f"{_remote_link.auth.ltype}.{_remote_link.auth.name}"
+                    ] = _remote_link.auth
                 else:
                     auth = ""
                 object_store_type = ObjectStoreType.REMOTE
                 include_link = True
+                data_mime_type = _remote_link.mime_type
             elif isinstance(data, (tuple, list)):
-                data_path, (data_offset, data_size) = data
-                if data_path not in map_path_sign:
-                    map_path_sign[data_path] = DatasetStorage.save_data_file(data_path)
-                data_uri, _ = map_path_sign[data_path]
+                _data_fpath, _local_link = data
+                if _data_fpath not in map_path_sign:
+                    map_path_sign[_data_fpath] = DatasetStorage.save_data_file(
+                        _data_fpath
+                    )
+
+                if not isinstance(_local_link, Link):
+                    raise NoSupportError("data only support Link type")
+
+                data_mime_type = _local_link.mime_type
+                data_offset, data_size = _local_link.offset, _local_link.size
+                data_uri, _ = map_path_sign[_data_fpath]
                 auth = ""
                 object_store_type = ObjectStoreType.LOCAL
             else:
@@ -374,6 +395,7 @@ class UserRawBuildExecutor(BaseBuildExecutor):
                     data_size=data_size,
                     data_origin=DataOriginType.NEW,
                     auth_name=auth,
+                    data_mime_type=data_mime_type,
                 )
             )
 
