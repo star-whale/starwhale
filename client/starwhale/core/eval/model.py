@@ -174,7 +174,15 @@ class StandaloneEvaluationJob(EvaluationJob):
             f"datastore path:{str(self.sw_config.datastore_dir)}, eval_id:{self.store.id}"
         )
         _datastore = wrapper.Evaluation()
-        return _datastore.get_metrics()
+        _labels = list(_datastore.get("labels"))
+        return dict(
+            summary=_datastore.get_metrics(),
+            labels={str(i): l for i, l in enumerate(_labels)},
+            confusion_matrix=dict(
+                binarylabel=list(_datastore.get("confusion_matrix/binarylabel"))
+            ),
+            kind=_datastore.get_metrics()["kind"],
+        )
 
     @staticmethod
     def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:

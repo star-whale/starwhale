@@ -3,6 +3,7 @@ import re
 import threading
 from typing import Any, Dict, List, Union, Iterator, Optional
 
+from starwhale.consts import VERSION_PREFIX_CNT
 from starwhale.consts.env import SWEnv
 
 from . import data_store
@@ -23,6 +24,8 @@ class Logger:
 
     def _log(self, table_name: str, record: Dict[str, Any]) -> None:
         with self._lock:
+            if table_name not in self._writers:
+                self._writers.setdefault(table_name, None)
             writer = self._writers[table_name]
             if writer is None:
                 writer = data_store.TableWriter(table_name)
@@ -44,10 +47,13 @@ class Evaluation(Logger):
         self.project = os.getenv(SWEnv.project)
         if self.project is None:
             raise RuntimeError(f"{SWEnv.project} is not set")
-        self._results_table_name = f"project/{self.project}/eval/{self.eval_id}/results"
+        self._results_table_name = self._get_datastore_table_name("results")
         self._summary_table_name = f"project/{self.project}/eval/summary"
         self._init_writers([self._results_table_name, self._summary_table_name])
         self._data_store = data_store.get_data_store()
+
+    def _get_datastore_table_name(self, table_name: str) -> str:
+        return f"project/{self.project}/eval/{self.eval_id[:VERSION_PREFIX_CNT]}/{self.eval_id}/{table_name}"
 
     def log_result(self, data_id: str, result: Any, **kwargs: Any) -> None:
         record = {"id": data_id, "result": result}
@@ -59,6 +65,7 @@ class Evaluation(Logger):
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> None:
         record = {"id": self.eval_id}
+        # TODO: without if else?
         if metrics is not None:
             for k, v in metrics.items():
                 k = k.lower()
@@ -68,6 +75,12 @@ class Evaluation(Logger):
             for k, v in kwargs.items():
                 record[k.lower()] = v
         self._log(self._summary_table_name, record)
+
+    def log(self, table_name: str, **kwargs: Any) -> None:
+        record = {}
+        for k, v in kwargs.items():
+            record[k.lower()] = v
+        self._log(self._get_datastore_table_name(table_name), record)
 
     def get_results(self) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
@@ -82,6 +95,11 @@ class Evaluation(Logger):
                 return metrics
 
         return {}
+
+    def get(self, table_name: str) -> Iterator[Dict[str, Any]]:
+        return self._data_store.scan_tables(
+            [data_store.TableDesc(self._get_datastore_table_name(table_name))]
+        )
 
 
 class Dataset(Logger):
