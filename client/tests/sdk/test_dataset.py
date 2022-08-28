@@ -1,9 +1,15 @@
 import os
 import json
+import struct
 from pathlib import Path
 
 from starwhale.utils.fs import ensure_dir, blake2b_file
-from starwhale.api.dataset import MNISTBuildExecutor, UserRawBuildExecutor
+from starwhale.api.dataset import (
+    Link,
+    MIMEType,
+    MNISTBuildExecutor,
+    UserRawBuildExecutor,
+)
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset
 from starwhale.api._impl.dataset.builder import (
@@ -27,7 +33,7 @@ class _UserRawMNIST(UserRawBuildExecutor):
         file_size = Path(path).stat().st_size
         offset = 16
         while offset < file_size:
-            yield offset, size
+            yield Link(offset=offset, size=size, mime_type=MIMEType.GRAYSCALE)
             offset += size
 
     def iter_label_slice(self, path: str):
@@ -39,7 +45,7 @@ class _UserRawMNIST(UserRawBuildExecutor):
                 content = f.read(1)
                 if not content:
                     break
-                yield content
+                yield struct.unpack(">B", content)[0]
 
 
 class TestDatasetBuildExecutor(BaseTestCase):

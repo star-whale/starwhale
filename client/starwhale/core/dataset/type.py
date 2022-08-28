@@ -160,7 +160,7 @@ DefaultS3LinkAuth = S3LinkAuth()
 class Link:
     def __init__(
         self,
-        uri: str,
+        uri: str = "",
         auth: t.Optional[LinkAuth] = DefaultS3LinkAuth,
         offset: int = FilePosition.START,
         size: int = -1,
@@ -235,15 +235,21 @@ class DatasetAttr:
         self,
         volume_size: t.Union[int, str] = D_FILE_VOLUME_SIZE,
         alignment_size: t.Union[int, str] = D_ALIGNMENT_SIZE,
+        data_mime_type: MIMEType = MIMEType.UNDEFINED,
         **kw: t.Any,
     ) -> None:
         self.volume_size = convert_to_bytes(volume_size)
         self.alignment_size = convert_to_bytes(alignment_size)
+        self.data_mime_type = data_mime_type
         self.kw = kw
 
     def as_dict(self) -> t.Dict[str, t.Any]:
+        # TODO: refactor an asdict mixin class
         _rd = deepcopy(self.__dict__)
-        _rd.pop("kw")
+        _rd.pop("kw", None)
+        for k, v in _rd.items():
+            if isinstance(v, Enum):
+                _rd[k] = v.value
         return _rd
 
 

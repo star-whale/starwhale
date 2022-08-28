@@ -52,7 +52,7 @@ class RawDataSetProcessExecutor(UserRawBuildExecutor):
             offset = 16
 
             for _ in range(number):
-                yield offset, size
+                yield Link(offset=offset, size=size, mime_type=MIMEType.GRAYSCALE)
                 offset += size
 
     def iter_label_slice(self, path: str):
