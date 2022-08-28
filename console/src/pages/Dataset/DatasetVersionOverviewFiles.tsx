@@ -1,15 +1,8 @@
 import React from 'react'
-import Table from '@/components/Table'
-import useTranslation from '@/hooks/useTranslation'
-import { useDataset, useDatasetLoading } from '@dataset/hooks/useDataset'
-import { IDatasetFileSchema } from '@dataset/schemas/dataset'
+import { useDataset } from '@dataset/hooks/useDataset'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { useHistory, useParams } from 'react-router-dom'
-import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 import { TableBuilder, TableBuilderColumn } from 'baseui/table-semantic'
-import { RecordDesc } from '@/domain/datastore/schemas/datastore'
-import { RecordListVO } from '../../domain/datastore/schemas/datastore'
-import { getToken } from '@/api'
 import { useAuth } from '@/api/Auth'
 import { tableDataLink } from '@/domain/datastore/utils'
 import { getMetaRow } from '@/domain/dataset/utils'
@@ -18,8 +11,7 @@ import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import { usePage } from '@/hooks/usePage'
 import Button from '@/components/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
-import ImageSegmentationViewer from '@/components/Viewer/ImageSegmentationViewer'
-import ImageViewer from '../../components/Viewer/ImageViewer'
+import ImageViewer from '@/components/Viewer/ImageViewer'
 import { Tabs, Tab } from 'baseui/tabs'
 
 export default function DatasetVersionFiles() {
@@ -43,6 +35,7 @@ export default function DatasetVersionFiles() {
                 tables.refetch()
             },
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, rowCount])
 
     const preview = React.useMemo(() => {
@@ -55,15 +48,14 @@ export default function DatasetVersionFiles() {
             size: row.data_size,
             Authorization: token as string,
         })
+        // eslint-disable-next-line consistent-return
         return {
-            src,
             ...row,
+            src,
         }
-    }, [tables, fileId])
+    }, [tables, datasetVersion, projectId, token, fileId])
 
     const [activeKey, setActiveKey] = React.useState('1')
-
-    console.log(preview)
 
     return (
         <div style={{ flex: 1, position: 'relative' }}>
@@ -162,8 +154,9 @@ export default function DatasetVersionFiles() {
                         }}
                     />
                     <Pagination
-                        size={'mini'}
+                        size='mini'
                         numPages={
+                            // esline-disable-next-line react/jsx-curly-brace-presence
                             paginationProps.total && paginationProps.count
                                 ? Math.ceil(paginationProps.total / Math.max(paginationProps.count, 1))
                                 : 0
@@ -224,8 +217,8 @@ export default function DatasetVersionFiles() {
                                     }),
                                 },
                             }}
-                            onChange={({ activeKey }) => {
-                                setActiveKey(activeKey)
+                            onChange={({ activeKey: activeKeyNew }) => {
+                                setActiveKey(activeKeyNew)
                             }}
                             activeKey={activeKey}
                         >

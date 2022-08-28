@@ -1,4 +1,3 @@
-import qs from 'qs'
 import yaml from 'js-yaml'
 
 export function getMetaRow(config: string) {

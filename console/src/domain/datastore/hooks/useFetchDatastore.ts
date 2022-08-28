@@ -1,9 +1,8 @@
 import React from 'react'
 import { useQuery } from 'react-query'
 import qs from 'qs'
-import { scanTable, queryTable } from '../services/datastore'
-import { tableNameOfDataset } from '../utils'
 import { IListQuerySchema } from '@/domain/base/schemas/list'
+import { scanTable, queryTable } from '../services/datastore'
 
 export function useScanDatastore(query: any) {
     const info = useQuery(`scanDatastore:${qs.stringify(query)}`, () => scanTable(query), {

@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
 import Color from 'color'
-import ZoomWrapper from './ZoomWrapper'
 
 export const COLORS = [
     '#df672a',
@@ -15,7 +14,7 @@ export const COLORS = [
 ].map((c) => Color(c).rgb().array() as [number, number, number])
 
 export const loadImage = (label: any, url: string) => {
-    const src = url.startsWith('http') || url.startsWith('data:image') ? url : 'data:image/png;base64,' + url
+    const src = url.startsWith('http') || url.startsWith('data:image') ? url : `data:image/png;base64,${url}`
     return new Promise<{ label: any; img: ImageData }>((resolve, reject) => {
         const img = new Image()
         img.onload = () => {
@@ -71,9 +70,9 @@ export const drawSegment = (canvas: HTMLCanvasElement, imgDatas: IImageData[], r
     const newImageData = new ImageData(canvas.width, canvas.height)
     for (let i = 0; i < newImageData.data.length; i += 4) {
         const rawIndex = imgDatas.findIndex((v) => v.img.data[i + 0] > 0)
+        // eslint-disable-next-line no-continue
         if (rawIndex < 0) continue
-        const [r, g, b, a = 255] = rawDatas[rawIndex]?.color //?? COLORS[rawIndex % COLORS.length]
-        // const isHover = rect ? rect.x + rect.y * imageData.width * 4 === i : false
+        const [r, g, b, a = 255] = rawDatas[rawIndex]?.color
         newImageData.data[i] = r
         newImageData.data[i + 1] = g
         newImageData.data[i + 2] = b
@@ -88,15 +87,17 @@ export const drawGrayscale = async (
     src: string,
     width: number,
     height: number,
-    scale: number = 1
+    scale = 1
 ) => {
-    let blob = await fetch(src).then((r) => r.blob())
-    let buffer = await blob.arrayBuffer()
-    let data = new Uint8Array(buffer)
+    const blob = await fetch(src).then((r) => r.blob())
+    const buffer = await blob.arrayBuffer()
+    const data = new Uint8Array(buffer)
 
     const resizeWidth = width * scale
     const resizeHeight = height * scale
+    // eslint-disable-next-line no-param-reassign
     canvas.width = resizeWidth
+    // eslint-disable-next-line no-param-reassign
     canvas.height = resizeHeight
     const ctx = canvas.getContext('2d')
     const newImageData = new ImageData(width, height)
@@ -122,8 +123,8 @@ export const drawGrayscale = async (
 }
 
 export async function resizeImageData(imageData: ImageData, width: number, height: number) {
-    const resizeWidth = width >> 0
-    const resizeHeight = height >> 0
+    const resizeWidth = width ?? 0
+    const resizeHeight = height ?? 0
     const ibm = await window.createImageBitmap(imageData, 0, 0, imageData.width, imageData.height, {
         resizeWidth,
         resizeHeight,
@@ -137,5 +138,5 @@ export async function resizeImageData(imageData: ImageData, width: number, heigh
         ctx.drawImage(ibm, 0, 0)
         return ctx.getImageData(0, 0, resizeWidth, resizeHeight)
     }
-    return
+    return new ImageData(0, 0)
 }

@@ -1,10 +1,5 @@
-import React from 'react'
-import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
-import Button from '@/components/Button'
-import normalLogoImg from '@/assets/logo_normal_en_white.svg'
+import React, { useEffect } from 'react'
 import ZoomWrapper from './ZoomWrapper'
-import { useEffect } from 'react'
-import _ from 'lodash'
 import { drawGrayscale } from './utils'
 
 type IImageViewerProps = {
@@ -21,7 +16,6 @@ export default function ImageViewer({ isZoom = false, data }: IImageViewerProps)
     }, [isZoom])
 
     useEffect(() => {
-        let url = null
         if (canvasRef.current) {
             const canvas = canvasRef.current
             drawGrayscale(canvas, data.src, 28, 28, scale)
@@ -33,7 +27,7 @@ export default function ImageViewer({ isZoom = false, data }: IImageViewerProps)
             // console.log(url)
             // URL.revokeObjectURL(url)
         }
-    }, [canvasRef, scale])
+    }, [canvasRef, scale, data])
 
     return (
         <div className='flowContainer'>

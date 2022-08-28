@@ -1,5 +1,3 @@
-import qs from 'qs'
-
 export const headerHeight = 56
 export const sidebarExpandedWidth = 200
 export const sidebarFoldedWidth = 68

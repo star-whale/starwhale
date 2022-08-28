@@ -1,7 +1,6 @@
 import React from 'react'
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch'
 import { Button } from '@/components/Button'
-import normalLogoImg from '@/assets/logo_normal_en_white.svg'
 
 export default function ZoomWrapper({ children, isTools }: any) {
     return (
