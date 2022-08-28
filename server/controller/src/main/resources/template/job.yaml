@@ -30,6 +30,7 @@ spec:
             - -c
             - >-
               cd /opt/starwhale && find ./ -type f \( -name \*.swmp -o -name \*.swrt \) -exec tar -C swmp/ -xf {} \;
+      containers:
         - name: 'worker'
           image: 'docker.io/library/busybox'
           imagePullPolicy: IfNotPresent
@@ -47,18 +48,6 @@ spec:
               value: pypi.doubanio.com
             - name: SW_PIP_CACHE_DIR
               value: /root/.cache/pip
-      containers:
-        - name: result-uploader
-          imagePullPolicy: IfNotPresent
-          image: amazon/aws-cli:2.7.25
-          volumeMounts:
-            - mountPath: /opt/starwhale
-              name: data
-          command:
-            - sh
-            - -c
-            - >-
-              aws --endpoint-url=$ENDPOINT_URL --region=$AWS_S3_REGION s3 cp /opt/starwhale/result/current $DST
       volumes:
         - name: pip-cache
           hostPath:
