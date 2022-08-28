@@ -319,7 +319,7 @@ class PipelineHandler(metaclass=ABCMeta):
             try:
                 # TODO: inspect profiling
                 pred = self.ppl(
-                    data.data if isinstance(data.data, bytes) else data.data.encode(),
+                    data.data.encode() if isinstance(data.data, str) else data.data,
                     data_index=data.idx,
                     data_size=data.data_size,
                     label_content=label.data,
