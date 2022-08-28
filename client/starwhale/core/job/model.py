@@ -1,3 +1,4 @@
+from typing import List, Optional
 from pathlib import Path
 
 from loguru import logger
@@ -19,20 +20,43 @@ class STATUS:
     FAILED = "failed"
 
 
+class TaskResult:
+    def __init__(self, task_id: int, status: str, exception: Optional[str] = None):
+        self.task_id = task_id
+        self.status = status
+        self.exception = exception
+
+
+class StepResult:
+    def __init__(self, step_name: str, task_results: List[TaskResult]):
+        self.step_name = step_name
+        self.task_results = task_results
+        self.status = self._status()
+
+    def _status(self) -> str:
+        _success = True
+        for tr in self.task_results:
+            _success = _success and tr.status == STATUS.SUCCESS
+        return STATUS.SUCCESS if _success else STATUS.FAILED
+
+
 class Task:
     def __init__(
         self,
+        index: int,
         context: Context,
         status: str,
         module: str,
         workdir: Path,
     ):
+        self.index = index
         self.context = context
         self.status = status
         self.module = module
         self.work_dir = workdir
+        self.exception = ""
 
-    def execute(self) -> bool:
+    def execute(self) -> TaskResult:
         """
         call function from module
         :return: function results
@@ -60,10 +84,14 @@ class Task:
             func(context=self.context)
 
         except Exception as e:
+            self.exception = str(e)
             self.status = STATUS.FAILED
-            logger.error(f"execute step:{self.context}, error:{e}")
-            return False
         else:
             self.status = STATUS.SUCCESS
-            logger.debug(f"execute step:{self.context} success")
-            return True
+        finally:
+            logger.debug(
+                f"execute step:{self.context}, status:{self.status}, error:{self.exception}"
+            )
+            return TaskResult(
+                task_id=self.index, status=self.status, exception=self.exception
+            )

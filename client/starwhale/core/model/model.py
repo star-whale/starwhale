@@ -260,17 +260,16 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _steps = _jobs[job_name]
 
         console.print(":hourglass_not_done: start to evaluation...")
-
+        _scheduler = Scheduler(
+            project=_project_uri.project,
+            version=version,
+            module=_module,
+            workdir=workdir,
+            dataset_uris=dataset_uris,
+            steps=_steps,
+            kw=kw,
+        )
         try:
-            _scheduler = Scheduler(
-                project=_project_uri.project,
-                version=version,
-                module=_module,
-                workdir=workdir,
-                dataset_uris=dataset_uris,
-                steps=_steps,
-                kw=kw,
-            )
             if not step:
                 _scheduler.schedule()
             else:
@@ -281,8 +280,13 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             raise
         finally:
             _status = True
-            for _step in _steps:
-                _status = _status and _step.status == STATUS.SUCCESS
+
+            _step_results = _scheduler.get_results()
+            logger.debug(f"job execute info:{_step_results}")
+
+            for _rt in _step_results:
+                _status = _status and _rt.status == STATUS.SUCCESS
+
             _manifest.update(
                 {
                     **dict(
@@ -300,7 +304,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             _f = _run_dir / DEFAULT_MANIFEST_NAME
             ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
-            logger.debug(f"job info:{_jobs}")
             console.print(
                 f":100: finish run, {STATUS.SUCCESS if _status else STATUS.FAILED}!"
             )
