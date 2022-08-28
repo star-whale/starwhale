@@ -355,7 +355,7 @@ public class SWModelPackageService {
             // only extract the eval job file content
             jobContent = new String(
                 Objects.requireNonNull(TarFileUtil.getContentFromTarFile(dsFile.getInputStream(), "src", "eval_jobs.yaml")));
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),is);
+            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH,swmpPath,dsFile.getOriginalFilename()),is, dsFile.getSize());
         } catch (IOException e) {
             log.error("upload swmp failed {}",uploadRequest.getSwmp(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),

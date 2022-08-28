@@ -325,7 +325,7 @@ public class RuntimeService {
             if(dsFile.getSize() >= Integer.MAX_VALUE){
                 is = new LargeFileInputStream(inputStream, dsFile.getSize());
             }
-            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH, runtimePath, dsFile.getOriginalFilename()), is);
+            storageAccessService.put(String.format(FORMATTER_STORAGE_PATH, runtimePath, dsFile.getOriginalFilename()), is, dsFile.getSize());
         } catch (IOException e) {
             log.error("upload runtime failed {}",uploadRequest.getRuntime(),e);
             throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE),

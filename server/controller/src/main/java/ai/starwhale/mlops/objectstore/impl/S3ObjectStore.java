@@ -49,7 +49,7 @@ public class S3ObjectStore implements ObjectStore {
 
     @Override
     public void put(String name, SwBuffer buf) throws IOException {
-        this.storageAccessService.put(name, new SwBufferInputStream(buf));
+        this.storageAccessService.put(name, new SwBufferInputStream(buf), buf.capacity());
     }
 
     @Override
