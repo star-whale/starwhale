@@ -48,7 +48,7 @@ class Evaluation(Logger):
         if self.project is None:
             raise RuntimeError(f"{SWEnv.project} is not set")
         self._results_table_name = self._get_datastore_table_name("results")
-        self._summary_table_name = self._get_datastore_table_name("summary")
+        self._summary_table_name = f"project/{self.project}/eval/summary"
         self._init_writers([self._results_table_name, self._summary_table_name])
         self._data_store = data_store.get_data_store()
 
