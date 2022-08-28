@@ -112,6 +112,10 @@ public class K8sTaskScheduler implements SWTaskScheduler {
     }
 
     /**
+     * {instance}/project/{projectName}/dataset/{datasetName}/version/{version}
+     */
+    static final String FORMATTER_URI_DATASET="%s/project/%s/dataset/%s/version/%s";
+    /**
      * todo hard code in this piece of code will be refactored after other core concepts being refactored
      *
      * @param client
@@ -140,24 +144,26 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         initContainerEnvs.put("SW_PYPI_TRUSTED_HOST",runTimeProperties.getPypi().getTrustedHost());
         // task container envs
         Map<String, String> coreContainerEnvs = new HashMap<>();
-        coreContainerEnvs.put("SW_TASK_STEP", task.getTaskRequest().getStepName());
+        coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         // TODO: support multi dataset uris
-        coreContainerEnvs.put("SW_DATASET_URI", task.getTaskRequest().getDatasetUris().get(0));
-        coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
-        coreContainerEnvs.put("SW_EVALUATION_VERSION", task.getTaskRequest().getJobId());
         // oss env
         List<SWDataSet> swDataSets = swJob.getSwDataSets();
+        SWDataSet swDataSet = swDataSets.get(0);
+        coreContainerEnvs.put("SW_DATASET_URI", String.format(FORMATTER_URI_DATASET,instanceUri,swJob.getProject().getName(),swDataSet.getName(),swDataSet.getVersion()));
+        coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
+        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getId().toString());
+
         swDataSets.forEach(ds -> ds.getFileStorageEnvs().values()
             .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
 
-        coreContainerEnvs.put(FileStorageEnv.ENV_KEY_PREFIX, storagePathCoordinator.getSwdsPathNamedFormatter());
+        coreContainerEnvs.put(FileStorageEnv.ENV_KEY_PREFIX, swDataSet.getPath());
 //        coreContainerEnvs.put("SW_S3_READ_TIMEOUT", );
 //        coreContainerEnvs.put("SW_S3_TOTAL_MAX_ATTEMPTS", );
 
         // datastore env
         coreContainerEnvs.put("SW_TOKEN", jobTokenConfig.getToken());
         coreContainerEnvs.put("SW_INSTANCE_URI", instanceUri);
-        coreContainerEnvs.put("SW_PROJECT", task.getTaskRequest().getProject());
+        coreContainerEnvs.put("SW_PROJECT", swJob.getProject().getName());
         try {
             // cmd（all、single[step、taskIndex]）
             String cmd = "run";
