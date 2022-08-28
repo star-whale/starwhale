@@ -175,16 +175,17 @@ class JobTermView(BaseTermView):
                     _tree.add(str(_obj))
 
                 for _k, _v in _obj.items():
-                    if isinstance(_v, (list, tuple)):
-                        _k = f"{_k}: [green]{'|'.join(_v)}"
-                    elif isinstance(_v, dict):
-                        _k = _k
-                    else:
-                        _k = f"{_k}: [green]{_v:.4f}"
+                    if _k != "id":
+                        if isinstance(_v, (list, tuple)):
+                            _k = f"{_k}: [green]{'|'.join(_v)}"
+                        elif isinstance(_v, dict) or isinstance(_v, str):
+                            _k = _k
+                        else:
+                            _k = f"{_k}: [green]{_v:.4f}"
 
-                    _ntree = _tree.add(_k)
-                    if isinstance(_v, dict):
-                        _r(_ntree, _v)
+                        _ntree = _tree.add(_k)
+                        if isinstance(_v, dict):
+                            _r(_ntree, _v)
 
             tree = Tree("Summary")
             _r(tree, report["summary"])
@@ -198,7 +199,7 @@ class JobTermView(BaseTermView):
                 table.add_column(_k.capitalize())
 
             for _k, _v in labels.items():
-                table.add_row(_k, *(f"{_v[_k2]:.4f}" for _k2 in keys))
+                table.add_row(_k, *(f"{float(_v[_k2]):.4f}" for _k2 in keys))
 
             console.rule(f"[bold green]{report['kind'].upper()} Report")
             console.print(self.comparison(tree, table))
@@ -213,7 +214,10 @@ class JobTermView(BaseTermView):
             for n in sort_label_names:
                 btable.add_column(n)
             for idx, bl in enumerate(cm.get("binarylabel", [])):
-                btable.add_row(sort_label_names[idx], *[f"{_:.4f}" for _ in bl])
+                btable.add_row(
+                    sort_label_names[idx],
+                    *[f"{float(bl[i]):.4f}" for i in bl if i != "id"],
+                )
 
             mtable = Table(box=box.SIMPLE)
             mtable.add_column("Label", style="cyan")

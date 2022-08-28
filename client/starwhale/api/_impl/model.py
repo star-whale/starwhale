@@ -26,6 +26,7 @@ from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import Context
+from starwhale.utils.flatten import do_flatten_dict
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.api._impl.dataset import DataField, get_data_loader
@@ -254,7 +255,36 @@ class PipelineHandler(metaclass=ABCMeta):
         else:
             self._timeline_writer.write({"time": now, "status": True, "exception": ""})
             self._sw_logger.debug(f"cmp result:{output}")
-            self.evaluation.log_metrics(output)
+
+            self.evaluation.log_metrics(do_flatten_dict(output["summary"]))
+            self.evaluation.log_metrics({"kind": output["kind"]})
+
+            for i, label in output["labels"].items():
+                self.evaluation.log_table("labels", label, id=i)
+
+            _binary_label = output["confusion_matrix"]["binarylabel"]
+            for _label, _probability in enumerate(_binary_label):
+                self.evaluation.log_table(
+                    "confusion_matrix/binarylabel",
+                    {
+                        **dict(
+                            id=str(_label),
+                        ),
+                        **{str(k): v for k, v in enumerate(_probability)},
+                    },
+                )
+
+            for _label, _roc_auc in output["roc_auc"].items():
+                _id = 0
+                for _fpr, _tpr, _threshold in zip(
+                    _roc_auc["fpr"], _roc_auc["tpr"], _roc_auc["thresholds"]
+                ):
+                    self.evaluation.log_table(
+                        f"roc_auc/{_label}",
+                        dict(id=str(_id), fpr=_fpr, tpr=_tpr, threshold=_threshold),
+                    )
+                    _id += 1
+                    self.evaluation.log_metrics({f"roc_auc/{_label}": _roc_auc["auc"]})
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:

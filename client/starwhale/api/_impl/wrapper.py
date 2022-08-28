@@ -23,6 +23,8 @@ class Logger:
 
     def _log(self, table_name: str, record: Dict[str, Any]) -> None:
         with self._lock:
+            if table_name not in self._writers.keys():
+                self._writers.setdefault(table_name, None)
             writer = self._writers[table_name]
             if writer is None:
                 writer = data_store.TableWriter(table_name)
@@ -59,6 +61,7 @@ class Evaluation(Logger):
         self, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
     ) -> None:
         record = {"id": self.eval_id}
+        # TODO: without if else?
         if metrics is not None:
             for k, v in metrics.items():
                 k = k.lower()
@@ -68,6 +71,19 @@ class Evaluation(Logger):
             for k, v in kwargs.items():
                 record[k.lower()] = v
         self._log(self._summary_table_name, record)
+
+    def log_table(
+        self, table_name: str, metrics: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> None:
+        record = {}
+        if metrics is not None:
+            for k, v in metrics.items():
+                k = k.lower()
+                record[k] = v
+
+        for k, v in kwargs.items():
+            record[k.lower()] = v
+        self._log(f"project/{self.project}/eval/{self.eval_id}/{table_name}", record)
 
     def get_results(self) -> Iterator[Dict[str, Any]]:
         return self._data_store.scan_tables(
@@ -82,6 +98,15 @@ class Evaluation(Logger):
                 return metrics
 
         return {}
+
+    def get_results_from_table(self, table_name: str) -> Iterator[Dict[str, Any]]:
+        return self._data_store.scan_tables(
+            [
+                data_store.TableDesc(
+                    f"project/{self.project}/eval/{self.eval_id}/{table_name}"
+                )
+            ]
+        )
 
 
 class Dataset(Logger):
