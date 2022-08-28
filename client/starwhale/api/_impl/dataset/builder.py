@@ -202,19 +202,29 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
 
     _DATA_FMT = SWDS_DATA_FNAME_FMT
 
-    def _write(self, writer: t.Any, data: bytes) -> t.Tuple[int, int]:
+    class _BinSection(t.NamedTuple):
+        offset: int
+        size: int
+        raw_data_offset: int
+        raw_data_size: int
+
+    def _write(self, writer: t.Any, data: bytes) -> _BinSection:
         size = len(data)
         crc = crc32(data)  # TODO: crc is right?
         start = writer.tell()
         padding_size = self._get_padding_size(size + _header_size)
 
-        # TODO: remove idx field
         _header = _header_struct.pack(
             _header_magic, crc, 0, size, padding_size, _header_version, _data_magic
         )
         _padding = b"\0" * padding_size
         writer.write(_header + data + _padding)
-        return start, _header_size + size + padding_size
+        return self._BinSection(
+            offset=start,
+            size=_header_size + size + padding_size,
+            raw_data_offset=start + _header_size,
+            raw_data_size=size,
+        )
 
     def _get_padding_size(self, size: int) -> int:
         remain = (size + _header_size) % self.alignment_bytes_size
@@ -248,7 +258,7 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
             if not isinstance(_data_content, bytes):
                 raise FormatError("data content must be bytes type")
 
-            data_offset, data_size = self._write(dwriter, _data_content)
+            _bin_section = self._write(dwriter, _data_content)
             self.tabular_dataset.put(
                 TabularDatasetRow(
                     id=idx,
@@ -256,17 +266,19 @@ class SWDSBinBuildExecutor(BaseBuildExecutor):
                     label=label,
                     data_format=self.data_format_type,
                     object_store_type=ObjectStoreType.LOCAL,
-                    data_offset=data_offset,
-                    data_size=data_size,
+                    data_offset=_bin_section.raw_data_offset,
+                    data_size=_bin_section.raw_data_size,
+                    _swds_bin_offset=_bin_section.offset,
+                    _swds_bin_size=_bin_section.size,
                     data_origin=DataOriginType.NEW,
                     data_mime_type=_data_mime_type or self.default_data_mime_type,
                 )
             )
 
-            total_data_size += data_size
+            total_data_size += _bin_section.size
             total_label_size += sys.getsizeof(label)
 
-            wrote_size += data_size
+            wrote_size += _bin_section.size
             if wrote_size > self.volume_bytes_size:
                 wrote_size = 0
                 fno += 1
