@@ -38,7 +38,7 @@ export default function DatasetVersionFiles() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, rowCount])
 
-    const preview = React.useMemo(() => {
+    const preview: any = React.useMemo(() => {
         const row = tables.data?.records?.find((v) => v.id === fileId)
         if (!row) return
         const src = tableDataLink(projectId, datasetVersion?.name as string, datasetVersion?.versionName as string, {
@@ -218,7 +218,7 @@ export default function DatasetVersionFiles() {
                                 },
                             }}
                             onChange={({ activeKey: activeKeyNew }) => {
-                                setActiveKey(activeKeyNew)
+                                setActiveKey(activeKeyNew as string)
                             }}
                             activeKey={activeKey}
                         >

@@ -31,7 +31,10 @@ export default function ImageViewer({ isZoom = false, data }: IImageViewerProps)
 
     return (
         <div className='flowContainer'>
-            <Wrapper isTools={false}>
+            <Wrapper
+                // @ts-ignore
+                isTools={isZoom ? false : undefined}
+            >
                 <canvas
                     ref={canvasRef}
                     style={{
