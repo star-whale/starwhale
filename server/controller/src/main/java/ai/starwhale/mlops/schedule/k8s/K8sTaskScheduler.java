@@ -174,17 +174,6 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             // set result upload path
 
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
-            // TODO:remove dst
-            k8sJob.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + "")
-                    , new V1EnvVar().name("ENDPOINT_URL").value(storageProperties.getS3Config().getEndpoint())
-                    , new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
-                    , new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
-                    , new V1EnvVar().name("AWS_SECRET_ACCESS_KEY").value(storageProperties.getS3Config().getSecretKey())
-                    , new V1EnvVar().name("SW_PYPI_INDEX_URL").value(runTimeProperties.getPypi().getIndexUrl())
-                    , new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(runTimeProperties.getPypi().getExtraIndexUrl())
-                    , new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(runTimeProperties.getPypi().getTrustedHost())
-                )
-            );
             // update node selector
             if (nodeSelector != null) {
                 var selector = k8sJob.getSpec().getTemplate().getSpec().getNodeSelector();

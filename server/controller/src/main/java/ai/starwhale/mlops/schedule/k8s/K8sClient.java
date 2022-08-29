@@ -120,7 +120,7 @@ public class K8sClient {
         V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
         Objects.requireNonNull(podSpec, "can not get pod spec");
 
-        V1Container coreContainer = podSpec.getInitContainers().stream().filter(c -> c.getName().equals(coreContainerName)).findFirst().orElse(null);
+        V1Container coreContainer = podSpec.getContainers().stream().filter(c -> c.getName().equals(coreContainerName)).findFirst().orElse(null);
         Objects.requireNonNull(coreContainer, "can not get coreContainer by name " + coreContainerName);
 
         if (!image.isEmpty()) {
@@ -142,7 +142,6 @@ public class K8sClient {
 
         if (!coreEnv.isEmpty()) {
             List<V1EnvVar> ee = new ArrayList<>();
-            coreEnv.putAll(env);
             coreEnv.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
             coreContainer.env(ee);
         }
@@ -192,7 +191,6 @@ public class K8sClient {
         appendLog(pod, logBuilder,"data-provider");
         appendLog(pod, logBuilder,"untar");
         appendLog(pod, logBuilder,"worker");
-        appendLog(pod, logBuilder,"result-uploader");
         return logBuilder.toString();
     }
 
