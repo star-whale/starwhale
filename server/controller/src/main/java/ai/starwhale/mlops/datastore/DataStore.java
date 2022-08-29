@@ -62,7 +62,8 @@ public class DataStore {
                 req.getOrderBy(),
                 req.getFilter(),
                 req.getStart(),
-                req.getLimit());
+                req.getLimit(),
+                req.isKeepNone());
     }
 
     public RecordList scan(DataStoreScanRequest req) {

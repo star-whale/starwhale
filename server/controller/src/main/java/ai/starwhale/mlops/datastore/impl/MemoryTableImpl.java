@@ -274,7 +274,8 @@ public class MemoryTableImpl implements MemoryTable {
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
             int start,
-            int limit) {
+            int limit,
+            boolean keepNone) {
         if (this.schema == null) {
             return new RecordList(null, List.of(), null);
         }
@@ -335,7 +336,7 @@ public class MemoryTableImpl implements MemoryTable {
                     var r = new HashMap<String, String>();
                     for (var entry : finalColumns.entrySet()) {
                         var value = record.get(entry.getKey());
-                        if (value != null) {
+                        if (keepNone || value != null) {
                             r.put(entry.getValue(), columnTypeMapping.get(entry.getValue()).encode(value));
                         }
                     }
