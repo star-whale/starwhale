@@ -53,6 +53,6 @@ public class EvalStepTrigger implements StepTrigger {
     }
 
     public boolean applyTo(JobType jobType, String stepName) {
-        return jobType == JobType.EVALUATION && JobSpliteratorEvaluation.STEP_NAMES[0].equals(stepName);
+        return true;
     }
 }
