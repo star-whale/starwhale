@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,22 +24,17 @@ import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.trigger.EvalStepTrigger;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatcher;
-import org.mockito.internal.progress.ThreadSafeMockingProgress;
 
 /**
  * a test for {@link EvalStepTrigger}
  */
 public class EvalStepTriggerTest {
-
-    static CMPRequest cmpRequest = null;
 
     @Test
     public void testEvalPPLStepTrigger() throws IOException {

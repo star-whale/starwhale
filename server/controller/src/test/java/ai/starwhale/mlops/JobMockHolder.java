@@ -31,7 +31,6 @@ import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.ppl.PPLRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.LinkedList;
 import java.util.List;
@@ -97,7 +96,6 @@ public class JobMockHolder {
             .uuid(taskUUId)
             .id(atomicLong.incrementAndGet())
             .agent(mockAgent())
-            .taskRequest(new PPLRequest())
             .resultRootPath(new ResultPath(
                 storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUUId)))
             .build();
@@ -109,7 +107,6 @@ public class JobMockHolder {
             .uuid(taskUUId)
             .id(atomicLong.incrementAndGet())
             .agent(mockAgent())
-            .taskRequest(new PPLRequest())
             .resultRootPath(new ResultPath(
                 storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUUId)))
             .build();

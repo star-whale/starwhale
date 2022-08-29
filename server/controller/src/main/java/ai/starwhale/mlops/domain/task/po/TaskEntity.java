@@ -46,7 +46,6 @@ public class TaskEntity extends BaseEntity {
 
     private TaskStatus taskStatus;
 
-    @Deprecated
     private String resultPath;
 
     private String taskRequest;
