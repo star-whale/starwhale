@@ -45,7 +45,6 @@ export default function EvaluationListCard() {
     const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
     const evaluationsInfo = useFetchEvaluations(projectId, { pageNum: 1, pageSize: 1000 })
-    const evaluationAttrsInfo = useFetchEvaluationAttrs(projectId, page)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const { project } = useProject()
 
@@ -62,10 +61,10 @@ export default function EvaluationListCard() {
     const store = useEvaluationStore()
 
     const summaryTableName = React.useMemo(() => {
+        if (!project?.name) return
         return tableNameOfSummary(project?.name as string)
-    }, [projectId])
+    }, [project])
     const summaryTable = useQueryDatasetList(summaryTableName, { pageNum: 0, pageSize: 1000 })
-    console.log(summaryTable.data)
 
     // TODO
     // 1. column key should be equal with eva attr field
@@ -75,8 +74,6 @@ export default function EvaluationListCard() {
             CustomColumn({
                 key: 'uuid',
                 title: t('Evaluation ID'),
-                // filterable: true,
-                // renderFilter: () => <div>1</div>,
                 mapDataToValue: (item: any) => item,
                 // @ts-ignore
                 renderCell: (props: any) => {
@@ -141,30 +138,27 @@ export default function EvaluationListCard() {
     const $columnsWithAttrs = useMemo(() => {
         const columnsWithAttrs = [...columns]
 
-        evaluationAttrsInfo?.data?.forEach((attr) => {
-            if (!attr.name.startsWith('summary/')) {
-                return
-            }
+        if (!summaryTable?.data) return columnsWithAttrs
 
-            const name = attr.name.split('/').slice(1).join('/')
-
-            switch (attr.type) {
-                default:
-                case 'string':
+        Object.entries(summaryTable?.data?.columnTypes ?? {}).forEach(([name, type]) => {
+            switch (type) {
+                case 'UNKNOWN':
+                case 'BYTES':
+                    break
+                case 'STRING':
                     columnsWithAttrs.push(
                         StringColumn({
-                            key: attr.name,
+                            key: name,
                             title: name,
                             filterType: 'string',
-                            mapDataToValue: (data: any) => data.attributes?.[attr.name],
+                            mapDataToValue: (data: any) => data[name],
                         })
                     )
                     break
-                case 'float':
-                case 'int':
+                default:
                     columnsWithAttrs.push(
                         CustomColumn({
-                            key: attr.name,
+                            key: name,
                             title: name,
                             sortable: true,
                             filterType: 'number',
@@ -181,9 +175,7 @@ export default function EvaluationListCard() {
                             renderCell: (props: any) => {
                                 return <p title={props?.value}>{props?.value}</p>
                             },
-                            mapDataToValue: (data: any): string =>
-                                data.attributes?.find((v: IEvaluationAttributeValue) => v.name === attr.name)?.value ??
-                                '-',
+                            mapDataToValue: (data: any): string => data.attributes?.[name] ?? '-',
                         })
                     )
                     break
@@ -191,7 +183,7 @@ export default function EvaluationListCard() {
         })
 
         return columnsWithAttrs
-    }, [evaluationAttrsInfo, columns])
+    }, [summaryTable.data, columns])
 
     const [compareRows, setCompareRows] = useState<any[]>([])
 
@@ -211,13 +203,13 @@ export default function EvaluationListCard() {
     const $data = useMemo(
         () =>
             evaluationsInfo.data?.list?.map((raw) => {
-                const $attributes = raw.attributes?.filter((item: any) => _.startsWith(item.name, 'summary'))
+                const $attributes = summaryTable.data?.records?.find((item: any) => item.id === raw.id)
                 return {
                     ...raw,
                     attributes: $attributes,
                 }
             }) ?? [],
-        [evaluationsInfo.data]
+        [evaluationsInfo.data, summaryTable.data]
     )
 
     const [gridMode, setGridMode] = useState(1)
@@ -446,7 +438,7 @@ export default function EvaluationListCard() {
                         title={t('Compare Evaluations')}
                         style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}
                     >
-                        <EvaluationListCompare rows={compareRows} attrs={evaluationAttrsInfo?.data ?? []} />
+                        <EvaluationListCompare rows={compareRows} attrs={summaryTable?.data?.columnTypes} />
                     </Card>
                 </>
             )}
