@@ -74,6 +74,11 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
     }
 
     @Override
+    public BundleVersionEntity findVersionById(Long bundleVersionId) {
+        return runtimeVersionMapper.findVersionById(bundleVersionId);
+    }
+
+    @Override
     public BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
         return runtimeVersionMapper.findByNameAndRuntimeId(name, bundleId);
     }
