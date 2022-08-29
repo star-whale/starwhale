@@ -283,7 +283,9 @@ class PipelineHandler(metaclass=ABCMeta):
                         threshold=_threshold,
                     )
                     _id += 1
-                    self.evaluation.log_metrics({f"roc_auc/{_label}": _roc_auc["auc"]})
+                    self.evaluation.log(
+                        "roc_auc/summary", id=_label, auc=_roc_auc["auc"]
+                    )
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
