@@ -1,10 +1,8 @@
 import React from 'react'
-import { useStyletron } from 'baseui'
 import { StatefulTooltip } from 'baseui/tooltip'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import { Link as BaseLink } from 'react-router-dom'
-import { StyleObject } from 'styletron-react'
 
 const useLinkStyles = createUseStyles({
     link: {
@@ -27,7 +25,6 @@ export type ILinkProps = {
 }
 
 export default function Link({ to, tooltip, className, style = {}, children }: ILinkProps) {
-    const [css] = useStyletron()
     const styles = useLinkStyles()
 
     return (

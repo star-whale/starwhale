@@ -15,7 +15,6 @@ import { tableNameOfResult } from '@/domain/datastore/utils'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'
-import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -29,13 +28,12 @@ function EvaluationResults() {
     const { project } = useProject()
     const { job } = useJob()
     const resultTableName = React.useMemo(() => {
-        if (!project?.name || !job?.uuid) return
+        if (!project?.name || !job?.uuid) return ''
         return tableNameOfResult(project?.name as string, job?.uuid)
     }, [project, job])
 
-    console.log(resultTableName)
-
     const resultTable = useQueryDatasetList(resultTableName, { pageNum: 0, pageSize: 1000 })
+    console.log(resultTable)
 
     const [t] = useTranslation()
 

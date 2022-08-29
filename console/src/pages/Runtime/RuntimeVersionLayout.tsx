@@ -6,7 +6,6 @@ import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchRuntime } from '@/domain/runtime/services/runtime'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode

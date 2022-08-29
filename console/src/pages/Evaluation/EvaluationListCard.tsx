@@ -13,10 +13,7 @@ import IconFont from '@/components/IconFont'
 import { CustomColumn, StringColumn } from '@/components/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import { useFetchEvaluations } from '@/domain/evaluation/hooks/useFetchEvaluations'
-import { useFetchEvaluationAttrs } from '@/domain/evaluation/hooks/useFetchEvaluationAttrs'
-import { usePage } from '@/hooks/usePage'
 import { ColumnT } from '@/components/data-table/types'
-import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
 import _ from 'lodash'
 import { useStyletron } from 'baseui'
 import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@/components/data-table/store'
@@ -24,9 +21,8 @@ import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { tableNameOfSummary } from '@/domain/datastore/utils'
-import EvaluationListCompare from './EvaluationListCompare'
 import { useProject } from '@/domain/project/hooks/useProject'
-import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
+import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
     // RIGHT:
@@ -42,7 +38,6 @@ export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
-    const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
     const evaluationsInfo = useFetchEvaluations(projectId, { pageNum: 1, pageSize: 1000 })
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
@@ -61,7 +56,7 @@ export default function EvaluationListCard() {
     const store = useEvaluationStore()
 
     const summaryTableName = React.useMemo(() => {
-        if (!project?.name) return
+        if (!project?.name) return ''
         return tableNameOfSummary(project?.name as string)
     }, [project])
     const summaryTable = useQueryDatasetList(summaryTableName, { pageNum: 0, pageSize: 1000 })

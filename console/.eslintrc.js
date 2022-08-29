@@ -76,6 +76,7 @@ module.exports = {
         'react/jsx-one-expression-per-line': 'off',
         'react/jsx-wrap-multilines': 'off',
         'react/no-array-index-key': 'off',
+        'react/jsx-props-no-spreading': 'off',
         'react/require-default-props': [
             'error',
             {

@@ -5,8 +5,10 @@ import '@/i18n'
 import reportWebVitals from '@/reportWebVitals'
 import App from './App'
 // eslint-disable-next-line
+// @ts-ignore
 window.g = null
 // eslint-disable-next-line
+// @ts-ignore
 window.i = null
 ReactDOM.render(
     <React.StrictMode>

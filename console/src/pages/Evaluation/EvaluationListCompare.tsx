@@ -6,7 +6,6 @@ import Table from '@/components/Table/TableTyped'
 import { useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { CustomColumn, StringColumn } from '@/components/data-table'
-import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
 import _ from 'lodash'
 import IconFont from '@/components/IconFont'
 import { useEvaluationCompareStore } from '@/components/data-table/store'
@@ -178,7 +177,7 @@ export default function EvaluationListCompare({
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs = [...$rows]
 
-        Object.entries(attrs ?? {}).forEach(([name, type]) => {
+        Object.entries(attrs ?? {}).forEach(([name]) => {
             rowWithAttrs.push({
                 key: name,
                 title: name,

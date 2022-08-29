@@ -6,7 +6,6 @@ import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchModel } from '@model/services/model'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 
 export interface IModelLayoutProps {
     children: React.ReactNode

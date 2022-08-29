@@ -2,7 +2,6 @@ import React from 'react'
 import { Table as TableSemantic, TableProps as BaseTableProps } from 'baseui/table-semantic'
 import { Pagination, SIZE as PaginationSize } from 'baseui/pagination'
 import { Skeleton } from 'baseui/skeleton'
-import useTranslation from '@/hooks/useTranslation'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
 import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
@@ -12,7 +11,6 @@ export interface ITableProps extends BaseTableProps {
 }
 
 export default function Table({ isLoading, columns, data, overrides, paginationProps }: ITableProps) {
-    const [t] = useTranslation()
     const [page, setPage] = usePage()
 
     return (
