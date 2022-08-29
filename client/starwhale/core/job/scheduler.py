@@ -52,13 +52,12 @@ class Scheduler:
             _failed = False
             for _name, _step in self._steps.items():
                 if _step.status == STATUS.FAILED:
-                    # todo break processing
-                    logger.error(f"step:{_step.step_name} failed, now exited.")
+                    logger.error(f"step:{_name} failed, now exited.")
                     _failed = True
-                    pass
-                if _step.status == STATUS.SUCCESS:
-                    _finished_step_names.append(_step.step_name)
-                if _step.status == STATUS.INIT or not _step.status:
+                    break
+                elif _step.status == STATUS.SUCCESS:
+                    _finished_step_names.append(_name)
+                elif _step.status == STATUS.INIT or not _step.status:
                     _wait_steps.append(_step)
             # judge whether a step's dependency all in finished
             if len(_wait_steps) == 0 or _failed:

@@ -284,8 +284,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             _step_results = _scheduler.get_results()
             logger.debug(f"job execute info:{_step_results}")
 
-            for _rt in _step_results:
-                _status = _status and _rt.status == STATUS.SUCCESS
+            _status = all([_rt.status == STATUS.SUCCESS for _rt in _step_results])
 
             _manifest.update(
                 {

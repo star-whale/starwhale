@@ -21,7 +21,7 @@ class STATUS:
 
 
 class TaskResult:
-    def __init__(self, task_id: int, status: str, exception: Optional[str] = None):
+    def __init__(self, task_id: int, status: str, exception: Optional[Exception] = None):
         self.task_id = task_id
         self.status = status
         self.exception = exception
@@ -84,7 +84,7 @@ class Task:
             func(context=self.context)
 
         except Exception as e:
-            self.exception = str(e)
+            self.exception = e
             self.status = STATUS.FAILED
         else:
             self.status = STATUS.SUCCESS
