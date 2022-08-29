@@ -6,7 +6,6 @@ import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchJob } from '@job/services/job'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 
 export interface IJobLayoutProps {
     children: React.ReactNode

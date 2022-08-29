@@ -6,7 +6,6 @@ import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchDataset } from '@dataset/services/dataset'
 import BaseSubLayout from '@/pages/BaseSubLayout'
-import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 
 export interface IDatasetLayoutProps {
     children: React.ReactNode
