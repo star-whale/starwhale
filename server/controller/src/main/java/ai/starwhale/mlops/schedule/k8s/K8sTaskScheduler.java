@@ -145,7 +145,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         SWDataSet swDataSet = swDataSets.get(0);
         coreContainerEnvs.put("SW_DATASET_URI", String.format(FORMATTER_URI_DATASET,instanceUri,swJob.getProject().getName(),swDataSet.getName(),swDataSet.getVersion()));
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
-        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getId().toString());
+        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
         swDataSets.forEach(ds -> ds.getFileStorageEnvs().values()
             .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
