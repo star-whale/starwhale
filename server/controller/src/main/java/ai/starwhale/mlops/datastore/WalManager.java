@@ -325,7 +325,6 @@ public class WalManager extends Thread {
                             Retry.of("put", RetryConfig.custom()
                                     .maxAttempts(10000)
                                     .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
-                                    .retryOnException(e -> !terminated)
                                     .build()),
                             () -> this.objectStore.put(this.logFilePrefix + this.logFileIndex,
                                     this.compressedBuffer.slice(0, compressedBufferSize)))
