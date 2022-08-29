@@ -292,4 +292,20 @@ public class WalManagerTest {
         walManager.terminate();
         verify(objectStore, times(3)).put(eq("test/wal.log.0"), any());
     }
+
+    @Test
+    public void testReadFailureAndRetry() throws Exception {
+        var objectStore = Mockito.mock(ObjectStore.class);
+        given(objectStore.list(anyString()))
+                .willThrow(new IOException())
+                .willReturn(List.of("test/wal.log.0").iterator());
+        given(objectStore.get(anyString())).willThrow(new IOException())
+                .willThrow(new IOException())
+                .willReturn(this.bufferManager.allocate(10));
+        var walManager = new WalManager(objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        //noinspection ResultOfMethodCallIgnored
+        ImmutableList.copyOf(walManager.readAll());
+        walManager.terminate();
+        verify(objectStore, times(3)).get(eq("test/wal.log.0"));
+    }
 }
