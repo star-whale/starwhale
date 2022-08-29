@@ -9,6 +9,8 @@ import BaseSubLayout from '@/pages/BaseSubLayout'
 import Card from '@/components/Card'
 import { durationToStr, formatTimestampDateTime } from '@/utils/datetime'
 import IconFont from '../../components/IconFont/index'
+import Accordion from '@/components/Accordion'
+import { Panel } from 'baseui/accordion'
 
 export interface IJobLayoutProps {
     children: React.ReactNode
@@ -74,93 +76,96 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
         return items
     }, [projectId, jobId, t])
 
-    const items = [
-        {
-            label: t('Evaluation ID'),
-            value: job?.id ?? '-',
-        },
-        {
-            label: t('Owner'),
-            value: job?.owner?.name ?? '-',
-        },
-        {
-            label: t('Status'),
-            value: job?.jobStatus ?? '-',
-        },
-        {
-            label: t('Runtime'),
-            value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration) : '-',
-        },
-        {
-            label: t('Created'),
-            value: job?.createdTime && formatTimestampDateTime(job.createdTime),
-        },
-        {
-            label: t('End Time'),
-            value: job?.stopTime && formatTimestampDateTime(job.stopTime),
-        },
-        {
-            label: t('Device'),
-            value: `${job?.device ?? '-'}, ${job?.deviceAmount ?? '-'}`,
-        },
-        {
-            label: t('Model'),
-            style: {
-                gridColumnStart: 'span 2',
+    const info = React.useMemo(() => {
+        const items = [
+            {
+                label: t('Owner'),
+                value: job?.owner?.name ?? '-',
             },
-            value: `${job?.modelName ?? '-'}:${job?.modelVersion ?? '-'}`,
-        },
-        {
-            label: t('Datasets'),
-            style: {
-                gridColumnStart: 'span 2',
+            {
+                label: t('Status'),
+                value: job?.jobStatus ?? '-',
             },
-            value: job?.datasets?.join(', '),
-        },
-        {
-            label: t('Runtime'),
-            style: {
-                gridColumnStart: 'span 2',
+            {
+                label: t('Runtime'),
+                value: job?.duration && job?.duration > 0 ? durationToStr(job?.duration) : '-',
             },
-            value: [job?.runtime?.name ?? '-', job?.runtime?.version?.name ?? '-'].join(':'),
-        },
-    ]
+            {
+                label: t('Created'),
+                value: job?.createdTime && formatTimestampDateTime(job.createdTime),
+            },
+            {
+                label: t('End Time'),
+                value: job?.stopTime && formatTimestampDateTime(job.stopTime),
+            },
+            {
+                label: t('Device'),
+                value: `${job?.device ?? '-'}, ${job?.deviceAmount ?? '-'}`,
+            },
+            {
+                label: t('Model'),
+                style: {
+                    gridColumnStart: 'span 2',
+                },
+                value: `${job?.modelName ?? '-'}:${job?.modelVersion ?? '-'}`,
+            },
+            {
+                label: t('Datasets'),
+                style: {
+                    gridColumnStart: 'span 2',
+                },
+                value: job?.datasets?.join(', '),
+            },
+            {
+                label: t('Runtime'),
+                style: {
+                    gridColumnStart: 'span 2',
+                },
+                value: [job?.runtime?.name ?? '-', job?.runtime?.version?.name ?? '-'].join(':'),
+            },
+        ]
 
-    const header = (
-        <Card
-            style={{
-                fontSize: '16px',
-                background: 'var(--color-brandBgSecondary4)',
-                padding: '12px 20px',
-                marginBottom: '10px',
-            }}
-            bodyStyle={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                gap: '12px',
-            }}
-        >
-            {items.map((v) => (
-                <div key={v?.label} style={{ display: 'flex', gap: '12px', ...v.style }}>
-                    <div
-                        style={{
-                            // flexBasis: '130px',
-                            background: 'var(--color-brandBgSecondary)',
-                            lineHeight: '24px',
-                            padding: '0 12px',
-                            borderRadius: '4px',
-                        }}
-                    >
-                        {v?.label}:
+        return (
+            <div
+                style={{
+                    fontSize: '14px',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+                    gap: '12px',
+                }}
+            >
+                {items.map((v) => (
+                    <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
+                        <div
+                            style={{
+                                lineHeight: '24px',
+                                borderRadius: '4px',
+                                color: 'rgba(2,16,43,0.60)',
+                            }}
+                        >
+                            {v?.label}:
+                        </div>
+                        <div> {v?.value}</div>
                     </div>
-                    <div> {v?.value}</div>
-                </div>
-            ))}
-        </Card>
+                ))}
+            </div>
+        )
+    }, [job, t])
+
+    const header = useMemo(
+        () => (
+            <div className='mb-20'>
+                <Accordion accordion>
+                    <Panel title={`${t('Evaluation ID')}: ${job?.id}`}>{info}</Panel>
+                </Accordion>
+            </div>
+        ),
+        [info, t]
     )
+
     return (
         <BaseSubLayout header={header} breadcrumbItems={breadcrumbItems} navItems={navItems}>
-            {children}
+            <div style={{ paddingTop: '12px', flex: '1' }}>{children}</div>
         </BaseSubLayout>
     )
 }

@@ -4,7 +4,10 @@ import '@/styles/_global.scss'
 import '@/i18n'
 import reportWebVitals from '@/reportWebVitals'
 import App from './App'
-
+// eslint-disable-next-line
+window.g = null
+// eslint-disable-next-line
+window.i = null
 ReactDOM.render(
     <React.StrictMode>
         <App />
