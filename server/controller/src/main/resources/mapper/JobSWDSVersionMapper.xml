@@ -14,6 +14,7 @@
                dsv.owner_id,
                version_name as dsv_version_name,
                ds.dataset_name as ds_dataset_name,
+               dsv.storage_auths as dsv_storage_auths,
                version_tag as dsv_version_tag,
                version_meta as dsv_version_meta,
                storage_path as dsv_storage_path,
