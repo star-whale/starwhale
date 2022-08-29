@@ -1,3 +1,4 @@
+SHELL=/bin/sh
 GIT_REVISION = $(shell git rev-parse --short HEAD)
 DATE = $(shell date "+%Y%m%d")
 LATEST_R_VERSION = $(patsubst v%,%,$(shell git describe --tags --abbrev=0))
@@ -8,12 +9,12 @@ GHCR_IO_REPO := ghcr.io/star-whale
 # Please update base/nodejs/base_server image version by manual, DOT NOT USE RELEASE TAG.
 # These images versions are slow to release.
 FIXED_VERSION_BASE_IMAGE := 0.2.1
-FIXED_VERSION_NODEJS_IMAGE := 0.1.1
+FIXED_VERSION_NODEJS_IMAGE := 0.1.2
 FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.1
 
 GHCR_BASE_IMAGE := ${GHCR_IO_REPO}/base:${FIXED_VERSION_BASE_IMAGE}
 DH_BASE_SERVER_IMAGE := ${DOCKER_HUB_REPO}/base_server:${FIXED_VERSION_BASE_SERVER_IMAGE}
-DH_NODEJS_IMAGE := ${DOCKER_HUB_REPO}/nodejs:${FIXED_VERSION_NODEJS_IMAGE}
+DH_NODEJS_IMAGE := ${GHCR_IO_REPO}/nodejs:${FIXED_VERSION_NODEJS_IMAGE}
 
 DOCKER_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ROOT_DIR := $(dir $(abspath $(DOCKER_DIR)))
@@ -28,6 +29,10 @@ PYPI_FMT_RELEASE_VERSION := $(shell python3 -c ${FMT_VERSION_CODE})
 ifndef PYPI_RELEASE_VERSION
 	PYPI_RELEASE_VERSION = 0.1.0.dev15
 endif
+
+MVN_IMG=maven:3.8.5-openjdk-11
+MVN_VOLUME=maven-repo
+YARN_VOLUME=yarn-cache
 
 define build-image
 	docker pull ${GHCR_IO_REPO}/$(1):latest || true
@@ -120,7 +125,23 @@ release-nodejs:
 	$(call push-image,nodejs,${FIXED_VERSION_NODEJS_IMAGE})
 
 build-console:
-	docker run --rm -v $(ROOT_DIR)console:/app -w /app ${DH_NODEJS_IMAGE} bash -c "yarn install && yarn build"
+	docker volume create --name ${YARN_VOLUME} && \
+	docker run --rm -v ${YARN_VOLUME}:/app ${DH_NODEJS_IMAGE} /bin/sh -c "cp -r /root/.npmrc /app/ && chown $(shell id -u):$(shell id -g) -R /app" && \
+	docker run --rm -it \
+		-u $(shell id -u):$(shell id -g) \
+		-v ${YARN_VOLUME}:/var/yarn-cache \
+		-v ${ROOT_DIR}console:/app \
+		-e YARN_REGISTRY=https://registry.npmmirror.com \
+		-e HOME=/var/yarn-cache \
+		-w /app ${DH_NODEJS_IMAGE} \
+		/bin/sh -c "yarn config set network-timeout 600000 -g && yarn && yarn build"
 
 build-jar:
-	docker volume create --name maven-repo; docker run --rm -it -v maven-repo:/root/.m2 -v $(ROOT_DIR):/app -w /app maven:3.8.5-openjdk-11 mvn clean package -f server/pom.xml -DskipTests;
+	docker volume create --name ${MVN_VOLUME} && \
+	docker run --rm -v ${MVN_VOLUME}:/app ${MVN_IMG} /bin/sh -c "chown $(shell id -u):$(shell id -g) -R /app" && \
+	docker run --rm -u $(shell id -u):$(shell id -g) \
+		-e MAVEN_CONFIG=/var/maven/.m2 \
+		-v ${MVN_VOLUME}:/var/maven/.m2 \
+		-v ${ROOT_DIR}:/app \
+		-w /app ${MVN_IMG} \
+		mvn -Duser.home=/var/maven clean package -f server/pom.xml -DskipTests
