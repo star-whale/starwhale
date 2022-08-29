@@ -16,24 +16,21 @@
 
 package ai.starwhale.mlops.domain.task;
 
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
+import ai.starwhale.mlops.ObjectMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
+import ai.starwhale.mlops.domain.swds.SWDSIndexLoaderImplTest;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
-import ai.starwhale.mlops.domain.task.bo.cmp.CMPRequest;
-import ai.starwhale.mlops.domain.task.bo.ppl.PPLRequest;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.ObjectMockHolder;
-import ai.starwhale.mlops.domain.swds.SWDSIndexLoaderImplTest;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
@@ -75,35 +72,10 @@ public class TaskBoConvertorTest {
             .build();
         Task task1 = taskBoConverter.transformTask(step, pplTask);
         Task task2 = taskBoConverter.transformTask(step, cmpTask);
-        TaskTrigger taskTrigger1 = taskBoConverter.toTaskTrigger(task1);
-        TaskTrigger taskTrigger2 = taskBoConverter.toTaskTrigger(task2);
-
 
         compareEntityAndTask(step,pplTask, task1);
         compareEntityAndTask(step,cmpTask, task2);
-
-        compareTriggerAndTask(task1,taskTrigger1);
-        compareTriggerAndTask(task2,taskTrigger2);
-
     }
-
-    private void compareTriggerAndTask(Task task, TaskTrigger taskTrigger) {
-        Assertions.assertEquals(task.getId(),taskTrigger.getId());
-        Assertions.assertTrue(task.getResultRootPath() == taskTrigger.getResultPath());
-        Assertions.assertEquals(task.getTaskType(),taskTrigger.getTaskType());
-        Assertions.assertEquals(task.getStep().getJob().getJobRuntime().getDeviceClass(),taskTrigger.getDeviceClass());
-        Assertions.assertTrue(swModelPackage == taskTrigger.getSwModelPackage());
-        if(task.getTaskType() == TaskType.CMP){
-            Assertions.assertTrue(taskTrigger.getCmpInputFilePaths().contains("a"));
-            Assertions.assertTrue(taskTrigger.getCmpInputFilePaths().contains("b"));
-            Assertions.assertTrue(taskTrigger.getCmpInputFilePaths().contains("c"));
-            Assertions.assertEquals(1,taskTrigger.getDeviceAmount());
-        }else {
-            Assertions.assertEquals(task.getStep().getJob().getJobRuntime().getDeviceAmount(),taskTrigger.getDeviceAmount());
-
-        }
-    }
-
     private void compareEntityAndTask(Step step,TaskEntity entity, Task task) {
         Assertions.assertEquals(entity.getId(), task.getId());
         Assertions.assertTrue(step == task.getStep());

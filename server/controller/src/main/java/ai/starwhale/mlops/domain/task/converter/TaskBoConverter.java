@@ -17,25 +17,20 @@
 package ai.starwhale.mlops.domain.task.converter;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
-import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
-import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand;
 import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import cn.hutool.json.JSONUtil;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 /**
  * convert task objects
@@ -72,25 +67,6 @@ public class TaskBoConverter {
         task.setStartTime(localDateTimeConvertor.convert(entity.getStartedTime()));
         task.setFinishTime(localDateTimeConvertor.convert(entity.getFinishedTime()));
         return task;
-    }
-
-    public List<TaskTrigger> toTaskTrigger(List<Task> tasks){
-        return tasks.parallelStream()
-            .map(this::toTaskTrigger).collect(Collectors.toList());
-    }
-
-    public TaskTrigger toTaskTrigger(Task t){
-        Job job = t.getStep().getJob();
-        JobRuntime jobRuntime = job.getJobRuntime();
-        return TaskTrigger.builder()
-            .id(t.getId())
-            .swrt(SWRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
-                jobRuntime.getStoragePath()).build())
-            .taskRequest(t.getTaskRequest())
-            // TODO:use task' resources
-            .deviceAmount(jobRuntime.getDeviceAmount())
-            .deviceClass(jobRuntime.getDeviceClass())
-            .swModelPackage(job.getSwmp()).build();
     }
 
     public List<TaskCommand> toTaskCommand(List<Task> tasks) {
