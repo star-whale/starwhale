@@ -114,7 +114,11 @@ public class ProjectManager implements ProjectAccessor{
     public Long getProjectId(@NotNull String projectUrl) {
         ProjectEntity projectEntity;
         if(idConvertor.isID(projectUrl)) {
-            projectEntity = projectMapper.findProject(idConvertor.revert(projectUrl));
+            Long id = idConvertor.revert(projectUrl);
+            if(id == 0){
+                return id;
+            }
+            projectEntity = projectMapper.findProject(id);
         } else {
             projectEntity = projectMapper.findProjectByName(projectUrl);
         }
