@@ -108,8 +108,8 @@ public class JobBoConverter {
                 .storagePath(runtimeVersionEntity.getStoragePath())
                 .deviceAmount(jobEntity.getDeviceAmount())
                 .deviceClass(Device.Clazz.from(jobEntity.getDeviceType()))
-                .image(null == runtimeVersionEntity.getVersionMeta() ? defaultRuntimeImage
-                    : runtimeVersionEntity.getVersionMeta())
+                .image(null == runtimeVersionEntity.getManifest() ? defaultRuntimeImage
+                    : runtimeVersionEntity.getManifest())
                 .build())
             .status(jobEntity.getJobStatus())
             .type(jobEntity.getType())
