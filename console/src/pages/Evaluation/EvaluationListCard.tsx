@@ -25,6 +25,8 @@ import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { tableNameOfSummary } from '@/domain/datastore/utils'
 import EvaluationListCompare from './EvaluationListCompare'
+import { useProject } from '@/domain/project/hooks/useProject'
+import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 
 const gridLayout = [
     // RIGHT:
@@ -45,6 +47,7 @@ export default function EvaluationListCard() {
     const evaluationsInfo = useFetchEvaluations(projectId, { pageNum: 1, pageSize: 1000 })
     const evaluationAttrsInfo = useFetchEvaluationAttrs(projectId, page)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
+    const { project } = useProject()
 
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
@@ -59,9 +62,9 @@ export default function EvaluationListCard() {
     const store = useEvaluationStore()
 
     const summaryTableName = React.useMemo(() => {
-        return tableNameOfSummary(projectId)
+        return tableNameOfSummary(project?.name as string)
     }, [projectId])
-    const summaryTable = useQueryDatasetList(summaryTableName, { pageNum: 1, pageSize: 1000 })
+    const summaryTable = useQueryDatasetList(summaryTableName, { pageNum: 0, pageSize: 1000 })
     console.log(summaryTable.data)
 
     // TODO
@@ -176,7 +179,6 @@ export default function EvaluationListCard() {
                             },
                             // @ts-ignore
                             renderCell: (props: any) => {
-                                // .slice(0, 6)
                                 return <p title={props?.value}>{props?.value}</p>
                             },
                             mapDataToValue: (data: any): string =>
