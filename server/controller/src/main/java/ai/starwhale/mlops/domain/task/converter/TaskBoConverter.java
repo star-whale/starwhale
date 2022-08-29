@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.task.converter;
 
+import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
@@ -65,6 +66,7 @@ public class TaskBoConverter {
             .agent(agentConverter.fromEntity(entity.getAgent()))
             .status(entity.getTaskStatus())
             .uuid(entity.getTaskUuid())
+            .resultRootPath(new ResultPath(entity.getResultPath()))
             .taskRequest(JSONUtil.toBean(entity.getTaskRequest(), TaskRequest.class))
             .build();
         task.setStartTime(localDateTimeConvertor.convert(entity.getStartedTime()));
