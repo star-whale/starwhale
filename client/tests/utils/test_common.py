@@ -7,7 +7,7 @@ import pytest
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pyfakefs.fake_filesystem_unittest import Patcher
 
-from starwhale.utils import load_dotenv, validate_obj_name
+from starwhale.utils import load_dotenv, pretty_merge_list, validate_obj_name
 from starwhale.consts import ENV_LOG_LEVEL
 from starwhale.utils.debug import init_logger
 
@@ -57,3 +57,16 @@ def test_load_dotenv(fake_fs: FakeFilesystem) -> None:
     assert not os.environ["c"]
     assert "ddd" not in os.environ
     assert len(os.environ) == 4
+
+
+def test_pretty_merge_list() -> None:
+    _cases = (
+        ([1, 2, 3, 4, 5, 7, 8, 9, 10, 100, 101, 102], "1-5,7-10,100-102"),
+        ([1, 3, 5, 7], "1,3,5,7"),
+        ([1, 3, 4, 5, 7], "1,3-5,7"),
+        ([], ""),
+        ([1, 3, 3, 4, 4, 5, 7], "1,3-5,7"),
+    )
+
+    for in_lst, expected_str in _cases:
+        assert pretty_merge_list(in_lst) == expected_str

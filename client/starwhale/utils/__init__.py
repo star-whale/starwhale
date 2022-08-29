@@ -211,3 +211,21 @@ def load_dotenv(fpath: Path) -> None:
 
             k, v = line.split("=", 1)
             os.environ[k.strip()] = v.strip()
+
+
+def pretty_merge_list(lst: t.List[int]) -> str:
+    _r = []
+    lst = sorted(lst)
+    if not lst:
+        return ""
+
+    _start, _end = lst[0], lst[0]
+    for _cur in lst[1:]:
+        if _end + 1 == _cur or _end == _cur:
+            _end = _cur
+        else:
+            _r.append(str(_start) if _start == _end else f"{_start}-{_end}")
+            _start = _end = _cur
+
+    _r.append(str(_start) if _start == _end else f"{_start}-{_end}")
+    return ",".join(_r)

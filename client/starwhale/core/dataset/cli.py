@@ -8,6 +8,8 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
+from starwhale.base.uri import URI
+from starwhale.base.type import URIType
 
 from .view import get_term_view, DatasetTermView
 
@@ -42,6 +44,19 @@ def _build(
     # TODO: add dry-run
     # TODO: add compress args
     view.build(workdir, project, dataset_yaml, append, append_from)
+
+
+@dataset_cmd.command("diff", help="Dataset version diff")
+@click.argument("base_uri", required=True)
+@click.argument("compare_uri", required=True)
+@click.option(
+    "--show-details", is_flag=True, help="Show data different detail by the row"
+)
+@click.pass_obj
+def _diff(
+    view: t.Type[DatasetTermView], base_uri: str, compare_uri: str, show_details: bool
+) -> None:
+    view(base_uri).diff(URI(compare_uri, expected_type=URIType.DATASET), show_details)
 
 
 @dataset_cmd.command("list", help="List dataset")
