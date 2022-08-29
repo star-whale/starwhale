@@ -58,7 +58,8 @@ public class S3ObjectStore implements ObjectStore {
             @SuppressWarnings("unchecked")
             var result = (ResponseInputStream<GetObjectResponse>) is;
             var ret = this.bufferManager.allocate(result.response().contentLength().intValue());
-            assert result.read(ret.asByteBuffer().array()) == ret.capacity();
+            int read = result.readNBytes(ret.asByteBuffer().array(),0,ret.capacity());
+            assert read == ret.capacity();
             return ret;
         }
     }
