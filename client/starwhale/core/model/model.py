@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import typing as t
 from abc import ABCMeta
-from copy import deepcopy
 from pathlib import Path
 from collections import defaultdict
 
@@ -29,6 +28,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir, ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType, InstanceType
 from starwhale.base.cloud import CloudRequestMixed, CloudBundleModelMixin
+from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
@@ -41,7 +41,7 @@ from starwhale.core.model.store import ModelStorage
 from starwhale.core.job.scheduler import Scheduler
 
 
-class ModelRunConfig:
+class ModelRunConfig(ASDictMixin):
 
     # TODO: use attr to tune class
     def __init__(
@@ -74,11 +74,8 @@ class ModelRunConfig:
     def __repr__(self) -> str:
         return f"Model Run Config: ppl -> {self.ppl}, runtime -> {self.runtime}"
 
-    def as_dict(self) -> t.Dict[str, t.Any]:
-        return deepcopy(self.__dict__)
 
-
-class ModelConfig:
+class ModelConfig(ASDictMixin):
 
     # TODO: use attr to tune class
     def __init__(
@@ -123,11 +120,6 @@ class ModelConfig:
 
     def __repr__(self) -> str:
         return f"Model Config: name -> {self.name}, model-> {self.model}"
-
-    def as_dict(self) -> t.Dict[str, t.Any]:
-        _r = deepcopy(self.__dict__)
-        _r["run"] = self.run.as_dict()
-        return _r
 
 
 class Model(BaseBundle, metaclass=ABCMeta):
@@ -411,7 +403,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 self._render_manifest,
                 5,
                 "render manifest",
-                # dict(user_raw_config=_model_config.as_dict()),
             ),
             (self._make_tar, 20, "build model bundle", dict(ftype=BundleType.MODEL)),
             (self._make_latest_tag, 5, "make latest tag"),

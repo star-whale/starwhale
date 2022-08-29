@@ -6,7 +6,6 @@ import typing as t
 import platform
 import tempfile
 from abc import ABCMeta
-from copy import deepcopy
 from pathlib import Path
 from xml.dom import NotFoundErr
 from collections import defaultdict
@@ -57,6 +56,7 @@ from starwhale.base.type import (
     RuntimeLockFileType,
 )
 from starwhale.base.cloud import CloudRequestMixed
+from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.http import ignore_error
 from starwhale.utils.venv import (
     is_venv,
@@ -109,7 +109,7 @@ _SUPPORT_CUDNN = {"8": {"support_cuda_versions": ["11.3", "11.4", "11.5", "11.6"
 _SUPPORT_PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
 
 
-class Environment:
+class Environment(ASDictMixin):
     def __init__(
         self,
         arch: _t_mixed_str_list = "",
@@ -128,9 +128,6 @@ class Environment:
         self.cudnn = str(cudnn).strip()
 
         self._do_validate()
-
-    def asdict(self) -> t.Dict[str, str]:
-        return deepcopy(self.__dict__)
 
     def _do_validate(self) -> None:
         if self.os not in (SupportOS.UBUNTU,):
@@ -167,7 +164,7 @@ class Environment:
     __repr__ = __str__
 
 
-class Dependencies:
+class Dependencies(ASDictMixin):
     def __init__(self, deps: t.Optional[t.List[str]] = None) -> None:
         deps = deps or []
 
@@ -216,24 +213,19 @@ class Dependencies:
     def __str__(self) -> str:
         return f"Starwhale Runtime Dependencies: pip:{len(self.pip_pkgs + self.pip_files)}, conda:{len(self.conda_pkgs + self.conda_files)}, wheels:{len(self.wheels)}, files:{len(self.files)}"
 
-    def asdict(self) -> t.Dict[str, t.Any]:
-        _d = deepcopy(self.__dict__)
-        _d.pop("_unparsed", None)
-        return _d
-
     __repr__ = __str__
 
+    def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
+        return super().asdict(ignore_keys=ignore_keys or ["_unparsed"])
 
-class Hooks:
+
+class Hooks(ASDictMixin):
     def __init__(self, pre: str = "", post: str = "", **kw: t.Any) -> None:
         self.pre = pre
         self.post = post
 
-    def asdict(self) -> t.Dict[str, str]:
-        return deepcopy(self.__dict__)
 
-
-class DockerConfig:
+class DockerConfig(ASDictMixin):
     def __init__(
         self,
         image: str = "",
@@ -242,7 +234,7 @@ class DockerConfig:
         self.image = image
 
 
-class PipConfig:
+class PipConfig(ASDictMixin):
     def __init__(
         self,
         index_url: str = "",
@@ -255,12 +247,12 @@ class PipConfig:
         self.trusted_host = _list(trusted_host)
 
 
-class CondaConfig:
+class CondaConfig(ASDictMixin):
     def __init__(self, channels: t.Optional[t.List[str]] = None, **kw: t.Any) -> None:
         self.channels = channels or [DEFAULT_CONDA_CHANNEL]
 
 
-class Configs:
+class Configs(ASDictMixin):
     def __init__(
         self,
         docker: t.Optional[t.Dict[str, str]] = None,
@@ -272,15 +264,8 @@ class Configs:
         self.conda = CondaConfig(**(conda or {}))
         self.pip = PipConfig(**(pip or {}))
 
-    def asdict(self) -> t.Dict[str, t.Dict[str, t.Any]]:
-        return {
-            "docker": deepcopy(self.docker.__dict__),
-            "conda": deepcopy(self.conda.__dict__),
-            "pip": deepcopy(self.pip.__dict__),
-        }
 
-
-class RuntimeConfig:
+class RuntimeConfig(ASDictMixin):
     def __init__(
         self,
         name: str,
@@ -330,20 +315,8 @@ class RuntimeConfig:
         c = load_yaml(path)
         return cls(**c)
 
-    def asdict(self) -> t.Dict[str, t.Any]:
-        _d = deepcopy(self.__dict__)
-        _d.pop("kw", None)
-        _d.pop("_starwhale_version", None)
-
-        _d.update(
-            dict(
-                hooks=self.hooks.asdict(),
-                configs=self.configs.asdict(),
-                environment=self.environment.asdict(),
-                dependencies=self.dependencies.asdict(),
-            )
-        )
-        return _d
+    def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
+        return super().asdict(ignore_keys=ignore_keys or ["kw", "_starwhale_version"])
 
 
 class Runtime(BaseBundle, metaclass=ABCMeta):
