@@ -511,7 +511,7 @@ public class MemoryTableImplTest {
         @Test
         public void testQueryInitialEmptyTable() {
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
-            var recordList = this.memoryTable.query(null, null, null, -1, -1);
+            var recordList = this.memoryTable.query(null, null, null, -1, -1, false);
             assertThat("empty", recordList.getColumnTypeMap(), nullValue());
             assertThat("empty", recordList.getRecords(), empty());
         }
@@ -521,14 +521,14 @@ public class MemoryTableImplTest {
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
             this.memoryTable.update(new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))),
                     List.of(Map.of("k", "0", "-", "1")));
-            var recordList = this.memoryTable.query(null, null, null, -1, -1);
+            var recordList = this.memoryTable.query(null, null, null, -1, -1, false);
             assertThat("empty", recordList.getColumnTypeMap(), is(Map.of("k", ColumnType.STRING)));
             assertThat("empty", recordList.getRecords(), empty());
         }
 
         @Test
         public void testQueryAll() {
-            var recordList = this.memoryTable.query(null, null, null, -1, -1);
+            var recordList = this.memoryTable.query(null, null, null, -1, -1, false);
             assertThat("all",
                     recordList.getColumnTypeMap(),
                     is(this.memoryTable.getSchema().getColumnSchemas().stream()
@@ -538,7 +538,7 @@ public class MemoryTableImplTest {
 
         @Test
         public void testQueryColumnAliases() {
-            var recordList = this.memoryTable.query(Map.of("a", "x", "d", "y"), null, null, -1, -1);
+            var recordList = this.memoryTable.query(Map.of("a", "x", "d", "y"), null, null, -1, -1, false);
             assertThat("columns",
                     recordList.getColumnTypeMap(),
                     is(Map.of("x", ColumnType.BOOL, "y", ColumnType.INT32)));
@@ -560,7 +560,7 @@ public class MemoryTableImplTest {
         @Test
         public void testQueryColumnAliasesInvalid() {
             assertThrows(SWValidationException.class,
-                    () -> this.memoryTable.query(Map.of("x", "x"), null, null, -1, -1),
+                    () -> this.memoryTable.query(Map.of("x", "x"), null, null, -1, -1, false),
                     "invalid column");
         }
 
@@ -571,7 +571,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("order by a",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "b", ColumnType.INT8)));
@@ -596,7 +597,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("b", true)),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "b", ColumnType.INT8)));
@@ -621,7 +623,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("b")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("order by a,b",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "b", ColumnType.INT8)));
@@ -646,7 +649,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("c")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("order by a,c",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "c", ColumnType.INT16)));
@@ -671,7 +675,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("d")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("order by a,d",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "d", ColumnType.INT32)));
@@ -696,7 +701,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("e")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("order by a,e",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "e", ColumnType.INT64)));
@@ -721,7 +727,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("f")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("order by a,f",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "f", ColumnType.FLOAT32)));
@@ -746,7 +753,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("g")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("order by a,g",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "g", ColumnType.FLOAT64)));
@@ -771,7 +779,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("h")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("order by a,h",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "h", ColumnType.STRING)));
@@ -796,7 +805,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("i")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("order by a,i",
                     recordList.getColumnTypeMap(),
                     is(Map.of("a", ColumnType.BOOL, "i", ColumnType.BYTES)));
@@ -821,7 +831,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("a"), new OrderByDesc("d")),
                     null,
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("aliases and order by",
                     recordList.getColumnTypeMap(),
                     is(Map.of("x", ColumnType.INT32)));
@@ -843,7 +854,7 @@ public class MemoryTableImplTest {
         @Test
         public void testQueryOrderByInvalid() {
             assertThrows(SWValidationException.class,
-                    () -> this.memoryTable.query(null, List.of(new OrderByDesc("x")), null, -1, -1),
+                    () -> this.memoryTable.query(null, List.of(new OrderByDesc("x")), null, -1, -1, false),
                     "invalid order by column");
         }
 
@@ -861,7 +872,8 @@ public class MemoryTableImplTest {
                             }})
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("d", 2))));
@@ -879,7 +891,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("a"), true))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(
@@ -900,7 +913,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("b"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("b", (byte) 5))));
@@ -917,7 +931,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("c"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("c", (short) 5))));
@@ -934,7 +949,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("d"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("d", 5))));
@@ -951,7 +967,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("e"), 5L))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("e", 5L))));
@@ -968,7 +985,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("f", 5.f))));
@@ -985,7 +1003,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("g"), 5.))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("g", 5.))));
@@ -1002,7 +1021,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("h"), "5"))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("h", "5"))));
@@ -1021,7 +1041,8 @@ public class MemoryTableImplTest {
                                     ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("i", ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))));
@@ -1038,7 +1059,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("a"), true))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(
@@ -1060,7 +1082,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("b"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("b", (byte) 0),
@@ -1081,7 +1104,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("c"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("c", (short) 0),
@@ -1102,7 +1126,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("d"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("d", 0),
@@ -1123,7 +1148,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("e"), 5L))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("e", 0L),
@@ -1144,7 +1170,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("f", 0.f),
@@ -1165,7 +1192,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("g"), 5.))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("g", 0.),
@@ -1186,7 +1214,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("h"), "5"))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("h", "0"),
@@ -1209,7 +1238,8 @@ public class MemoryTableImplTest {
                                     ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("i", ByteBuffer.wrap("0".getBytes(StandardCharsets.UTF_8))),
@@ -1230,7 +1260,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("a"), true))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(
@@ -1256,7 +1287,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("b"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("b", (byte) 0),
@@ -1278,7 +1310,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("c"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("c", (short) 0),
@@ -1300,7 +1333,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("d"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("d", 0),
@@ -1322,7 +1356,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("e"), 5L))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("e", 0L),
@@ -1344,7 +1379,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("f", 0.f),
@@ -1366,7 +1402,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("g"), 5.))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("g", 0.),
@@ -1388,7 +1425,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("h"), "5"))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("h", "0"),
@@ -1412,7 +1450,8 @@ public class MemoryTableImplTest {
                                     ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("i", ByteBuffer.wrap("0".getBytes(StandardCharsets.UTF_8))),
@@ -1434,7 +1473,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("a"), false))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(
@@ -1455,7 +1495,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("b"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("b", (byte) 6),
@@ -1474,7 +1515,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("c"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("c", (short) 6),
@@ -1493,7 +1535,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("d"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("d", 6),
@@ -1512,7 +1555,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("e"), 5L))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("e", 6L),
@@ -1531,7 +1575,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("f", 6.f),
@@ -1550,7 +1595,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("g"), 5.))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("g", 6.),
@@ -1569,7 +1615,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("h"), "5"))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("h", "6"),
@@ -1590,7 +1637,8 @@ public class MemoryTableImplTest {
                                     ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("i", ByteBuffer.wrap("6".getBytes(StandardCharsets.UTF_8))),
@@ -1609,7 +1657,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("a"), false))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(
@@ -1635,7 +1684,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("b"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("b", (byte) 5),
@@ -1655,7 +1705,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("c"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("c", (short) 5),
@@ -1675,7 +1726,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("d"), 5))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("d", 5),
@@ -1695,7 +1747,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("e"), 5L))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("e", 5L),
@@ -1715,7 +1768,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("f"), 5.f))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("f", 5.f),
@@ -1735,7 +1789,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("g"), 5.))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("g", 5.),
@@ -1755,7 +1810,8 @@ public class MemoryTableImplTest {
                             .operands(List.of(new TableQueryFilter.Column("h"), "5"))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("h", "5"),
@@ -1777,7 +1833,8 @@ public class MemoryTableImplTest {
                                     ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("i", ByteBuffer.wrap("5".getBytes(StandardCharsets.UTF_8))),
@@ -1803,7 +1860,8 @@ public class MemoryTableImplTest {
                                             .build()))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of(),
@@ -1840,7 +1898,8 @@ public class MemoryTableImplTest {
                                             .build()))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("a", true, "d", 0),
@@ -1870,7 +1929,8 @@ public class MemoryTableImplTest {
                                             .build()))
                             .build(),
                     -1,
-                    -1);
+                    -1,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("d", 2),
@@ -1890,7 +1950,8 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("d")),
                     null,
                     5,
-                    2);
+                    2,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of("d", 4),
@@ -1905,10 +1966,31 @@ public class MemoryTableImplTest {
                     List.of(new OrderByDesc("z")),
                     null,
                     5,
-                    2);
+                    2,
+                    false);
             assertThat("test",
                     decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
                     is(List.of(Map.of(), Map.of())));
+        }
+
+        @Test
+        public void testQueryKeepNone() {
+            var columns = Map.of("a", "a");
+            var records = this.memoryTable.query(
+                    columns,
+                    null,
+                    TableQueryFilter.builder()
+                            .operator(TableQueryFilter.Operator.EQUAL)
+                            .operands(List.of(new TableQueryFilter.Column("b"), 0))
+                            .build(),
+                    -1,
+                    -1,
+                    true);
+            assertThat("test",
+                    decodeRecords(this.memoryTable.getSchema().getColumnTypeMapping(columns), records.getRecords()),
+                    is(List.of(new HashMap<String, Object>() {{
+                        put("a", null);
+                    }})));
         }
 
         @Test

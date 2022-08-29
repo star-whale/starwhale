@@ -35,4 +35,5 @@ public class DataStoreQueryRequest {
     private TableQueryFilter filter;
     private int start = -1;
     private int limit = -1;
+    private boolean keepNone;
 }

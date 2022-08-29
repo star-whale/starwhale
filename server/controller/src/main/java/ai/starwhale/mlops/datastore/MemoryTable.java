@@ -29,7 +29,8 @@ public interface MemoryTable {
                      List<OrderByDesc> orderBy,
                      TableQueryFilter filter,
                      int start,
-                     int limit);
+                     int limit,
+                     boolean keepNone);
 
     TableScanIterator scan(
             Map<String, String> columns,
