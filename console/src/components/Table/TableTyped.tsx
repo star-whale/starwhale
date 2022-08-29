@@ -1,14 +1,11 @@
 /* eslint-disable */
-import React, { useRef, useState, useMemo } from 'react'
-import { Table as TableSemantic, TableProps as BaseTableProps } from 'baseui/table-semantic'
+import React, { useRef, useMemo } from 'react'
+import { TableProps as BaseTableProps } from 'baseui/table-semantic'
 import { Pagination, SIZE as PaginationSize } from 'baseui/pagination'
 import { Skeleton } from 'baseui/skeleton'
-import { FiInbox } from 'react-icons/fi'
 import useTranslation from '@/hooks/useTranslation'
-import Text from '@/components/Text'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
-import { StatefulTooltip } from 'baseui/tooltip'
 import {
     StatefulDataTable,
     CategoricalColumn,
@@ -29,6 +26,7 @@ import { useEffect } from 'react'
 import { useStyletron } from 'baseui'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
+import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
 
 const useStyles = createUseStyles({
     table: {
@@ -286,23 +284,7 @@ export function TableTyped({
                         />
                     )}
                     // @ts-ignore
-                    emptyMessage={() => (
-                        <div
-                            style={{
-                                position: 'absolute',
-                                top: '50%',
-                                left: 0,
-                                right: 0,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 8,
-                            }}
-                        >
-                            <FiInbox size={50} />
-                        </div>
-                    )}
+                    emptyMessage={() => <BusyPlaceholder type='notfound' />}
                 />
             </div>
             {paginationProps && (

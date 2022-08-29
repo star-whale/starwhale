@@ -4,8 +4,8 @@ const VERSION_PREFIX_CNT = 2
 
 export function tableDataLink(
     projectId: string,
-    datasetId: string,
-    datasetVersion: string,
+    datasetName: string,
+    datasetVersionName: string,
     query: {
         uri: string
         authName: string
@@ -14,20 +14,22 @@ export function tableDataLink(
         Authorization?: string
     }
 ) {
-    return `/api/v1/project/${projectId}/dataset/${datasetId}/version/${datasetVersion}/link?${qs.stringify(query)}`
+    return `/api/v1/project/${projectId}/dataset/${datasetName}/version/${datasetVersionName}/link?${qs.stringify(
+        query
+    )}`
 }
 
-export function tableNameOfDataset(projectId: string, datasetId: string, datasetVersion: string) {
-    return `project/${projectId}/dataset/${datasetId}/${datasetVersion.substring(
+export function tableNameOfDataset(projectName: string, datasetName: string, datasetVersionName: string) {
+    return `project/${projectName}/dataset/${datasetName}/${datasetVersionName.substring(
         0,
         VERSION_PREFIX_CNT
-    )}/${datasetVersion}/meta`
+    )}/${datasetVersionName}/meta`
 }
 
-export function tableNameOfResult(projectId: string, evaluationId: string) {
-    return `project/${projectId}/eval/${evaluationId}/results`
+export function tableNameOfResult(projectName: string, evaluationUuid: string) {
+    return `project/${projectName}/eval/${evaluationUuid}/results`
 }
 
-export function tableNameOfSummary(projectId: string) {
-    return `/project/${projectId}/eval/summary`
+export function tableNameOfSummary(projectName: string) {
+    return `project/${projectName}/eval/summary`
 }

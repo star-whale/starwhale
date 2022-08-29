@@ -16,70 +16,86 @@ import { QueryInput } from '@/components/data-table/stateful-data-table'
 import cn from 'classnames'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { StatefulTooltip } from 'baseui/tooltip'
+import { createUseStyles } from 'react-jss'
 import { IProjectSchema } from '../../domain/project/schemas/project'
+import { IconLink, TextLink } from '@/components/Link'
 
 type IProjectCardProps = {
     project: IProjectSchema
     onEdit?: () => void
 }
 
+const useCardStyles = createUseStyles({
+    card: {
+        'display': 'flex',
+        'height': '116px',
+        'gap': '10px',
+        'background': '#FFFFFF',
+        'border': '1px solid #E2E7F0',
+        'borderRadius': '4px',
+        'padding': '20px',
+        'flexDirection': 'column',
+        'alignItems': 'space-between',
+        'justifyContent': 'space-between',
+        'textDecoration': 'none',
+        'color': ' rgba(2,16,43,0.60)',
+        ':hover': {
+            boxShadow: '0 2px 8px 0 rgba(0,0,0,0.20)',
+        },
+    },
+    row: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        flexGrow: 0,
+        lineHeight: '18px',
+    },
+    rowKey: {
+        color: 'rgba(2,16,43,0.60)',
+        marginRight: '8px',
+    },
+    rowValue: {
+        display: 'flex',
+        alignItems: 'center',
+        color: '#02102B',
+    },
+    rowEnd: {
+        marginLeft: 'auto',
+    },
+    description: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        color: ' rgba(2,16,43,0.60)',
+    },
+    statistics: {
+        display: 'flex',
+        justifyContent: 'flex-start',
+        color: ' rgba(2,16,43,0.60)',
+        gap: '12px',
+    },
+    statisticsItem: {
+        display: 'flex',
+        gap: '4px',
+    },
+    tag: {
+        fontSize: '12px',
+        color: '#00B368',
+        backgroundColor: '#E6FFF4',
+        borderRadius: '9px',
+        padding: '3px 10px',
+    },
+})
+
 const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
     const [css] = useStyletron()
     const [t] = useTranslation()
+    const styles = useCardStyles()
 
     return (
-        <div
-            className={css({
-                'display': 'flex',
-                'height': '116px',
-                'gap': '10px',
-                'background': '#FFFFFF',
-                'border': '1px solid #E2E7F0',
-                'borderRadius': '4px',
-                'padding': '20px',
-                'flexDirection': 'column',
-                'alignItems': 'space-between',
-                'justifyContent': 'space-between',
-                'textDecoration': 'none',
-                'color': ' rgba(2,16,43,0.60)',
-                ':hover': {
-                    boxShadow: '0 2px 8px 0 rgba(0,0,0,0.20)',
-                },
-            })}
-        >
-            <div
-                className={css({
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    flexGrow: 0,
-                    lineHeight: '18px',
-                })}
-            >
-                <Link
-                    className={css({
-                        display: 'flex',
-                        width: '80%',
-                        textDecoration: 'none',
-                    })}
-                    to={`/projects/${project.id}`}
-                >
-                    <p
-                        className={cn(
-                            'text-ellipsis',
-                            css({
-                                'fontSize': '14px',
-                                'fontWeight': 'bold',
-                                'color': '#02102B',
-                                ':hover': {
-                                    textDecoration: 'underline',
-                                    color: ' #5181E0',
-                                },
-                            })
-                        )}
-                    >
-                        {[project.owner?.name, project.name].join('/')}
-                    </p>
-                </Link>
+        <div className={styles.card}>
+            <div className={styles.row}>
+                <TextLink to={`/projects/${project.id}`} style={{ width: '80%' }}>
+                    {[project.owner?.name, project.name].join('/')}
+                </TextLink>
                 <div
                     className={css({
                         display: 'flex',
@@ -92,24 +108,18 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                                 display: 'flex',
                                 fontSize: '12px',
                                 color: project?.privacy === 'PRIVATE' ? '#4848B3' : '#00B368',
-                                backgroundColor: '#E6FFF4',
+                                backgroundColor: project?.privacy === 'PRIVATE' ? '#EDEDFF' : '#E6FFF4',
                                 borderRadius: '9px',
                                 padding: '3px 10px',
                             })
                         )}
                     >
-                        {project.privacy?.toLowerCase()}
+                        {project.privacy === 'PRIVATE' ? t('Private') : t('Public')}
                     </p>
                 </div>
             </div>
-            <div
-                className={css({
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    color: ' rgba(2,16,43,0.60)',
-                })}
-            >
-                <StatefulTooltip content='desc' placement='bottom'>
+            <div className={styles.description}>
+                <StatefulTooltip content={project.description ?? ''} placement='bottom'>
                     {project.description ?? ''}
                 </StatefulTooltip>
             </div>
@@ -119,38 +129,74 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     justifyContent: 'space-between',
                 })}
             >
-                <div />
+                <div className={styles.statistics}>
+                    <div className={styles.statisticsItem}>
+                        <IconLink
+                            to={`/projects/${project.id}`}
+                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
+                            tooltip={`${t('Evaluations')}:${project?.statistics.evaluationCounts}`}
+                        >
+                            <IconFont
+                                type='evaluation'
+                                size={12}
+                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '4px' }}
+                            />
+                            <span>{project?.statistics.evaluationCounts}</span>
+                        </IconLink>
+                    </div>
+                    <div className={styles.statisticsItem}>
+                        <IconLink
+                            to={`/projects/${project.id}`}
+                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
+                            tooltip={`${t('Datasets')}:${project?.statistics.datasetCounts}`}
+                        >
+                            <IconFont
+                                type='dataset'
+                                size={12}
+                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '4px' }}
+                            />
+                            <span>{project?.statistics.datasetCounts}</span>
+                        </IconLink>
+                    </div>
+                    <div className={styles.statisticsItem}>
+                        <IconLink
+                            to={`/projects/${project.id}`}
+                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
+                            tooltip={`${t('Models')}:${project?.statistics.modelCounts}`}
+                        >
+                            <IconFont
+                                type='model'
+                                size={12}
+                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '4px' }}
+                            />
+                            <span>{project?.statistics.modelCounts}</span>
+                        </IconLink>
+                    </div>
+                    <div className={styles.statisticsItem}>
+                        <IconLink
+                            to={`/projects/${project.id}`}
+                            style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
+                            tooltip={`${t('Members')}:${project?.statistics.memberCounts}`}
+                        >
+                            <IconFont
+                                type='a-managemember'
+                                size={12}
+                                style={{ color: 'rgba(2,16,43,0.20)', marginRight: '4px' }}
+                            />
+                            <span>{project?.statistics.memberCounts}</span>
+                        </IconLink>
+                    </div>
+                </div>
                 <div
                     style={{
                         display: 'flex',
                         gap: '12px',
                     }}
                 >
-                    <StatefulTooltip content={t('Manage Member')} placement='bottom'>
-                        <Link
-                            key={project.id}
-                            to={`/projects/${project.id}/members`}
-                            className={cn(
-                                'flex-row-center',
-                                css({
-                                    'display': 'flex',
-                                    'fontSize': '12px',
-                                    'backgroundColor': '#F4F5F7',
-                                    'borderRadius': '2px',
-                                    'width': '20px',
-                                    'height': '20px',
-                                    'textDecoration': 'none',
-                                    'color': 'gray !important',
-                                    ':hover span': {
-                                        color: ' #5181E0  !important',
-                                    },
-                                })
-                            )}
-                        >
-                            <IconFont type='setting' size={12} />
-                        </Link>
-                    </StatefulTooltip>
-                    <StatefulTooltip content={t('edit sth', [t('Project')])} placement='bottom'>
+                    <IconLink to={`/projects/${project.id}/members`} tooltip={t('Manage Member')}>
+                        <IconFont type='setting' size={12} style={{ color: 'rgba(2,16,43,0.60)' }} />
+                    </IconLink>
+                    <StatefulTooltip content={t('edit sth', [t('Project')])} placement='top'>
                         <Button
                             onClick={onEdit}
                             size='compact'
@@ -161,19 +207,23 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                                         'display': 'flex',
                                         'fontSize': '12px',
                                         'backgroundColor': '#F4F5F7',
-                                        // 'borderRadius': '2px',
                                         'width': '20px',
                                         'height': '20px',
                                         'textDecoration': 'none',
                                         'color': 'gray !important',
+                                        'paddingLeft': '10px',
+                                        'paddingRight': '10px',
                                         ':hover span': {
                                             color: ' #5181E0  !important',
+                                        },
+                                        ':hover': {
+                                            backgroundColor: '#F0F4FF',
                                         },
                                     },
                                 },
                             }}
                         >
-                            <IconFont type='edit' size={12} />
+                            <IconFont type='edit' size={10} />
                         </Button>
                     </StatefulTooltip>
                 </div>

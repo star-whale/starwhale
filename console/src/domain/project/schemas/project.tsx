@@ -6,6 +6,12 @@ export interface IProjectSchema extends IResourceSchema {
     owner?: IUserSchema
     privacy?: string
     description?: string
+    statistics: {
+        modelCounts: number
+        datasetCounts: number
+        evaluationCounts: number
+        memberCounts: number
+    }
 }
 
 export interface IUpdateProjectSchema {

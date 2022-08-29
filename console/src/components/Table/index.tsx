@@ -2,11 +2,10 @@ import React from 'react'
 import { Table as TableSemantic, TableProps as BaseTableProps } from 'baseui/table-semantic'
 import { Pagination, SIZE as PaginationSize } from 'baseui/pagination'
 import { Skeleton } from 'baseui/skeleton'
-import { FiInbox } from 'react-icons/fi'
 import useTranslation from '@/hooks/useTranslation'
-import Text from '@/components/Text'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
+import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
 
 export interface ITableProps extends BaseTableProps {
     paginationProps?: IPaginationProps
@@ -77,8 +76,7 @@ export default function Table({ isLoading, columns, data, overrides, paginationP
                             height: 100,
                         }}
                     >
-                        <FiInbox size={30} />
-                        <Text>{t('no data')}</Text>
+                        <BusyPlaceholder type='notfound' />
                     </div>
                 }
             />

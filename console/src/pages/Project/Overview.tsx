@@ -99,9 +99,10 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         className={styles.tag}
                         style={{
                             color: project?.privacy === 'PRIVATE' ? '#4848B3' : '#00B368',
+                            backgroundColor: project?.privacy === 'PRIVATE' ? '#EDEDFF' : '#E6FFF4',
                         }}
                     >
-                        {project.privacy}
+                        {project.privacy === 'PRIVATE' ? t('Private') : t('Public')}
                     </p>
                 </div>
             </div>

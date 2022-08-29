@@ -97,7 +97,7 @@ export default function IconFont({ size = 14, type = 'user', kind = 'inherit', s
             }}
         >
             {type in hijacked ? (
-                <img src={_.get(hijacked, type)} alt={type} width={20} />
+                <img src={_.get(hijacked, type)} alt={type} width={size ?? 20} />
             ) : (
                 <span className={`iconfont icon-${type}`} style={{ fontSize: size }} />
             )}
