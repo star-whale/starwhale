@@ -2,7 +2,7 @@ import copy
 import typing as t
 from pathlib import Path
 from collections import defaultdict
-
+import networkx as nx
 import yaml
 from loguru import logger
 
@@ -189,10 +189,11 @@ class Parser:
     def check(jobs: t.Dict[str, t.List[t.Dict]]) -> bool:
         checks = []
         logger.debug(f"jobs:{jobs}")
-        for job in jobs.items():
+        for name, steps in jobs.items():
+            graph = nx.DiGraph()
             all_steps = []
             needs = []
-            for _step in job[1]:
+            for _step in steps:
                 all_steps.append(_step["step_name"])
                 for d in _step["needs"]:
                     if d:
@@ -200,7 +201,7 @@ class Parser:
             logger.debug(f"all steps:{all_steps}, length:{len(all_steps)}")
             _check = all(item in all_steps for item in needs)
             if not _check:
-                logger.error(f"job:{job[0]} check error!")
+                logger.error(f"job:{name} check error!")
             checks.append(_check)
 
         return all(checks)
