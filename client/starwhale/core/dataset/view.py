@@ -13,6 +13,7 @@ from starwhale.consts import (
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
+from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .model import Dataset
 
@@ -75,12 +76,23 @@ class DatasetTermView(BaseTermView):
         yaml_name: str = DefaultYAMLName.DATASET,
         append: bool = False,
         append_from: str = LATEST_TAG,
+        runtime_uri: str = "",
+        runtime_restore: bool = False,
     ) -> None:
-        _dataset_uri = cls.prepare_build_bundle(
+        dataset_uri = cls.prepare_build_bundle(
             workdir, project, yaml_name, URIType.DATASET
         )
-        _ds = Dataset.get_dataset(_dataset_uri)
-        _ds.build(Path(workdir), yaml_name, append=append, append_from=append_from)
+        ds = Dataset.get_dataset(dataset_uri)
+        if runtime_uri:
+            RuntimeProcess.from_runtime_uri(
+                uri=runtime_uri,
+                target=ds.build,
+                args=(Path(workdir), yaml_name),
+                kwargs={"append": append, "append_from": append_from},
+                runtime_restore=runtime_restore,
+            ).run()
+        else:
+            ds.build(Path(workdir), yaml_name, append=append, append_from=append_from)
 
     @classmethod
     def copy(
