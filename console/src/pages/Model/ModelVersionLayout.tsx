@@ -16,7 +16,6 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
     const { projectId, modelId } = useParams<{ modelId: string; projectId: string }>()
     const modelInfo = useQuery(`fetchModel:${projectId}:${modelId}`, () => fetchModel(projectId, modelId))
     const { model, setModel } = useModel()
-    const projectInfo = useFetchProject(projectId)
     const { setModelLoading } = useModelLoading()
     useEffect(() => {
         setModelLoading(modelInfo.isLoading)
@@ -31,25 +30,24 @@ export default function ModelVersionLayout({ children }: IModelLayoutProps) {
 
     const [t] = useTranslation()
     const modelName = model?.versionMeta ?? '-'
-    const project = projectInfo.data ?? {}
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
                 title: t('Models'),
-                path: `/projects/${project?.id}/models`,
+                path: `/projects/${projectId}/models`,
             },
             {
                 title: modelName,
-                path: `/projects/${project?.id}/models/${modelId}`,
+                path: `/projects/${projectId}/models/${modelId}`,
             },
             {
                 title: t('model versions'),
-                path: `/projects/${project?.id}/models/${modelId}/versions`,
+                path: `/projects/${projectId}/models/${modelId}/versions`,
             },
         ]
         return items
-    }, [modelName, t, project?.id, modelId])
+    }, [modelName, t, projectId, modelId])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

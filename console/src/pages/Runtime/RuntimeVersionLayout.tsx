@@ -16,7 +16,6 @@ export default function RuntimeVersionLayout({ children }: IRuntimeLayoutProps) 
     const { projectId, runtimeId } = useParams<{ runtimeId: string; projectId: string }>()
     const runtimeInfo = useQuery(`fetchRuntime:${projectId}:${runtimeId}`, () => fetchRuntime(projectId, runtimeId))
     const { runtime, setRuntime } = useRuntime()
-    const projectInfo = useFetchProject(projectId)
     const { setRuntimeLoading } = useRuntimeLoading()
     useEffect(() => {
         setRuntimeLoading(runtimeInfo.isLoading)
@@ -38,25 +37,24 @@ export default function RuntimeVersionLayout({ children }: IRuntimeLayoutProps) 
 
     const [t] = useTranslation()
     const runtimeName = runtime?.versionMeta ?? '-'
-    const project = projectInfo.data ?? {}
 
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
                 title: t('Runtimes'),
-                path: `/projects/${project?.id}/runtimes`,
+                path: `/projects/${projectId}/runtimes`,
             },
             {
                 title: runtimeName,
-                path: `/projects/${project?.id}/runtimes/${runtimeId}`,
+                path: `/projects/${projectId}/runtimes/${runtimeId}`,
             },
             {
                 title: t('runtime versions'),
-                path: `/projects/${project?.id}/runtimes/${runtimeId}/versions`,
+                path: `/projects/${projectId}/runtimes/${runtimeId}/versions`,
             },
         ]
         return items
-    }, [runtimeName, t, project?.id, runtimeId])
+    }, [runtimeName, t, projectId, runtimeId])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

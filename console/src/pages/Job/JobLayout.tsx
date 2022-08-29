@@ -16,7 +16,6 @@ export default function JobLayout({ children }: IJobLayoutProps) {
     const { projectId, jobId } = useParams<{ jobId: string; projectId: string }>()
     const jobInfo = useQuery(`fetchJob:${projectId}:${jobId}`, () => fetchJob(projectId, jobId))
     const { job, setJob } = useJob()
-    const projectInfo = useFetchProject(projectId)
     const { setJobLoading } = useJobLoading()
     useEffect(() => {
         setJobLoading(jobInfo.isLoading)
@@ -31,21 +30,19 @@ export default function JobLayout({ children }: IJobLayoutProps) {
 
     const [t] = useTranslation()
     const uuid = job?.uuid ?? '-'
-    const project = projectInfo.data ?? {}
-
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
                 title: t('Jobs'),
-                path: `/projects/${project?.id}/jobs`,
+                path: `/projects/${projectId}/jobs`,
             },
             {
                 title: uuid ?? '-',
-                path: `/projects/${project?.id}/jobs/${jobId}`,
+                path: `/projects/${projectId}/jobs/${jobId}`,
             },
         ]
         return items
-    }, [project?.id, jobId, uuid, t])
+    }, [projectId, jobId, uuid, t])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

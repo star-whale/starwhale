@@ -22,10 +22,6 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
     const { job, setJob } = useJob()
     const { setJobLoading } = useJobLoading()
 
-    // useEffect(() => {
-    //     setExpanded(false)
-    // }, [setExpanded])
-
     useEffect(() => {
         setJobLoading(jobInfo.isLoading)
         if (jobInfo.isSuccess) {
@@ -156,11 +152,11 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
         () => (
             <div className='mb-20'>
                 <Accordion accordion>
-                    <Panel title={`${t('Evaluation ID')}: ${job?.id}`}>{info}</Panel>
+                    <Panel title={`${t('Evaluation ID')}: ${job?.id ?? ''}`}>{info}</Panel>
                 </Accordion>
             </div>
         ),
-        [info, t]
+        [job, info, t]
     )
 
     return (

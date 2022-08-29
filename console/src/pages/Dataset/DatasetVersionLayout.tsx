@@ -16,7 +16,6 @@ export default function DatasetVersionLayout({ children }: IDatasetLayoutProps) 
     const { projectId, datasetId } = useParams<{ datasetId: string; projectId: string }>()
     const datasetInfo = useQuery(`fetchDataset:${projectId}:${datasetId}`, () => fetchDataset(projectId, datasetId))
     const { dataset, setDataset } = useDataset()
-    const projectInfo = useFetchProject(projectId)
     const { setDatasetLoading } = useDatasetLoading()
     useEffect(() => {
         setDatasetLoading(datasetInfo.isLoading)
@@ -38,25 +37,23 @@ export default function DatasetVersionLayout({ children }: IDatasetLayoutProps) 
 
     const [t] = useTranslation()
     const datasetName = dataset?.versionName ?? '-'
-    const project = projectInfo.data ?? {}
-
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
                 title: t('Datasets'),
-                path: `/projects/${project?.id}/datasets`,
+                path: `/projects/${projectId}/datasets`,
             },
             {
                 title: datasetName,
-                path: `/projects/${project?.id}/datasets/${datasetId}`,
+                path: `/projects/${projectId}/datasets/${datasetId}`,
             },
             {
                 title: t('dataset versions'),
-                path: `/projects/${project?.id}/datasets/${datasetId}/versions`,
+                path: `/projects/${projectId}/datasets/${datasetId}/versions`,
             },
         ]
         return items
-    }, [project?.id, datasetId, datasetName, t])
+    }, [projectId, datasetId, datasetName, t])
 
     return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
 }

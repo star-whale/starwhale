@@ -23,7 +23,7 @@ export default function ApiHeader() {
     const [, setCurrentUserRoles] = useCurrentUserRoles()
     const userRoles = useQuery('currentUserRoles', () => fetchCurrentUserRoles(), { enabled: false })
     const [t] = useTranslation()
-    const { projectId } = useParams<{ projectId: string }>()
+    const projectId = React.useMemo(() => location?.pathname.match(/^\/projects\/(\d)\/?/)?.[1], [location])
     const projectInfo = useFetchProject(projectId)
     const { setProject } = useProject()
 
