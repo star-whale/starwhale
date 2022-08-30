@@ -90,7 +90,7 @@ restore_activate_runtime() {
 
 run() {
     echo "--> start to run swmp ${STEP}, use $(which swcli) cli..."
-    swcli ${VERBOSE} model eval "${WORKDIR}"/src --dataset=${SW_DATASET_URI}/src --step=${STEP} --task-index=${TASK_INDEX} --version=${SW_EVALUATION_VERSION}
+    swcli ${VERBOSE} model eval "${WORKDIR}"/src --dataset=${SW_DATASET_URI} --step=${STEP} --task-index=${TASK_INDEX} --version=${SW_EVALUATION_VERSION}
 }
 
 welcome() {
