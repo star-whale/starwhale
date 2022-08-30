@@ -350,15 +350,6 @@ public class MemoryTableImplTest {
 
             assertThrows(SWValidationException.class,
                     () -> this.memoryTable.update(
-                            new TableSchemaDesc("k",
-                                    List.of(new ColumnSchemaDesc("k", "STRING"),
-                                            new ColumnSchemaDesc("-", "INT32"))),
-                            List.of(Map.of("k", "0"))),
-                    "invalid column name");
-            assertThat("invalid column name", scanAll(this.memoryTable, false), empty());
-
-            assertThrows(SWValidationException.class,
-                    () -> this.memoryTable.update(
                             new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))),
                             List.of(Map.of("k", "0"), Map.of("k", "1", "a", "1"))),
                     "extra column data");

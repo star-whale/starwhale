@@ -718,7 +718,7 @@ class LocalDataStore:
 
     def __init__(self, root_path: str) -> None:
         self.root_path = root_path
-        self.name_pattern = re.compile(r"^[A-Za-z0-9-_/ ]+$")
+        self.name_pattern = re.compile(r"^[A-Za-z0-9-_/: ]+$")
         self.tables: Dict[str, MemoryTable] = {}
 
     def update_table(

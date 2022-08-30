@@ -80,40 +80,6 @@ public class TableSchemaTest {
                                         new ColumnSchemaDesc("k", "STRING")))),
                 "duplicate key");
 
-        assertThrows(SWValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k",
-                                List.of(new ColumnSchemaDesc("k", "STRING"),
-                                        new ColumnSchemaDesc("-", "STRING")))),
-                "invalid name 1");
-
-        assertThrows(SWValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k",
-                                List.of(new ColumnSchemaDesc("k", "STRING"),
-                                        new ColumnSchemaDesc("/a", "STRING")))),
-                "invalid name 2");
-
-        assertThrows(SWValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k",
-                                List.of(new ColumnSchemaDesc("k", "STRING"),
-                                        new ColumnSchemaDesc("3", "STRING")))),
-                "invalid name 3");
-
-        assertThrows(SWValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k",
-                                List.of(new ColumnSchemaDesc("k", "STRING"),
-                                        new ColumnSchemaDesc("a:", "STRING")))),
-                "invalid name 4");
-
-        assertThrows(SWValidationException.class,
-                () -> new TableSchema(
-                        new TableSchemaDesc("k",
-                                List.of(new ColumnSchemaDesc("k", "STRING"),
-                                        new ColumnSchemaDesc("a:b/c", "STRING")))),
-                "invalid name 5");
     }
 
     @Test
