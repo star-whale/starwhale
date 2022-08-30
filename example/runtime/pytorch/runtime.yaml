@@ -7,10 +7,10 @@ configs:
     image: ghcr.io/star-whale/runtime/pytorch
   pip:
     extra_index_url: https://mirrors.bfsu.edu.cn/pypi/web/simple/
-    index_url: http://10.131.0.1:8081/repository/proxy-pi/simple
+    index_url: https://pypi.doubanio.com/simple/
     trusted_host:
       - mirrors.bfsu.edu.cn
-      - 10.131.0.1
+      - pypi.doubanio.com
 dependencies:
   - pip:
       - numpy >= 1.23.2

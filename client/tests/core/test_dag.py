@@ -5,7 +5,7 @@ from starwhale.core.job.dag import DAG
 
 
 class DagTest(TestCase):
-    def test_invalid_vertex(self):
+    def test_dag(self):
         dag = DAG()
         dag.add_vertex("init", "ppl", "cmp", "ppl-1", "cmp-1", "end")
         dag.add_edge("init", "ppl")

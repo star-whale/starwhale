@@ -91,7 +91,7 @@ class DataLoader(metaclass=ABCMeta):
             _store = self._get_store(row)
             _key_compose = self._get_key_compose(row, _store)
 
-            # self.logger.info(f"@{_store.bucket}/{_key_compose}")
+            self.logger.info(f"@{_store.bucket}/{_key_compose}")
             _file = _store.backend._make_file(_store.bucket, _key_compose)
             for data_content, data_size in self._do_iter(_file, row):
                 label = DataField(
