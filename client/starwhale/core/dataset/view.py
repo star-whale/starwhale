@@ -155,7 +155,6 @@ class DatasetTermView(BaseTermView):
         append: bool = False,
         append_from: str = LATEST_TAG,
         runtime_uri: str = "",
-        runtime_restore: bool = False,
     ) -> None:
         dataset_uri = cls.prepare_build_bundle(
             workdir, project, yaml_name, URIType.DATASET
@@ -167,7 +166,6 @@ class DatasetTermView(BaseTermView):
                 target=ds.build,
                 args=(Path(workdir), yaml_name),
                 kwargs={"append": append, "append_from": append_from},
-                runtime_restore=runtime_restore,
             ).run()
         else:
             ds.build(Path(workdir), yaml_name, append=append, append_from=append_from)

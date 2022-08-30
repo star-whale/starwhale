@@ -32,7 +32,6 @@ def dataset_cmd(ctx: click.Context) -> None:
 @click.option("--append", is_flag=True, help="Only append new data")
 @click.option("--append-from", default=LATEST_TAG, help="Append from dataset version")
 @click.option("--runtime", default="", help="runtime uri")
-@click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 @click.pass_obj
 def _build(
     view: DatasetTermView,
@@ -42,14 +41,11 @@ def _build(
     append: bool,
     append_from: str,
     runtime: str,
-    runtime_restore: bool,
 ) -> None:
     # TODO: add cmd options for dataset build, another choice for dataset.yaml
     # TODO: add dry-run
     # TODO: add compress args
-    view.build(
-        workdir, project, dataset_yaml, append, append_from, runtime, runtime_restore
-    )
+    view.build(workdir, project, dataset_yaml, append, append_from, runtime)
 
 
 @dataset_cmd.command("diff", help="Dataset version diff")

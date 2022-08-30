@@ -22,8 +22,9 @@ def model_cmd(ctx: click.Context) -> None:
     default=DefaultYAMLName.MODEL,
     help="mode yaml filename, default use ${workdir}/model.yaml file",
 )
-def _build(workdir: str, project: str, model_yaml: str) -> None:
-    ModelTermView.build(workdir, project, model_yaml)
+@click.option("--runtime", default="", help="runtime uri")
+def _build(workdir: str, project: str, model_yaml: str, runtime: str) -> None:
+    ModelTermView.build(workdir, project, model_yaml, runtime)
 
 
 @model_cmd.command("tag", help="Model Tag Management, add or remove")
@@ -134,7 +135,6 @@ def _extract(model: str, force: bool, target_dir: str) -> None:
 @click.option("--step", default="", help="Evaluation run step")
 @click.option("--task-index", default=0, help="Index of tasks in the current step")
 @click.option("--runtime", default="", help="runtime uri")
-@click.option("--runtime-restore", is_flag=True, help="Force to restore runtime")
 @click.option("--dataset", envvar=SWEnv.dataset_uri, help="dataset uri")
 def _eval(
     project: str,
@@ -145,7 +145,6 @@ def _eval(
     step: str,
     task_index: int,
     runtime: str,
-    runtime_restore: bool,
 ) -> None:
     """
     [ONLY Standalone]Run evaluation processing with root dir of {target}.
@@ -158,7 +157,6 @@ def _eval(
         version=version,
         yaml_name=model_yaml,
         runtime_uri=runtime,
-        runtime_restore=runtime_restore,
         step=step,
         task_index=task_index,
         dataset_uris=[dataset],
