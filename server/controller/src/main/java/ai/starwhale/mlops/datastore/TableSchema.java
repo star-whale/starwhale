@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @EqualsAndHashCode
 public class TableSchema {
     private static final Pattern COLUMN_NAME_PATTERN =
-            Pattern.compile("^[\\p{Alpha}_][\\p{Alnum}-_/ ]*(:[\\p{Alpha}_][\\p{Alnum}-_ ]*)*$");
+            Pattern.compile("^[\\p{Alpha}\\p{Alnum}-_/ ]*$");
     @Getter
     private final String keyColumn;
     @Getter

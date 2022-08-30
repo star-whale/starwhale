@@ -267,7 +267,7 @@ class PipelineHandler(metaclass=ABCMeta):
                 self.evaluation.log(
                     "confusion_matrix/binarylabel",
                     id=str(_label),
-                    **{f"label_{k}": v for k, v in enumerate(_probability)},
+                    **{str(k): v for k, v in enumerate(_probability)},
                 )
 
             for _label, _roc_auc in output["roc_auc"].items():
