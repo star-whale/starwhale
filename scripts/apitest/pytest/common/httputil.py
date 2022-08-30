@@ -34,7 +34,7 @@ def create_tmp_user(host, port):
     login(host, port)
 
     api_url = '{api}/user'
-    sec = str(int(time.time()))
+    sec = str(int(time.time() * 1000 * 1000))
     user_name = 'pt_user' + sec
     user_password = tmp_user_password()
     os.environ[ENV_TMP_USER_NAME] = user_name
