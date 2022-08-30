@@ -9,6 +9,7 @@ import urllib
 import pathlib
 import binascii
 import threading
+from http import HTTPStatus
 from typing import Any, Set, cast, Dict, List, Tuple, Union, Iterator, Optional
 
 import numpy as np
@@ -20,6 +21,7 @@ from typing_extensions import Protocol
 
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
+from starwhale.utils.error import MissingFieldError
 from starwhale.utils.config import SWCliConfigMixed
 
 try:
@@ -895,6 +897,9 @@ class RemoteDataStore:
                 encoded.append({"values": r})
             data["records"] = encoded
 
+        if self.token is None:
+            raise MissingFieldError("no authorization token")
+
         assert self.token is not None
         resp = requests.post(
             urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/updateTable"),
@@ -903,8 +908,13 @@ class RemoteDataStore:
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": self.token,
             },
-            timeout=5.0,
+            timeout=60,
         )
+
+        if resp.status_code != HTTPStatus.OK:
+            logger.error(
+                f"[update-table]Table:{table_name}, resp code:{resp.status_code}, \n resp text: {resp.text}, \n records: {records}"
+            )
         resp.raise_for_status()
 
     def scan_tables(
@@ -933,7 +943,7 @@ class RemoteDataStore:
                     "Content-Type": "application/json; charset=utf-8",
                     "Authorization": self.token,
                 },
-                timeout=5.0,
+                timeout=60,
             )
             resp.raise_for_status()
             resp_json: Dict[str, Any] = resp.json()["data"]

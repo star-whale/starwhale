@@ -1187,7 +1187,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=5.0,
+            timeout=60,
         )
         mock_post.assert_any_call(
             "http://test/api/v1/datastore/updateTable",
@@ -1208,7 +1208,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=5.0,
+            timeout=60,
         )
         mock_post.assert_any_call(
             "http://test/api/v1/datastore/updateTable",
@@ -1251,7 +1251,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=5.0,
+            timeout=60,
         )
 
     @patch("starwhale.api._impl.data_store.requests.post")
@@ -1373,7 +1373,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=5.0,
+            timeout=60,
         )
         mock_post.assert_any_call(
             "http://test/api/v1/datastore/scanTable",
@@ -1392,7 +1392,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=5.0,
+            timeout=60,
         )
         mock_post.assert_any_call(
             "http://test/api/v1/datastore/scanTable",
@@ -1413,7 +1413,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=5.0,
+            timeout=60,
         )
         mock_post.assert_any_call(
             "http://test/api/v1/datastore/scanTable",
@@ -1434,7 +1434,7 @@ class TestRemoteDataStore(unittest.TestCase):
                 "Content-Type": "application/json; charset=utf-8",
                 "Authorization": "tt",
             },
-            timeout=5.0,
+            timeout=60,
         )
 
 
