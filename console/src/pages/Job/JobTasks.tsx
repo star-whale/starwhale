@@ -108,8 +108,6 @@ export default function JobTasks() {
             return obj?.logIncrement.filter((v: string) => v !== '').join('\n')
         }
 
-        console.log(columns)
-
         return (
             <span style={{ whiteSpace: 'nowrap' }}>
                 {columns

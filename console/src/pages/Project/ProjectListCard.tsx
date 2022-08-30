@@ -110,7 +110,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
         <div className={styles.card}>
             <div className={styles.row}>
                 <div className={styles.name}>
-                    <TextLink to={`/projects/${project.id}`} style={{ fontWeight: 'bold' }}>
+                    <TextLink to={`/projects/${project.id}/evaluations`} style={{ fontWeight: 'bold' }}>
                         {[project.owner?.name, project.name].join('/')}
                     </TextLink>
                 </div>
@@ -137,7 +137,10 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                 </div>
             </div>
             <div className={cn(styles.description, 'text-ellipsis')}>
-                <StatefulTooltip content={project.description ?? ''} placement='bottom'>
+                <StatefulTooltip
+                    content={() => <p style={{ maxWidth: '300px' }}>{project.description ?? ''}</p>}
+                    placement='bottom'
+                >
                     <p className={cn(styles.descriptionText)}>{project.description ?? ''}</p>
                 </StatefulTooltip>
             </div>
@@ -150,7 +153,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                 <div className={styles.statistics}>
                     <div className={styles.statisticsItem}>
                         <IconLink
-                            to={`/projects/${project.id}`}
+                            to={`/projects/${project.id}/evaluations`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
                             tooltip={{
                                 content: `${t('Evaluations')}:${project?.statistics.evaluationCounts}`,
@@ -166,7 +169,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     </div>
                     <div className={styles.statisticsItem}>
                         <IconLink
-                            to={`/projects/${project.id}`}
+                            to={`/projects/${project.id}/datasets`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
                             tooltip={{
                                 content: `${t('Datasets')}:${project?.statistics.datasetCounts}`,
@@ -182,7 +185,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     </div>
                     <div className={styles.statisticsItem}>
                         <IconLink
-                            to={`/projects/${project.id}`}
+                            to={`/projects/${project.id}/models`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
                             tooltip={{
                                 content: `${t('Models')}:${project?.statistics.modelCounts}`,
@@ -198,7 +201,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     </div>
                     <div className={styles.statisticsItem}>
                         <IconLink
-                            to={`/projects/${project.id}`}
+                            to={`/projects/${project.id}/members`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
                             tooltip={{
                                 content: `${t('Members')}:${project?.statistics.memberCounts}`,

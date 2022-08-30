@@ -19,6 +19,8 @@ import { useAuth } from '@/api/Auth'
 import IconFont from '../IconFont'
 import Logo from './Logo'
 import { TextLink } from '@/components/Link'
+import Avatar from '../Avatar'
+import classNames from 'classnames'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: {
@@ -115,11 +117,11 @@ const useStyles = createUseStyles({
         'cursor': 'pointer',
         'display': 'flex',
         'align-items': 'center',
-        'min-width': '140px',
         'height': '100%',
         'margin-left': '12px',
         'padding': '10px 0 10px 0',
         'justifyContent': 'flex-end',
+        'width': '220px',
 
         '&:hover': {
             '& $userMenu': {
@@ -139,11 +141,11 @@ const useStyles = createUseStyles({
         'backgroundColor': '#264480',
     },
     userMenu: (props: IThemedStyleProps) => ({
+        'padding': '16px 0px 0px',
         'position': 'absolute',
         'top': '100%',
         'display': 'none',
         'margin': 0,
-        'padding': '8px 0',
         'line-height': 1.6,
         'flex-direction': 'column',
         'alignItems': 'center',
@@ -165,18 +167,66 @@ const useStyles = createUseStyles({
                 'text-decoration': 'none',
             },
         },
+        'backgroundColor': '#FFF',
     }),
-    userMenuItem: (props: IThemedStyleProps) => ({
+    userMenuItems: {
+        width: '100%',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'left',
-        alignSelf: 'normal',
-        gap: '10px',
-        height: '32px',
-        paddingLeft: '10px',
-        color: props.theme.colors.contentPrimary,
-        backgroundColor: 'var(--color-brandMenuItemBackground)',
+        flexShrink: 0,
+        flexDirection: 'column',
+        overflow: 'hidden',
+        overflowY: 'auto',
+        background: '#FFFFFF',
+        transition: 'all 200ms cubic-bezier(0.7, 0.1, 0.33, 1) 0ms',
+        color: 'rgba(2,16,43,0.60)',
+        borderRight: '1px solid #E2E7F0',
+        padding: '8px 12px 8px',
+    },
+    userMenuItem: (props: IThemedStyleProps) => ({
+        'display': 'flex',
+        'alignItems': 'center',
+        'justifyContent': 'left',
+        'alignSelf': 'normal',
+        'gap': '10px',
+        'height': '32px',
+        'paddingLeft': '10px',
+        'color': props.theme.colors.contentPrimary,
+        'borderRadius': '4px',
+        '&:hover': {
+            backgroundColor: 'var(--color-brandMenuItemBackground)',
+        },
     }),
+    userSignedIn: {
+        flex: 1,
+        color: 'rgba(2,16,43,0.40)',
+        textAlign: 'left',
+        width: '100%',
+        marginBottom: '13px',
+        padding: '0 12px',
+    },
+    userAvatar: {
+        flex: 1,
+        width: '100%',
+        paddingBottom: '17px',
+        gap: '13px',
+        display: 'grid',
+        gridTemplateColumns: '34px 1fr',
+        overflow: 'hidden',
+        padding: '0 12px',
+    },
+    userAvatarInfo: {
+        flex: 1,
+    },
+    userAvatarName: {
+        fontSize: '14px',
+        lineHeight: '14px',
+        color: '#02102B',
+    },
+    userAvatarEmail: {
+        fontSize: '12px',
+        lineHeight: '12px',
+        color: 'rgba(2,16,43,0.60)',
+    },
     roundWrapper: {
         borderRadius: '50%',
         backgroundColor: 'var(--color-brandWhite)',
@@ -185,6 +235,11 @@ const useStyles = createUseStyles({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    divider: {
+        height: '1px',
+        width: '100%',
+        backgroundColor: '#EEF1F6',
     },
 })
 
@@ -242,40 +297,51 @@ export default function Header() {
             {currentUser && (
                 <div className={styles.userWrapper}>
                     <div className={styles.userNameWrapper}>
-                        <div className={styles.roundWrapper}>
-                            <IconFont type='user' size={20} kind='white2' />
-                        </div>
-
-                        <BsChevronDown size={14} />
+                        <Avatar name={currentUser.name} size={28} />
+                        <IconFont type='arrow_down' />
                     </div>
                     <div className={styles.userMenu}>
-                        {sysRole === 'OWNER' && (
+                        <p className={styles.userSignedIn}>{t('Signed in as')}</p>
+                        <p className={styles.userAvatar}>
+                            <Avatar name={currentUser.name} isTooltip={false} />
+                            <div className={classNames(styles.userAvatarInfo, 'text-ellipsis')}>
+                                <span className={styles.userAvatarName}>{currentUser.name}</span>
+                                <p className={styles.userAvatarEmail}>{currentUser.email ?? ''}</p>
+                            </div>
+                        </p>
+                        <div className={styles.divider} />
+                        <div className={styles.userMenuItems}>
+                            {sysRole === 'OWNER' && (
+                                <div
+                                    role='button'
+                                    tabIndex={0}
+                                    className={styles.userMenuItem}
+                                    onClick={() => {
+                                        history.push('/admin')
+                                    }}
+                                >
+                                    <IconFont type='setting' />
+                                    <span>{t('Admin Settings')}</span>
+                                </div>
+                            )}
                             <div
                                 role='button'
                                 tabIndex={0}
                                 className={styles.userMenuItem}
                                 onClick={() => {
-                                    history.push('/admin')
+                                    setIsChangePasswordOpen(true)
                                 }}
                             >
-                                <IconFont type='setting' />
-                                <span>{t('Admin Settings')}</span>
+                                <IconFont type='a-passwordresets' />
+                                <span>{t('Change Password')}</span>
                             </div>
-                        )}
-                        <div
-                            role='button'
-                            tabIndex={0}
-                            className={styles.userMenuItem}
-                            onClick={() => {
-                                setIsChangePasswordOpen(true)
-                            }}
-                        >
-                            <IconFont type='a-passwordresets' />
-                            <span>{t('Change Password')}</span>
                         </div>
-                        <div role='button' tabIndex={0} className={styles.userMenuItem} onClick={onLogout}>
-                            <IconFont type='logout' />
-                            <span>{t('Logout')}</span>
+                        <div className={styles.divider} />
+                        <div className={styles.userMenuItems}>
+                            <div role='button' tabIndex={0} className={styles.userMenuItem} onClick={onLogout}>
+                                <IconFont type='logout' />
+                                <span>{t('Logout')}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

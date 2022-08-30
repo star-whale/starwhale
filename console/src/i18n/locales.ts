@@ -616,6 +616,9 @@ const locales0 = {
     'Members': {
         en: 'Members',
     },
+    'Signed in as': {
+        en: 'Signed in as',
+    },
 }
 
 export const locales: { [key in keyof typeof locales0]: ILocaleItem } = locales0

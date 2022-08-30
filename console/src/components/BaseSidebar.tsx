@@ -12,6 +12,7 @@ import Text from '@/components/Text'
 import { createUseStyles } from 'react-jss'
 import IconFont from '@/components/IconFont'
 import TextLink from './Link/TextLink'
+import { StatefulTooltip } from 'baseui/tooltip'
 
 const useBaseSideBarStyles = createUseStyles({
     sidebarWrapper: {
@@ -99,8 +100,13 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                             justifyContent: ctx.expanded ? 'flex-start' : 'center',
                         }}
                     >
-                        {Icon}
+                        {ctx.expanded && Icon}
                         {ctx.expanded && <span>{item.title}</span>}
+                        {!ctx.expanded && (
+                            <StatefulTooltip content={item.title} placement='bottomRight'>
+                                <div>{Icon}</div>
+                            </StatefulTooltip>
+                        )}
                     </div>
                 ),
                 itemId: item.path,
@@ -153,8 +159,9 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                         paddingLeft: EXPANDED_PADDING,
                     }}
                 >
-                    {icon}
-
+                    <StatefulTooltip content={title} placement='bottomRight'>
+                        <div>{icon}</div>
+                    </StatefulTooltip>
                     <TextLink
                         to={titleLink ?? '/projects'}
                         tooltip={{
