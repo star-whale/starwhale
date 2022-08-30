@@ -18,6 +18,7 @@ import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import { useAuth } from '@/api/Auth'
 import IconFont from '../IconFont'
 import Logo from './Logo'
+import { TextLink } from '@/components/Link'
 
 const useHeaderStyles = createUseStyles({
     headerWrapper: {
@@ -231,7 +232,7 @@ export default function Header() {
 
             {currentUser && (
                 <div className={styles.systemWrapper}>
-                    <Link to='/projects'>{t('Project')}</Link>
+                    <TextLink to='/projects'>{t('Project')}</TextLink>
                 </div>
             )}
             <div style={{ flexGrow: 1 }} />

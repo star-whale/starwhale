@@ -11,7 +11,7 @@ import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
 import SummaryIndicator from '@/components/Indicator/SummaryIndicator'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
-import { tableNameOfResult } from '@/domain/datastore/utils'
+import { tableNameOfConfusionMatrix } from '@/domain/datastore/utils'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'
@@ -29,7 +29,7 @@ function EvaluationResults() {
     const { job } = useJob()
     const resultTableName = React.useMemo(() => {
         if (!project?.name || !job?.uuid) return ''
-        return tableNameOfResult(project?.name as string, job?.uuid)
+        return tableNameOfConfusionMatrix(project?.name as string, job?.uuid)
     }, [project, job])
 
     const resultTable = useQueryDatasetList(resultTableName, { pageNum: 0, pageSize: 1000 })

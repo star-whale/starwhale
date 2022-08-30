@@ -13,8 +13,10 @@ const useLinkStyles = createUseStyles({
         'justifyContent': 'center',
         'alignItems': 'center',
         'fontSize': '14px',
-        'fontWeight': 'bold',
-        'color': '#02102B',
+        // 'fontWeight': 'bold',
+        // 'color': '#02102B',
+        // 'color': 'inherit',
+        'color': 'rgb(2, 16, 43)',
         '&:hover': {
             textDecoration: 'underline',
             color: ' #5181E0 ',

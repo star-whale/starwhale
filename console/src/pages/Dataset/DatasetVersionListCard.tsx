@@ -13,6 +13,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
+import { ButtonLink, TextLink } from '@/components/Link'
 
 export default function DatasetVersionListCard() {
     const [page] = usePage()
@@ -48,12 +49,12 @@ export default function DatasetVersionListCard() {
                     data={
                         datasetVersionsInfo.data?.list.map((datasetVersion) => {
                             return [
-                                <Link
+                                <TextLink
                                     key={datasetId}
                                     to={`/projects/${projectId}/datasets/${datasetId}/versions/${datasetVersion.id}/overview`}
                                 >
                                     {datasetVersion.name}
-                                </Link>,
+                                </TextLink>,
                                 // <Button
                                 //     key={datasetVersion.id}
                                 //     size='compact'
@@ -67,16 +68,14 @@ export default function DatasetVersionListCard() {
                                 // </Button>,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
-                                <StyledLink
-                                    animateUnderline={false}
-                                    className='row-center--inline gap4'
+                                <ButtonLink
                                     key={datasetVersion.id}
                                     onClick={() => {
                                         handleAction(datasetVersion.id)
                                     }}
                                 >
                                     {t('Revert')}
-                                </StyledLink>,
+                                </ButtonLink>,
                             ]
                         }) ?? []
                     }

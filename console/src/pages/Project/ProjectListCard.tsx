@@ -28,7 +28,7 @@ const useCardStyles = createUseStyles({
     card: {
         'display': 'flex',
         'height': '116px',
-        'gap': '10px',
+        'gap': '6px',
         'background': '#FFFFFF',
         'border': '1px solid #E2E7F0',
         'borderRadius': '4px',
@@ -65,6 +65,15 @@ const useCardStyles = createUseStyles({
         justifyContent: 'space-between',
         color: ' rgba(2,16,43,0.60)',
     },
+    descriptionText: {
+        lineHeight: '12px',
+        fontSize: '12px',
+        whiteSpace: 'normal',
+        display: '-webkit-box',
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: 'vertical',
+        overflow: 'hidden',
+    },
     statistics: {
         display: 'flex',
         justifyContent: 'flex-start',
@@ -92,7 +101,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
     return (
         <div className={styles.card}>
             <div className={styles.row}>
-                <TextLink to={`/projects/${project.id}`} style={{ width: '80%' }}>
+                <TextLink to={`/projects/${project.id}`} style={{ width: '80%', fontWeight: 'bold' }}>
                     {[project.owner?.name, project.name].join('/')}
                 </TextLink>
                 <div
@@ -117,9 +126,9 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     </p>
                 </div>
             </div>
-            <div className={styles.description}>
+            <div className={cn(styles.description, 'text-ellipsis')}>
                 <StatefulTooltip content={project.description ?? ''} placement='bottom'>
-                    {project.description ?? ''}
+                    <p className={cn(styles.descriptionText)}>{project.description ?? ''}</p>
                 </StatefulTooltip>
             </div>
             <div

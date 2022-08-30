@@ -23,6 +23,7 @@ import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { tableNameOfSummary } from '@/domain/datastore/utils'
 import { useProject } from '@/domain/project/hooks/useProject'
 import EvaluationListCompare from './EvaluationListCompare'
+import { TextLink } from '@/components/Link'
 
 const gridLayout = [
     // RIGHT:
@@ -75,9 +76,9 @@ export default function EvaluationListCard() {
                     const item = props.value
 
                     return (
-                        <Link key={item.id} to={`/projects/${projectId}/evaluations/${item.id}/results`}>
+                        <TextLink key={item.id} to={`/projects/${projectId}/evaluations/${item.id}/results`}>
                             {`${item.modelName}-${item.id}`}
-                        </Link>
+                        </TextLink>
                     )
                 },
             }),

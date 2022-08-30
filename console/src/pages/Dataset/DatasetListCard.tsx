@@ -11,6 +11,7 @@ import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { Link, useParams } from 'react-router-dom'
 import { useFetchDatasets } from '@dataset/hooks/useFetchDatasets'
+import { TextLink } from '@/components/Link'
 
 export default function DatasetListCard() {
     const [page] = usePage()
@@ -36,14 +37,14 @@ export default function DatasetListCard() {
                 data={
                     datasetsInfo.data?.list.map((dataset) => {
                         return [
-                            <Link key={dataset.id} to={`/projects/${projectId}/datasets/${dataset.id}`}>
+                            <TextLink key={dataset.id} to={`/projects/${projectId}/datasets/${dataset.id}`}>
                                 {dataset.name}
-                            </Link>,
+                            </TextLink>,
                             dataset.owner && <User user={dataset.owner} />,
                             dataset.createdTime && formatTimestampDateTime(dataset.createdTime),
-                            <Link key={dataset.id} to={`/projects/${projectId}/datasets/${dataset.id}/versions`}>
+                            <TextLink key={dataset.id} to={`/projects/${projectId}/datasets/${dataset.id}/versions`}>
                                 {t('Version History')}
-                            </Link>,
+                            </TextLink>,
                         ]
                     }) ?? []
                 }

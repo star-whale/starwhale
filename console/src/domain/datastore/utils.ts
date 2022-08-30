@@ -30,6 +30,13 @@ export function tableNameOfResult(projectName: string, evaluationUuid: string) {
     return `project/${projectName}/eval/${evaluationUuid.substring(0, VERSION_PREFIX_CNT)}/${evaluationUuid}/results`
 }
 
+export function tableNameOfConfusionMatrix(projectName: string, evaluationUuid: string) {
+    return `project/${projectName}/eval/${evaluationUuid.substring(
+        0,
+        VERSION_PREFIX_CNT
+    )}/${evaluationUuid}/confusion_matrix/binarylabel`
+}
+
 export function tableNameOfSummary(projectName: string) {
     return `project/${projectName}/eval/summary`
 }

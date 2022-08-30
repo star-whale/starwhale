@@ -11,6 +11,7 @@ import { SidebarContext } from '@/contexts/SidebarContext'
 import Text from '@/components/Text'
 import { createUseStyles } from 'react-jss'
 import IconFont from '@/components/IconFont'
+import TextLink from './Link/TextLink'
 
 const useBaseSideBarStyles = createUseStyles({
     sidebarWrapper: {
@@ -146,26 +147,29 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
             }}
         >
             {title && icon && (
-                <Link
+                <p
                     className={styles.siderTitle}
                     style={{
                         paddingLeft: EXPANDED_PADDING,
                     }}
-                    to={titleLink ?? '/projects'}
                 >
-                    {icon}
-                    {ctx.expanded && (
-                        <Text
-                            style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
-                            {title}
-                        </Text>
-                    )}
-                </Link>
+                    <TextLink to={titleLink ?? '/projects'}>
+                        {icon}
+                        {ctx.expanded && (
+                            <Text
+                                style={{
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    marginLeft: '8px',
+                                    fontWeight: 'bold',
+                                }}
+                            >
+                                {title}
+                            </Text>
+                        )}
+                    </TextLink>
+                </p>
             )}
             <Navigation
                 overrides={{

@@ -15,6 +15,7 @@ import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
 import IconFont from '@/components/IconFont'
+import { TextLink } from '@/components/Link'
 
 export default function JobListCard() {
     const [t] = useTranslation()
@@ -108,16 +109,16 @@ export default function JobListCard() {
                                     </>
                                 ),
                                 [JobStatusType.SUCCESS]: (
-                                    <Link to={`/projects/${projectId}/jobs/${job.id}/results`}>
+                                    <TextLink to={`/projects/${projectId}/jobs/${job.id}/results`}>
                                         {t('View Results')}
-                                    </Link>
+                                    </TextLink>
                                 ),
                             }
 
                             return [
-                                <Link key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>
+                                <TextLink key={job.id} to={`/projects/${projectId}/jobs/${job.id}/actions`}>
                                     {job.uuid}
-                                </Link>,
+                                </TextLink>,
                                 job.modelName,
                                 job.modelVersion,
                                 job.owner && <User user={job.owner} />,
