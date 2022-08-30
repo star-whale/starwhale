@@ -1,6 +1,7 @@
 FROM ubuntu:20.04
 
-ARG TARGETARCH=amd64
+# https://github.com/docker/buildx/issues/510
+ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=en_US.UTF-8
@@ -14,9 +15,7 @@ RUN bash /tmp/render_sources_list.sh ${TARGETARCH}
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     wget locales make cmake build-essential software-properties-common curl sudo ca-certificates apt-transport-https iputils-ping net-tools openssh-server net-tools gcc-aarch64-linux-gnu \
-    zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils gpg-agent \
-    && apt-get clean all \
-    && rm -rf /var/lib/apt/lists/* /tmp/*
+    zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libreadline-dev libffi-dev shellcheck git apt-utils gpg-agent jq
 
 RUN locale-gen en_US.UTF-8
 #TODO: build a seperated image by the different python version
@@ -47,3 +46,6 @@ RUN python3.7 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && python3.9 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0 \
     && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.10 \
     && python3.10 -m pip install --upgrade virtualenv>=20.14.0 pip>=22.1.0
+
+# install yq for parsing yaml files
+RUN python3 -m pip install yq && python3 -m pip cache purge
