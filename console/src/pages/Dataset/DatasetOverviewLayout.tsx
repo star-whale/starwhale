@@ -167,9 +167,11 @@ export default function DatasetOverviewLayout({ children }: IDatasetLayoutProps)
                         style: {
                             flex: 1,
                             display: 'flex',
+                            fontSize: '14px',
                         },
                     },
                 }}
+                accordion={false}
             >
                 <Panel title={t('Version and Files')} expanded>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>

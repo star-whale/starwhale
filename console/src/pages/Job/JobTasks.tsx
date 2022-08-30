@@ -4,12 +4,12 @@ import { toaster } from 'baseui/toast'
 import useTranslation from '@/hooks/useTranslation'
 import Card from '@/components/Card'
 import { LazyLog } from 'react-lazylog'
-import { Accordion, Panel } from 'baseui/accordion'
+import { Panel } from 'baseui/accordion'
 import { fetchTaskOfflineFileLog, fetchTaskOfflineLogFiles } from '@/domain/job/services/task'
 import { getToken } from '@/api'
-// import useWebSocket from '@/hooks/useWebSocket'
 import TaskListCard from './TaskListCard'
 import { ITaskSchema, TaskStatusType } from '../../domain/job/schemas/task'
+import Accordion from '@/components/Accordion'
 
 export interface IScrollProps {
     scrollTop: number
@@ -38,7 +38,7 @@ export default function JobTasks() {
                 const files: Record<string, string> = {}
                 data.map(async (v: string) => {
                     const content = await fetchTaskOfflineFileLog(task?.id, v)
-                    files[v] = content
+                    files[v] = content ?? ''
                     setCurrentLogFiles({
                         ...files,
                     })
@@ -108,6 +108,8 @@ export default function JobTasks() {
             return obj?.logIncrement.filter((v: string) => v !== '').join('\n')
         }
 
+        console.log(columns)
+
         return (
             <span style={{ whiteSpace: 'nowrap' }}>
                 {columns
@@ -136,6 +138,8 @@ export default function JobTasks() {
             currentTask?.id
         }?Authorization=${getToken()}`
     }, [currentTask])
+
+    console.log(Object.entries(currentLogFiles))
 
     return (
         <>
@@ -176,11 +180,11 @@ export default function JobTasks() {
                                     <LazyLog
                                         enableSearch
                                         selectableLines
-                                        text={content || ''}
+                                        text={content || ' '}
                                         follow={follow}
                                         formatPart={formatContent}
-                                        // scrollToLine={scrollToLine}
                                         onScroll={handleScroll}
+                                        extraLines={1}
                                     />
                                 ) : (
                                     <LazyLog

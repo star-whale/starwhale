@@ -6,7 +6,7 @@ import { useStyletron } from 'baseui'
 
 const useLinkStyles = createUseStyles({
     link: {
-        display: 'inline-block',
+        // display: 'inline-block',
         textDecoration: 'none',
         flex: 1,
         width: '100%',

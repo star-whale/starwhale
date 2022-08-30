@@ -6,6 +6,9 @@ import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchModel } from '@model/services/model'
 import BaseSubLayout from '@/pages/BaseSubLayout'
+import Accordion from '@/components/Accordion'
+import { formatTimestampDateTime } from '@/utils/datetime'
+import { Panel } from 'baseui/accordion'
 
 export interface IModelLayoutProps {
     children: React.ReactNode
@@ -43,5 +46,69 @@ export default function ModelLayout({ children }: IModelLayoutProps) {
         return items
     }, [projectId, modelName, modelId, t])
 
-    return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
+    const items = [
+        {
+            label: t('Version Name'),
+            value: model?.versionName ?? '',
+        },
+        {
+            label: t('Version Meta'),
+            value: model?.versionMeta ?? '',
+        },
+        {
+            label: t('Version Tag'),
+            value: model?.versionTag ?? '',
+        },
+        {
+            label: t('Model ID'),
+            value: model?.id ?? '',
+        },
+        {
+            label: t('Created'),
+            value: model?.createdTime && formatTimestampDateTime(model.createdTime),
+        },
+    ]
+
+    const info = (
+        <div
+            style={{
+                fontSize: '14px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+                gap: '12px',
+            }}
+        >
+            {items.map((v) => (
+                <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
+                    <div
+                        style={{
+                            lineHeight: '24px',
+                            borderRadius: '4px',
+                            color: 'rgba(2,16,43,0.60)',
+                        }}
+                    >
+                        {v?.label}:
+                    </div>
+                    <div> {v?.value}</div>
+                </div>
+            ))}
+        </div>
+    )
+
+    const header = React.useMemo(
+        () => (
+            <div className='mb-20'>
+                <Accordion accordion>
+                    <Panel title={`${t('Model ID')}: ${model?.id ?? ''}`}>{info}</Panel>
+                </Accordion>
+            </div>
+        ),
+        [model, info, t]
+    )
+
+    return (
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} header={header}>
+            {children}
+        </BaseSubLayout>
+    )
 }
