@@ -36,7 +36,7 @@ from starwhale.base.bundle_copy import BundleCopy
 
 from .type import DatasetConfig, DatasetSummary
 from .store import DatasetStorage
-from .tabular import StandaloneTabularDataset
+from .tabular import TabularDataset, StandaloneTabularDataset
 
 
 class Dataset(BaseBundle, metaclass=ABCMeta):
@@ -45,6 +45,9 @@ class Dataset(BaseBundle, metaclass=ABCMeta):
 
     @abstractmethod
     def summary(self) -> DatasetSummary:
+        raise NotImplementedError
+
+    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
         raise NotImplementedError
 
     @classmethod
@@ -99,6 +102,71 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
 
     def remove_tags(self, tags: t.List[str], quiet: bool = False) -> None:
         self.tag.remove(tags, quiet)
+
+    def diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+        # TODO: support cross-instance diff: standalone <--> cloud
+        if compare_uri.instance_type != InstanceType.STANDALONE:
+            raise NoSupportError(
+                f"only support standalone uri, but compare_uri({compare_uri}) is for cloud instance"
+            )
+
+        if self.uri.object.name != compare_uri.object.name:
+            raise NoSupportError(
+                f"only support two versions diff in one dataset, base dataset:{self.uri}, compare dataset:{compare_uri}"
+            )
+
+        if self.uri.object.version == compare_uri.object.version:
+            return {}
+
+        compare_ds = StandaloneDataset(compare_uri)
+        base_summary = self.summary()
+        compare_summary = compare_ds.summary()
+
+        base_rows = base_summary.rows
+        compare_rows = compare_summary.rows
+        scan_end_rows = min(base_rows, compare_rows)
+
+        base_tabular_ds = TabularDataset.from_uri(self.uri)
+        compare_tabular_ds = TabularDataset.from_uri(compare_uri)
+
+        unchanged_cnt = 0
+        diff_updated = []
+
+        # TODO: tune diff performance
+        for _brow, _crow in zip(
+            base_tabular_ds.scan(0, scan_end_rows),
+            compare_tabular_ds.scan(0, scan_end_rows),
+        ):
+            if _brow == _crow:
+                unchanged_cnt += 1
+            else:
+                diff_updated.append((_brow.asdict(), _crow.asdict()))
+
+        # TODO: tune diff deleted and added rows like git diff
+        diff_deleted = list(range(scan_end_rows, base_rows))
+        diff_added = list(range(scan_end_rows, compare_rows))
+
+        return {
+            "version": {
+                "base": self.uri.object.version,
+                "compare": compare_uri.object.version,
+            },
+            "summary": {
+                "base": base_summary.asdict(),
+                "compare": compare_summary.asdict(),
+            },
+            "diff": {
+                "updated": diff_updated,
+                "deleted": diff_deleted,
+                "added": diff_added,
+            },
+            "diff_rows": {
+                "unchanged": unchanged_cnt,
+                "updated": len(diff_updated),
+                "added": len(diff_added),
+                "deleted": len(diff_deleted),
+            },
+        }
 
     def history(
         self,
@@ -279,7 +347,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
         )
         self._manifest.update(
             {
-                "dataset_attr": swds_config.attr.as_dict(),
+                "dataset_attr": swds_config.attr.asdict(),
                 "process": swds_config.process,
                 "from": {
                     "version": append_from_version,
@@ -313,7 +381,7 @@ class StandaloneDataset(Dataset, LocalStorageBundleMixin):
                 f":ghost: import [red]{swds_config.process}@{workdir.resolve()}[/] to make swds..."
             )
             _summary: DatasetSummary = _obj.make_swds()
-            self._manifest["dataset_summary"] = _summary.as_dict()
+            self._manifest["dataset_summary"] = _summary.asdict()
 
         console.print(f"[step:swds]finish gen swds @ {self.store.data_dir}")
 

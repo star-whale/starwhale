@@ -92,6 +92,11 @@ public class SwmpManager implements BundleAccessor, BundleVersionAccessor, TagAc
     }
 
     @Override
+    public BundleVersionEntity findVersionById(Long bundleVersionId) {
+        return versionMapper.findVersionById(bundleVersionId);
+    }
+
+    @Override
     public BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
         return versionMapper.findByNameAndSwmpId(name, bundleId);
     }

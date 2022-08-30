@@ -54,11 +54,14 @@ public class S3ObjectStore implements ObjectStore {
 
     @Override
     public SwBuffer get(String name) throws IOException {
-        @SuppressWarnings("unchecked")
-        var result = (ResponseInputStream<GetObjectResponse>) this.storageAccessService.get(name);
-        var ret = this.bufferManager.allocate(result.response().contentLength().intValue());
-        assert result.read(ret.asByteBuffer().array()) == ret.capacity();
-        return ret;
+        try (var is = this.storageAccessService.get(name)) {
+            @SuppressWarnings("unchecked")
+            var result = (ResponseInputStream<GetObjectResponse>) is;
+            var ret = this.bufferManager.allocate(result.response().contentLength().intValue());
+            int read = result.readNBytes(ret.asByteBuffer().array(),0,ret.capacity());
+            assert read == ret.capacity();
+            return ret;
+        }
     }
 
     @Override

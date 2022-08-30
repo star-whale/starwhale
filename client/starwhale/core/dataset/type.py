@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import typing as t
 from abc import ABCMeta, abstractmethod
-from copy import deepcopy
 from enum import Enum, unique
 from pathlib import Path
 from functools import partial
@@ -11,6 +10,7 @@ from functools import partial
 from starwhale.utils import load_yaml, convert_to_bytes
 from starwhale.consts import DEFAULT_STARWHALE_API_VERSION
 from starwhale.utils.fs import FilePosition
+from starwhale.base.mixin import ASDictMixin
 from starwhale.utils.error import NoSupportError, FieldTypeOrValueError
 
 D_FILE_VOLUME_SIZE = 64 * 1024 * 1024  # 64MB
@@ -192,7 +192,7 @@ class Link:
         return f"Link uri:{self.uri}, offset:{self.offset}, size:{self.size}, mime type:{self.mime_type}"
 
 
-class DatasetSummary:
+class DatasetSummary(ASDictMixin):
     def __init__(
         self,
         rows: int = 0,
@@ -211,13 +211,6 @@ class DatasetSummary:
         self.include_link = include_link
         self.include_user_raw = include_user_raw
 
-    def as_dict(self) -> t.Dict[str, t.Any]:
-        d = deepcopy(self.__dict__)
-        for k, v in d.items():
-            if isinstance(v, Enum):
-                d[k] = v.value
-        return d
-
     def __str__(self) -> str:
         return f"Dataset Summary: rows({self.rows}), include user-raw({self.include_user_raw}), include link({self.include_link})"
 
@@ -230,7 +223,7 @@ class DatasetSummary:
 
 
 # TODO: use attr to tune code
-class DatasetAttr:
+class DatasetAttr(ASDictMixin):
     def __init__(
         self,
         volume_size: t.Union[int, str] = D_FILE_VOLUME_SIZE,
@@ -243,19 +236,13 @@ class DatasetAttr:
         self.data_mime_type = data_mime_type
         self.kw = kw
 
-    def as_dict(self) -> t.Dict[str, t.Any]:
-        # TODO: refactor an asdict mixin class
-        _rd = deepcopy(self.__dict__)
-        _rd.pop("kw", None)
-        for k, v in _rd.items():
-            if isinstance(v, Enum):
-                _rd[k] = v.value
-        return _rd
+    def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
+        return super().asdict(ignore_keys=ignore_keys or ["kw"])
 
 
 # TODO: abstract base class from DataSetConfig and ModelConfig
 # TODO: use attr to tune code
-class DatasetConfig:
+class DatasetConfig(ASDictMixin):
     def __init__(
         self,
         name: str,
@@ -301,11 +288,6 @@ class DatasetConfig:
 
     def __repr__(self) -> str:
         return f"DataSet Config {self.name}, data:{self.data_dir}"
-
-    def as_dict(self) -> t.Dict[str, t.Any]:
-        _r = deepcopy(self.__dict__)
-        _r["attr"] = self.attr.as_dict()
-        return _r
 
     @classmethod
     def create_by_yaml(cls, fpath: t.Union[str, Path]) -> DatasetConfig:

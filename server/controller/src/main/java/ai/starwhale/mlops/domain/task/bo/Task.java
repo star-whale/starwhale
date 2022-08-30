@@ -57,7 +57,6 @@ public class Task extends TimeConcern {
     /**
      * storage directory path of results
      */
-    @Deprecated
     ResultPath resultRootPath;
 
     TaskRequest taskRequest;

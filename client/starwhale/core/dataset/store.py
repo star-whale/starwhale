@@ -156,7 +156,7 @@ class FileLikeObj(Protocol):
     def readline(self) -> bytes:
         ...
 
-    def read(self, size: int) -> t.Union[bytes, memoryview]:
+    def read(self, size: int) -> bytes:
         ...
 
 
@@ -428,7 +428,16 @@ class S3BufferedFileLike:
             line = b""
         return line
 
-    def read(self, size: int) -> memoryview:
+    def read(self, size: int) -> bytes:
+        _r = self._read(size)
+        if isinstance(_r, memoryview):
+            return _r.tobytes()
+        elif isinstance(_r, bytes):
+            return _r
+        else:
+            raise FormatError(f"{_r}:{type(_r)} is not bytes or memoryview type")
+
+    def _read(self, size: int) -> memoryview:
         # TODO: use smart_open 3rd lib?
         if (self._current + size) <= len(self._buffer):
             end = self._current + size

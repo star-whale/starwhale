@@ -8,6 +8,8 @@ from starwhale.consts import (
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
 )
+from starwhale.base.uri import URI
+from starwhale.base.type import URIType
 
 from .view import get_term_view, DatasetTermView
 
@@ -29,6 +31,7 @@ def dataset_cmd(ctx: click.Context) -> None:
 )
 @click.option("--append", is_flag=True, help="Only append new data")
 @click.option("--append-from", default=LATEST_TAG, help="Append from dataset version")
+@click.option("--runtime", default="", help="runtime uri")
 @click.pass_obj
 def _build(
     view: DatasetTermView,
@@ -37,11 +40,25 @@ def _build(
     dataset_yaml: str,
     append: bool,
     append_from: str,
+    runtime: str,
 ) -> None:
     # TODO: add cmd options for dataset build, another choice for dataset.yaml
     # TODO: add dry-run
     # TODO: add compress args
-    view.build(workdir, project, dataset_yaml, append, append_from)
+    view.build(workdir, project, dataset_yaml, append, append_from, runtime)
+
+
+@dataset_cmd.command("diff", help="Dataset version diff")
+@click.argument("base_uri", required=True)
+@click.argument("compare_uri", required=True)
+@click.option(
+    "--show-details", is_flag=True, help="Show data different detail by the row"
+)
+@click.pass_obj
+def _diff(
+    view: t.Type[DatasetTermView], base_uri: str, compare_uri: str, show_details: bool
+) -> None:
+    view(base_uri).diff(URI(compare_uri, expected_type=URIType.DATASET), show_details)
 
 
 @dataset_cmd.command("list", help="List dataset")

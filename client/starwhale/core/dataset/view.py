@@ -1,18 +1,22 @@
 import typing as t
 from pathlib import Path
 
+from rich import box
+from rich.table import Table
 from rich.pretty import Pretty
 
-from starwhale.utils import console, pretty_bytes
+from starwhale.utils import console, pretty_bytes, pretty_merge_list
 from starwhale.consts import (
     LATEST_TAG,
     DefaultYAMLName,
     DEFAULT_PAGE_IDX,
     DEFAULT_PAGE_SIZE,
+    SHORT_VERSION_CNT,
 )
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
 from starwhale.base.view import BaseTermView
+from starwhale.core.runtime.process import Process as RuntimeProcess
 
 from .model import Dataset
 
@@ -50,7 +54,82 @@ class DatasetTermView(BaseTermView):
         self._print_info(self.dataset.info(), fullname=fullname)
 
     def summary(self) -> None:
-        console.print(Pretty(self.dataset.summary().as_dict(), expand_all=True))
+        console.print(Pretty(self.dataset.summary().asdict(), expand_all=True))
+
+    def _do_diff(self, compare_uri: URI) -> t.Dict[str, t.Any]:
+        r = self.dataset.diff(compare_uri)
+        r["diff_merged_output"] = {
+            "added": pretty_merge_list(r["diff"]["added"]),
+            "deleted": pretty_merge_list(r["diff"]["deleted"]),
+            "updated": pretty_merge_list(
+                [row["id"] for row, _ in r["diff"]["updated"]]
+            ),
+        }
+        return r
+
+    def diff(self, compare_uri: URI, show_details: bool = False) -> None:
+        _print_dict: t.Callable[[t.Dict], str] = lambda _s: "\n".join(
+            [f"{k}:{v}" for k, v in _s.items()]
+        )
+        r = self._do_diff(compare_uri)
+        table = Table(box=box.SIMPLE, expand=False, show_lines=True)
+        table.add_column()
+        table.add_column(
+            f"base: {r['version']['base'][:SHORT_VERSION_CNT]}",
+            style="magenta",
+            justify="left",
+        )
+        table.add_column(
+            f"compare: {r['version']['compare'][:SHORT_VERSION_CNT]}",
+            style="cyan",
+            justify="left",
+        )
+
+        table.add_row(
+            "diff summary",
+            _print_dict(r["diff_rows"]),
+            style="red",
+        )
+        table.add_row(
+            "dataset version",
+            r["version"]["base"],
+            r["version"]["compare"],
+        )
+        table.add_row(
+            "dataset digest",
+            _print_dict(r["summary"]["base"]),
+            _print_dict(r["summary"]["compare"]),
+        )
+
+        def _print_diff(_diff: t.Union[str, list]) -> str:
+            if isinstance(_diff, (list, tuple)):
+                _diff = ",".join([str(_d) for _d in _diff])
+            return _diff or "--"
+
+        def _str_row(row: t.Dict) -> str:
+            data_uri = (
+                row["data_uri"][:SHORT_VERSION_CNT]
+                if row["object_store_type"] == "local"
+                else row["data_uri"]
+            )
+            return f"{row['id']}:offset-{row['data_offset']}:size-{row['data_size']}:uri-{data_uri}"
+
+        table.add_row("diff-deleted", _print_diff(r["diff_merged_output"]["deleted"]))
+        table.add_row("diff-added", "", _print_diff(r["diff_merged_output"]["added"]))
+
+        if show_details:
+            _bout, _cout = [], []
+            for _brow, _crow in r["diff"]["updated"]:
+                _bout.append(_str_row(_brow))
+                _cout.append(_str_row(_crow))
+
+            table.add_row("diff-updated", "\n".join(_bout), "\n".join(_cout))
+        else:
+            table.add_row(
+                "diff-updated", _print_diff(r["diff_merged_output"]["updated"])
+            )
+
+        console.print(table)
 
     @classmethod
     def list(
@@ -75,12 +154,21 @@ class DatasetTermView(BaseTermView):
         yaml_name: str = DefaultYAMLName.DATASET,
         append: bool = False,
         append_from: str = LATEST_TAG,
+        runtime_uri: str = "",
     ) -> None:
-        _dataset_uri = cls.prepare_build_bundle(
+        dataset_uri = cls.prepare_build_bundle(
             workdir, project, yaml_name, URIType.DATASET
         )
-        _ds = Dataset.get_dataset(_dataset_uri)
-        _ds.build(Path(workdir), yaml_name, append=append, append_from=append_from)
+        ds = Dataset.get_dataset(dataset_uri)
+        if runtime_uri:
+            RuntimeProcess.from_runtime_uri(
+                uri=runtime_uri,
+                target=ds.build,
+                args=(Path(workdir), yaml_name),
+                kwargs={"append": append, "append_from": append_from},
+            ).run()
+        else:
+            ds.build(Path(workdir), yaml_name, append=append, append_from=append_from)
 
     @classmethod
     def copy(
@@ -141,6 +229,13 @@ class DatasetTermViewJson(DatasetTermView):
 
     def info(self, fullname: bool = False) -> None:
         self.pretty_json(self.get_info_data(self.dataset.info(), fullname))
+
+    def diff(self, compare_uri: URI, show_details: bool = False) -> None:
+        r = self._do_diff(compare_uri)
+        if not show_details:
+            r.pop("diff", None)
+
+        self.pretty_json(r)
 
 
 def get_term_view(ctx_obj: t.Dict) -> t.Type[DatasetTermView]:

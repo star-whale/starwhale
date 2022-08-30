@@ -31,6 +31,8 @@ import java.util.Objects;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ResourcePool {
+
+    public static final String DEFAULT="default";
     String label;
 
     @Override
@@ -50,6 +52,6 @@ public class ResourcePool {
         return Objects.hash(label);
     }
     public static ResourcePool empty() {
-        return new ResourcePool("default");
+        return new ResourcePool(DEFAULT);
     }
 }

@@ -199,10 +199,14 @@ class JobTermView(BaseTermView):
             table.add_column("Label", style="cyan")
             keys = labels[sort_label_names[0]]
             for _k in keys:
+                if _k == "id":
+                    continue
                 table.add_column(_k.capitalize())
 
             for _k, _v in labels.items():
-                table.add_row(_k, *(f"{float(_v[_k2]):.4f}" for _k2 in keys))
+                table.add_row(
+                    _k, *(f"{float(_v[_k2]):.4f}" for _k2 in keys if _k2 != "id")
+                )
 
             console.rule(f"[bold green]{report['kind'].upper()} Report")
             console.print(self.comparison(tree, table))
@@ -250,7 +254,6 @@ class JobTermView(BaseTermView):
         use_docker: bool = False,
         step: str = "",
         task_index: int = 0,
-        runtime_restore: bool = False,
     ) -> None:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
         ok, reason = EvaluationJob.run(
@@ -264,7 +267,6 @@ class JobTermView(BaseTermView):
             resource=resource,
             gencmd=gencmd,
             use_docker=use_docker,
-            runtime_restore=runtime_restore,
             step=step,
             task_index=task_index,
         )

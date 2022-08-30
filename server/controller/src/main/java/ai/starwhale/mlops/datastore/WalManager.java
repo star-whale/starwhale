@@ -92,7 +92,20 @@ public class WalManager extends Thread {
         this.compressedBuffer = this.bufferManager.allocate(this.walMaxFileSize);
         this.outputStream = new SwBufferOutputStream(this.outputBuffer);
         var walMap = new TreeMap<Integer, String>();
-        var it = this.objectStore.list(this.logFilePrefix);
+        Iterator<String> it;
+        try {
+            it = Retry.decorateCheckedSupplier(
+                            Retry.of("put", RetryConfig.custom()
+                                    .maxAttempts(10000)
+                                    .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
+                                    .retryOnException(e -> !terminated)
+                                    .build()),
+                            () -> this.objectStore.list(this.logFilePrefix))
+                    .apply();
+        } catch (Throwable e) {
+            log.error("fail to read WAL", e);
+            throw new SWProcessException(SWProcessException.ErrorType.DATASTORE);
+        }
         while (it.hasNext()) {
             var fn = it.next();
             try {
@@ -147,8 +160,14 @@ public class WalManager extends Thread {
                 this.files.remove(0);
                 SwBuffer data;
                 try {
-                    data = objectStore.get(fn);
-                } catch (IOException e) {
+                    data = Retry.decorateCheckedSupplier(
+                                    Retry.of("get", RetryConfig.custom()
+                                            .maxAttempts(10000)
+                                            .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
+                                            .build()),
+                                    () -> objectStore.get(fn))
+                            .apply();
+                } catch (Throwable e) {
                     log.error("fail to read from object store", e);
                     throw new SWProcessException(SWProcessException.ErrorType.DATASTORE);
                 }
@@ -325,7 +344,6 @@ public class WalManager extends Thread {
                             Retry.of("put", RetryConfig.custom()
                                     .maxAttempts(10000)
                                     .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
-                                    .retryOnException(e -> !terminated)
                                     .build()),
                             () -> this.objectStore.put(this.logFilePrefix + this.logFileIndex,
                                     this.compressedBuffer.slice(0, compressedBufferSize)))

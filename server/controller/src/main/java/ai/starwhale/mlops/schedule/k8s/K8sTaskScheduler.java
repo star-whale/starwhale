@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskTrigger;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.job.bo.Job;
@@ -30,14 +29,10 @@ import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +41,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
@@ -151,7 +145,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         SWDataSet swDataSet = swDataSets.get(0);
         coreContainerEnvs.put("SW_DATASET_URI", String.format(FORMATTER_URI_DATASET,instanceUri,swJob.getProject().getName(),swDataSet.getName(),swDataSet.getVersion()));
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
-        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getId().toString());
+        coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
         swDataSets.forEach(ds -> ds.getFileStorageEnvs().values()
             .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
@@ -174,17 +168,6 @@ public class K8sTaskScheduler implements SWTaskScheduler {
             // set result upload path
 
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
-            // TODO:remove dst
-            k8sJob.getSpec().getTemplate().getSpec().getContainers().get(0).env(List.of(new V1EnvVar().name("DST").value(prefix + "")
-                    , new V1EnvVar().name("ENDPOINT_URL").value(storageProperties.getS3Config().getEndpoint())
-                    , new V1EnvVar().name("AWS_ACCESS_KEY_ID").value(storageProperties.getS3Config().getAccessKey())
-                    , new V1EnvVar().name("AWS_S3_REGION").value(storageProperties.getS3Config().getRegion())
-                    , new V1EnvVar().name("AWS_SECRET_ACCESS_KEY").value(storageProperties.getS3Config().getSecretKey())
-                    , new V1EnvVar().name("SW_PYPI_INDEX_URL").value(runTimeProperties.getPypi().getIndexUrl())
-                    , new V1EnvVar().name("SW_PYPI_EXTRA_INDEX_URL").value(runTimeProperties.getPypi().getExtraIndexUrl())
-                    , new V1EnvVar().name("SW_PYPI_TRUSTED_HOST").value(runTimeProperties.getPypi().getTrustedHost())
-                )
-            );
             // update node selector
             if (nodeSelector != null) {
                 var selector = k8sJob.getSpec().getTemplate().getSpec().getNodeSelector();
@@ -199,54 +182,6 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Deprecated // TODO
-    private String generateConfigFile(TaskTrigger task) {
-        JSONObject object = JSONUtil.createObj();
-        object.set("backend", "s3");
-        object.set("secret", JSONUtil.createObj().set("access_key", storageProperties.getS3Config().getAccessKey()).set("secret_key", storageProperties.getS3Config().getSecretKey()));
-        object.set("service", JSONUtil.createObj()
-            .set("endpoint", storageProperties.getS3Config().getEndpoint())
-            .set("region", storageProperties.getS3Config().getRegion())
-        );
-        final String dataFormat = "%s:%s:%s";
-        switch (task.getTaskType()) {
-            case PPL:
-                object.set("kind", "swds");
-                JSONArray swds = JSONUtil.createArray();
-
-                task.getSwdsBlocks().forEach(swdsBlock -> {
-                    JSONObject ds = JSONUtil.createObj();
-                    ds.set("bucket", storageProperties.getS3Config().getBucket());
-                    ds.set("key", JSONUtil.createObj()
-                        .set("data", String.format(dataFormat, swdsBlock.getLocationInput().getFile(), swdsBlock.getLocationInput().getOffset(), swdsBlock.getLocationInput().getOffset() + swdsBlock.getLocationInput().getSize() - 1))
-                        .set("label", String.format(dataFormat, swdsBlock.getLocationLabel().getFile(), swdsBlock.getLocationLabel().getOffset(), swdsBlock.getLocationLabel().getOffset() + swdsBlock.getLocationLabel().getSize() - 1))
-                    );
-                    ds.set("ext_attr", JSONUtil.createObj()
-                        .set("swds_name", swdsBlock.getDsName())
-                        .set("swds_version", swdsBlock.getDsVersion())
-                    );
-                    swds.add(ds);
-                });
-                object.set("swds", swds);
-                break;
-            case CMP:
-                object.set("kind", "jsonl");
-                JSONArray cmp = JSONUtil.createArray();
-                task.getCmpInputFilePaths().forEach(inputFilePath -> {
-                    JSONObject ds = JSONUtil.createObj();
-                    ds.set("bucket", storageProperties.getS3Config().getBucket());
-                    ds.set("key", JSONUtil.createObj()
-                        .set("data", inputFilePath)
-                    );
-                    cmp.add(ds);
-                });
-
-                object.set("swds", cmp);
-        }
-
-        return JSONUtil.toJsonStr(object);
     }
 
     private String getJobTemplate() throws IOException {

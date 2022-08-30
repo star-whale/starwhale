@@ -29,4 +29,5 @@ public class QueryTableRequest {
     private TableQueryFilterDesc filter;
     private int start = -1;
     private int limit = -1;
+    private boolean keepNone;
 }

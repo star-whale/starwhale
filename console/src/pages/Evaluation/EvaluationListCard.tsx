@@ -22,6 +22,8 @@ import { useStyletron } from 'baseui'
 import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@/components/data-table/store'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
+import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
+import { tableNameOfSummary } from '@/domain/datastore/utils'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
@@ -55,6 +57,12 @@ export default function EvaluationListCard() {
     )
 
     const store = useEvaluationStore()
+
+    const summaryTableName = React.useMemo(() => {
+        return tableNameOfSummary(projectId)
+    }, [projectId])
+    const summaryTable = useQueryDatasetList(summaryTableName, { pageNum: 1, pageSize: 1000 })
+    console.log(summaryTable.data)
 
     // TODO
     // 1. column key should be equal with eva attr field

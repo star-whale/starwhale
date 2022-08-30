@@ -100,6 +100,7 @@ public class DataStoreController implements DataStoreApi {
                     .orderBy(request.getOrderBy())
                     .start(request.getStart())
                     .limit(request.getLimit())
+                    .keepNone(request.isKeepNone())
                     .build());
             return ResponseEntity.ok(Code.success.asResponse(RecordListVO.builder()
                     .columnTypes(recordList.getColumnTypeMap())

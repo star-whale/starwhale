@@ -18,11 +18,9 @@ package ai.starwhale.mlops.domain.project;
 
 import ai.starwhale.mlops.common.IDConvertor;
 import ai.starwhale.mlops.common.OrderParams;
-import ai.starwhale.mlops.domain.project.bo.Project;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
-import ai.starwhale.mlops.domain.user.bo.User;
 import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
@@ -35,7 +33,6 @@ import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -115,10 +112,16 @@ public class ProjectManager implements ProjectAccessor{
     }
 
     public Long getProjectId(@NotNull String projectUrl) {
+        ProjectEntity projectEntity;
         if(idConvertor.isID(projectUrl)) {
-            return idConvertor.revert(projectUrl);
+            Long id = idConvertor.revert(projectUrl);
+            if(id == 0){
+                return id;
+            }
+            projectEntity = projectMapper.findProject(id);
+        } else {
+            projectEntity = projectMapper.findProjectByName(projectUrl);
         }
-        ProjectEntity projectEntity = projectMapper.findProjectByName(projectUrl);
         if(projectEntity == null) {
             throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
                 .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);

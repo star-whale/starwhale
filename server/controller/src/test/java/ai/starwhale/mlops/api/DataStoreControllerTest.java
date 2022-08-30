@@ -331,7 +331,8 @@ public class DataStoreControllerTest {
                 setTableName("t1");
                 setTableSchemaDesc(new TableSchemaDesc("k",
                         List.of(new ColumnSchemaDesc("k", "INT32"),
-                                new ColumnSchemaDesc("a", "INT32"))));
+                                new ColumnSchemaDesc("a", "INT32"),
+                                new ColumnSchemaDesc("x", "INT32"))));
                 setRecords(List.of(new RecordDesc() {{
                     setValues(List.of(new RecordValueDesc() {{
                         setKey("k");
@@ -347,6 +348,8 @@ public class DataStoreControllerTest {
                     }}, new RecordValueDesc() {{
                         setKey("a");
                         setValue("4");
+                    }}, new RecordValueDesc() {{
+                        setKey("x");
                     }}));
                 }}, new RecordDesc() {{
                     setValues(List.of(new RecordValueDesc() {{
@@ -384,7 +387,7 @@ public class DataStoreControllerTest {
             assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
-                    is(Map.of("k", ColumnType.INT32, "a", ColumnType.INT32)));
+                    is(Map.of("k", ColumnType.INT32, "a", ColumnType.INT32, "x", ColumnType.INT32)));
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "0", "a", "5"),
@@ -422,6 +425,23 @@ public class DataStoreControllerTest {
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "1", "b", "4"))));
+
+            this.req.setColumns(Lists.concat(this.req.getColumns(), List.of(new ColumnDesc() {{
+                setColumnName("x");
+            }})));
+            this.req.setKeepNone(true);
+            resp = DataStoreControllerTest.this.controller.queryTable(this.req);
+            assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
+                    is(Map.of("k", ColumnType.INT32, "b", ColumnType.INT32, "x", ColumnType.INT32)));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                    is(List.of(new HashMap<>() {{
+                        put("k", "1");
+                        put("b", "4");
+                        put("x", null);
+                    }})));
         }
 
         @Test

@@ -20,7 +20,6 @@ import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.ppl.PPLRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import java.util.UUID;
@@ -30,14 +29,6 @@ import org.junit.jupiter.api.Test;
  * test for {@link ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher}
  */
 public class TaskWatcherTest {
-
-
-
-
-
-
-
-
 
     TaskStatusMachine taskStatusMachine = new TaskStatusMachine();
 
@@ -54,8 +45,6 @@ public class TaskWatcherTest {
 
     private Task mockTask() {
         Task task = Task.builder()
-            .taskType(TaskType.PPL)
-            .taskRequest(new PPLRequest())
             .agent(Agent.builder().build())
             .id(1L)
             .status(TaskStatus.RUNNING)

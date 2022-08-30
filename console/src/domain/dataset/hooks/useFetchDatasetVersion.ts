@@ -13,7 +13,8 @@ export function useFetchDatasetVersion(projectId: string, datasetId: string, dat
         if (datasetVersionId) {
             datasetVersionsInfo.refetch()
         }
-    }, [datasetVersionId, datasetVersionsInfo])
+        // eslint-disalbe-next-line react-hooks/exhaustive-deps
+    }, [datasetVersionId])
 
     return datasetVersionsInfo
 }

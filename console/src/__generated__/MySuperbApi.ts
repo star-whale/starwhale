@@ -20,12 +20,21 @@ export interface ResponseMessageString {
 }
 
 export interface UserUpdatePasswordRequest {
-    originPwd?: string
-    userPwd: string
+    currentUserPwd: string
+    newPwd: string
 }
 
-export interface ProjectRequest {
-    projectName: string
+export interface UserRoleUpdateRequest {
+    currentUserPwd: string
+    roleId: string
+}
+
+export interface UpdateProjectRequest {
+    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{3,80}$ */
+    projectName?: string
+    ownerId?: string
+    privacy?: string
+    description?: string
 }
 
 export interface RuntimeTagRequest {
@@ -48,118 +57,27 @@ export interface SWDSTagRequest {
 }
 
 export interface UserRequest {
+    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{3,32}$ */
     userName: string
     userPwd: string
 }
 
-export interface Device {
-    id?: string
-    clazz?: 'CPU' | 'GPU' | 'UNKNOWN'
-    type?: string
-    driver?: string
-    status?: 'idle' | 'busy'
+export interface UserCheckPasswordRequest {
+    currentUserPwd: string
 }
 
-export interface Node {
-    agentVersion?: string
-    serialNumber?: string
-    ipAddr?: string
-
-    /** @format int32 */
-    memorySizeGB?: number
-    devices?: Device[]
+export interface UserRoleAddRequest {
+    currentUserPwd: string
+    userId: string
+    roleId: string
 }
 
-export interface ReportRequest {
-    nodeInfo?: Node
-    tasks?: TaskReport[]
-}
-
-export interface TaskLog {
-    readerId?: string
-    log?: string
-}
-
-export interface TaskReport {
-    /** @format int64 */
-    id?: number
-    status?: 'PREPARING' | 'RUNNING' | 'SUCCESS' | 'CANCELING' | 'CANCELED' | 'FAIL'
-    taskType?: 'UNKNOWN' | 'PPL' | 'CMP'
-    readerLogs?: TaskLog[]
-}
-
-export interface LogReader {
-    /** @format int64 */
-    taskId?: number
-    readerId?: string
-}
-
-export interface ReportResponse {
-    taskIdsToCancel?: number[]
-    tasksToRun?: TaskTrigger[]
-    logReaders?: LogReader[]
-}
-
-export interface ResponseMessageReportResponse {
-    code?: string
-    message?: string
-    data?: ReportResponse
-}
-
-export interface ResultPath {
-    root?: string
-    resultDir?: string
-    logDir?: string
-}
-
-export interface SWDSBlockVO {
-    /** @format int64 */
-    id?: number
-    dsName?: string
-    dsVersion?: string
-
-    /** @format int32 */
-    batch?: number
-    label?: SWDSDataLocation
-    data?: SWDSDataLocation
-}
-
-export interface SWDSDataLocation {
-    /** @format int32 */
-    offset?: number
-
-    /** @format int32 */
-    size?: number
-    file?: string
-}
-
-export interface SWModelPackage {
-    /** @format int64 */
-    id?: number
-    name?: string
-    version?: string
-    path?: string
-}
-
-export interface SWRunTime {
-    name?: string
-    version?: string
-    path?: string
-}
-
-export interface TaskTrigger {
-    /** @format int64 */
-    id?: number
-    taskType?: 'UNKNOWN' | 'PPL' | 'CMP'
-    cmpInputFilePaths?: string[]
-    swrt?: SWRunTime
-    swModelPackage?: SWModelPackage
-    swdsBlocks?: SWDSBlockVO[]
-
-    /** @format int32 */
-    deviceAmount?: number
-    deviceClass?: 'CPU' | 'GPU' | 'UNKNOWN'
-    resultPath?: ResultPath
+export interface CreateProjectRequest {
+    /** @pattern ^[a-zA-Z][a-zA-Z\d_-]{3,80}$ */
+    projectName: string
+    ownerId: string
+    privacy: string
+    description: string
 }
 
 export interface RuntimeRevertRequest {
@@ -168,10 +86,24 @@ export interface RuntimeRevertRequest {
     versionUrl?: string
 }
 
+export interface ClientRuntimeRequest {
+    runtime?: string
+    project?: string
+    force?: string
+    manifest?: string
+}
+
 export interface RevertSWMPVersionRequest {
     version?: string
     versionId?: string
     versionUrl?: string
+}
+
+export interface ClientSWMPRequest {
+    swmp?: string
+    project?: string
+    force?: string
+    manifest?: string
 }
 
 export interface JobRequest {
@@ -183,6 +115,7 @@ export interface JobRequest {
     /** @format int32 */
     deviceAmount: number
     comment?: string
+    resourcePool?: string
 }
 
 export interface ConfigRequest {
@@ -196,22 +129,8 @@ export interface RevertSWDSRequest {
     versionUrl?: string
 }
 
-export interface ClientRuntimeRequest {
-    runtime?: string
-    project?: string
-    force?: string
-    manifest?: string
-}
-
-export interface ClientSWMPRequest {
-    swmp?: string
-    project?: string
-    force?: string
-    manifest?: string
-}
-
 export interface UploadRequest {
-    swds: string
+    swds?: string
     phase: 'MANIFEST' | 'BLOB' | 'END' | 'CANCEL'
     force?: string
     project?: string
@@ -225,6 +144,107 @@ export interface ResponseMessageUploadResult {
 
 export interface UploadResult {
     upload_id?: string
+}
+
+export interface ColumnSchemaDesc {
+    name?: string
+    type?: string
+}
+
+export interface RecordDesc {
+    values: RecordValueDesc[]
+}
+
+export interface RecordValueDesc {
+    key: string
+    value?: string
+}
+
+export interface TableSchemaDesc {
+    keyColumn?: string
+    columnSchemaList?: ColumnSchemaDesc[]
+}
+
+export interface UpdateTableRequest {
+    tableName?: string
+    tableSchemaDesc?: TableSchemaDesc
+    records?: RecordDesc[]
+}
+
+export interface ColumnDesc {
+    columnName?: string
+    alias?: string
+}
+
+export interface ScanTableRequest {
+    tables?: TableDesc[]
+    start?: string
+    startInclusive?: boolean
+    end?: string
+    endInclusive?: boolean
+
+    /** @format int32 */
+    limit?: number
+    keepNone?: boolean
+}
+
+export interface TableDesc {
+    tableName?: string
+    columns?: ColumnDesc[]
+    keepNone?: boolean
+}
+
+export interface RecordListVO {
+    columnTypes?: Record<
+        string,
+        'UNKNOWN' | 'BOOL' | 'INT8' | 'INT16' | 'INT32' | 'INT64' | 'FLOAT32' | 'FLOAT64' | 'STRING' | 'BYTES'
+    >
+    records?: Record<string, string>[]
+    lastKey?: string
+}
+
+export interface ResponseMessageRecordListVO {
+    code?: string
+    message?: string
+    data?: RecordListVO
+}
+
+export interface OrderByDesc {
+    columnName?: string
+    descending?: boolean
+}
+
+export interface QueryTableRequest {
+    tableName?: string
+    columns?: ColumnDesc[]
+    orderBy?: OrderByDesc[]
+    descending?: boolean
+    filter?: TableQueryFilterDesc
+
+    /** @format int32 */
+    start?: number
+
+    /** @format int32 */
+    limit?: number
+}
+
+export interface TableQueryFilterDesc {
+    operator: string
+    operands?: TableQueryOperandDesc[]
+}
+
+export interface TableQueryOperandDesc {
+    filter?: TableQueryFilterDesc
+    columnName?: string
+    boolValue?: boolean
+
+    /** @format int64 */
+    intValue?: number
+
+    /** @format double */
+    floatValue?: number
+    stringValue?: string
+    bytesValue?: string
 }
 
 export interface PageInfo {
@@ -274,25 +294,73 @@ export interface PageInfo {
 /**
  * User object
  */
-export interface RoleVO {
-    id?: string
-    name?: string
-    nameEn?: string
-}
-
-/**
- * User object
- */
 export interface UserVO {
     id?: string
     name?: string
 
     /** @format int64 */
     createdTime?: number
+    isEnabled?: boolean
+}
+
+/**
+ * Project object
+ */
+export interface ProjectVO {
+    id?: string
+    name?: string
+    description?: string
+    privacy?: string
+
+    /** @format int64 */
+    createdTime?: number
+
+    /** User object */
+    owner?: UserVO
+    statistics?: StatisticsVO
+}
+
+export interface ResponseMessageListUserRoleVO {
+    code?: string
+    message?: string
+    data?: UserRoleVO[]
+}
+
+/**
+ * User object
+ */
+export interface RoleVO {
+    id?: string
+    name?: string
+    code?: string
+    description?: string
+}
+
+export interface StatisticsVO {
+    /** @format int32 */
+    modelCounts?: number
+
+    /** @format int32 */
+    datasetCounts?: number
+
+    /** @format int32 */
+    memberCounts?: number
+
+    /** @format int32 */
+    evaluationCounts?: number
+}
+
+/**
+ * User Role object
+ */
+export interface UserRoleVO {
+    id?: string
+
+    /** Project object */
+    project?: ProjectVO
 
     /** User object */
     role?: RoleVO
-    isEnabled?: boolean
 }
 
 /**
@@ -313,19 +381,29 @@ export interface UpgradeProgressVO {
     progress?: number
 }
 
-/**
- * Project object
- */
-export interface ProjectVO {
-    id?: string
-    name?: string
+export interface ResponseMessageListSystemRoleVO {
+    code?: string
+    message?: string
+    data?: SystemRoleVO[]
+}
 
-    /** @format int64 */
-    createdTime?: number
+/**
+ * System Role object
+ */
+export interface SystemRoleVO {
+    id?: string
 
     /** User object */
-    owner?: UserVO
-    isDefault?: boolean
+    user?: UserVO
+
+    /** User object */
+    role?: RoleVO
+}
+
+export interface ResponseMessageListRoleVO {
+    code?: string
+    message?: string
+    data?: RoleVO[]
 }
 
 export interface ResponseMessageRuntimeInfoVO {
@@ -428,6 +506,28 @@ export interface RuntimeVersionVO {
 }
 
 /**
+ * Project Role object
+ */
+export interface ProjectRoleVO {
+    id?: string
+
+    /** User object */
+    user?: UserVO
+
+    /** Project object */
+    project?: ProjectVO
+
+    /** User object */
+    role?: RoleVO
+}
+
+export interface ResponseMessageListProjectRoleVO {
+    code?: string
+    message?: string
+    data?: ProjectRoleVO[]
+}
+
+/**
  * SWModelPackage information object
  */
 export interface SWModelPackageInfoVO {
@@ -480,6 +580,7 @@ export interface JobVO {
         | 'FAIL'
         | 'UNKNOWN'
     comment?: string
+    resourcePool?: string
 
     /** @format int64 */
     duration?: number
@@ -589,19 +690,28 @@ export interface ResponseMessagePageInfoSummaryVO {
  * Evaluation Summary object
  */
 export interface SummaryVO {
-    jobUuid?: string
+    id?: string
+    uuid?: string
     projectId?: string
     projectName?: string
-    model?: string
+    modelName?: string
+    modelVersion?: string
     datasets?: string
     runtime?: string
-
-    /** @format int64 */
-    duration?: number
     device?: string
 
     /** @format int32 */
     deviceAmount?: number
+
+    /** @format int64 */
+    createdTime?: number
+
+    /** @format int64 */
+    stopTime?: number
+    owner?: string
+
+    /** @format int64 */
+    duration?: number
     attributes?: AttributeValueVO[]
 }
 
@@ -638,10 +748,17 @@ export interface ResponseMessageListAttributeVO {
     data?: AttributeVO[]
 }
 
+export interface FileStorageEnv {
+    envs?: Record<string, string>
+    envType?: 'S3' | 'HDFS' | 'NFS' | 'LOCAL_FS' | 'REST_RESOURCE' | 'FTP'
+}
+
 /**
  * SWDataset information object
  */
 export interface SWDatasetInfoVO {
+    indexTable?: string
+    fileStorageEnvs?: Record<string, FileStorageEnv>
     id?: string
     name?: string
     versionName?: string
@@ -653,22 +770,8 @@ export interface SWDatasetInfoVO {
     files?: StorageFileVO[]
 }
 
-export interface ResponseMessageListRuntimeInfoVO {
-    code?: string
-    message?: string
-    data?: RuntimeInfoVO[]
-}
-
-export interface ResponseMessageListSWModelPackageInfoVO {
-    code?: string
-    message?: string
-    data?: SWModelPackageInfoVO[]
-}
-
-export interface ResponseMessageListSWDatasetInfoVO {
-    code?: string
-    message?: string
-    data?: SWDatasetInfoVO[]
+export interface UserRoleDeleteRequest {
+    currentUserPwd: string
 }
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, ResponseType } from 'axios'
@@ -850,6 +953,86 @@ export class Api<SecurityDataType extends unknown> {
             }),
 
         /**
+         * No description
+         *
+         * @tags User
+         * @name UpdateCurrentUserPassword
+         * @summary Update Current User password
+         * @request PUT:/api/v1/user/current/pwd
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        updateCurrentUserPassword: (data: UserUpdatePasswordRequest, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/user/current/pwd`,
+                method: 'PUT',
+                body: data,
+                secure: true,
+                type: ContentType.Json,
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags User
+         * @name CheckCurrentUserPassword
+         * @summary Check Current User password
+         * @request POST:/api/v1/user/current/pwd
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        checkCurrentUserPassword: (data: UserCheckPasswordRequest, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/user/current/pwd`,
+                method: 'POST',
+                body: data,
+                secure: true,
+                type: ContentType.Json,
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags User
+         * @name UpdateUserSystemRole
+         * @summary Update user role of system
+         * @request PUT:/api/v1/role/{systemRoleId}
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        updateUserSystemRole: (systemRoleId: string, data: UserRoleUpdateRequest, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/role/${systemRoleId}`,
+                method: 'PUT',
+                body: data,
+                secure: true,
+                type: ContentType.Json,
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags User
+         * @name DeleteUserSystemRole
+         * @summary Delete user role of system
+         * @request DELETE:/api/v1/role/{systemRoleId}
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        deleteUserSystemRole: (systemRoleId: string, data: UserRoleDeleteRequest, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/role/${systemRoleId}`,
+                method: 'DELETE',
+                body: data,
+                secure: true,
+                type: ContentType.Json,
+                ...params,
+            }),
+
+        /**
          * @description Returns a single project object.
          *
          * @tags Project
@@ -878,7 +1061,7 @@ export class Api<SecurityDataType extends unknown> {
          * @secure
          * @response `200` `ResponseMessageString` ok
          */
-        updateProject: (projectUrl: string, data: ProjectRequest, params: RequestParams = {}) =>
+        updateProject: (projectUrl: string, data: UpdateProjectRequest, params: RequestParams = {}) =>
             this.http.request<ResponseMessageString, any>({
                 path: `/api/v1/project/${projectUrl}`,
                 method: 'PUT',
@@ -981,16 +1164,40 @@ export class Api<SecurityDataType extends unknown> {
          * No description
          *
          * @tags Project
-         * @name RecoverProject
-         * @summary Recover a project
-         * @request PUT:/api/v1/project/{projectUrl}/recover
+         * @name ModifyProjectRole
+         * @summary Modify a project role
+         * @request PUT:/api/v1/project/{projectUrl}/role/{projectRoleId}
          * @secure
          * @response `200` `ResponseMessageString` ok
          */
-        recoverProject: (projectUrl: string, params: RequestParams = {}) =>
+        modifyProjectRole: (
+            projectUrl: string,
+            projectRoleId: string,
+            query: { roleId: string },
+            params: RequestParams = {}
+        ) =>
             this.http.request<ResponseMessageString, any>({
-                path: `/api/v1/project/${projectUrl}/recover`,
+                path: `/api/v1/project/${projectUrl}/role/${projectRoleId}`,
                 method: 'PUT',
+                query: query,
+                secure: true,
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags Project
+         * @name DeleteProjectRole
+         * @summary Delete a project role
+         * @request DELETE:/api/v1/project/{projectUrl}/role/{projectRoleId}
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        deleteProjectRole: (projectUrl: string, projectRoleId: string, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/project/${projectUrl}/role/${projectRoleId}`,
+                method: 'DELETE',
                 secure: true,
                 ...params,
             }),
@@ -1018,6 +1225,25 @@ export class Api<SecurityDataType extends unknown> {
                 body: data,
                 secure: true,
                 type: ContentType.Json,
+                ...params,
+            }),
+
+        /**
+         * @description head for swmp info
+         *
+         * @tags Model
+         * @name HeadModel
+         * @summary head for swmp info
+         * @request HEAD:/api/v1/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}
+         * @secure
+         * @response `200` `object` ok
+         */
+        headModel: (projectUrl: string, modelUrl: string, versionUrl: string, params: RequestParams = {}) =>
+            this.http.request<object, any>({
+                path: `/api/v1/project/${projectUrl}/model/${modelUrl}/version/${versionUrl}`,
+                method: 'HEAD',
+                secure: true,
+                format: 'json',
                 ...params,
             }),
 
@@ -1152,6 +1378,25 @@ export class Api<SecurityDataType extends unknown> {
             }),
 
         /**
+         * @description head for swds info
+         *
+         * @tags Dataset
+         * @name HeadDataset
+         * @summary head for swds info
+         * @request HEAD:/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}
+         * @secure
+         * @response `200` `object` ok
+         */
+        headDataset: (projectUrl: string, datasetUrl: string, versionUrl: string, params: RequestParams = {}) =>
+            this.http.request<object, any>({
+                path: `/api/v1/project/${projectUrl}/dataset/${datasetUrl}/version/${versionUrl}`,
+                method: 'HEAD',
+                secure: true,
+                format: 'json',
+                ...params,
+            }),
+
+        /**
          * @description add|remove|set tags
          *
          * @tags Dataset
@@ -1193,6 +1438,24 @@ export class Api<SecurityDataType extends unknown> {
                 method: 'PUT',
                 secure: true,
                 format: 'json',
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags Project
+         * @name RecoverProject
+         * @summary Recover a project
+         * @request PUT:/api/v1/project/{projectId}/recover
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        recoverProject: (projectId: string, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/project/${projectId}/recover`,
+                method: 'PUT',
+                secure: true,
                 ...params,
             }),
 
@@ -1257,15 +1520,34 @@ export class Api<SecurityDataType extends unknown> {
         /**
          * No description
          *
-         * @tags report-controller
-         * @name Report
-         * @request POST:/api/v1/report
+         * @tags User
+         * @name ListSystemRoles
+         * @summary List system role of users
+         * @request GET:/api/v1/role
          * @secure
-         * @response `200` `ResponseMessageReportResponse` OK
+         * @response `200` `ResponseMessageListSystemRoleVO` ok
          */
-        report: (data: ReportRequest, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageReportResponse, any>({
-                path: `/api/v1/report`,
+        listSystemRoles: (params: RequestParams = {}) =>
+            this.http.request<ResponseMessageListSystemRoleVO, any>({
+                path: `/api/v1/role`,
+                method: 'GET',
+                secure: true,
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags User
+         * @name AddUserSystemRole
+         * @summary Add user role of system
+         * @request POST:/api/v1/role
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        addUserSystemRole: (data: UserRoleAddRequest, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/role`,
                 method: 'POST',
                 body: data,
                 secure: true,
@@ -1284,16 +1566,7 @@ export class Api<SecurityDataType extends unknown> {
          * @response `200` `PageInfo` ok
          */
         listProject: (
-            query?: {
-                projectName?: string
-                isDeleted?: boolean
-                ownerId?: string
-                ownerName?: string
-                pageNum?: number
-                pageSize?: number
-                sort?: string
-                order?: number
-            },
+            query?: { projectName?: string; pageNum?: number; pageSize?: number; sort?: string; order?: number },
             params: RequestParams = {}
         ) =>
             this.http.request<PageInfo, any>({
@@ -1310,12 +1583,12 @@ export class Api<SecurityDataType extends unknown> {
          *
          * @tags Project
          * @name CreateProject
-         * @summary Create a new project
+         * @summary Create or Recover a new project
          * @request POST:/api/v1/project
          * @secure
          * @response `200` `ResponseMessageString` ok
          */
-        createProject: (data: ProjectRequest, params: RequestParams = {}) =>
+        createProject: (data: CreateProjectRequest, params: RequestParams = {}) =>
             this.http.request<ResponseMessageString, any>({
                 path: `/api/v1/project`,
                 method: 'POST',
@@ -1352,6 +1625,72 @@ export class Api<SecurityDataType extends unknown> {
             }),
 
         /**
+         * @description Create a new version of the runtime. The data resources can be selected by uploading the file package or entering the server path.
+         *
+         * @tags SWRuntime
+         * @name Upload
+         * @summary Create a new runtime version
+         * @request POST:/api/v1/project/{projectUrl}/runtime/{runtimeName}/version/{versionName}/file
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        upload: (
+            projectUrl: string,
+            runtimeName: string,
+            versionName: string,
+            query: { uploadRequest: ClientRuntimeRequest },
+            data: { file: File },
+            params: RequestParams = {}
+        ) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/project/${projectUrl}/runtime/${runtimeName}/version/${versionName}/file`,
+                method: 'POST',
+                query: query,
+                body: data,
+                secure: true,
+                type: ContentType.FormData,
+                format: 'json',
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags Project
+         * @name ListProjectRole
+         * @summary List project roles
+         * @request GET:/api/v1/project/{projectUrl}/role
+         * @secure
+         * @response `200` `ResponseMessageListProjectRoleVO` ok
+         */
+        listProjectRole: (projectUrl: string, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageListProjectRoleVO, any>({
+                path: `/api/v1/project/${projectUrl}/role`,
+                method: 'GET',
+                secure: true,
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags Project
+         * @name AddProjectRole
+         * @summary Grant project role to a user
+         * @request POST:/api/v1/project/{projectUrl}/role
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        addProjectRole: (projectUrl: string, query: { userId: string; roleId: string }, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/project/${projectUrl}/role`,
+                method: 'POST',
+                query: query,
+                secure: true,
+                ...params,
+            }),
+
+        /**
          * @description Select a historical version of the model and revert the latest version of the current model to this version
          *
          * @tags Model
@@ -1373,6 +1712,35 @@ export class Api<SecurityDataType extends unknown> {
                 body: data,
                 secure: true,
                 type: ContentType.Json,
+                ...params,
+            }),
+
+        /**
+         * @description Create a new version of the swmp. The data resources can be selected by uploading the file package or entering the server path.
+         *
+         * @tags Model
+         * @name Upload1
+         * @summary Create a new swmp version
+         * @request POST:/api/v1/project/{projectUrl}/model/{modelName}/version/{versionName}/file
+         * @secure
+         * @response `200` `ResponseMessageString` ok
+         */
+        upload1: (
+            projectUrl: string,
+            modelName: string,
+            versionName: string,
+            query: { uploadRequest: ClientSWMPRequest },
+            data: { file: File },
+            params: RequestParams = {}
+        ) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/project/${projectUrl}/model/${modelName}/version/${versionName}/file`,
+                method: 'POST',
+                query: query,
+                body: data,
+                secure: true,
+                type: ContentType.FormData,
+                format: 'json',
                 ...params,
             }),
 
@@ -1522,129 +1890,88 @@ export class Api<SecurityDataType extends unknown> {
             }),
 
         /**
-         * @description Create a new version of the runtime. The data resources can be selected by uploading the file package or entering the server path.
-         *
-         * @tags SWRuntime
-         * @name Upload
-         * @summary Create a new runtime version
-         * @request POST:/api/v1/project/runtime/push
-         * @secure
-         * @response `200` `ResponseMessageString` ok
-         */
-        upload: (query: { uploadRequest: ClientRuntimeRequest }, data: { file: File }, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageString, any>({
-                path: `/api/v1/project/runtime/push`,
-                method: 'POST',
-                query: query,
-                body: data,
-                secure: true,
-                type: ContentType.FormData,
-                format: 'json',
-                ...params,
-            }),
-
-        /**
-         * @description Pull SWMP binary
-         *
-         * @tags Model
-         * @name PullModel
-         * @summary Pull SWMP binary
-         * @request GET:/api/v1/project/model
-         * @secure
-         * @response `200` `void` ok
-         */
-        pullModel: (query: { pullRequest: ClientSWMPRequest }, params: RequestParams = {}) =>
-            this.http.request<void, any>({
-                path: `/api/v1/project/model`,
-                method: 'GET',
-                query: query,
-                secure: true,
-                ...params,
-            }),
-
-        /**
-         * @description Create a new version of the swmp. The data resources can be selected by uploading the file package or entering the server path.
-         *
-         * @tags Model
-         * @name UploadModel
-         * @summary Create a new swmp version
-         * @request POST:/api/v1/project/model
-         * @secure
-         * @response `200` `ResponseMessageString` ok
-         */
-        uploadModel: (query: { uploadRequest: ClientSWMPRequest }, data: { file: File }, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageString, any>({
-                path: `/api/v1/project/model`,
-                method: 'POST',
-                query: query,
-                body: data,
-                secure: true,
-                type: ContentType.FormData,
-                format: 'json',
-                ...params,
-            }),
-
-        /**
-         * @description head for swmp info
-         *
-         * @tags Model
-         * @name HeadModel
-         * @summary head for swmp info
-         * @request HEAD:/api/v1/project/model
-         * @secure
-         * @response `200` `string` ok
-         */
-        headModel: (query: { queryRequest: ClientSWMPRequest }, params: RequestParams = {}) =>
-            this.http.request<string, any>({
-                path: `/api/v1/project/model`,
-                method: 'HEAD',
-                query: query,
-                secure: true,
-                format: 'json',
-                ...params,
-            }),
-
-        /**
-         * @description Create a new version of the swmp. The data resources can be selected by uploading the file package or entering the server path.
-         *
-         * @tags Model
-         * @name Upload1
-         * @summary Create a new swmp version
-         * @request POST:/api/v1/project/model/push
-         * @secure
-         * @response `200` `ResponseMessageString` ok
-         */
-        upload1: (query: { uploadRequest: ClientSWMPRequest }, data: { file: File }, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageString, any>({
-                path: `/api/v1/project/model/push`,
-                method: 'POST',
-                query: query,
-                body: data,
-                secure: true,
-                type: ContentType.FormData,
-                format: 'json',
-                ...params,
-            }),
-
-        /**
          * @description Create a new version of the dataset. The data resources can be selected by uploading the file package or entering the server path.
          *
          * @tags Dataset
          * @name UploadDs
          * @summary Create a new dataset version
-         * @request POST:/api/v1/project/dataset/push
+         * @request POST:/api/v1/project/{projectUrl}/dataset/{datasetName}/version/{versionName}/file
          * @secure
          * @response `200` `ResponseMessageUploadResult` ok
          */
-        uploadDs: (query: { uploadRequest: UploadRequest }, data: { file?: File }, params: RequestParams = {}) =>
+        uploadDs: (
+            projectUrl: string,
+            datasetName: string,
+            versionName: string,
+            query: { uploadRequest: UploadRequest },
+            data: { file?: File },
+            params: RequestParams = {}
+        ) =>
             this.http.request<ResponseMessageUploadResult, any>({
-                path: `/api/v1/project/dataset/push`,
+                path: `/api/v1/project/${projectUrl}/dataset/${datasetName}/version/${versionName}/file`,
                 method: 'POST',
                 query: query,
                 body: data,
                 secure: true,
                 type: ContentType.FormData,
                 format: 'json',
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags data-store-controller
+         * @name UpdateTable
+         * @request POST:/api/v1/datastore/updateTable
+         * @secure
+         * @response `200` `ResponseMessageString` OK
+         */
+        updateTable: (data: UpdateTableRequest, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageString, any>({
+                path: `/api/v1/datastore/updateTable`,
+                method: 'POST',
+                body: data,
+                secure: true,
+                type: ContentType.Json,
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags data-store-controller
+         * @name ScanTable
+         * @request POST:/api/v1/datastore/scanTable
+         * @secure
+         * @response `200` `ResponseMessageRecordListVO` OK
+         */
+        scanTable: (data: ScanTableRequest, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageRecordListVO, any>({
+                path: `/api/v1/datastore/scanTable`,
+                method: 'POST',
+                body: data,
+                secure: true,
+                type: ContentType.Json,
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags data-store-controller
+         * @name QueryTable
+         * @request POST:/api/v1/datastore/queryTable
+         * @secure
+         * @response `200` `ResponseMessageRecordListVO` OK
+         */
+        queryTable: (data: QueryTableRequest, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageRecordListVO, any>({
+                path: `/api/v1/datastore/queryTable`,
+                method: 'POST',
+                body: data,
+                secure: true,
+                type: ContentType.Json,
                 ...params,
             }),
 
@@ -1654,35 +1981,14 @@ export class Api<SecurityDataType extends unknown> {
          * @tags SWRuntime
          * @name HeadRuntime
          * @summary head for runtime info
-         * @request HEAD:/api/v1/project/runtime
+         * @request HEAD:/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}
          * @secure
-         * @response `200` `string` OK
+         * @response `200` `object` OK
          */
-        headRuntime: (query: { queryRequest: ClientRuntimeRequest }, params: RequestParams = {}) =>
-            this.http.request<string, any>({
-                path: `/api/v1/project/runtime`,
+        headRuntime: (projectUrl: string, runtimeUrl: string, versionUrl: string, params: RequestParams = {}) =>
+            this.http.request<object, any>({
+                path: `/api/v1/project/${projectUrl}/runtime/${runtimeUrl}/version/${versionUrl}`,
                 method: 'HEAD',
-                query: query,
-                secure: true,
-                format: 'json',
-                ...params,
-            }),
-
-        /**
-         * @description head for swds info
-         *
-         * @tags Dataset
-         * @name HeadDataset
-         * @summary head for swds info
-         * @request HEAD:/api/v1/project/dataset
-         * @secure
-         * @response `200` `string` ok
-         */
-        headDataset: (query: { uploadRequest: UploadRequest }, params: RequestParams = {}) =>
-            this.http.request<string, any>({
-                path: `/api/v1/project/dataset`,
-                method: 'HEAD',
-                query: query,
                 secure: true,
                 format: 'json',
                 ...params,
@@ -1708,6 +2014,25 @@ export class Api<SecurityDataType extends unknown> {
             }),
 
         /**
+         * @description Get token of any user for third party system integration, only super admin is allowed to do this
+         *
+         * @tags User
+         * @name UserToken
+         * @summary Get arbitrary user token
+         * @request GET:/api/v1/user/token/{userId}
+         * @secure
+         * @response `200` `string` ok
+         */
+        userToken: (userId: number, params: RequestParams = {}) =>
+            this.http.request<string, any>({
+                path: `/api/v1/user/token/${userId}`,
+                method: 'GET',
+                secure: true,
+                format: 'json',
+                ...params,
+            }),
+
+        /**
          * No description
          *
          * @tags User
@@ -1723,6 +2048,25 @@ export class Api<SecurityDataType extends unknown> {
                 method: 'GET',
                 secure: true,
                 format: 'json',
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags User
+         * @name GetCurrentUserRoles
+         * @summary Get the current user roles.
+         * @request GET:/api/v1/user/current/role
+         * @secure
+         * @response `200` `ResponseMessageListUserRoleVO` ok
+         */
+        getCurrentUserRoles: (query?: { projectUrl?: string }, params: RequestParams = {}) =>
+            this.http.request<ResponseMessageListUserRoleVO, any>({
+                path: `/api/v1/user/current/role`,
+                method: 'GET',
+                query: query,
+                secure: true,
                 ...params,
             }),
 
@@ -1787,6 +2131,25 @@ export class Api<SecurityDataType extends unknown> {
          * No description
          *
          * @tags System
+         * @name ListResourcePools
+         * @summary Get the list of resource pool
+         * @request GET:/api/v1/system/resourcePool
+         * @secure
+         * @response `200` `string` ok
+         */
+        listResourcePools: (params: RequestParams = {}) =>
+            this.http.request<string, any>({
+                path: `/api/v1/system/resourcePool`,
+                method: 'GET',
+                secure: true,
+                format: 'json',
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags System
          * @name ListAgent
          * @summary Get the list of agents
          * @request GET:/api/v1/system/agent
@@ -1797,26 +2160,6 @@ export class Api<SecurityDataType extends unknown> {
             this.http.request<PageInfo, any>({
                 path: `/api/v1/system/agent`,
                 method: 'GET',
-                query: query,
-                secure: true,
-                format: 'json',
-                ...params,
-            }),
-
-        /**
-         * No description
-         *
-         * @tags System
-         * @name DeleteAgent
-         * @summary remove offline agent
-         * @request DELETE:/api/v1/system/agent
-         * @secure
-         * @response `200` `string` ok
-         */
-        deleteAgent: (query: { serialNumber: string }, params: RequestParams = {}) =>
-            this.http.request<string, any>({
-                path: `/api/v1/system/agent`,
-                method: 'DELETE',
                 query: query,
                 secure: true,
                 format: 'json',
@@ -1839,6 +2182,24 @@ export class Api<SecurityDataType extends unknown> {
                 method: 'GET',
                 secure: true,
                 format: 'json',
+                ...params,
+            }),
+
+        /**
+         * No description
+         *
+         * @tags User
+         * @name ListRoles
+         * @summary List role enums
+         * @request GET:/api/v1/role/enums
+         * @secure
+         * @response `200` `ResponseMessageListRoleVO` ok
+         */
+        listRoles: (params: RequestParams = {}) =>
+            this.http.request<ResponseMessageListRoleVO, any>({
+                path: `/api/v1/role/enums`,
+                method: 'GET',
+                secure: true,
                 ...params,
             }),
 
@@ -1923,7 +2284,7 @@ export class Api<SecurityDataType extends unknown> {
         listRuntimeVersion: (
             projectUrl: string,
             runtimeUrl: string,
-            query?: { vName?: string; vTag?: string; pageNum?: number; pageSize?: number },
+            query?: { name?: string; tag?: string; pageNum?: number; pageSize?: number },
             params: RequestParams = {}
         ) =>
             this.http.request<ResponseMessagePageInfoRuntimeVersionVO, any>({
@@ -1932,6 +2293,24 @@ export class Api<SecurityDataType extends unknown> {
                 query: query,
                 secure: true,
                 format: 'json',
+                ...params,
+            }),
+
+        /**
+         * @description Pull file of a runtime version.
+         *
+         * @tags SWRuntime
+         * @name Pull
+         * @summary Pull file of a runtime version
+         * @request GET:/api/v1/project/{projectUrl}/runtime/{runtimeUrl}/version/{versionUrl}/file
+         * @secure
+         * @response `200` `void` ok
+         */
+        pull: (projectUrl: string, runtimeUrl: string, versionUrl: string, params: RequestParams = {}) =>
+            this.http.request<void, any>({
+                path: `/api/v1/project/${projectUrl}/runtime/${runtimeUrl}/version/${versionUrl}/file`,
+                method: 'GET',
+                secure: true,
                 ...params,
             }),
 
@@ -2024,6 +2403,24 @@ export class Api<SecurityDataType extends unknown> {
                 query: query,
                 secure: true,
                 format: 'json',
+                ...params,
+            }),
+
+        /**
+         * @description Create a new version of the swmp.
+         *
+         * @tags Model
+         * @name Pull1
+         * @summary Pull file of a model version
+         * @request GET:/api/v1/project/{projectUrl}/model/{modelUrl}/version/{versionUrl}/file
+         * @secure
+         * @response `200` `void` ok
+         */
+        pull1: (projectUrl: string, modelUrl: string, versionUrl: string, params: RequestParams = {}) =>
+            this.http.request<void, any>({
+                path: `/api/v1/project/${projectUrl}/model/${modelUrl}/version/${versionUrl}/file`,
+                method: 'GET',
+                secure: true,
                 ...params,
             }),
 
@@ -2211,7 +2608,7 @@ export class Api<SecurityDataType extends unknown> {
         listDatasetVersion: (
             projectUrl: string,
             datasetUrl: string,
-            query?: { vName?: string; vTag?: string; pageNum?: number; pageSize?: number },
+            query?: { name?: string; tag?: string; pageNum?: number; pageSize?: number },
             params: RequestParams = {}
         ) =>
             this.http.request<PageInfo, any>({
@@ -2224,79 +2621,27 @@ export class Api<SecurityDataType extends unknown> {
             }),
 
         /**
-         * @description Create a new version of the runtime. The data resources can be selected by uploading the file package or entering the server path.
+         * @description Pull SWDS uri file contents
          *
-         * @tags SWRuntime
-         * @name Pull
-         * @summary Create a new runtime version
-         * @request GET:/api/v1/project/runtime/pull
+         * @tags Dataset
+         * @name PullLinkContent
+         * @summary Pull SWDS uri file contents
+         * @request GET:/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/link
          * @secure
          * @response `200` `void` ok
          */
-        pull: (query: { pullRequest: ClientRuntimeRequest }, params: RequestParams = {}) =>
+        pullLinkContent: (
+            projectUrl: string,
+            datasetUrl: string,
+            versionUrl: string,
+            query: { uri: string; authName?: string },
+            params: RequestParams = {}
+        ) =>
             this.http.request<void, any>({
-                path: `/api/v1/project/runtime/pull`,
+                path: `/api/v1/project/${projectUrl}/dataset/${datasetUrl}/version/${versionUrl}/link`,
                 method: 'GET',
                 query: query,
                 secure: true,
-                ...params,
-            }),
-
-        /**
-         * @description List Runtime versions info.
-         *
-         * @tags SWRuntime
-         * @name ListRuntimeInfo
-         * @summary List Runtime versions info
-         * @request GET:/api/v1/project/runtime/list
-         * @secure
-         * @response `200` `ResponseMessageListRuntimeInfoVO` ok
-         */
-        listRuntimeInfo: (query?: { project?: string; name?: string }, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageListRuntimeInfoVO, any>({
-                path: `/api/v1/project/runtime/list`,
-                method: 'GET',
-                query: query,
-                secure: true,
-                ...params,
-            }),
-
-        /**
-         * @description Create a new version of the swmp. The data resources can be selected by uploading the file package or entering the server path.
-         *
-         * @tags Model
-         * @name Pull1
-         * @summary Create a new swmp version
-         * @request GET:/api/v1/project/model/pull
-         * @secure
-         * @response `200` `void` ok
-         */
-        pull1: (query: { pullRequest: ClientSWMPRequest }, params: RequestParams = {}) =>
-            this.http.request<void, any>({
-                path: `/api/v1/project/model/pull`,
-                method: 'GET',
-                query: query,
-                secure: true,
-                ...params,
-            }),
-
-        /**
-         * @description List SWMP versions.
-         *
-         * @tags Model
-         * @name ListModel1
-         * @summary List SWMP versions
-         * @request GET:/api/v1/project/model/list
-         * @secure
-         * @response `200` `ResponseMessageListSWModelPackageInfoVO` ok
-         */
-        listModel1: (query?: { project?: string; name?: string }, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageListSWModelPackageInfoVO, any>({
-                path: `/api/v1/project/model/list`,
-                method: 'GET',
-                query: query,
-                secure: true,
-                format: 'json',
                 ...params,
             }),
 
@@ -2306,39 +2651,22 @@ export class Api<SecurityDataType extends unknown> {
          * @tags Dataset
          * @name PullDs
          * @summary Pull SWDS files
-         * @request GET:/api/v1/project/dataset/pull
+         * @request GET:/api/v1/project/{projectUrl}/dataset/{datasetUrl}/version/{versionUrl}/file
          * @secure
-         * @response `200` `(string)[]` ok
+         * @response `200` `void` ok
          */
         pullDs: (
-            query: { project: string; name: string; version: string; part_name?: string },
+            projectUrl: string,
+            datasetUrl: string,
+            versionUrl: string,
+            query?: { part_name?: string },
             params: RequestParams = {}
         ) =>
-            this.http.request<string[], any>({
-                path: `/api/v1/project/dataset/pull`,
+            this.http.request<void, any>({
+                path: `/api/v1/project/${projectUrl}/dataset/${datasetUrl}/version/${versionUrl}/file`,
                 method: 'GET',
                 query: query,
                 secure: true,
-                ...params,
-            }),
-
-        /**
-         * @description List SWDS versions.
-         *
-         * @tags Dataset
-         * @name ListDs
-         * @summary List SWDS versions
-         * @request GET:/api/v1/project/dataset/list
-         * @secure
-         * @response `200` `ResponseMessageListSWDatasetInfoVO` ok
-         */
-        listDs: (query?: { project?: string; name?: string }, params: RequestParams = {}) =>
-            this.http.request<ResponseMessageListSWDatasetInfoVO, any>({
-                path: `/api/v1/project/dataset/list`,
-                method: 'GET',
-                query: query,
-                secure: true,
-                format: 'json',
                 ...params,
             }),
 

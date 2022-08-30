@@ -160,7 +160,6 @@ class StandaloneEvaluationJob(EvaluationJob):
                 uri=runtime_uri,
                 target=ee.run,
                 args=(),
-                runtime_restore=kw.get("runtime_restore", False),
             ).run()
         else:
             ee.run()

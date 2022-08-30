@@ -3,8 +3,6 @@ from __future__ import annotations
 import sys
 import json
 import typing as t
-from copy import deepcopy
-from enum import Enum
 from types import TracebackType
 from pathlib import Path
 
@@ -25,6 +23,7 @@ from starwhale.base.type import (
     DataOriginType,
     ObjectStoreType,
 )
+from starwhale.base.mixin import ASDictMixin, _do_asdict_convert
 from starwhale.utils.error import (
     NotFoundError,
     NoSupportError,
@@ -37,7 +36,7 @@ from starwhale.core.dataset.store import DatasetStorage
 from .type import MIMEType
 
 
-class TabularDatasetRow:
+class TabularDatasetRow(ASDictMixin):
     def __init__(
         self,
         id: int,
@@ -67,6 +66,9 @@ class TabularDatasetRow:
         # TODO: add non-starwhale object store related fields, such as address, authority
         # TODO: add data uri crc for versioning
         # TODO: support user custom annotations
+
+    def __eq__(self, o: object) -> bool:
+        return self.__dict__ == o.__dict__
 
     def _parse_label(self, label: t.Any) -> str:
         # TODO: add more label type-parse
@@ -108,13 +110,9 @@ class TabularDatasetRow:
             f"origin-[{self.data_origin}], object store-{self.object_store_type}"
         )
 
-    def asdict(self) -> t.Dict[str, t.Union[str, bytes, int]]:
-        d = deepcopy(self.__dict__)
-        d.pop("extra_kw", None)
-        d.update(self.extra_kw)
-        for k, v in d.items():
-            if isinstance(v, Enum):
-                d[k] = v.value
+    def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
+        d = super().asdict(ignore_keys=ignore_keys or ["extra_kw"])
+        d.update(_do_asdict_convert(self.extra_kw))
         return d
 
 

@@ -76,6 +76,11 @@ public class SwdsManager implements BundleAccessor, BundleVersionAccessor, TagAc
     }
 
     @Override
+    public BundleVersionEntity findVersionById(Long bundleVersionId) {
+        return datasetVersionMapper.getVersionById(bundleVersionId);
+    }
+
+    @Override
     public BundleVersionEntity findVersionByNameAndBundleId(String name, Long bundleId) {
         return datasetVersionMapper.findByDSIdAndVersionName(bundleId, name);
     }
