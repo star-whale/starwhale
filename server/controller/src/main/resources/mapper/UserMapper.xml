@@ -20,7 +20,10 @@
                u.user_pwd_salt,
                u.user_enabled,
                u.created_time as user_created_time,
-               u.modified_time as user_modified_time
+               u.modified_time as user_modified_time,
+               (select if((select 1 from information_schema.tables where table_schema='starwhale' and table_name ='register_info'),
+                          (select email from register_info where user_id = u.id),
+                          null)) as user_email
         from user_info as u
         where u.id = #{id}
     </select>
@@ -32,7 +35,10 @@
                u.user_pwd_salt,
                u.user_enabled,
                u.created_time as user_created_time,
-               u.modified_time as user_modified_time
+               u.modified_time as user_modified_time,
+               (select if((select 1 from information_schema.tables where table_schema='starwhale' and table_name ='register_info'),
+                          (select email from register_info where user_id = u.id),
+                          null)) as user_email
         from user_info as u
         where u.user_name = #{userName}
     </select>
