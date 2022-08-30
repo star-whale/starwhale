@@ -11,8 +11,7 @@ ulimit -n 65535 || true
 CONDA_BIN="/opt/miniconda3/bin"
 WORKDIR=${SW_SWMP_WORKDIR:=/opt/starwhale/swmp}
 PIP_CACHE_DIR=${SW_PIP_CACHE_DIR:=/root/.cache/pip}
-_MANIFEST_RUNTIME=$(cat ${WORKDIR}/_manifest.yaml| grep "python:" | awk '{print $2}' | awk -F '.' '{print $1"."$2}') || true
-_MODEL_RUNTIME=$(cat ${WORKDIR}/model.yaml | grep 'runtime' | awk '{print $2}') || true
+_MANIFEST_RUNTIME=$(yq -r .environment.python ${WORKDIR}/_manifest.yaml) || true
 VERBOSE="-vvvv"
 STEP=${SW_TASK_STEP:-""}
 TASK_INDEX=${SW_TASK_INDEX:-0}
@@ -70,9 +69,6 @@ pre_check() {
 
 set_python() {
     _RUNTIME="python${_MANIFEST_RUNTIME}"
-    if [ "$_RUNTIME" = "" ]; then
-      _RUNTIME="${_MODEL_RUNTIME}"
-    fi
 
     echo "**** DETECT RUNTIME: ${_RUNTIME}"
 
