@@ -1,7 +1,7 @@
 name: Release Starwhale base Docker Image
 
 on:
-  pull_request:
+  push:
     branches:
       - main
 
