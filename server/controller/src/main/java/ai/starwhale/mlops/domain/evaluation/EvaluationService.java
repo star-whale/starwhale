@@ -33,6 +33,7 @@ import ai.starwhale.mlops.domain.job.converter.JobConvertor;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
+import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.project.ProjectManager;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.resulting.ResultQuerier;
@@ -78,6 +79,9 @@ public class EvaluationService {
 
     @Resource
     private ResultQuerier resultQuerier;
+
+    @Resource
+    private JobStatusMachine jobStatusMachine;
 
     private static final Map<Long, SummaryVO> summaryCache = new ConcurrentHashMap<>();
 
@@ -159,7 +163,11 @@ public class EvaluationService {
                 .value(value)
                 .build());
         }*/
-        summaryCache.put(entity.getId(), summaryVO);
+
+        // only cache the jobs which have the final status
+        if (jobStatusMachine.isFinal(entity.getJobStatus())) {
+            summaryCache.put(entity.getId(), summaryVO);
+        }
         return summaryVO;
     }
 
