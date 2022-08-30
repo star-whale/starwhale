@@ -115,6 +115,9 @@ export function getRocAucConfig(title = '', labels: string[], data: Record<strin
     return rocAucData
 }
 
+// columnTypes: {label_6: "FLOAT64", label_5: "FLOAT64", label_4: "FLOAT64", label_3: "FLOAT64", label_9: "FLOAT64",…}
+// records: [0: {label_6: "3f1a378ebbf957e5", label_5: "0", label_4: "0", label_3: "0", label_9: "0",…}]
+
 export function getHeatmapConfig(title = '', labels: string[], heatmap: number[][]) {
     const nums = labels.length
     let layout = {

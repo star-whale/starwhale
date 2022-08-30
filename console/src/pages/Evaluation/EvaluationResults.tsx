@@ -1,5 +1,5 @@
 import LabelsIndicator from '@/components/Indicator/LabelsIndicator'
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
@@ -11,14 +11,27 @@ import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
 import SummaryIndicator from '@/components/Indicator/SummaryIndicator'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
-import { tableNameOfConfusionMatrix } from '@/domain/datastore/utils'
+import { tableNameOfConfusionMatrix, tableNameOfRocAuc } from '@/domain/datastore/utils'
 import { useJob } from '@/domain/job/hooks/useJob'
-import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
+import { useQueryDatasetList, useScanDatastore } from '@/domain/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'
+import { useParseConfusionMatrix } from '@/domain/datastore/hooks/useParseDatastore'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
+
+function Heatmap({ labels, binarylabel }: any) {
+    const [t] = useTranslation()
+    const heatmapData = getHeatmapConfig(t('Confusion Matrix'), labels, binarylabel)
+    return (
+        <Card outTitle={t('Confusion Matrix')} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
+            <React.Suspense fallback={<BusyPlaceholder />}>
+                <PlotlyVisualizer data={heatmapData} />
+            </React.Suspense>
+        </Card>
+    )
+}
 
 function EvaluationResults() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
@@ -33,7 +46,23 @@ function EvaluationResults() {
     }, [project, job])
 
     const resultTable = useQueryDatasetList(resultTableName, { pageNum: 0, pageSize: 1000 })
-    console.log(resultTable)
+    // console.log(project?.name, resultTableName, resultTable)
+    const { labels, binarylabel } = useParseConfusionMatrix(resultTable.data)
+
+    const tables = useScanDatastore({
+        tables: [
+            { tableName: tableNameOfConfusionMatrix(project?.name as string, job?.uuid ?? '') },
+            { tableName: tableNameOfRocAuc(project?.name as string, job?.uuid ?? '') },
+        ],
+        start: 0,
+        limit: 1000,
+    })
+
+    useEffect(() => {
+        if (job?.uuid && project?.name) {
+            tables.refetch()
+        }
+    }, [project?.name, job?.uuid])
 
     const [t] = useTranslation()
 
@@ -53,7 +82,7 @@ function EvaluationResults() {
                     break
                 }
                 case INDICATORTYPE.CONFUSION_MATRIX: {
-                    const heatmapData = getHeatmapConfig(k, _.keys(v?.binarylabel), v?.binarylabel)
+                    const heatmapData = getHeatmapConfig(k, labels, v?.binarylabel)
                     outTitle = t('Confusion Matrix')
                     children = (
                         <React.Suspense fallback={<BusyPlaceholder />}>
@@ -163,6 +192,7 @@ function EvaluationResults() {
                 }}
             >
                 {indicators}
+                <Heatmap labels={labels} binarylabel={binarylabel} />
             </div>
         </div>
     )

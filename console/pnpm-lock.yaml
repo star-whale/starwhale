@@ -171,7 +171,7 @@ specifiers:
   xterm: ^4.14.1
   xterm-addon-fit: ^0.5.0
   xterm-addon-web-links: ^0.4.0
-  zustand: ^4.0.0-rc.1
+  zustand: v4.1.1
 
 dependencies:
   '@faker-js/faker': 6.3.1
@@ -276,7 +276,7 @@ dependencies:
   xterm: 4.19.0
   xterm-addon-fit: 0.5.0_xterm@4.19.0
   xterm-addon-web-links: 0.4.0_xterm@4.19.0
-  zustand: 4.0.0_immer@9.0.15+react@17.0.2
+  zustand: 4.1.1_immer@9.0.15+react@17.0.2
 
 devDependencies:
   '@babel/core': 7.18.10
@@ -23565,8 +23565,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /zustand/4.0.0_immer@9.0.15+react@17.0.2:
-    resolution: {integrity: sha512-OrsfQTnRXF1LZ9/vR/IqN9ws5EXUhb149xmPjErZnUrkgxS/gAHGy2dPNIVkVvoxrVe1sIydn4JjF0dYHmGeeQ==}
+  /zustand/4.1.1_immer@9.0.15+react@17.0.2:
+    resolution: {integrity: sha512-h4F3WMqsZgvvaE0n3lThx4MM81Ls9xebjvrABNzf5+jb3/03YjNTSgZXeyrvXDArMeV9untvWXRw1tY+ntPYbA==}
     engines: {node: '>=12.7.0'}
     peerDependencies:
       immer: '>=9.0'

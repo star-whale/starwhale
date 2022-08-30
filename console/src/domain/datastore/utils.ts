@@ -1,4 +1,5 @@
 import qs from 'qs'
+import { RecordListVO } from './schemas/datastore'
 
 const VERSION_PREFIX_CNT = 2
 
@@ -35,6 +36,10 @@ export function tableNameOfConfusionMatrix(projectName: string, evaluationUuid: 
         0,
         VERSION_PREFIX_CNT
     )}/${evaluationUuid}/confusion_matrix/binarylabel`
+}
+
+export function tableNameOfRocAuc(projectName: string, evaluationUuid: string) {
+    return `project/${projectName}/eval/${evaluationUuid.substring(0, VERSION_PREFIX_CNT)}/${evaluationUuid}/roc_auc/0`
 }
 
 export function tableNameOfSummary(projectName: string) {

@@ -216,6 +216,9 @@ const useStyles = createUseStyles({
     },
     userAvatarInfo: {
         flex: 1,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     userAvatarName: {
         fontSize: '14px',

@@ -16,7 +16,8 @@ import { useFetchEvaluations } from '@/domain/evaluation/hooks/useFetchEvaluatio
 import { ColumnT } from '@/components/data-table/types'
 import _ from 'lodash'
 import { useStyletron } from 'baseui'
-import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@/components/data-table/store'
+import { IStore, ITableState, useEvaluationCompareStore, useEvaluationStore } from '@/components/data-table/store'
+import { StoreProvider, useContextStore } from '@/components/data-table/storeContext'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
@@ -55,6 +56,8 @@ export default function EvaluationListCard() {
     )
 
     const store = useEvaluationStore()
+
+    // console.log(useContextStore('eva'))
 
     const summaryTableName = React.useMemo(() => {
         if (!project?.name) return ''
@@ -357,17 +360,19 @@ export default function EvaluationListCard() {
                     </Button>
                 }
             >
-                <Table
-                    useStore={useEvaluationStore}
-                    searchable
-                    filterable
-                    columnable
-                    viewable
-                    batchActions={batchAction}
-                    isLoading={evaluationsInfo.isLoading}
-                    columns={$columnsWithAttrs}
-                    data={$data}
-                />
+                <StoreProvider initState={{}}>
+                    <Table
+                        useStore={useEvaluationStore}
+                        searchable
+                        filterable
+                        columnable
+                        viewable
+                        batchActions={batchAction}
+                        isLoading={evaluationsInfo.isLoading}
+                        columns={$columnsWithAttrs}
+                        data={$data}
+                    />
+                </StoreProvider>
                 <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                     <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                     <ModalBody>
