@@ -12,7 +12,11 @@ from starwhale.utils import console
 from starwhale.consts import PythonRunEnv
 from starwhale.base.uri import URI
 from starwhale.base.type import URIType, InstanceType
-from starwhale.utils.venv import guess_python_env_mode
+from starwhale.utils.venv import (
+    guess_python_env_mode,
+    check_valid_venv_prefix,
+    check_valid_conda_prefix,
+)
 from starwhale.utils.error import NotFoundError, NoSupportError
 from starwhale.utils.process import check_call
 
@@ -87,7 +91,7 @@ class Process:
         target: t.Callable,
         args: t.Tuple = (),
         kwargs: t.Dict[str, t.Any] = {},
-        runtime_restore: bool = False,
+        force_restore: bool = False,
     ) -> Process:
         _uri: URI
         if isinstance(uri, str):
@@ -99,16 +103,18 @@ class Process:
             raise NoSupportError("run process with cloud instance uri")
 
         runtime = StandaloneRuntime(_uri)
-        if runtime_restore:
+        venv_prefix = runtime.store.export_dir / PythonRunEnv.VENV
+        conda_prefix = runtime.store.export_dir / PythonRunEnv.CONDA
+        has_restored_runtime = check_valid_venv_prefix(
+            venv_prefix
+        ) or check_valid_conda_prefix(conda_prefix)
+
+        if force_restore or not has_restored_runtime:
             console.print(f":snail: start to restore runtime: {uri}")
             if not runtime.store.manifest_path.exists():
                 runtime.extract(force=True)
-
             StandaloneRuntime.restore(runtime.store.snapshot_workdir, verbose=False)
 
-        venv_prefix = runtime.store.export_dir / PythonRunEnv.VENV
-        conda_prefix = runtime.store.export_dir / PythonRunEnv.CONDA
-        prefix = Path()
         if venv_prefix.exists():
             prefix = venv_prefix
         elif conda_prefix.exists():

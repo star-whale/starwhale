@@ -59,7 +59,6 @@ class ModelTermView(BaseTermView):
         step: str = "",
         task_index: int = 0,
         runtime_uri: str = "",
-        runtime_restore: bool = False,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
@@ -84,7 +83,6 @@ class ModelTermView(BaseTermView):
                     task_index,
                 ),
                 kwargs={"yaml_name": yaml_name, "kw": kw},
-                runtime_restore=runtime_restore,
             ).run()
         else:
             StandaloneModel.eval_user_handler(
@@ -115,13 +113,24 @@ class ModelTermView(BaseTermView):
 
     @classmethod
     def build(
-        cls, workdir: str, project: str, yaml_name: str = DefaultYAMLName.MODEL
+        cls,
+        workdir: str,
+        project: str,
+        yaml_name: str = DefaultYAMLName.MODEL,
+        runtime_uri: str = "",
     ) -> None:
         _model_uri = cls.prepare_build_bundle(
             workdir, project, yaml_name, URIType.MODEL
         )
         _m = Model.get_model(_model_uri)
-        _m.build(Path(workdir), yaml_name)
+        if runtime_uri:
+            RuntimeProcess.from_runtime_uri(
+                uri=runtime_uri,
+                target=_m.build,
+                args=(Path(workdir), yaml_name),
+            ).run()
+        else:
+            _m.build(Path(workdir), yaml_name)
 
     @classmethod
     def copy(cls, src_uri: str, dest_uri: str, force: bool = False) -> None:

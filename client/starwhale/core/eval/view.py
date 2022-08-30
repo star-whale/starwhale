@@ -254,7 +254,6 @@ class JobTermView(BaseTermView):
         use_docker: bool = False,
         step: str = "",
         task_index: int = 0,
-        runtime_restore: bool = False,
     ) -> None:
         _project_uri = URI(project_uri, expected_type=URIType.PROJECT)
         ok, reason = EvaluationJob.run(
@@ -268,7 +267,6 @@ class JobTermView(BaseTermView):
             resource=resource,
             gencmd=gencmd,
             use_docker=use_docker,
-            runtime_restore=runtime_restore,
             step=step,
             task_index=task_index,
         )
