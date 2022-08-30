@@ -1,7 +1,11 @@
+import time
+import typing as t
+import concurrent.futures
 from typing import List, Optional
 from pathlib import Path
 
 from loguru import logger
+from typing_extensions import Protocol
 
 from starwhale.utils.load import (
     load_cls,
@@ -9,7 +13,7 @@ from starwhale.utils.load import (
     get_func_from_module,
     get_func_from_object,
 )
-from starwhale.api._impl.job import Context
+from starwhale.api._impl.job import Step, Context
 
 
 class STATUS:
@@ -21,7 +25,9 @@ class STATUS:
 
 
 class TaskResult:
-    def __init__(self, task_id: int, status: str, exception: Optional[Exception] = None):
+    def __init__(
+        self, task_id: int, status: str, exception: Optional[Exception] = None
+    ):
         self.task_id = task_id
         self.status = status
         self.exception = exception
@@ -40,7 +46,12 @@ class StepResult:
         return STATUS.SUCCESS if _success else STATUS.FAILED
 
 
-class Task:
+class BaseExecutor(Protocol):
+    def execute(self) -> t.Any:
+        ...
+
+
+class TaskExecutor:
     def __init__(
         self,
         index: int,
@@ -54,7 +65,7 @@ class Task:
         self.status = status
         self.module = module
         self.work_dir = workdir
-        self.exception = ""
+        self.exception: Optional[Exception] = None
 
     def execute(self) -> TaskResult:
         """
@@ -95,3 +106,78 @@ class Task:
             return TaskResult(
                 task_id=self.index, status=self.status, exception=self.exception
             )
+
+
+class StepExecutor:
+    def __init__(
+        self,
+        step: Step,
+        project: str,
+        version: str,
+        module: str,
+        workdir: Path,
+        dataset_uris: t.List[str],
+        kw: t.Dict[str, t.Any] = {},
+    ) -> None:
+        self.step = step
+        self.project = project
+        self.dataset_uris = dataset_uris
+        self.module = module
+        self.workdir = workdir
+        self.version = version
+        self.kw = kw
+
+    def execute(self) -> StepResult:
+        logger.debug(f"start execute step:{self.step}")
+        processor = MultiThreadProcessor(
+            self.step.step_name, self.step.concurrency, self._split_tasks()
+        )
+        task_results = processor.exec()
+        logger.debug(f"finish execute step:{self.step}")
+        return StepResult(step_name=self.step.step_name, task_results=task_results)
+
+    def _split_tasks(self) -> t.List[BaseExecutor]:
+        return list(
+            TaskExecutor(
+                index=index,
+                context=Context(
+                    project=self.project,
+                    version=self.version,
+                    step=self.step.step_name,
+                    total=self.step.task_num,
+                    index=index,
+                    dataset_uris=self.dataset_uris,
+                    workdir=self.workdir,
+                    kw=self.kw,
+                ),
+                status=STATUS.INIT,
+                module=self.module,
+                workdir=self.workdir,
+            )
+            for index in range(self.step.task_num)
+        )
+
+
+class MultiThreadProcessor:
+    def __init__(
+        self,
+        name: str,
+        concurrency: int,
+        executors: t.List[BaseExecutor],
+    ) -> None:
+        self.name = name
+        self.concurrency = concurrency
+        self.executors = executors
+
+    def exec(self) -> t.List[t.Any]:
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=self.concurrency
+        ) as pool:
+            start_time = time.time()
+            futures = [pool.submit(executor.execute) for executor in self.executors]
+            _results: t.List[t.Any] = list(
+                future.result() for future in concurrent.futures.as_completed(futures)
+            )
+            exec_time = time.time() - start_time
+            logger.debug(f"execute:{self.name} time:{exec_time}")
+        return _results

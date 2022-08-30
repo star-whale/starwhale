@@ -269,23 +269,25 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             steps=_steps,
             kw=kw,
         )
+        _status = STATUS.START
         try:
             if not step:
-                _scheduler.schedule()
+                _step_results = _scheduler.schedule()
             else:
-                _scheduler.schedule_single_task(step, task_index)
+                _step_results = [_scheduler.schedule_single_task(step, task_index)]
+
+            _status = (
+                STATUS.SUCCESS
+                if all([_rt.status == STATUS.SUCCESS for _rt in _step_results])
+                else STATUS.FAILED
+            )
+
+            logger.debug(f"job execute info:{_step_results}")
         except Exception as e:
-            _manifest["status"] = STATUS.FAILED
+            _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
             raise
         finally:
-            _status = True
-
-            _step_results = _scheduler.get_results()
-            logger.debug(f"job execute info:{_step_results}")
-
-            _status = all([_rt.status == STATUS.SUCCESS for _rt in _step_results])
-
             _manifest.update(
                 {
                     **dict(
@@ -294,7 +296,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         model=_model_config.model[0],
                         model_dir=str(workdir),
                         datasets=list(dataset_uris),
-                        status=STATUS.SUCCESS if _status else STATUS.FAILED,
+                        status=_status,
                         finished_at=now_str(),
                     ),
                     **kw,
@@ -303,9 +305,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             _f = _run_dir / DEFAULT_MANIFEST_NAME
             ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
-            console.print(
-                f":100: finish run, {STATUS.SUCCESS if _status else STATUS.FAILED}!"
-            )
+            console.print(f":clap: finish run, {_status}!")
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()

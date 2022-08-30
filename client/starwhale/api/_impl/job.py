@@ -2,7 +2,7 @@ import copy
 import typing as t
 from pathlib import Path
 from collections import defaultdict
-import networkx as nx
+
 import yaml
 from loguru import logger
 
@@ -190,7 +190,6 @@ class Parser:
         checks = []
         logger.debug(f"jobs:{jobs}")
         for name, steps in jobs.items():
-            graph = nx.DiGraph()
             all_steps = []
             needs = []
             for _step in steps:

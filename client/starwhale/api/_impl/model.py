@@ -297,6 +297,9 @@ class PipelineHandler(metaclass=ABCMeta):
         dataset_row_start, dataset_row_end = calculate_index(
             _dataset.summary().rows, self.context.total, self.context.index
         )
+        self._sw_logger.debug(
+            f"step:{self.context.step}, ds start from:{dataset_row_start} to:{dataset_row_end}"
+        )
 
         _data_loader = get_data_loader(
             dataset_uri=_dataset_uri,

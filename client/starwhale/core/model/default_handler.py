@@ -22,7 +22,7 @@ def _get_cls(src_dir: Path) -> Any:
     return _cls
 
 
-@step()
+@step(concurrency=2, task_num=5)
 def ppl(context: Context) -> None:
     logger.debug(f"workdir : {context.workdir}")
     _cls = _get_cls(context.workdir)
