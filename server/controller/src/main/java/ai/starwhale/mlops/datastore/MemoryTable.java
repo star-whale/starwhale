@@ -30,7 +30,8 @@ public interface MemoryTable {
                      TableQueryFilter filter,
                      int start,
                      int limit,
-                     boolean keepNone);
+                     boolean keepNone,
+                     boolean rawResult);
 
     TableScanIterator scan(
             Map<String, String> columns,
@@ -38,5 +39,6 @@ public interface MemoryTable {
             boolean startInclusive,
             String end,
             boolean endInclusive,
-            boolean keepNone);
+            boolean keepNone,
+            boolean rawResult);
 }

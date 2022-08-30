@@ -442,6 +442,20 @@ public class DataStoreControllerTest {
                         put("b", "4");
                         put("x", null);
                     }})));
+
+            this.req.setRawResult(true);
+            resp = DataStoreControllerTest.this.controller.queryTable(this.req);
+            assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
+                    is(Map.of("k", ColumnType.INT32, "b", ColumnType.INT32, "x", ColumnType.INT32)));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                    is(List.of(new HashMap<>() {{
+                        put("k", "1");
+                        put("b", "4");
+                        put("x", null);
+                    }})));
         }
 
         @Test
@@ -839,6 +853,17 @@ public class DataStoreControllerTest {
             assertThat("test",
                     Objects.requireNonNull(resp.getBody()).getData().getRecords(),
                     is(List.of(Map.of("k", "1", "b", "1", "a", "10"))));
+            assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("1"));
+
+            this.req.setRawResult(true);
+            resp = DataStoreControllerTest.this.controller.scanTable(this.req);
+            assertThat("test", resp.getStatusCode().is2xxSuccessful(), is(true));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getColumnTypes(),
+                    is(Map.of("k", ColumnType.INT32, "a", ColumnType.INT32, "b", ColumnType.INT32)));
+            assertThat("test",
+                    Objects.requireNonNull(resp.getBody()).getData().getRecords(),
+                    is(List.of(Map.of("k", "1", "b", "1", "a", "16"))));
             assertThat("test", Objects.requireNonNull(resp.getBody()).getData().getLastKey(), is("1"));
         }
 

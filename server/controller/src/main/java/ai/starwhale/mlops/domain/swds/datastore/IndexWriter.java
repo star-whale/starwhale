@@ -27,6 +27,9 @@ import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,8 +39,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 /**
  * write index to DataStore
@@ -100,7 +101,7 @@ public class IndexWriter {
         indexItem.entrySet().stream().map(entry->{
             String k = entry.getKey();
             Object v = entry.getValue();
-            return new RecordValueDesc(k,tableSchemaMap.get(k).encode(v));
+            return new RecordValueDesc(k,tableSchemaMap.get(k).encode(v, false));
         }).collect(Collectors.toList());
         return new RecordDesc(values);
     }
