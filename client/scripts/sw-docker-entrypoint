@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
 set -e
+
+if [ "${SW_TASK_DISABLE_DEBUG}" != "1" ]; then
+    set -x
+fi
+
 ulimit -n 65535 || true
 
 CONDA_BIN="/opt/miniconda3/bin"
@@ -71,7 +76,7 @@ set_python() {
 
     echo "**** DETECT RUNTIME: ${_RUNTIME}"
 
-    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] || [ "$_RUNTIME" = "python3.10"] ; then
+    if [ "$_RUNTIME" = "python3.7" ] || [ "$_RUNTIME" = "python3.9" ] || [ "$_RUNTIME" = "python3.10" ] ; then
         _update_python_alter "$_RUNTIME"
     else
         _update_python_alter "python3.8"
