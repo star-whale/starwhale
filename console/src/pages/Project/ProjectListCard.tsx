@@ -27,7 +27,7 @@ type IProjectCardProps = {
 const useCardStyles = createUseStyles({
     card: {
         'display': 'flex',
-        'height': '116px',
+        'height': '120px',
         'gap': '6px',
         'background': '#FFFFFF',
         'border': '1px solid #E2E7F0',
@@ -59,6 +59,14 @@ const useCardStyles = createUseStyles({
     },
     rowEnd: {
         marginLeft: 'auto',
+    },
+    name: {
+        textOverflow: 'ellipsis',
+        display: '-webkit-box',
+        WebkitLineClamp: 1,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        flexBasis: '80%',
     },
     description: {
         display: 'flex',
@@ -101,9 +109,11 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
     return (
         <div className={styles.card}>
             <div className={styles.row}>
-                <TextLink to={`/projects/${project.id}`} style={{ width: '80%', fontWeight: 'bold' }}>
-                    {[project.owner?.name, project.name].join('/')}
-                </TextLink>
+                <div className={styles.name}>
+                    <TextLink to={`/projects/${project.id}`} style={{ fontWeight: 'bold' }}>
+                        {[project.owner?.name, project.name].join('/')}
+                    </TextLink>
+                </div>
                 <div
                     className={css({
                         display: 'flex',
@@ -142,7 +152,9 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         <IconLink
                             to={`/projects/${project.id}`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
-                            tooltip={`${t('Evaluations')}:${project?.statistics.evaluationCounts}`}
+                            tooltip={{
+                                content: `${t('Evaluations')}:${project?.statistics.evaluationCounts}`,
+                            }}
                         >
                             <IconFont
                                 type='evaluation'
@@ -156,7 +168,9 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         <IconLink
                             to={`/projects/${project.id}`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
-                            tooltip={`${t('Datasets')}:${project?.statistics.datasetCounts}`}
+                            tooltip={{
+                                content: `${t('Datasets')}:${project?.statistics.datasetCounts}`,
+                            }}
                         >
                             <IconFont
                                 type='dataset'
@@ -170,7 +184,9 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         <IconLink
                             to={`/projects/${project.id}`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
-                            tooltip={`${t('Models')}:${project?.statistics.modelCounts}`}
+                            tooltip={{
+                                content: `${t('Models')}:${project?.statistics.modelCounts}`,
+                            }}
                         >
                             <IconFont
                                 type='model'
@@ -184,7 +200,9 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         <IconLink
                             to={`/projects/${project.id}`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
-                            tooltip={`${t('Members')}:${project?.statistics.memberCounts}`}
+                            tooltip={{
+                                content: `${t('Members')}:${project?.statistics.memberCounts}`,
+                            }}
                         >
                             <IconFont
                                 type='a-managemember'
@@ -201,7 +219,12 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         gap: '12px',
                     }}
                 >
-                    <IconLink to={`/projects/${project.id}/members`} tooltip={t('Manage Member')}>
+                    <IconLink
+                        to={`/projects/${project.id}/members`}
+                        tooltip={{
+                            content: t('Manage Member'),
+                        }}
+                    >
                         <IconFont type='setting' size={12} style={{ color: 'rgba(2,16,43,0.60)' }} />
                     </IconLink>
                     <StatefulTooltip content={t('edit sth', [t('Project')])} placement='top'>

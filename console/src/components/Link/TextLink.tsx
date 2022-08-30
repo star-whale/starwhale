@@ -2,20 +2,21 @@ import React from 'react'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import BaseLink, { ILinkProps } from './Link'
+import { useStyletron } from 'baseui'
 
 const useLinkStyles = createUseStyles({
     link: {
-        display: 'flex',
+        display: 'inline-block',
         textDecoration: 'none',
+        flex: 1,
+        width: '100%',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
     },
     text: {
-        'display': 'flex',
-        'justifyContent': 'center',
-        'alignItems': 'center',
+        'display': 'initial',
         'fontSize': '14px',
-        // 'fontWeight': 'bold',
-        // 'color': '#02102B',
-        // 'color': 'inherit',
         'color': 'rgb(2, 16, 43)',
         '&:hover': {
             textDecoration: 'underline',
@@ -24,12 +25,15 @@ const useLinkStyles = createUseStyles({
     },
 })
 
-export default function TextLink({ children, className, ...rest }: ILinkProps) {
+export default function TextLink({ children, className, style, ...rest }: ILinkProps) {
     const styles = useLinkStyles()
+    const [css] = useStyletron()
 
     return (
-        <BaseLink {...rest}>
-            <p className={cn(styles.text, className)}>{children}</p>
+        <BaseLink className={styles.link} {...rest}>
+            <p className={cn(styles.text, className)} style={style}>
+                {children}
+            </p>
         </BaseLink>
     )
 }

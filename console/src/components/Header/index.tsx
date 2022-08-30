@@ -232,7 +232,9 @@ export default function Header() {
 
             {currentUser && (
                 <div className={styles.systemWrapper}>
-                    <TextLink to='/projects'>{t('Project')}</TextLink>
+                    <TextLink to='/projects' style={{ color: '#FFF' }}>
+                        {t('Project')}
+                    </TextLink>
                 </div>
             )}
             <div style={{ flexGrow: 1 }} />

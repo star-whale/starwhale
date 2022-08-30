@@ -30,7 +30,7 @@ const useBaseSideBarStyles = createUseStyles({
         backgroundColor: '#F7F8FA',
         color: '#02102B',
         display: 'flex',
-        gap: 14,
+        gap: 8,
         fontSize: '14px',
         placeItems: 'center',
         padding: '8px 26px 8px 26px',
@@ -153,15 +153,18 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                         paddingLeft: EXPANDED_PADDING,
                     }}
                 >
-                    <TextLink to={titleLink ?? '/projects'}>
-                        {icon}
+                    {icon}
+
+                    <TextLink
+                        to={titleLink ?? '/projects'}
+                        tooltip={{
+                            content: title,
+                            placement: 'bottomRight',
+                        }}
+                    >
                         {ctx.expanded && (
                             <Text
                                 style={{
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    marginLeft: '8px',
                                     fontWeight: 'bold',
                                 }}
                             >
