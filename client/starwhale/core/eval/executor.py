@@ -7,7 +7,6 @@ from loguru import logger
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
 from starwhale.consts import (
     DefaultYAMLName,
-    DEFAULT_MANIFEST_NAME,
     CNTR_DEFAULT_PIP_CACHE_DIR,
 )
 from starwhale.base.uri import URI
@@ -209,33 +208,38 @@ class EvalExecutor:
             "-v",
             f"{_run_dir}:{_CNTR_WORKDIR}",
             "-v",
-            f"{self.project_dir / URIType.DATASET}:/root/.starwhale/{self.project_uri.project}/{RunSubDirType.DATASET}",
+            f"{self.sw_config.rootdir}:/root/.starwhale",
             "-v",
-            f"{self.sw_config.datastore_dir}:/root/.starwhale/.datastore",
+            f"{self.sw_config.object_store_dir}:{self.sw_config.object_store_dir}",
             "-v",
             f"{self._model_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/src",
             "-v",
             f"{self._model_dir}/{DefaultYAMLName.MODEL}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DefaultYAMLName.MODEL}",
             "-v",
-            f"{self._runtime_dir}/dep:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/dep",
-            "-v",
-            f"{self._runtime_dir}/{DEFAULT_MANIFEST_NAME}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}/{DEFAULT_MANIFEST_NAME}",
+            f"{self._runtime_dir}:{_CNTR_WORKDIR}/{RunSubDirType.SWMP}",
         ]
 
         if typ == EvalTaskType.SINGLE:
             cmd.extend(["-e", f"SW_TASK_STEP={step}"])
             cmd.extend(["-e", f"SW_TASK_INDEX={task_index}"])
 
+        logger.debug(f"config:{self.sw_config._current_instance_obj}")
+        cmd.extend(["-e", f"{SWEnv.project}={self.project_uri.project}"])
+        cmd.extend(["-e", f"{SWEnv.eval_version}={self._version}"])
         cmd.extend(
             [
                 "-e",
                 f"{SWEnv.instance_uri}={self.sw_config._current_instance_obj['uri']}",
             ]
         )
-        cmd.extend(["-e", f"{SWEnv.project}={self.project_uri.project}"])
-        cmd.extend(["-e", f"{SWEnv.eval_version}={self._version}"])
+        cmd.extend(
+            [
+                "-e",
+                f"{SWEnv.instance_token}={self.sw_config._current_instance_obj.get('sw_token', '')}",
+            ]
+        )
         # TODO: support multi dataset
-        cmd.extend(["-e", f"{SWEnv.dataset_uri}={self.dataset_uris[0]}"])
+        cmd.extend(["-e", f"{SWEnv.dataset_uri}={self.dataset_uris[0].full_uri}"])
 
         cntr_cache_dir = os.environ.get("SW_PIP_CACHE_DIR", CNTR_DEFAULT_PIP_CACHE_DIR)
         host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
