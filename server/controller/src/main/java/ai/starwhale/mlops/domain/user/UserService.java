@@ -137,6 +137,9 @@ public class UserService implements UserDetailsService {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB)
                 .tip(String.format("Unable to find user by name %s", user.getName())), HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        if(userMapper.existRegister() != null) {
+            userEntity.setUserEmail(userMapper.getUserEmail(userEntity.getId()));
+        }
         return userConvertor.convert(userEntity);
     }
 
@@ -153,6 +156,9 @@ public class UserService implements UserDetailsService {
 
     public UserVO findUserById(Long id) {
         UserEntity entity = userMapper.findUser(id);
+        if(userMapper.existRegister() != null) {
+            entity.setUserEmail(userMapper.getUserEmail(entity.getId()));
+        }
         return userConvertor.convert(entity);
     }
 
