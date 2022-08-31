@@ -27,6 +27,7 @@ install_requires = [
     "packaging>=21.3",
     "pyarrow>=8.0.0",
     "Jinja2>=3.1.2",
+    "tenacity>=8.0.1",
 ]
 
 
