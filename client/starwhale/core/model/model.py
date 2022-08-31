@@ -276,6 +276,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             logger.debug(f"job execute info:{_step_results}")
         except Exception as e:
+            logger.error(f"job:{job_name} execute error:{e}")
             _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
             raise
@@ -297,7 +298,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             _f = _run_dir / DEFAULT_MANIFEST_NAME
             ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
-            console.print(f":clap: finish run, {_status}!")
+            console.print(
+                f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!"
+            )
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()

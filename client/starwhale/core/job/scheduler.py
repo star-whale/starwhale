@@ -80,7 +80,7 @@ class Scheduler:
 
             vertices_running |= set(vertices_to_run)
             # execute and get results
-            step_results: t.List[StepResult] = processor.exec()
+            step_results: t.List[StepResult] = processor.execute()
             _results += step_results
             vertices_finished = [result.step_name for result in step_results]
             vertices_running -= set(vertices_finished)

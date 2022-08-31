@@ -40,10 +40,11 @@ class StepResult:
         self.status = self._status()
 
     def _status(self) -> str:
-        _success = True
-        for tr in self.task_results:
-            _success = _success and tr.status == STATUS.SUCCESS
-        return STATUS.SUCCESS if _success else STATUS.FAILED
+        return (
+            STATUS.SUCCESS
+            if all(tr.status == STATUS.SUCCESS for tr in self.task_results)
+            else STATUS.FAILED
+        )
 
 
 class BaseExecutor(Protocol):
@@ -132,7 +133,7 @@ class StepExecutor:
         processor = MultiThreadProcessor(
             self.step.step_name, self.step.concurrency, self._split_tasks()
         )
-        task_results = processor.exec()
+        task_results = processor.execute()
         logger.debug(f"finish execute step:{self.step}")
         return StepResult(step_name=self.step.step_name, task_results=task_results)
 
@@ -169,15 +170,16 @@ class MultiThreadProcessor:
         self.concurrency = concurrency
         self.executors = executors
 
-    def exec(self) -> t.List[t.Any]:
+    def execute(self) -> t.List[t.Any]:
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.concurrency
         ) as pool:
             start_time = time.time()
             futures = [pool.submit(executor.execute) for executor in self.executors]
-            _results: t.List[t.Any] = list(
+            _results: t.List[t.Any] = [
                 future.result() for future in concurrent.futures.as_completed(futures)
-            )
+            ]
+
             exec_time = time.time() - start_time
             logger.debug(f"execute:{self.name} time:{exec_time}")
         return _results
