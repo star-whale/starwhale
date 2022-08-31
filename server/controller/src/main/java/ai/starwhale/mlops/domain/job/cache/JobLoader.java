@@ -43,8 +43,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -116,20 +114,18 @@ public class JobLoader {
 
     }
 
-    private static final Logger logger = LoggerFactory.getLogger("test");
-
     private void fillStepsAndTasks(Job job,Boolean resumePausedOrFailTasks,Boolean doCache) {
         List<StepEntity> stepEntities = stepMapper.findByJobId(job.getId());
         List<Step> steps = stepEntities.parallelStream().map(stepConverter::fromEntity)
             .peek(step -> {
-                logger.debug("start");
+                log.debug("start");
                 step.setJob(job);
                 List<TaskEntity> taskEntities = taskMapper.findByStepId(step.getId());
                 List<Task> tasks = taskBoConverter.fromTaskEntity(taskEntities, step);//PAUSED, FAIL
                 if(resumePausedOrFailTasks){
                     resumeFrozenTasks(tasks);
                 }
-                logger.debug("start cache");
+                log.debug("start cache");
                 if(doCache){
                     List<Task> watchableTasks = watchableTaskFactory.wrapTasks(tasks);
                     scheduleReadyTasks(watchableTasks.parallelStream()
@@ -141,7 +137,7 @@ public class JobLoader {
                     step.setTasks(tasks);
                 }
 
-                logger.debug("start set status");
+                log.debug("start set status");
                 step.setStatus(stepHelper.desiredStepStatus(tasks.parallelStream().map(Task::getStatus).collect(
                     Collectors.toSet())));
                 if(step.getStatus() == StepStatus.RUNNING){
@@ -191,7 +187,7 @@ public class JobLoader {
         tasks.parallelStream()
             .collect(Collectors.groupingBy(task -> task.getStep().getJob().getJobRuntime().getDeviceClass()))
             .forEach((deviceClass, taskList) ->
-                swTaskScheduler.adopt(taskList, deviceClass));
+                swTaskScheduler.schedule(taskList, deviceClass));
     }
 
     private void triggerPossibleNextStep(Job job) {

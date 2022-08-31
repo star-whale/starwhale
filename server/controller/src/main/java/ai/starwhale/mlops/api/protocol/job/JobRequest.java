@@ -44,7 +44,7 @@ public class JobRequest implements Serializable {
 
     @NotNull
     @JsonProperty("deviceAmount")
-    private Integer deviceAmount;
+    private Float deviceAmount;
 
     @JsonProperty("comment")
     private String comment;

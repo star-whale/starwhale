@@ -26,6 +26,11 @@ import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
+import ai.starwhale.mlops.domain.task.status.TaskStatus;
+import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
+import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForJobStatus;
+import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
+import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv;
@@ -41,6 +46,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
@@ -83,7 +89,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
     }
 
     @Override
-    public void adopt(Collection<Task> tasks,
+    public void schedule(Collection<Task> tasks,
                       Clazz deviceClass) {
 
         tasks.parallelStream().forEach(task -> {
@@ -95,7 +101,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
     }
 
     @Override
-    public void remove(Collection<Long> taskIds) {
+    public void stopSchedule(Collection<Long> taskIds) {
         taskIds.parallelStream().forEach(id -> {
             try {
                 k8sClient.deleteJob(id.toString());
@@ -179,9 +185,23 @@ public class K8sTaskScheduler implements SWTaskScheduler {
                 k8sJob.getSpec().getTemplate().getSpec().nodeSelector(selector);
             }
             client.deploy(k8sJob);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (ApiException k8sE){
+            log.error(" schedule task failed {}",k8sE.getResponseBody(),k8sE);
+            taskFailed(task);
         }
+        catch (Exception e) {
+            log.error(" schedule task failed {}",e);
+            taskFailed(task);
+        }
+    }
+
+    private void taskFailed(Task task) {
+        TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class
+            , TaskWatcherForSchedule.class
+            , TaskWatcherForLogging.class));
+        //todo save log
+        task.updateStatus(TaskStatus.FAIL);
+        TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
     }
 
     private String getJobTemplate() throws IOException {
