@@ -74,11 +74,9 @@ public class Job extends TimeConcern {
     JobType type;
 
     /**
-     * job result holding dir
-     * Deprecated reason: use storage unaware of resultDir
+     * job output holding dir
      */
-    @Deprecated
-    String resultDir;
+    String outputDir;
 
     List<Step> steps;
 

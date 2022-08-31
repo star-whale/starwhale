@@ -31,7 +31,6 @@ import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -150,13 +149,11 @@ public class DAGQuerier {
     @NoArgsConstructor
     public static class TaskNodeContent extends TimeConcern {
         Long id;
-        TaskType type;
         String agentIp;
         TaskStatus status;
         public TaskNodeContent(Task t){
             this.id = t.getId();
-            this.type = t.getTaskType();
-            this.agentIp = t.getAgent() == null ? "Controller":t.getAgent().getIp();
+            this.agentIp = "Controller";
             this.status = t.getStatus();
             this.setStartTime(t.getStartTime());
             this.setFinishTime(t.getFinishTime());

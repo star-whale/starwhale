@@ -23,7 +23,7 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.status.StepStatusMachine;
-import ai.starwhale.mlops.domain.job.step.trigger.StepTriggerContext;
+import ai.starwhale.mlops.domain.job.step.trigger.StepTrigger;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -49,7 +49,7 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
 
     final StepMapper stepMapper;
 
-    final StepTriggerContext stepTriggerContext;
+    final StepTrigger stepTrigger;
 
     final JobUpdateHelper jobUpdateHelper;
 
@@ -59,13 +59,13 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
         StepHelper stepHelper,
         StepStatusMachine stepStatusMachine,
         StepMapper stepMapper,
-        StepTriggerContext stepTriggerContext,
+        StepTrigger stepTrigger,
         JobUpdateHelper jobUpdateHelper,
         LocalDateTimeConvertor localDateTimeConvertor) {
         this.stepHelper = stepHelper;
         this.stepStatusMachine = stepStatusMachine;
         this.stepMapper = stepMapper;
-        this.stepTriggerContext = stepTriggerContext;
+        this.stepTrigger = stepTrigger;
         this.jobUpdateHelper = jobUpdateHelper;
         this.localDateTimeConvertor = localDateTimeConvertor;
     }
@@ -91,7 +91,7 @@ public class TaskWatcherForJobStatus implements TaskStatusChangeWatcher {
             updateStepStatus(step, stepNewStatus);
             jobUpdateHelper.updateJob(job);
             if(step.getStatus() == StepStatus.SUCCESS){
-                stepTriggerContext.triggerNextStep(step);
+                stepTrigger.triggerNextStep(step);
             }
 
         }

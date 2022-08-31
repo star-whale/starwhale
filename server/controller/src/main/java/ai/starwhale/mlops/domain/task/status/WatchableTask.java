@@ -19,7 +19,6 @@ package ai.starwhale.mlops.domain.task.status;
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
-import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.TaskWrapper;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
@@ -83,16 +82,6 @@ public class WatchableTask extends Task implements TaskWrapper {
     }
 
     @Override
-    public Agent getAgent() {
-        return oTask.getAgent();
-    }
-
-    @Override
-    public TaskType getTaskType() {
-        return oTask.getTaskType();
-    }
-
-    @Override
     public Long getStartTime(){
         return oTask.getStartTime();
     }
@@ -121,11 +110,6 @@ public class WatchableTask extends Task implements TaskWrapper {
                 return !TaskStatusChangeWatcher.SKIPPED_WATCHERS.get().contains(w.getClass());
             }
         ).forEach(watcher -> watcher.onTaskStatusChange(this, oldStatus));
-    }
-
-    @Override
-    public void setAgent(Agent agent) {
-        oTask.setAgent(agent);
     }
 
     public void setResultRootPath(ResultPath resultRootPath) {

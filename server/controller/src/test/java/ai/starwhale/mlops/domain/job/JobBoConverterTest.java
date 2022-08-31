@@ -111,7 +111,7 @@ public class JobBoConverterTest {
         Assertions.assertEquals(jobEntity.getJobStatus(),job.getStatus());
         Assertions.assertEquals(jobEntity.getId(),job.getId());
         Assertions.assertEquals(jobEntity.getType(),job.getType());
-        Assertions.assertEquals(jobEntity.getResultOutputPath(),job.getResultDir());
+        Assertions.assertEquals(jobEntity.getResultOutputPath(),job.getOutputDir());
         Assertions.assertEquals(jobEntity.getJobUuid(),job.getUuid());
         JobRuntime swrt = job.getJobRuntime();
         Assertions.assertNotNull(swrt);
