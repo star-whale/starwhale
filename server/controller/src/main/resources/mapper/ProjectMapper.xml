@@ -129,7 +129,7 @@
             (select count(*) as count_member, project_id from user_role_rel group by project_id) as c3
                 on p.id = c3.project_id
         left join
-            (select count(*) as count_jobs, project_id from job_info where job_status = 'SUCCESS' group by project_id) as c4
+            (select count(*) as count_jobs, project_id from job_info group by project_id) as c4
                 on p.id = c4.project_id
         <if test="projectIds != null">
             where p.id in
