@@ -994,9 +994,7 @@ class DataStore(Protocol):
 
 def get_data_store() -> DataStore:
     instance_uri = os.getenv(SWEnv.instance_uri)
-    if instance_uri is None:
-        instance_uri = SWCliConfigMixed()._current_instance_obj["uri"]
-    if instance_uri == "local":
+    if instance_uri is None or instance_uri == "local":
         return LocalDataStore.get_instance()
     else:
         return RemoteDataStore(instance_uri)
