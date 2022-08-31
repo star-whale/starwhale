@@ -5,10 +5,7 @@ from pathlib import Path
 from loguru import logger
 
 from starwhale.utils import console, now_str, is_darwin, gen_uniq_version
-from starwhale.consts import (
-    DefaultYAMLName,
-    CNTR_DEFAULT_PIP_CACHE_DIR,
-)
+from starwhale.consts import DefaultYAMLName, CNTR_DEFAULT_PIP_CACHE_DIR
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.base.type import URIType, EvalTaskType, RunSubDirType
