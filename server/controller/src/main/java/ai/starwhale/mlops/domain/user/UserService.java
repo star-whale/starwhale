@@ -39,6 +39,8 @@ import ai.starwhale.mlops.exception.SWAuthException;
 import ai.starwhale.mlops.exception.SWAuthException.AuthType;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import com.github.pagehelper.PageHelper;
@@ -172,6 +174,10 @@ public class UserService implements UserDetailsService {
 
     public Long createUser(User user, String rawPassword) {
         String salt = saltGenerator.salt();
+        UserEntity userByName = userMapper.findUserByName(user.getName());//todo lock this row
+        if (null != userByName) {
+            throw new SWValidationException(ValidSubject.USER).tip("user already exists");
+        }
         UserEntity userEntity = UserEntity.builder()
             .userName(user.getName())
             .userPwd(SWPasswordEncoder.getEncoder(salt).encode(rawPassword))
