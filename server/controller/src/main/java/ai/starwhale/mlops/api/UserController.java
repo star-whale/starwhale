@@ -80,7 +80,7 @@ public class UserController implements UserApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> createUser(UserRequest request) {
         Long userId = userService.createUser(User.builder().name(request.getUserName()).build(),
-            request.getUserPwd());
+            request.getUserPwd(), request.getSalt());
 
         //create default project
 //        projectService.createProject(Project.builder()

@@ -170,11 +170,17 @@ public class UserService implements UserDetailsService {
         return PageUtil.toPageInfo(userEntities, userConvertor::convert);
     }
 
-    public Long createUser(User user, String rawPassword) {
-        String salt = saltGenerator.salt();
+    public Long createUser(User user, String password, String salt) {
+        String encodedPwd;
+        if(StrUtil.isEmpty(salt)) {
+            salt = saltGenerator.salt();
+            encodedPwd = SWPasswordEncoder.getEncoder(salt).encode(password);
+        } else {
+            encodedPwd = password;
+        }
         UserEntity userEntity = UserEntity.builder()
             .userName(user.getName())
-            .userPwd(SWPasswordEncoder.getEncoder(salt).encode(rawPassword))
+            .userPwd(encodedPwd)
             .userPwdSalt(salt)
             .userEnabled(1)
             .build();
