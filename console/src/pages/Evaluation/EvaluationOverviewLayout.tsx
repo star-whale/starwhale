@@ -24,7 +24,7 @@ function EvaluationOverviewLayout({ children }: IJobLayoutProps) {
     useEffect(() => {
         setJobLoading(jobInfo.isLoading)
         if (jobInfo.isSuccess) {
-            if (jobInfo.data.id !== job?.id) {
+            if (jobInfo.data?.id !== job?.id) {
                 setJob(jobInfo.data)
             }
         } else if (jobInfo.isLoading) {

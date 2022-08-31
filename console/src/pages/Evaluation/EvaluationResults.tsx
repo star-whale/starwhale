@@ -5,7 +5,7 @@ import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
 import { ILabels, INDICATORTYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
-import { getHeatmapConfig, getRocAucConfig } from '@/components/Indicator/utils'
+import { getHeatmapConfig, getRocAucConfig, IRocAuc } from '@/components/Indicator/utils'
 import { LabelSmall } from 'baseui/typography'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
@@ -33,6 +33,20 @@ function Heatmap({ labels, binarylabel }: any) {
     )
 }
 
+function RocAuc({ labels, data }: { labels: any[]; data: Record<string, IRocAuc> }) {
+    const [t] = useTranslation()
+    const title = t('Roc Auc')
+    const rocaucData = getRocAucConfig(title, labels, data)
+
+    return (
+        <Card outTitle={t('Roc Auc')} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
+            <React.Suspense fallback={<BusyPlaceholder />}>
+                <PlotlyVisualizer data={rocaucData} />
+            </React.Suspense>
+        </Card>
+    )
+}
+
 function EvaluationResults() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
     const jobResult = useQuery(`fetchJobResult:${projectId}:${jobId}`, () => fetchJobResult(projectId, jobId), {
@@ -49,18 +63,15 @@ function EvaluationResults() {
     // console.log(project?.name, resultTableName, resultTable)
     const { labels, binarylabel } = useParseConfusionMatrix(resultTable.data)
 
-    const tables = useScanDatastore({
-        tables: [
-            { tableName: tableNameOfConfusionMatrix(project?.name as string, job?.uuid ?? '') },
-            { tableName: tableNameOfRocAuc(project?.name as string, job?.uuid ?? '') },
-        ],
+    const rocAucTable = useScanDatastore({
+        tables: [{ tableName: tableNameOfRocAuc(project?.name as string, job?.uuid ?? '') }],
         start: 0,
         limit: 1000,
     })
 
     useEffect(() => {
         if (job?.uuid && project?.name) {
-            tables.refetch()
+            rocAucTable.refetch()
         }
     }, [project?.name, job?.uuid])
 
@@ -193,6 +204,7 @@ function EvaluationResults() {
             >
                 {indicators}
                 <Heatmap labels={labels} binarylabel={binarylabel} />
+                <RocAuc labels={labels} data={rocAucTable.data?.records} />
             </div>
         </div>
     )
