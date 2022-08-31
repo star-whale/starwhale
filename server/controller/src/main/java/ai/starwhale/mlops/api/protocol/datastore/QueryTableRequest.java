@@ -30,4 +30,5 @@ public class QueryTableRequest {
     private int start = -1;
     private int limit = -1;
     private boolean keepNone;
+    private boolean rawResult;
 }
