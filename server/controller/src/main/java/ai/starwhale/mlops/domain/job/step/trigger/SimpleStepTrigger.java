@@ -16,32 +16,22 @@
 
 package ai.starwhale.mlops.domain.job.step.trigger;
 
-import ai.starwhale.mlops.domain.job.JobType;
-import ai.starwhale.mlops.domain.job.split.JobSpliteratorEvaluation;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.storage.StorageAccessService;
-
 import java.util.List;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-// TODO: common step trigger
-public class EvalStepTrigger implements StepTrigger {
+public class SimpleStepTrigger implements StepTrigger {
 
     final StorageAccessService storageAccessService;
 
-    final TaskMapper taskMapper;
-
-    public EvalStepTrigger(StorageAccessService storageAccessService,
-                           TaskMapper taskMapper) {
+    public SimpleStepTrigger(StorageAccessService storageAccessService) {
         this.storageAccessService = storageAccessService;
-        this.taskMapper = taskMapper;
     }
 
     public void triggerNextStep(Step pplStep) {
@@ -52,7 +42,4 @@ public class EvalStepTrigger implements StepTrigger {
         }
     }
 
-    public boolean applyTo(JobType jobType, String stepName) {
-        return true;
-    }
 }

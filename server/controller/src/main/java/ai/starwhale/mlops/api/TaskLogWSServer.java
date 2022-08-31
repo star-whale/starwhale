@@ -18,7 +18,6 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.TaskStatusInterface;
 import ai.starwhale.mlops.api.protocol.report.req.TaskLog;
-import ai.starwhale.mlops.api.protocol.report.req.TaskReport;
 import ai.starwhale.mlops.api.protocol.report.resp.LogReader;
 import ai.starwhale.mlops.common.IDConvertor;
 import cn.hutool.core.util.StrUtil;
@@ -111,15 +110,6 @@ public class TaskLogWSServer {
         }
 
         return readers;
-    }
-
-    public void report(TaskReport taskReport) {
-        String status = getLogStatus(taskReport.getStatus());
-        if(taskReport.getReaderLogs() != null) {
-            for (TaskLog readerLog : taskReport.getReaderLogs()) {
-                report(readerLog, status);
-            }
-        }
     }
 
     private String getLogStatus(TaskStatusInterface taskStatus) {

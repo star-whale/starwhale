@@ -20,23 +20,21 @@ import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import ai.starwhale.mlops.common.TimeConcern;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.TaskWrapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.TaskType;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * Tasks are derived from a Job. Tasks are the executing units of a Job.
+ */
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Getter
-/**
- * Tasks are derived from a Job. Tasks are the executing units of a Job.
- */
 public class Task extends TimeConcern {
 
     /**
@@ -66,20 +64,8 @@ public class Task extends TimeConcern {
      */
     Step step;
 
-    /**
-     * the agent where the task is executed
-     */
-    Agent agent;
-
-    @Deprecated
-    TaskType taskType;
-
     public void updateStatus(TaskStatus status){
         this.status = status;
-    }
-
-    public void setAgent(Agent agent) {
-        this.agent = agent;
     }
 
     public void setResultRootPath(ResultPath resultRootPath) {
@@ -104,38 +90,4 @@ public class Task extends TimeConcern {
         return this.uuid.equals(tsk.uuid);
     }
 
-    public static class StatusUnModifiableTask extends Task implements TaskWrapper {
-
-        Task oTask;
-        public StatusUnModifiableTask(Task task){
-            this.oTask = task;
-        }
-
-        @Override
-        public Task unwrap(){
-            if(oTask instanceof TaskWrapper){
-                TaskWrapper wrappedTask = (TaskWrapper) oTask;
-                return wrappedTask.unwrap();
-            }
-            return oTask;
-        }
-
-        @Override
-        public int hashCode() {
-            return oTask.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj){
-            return oTask.equals(obj);
-        }
-
-        @Override
-        public String toString() {
-            return "StatusUnModifiableTask{" +
-                "id=" + id +
-                ", uuid='" + uuid + '\'' +
-                '}';
-        }
-    }
 }

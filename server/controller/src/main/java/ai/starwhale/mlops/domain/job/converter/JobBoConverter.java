@@ -79,7 +79,7 @@ public class JobBoConverter {
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
         this.swdsboConverter = swdsboConverter;
-        this.defaultRuntimeImage = defaultImage;//todo(renyanda): replace with runtime meta
+        this.defaultRuntimeImage = defaultImage;
         this.resourcePoolMapper = resourcePoolMapper;
         this.resourcePoolConverter = resourcePoolConverter;
     }
@@ -121,16 +121,10 @@ public class JobBoConverter {
                 .path(jobEntity.getSwmpVersion().getStoragePath()).build())
             .evalJobDDL(jobEntity.getSwmpVersion().getEvalJobs())
             .swDataSets(swDataSets)
-            .resultDir(jobEntity.getResultOutputPath())
+            .outputDir(jobEntity.getResultOutputPath())
             .uuid(jobEntity.getJobUuid())
             .resourcePool(resourcePool)
             .build();
     }
-
-    static final String PATH_INDEX = "/index.jsonl";
-    private String getIndexPath(SWDatasetVersionEntity swDatasetVersionEntity) {
-        return swDatasetVersionEntity.getStoragePath() + PATH_INDEX;
-    }
-
 
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.swds.datastore;
+package ai.starwhale.mlops.domain.swds.index.datastore;
 
 import ai.starwhale.mlops.api.DataStoreController;
 import ai.starwhale.mlops.api.protocol.datastore.RecordDesc;

@@ -91,7 +91,7 @@ public class TaskService {
 
     private ResultPath resultPathOfTask(Long taskId) {
         TaskEntity taskById = taskMapper.findTaskById(taskId);
-        return new ResultPath(taskById.getResultPath());
+        return new ResultPath(taskById.getOutputPath());
     }
 
     static final String PATH_SPLITERATOR ="/";

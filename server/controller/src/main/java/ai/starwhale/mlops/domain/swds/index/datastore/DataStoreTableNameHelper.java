@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.swds.datastore;
+package ai.starwhale.mlops.domain.swds.index.datastore;
 
 import org.springframework.stereotype.Component;
 

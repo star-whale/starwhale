@@ -117,7 +117,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
      * @param task
      */
     private void deployTaskToK8s(K8sClient client, String image, Task task, Map<String, String> nodeSelector) {
-        log.debug("deploying task to k8s {} {}", task.getId(),  task.getTaskType());
+        log.debug("deploying task to k8s {} ", task.getId());
         Map<String, String> initContainerEnvs = new HashMap<>();
         List<String> downloads = new ArrayList<>();
         Job swJob = task.getStep().getJob();

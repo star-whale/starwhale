@@ -18,7 +18,6 @@ package ai.starwhale.mlops.domain.swds.datastore;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.DataStoreController;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
@@ -27,6 +26,7 @@ import ai.starwhale.mlops.api.protocol.datastore.UpdateTableRequest;
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
+import ai.starwhale.mlops.domain.swds.index.datastore.IndexWriter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.util.List;

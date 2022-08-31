@@ -45,7 +45,6 @@ public class TaskWatcherTest {
 
     private Task mockTask() {
         Task task = Task.builder()
-            .agent(Agent.builder().build())
             .id(1L)
             .status(TaskStatus.RUNNING)
             .step(Step.builder().build())

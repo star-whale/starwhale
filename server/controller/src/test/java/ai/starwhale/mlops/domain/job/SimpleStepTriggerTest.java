@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
-import ai.starwhale.mlops.domain.job.step.trigger.EvalStepTrigger;
+import ai.starwhale.mlops.domain.job.step.trigger.SimpleStepTrigger;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -32,9 +32,9 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 /**
- * a test for {@link EvalStepTrigger}
+ * a test for {@link SimpleStepTrigger}
  */
-public class EvalStepTriggerTest {
+public class SimpleStepTriggerTest {
 
     @Test
     public void testEvalPPLStepTrigger() throws IOException {
@@ -45,7 +45,7 @@ public class EvalStepTriggerTest {
         when(storageAccessService.list("task_path_a/result")).thenReturn(pplResultPathA.stream());
         when(storageAccessService.list("task_path_b/result")).thenReturn(pplResultPathB.stream());
         TaskMapper taskMapper = mock(TaskMapper.class);
-        EvalStepTrigger evalPPLStepTrigger = new EvalStepTrigger(storageAccessService,taskMapper);
+        SimpleStepTrigger evalPPLStepTrigger = new SimpleStepTrigger(storageAccessService);
 
         Task task = mock(Task.class);
         long taskId = 123L;

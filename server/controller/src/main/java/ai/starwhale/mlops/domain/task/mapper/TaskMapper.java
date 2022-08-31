@@ -38,8 +38,6 @@ public interface TaskMapper {
 
     List<TaskEntity> findTaskByStatusIn(@Param("taskStatusList") List<TaskStatus> taskStatusList);
 
-    void updateTaskAgent(@Param("ids") List<Long> taskIds,@Param("agentId") Long agentId);
-
     void updateTaskFinishedTime(@Param("taskId") Long taskId,@Param("finishedTime") LocalDateTime finishedTime);
 
     void updateTaskStartedTime(@Param("taskId") Long taskId,@Param("startedTime")LocalDateTime startedTime);

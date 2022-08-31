@@ -16,39 +16,30 @@
 
 package ai.starwhale.mlops.domain.job.split;
 
-import ai.starwhale.mlops.api.protocol.report.resp.SWDSBlockVO;
+import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.parser.JobParser;
 import ai.starwhale.mlops.domain.job.parser.StepMetaData;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.StepConverter;
-import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
-import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
-import ai.starwhale.mlops.domain.swds.bo.SWDSIndex;
-import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoader;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
-import ai.starwhale.mlops.domain.task.TaskType;
-import ai.starwhale.mlops.domain.task.po.TaskEntity;
-import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
-import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import cn.hutool.json.JSONUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,36 +53,21 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
 
     private final StoragePathCoordinator storagePathCoordinator;
 
-    private final SWDSIndexLoader swdsIndexLoader;
-
-    private final SWDSBlockSerializer swdsBlockSerializer;
-
     private final TaskMapper taskMapper;
 
     private final JobMapper jobMapper;
 
-    private final TaskBoConverter taskBoConverter;
 
     private final StepMapper stepMapper;
 
-    private final StepConverter stepConverter;
-
-    private final WatchableTaskFactory watchableTaskFactory;
-
     public JobSpliteratorEvaluation(StoragePathCoordinator storagePathCoordinator,
-                                    SWDSIndexLoader swdsIndexLoader, SWDSBlockSerializer swdsBlockSerializer,
-                                    TaskMapper taskMapper, JobMapper jobMapper, TaskBoConverter taskBoConverter,
-                                    StepMapper stepMapper, StepConverter stepConverter,
-                                    WatchableTaskFactory watchableTaskFactory) {
+        TaskMapper taskMapper,
+        JobMapper jobMapper,
+        StepMapper stepMapper) {
         this.storagePathCoordinator = storagePathCoordinator;
-        this.swdsIndexLoader = swdsIndexLoader;
-        this.swdsBlockSerializer = swdsBlockSerializer;
         this.taskMapper = taskMapper;
         this.jobMapper = jobMapper;
-        this.taskBoConverter = taskBoConverter;
         this.stepMapper = stepMapper;
-        this.stepConverter = stepConverter;
-        this.watchableTaskFactory = watchableTaskFactory;
     }
 
     /**
@@ -105,12 +81,9 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
      */
     final static Integer MAX_MYSQL_INSERTION_SIZE = 500;
 
-    public static final String[] STEP_NAMES = new String[]{"PPL", "CMP"};
-
     /**
-     * split job into two steps 1. ppl 2. cmp
-     * get all data blocks and split them by a simple random number
-     * transactional jobStatus->READY pplTaskStatus->READY cmpTaskStatus->CREATED
+     * split job into two steps transactional jobStatus->READY firstStepTaskStatus->READY
+     * followerStepTaskStatus->CREATED
      */
     @Override
     @Transactional
@@ -138,7 +111,6 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
             nameMapping.put(stepMetaData.getStepName(), stepEntity);
         }
 
-
         for (StepEntity stepEntity : stepEntities) {
             List<String> dependencies = allDependencies.get(stepEntity.getName());
             for (String dependency : dependencies) {
@@ -151,7 +123,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 final String taskUuid = UUID.randomUUID().toString();
                 taskEntities.add(TaskEntity.builder()
                     .stepId(stepEntity.getId())
-                    .resultPath(
+                    .outputPath(
                         storagePathCoordinator.generateTaskResultPath(job.getUuid(), taskUuid))
                     .taskRequest(JSONUtil.toJsonStr(
                             TaskRequest.builder()
@@ -167,44 +139,12 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
 
             // update step's lastStepId and save tasks
             stepMapper.updateLastStep(stepEntity.getId(), stepEntity.getLastStepId());
-            BatchOperateHelper.doBatch(taskEntities, ts -> taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())), MAX_MYSQL_INSERTION_SIZE);
+            BatchOperateHelper.doBatch(taskEntities,
+                ts -> taskMapper.addAll(ts.parallelStream().collect(Collectors.toList())),
+                MAX_MYSQL_INSERTION_SIZE);
         }
         // update job status
         jobMapper.updateJobStatus(List.of(job.getId()), JobStatus.READY);
         return stepEntities;
     }
-
-    private List<SWDSBlockVO> extractSWDS(SWDataSet swDataSet) {
-        SWDSIndex swdsIndex = swdsIndexLoader.load(swDataSet.getIndexPath());
-        return swdsIndex.getSwdsBlockList().parallelStream().map(swdsBlock -> {
-            SWDSBlockVO swdsBlockVO = new SWDSBlockVO();
-            BeanUtils.copyProperties(swdsBlock, swdsBlockVO);
-            swdsBlockVO.prependDSPath(swDataSet.getPath());
-            swdsBlockVO.setDsName(swDataSet.getName());
-            swdsBlockVO.setDsVersion(swDataSet.getVersion());
-            return swdsBlockVO;
-        }).collect(Collectors.toList());
-    }
-
-    private List<TaskEntity> buildTaskEntities(Job job, StepEntity stepEntityPPL, Map<Integer, List<SWDSBlockVO>> swdsBlocks)
-        throws JsonProcessingException {
-        List<TaskEntity> taskEntities = new LinkedList<>();
-        for (Entry<Integer, List<SWDSBlockVO>> entry : swdsBlocks.entrySet()) {
-            final String taskUuid = UUID.randomUUID().toString();
-            taskEntities.add(TaskEntity.builder()
-                .stepId(stepEntityPPL.getId())
-                .resultPath(storagePath(job.getUuid(), taskUuid))
-                .taskRequest(swdsBlockSerializer.toString(entry.getValue()))
-                .taskStatus(TaskStatus.READY)
-                .taskUuid(taskUuid)
-                //.taskType(TaskType.PPL)
-                .build());
-        }
-        return taskEntities;
-    }
-
-    private String storagePath(String jobId, String taskId) {
-        return storagePathCoordinator.generateTaskResultPath(jobId, taskId);
-    }
-
 }
