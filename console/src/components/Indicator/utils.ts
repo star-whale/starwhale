@@ -1,8 +1,8 @@
 // @ts-nocheck
+/* eslint-disable */
+import struct from '@aksel/structjs'
 
-import _ from 'lodash'
-
-interface IRocAuc {
+export interface IRocAuc {
     fpr: number[]
     tpr: number[]
     thresholds: number[]
@@ -70,7 +70,18 @@ const Layout = {
     },
 }
 
-export function getRocAucConfig(title = '', labels: string[], data: Record<string, IRocAuc>) {
+var unhexlify = function (str) {
+    const f = new Uint8Array(8)
+    let j = 0
+    for (var i = 0, l = str.length; i < l; i += 2) {
+        f[j] = parseInt(str.substr(i, 2), 16)
+        j++
+    }
+    let s = struct('>d')
+    return s.unpack(f.buffer)[0]
+}
+
+export function getRocAucConfig(title = '', labels: string[], data: IRocAuc[]) {
     const layout = {
         ...Layout.init,
         title,
@@ -86,20 +97,29 @@ export function getRocAucConfig(title = '', labels: string[], data: Record<strin
         },
     }
 
+    const fpr = []
+    const tpr = []
+    data?.sort((a, b) => {
+        return parseInt(a.id) - parseInt(b.id)
+    })
+    data?.forEach((item, i) => {
+        if (i % 6 != 0) return
+        fpr.push(Number(unhexlify(item.fpr).toFixed('4')))
+        tpr.push(Number(unhexlify(item.tpr).toFixed('4')))
+    })
+
     const rocAucData = {
         data: [
-            ..._.map(data, (roc_auc, label) => {
-                return {
-                    x: roc_auc.fpr,
-                    y: roc_auc.tpr,
-                    mode: 'lines+markers',
-                    name: `label ${label}`,
-                    type: 'scatter',
-                }
-            }),
             {
-                x: [0, 1],
-                y: [0, 1],
+                x: fpr,
+                y: tpr,
+                mode: 'lines+markers',
+                name: `label ${0}`,
+                type: 'scatter',
+            },
+            {
+                x: [0.0, 1],
+                y: [0.0, 1],
                 mode: 'lines',
                 name: 'baseline',
                 line: {
@@ -112,6 +132,7 @@ export function getRocAucConfig(title = '', labels: string[], data: Record<strin
             ...layout,
         },
     }
+    // console.log(rocAucData.data[0])
     return rocAucData
 }
 

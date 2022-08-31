@@ -8,22 +8,22 @@ import useTranslation from '@/hooks/useTranslation'
 import { Button, SIZE as ButtonSize } from 'baseui/button'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table/TableTyped'
-import { Link, useHistory, useParams } from 'react-router-dom'
+import { useHistory, useParams } from 'react-router-dom'
 import IconFont from '@/components/IconFont'
 import { CustomColumn, StringColumn } from '@/components/data-table'
 import { useDrawer } from '@/hooks/useDrawer'
 import { useFetchEvaluations } from '@/domain/evaluation/hooks/useFetchEvaluations'
-import { useFetchEvaluationAttrs } from '@/domain/evaluation/hooks/useFetchEvaluationAttrs'
-import { usePage } from '@/hooks/usePage'
 import { ColumnT } from '@/components/data-table/types'
-import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
 import _ from 'lodash'
 import { useStyletron } from 'baseui'
 import { ITableState, useEvaluationCompareStore, useEvaluationStore } from '@/components/data-table/store'
+import { StoreProvider } from '@/components/data-table/storeContext'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { tableNameOfSummary } from '@/domain/datastore/utils'
+import { useProject } from '@/domain/project/hooks/useProject'
+import { TextLink } from '@/components/Link'
 import EvaluationListCompare from './EvaluationListCompare'
 
 const gridLayout = [
@@ -40,11 +40,10 @@ export default function EvaluationListCard() {
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
-    const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
     const evaluationsInfo = useFetchEvaluations(projectId, { pageNum: 1, pageSize: 1000 })
-    const evaluationAttrsInfo = useFetchEvaluationAttrs(projectId, page)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
+    const { project } = useProject()
 
     const [isCreateJobOpen, setIsCreateJobOpen] = useState(false)
     const handleCreateJob = useCallback(
@@ -58,11 +57,13 @@ export default function EvaluationListCard() {
 
     const store = useEvaluationStore()
 
+    // console.log(useContextStore('eva'))
+
     const summaryTableName = React.useMemo(() => {
-        return tableNameOfSummary(projectId)
-    }, [projectId])
-    const summaryTable = useQueryDatasetList(summaryTableName, { pageNum: 1, pageSize: 1000 })
-    console.log(summaryTable.data)
+        if (!project?.name) return ''
+        return tableNameOfSummary(project?.name as string)
+    }, [project])
+    const summaryTable = useQueryDatasetList(summaryTableName, { pageNum: 0, pageSize: 1000 })
 
     // TODO
     // 1. column key should be equal with eva attr field
@@ -72,17 +73,15 @@ export default function EvaluationListCard() {
             CustomColumn({
                 key: 'uuid',
                 title: t('Evaluation ID'),
-                // filterable: true,
-                // renderFilter: () => <div>1</div>,
                 mapDataToValue: (item: any) => item,
                 // @ts-ignore
                 renderCell: (props: any) => {
                     const item = props.value
 
                     return (
-                        <Link key={item.id} to={`/projects/${projectId}/evaluations/${item.id}/results`}>
+                        <TextLink key={item.id} to={`/projects/${projectId}/evaluations/${item.id}/results`}>
                             {`${item.modelName}-${item.id}`}
-                        </Link>
+                        </TextLink>
                     )
                 },
             }),
@@ -138,30 +137,27 @@ export default function EvaluationListCard() {
     const $columnsWithAttrs = useMemo(() => {
         const columnsWithAttrs = [...columns]
 
-        evaluationAttrsInfo?.data?.forEach((attr) => {
-            if (!attr.name.startsWith('summary/')) {
-                return
-            }
+        if (!summaryTable?.data) return columnsWithAttrs
 
-            const name = attr.name.split('/').slice(1).join('/')
-
-            switch (attr.type) {
-                default:
-                case 'string':
+        Object.entries(summaryTable?.data?.columnTypes ?? {}).forEach(([name, type]) => {
+            switch (type) {
+                case 'UNKNOWN':
+                case 'BYTES':
+                    break
+                case 'STRING':
                     columnsWithAttrs.push(
                         StringColumn({
-                            key: attr.name,
+                            key: name,
                             title: name,
                             filterType: 'string',
-                            mapDataToValue: (data: any) => data.attributes?.[attr.name],
+                            mapDataToValue: (data: any) => data[name],
                         })
                     )
                     break
-                case 'float':
-                case 'int':
+                default:
                     columnsWithAttrs.push(
                         CustomColumn({
-                            key: attr.name,
+                            key: name,
                             title: name,
                             sortable: true,
                             filterType: 'number',
@@ -176,12 +172,9 @@ export default function EvaluationListCard() {
                             },
                             // @ts-ignore
                             renderCell: (props: any) => {
-                                // .slice(0, 6)
                                 return <p title={props?.value}>{props?.value}</p>
                             },
-                            mapDataToValue: (data: any): string =>
-                                data.attributes?.find((v: IEvaluationAttributeValue) => v.name === attr.name)?.value ??
-                                '-',
+                            mapDataToValue: (data: any): string => data.attributes?.[name] ?? '-',
                         })
                     )
                     break
@@ -189,7 +182,7 @@ export default function EvaluationListCard() {
         })
 
         return columnsWithAttrs
-    }, [evaluationAttrsInfo, columns])
+    }, [summaryTable.data, columns])
 
     const [compareRows, setCompareRows] = useState<any[]>([])
 
@@ -209,13 +202,13 @@ export default function EvaluationListCard() {
     const $data = useMemo(
         () =>
             evaluationsInfo.data?.list?.map((raw) => {
-                const $attributes = raw.attributes?.filter((item: any) => _.startsWith(item.name, 'summary'))
+                const $attributes = summaryTable.data?.records?.find((item: any) => item.id === raw.id)
                 return {
                     ...raw,
                     attributes: $attributes,
                 }
             }) ?? [],
-        [evaluationsInfo.data]
+        [evaluationsInfo.data, summaryTable.data]
     )
 
     const [gridMode, setGridMode] = useState(1)
@@ -367,17 +360,19 @@ export default function EvaluationListCard() {
                     </Button>
                 }
             >
-                <Table
-                    useStore={useEvaluationStore}
-                    searchable
-                    filterable
-                    columnable
-                    viewable
-                    batchActions={batchAction}
-                    isLoading={evaluationsInfo.isLoading}
-                    columns={$columnsWithAttrs}
-                    data={$data}
-                />
+                <StoreProvider initState={{}}>
+                    <Table
+                        useStore={useEvaluationStore}
+                        searchable
+                        filterable
+                        columnable
+                        viewable
+                        batchActions={batchAction}
+                        isLoading={evaluationsInfo.isLoading}
+                        columns={$columnsWithAttrs}
+                        data={$data}
+                    />
+                </StoreProvider>
                 <Modal isOpen={isCreateJobOpen} onClose={() => setIsCreateJobOpen(false)} closeable animate autoFocus>
                     <ModalHeader>{t('create sth', [t('Job')])}</ModalHeader>
                     <ModalBody>
@@ -444,7 +439,7 @@ export default function EvaluationListCard() {
                         title={t('Compare Evaluations')}
                         style={{ marginRight: expanded ? expandedWidth : '0', marginBottom: 0 }}
                     >
-                        <EvaluationListCompare rows={compareRows} attrs={evaluationAttrsInfo?.data ?? []} />
+                        <EvaluationListCompare rows={compareRows} attrs={summaryTable?.data?.columnTypes} />
                     </Card>
                 </>
             )}

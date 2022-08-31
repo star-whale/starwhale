@@ -4,9 +4,10 @@ import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
 import Table from '@/components/Table'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useFetchRuntimes } from '@/domain/runtime/hooks/useFetchRuntimes'
 import User from '@/domain/user/components/User'
+import { TextLink } from '@/components/Link'
 
 export default function RuntimeListCard() {
     const [page] = usePage()
@@ -24,15 +25,15 @@ export default function RuntimeListCard() {
                 data={
                     runtimesInfo.data?.list.map((runtime) => {
                         return [
-                            <Link key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}`}>
+                            <TextLink key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}`}>
                                 {runtime.name}
-                            </Link>,
+                            </TextLink>,
                             runtime.version?.meta ?? '-',
                             runtime.owner && <User user={runtime.owner} />,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
-                            <Link key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}/versions`}>
+                            <TextLink key={runtime.id} to={`/projects/${projectId}/runtimes/${runtime.id}/versions`}>
                                 {t('Version History')}
-                            </Link>,
+                            </TextLink>,
                         ]
                     }) ?? []
                 }

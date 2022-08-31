@@ -1,14 +1,11 @@
 /* eslint-disable */
-import React, { useRef, useState, useMemo } from 'react'
-import { Table as TableSemantic, TableProps as BaseTableProps } from 'baseui/table-semantic'
+import React, { useRef, useMemo } from 'react'
+import { TableProps as BaseTableProps } from 'baseui/table-semantic'
 import { Pagination, SIZE as PaginationSize } from 'baseui/pagination'
 import { Skeleton } from 'baseui/skeleton'
-import { FiInbox } from 'react-icons/fi'
 import useTranslation from '@/hooks/useTranslation'
-import Text from '@/components/Text'
 import { usePage } from '@/hooks/usePage'
 import { IPaginationProps } from '@/components/Table/IPaginationProps'
-import { StatefulTooltip } from 'baseui/tooltip'
 import {
     StatefulDataTable,
     CategoricalColumn,
@@ -27,6 +24,7 @@ import type { ColumnT, ConfigT, RowT } from '../data-table/types'
 import { useUID, useUIDSeed } from 'react-uid'
 import useStore from '../data-table/store'
 import { useEffect } from 'react'
+import BusyPlaceholder from '../BusyLoaderWrapper/BusyPlaceholder'
 
 export interface ITableProps extends BaseTableProps {
     batchActions?: Types.BatchActionT[]
@@ -254,7 +252,7 @@ export function TableTyped({
                                 gap: 8,
                             }}
                         >
-                            <FiInbox size={50} />
+                            <BusyPlaceholder type='notfound' />
                         </div>
                     )}
                 />

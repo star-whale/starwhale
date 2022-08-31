@@ -3,7 +3,7 @@
 import { Navigation } from 'baseui/side-navigation'
 import _ from 'lodash'
 import React, { useCallback, useContext, useMemo } from 'react'
-import { useLocation, useHistory, Link } from 'react-router-dom'
+import { useLocation, useHistory } from 'react-router-dom'
 import useSidebarWidth from '@/hooks/useSidebarWidth'
 import { useStyletron } from 'baseui'
 import type { IconBaseProps } from 'react-icons/lib'
@@ -11,6 +11,8 @@ import { SidebarContext } from '@/contexts/SidebarContext'
 import Text from '@/components/Text'
 import { createUseStyles } from 'react-jss'
 import IconFont from '@/components/IconFont'
+import { StatefulTooltip } from 'baseui/tooltip'
+import TextLink from './Link/TextLink'
 
 const useBaseSideBarStyles = createUseStyles({
     sidebarWrapper: {
@@ -29,7 +31,7 @@ const useBaseSideBarStyles = createUseStyles({
         backgroundColor: '#F7F8FA',
         color: '#02102B',
         display: 'flex',
-        gap: 14,
+        gap: 8,
         fontSize: '14px',
         placeItems: 'center',
         padding: '8px 26px 8px 26px',
@@ -98,8 +100,13 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                             justifyContent: ctx.expanded ? 'flex-start' : 'center',
                         }}
                     >
-                        {Icon}
+                        {ctx.expanded && Icon}
                         {ctx.expanded && <span>{item.title}</span>}
+                        {!ctx.expanded && (
+                            <StatefulTooltip content={item.title} placement='bottomRight'>
+                                <div>{Icon}</div>
+                            </StatefulTooltip>
+                        )}
                     </div>
                 ),
                 itemId: item.path,
@@ -146,26 +153,33 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
             }}
         >
             {title && icon && (
-                <Link
+                <p
                     className={styles.siderTitle}
                     style={{
                         paddingLeft: EXPANDED_PADDING,
                     }}
-                    to={titleLink ?? '/projects'}
                 >
-                    {icon}
-                    {ctx.expanded && (
-                        <Text
-                            style={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
-                            {title}
-                        </Text>
-                    )}
-                </Link>
+                    <StatefulTooltip content={title} placement='bottomRight'>
+                        <div>{icon}</div>
+                    </StatefulTooltip>
+                    <TextLink
+                        to={titleLink ?? '/projects'}
+                        tooltip={{
+                            content: title,
+                            placement: 'bottomRight',
+                        }}
+                    >
+                        {ctx.expanded && (
+                            <Text
+                                style={{
+                                    fontWeight: 'bold',
+                                }}
+                            >
+                                {title}
+                            </Text>
+                        )}
+                    </TextLink>
+                </p>
             )}
             <Navigation
                 overrides={{

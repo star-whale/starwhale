@@ -19,7 +19,7 @@ export default function BusyPlaceholder({ type }: IBusyPlaceholderProps) {
             children = (
                 <>
                     <div style={{ alignSelf: 'center', fontSize: '50px' }}>
-                        <IconFont type='searchEmpty' />
+                        <IconFont type='searchEmpty' size={50} />
                     </div>
                 </>
             )
@@ -28,7 +28,7 @@ export default function BusyPlaceholder({ type }: IBusyPlaceholderProps) {
             children = (
                 <>
                     <div style={{ alignSelf: 'center', fontSize: '50px' }}>
-                        <IconFont type='empty' />
+                        <IconFont type='empty' size={50} />
                     </div>
                 </>
             )

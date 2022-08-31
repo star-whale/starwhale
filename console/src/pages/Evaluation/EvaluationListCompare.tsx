@@ -6,12 +6,12 @@ import Table from '@/components/Table/TableTyped'
 import { useParams } from 'react-router-dom'
 import { useFetchJobs } from '@job/hooks/useFetchJobs'
 import { CustomColumn, StringColumn } from '@/components/data-table'
-import { IEvaluationAttributeValue } from '@/domain/evaluation/schemas/evaluation'
 import _ from 'lodash'
 import IconFont from '@/components/IconFont'
 import { useEvaluationCompareStore } from '@/components/data-table/store'
 import { Checkbox } from 'baseui/checkbox'
 import { longestCommonSubstring } from '@/utils'
+import { RecordListVO } from '../../domain/datastore/schemas/datastore'
 
 type RowT = {
     key: string
@@ -73,24 +73,15 @@ const StringCompareCell = ({ value, comparedValue, renderedValue, data }: CellT<
 
 export default function EvaluationListCompare({
     rows = [],
-    attrs = [],
+    attrs,
 }: {
-    attrs: IEvaluationAttributeValue[]
     rows: any[]
+    attrs: RecordListVO['columnTypes']
 }) {
     const [t] = useTranslation()
     const [page] = usePage()
     const { projectId } = useParams<{ projectId: string }>()
     const evaluationsInfo = useFetchJobs(projectId, page)
-
-    // const results = useQueries(
-    //     rows.map((row: any) => ({
-    //         queryKey: `fetchJobResult:${projectId}:${row.id}`,
-    //         queryFn: () => fetchJobResult(projectId, row.id),
-    //         refetchOnWindowFocus: false,
-    //     }))
-    // )
-
     const store = useEvaluationCompareStore()
     const { comparePinnedKey, compareShowCellChanges, compareShowDiffOnly } = store.compare ?? {}
 
@@ -123,7 +114,7 @@ export default function EvaluationListCompare({
         const row = rows.find((r) => r.id === comparePinnedKey) ?? {}
         return {
             ...row,
-            ..._.mapValues(_.keyBy(row.attributes, 'name'), (o) => o.value),
+            ...row.attributes,
         }
     }, [rows, comparePinnedKey])
 
@@ -186,27 +177,11 @@ export default function EvaluationListCompare({
     const $rowWithAttrs = useMemo(() => {
         const rowWithAttrs = [...$rows]
 
-        attrs.forEach((attr) => {
-            if (!attr.name.startsWith('summary/')) {
-                return
-            }
-
-            const name = attr.name.split('/').slice(1).join('/')
-
+        Object.entries(attrs ?? {}).forEach(([name]) => {
             rowWithAttrs.push({
-                key: attr.name,
+                key: name,
                 title: name,
-                values: rows.map((data: any) => {
-                    const attrIndex = data.attributes?.findIndex(
-                        (row: IEvaluationAttributeValue) => row.name === attr.name
-                    )
-
-                    if (attrIndex >= 0) {
-                        return data.attributes?.[attrIndex]?.value ?? '-'
-                    }
-
-                    return '-'
-                }),
+                values: rows.map((data: any) => data.attributes?.[name] ?? '-'),
                 renderCompare: NumberCompareCell,
             })
         })

@@ -22,6 +22,9 @@ export default function Accordion({ children, ...props }: IAccordionProps) {
             Header: {
                 style: {
                     backgroundColor: '#F7F8FA',
+                    paddingTop: '9px',
+                    paddingBottom: '9px',
+                    fontSize: '14px',
                 },
             },
             Content: {

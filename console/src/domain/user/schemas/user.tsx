@@ -10,6 +10,7 @@ export interface IUserRoleSchema {
 export interface IUserSchema extends IResourceSchema {
     id: string
     name: string
+    email: string
     isEnabled: string
     role: IUserRoleSchema
 }
