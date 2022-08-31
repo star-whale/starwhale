@@ -300,7 +300,9 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
             logger.debug(f"job info:{_jobs}")
-            console.print(f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!")
+            console.print(
+                f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!"
+            )
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
