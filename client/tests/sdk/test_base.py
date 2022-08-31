@@ -1,7 +1,6 @@
 import os
 import tempfile
 import unittest
-from unittest.mock import patch, MagicMock
 
 from starwhale.utils import config as sw_config
 from starwhale.consts import ENV_SW_CLI_CONFIG, ENV_SW_LOCAL_STORAGE
@@ -18,12 +17,7 @@ class BaseTestCase(unittest.TestCase):
         self.datastore_root = str(sw_config.SWCliConfigMixed().datastore_dir)
         ensure_dir(self.datastore_root)
 
-        self.mock_atexit = patch("starwhale.api._impl.data_store.atexit", MagicMock())
-        self.mock_atexit.start()
-
     def tearDown(self) -> None:
         empty_dir(self.local_storage)
         os.environ.pop(ENV_SW_CLI_CONFIG, "")
         os.environ.pop(ENV_SW_LOCAL_STORAGE, "")
-
-        self.mock_atexit.stop()

@@ -2,7 +2,6 @@ import os
 import re
 import sys
 import json
-import atexit
 import base64
 import struct
 import urllib
@@ -713,13 +712,15 @@ class LocalDataStore:
                 ensure_dir(ds_path)
 
                 LocalDataStore._instance = LocalDataStore(str(ds_path))
-                atexit.register(LocalDataStore._instance.dump)
             return LocalDataStore._instance
 
     def __init__(self, root_path: str) -> None:
         self.root_path = root_path
         self.name_pattern = re.compile(r"^[A-Za-z0-9-_/: ]+$")
         self.tables: Dict[str, MemoryTable] = {}
+
+    def __del__(self) -> None:
+        self.dump()
 
     def update_table(
         self,
@@ -1026,7 +1027,6 @@ class TableWriter(threading.Thread):
         self.data_store = get_data_store()
         self.cond = threading.Condition()
         self.setDaemon(True)
-        atexit.register(self.close)
         self.start()
 
     def __enter__(self) -> Any:
@@ -1035,10 +1035,12 @@ class TableWriter(threading.Thread):
     def __exit__(self, type: Any, value: Any, tb: Any) -> None:
         self.close()
 
+    def __del__(self) -> None:
+        self.close()
+
     def close(self) -> None:
         with self.cond:
             if not self.stopped:
-                atexit.unregister(self.close)
                 self.stopped = True
                 self.cond.notify()
         self.join()
