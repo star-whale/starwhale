@@ -21,6 +21,7 @@ const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
 
+const p = { pageNum: 0, pageSize: 1000 }
 function Heatmap({ labels, binarylabel }: any) {
     const [t] = useTranslation()
     const heatmapData = getHeatmapConfig(t('Confusion Matrix'), labels, binarylabel)
@@ -59,7 +60,7 @@ function EvaluationResults() {
         return tableNameOfConfusionMatrix(project?.name as string, job?.uuid)
     }, [project, job])
 
-    const resultTable = useQueryDatasetList(resultTableName, { pageNum: 0, pageSize: 1000 })
+    const resultTable = useQueryDatasetList(resultTableName, p)
     // console.log(project?.name, resultTableName, resultTable)
     const { labels, binarylabel } = useParseConfusionMatrix(resultTable.data)
 

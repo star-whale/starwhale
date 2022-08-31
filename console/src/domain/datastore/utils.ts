@@ -1,4 +1,6 @@
 import qs from 'qs'
+// @ts-ignore
+import struct from '@aksel/structjs'
 
 const VERSION_PREFIX_CNT = 2
 
@@ -43,4 +45,15 @@ export function tableNameOfRocAuc(projectName: string, evaluationUuid: string) {
 
 export function tableNameOfSummary(projectName: string) {
     return `project/${projectName}/eval/summary`
+}
+
+export const unhexlify = function (str: string) {
+    const f = new Uint8Array(8)
+    let j = 0
+    for (let i = 0, l = str.length; i < l; i += 2) {
+        f[j] = parseInt(str.substr(i, 2), 16)
+        j++
+    }
+    const s = struct('>d')
+    return s.unpack(f.buffer)[0]
 }

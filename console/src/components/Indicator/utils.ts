@@ -1,6 +1,7 @@
 // @ts-nocheck
 /* eslint-disable */
 import struct from '@aksel/structjs'
+import { unhexlify } from '@/domain/datastore/utils'
 
 export interface IRocAuc {
     fpr: number[]
@@ -68,17 +69,6 @@ const Layout = {
             size: 16,
         },
     },
-}
-
-var unhexlify = function (str) {
-    const f = new Uint8Array(8)
-    let j = 0
-    for (var i = 0, l = str.length; i < l; i += 2) {
-        f[j] = parseInt(str.substr(i, 2), 16)
-        j++
-    }
-    let s = struct('>d')
-    return s.unpack(f.buffer)[0]
 }
 
 export function getRocAucConfig(title = '', labels: string[], data: IRocAuc[]) {
