@@ -114,7 +114,9 @@ class Scheduler:
             module=self.module,
             workdir=self.workdir,
         )
-        _task.execute()
+        start_time = time.time()
+        res = _task.execute()
+        StepCallback().callback(_step, [_task], res, time.time() - start_time)
 
 
 class Producer(threading.Thread):
