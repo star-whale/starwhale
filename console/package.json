@@ -52,7 +52,7 @@
     "just-extend": "^6.0.1",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
-    "moment-timezone": "^0.5.34",
+    "moment-timezone": "^0.5.35",
     "normalize.css": "^8.0.1",
     "plotly.js": "^2.11.1",
     "plyr-react": "^5.1.0",
