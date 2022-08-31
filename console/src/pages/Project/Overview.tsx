@@ -131,8 +131,8 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
             </div>
             <div className={styles.row}>
                 <div className={styles.memberWrapper}>
-                    {members.data?.map((member) => (
-                        <Avatar name={member.user.name} />
+                    {members.data?.map((member, i) => (
+                        <Avatar key={i} name={member.user.name} />
                     ))}
                 </div>
             </div>

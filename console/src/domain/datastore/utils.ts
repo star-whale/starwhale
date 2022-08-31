@@ -1,5 +1,4 @@
 import qs from 'qs'
-import { RecordListVO } from './schemas/datastore'
 
 const VERSION_PREFIX_CNT = 2
 

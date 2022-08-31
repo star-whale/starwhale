@@ -3,7 +3,7 @@
 import { Navigation } from 'baseui/side-navigation'
 import _ from 'lodash'
 import React, { useCallback, useContext, useMemo } from 'react'
-import { useLocation, useHistory, Link } from 'react-router-dom'
+import { useLocation, useHistory } from 'react-router-dom'
 import useSidebarWidth from '@/hooks/useSidebarWidth'
 import { useStyletron } from 'baseui'
 import type { IconBaseProps } from 'react-icons/lib'
@@ -11,8 +11,8 @@ import { SidebarContext } from '@/contexts/SidebarContext'
 import Text from '@/components/Text'
 import { createUseStyles } from 'react-jss'
 import IconFont from '@/components/IconFont'
-import TextLink from './Link/TextLink'
 import { StatefulTooltip } from 'baseui/tooltip'
+import TextLink from './Link/TextLink'
 
 const useBaseSideBarStyles = createUseStyles({
     sidebarWrapper: {

@@ -1,15 +1,14 @@
 // @ts-nocheck
-
+/* eslint-disable */
 import omit from 'lodash/omit'
 import keyBy from 'lodash/keyBy'
-import set from 'lodash/set'
 import React from 'react'
 import { RecordListVO } from '../schemas/datastore'
 import struct from '@aksel/structjs'
 
-var unhexlify = function (str) {
-    var f = new Uint8Array(8)
-    var j = 0
+const unhexlify = function (str) {
+    const f = new Uint8Array(8)
+    let j = 0
     for (var i = 0, l = str.length; i < l; i += 2) {
         f[j] = parseInt(str.substr(i, 2), 16)
         j++

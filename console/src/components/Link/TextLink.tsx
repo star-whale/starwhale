@@ -2,7 +2,6 @@ import React from 'react'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
 import BaseLink, { ILinkProps } from './Link'
-import { useStyletron } from 'baseui'
 
 const useLinkStyles = createUseStyles({
     link: {
@@ -27,7 +26,6 @@ const useLinkStyles = createUseStyles({
 
 export default function TextLink({ children, className, style, ...rest }: ILinkProps) {
     const styles = useLinkStyles()
-    const [css] = useStyletron()
 
     return (
         <BaseLink className={styles.link} {...rest}>

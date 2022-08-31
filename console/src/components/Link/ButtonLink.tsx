@@ -1,7 +1,6 @@
 import React from 'react'
 import { createUseStyles } from 'react-jss'
 import cn from 'classnames'
-import BaseLink, { ILinkProps } from './Link'
 import { StyledLink } from 'baseui/link'
 
 const useLinkStyles = createUseStyles({

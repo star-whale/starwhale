@@ -7,9 +7,9 @@ import { LazyLog } from 'react-lazylog'
 import { Panel } from 'baseui/accordion'
 import { fetchTaskOfflineFileLog, fetchTaskOfflineLogFiles } from '@/domain/job/services/task'
 import { getToken } from '@/api'
-import TaskListCard from './TaskListCard'
-import { ITaskSchema, TaskStatusType } from '../../domain/job/schemas/task'
+import { ITaskSchema, TaskStatusType } from '@/domain/job/schemas/task'
 import Accordion from '@/components/Accordion'
+import TaskListCard from './TaskListCard'
 
 export interface IScrollProps {
     scrollTop: number
@@ -136,8 +136,6 @@ export default function JobTasks() {
             currentTask?.id
         }?Authorization=${getToken()}`
     }, [currentTask])
-
-    console.log(Object.entries(currentLogFiles))
 
     return (
         <>

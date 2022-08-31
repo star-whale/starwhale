@@ -33,7 +33,7 @@ function Heatmap({ labels, binarylabel }: any) {
     )
 }
 
-function RocAuc({ labels, data }: { labels: any[]; data: Record<string, IRocAuc> }) {
+function RocAuc({ labels, data }: { labels: any[]; data: IRocAuc[] }) {
     const [t] = useTranslation()
     const title = t('Roc Auc')
     const rocaucData = getRocAucConfig(title, labels, data)
@@ -204,7 +204,8 @@ function EvaluationResults() {
             >
                 {indicators}
                 <Heatmap labels={labels} binarylabel={binarylabel} />
-                <RocAuc labels={labels} data={rocAucTable.data?.records} />
+                {/* @ts-ignore */}
+                <RocAuc labels={labels} data={(rocAucTable.data?.records ?? []) as IRocAuc[]} />
             </div>
         </div>
     )

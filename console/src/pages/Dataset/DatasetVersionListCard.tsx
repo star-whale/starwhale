@@ -9,9 +9,8 @@ import useTranslation from '@/hooks/useTranslation'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useFetchDatasetVersions } from '@dataset/hooks/useFetchDatasetVersions'
-import { StyledLink } from 'baseui/link'
 import { toaster } from 'baseui/toast'
 import { ButtonLink, TextLink } from '@/components/Link'
 
@@ -55,17 +54,6 @@ export default function DatasetVersionListCard() {
                                 >
                                     {datasetVersion.name}
                                 </TextLink>,
-                                // <Button
-                                //     key={datasetVersion.id}
-                                //     size='compact'
-                                //     as='link'
-                                //     onClick={() => {
-                                //         setDrawerData(datasetVersion.meta)
-                                //         setIsOpen(true)
-                                //     }}
-                                // >
-                                //     {t('show meta')}
-                                // </Button>,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
                                 <ButtonLink

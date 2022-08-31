@@ -1,6 +1,5 @@
 // @ts-nocheck
-
-import _ from 'lodash'
+/* eslint-disable */
 import struct from '@aksel/structjs'
 
 export interface IRocAuc {
@@ -71,71 +70,15 @@ const Layout = {
     },
 }
 
-function IEEEToDouble(is) {
-    return new Float64Array(Uint32Array.from(is).buffer)[0]
-}
-function hex2bin(hex) {
-    return parseInt(hex, 16).toString(2).padStart(8, '0')
-}
-
-var unhexlify2 = function (str) {
-    var result = ''
-    for (var i = 0, l = str.length; i < l; i += 2) {
-        result += String.fromCharCode(parseInt(str.substr(i, 2), 16))
-    }
-    return result
-}
-
 var unhexlify = function (str) {
-    var result = ''
-    var f = new Uint8Array(8)
-    var j = 0
-    var bin = ''
-    let accii
+    const f = new Uint8Array(8)
+    let j = 0
     for (var i = 0, l = str.length; i < l; i += 2) {
-        // console.log(
-        //     str.substr(i, 2),
-        //     parseInt(str.substr(i, 2), 16)
-        //     // String.fromCharCode(parseInt(str.substr(i, 2), 16))
-        // )
-
-        accii += String.fromCharCode(parseInt(str.substr(i, 2), 16))
-        result += String(parseInt(str.substr(i, 2), 16))
-        bin += String(hex2bin(str.substr(i, 2)))
         f[j] = parseInt(str.substr(i, 2), 16)
         j++
     }
-    // console.log(str, f, IEEEToDouble(f), f.BYTES_PER_ELEMENT)
-    // console.log(f.toString())
-    // console.log(Uint32Array.from(f))
-    // console.log(new Float64Array(Uint32Array.from(f).buffer)[0])
-    // console.log(new Float64Array(Uint32Array.from(f).buffer)[1])
-    // console.log(new Float64Array(Uint32Array.from(f).buffer)[2])
-    // console.log(new Float64Array(Uint32Array.from(f).buffer)[3])
-    // console.log(new Float64Array(Uint32Array.from(f).buffer)[4])
-    // const decoder = new TextDecoder('utf8')
-    // console.log(decoder.decode(f.buffer))
-    // console.log(f.toString(10))
-    // console.log(bin)
-    // console.log(parseInt(bin, 2))
-
     let s = struct('>d')
-    // console.log(result, unhexlify2(accii))
-    try {
-        // console.log(f)
-        // console.log(str, f.toString(), s.unpack(f.buffer))
-    } catch (e) {
-        // console.log(e)
-    }
-
     return s.unpack(f.buffer)[0]
-}
-
-var decrypt = function (a) {
-    return a.replace(/\s*[01]{8}\s*/g, (bin) => {
-        let charCode = parseInt(bin, 2)
-        return String.fromCharCode(charCode)
-    })
 }
 
 export function getRocAucConfig(title = '', labels: string[], data: IRocAuc[]) {
@@ -156,7 +99,7 @@ export function getRocAucConfig(title = '', labels: string[], data: IRocAuc[]) {
 
     const fpr = []
     const tpr = []
-    const sorted = data?.sort((a, b) => {
+    data?.sort((a, b) => {
         return parseInt(a.id) - parseInt(b.id)
     })
     data?.forEach((item, i) => {
@@ -189,12 +132,9 @@ export function getRocAucConfig(title = '', labels: string[], data: IRocAuc[]) {
             ...layout,
         },
     }
-    console.log(rocAucData.data[0])
+    // console.log(rocAucData.data[0])
     return rocAucData
 }
-
-// columnTypes: {label_6: "FLOAT64", label_5: "FLOAT64", label_4: "FLOAT64", label_3: "FLOAT64", label_9: "FLOAT64",…}
-// records: [0: {label_6: "3f1a378ebbf957e5", label_5: "0", label_4: "0", label_3: "0", label_9: "0",…}]
 
 export function getHeatmapConfig(title = '', labels: string[], heatmap: number[][]) {
     const nums = labels.length
