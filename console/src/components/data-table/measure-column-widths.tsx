@@ -150,7 +150,6 @@ export default function MeasureColumnWidths({
                 // 1.Refresh at 100% of done
                 // 2. Refresh only when there is a width updating ,and the minised of the width is more than 2px
                 if (widthMap.size === columns.length) {
-                    // console.log('updating', widthMap)
                     setWidthMap(widthMap)
                     onWidthsChange(Array.from(widthMap.values()))
                 }

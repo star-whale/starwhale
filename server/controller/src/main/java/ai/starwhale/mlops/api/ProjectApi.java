@@ -111,7 +111,7 @@ public interface ProjectApi {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "ok")})
     @GetMapping(value = "/project/{projectUrl}/role")
-    @PreAuthorize("hasAnyRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
     ResponseEntity<ResponseMessage<List<ProjectRoleVO>>> listProjectRole(
         @PathVariable("projectUrl") String projectUrl
     );

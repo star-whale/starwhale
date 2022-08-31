@@ -47,4 +47,5 @@ public class DataStoreScanRequest {
     @Builder.Default
     private int limit = -1;
     private boolean keepNone;
+    private boolean rawResult;
 }

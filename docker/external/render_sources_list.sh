@@ -36,4 +36,4 @@ main() {
     cat $SOURCES_LIST_PATH
 }
 
-main $1
+#main $1

@@ -275,7 +275,8 @@ public class MemoryTableImpl implements MemoryTable {
             TableQueryFilter filter,
             int start,
             int limit,
-            boolean keepNone) {
+            boolean keepNone,
+            boolean rawResult) {
         if (this.schema == null) {
             return new RecordList(null, List.of(), null);
         }
@@ -337,7 +338,7 @@ public class MemoryTableImpl implements MemoryTable {
                     for (var entry : finalColumns.entrySet()) {
                         var value = record.get(entry.getKey());
                         if (keepNone || value != null) {
-                            r.put(entry.getValue(), columnTypeMapping.get(entry.getValue()).encode(value));
+                            r.put(entry.getValue(), columnTypeMapping.get(entry.getValue()).encode(value, rawResult));
                         }
                     }
                     return r;
@@ -351,6 +352,7 @@ public class MemoryTableImpl implements MemoryTable {
         private Map<String, String> columns;
         private Object endKey;
         private boolean keepNone;
+        private boolean rawResult;
         private Iterator<Map.Entry<Object, Map<String, Object>>> iterator;
         @Getter
         private Object key;
@@ -365,7 +367,8 @@ public class MemoryTableImpl implements MemoryTable {
                 boolean startInclusive,
                 String end,
                 boolean endInclusive,
-                boolean keepNone) {
+                boolean keepNone,
+                boolean rawResult) {
             if (MemoryTableImpl.this.schema == null) {
                 return;
             }
@@ -373,6 +376,7 @@ public class MemoryTableImpl implements MemoryTable {
                     () -> MemoryTableImpl.this.schema.getColumnSchemas().stream()
                             .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::getName)));
             this.keepNone = keepNone;
+            this.rawResult = rawResult;
             this.columnTypeMapping = MemoryTableImpl.this.schema.getColumnTypeMapping(this.columns);
             Object startKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(start);
             Object endKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(end);
@@ -429,7 +433,7 @@ public class MemoryTableImpl implements MemoryTable {
                     var value = r.get(entry.getKey());
                     if (value != null) {
                         this.record.put(entry.getValue(),
-                                this.columnTypeMapping.get(entry.getValue()).encode(value));
+                                this.columnTypeMapping.get(entry.getValue()).encode(value, rawResult));
                     } else if (this.keepNone) {
                         this.record.put(entry.getValue(), null);
                     }
@@ -445,8 +449,9 @@ public class MemoryTableImpl implements MemoryTable {
             boolean startInclusive,
             String end,
             boolean endInclusive,
-            boolean keepNone) {
-        return new InternalIterator(columns, start, startInclusive, end, endInclusive, keepNone);
+            boolean keepNone,
+            boolean rawResult) {
+        return new InternalIterator(columns, start, startInclusive, end, endInclusive, keepNone, rawResult);
     }
 
     private static int sortCompare(Object a, Object b) {

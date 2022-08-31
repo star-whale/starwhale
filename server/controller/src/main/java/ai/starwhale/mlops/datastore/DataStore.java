@@ -63,7 +63,8 @@ public class DataStore {
                 req.getFilter(),
                 req.getStart(),
                 req.getLimit(),
-                req.isKeepNone());
+                req.isKeepNone(),
+                req.isRawResult());
     }
 
     public RecordList scan(DataStoreScanRequest req) {
@@ -75,7 +76,8 @@ public class DataStore {
                     req.isStartInclusive(),
                     req.getEnd(),
                     req.isEndInclusive(),
-                    info.isKeepNone());
+                    info.isKeepNone(),
+                    req.isRawResult());
             iter.next();
             if (iter.getRecord() != null) {
                 iters.add(iter);
@@ -111,7 +113,7 @@ public class DataStore {
             ret.add(record);
             iters.removeIf(x -> x.getRecord() == null);
         }
-        return new RecordList(columnTypeMap, ret, keyColumnType.encode(lastKey));
+        return new RecordList(columnTypeMap, ret, keyColumnType.encode(lastKey, false));
     }
 
     private MemoryTable getTable(String tableName) {

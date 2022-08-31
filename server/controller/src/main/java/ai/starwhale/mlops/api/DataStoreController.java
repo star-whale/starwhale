@@ -101,6 +101,7 @@ public class DataStoreController implements DataStoreApi {
                     .start(request.getStart())
                     .limit(request.getLimit())
                     .keepNone(request.isKeepNone())
+                    .rawResult(request.isRawResult())
                     .build());
             return ResponseEntity.ok(Code.success.asResponse(RecordListVO.builder()
                     .columnTypes(recordList.getColumnTypeMap())
@@ -142,6 +143,7 @@ public class DataStoreController implements DataStoreApi {
                     .endInclusive(request.isEndInclusive())
                     .limit(request.getLimit())
                     .keepNone(request.isKeepNone())
+                    .rawResult(request.isRawResult())
                     .build());
             return ResponseEntity.ok(Code.success.asResponse(RecordListVO.builder()
                     .columnTypes(recordList.getColumnTypeMap())

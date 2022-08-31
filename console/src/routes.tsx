@@ -75,8 +75,8 @@ const Routes = () => {
             <React.Suspense fallback={<Pending />}>
                 <BrowserRouter>
                     <div className={styles.root}>
-                        <ApiHeader />
                         <Route>
+                            <ApiHeader />
                             <LoginLayout>
                                 <Switch>
                                     <Route exact path='/reset' component={ResetPassword} />
@@ -95,189 +95,199 @@ const Routes = () => {
         <React.Suspense fallback={<Pending />}>
             <BrowserRouter>
                 <div className={styles.root}>
-                    <ApiHeader />
-                    <Header />
-                    <Switch>
-                        {/* setting */}
-                        <Route exact path='/settings/:path?'>
-                            <SettingsOverviewLayout>
-                                <Switch>
-                                    <Route exact path='/settings/agents' component={SettingAgentListCard} />
-                                    <Redirect from='/settings/:path?' to='/settings/agents' />
-                                </Switch>
-                            </SettingsOverviewLayout>
-                        </Route>
-                        {/* project */}
-                        <Route exact path='/projects/:projectId/members'>
-                            <CenterLayout>
-                                <Route exact path='/projects/:projectId/members' component={ProjectMembers} />
-                            </CenterLayout>
-                        </Route>
-                        <Route exact path='/projects/:projectId/:path?'>
-                            <ProjectLayout>
-                                <Switch>
-                                    <Route exact path='/projects/:projectId/models' component={ProjectModels} />
-                                    <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
-                                    <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/evaluations'
-                                        component={ProjectEvaluations}
-                                    />
-                                    <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
-                                    <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
+                    <Route>
+                        <ApiHeader />
+                        <Header />
+                        <Switch>
+                            {/* setting */}
+                            <Route exact path='/settings/:path?'>
+                                <SettingsOverviewLayout>
+                                    <Switch>
+                                        <Route exact path='/settings/agents' component={SettingAgentListCard} />
+                                        <Redirect from='/settings/:path?' to='/settings/agents' />
+                                    </Switch>
+                                </SettingsOverviewLayout>
+                            </Route>
+                            {/* project */}
+                            <Route exact path='/projects/:projectId/members'>
+                                <CenterLayout>
                                     <Route exact path='/projects/:projectId/members' component={ProjectMembers} />
-                                    <Route exact path='/projects/:projectId/overview' component={ProjectOverview} />
-                                    <Redirect from='/projects/:projectId' to='/projects/:projectId/overview' />
-                                </Switch>
-                            </ProjectLayout>
-                        </Route>
-                        {/* evaluation */}
-                        <Route exact path='/projects/:projectId/evaluations/:jobId/:path?'>
-                            <EvaluationOverviewLayout>
-                                <Switch>
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/evaluations/:jobId/results'
-                                        component={EvaluationResults}
-                                    />
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/evaluations/:jobId/tasks'
-                                        component={JobTasks}
-                                    />
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/evaluations/:jobId/actions'
-                                        component={JobDAG}
-                                    />
-                                    <Redirect
-                                        from='/projects/:projectId/evaluations/:jobId'
-                                        to='/projects/:projectId/evaluations/:jobId/results'
-                                    />
-                                </Switch>
-                            </EvaluationOverviewLayout>
-                        </Route>
-                        {/* job & task */}
-                        <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
-                            <JobOverviewLayout>
-                                <Switch>
-                                    <Route exact path='/projects/:projectId/jobs/:jobId/tasks' component={JobTasks} />
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/jobs/:jobId/results'
-                                        component={JobResults}
-                                    />
-                                    <Route exact path='/projects/:projectId/jobs/:jobId/actions' component={JobDAG} />
-                                    <Redirect
-                                        from='/projects/:projectId/jobs/:jobId'
-                                        to='/projects/:projectId/jobs/:jobId/actions'
-                                    />
-                                </Switch>
-                            </JobOverviewLayout>
-                        </Route>
-                        {/* datasets */}
-                        <Route
-                            exact
-                            path='/projects/:projectId/datasets/:datasetId/:path?/:datasetVersionId?/:path?/:fileId?'
-                        >
-                            <DatasetOverviewLayout>
-                                <Switch>
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/datasets/:datasetId'
-                                        component={DatasetVersionListCard}
-                                    />
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/overview'
-                                        component={DatasetVersionOverview}
-                                    />
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/meta'
-                                        component={DatasetVersionOverviewMeta}
-                                    />
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/files'
-                                        component={DatasetVersionOverviewFiles}
-                                    />
+                                </CenterLayout>
+                            </Route>
+                            <Route exact path='/projects/:projectId/:path?'>
+                                <ProjectLayout>
+                                    <Switch>
+                                        <Route exact path='/projects/:projectId/models' component={ProjectModels} />
+                                        <Route exact path='/projects/:projectId/datasets' component={ProjectDatasets} />
+                                        <Route exact path='/projects/:projectId/jobs' component={ProjectJobs} />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/evaluations'
+                                            component={ProjectEvaluations}
+                                        />
+                                        <Route exact path='/projects/:projectId/runtimes' component={ProjectRuntimes} />
+                                        <Route exact path='/projects/:projectId/new_job' component={JobNewCard} />
+                                        <Route exact path='/projects/:projectId/members' component={ProjectMembers} />
+                                        <Route exact path='/projects/:projectId/overview' component={ProjectOverview} />
+                                        <Redirect from='/projects/:projectId' to='/projects/:projectId/overview' />
+                                    </Switch>
+                                </ProjectLayout>
+                            </Route>
+                            {/* evaluation */}
+                            <Route exact path='/projects/:projectId/evaluations/:jobId/:path?'>
+                                <EvaluationOverviewLayout>
+                                    <Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/evaluations/:jobId/results'
+                                            component={EvaluationResults}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/evaluations/:jobId/tasks'
+                                            component={JobTasks}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/evaluations/:jobId/actions'
+                                            component={JobDAG}
+                                        />
+                                        <Redirect
+                                            from='/projects/:projectId/evaluations/:jobId'
+                                            to='/projects/:projectId/evaluations/:jobId/results'
+                                        />
+                                    </Switch>
+                                </EvaluationOverviewLayout>
+                            </Route>
+                            {/* job & task */}
+                            <Route exact path='/projects/:projectId/jobs/:jobId/:path?'>
+                                <JobOverviewLayout>
+                                    <Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/jobs/:jobId/tasks'
+                                            component={JobTasks}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/jobs/:jobId/results'
+                                            component={JobResults}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/jobs/:jobId/actions'
+                                            component={JobDAG}
+                                        />
+                                        <Redirect
+                                            from='/projects/:projectId/jobs/:jobId'
+                                            to='/projects/:projectId/jobs/:jobId/actions'
+                                        />
+                                    </Switch>
+                                </JobOverviewLayout>
+                            </Route>
+                            {/* datasets */}
+                            <Route
+                                exact
+                                path='/projects/:projectId/datasets/:datasetId/:path?/:datasetVersionId?/:path?/:fileId?'
+                            >
+                                <DatasetOverviewLayout>
+                                    <Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/datasets/:datasetId'
+                                            component={DatasetVersionListCard}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/overview'
+                                            component={DatasetVersionOverview}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/meta'
+                                            component={DatasetVersionOverviewMeta}
+                                        />
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/files'
+                                            component={DatasetVersionOverviewFiles}
+                                        />
 
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/files/:fileId?'
-                                        component={DatasetVersionOverviewFiles}
-                                    />
-                                    <Redirect to='/projects/:projectId/datasets/:datasetId' />
-                                </Switch>
-                            </DatasetOverviewLayout>
-                        </Route>
-                        {/* runtime */}
-                        <Route exact path='/projects/:projectId/runtimes/:runtimeId/versions'>
-                            <RuntimeVersionLayout>
-                                <Switch>
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/runtimes/:runtimeId/versions'
-                                        component={RuntimeVersionListCard}
-                                    />
-                                </Switch>
-                            </RuntimeVersionLayout>
-                        </Route>
-                        <Route exact path='/projects/:projectId/runtimes/:runtimeId/:path?/:path?'>
-                            <RuntimeLayout>
-                                <Switch>
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/runtimes/:runtimeId'
-                                        component={RuntimeOverview}
-                                    />
-                                </Switch>
-                            </RuntimeLayout>
-                        </Route>
-                        {/* model */}
-                        <Route exact path='/projects/:projectId/models/:modelId/versions'>
-                            <ModelVersionLayout>
-                                <Switch>
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/models/:modelId/versions'
-                                        component={ModelVersionListCard}
-                                    />
-                                </Switch>
-                            </ModelVersionLayout>
-                        </Route>
-                        <Route exact path='/projects/:projectId/models/:modelId/:path?/:path?'>
-                            <ModelLayout>
-                                <Switch>
-                                    <Route
-                                        exact
-                                        path='/projects/:projectId/models/:modelId'
-                                        component={ModelOverview}
-                                    />
-                                </Switch>
-                            </ModelLayout>
-                        </Route>
-                        {/* admin */}
-                        <Route exact path='/admin/:path?'>
-                            <AdminLayout>
-                                <Switch>
-                                    <Route exact path='/admin/users' component={UserManagement} />
-                                    <Redirect exact from='/admin' to='/admin/users' />
-                                </Switch>
-                            </AdminLayout>
-                        </Route>
-                        {/* default */}
-                        <Route>
-                            <CenterLayout>
-                                <Switch>
-                                    <Route path='/projects' component={ProjectListCard} />
-                                    <Redirect path='/' to='/projects' />
-                                </Switch>
-                            </CenterLayout>
-                        </Route>
-                    </Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/datasets/:datasetId/versions/:datasetVersionId/files/:fileId?'
+                                            component={DatasetVersionOverviewFiles}
+                                        />
+                                        <Redirect to='/projects/:projectId/datasets/:datasetId' />
+                                    </Switch>
+                                </DatasetOverviewLayout>
+                            </Route>
+                            {/* runtime */}
+                            <Route exact path='/projects/:projectId/runtimes/:runtimeId/versions'>
+                                <RuntimeVersionLayout>
+                                    <Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/runtimes/:runtimeId/versions'
+                                            component={RuntimeVersionListCard}
+                                        />
+                                    </Switch>
+                                </RuntimeVersionLayout>
+                            </Route>
+                            <Route exact path='/projects/:projectId/runtimes/:runtimeId/:path?/:path?'>
+                                <RuntimeLayout>
+                                    <Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/runtimes/:runtimeId'
+                                            component={RuntimeOverview}
+                                        />
+                                    </Switch>
+                                </RuntimeLayout>
+                            </Route>
+                            {/* model */}
+                            <Route exact path='/projects/:projectId/models/:modelId/versions'>
+                                <ModelVersionLayout>
+                                    <Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/models/:modelId/versions'
+                                            component={ModelVersionListCard}
+                                        />
+                                    </Switch>
+                                </ModelVersionLayout>
+                            </Route>
+                            <Route exact path='/projects/:projectId/models/:modelId/:path?/:path?'>
+                                <ModelLayout>
+                                    <Switch>
+                                        <Route
+                                            exact
+                                            path='/projects/:projectId/models/:modelId'
+                                            component={ModelOverview}
+                                        />
+                                    </Switch>
+                                </ModelLayout>
+                            </Route>
+                            {/* admin */}
+                            <Route exact path='/admin/:path?'>
+                                <AdminLayout>
+                                    <Switch>
+                                        <Route exact path='/admin/users' component={UserManagement} />
+                                        <Redirect exact from='/admin' to='/admin/users' />
+                                    </Switch>
+                                </AdminLayout>
+                            </Route>
+                            {/* default */}
+                            <Route>
+                                <CenterLayout>
+                                    <Switch>
+                                        <Route path='/projects' component={ProjectListCard} />
+                                        <Redirect path='/' to='/projects' />
+                                    </Switch>
+                                </CenterLayout>
+                            </Route>
+                        </Switch>
+                    </Route>
                 </div>
             </BrowserRouter>
         </React.Suspense>

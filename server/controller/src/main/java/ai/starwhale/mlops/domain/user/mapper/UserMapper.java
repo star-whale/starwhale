@@ -28,6 +28,10 @@ public interface UserMapper {
 
     UserEntity findUserByName(@Param("userName") String userName);
 
+    String existRegister();
+
+    String getUserEmail(@Param("id")Long id);
+
     List<UserEntity> listUsers(@Param("userNamePrefix") String userNamePrefix);
 
     int changePassword(@Param("user")UserEntity user);

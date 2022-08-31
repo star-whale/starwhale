@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.Base64;
 import java.util.Map;
@@ -72,28 +73,46 @@ public enum ColumnType {
     }
 
     @SneakyThrows
-    public String encode(Object value) {
+    public String encode(Object value, boolean rawResult) {
         if (value == null) {
             return null;
         }
-        switch (this) {
-            case BOOL:
-                return (Boolean) value ? "1" : "0";
-            case INT8:
-            case INT16:
-            case INT32:
-            case INT64:
-                return Long.toHexString(((Number) value).longValue());
-            case FLOAT32:
-                return Integer.toHexString(Float.floatToIntBits((Float) value));
-            case FLOAT64:
-                return Long.toHexString(Double.doubleToLongBits((Double) value));
-            case STRING:
-                return (String) value;
-            case BYTES:
-                return Base64.getEncoder().encodeToString(((ByteBuffer) value).array());
-            default:
-                throw new IllegalArgumentException("invalid type " + this);
+        if (rawResult) {
+            switch (this) {
+                case BOOL:
+                case INT8:
+                case INT16:
+                case INT32:
+                case INT64:
+                case FLOAT32:
+                case FLOAT64:
+                case STRING:
+                    return value.toString();
+                case BYTES:
+                    return StandardCharsets.UTF_8.decode((ByteBuffer) value).toString();
+                default:
+                    throw new IllegalArgumentException("invalid type " + this);
+            }
+        } else {
+            switch (this) {
+                case BOOL:
+                    return (Boolean) value ? "1" : "0";
+                case INT8:
+                case INT16:
+                case INT32:
+                case INT64:
+                    return Long.toHexString(((Number) value).longValue());
+                case FLOAT32:
+                    return Integer.toHexString(Float.floatToIntBits((Float) value));
+                case FLOAT64:
+                    return Long.toHexString(Double.doubleToLongBits((Double) value));
+                case STRING:
+                    return (String) value;
+                case BYTES:
+                    return Base64.getEncoder().encodeToString(((ByteBuffer) value).array());
+                default:
+                    throw new IllegalArgumentException("invalid type " + this);
+            }
         }
     }
 

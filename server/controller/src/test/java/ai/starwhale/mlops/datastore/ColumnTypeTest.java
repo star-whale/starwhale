@@ -16,24 +16,42 @@
 
 package ai.starwhale.mlops.datastore;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
 public class ColumnTypeTest {
+    @Test
+    public void testEncodeRawResult() {
+        assertThat(ColumnType.BOOL.encode(true, true), is("true"));
+        assertThat(ColumnType.INT8.encode((byte) 10, true), is("10"));
+        assertThat(ColumnType.INT16.encode((short) 10, true), is("10"));
+        assertThat(ColumnType.INT32.encode(10, true), is("10"));
+        assertThat(ColumnType.INT64.encode(10L, true), is("10"));
+        assertThat(ColumnType.FLOAT32.encode(1.003f, true), is("1.003"));
+        assertThat(ColumnType.FLOAT64.encode(1.003, true), is("1.003"));
+        assertThat(ColumnType.STRING.encode("test", true), is("test"));
+        assertThat(ColumnType.BYTES.encode(ByteBuffer.wrap("test\n".getBytes(StandardCharsets.UTF_8)), true),
+                is("test\n"));
+    }
 
     @Test
-    public void testDecode(){
-        Object decode = ColumnType.INT32.decode(ColumnType.INT32.encode(Integer.valueOf(1)));
-        Assertions.assertEquals(1,decode);
-
-        decode = ColumnType.INT64.decode(ColumnType.INT64.encode(Long.valueOf(1)));
-        Assertions.assertEquals(1l,decode);
-
-        decode = ColumnType.FLOAT32.decode(ColumnType.FLOAT32.encode(1.003f));
-        Assertions.assertEquals(1.003f,decode);
-
-        decode = ColumnType.FLOAT64.decode(ColumnType.FLOAT64.encode(1d));
-        Assertions.assertEquals(1d,decode);
+    public void testDecode() {
+        assertThat(ColumnType.BOOL.decode(ColumnType.BOOL.encode(true, false)), is(true));
+        assertThat(ColumnType.INT8.decode(ColumnType.INT8.encode(1, false)), is((byte) 1));
+        assertThat(ColumnType.INT16.decode(ColumnType.INT16.encode(1, false)), is((short) 1));
+        assertThat(ColumnType.INT32.decode(ColumnType.INT32.encode(1, false)), is(1));
+        assertThat(ColumnType.INT64.decode(ColumnType.INT64.encode(1L, false)), is(1L));
+        assertThat(ColumnType.FLOAT32.decode(ColumnType.FLOAT32.encode(1.003f, false)), is(1.003f));
+        assertThat(ColumnType.FLOAT64.decode(ColumnType.FLOAT64.encode(1d, false)), is(1d));
+        assertThat(ColumnType.STRING.decode(ColumnType.STRING.encode("test", false)), is("test"));
+        assertThat(ColumnType.BYTES.decode(
+                        ColumnType.BYTES.encode(ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8)), false)),
+                is(ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8))));
     }
 
 }

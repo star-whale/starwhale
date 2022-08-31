@@ -28,4 +28,5 @@ public class ScanTableRequest {
     private boolean endInclusive;
     private int limit = -1;
     private boolean keepNone;
+    private boolean rawResult;
 }

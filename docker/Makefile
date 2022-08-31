@@ -8,7 +8,7 @@ GHCR_IO_REPO := ghcr.io/star-whale
 
 # Please update base/nodejs/base_server image version by manual, DOT NOT USE RELEASE TAG.
 # These images versions are slow to release.
-FIXED_VERSION_BASE_IMAGE := 0.2.1
+FIXED_VERSION_BASE_IMAGE := 0.2.2
 FIXED_VERSION_NODEJS_IMAGE := 0.1.2
 FIXED_VERSION_BASE_SERVER_IMAGE := 0.1.1
 
@@ -83,6 +83,7 @@ prepare-buildx:
 		--use --bootstrap --driver-opt network=host
 
 build-release-base:
+	docker manifest inspect $(GHCR_IO_REPO)/base:$(FIXED_VERSION_BASE_IMAGE) || \
 	docker buildx build --platform linux/arm64,linux/amd64 \
 		--build-arg HTTP_PROXY=$(HTTP_PROXY) --build-arg HTTPS_PROXY=$(HTTPS_PROXY) \
 		--build-arg http_proxy=$(HTTP_PROXY) --build-arg https_proxy=$(HTTPS_PROXY) \
