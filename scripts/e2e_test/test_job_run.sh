@@ -29,8 +29,7 @@ job_id=`curl -X 'POST' \
   "runtimeVersionUrl": "1",
   "device": "1",
   "deviceAmount": 1000,
-  "comment": "string",
-  "resourcePool": "bj01"
+  "comment": "string"
 }' | jq -r '.data'`
 
 if [ "$job_id" == "null" ] ; then
