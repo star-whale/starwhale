@@ -266,27 +266,22 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             )
             if not step:
                 _scheduler.schedule()
-                _status = (
-                    STATUS.SUCCESS
-                    if all(_s.status == STATUS.SUCCESS for _s in _steps)
-                    else STATUS.FAILED
-                )
             else:
                 _scheduler.schedule_single_task(step, task_index)
-                _status = (
-                    STATUS.SUCCESS
-                    if all(
-                        _s.status == STATUS.SUCCESS
-                        for _s in _steps
-                        if _s.step_name == step
-                    )
-                    else STATUS.FAILED
-                )
         except Exception as e:
-            _manifest["status"] = STATUS.FAILED
+            _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
             raise
         finally:
+            _status = (
+                STATUS.SUCCESS
+                if all(
+                    _s.status == STATUS.SUCCESS
+                    for _s in _steps
+                    if (step and _s.step_name == step) or not step
+                )
+                else STATUS.FAILED
+            )
             _manifest.update(
                 {
                     **dict(
@@ -305,7 +300,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
             logger.debug(f"job info:{_jobs}")
-            console.print(f":100: finish run, {_status}!")
+            console.print(f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!")
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
