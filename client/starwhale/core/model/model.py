@@ -253,6 +253,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         console.print(":hourglass_not_done: start to evaluation...")
 
+        _status = STATUS.START
         try:
             _scheduler = Scheduler(
                 project=_project_uri.project,
@@ -265,16 +266,27 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             )
             if not step:
                 _scheduler.schedule()
+                _status = (
+                    STATUS.SUCCESS
+                    if all(_s.status == STATUS.SUCCESS for _s in _steps)
+                    else STATUS.FAILED
+                )
             else:
                 _scheduler.schedule_single_task(step, task_index)
+                _status = (
+                    STATUS.SUCCESS
+                    if all(
+                        _s.status == STATUS.SUCCESS
+                        for _s in _steps
+                        if _s.step_name == step
+                    )
+                    else STATUS.FAILED
+                )
         except Exception as e:
             _manifest["status"] = STATUS.FAILED
             _manifest["error_message"] = str(e)
             raise
         finally:
-            _status = True
-            for _step in _steps:
-                _status = _status and _step.status == STATUS.SUCCESS
             _manifest.update(
                 {
                     **dict(
@@ -283,7 +295,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         model=_model_config.model[0],
                         model_dir=str(workdir),
                         datasets=list(dataset_uris),
-                        status=STATUS.SUCCESS if _status else STATUS.FAILED,
+                        status=_status,
                         finished_at=now_str(),
                     ),
                     **kw,
@@ -293,9 +305,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
             logger.debug(f"job info:{_jobs}")
-            console.print(
-                f":100: finish run, {STATUS.SUCCESS if _status else STATUS.FAILED}!"
-            )
+            console.print(f":100: finish run, {_status}!")
 
     def info(self) -> t.Dict[str, t.Any]:
         return self._get_bundle_info()
