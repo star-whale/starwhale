@@ -32,7 +32,7 @@ export function useQueryDatasetList(tableName?: string, page?: IListQuerySchema)
             info.refetch()
         }
         // eslint-disalbe-next-line react-hooks/exhaustive-deps
-    }, [tableName])
+    }, [tableName, page])
 
     return info
 }

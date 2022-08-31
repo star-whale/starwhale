@@ -30,7 +30,7 @@ export function useParseConfusionMatrix(data: RecordListVO = {}) {
         labels.forEach((labeli, i) => {
             labels.forEach((labelj, j) => {
                 if (!rtn[i]) rtn[i] = []
-                rtn[i][j] = unhexlify(recordMap?.[labeli.split('_')[1]]?.[labelj]) ?? ''
+                rtn[i][j] = unhexlify(recordMap?.[labeli]?.[labelj] ?? '') ?? ''
             })
         })
         return rtn
