@@ -203,7 +203,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         dataset_uris: t.List[str],
         model_yaml_name: str = DefaultYAMLName.MODEL,
         job_name: str = "default",
-        step: str = "",
+        step_name: str = "",
         task_index: int = 0,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
@@ -211,7 +211,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _manifest: t.Dict[str, t.Any] = {
             "created_at": now_str(),
             "status": STATUS.START,
-            "step": step,
+            "step": step_name,
             "task_index": task_index,
         }
         # load model config by yaml
@@ -264,24 +264,24 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 steps=_steps,
                 kw=kw,
             )
-            if not step:
+            if not step_name:
                 _scheduler.schedule()
             else:
-                _scheduler.schedule_single_task(step, task_index)
-        except Exception as e:
-            _status = STATUS.FAILED
-            _manifest["error_message"] = str(e)
-            raise
-        finally:
+                _scheduler.schedule_single_task(step_name, task_index)
             _status = (
                 STATUS.SUCCESS
                 if all(
                     _s.status == STATUS.SUCCESS
                     for _s in _steps
-                    if (step and _s.step_name == step) or not step
+                    if step_name == "" or _s.step_name == step_name
                 )
                 else STATUS.FAILED
             )
+        except Exception as e:
+            _status = STATUS.FAILED
+            _manifest["error_message"] = str(e)
+            raise
+        finally:
             _manifest.update(
                 {
                     **dict(
