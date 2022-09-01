@@ -132,6 +132,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           name: standalone-python${{matrix.python-version}}
+          token: ${{ secrets.GITHUB_TOKEN }}
           fail_ci_if_error: true
           flags: unittests,standalone
           verbose: true
