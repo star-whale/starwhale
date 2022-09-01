@@ -16,38 +16,16 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
-import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
 import ai.starwhale.mlops.domain.job.split.JobSpliteratorEvaluation;
-import ai.starwhale.mlops.domain.job.status.JobStatus;
-import ai.starwhale.mlops.domain.job.step.StepConverter;
-import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
-import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.index.SWDSBlockSerializer;
-import ai.starwhale.mlops.domain.swds.index.SWDSIndexLoaderImpl;
-import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
-import ai.starwhale.mlops.domain.task.po.TaskEntity;
-import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.domain.task.status.WatchableTask;
-import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
-import ai.starwhale.mlops.JobMockHolder;
-import ai.starwhale.mlops.ObjectMockHolder;
-import ai.starwhale.mlops.domain.swds.SWDSIndexLoaderImplTest;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 
@@ -58,22 +36,15 @@ public class JobSpliteratorEvaluationTest {
 
     @Test
     public void testJobSpliteratorEvaluation() throws IOException {
-        SWDSIndexLoaderImpl swdsIndexLoader = SWDSIndexLoaderImplTest.mockIndexLoader();
 
         TaskMapper taskMapper = mock(TaskMapper.class);
         JobMapper jobMapper = mock(JobMapper.class);
         StepMapper stepMapper = mock(StepMapper.class);
-        TaskBoConverter taskBoConverter = ObjectMockHolder.taskBoConverter();
         JobSpliteratorEvaluation jobSpliteratorEvaluation = new JobSpliteratorEvaluation(
             new StoragePathCoordinator("/test")
-            ,swdsIndexLoader
-            ,new SWDSBlockSerializer(new ObjectMapper())
             ,taskMapper
             ,jobMapper
-            ,taskBoConverter
-            ,stepMapper
-            ,new StepConverter(new LocalDateTimeConvertor()),new WatchableTaskFactory(
-            List.of(),new TaskStatusMachine()));
+            ,stepMapper);
 
         JobMockHolder jobMockHolder = new JobMockHolder();
         Job mockJob = jobMockHolder.mockJob();

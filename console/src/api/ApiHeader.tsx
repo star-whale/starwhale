@@ -8,7 +8,9 @@ import { getErrMsg } from '@/api'
 import { useLocation } from 'react-router-dom'
 import useTranslation from '@/hooks/useTranslation'
 import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
-import { useFirstRender } from '../hooks/useFirstRender'
+import { useFirstRender } from '@/hooks/useFirstRender'
+import { useProject } from '@project/hooks/useProject'
+import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
 
 export default function ApiHeader() {
     const location = useLocation()
@@ -21,6 +23,11 @@ export default function ApiHeader() {
     const [, setCurrentUserRoles] = useCurrentUserRoles()
     const userRoles = useQuery('currentUserRoles', () => fetchCurrentUserRoles(), { enabled: false })
     const [t] = useTranslation()
+    const projectId = React.useMemo(() => location?.pathname.match(/^\/projects\/(\d*)\/?/)?.[1], [location])
+    const projectInfo = useFetchProject(projectId)
+    const { setProject } = useProject()
+
+    // console.log(projectId, location, location?.pathname.match(/^\/projects\/(\d*)\/?/))
 
     useFirstRender(() => {
         axios.interceptors.response.use(
@@ -58,9 +65,10 @@ export default function ApiHeader() {
 
     useEffect(() => {
         if (currentUser) {
-            // userRoles.refetch()
+            userRoles.refetch()
         }
-    }, [currentUser, userRoles])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUser])
 
     useEffect(() => {
         if (lastLocationPathRef.current !== location.pathname) {
@@ -70,8 +78,16 @@ export default function ApiHeader() {
     }, [location.pathname])
 
     useEffect(() => {
-        setCurrentUserRoles(userRoles.data)
+        if (userRoles.data) {
+            setCurrentUserRoles(userRoles.data)
+        }
     }, [userRoles.data, setCurrentUserRoles])
+
+    useEffect(() => {
+        if (projectInfo.data) {
+            setProject(projectInfo.data)
+        }
+    }, [projectInfo.data, setProject, projectId])
 
     return <></>
 }

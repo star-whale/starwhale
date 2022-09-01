@@ -348,9 +348,6 @@ const locales0 = {
     'Password Not Equal': {
         en: 'The passwords you entered do not match',
     },
-    'no data': {
-        en: 'no data',
-    },
     'submit': {
         en: 'submit',
     },
@@ -615,6 +612,12 @@ const locales0 = {
     },
     'or': {
         en: 'or',
+    },
+    'Members': {
+        en: 'Members',
+    },
+    'Signed in as': {
+        en: 'Signed in as',
     },
 }
 

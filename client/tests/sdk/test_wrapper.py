@@ -12,6 +12,11 @@ class TestEvaluation(BaseTestCase):
         os.environ[SWEnv.project] = "test"
         os.environ[SWEnv.eval_version] = "tt"
 
+    def tearDown(self) -> None:
+        super().tearDown()
+        os.environ.pop(SWEnv.instance_uri, None)
+        os.environ.pop(SWEnv.instance_token, None)
+
     def test_log_results_and_scan(self) -> None:
         eval = wrapper.Evaluation("test")
         eval.log_result("0", 3)
@@ -40,6 +45,27 @@ class TestEvaluation(BaseTestCase):
                 )
             ),
         )
+
+    def test_exception_close(self) -> None:
+        os.environ[SWEnv.instance_token] = "abcd"
+        os.environ[SWEnv.instance_uri] = "http://1.1.1.1"
+        eval = wrapper.Evaluation("test")
+        eval.log_result("0", 3)
+        eval.log_metrics({"a/b": 2})
+
+        assert len(eval._writers) == 2
+        with self.assertRaises(Exception) as twe:
+            eval.close()
+
+        assert len(twe.exception.args) == 2
+        for e in twe.exception.args:
+            assert isinstance(e, data_store.TableWriterException)
+
+        for _writer in eval._writers.values():
+            assert _writer is not None
+            assert not _writer.is_alive()
+            assert _writer._stopped
+            assert len(_writer._queue_run_exceptions) == 0
 
 
 class TestDataset(BaseTestCase):

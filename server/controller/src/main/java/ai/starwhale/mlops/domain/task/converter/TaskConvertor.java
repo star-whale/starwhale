@@ -36,9 +36,6 @@ public class TaskConvertor implements Convertor<TaskEntity, TaskVO> {
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
 
-    @Resource
-    private AgentConvertor agentConvertor;
-
     @Override
     public TaskVO convert(TaskEntity entity) throws ConvertException {
         if(entity == null) {
@@ -49,7 +46,6 @@ public class TaskConvertor implements Convertor<TaskEntity, TaskVO> {
             .uuid(entity.getTaskUuid())
             .taskStatus(entity.getTaskStatus())
             .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-            .agent(agentConvertor.convert(entity.getAgent()))
             .build();
     }
 

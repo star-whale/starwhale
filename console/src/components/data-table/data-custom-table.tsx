@@ -228,7 +228,7 @@ const RowPlacementMemo: React.ReactComponentElement = React.memo<CellPlacementPr
                 )
             },
             // eslint-disable-next-line react-hooks/exhaustive-deps
-            [data.columns, data.isRowSelected, data.rows, data.isSelectable, rowIndex, pinned]
+            [data.columns, data.isRowSelected, data.rows, data.isSelectable, rowIndex, pinned, data.normalizedWidths]
         )
 
         // useWhatChanged([columns, renderer, pinned, ''])
@@ -1030,7 +1030,6 @@ export function DataTable({
             const filledColumnsLen = columns.filter((c) => (c ? c.fillWidth : true)).length
             const padding = filledColumnsLen === 0 ? 0 : Math.floor(remainder / filledColumnsLen)
 
-            // console.log(resizedWidths, remainder, padding)
             if (padding > 0) {
                 const result = []
                 // -1 so that we loop over all but the last item
@@ -1046,6 +1045,7 @@ export function DataTable({
                 return result
             }
         }
+
         return resizedWidths
     }, [
         gridRef,

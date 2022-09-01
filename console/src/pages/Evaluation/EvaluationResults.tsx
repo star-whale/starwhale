@@ -1,26 +1,79 @@
 import LabelsIndicator from '@/components/Indicator/LabelsIndicator'
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { fetchJobResult } from '@/domain/job/services/job'
 import { ILabels, INDICATORTYPE } from '@/components/Indicator/types.d'
 import _ from 'lodash'
-import { getHeatmapConfig, getRocAucConfig } from '@/components/Indicator/utils'
+import { getHeatmapConfig, getRocAucConfig, IRocAuc } from '@/components/Indicator/utils'
 import { LabelSmall } from 'baseui/typography'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
 import SummaryIndicator from '@/components/Indicator/SummaryIndicator'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
+import { tableNameOfConfusionMatrix, tableNameOfRocAuc } from '@/domain/datastore/utils'
+import { useJob } from '@/domain/job/hooks/useJob'
+import { useQueryDatasetList, useScanDatastore } from '@/domain/datastore/hooks/useFetchDatastore'
+import { useProject } from '@/domain/project/hooks/useProject'
+import { useParseConfusionMatrix } from '@/domain/datastore/hooks/useParseDatastore'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
 )
+
+function Heatmap({ labels, binarylabel }: any) {
+    const [t] = useTranslation()
+    const heatmapData = getHeatmapConfig(t('Confusion Matrix'), labels, binarylabel)
+    return (
+        <Card outTitle={t('Confusion Matrix')} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
+            <React.Suspense fallback={<BusyPlaceholder />}>
+                <PlotlyVisualizer data={heatmapData} />
+            </React.Suspense>
+        </Card>
+    )
+}
+
+function RocAuc({ labels, data }: { labels: any[]; data: IRocAuc[] }) {
+    const [t] = useTranslation()
+    const title = t('Roc Auc')
+    const rocaucData = getRocAucConfig(title, labels, data)
+
+    return (
+        <Card outTitle={t('Roc Auc')} style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}>
+            <React.Suspense fallback={<BusyPlaceholder />}>
+                <PlotlyVisualizer data={rocaucData} />
+            </React.Suspense>
+        </Card>
+    )
+}
 
 function EvaluationResults() {
     const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
     const jobResult = useQuery(`fetchJobResult:${projectId}:${jobId}`, () => fetchJobResult(projectId, jobId), {
         refetchOnWindowFocus: false,
     })
+    const { project } = useProject()
+    const { job } = useJob()
+    const resultTableName = React.useMemo(() => {
+        if (!project?.name || !job?.uuid) return ''
+        return tableNameOfConfusionMatrix(project?.name as string, job?.uuid)
+    }, [project, job])
+
+    const resultTable = useQueryDatasetList(resultTableName, { pageNum: 0, pageSize: 1000 })
+    // console.log(project?.name, resultTableName, resultTable)
+    const { labels, binarylabel } = useParseConfusionMatrix(resultTable.data)
+
+    const rocAucTable = useScanDatastore({
+        tables: [{ tableName: tableNameOfRocAuc(project?.name as string, job?.uuid ?? '') }],
+        start: 0,
+        limit: 1000,
+    })
+
+    useEffect(() => {
+        if (job?.uuid && project?.name) {
+            rocAucTable.refetch()
+        }
+    }, [project?.name, job?.uuid])
 
     const [t] = useTranslation()
 
@@ -40,7 +93,7 @@ function EvaluationResults() {
                     break
                 }
                 case INDICATORTYPE.CONFUSION_MATRIX: {
-                    const heatmapData = getHeatmapConfig(k, _.keys(v?.binarylabel), v?.binarylabel)
+                    const heatmapData = getHeatmapConfig(k, labels, v?.binarylabel)
                     outTitle = t('Confusion Matrix')
                     children = (
                         <React.Suspense fallback={<BusyPlaceholder />}>
@@ -150,6 +203,9 @@ function EvaluationResults() {
                 }}
             >
                 {indicators}
+                <Heatmap labels={labels} binarylabel={binarylabel} />
+                {/* @ts-ignore */}
+                <RocAuc labels={labels} data={(rocAucTable.data?.records ?? []) as IRocAuc[]} />
             </div>
         </div>
     )

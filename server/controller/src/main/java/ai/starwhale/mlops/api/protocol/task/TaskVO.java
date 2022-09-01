@@ -37,9 +37,6 @@ public class TaskVO implements Serializable {
     @JsonProperty("uuid")
     private String uuid;
 
-    @JsonProperty("agent")
-    private AgentVO agent;
-
     @JsonProperty("createdTime")
     private Long createdTime;
 
@@ -47,6 +44,6 @@ public class TaskVO implements Serializable {
     private TaskStatus taskStatus;
 
     public static TaskVO empty() {
-        return new TaskVO("", "", AgentVO.empty(), -1L, TaskStatus.CREATED);
+        return new TaskVO("", "", -1L, TaskStatus.CREATED);
     }
 }

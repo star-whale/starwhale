@@ -21,13 +21,9 @@ import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.swds.SWDSIndexLoaderImplTest;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskCommand;
-import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
@@ -47,11 +43,6 @@ public class TaskBoConvertorTest {
     public void testTaskBoConverter() {
         TaskBoConverter taskBoConverter = ObjectMockHolder.taskBoConverter();
 
-        Task t = Task.builder().id(1L).status(TaskStatus.CANCELLING).build();
-        TaskCommand taskCommand = taskBoConverter.toTaskCommand(t);
-        Assertions.assertEquals(CommandType.CANCEL, taskCommand.getCommandType());
-        Assertions.assertTrue(t == taskCommand.getTask());
-
         Step step = Step.builder().job(Job.builder().swmp(swModelPackage).jobRuntime(JobRuntime.builder().deviceAmount(1).deviceClass(
             Clazz.CPU).name("name_swrt").storagePath("path_storage").version("version_swrt").build()).build()).build();
         TaskEntity pplTask = TaskEntity.builder()
@@ -60,7 +51,6 @@ public class TaskBoConvertorTest {
             .taskStatus(TaskStatus.RUNNING)
             .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"ppl\"}")
             .startedTime(LocalDateTime.now())
-            .taskRequest(SWDSIndexLoaderImplTest.INDEX_CONTENT)
             .taskUuid(UUID.randomUUID().toString())
             .build();
         TaskEntity cmpTask = TaskEntity.builder()
@@ -82,15 +72,6 @@ public class TaskBoConvertorTest {
         Assertions.assertEquals(entity.getTaskStatus(), task.getStatus());
         Assertions.assertEquals(entity.getTaskUuid(), task.getUuid());
 
-        AgentEntity agentEntity = entity.getAgent();
-        if(null != agentEntity){
-            Agent agent = task.getAgent();
-            Assertions.assertNotNull(agent);
-            Assertions.assertEquals(agentEntity.getId(), agent.getId());
-            Assertions.assertEquals(agentEntity.getSerialNumber(),agent.getSerialNumber());
-        }else {
-            Assertions.assertNull(task.getAgent());
-        }
 
     }
 }

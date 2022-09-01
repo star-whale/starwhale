@@ -172,15 +172,22 @@ public class UserService implements UserDetailsService {
         return PageUtil.toPageInfo(userEntities, userConvertor::convert);
     }
 
+
     public Long createUser(User user, String rawPassword) {
-        String salt = saltGenerator.salt();
-        UserEntity userByName = userMapper.findUserByName(user.getName());//todo lock this row
+       UserEntity userByName = userMapper.findUserByName(user.getName());//todo lock this row
         if (null != userByName) {
             throw new SWValidationException(ValidSubject.USER).tip("user already exists");
         }
+        String encodedPwd;
+        if(StrUtil.isEmpty(salt)) {
+            salt = saltGenerator.salt();
+            encodedPwd = SWPasswordEncoder.getEncoder(salt).encode(password);
+        } else {
+            encodedPwd = password;
+        }
         UserEntity userEntity = UserEntity.builder()
             .userName(user.getName())
-            .userPwd(SWPasswordEncoder.getEncoder(salt).encode(rawPassword))
+            .userPwd(encodedPwd)
             .userPwdSalt(salt)
             .userEnabled(1)
             .build();

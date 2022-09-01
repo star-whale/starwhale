@@ -25,8 +25,7 @@ import ai.starwhale.mlops.domain.job.status.JobStatusCalculator;
 import ai.starwhale.mlops.domain.job.status.JobStatusMachine;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatusMachine;
-import ai.starwhale.mlops.domain.job.step.trigger.EvalStepTrigger;
-import ai.starwhale.mlops.domain.job.step.trigger.StepTriggerContext;
+import ai.starwhale.mlops.domain.job.step.trigger.SimpleStepTrigger;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
@@ -81,18 +80,14 @@ public class ObjectMockHolder {
         return mock(StorageAccessService.class);
     }
 
-    public static EvalStepTrigger evalPPLStepTrigger()  {
+    public static SimpleStepTrigger evalPPLStepTrigger()  {
         StorageAccessService storageAccessService = storageAccessService();
         try {
             when(storageAccessService.list(anyString())).thenReturn(List.of("a","b","c").stream());
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return new EvalStepTrigger(storageAccessService,taskMapper);
-    }
-
-    public static StepTriggerContext stepTriggerContext() {
-        return new StepTriggerContext(List.of(evalPPLStepTrigger()));
+        return new SimpleStepTrigger(storageAccessService);
     }
 
     public static HotJobHolderImpl hotJobHolder(){

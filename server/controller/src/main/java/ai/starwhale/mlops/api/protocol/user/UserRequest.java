@@ -36,4 +36,7 @@ public class UserRequest implements Serializable {
     @NotNull
     @JsonProperty("userPwd")
     private String userPwd;
+
+    @JsonProperty("salt")
+    private String salt;
 }

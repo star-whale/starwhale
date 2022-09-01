@@ -24,13 +24,11 @@ import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.Task.StatusUnModifiableTask;
 import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.domain.task.status.WatchableTask;
-import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForCommandingAssurance;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForJobStatus;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
@@ -38,6 +36,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,15 +70,12 @@ public class WatchableTaskTest {
             .resultRootPath(resultRootPath)
             .taskRequest(taskRequest)
             .step(Step.builder().build())
-            .agent(agent)
-            .taskType(TaskType.CMP)
             .build();
         TaskWatcherForSchedule taskWatcherForSchedule = mock(TaskWatcherForSchedule.class);
         TaskWatcherForPersist taskWatcherForPersist = mock(TaskWatcherForPersist.class);
         TaskWatcherForJobStatus taskWatcherForJobStatus = mock(TaskWatcherForJobStatus.class);
-        TaskWatcherForCommandingAssurance taskWatcherForCommandingAssurance = mock(TaskWatcherForCommandingAssurance.class);
 
-        List<TaskStatusChangeWatcher> watchers = List.of(taskWatcherForSchedule,taskWatcherForJobStatus,taskWatcherForCommandingAssurance,taskWatcherForPersist);
+        List<TaskStatusChangeWatcher> watchers = List.of(taskWatcherForSchedule,taskWatcherForJobStatus,taskWatcherForPersist);
         WatchableTask watchableTask = new WatchableTask(oTask,watchers,new TaskStatusMachine());
 
         Method[] methods = oTask.getClass().getMethods();
@@ -103,19 +99,14 @@ public class WatchableTaskTest {
         };
         watchableTask.setTaskRequest(newTaskRequest);
         Agent newAgent = Agent.builder().build();
-        watchableTask.setAgent(newAgent);
         ResultPath newResultRootPath = new ResultPath();
         watchableTask.setResultRootPath(newResultRootPath);
         Assertions.assertEquals(TaskStatus.READY,oTask.getStatus());
         verify(taskWatcherForSchedule).onTaskStatusChange(watchableTask,TaskStatus.CREATED);
         verify(taskWatcherForPersist).onTaskStatusChange(watchableTask,TaskStatus.CREATED);
         verify(taskWatcherForJobStatus).onTaskStatusChange(watchableTask,TaskStatus.CREATED);
-        verify(taskWatcherForCommandingAssurance).onTaskStatusChange(watchableTask,TaskStatus.CREATED);
         Assertions.assertTrue(oTask.getResultRootPath() == newResultRootPath);
         Assertions.assertTrue(oTask.getResultRootPath() != resultRootPath);
-
-        Assertions.assertTrue(oTask.getAgent() == newAgent);
-        Assertions.assertTrue(oTask.getAgent() != agent);
 
         Assertions.assertTrue(oTask.getTaskRequest() == newTaskRequest);
         Assertions.assertTrue(oTask.getTaskRequest() != taskRequest);
@@ -125,7 +116,6 @@ public class WatchableTaskTest {
         verify(taskWatcherForSchedule,times(1)).onTaskStatusChange(watchableTask,TaskStatus.READY);
         verify(taskWatcherForPersist,times(0)).onTaskStatusChange(watchableTask,TaskStatus.READY);
         verify(taskWatcherForJobStatus,times(1)).onTaskStatusChange(watchableTask,TaskStatus.READY);
-        verify(taskWatcherForCommandingAssurance,times(1)).onTaskStatusChange(watchableTask,TaskStatus.READY);
         TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
     }
 
@@ -134,7 +124,7 @@ public class WatchableTaskTest {
     @Test
     public void testUnwrap() throws NoSuchFieldException, IllegalAccessException {
         Task oTask = Task.builder().build();
-        Task.StatusUnModifiableTask unModifiableTask = new StatusUnModifiableTask(oTask);
+        WatchableTask unModifiableTask = new WatchableTask(oTask, Collections.emptyList(),null);
         WatchableTask watchableTask1 = new WatchableTask(unModifiableTask,null,null);
         WatchableTask watchableTask2 = new WatchableTask(oTask,null,null);
         WatchableTask watchableTask3 = new WatchableTask(watchableTask2,null,null);

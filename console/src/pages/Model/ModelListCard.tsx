@@ -6,13 +6,12 @@ import { ICreateModelSchema } from '@model/schemas/model'
 import ModelForm from '@model/components/ModelForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-// import { Button, SIZE as ButtonSize } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useFetchModels } from '@model/hooks/useFetchModels'
-// import IconFont from '@/components/IconFont'
+import { TextLink } from '@/components/Link'
 
 export default function ModelListCard() {
     const [page] = usePage()
@@ -49,14 +48,14 @@ export default function ModelListCard() {
                 data={
                     modelsInfo.data?.list.map((model) => {
                         return [
-                            <Link key={model.id} to={`/projects/${projectId}/models/${model.id}`}>
+                            <TextLink key={model.id} to={`/projects/${projectId}/models/${model.id}`}>
                                 {model.name}
-                            </Link>,
+                            </TextLink>,
                             model.owner && <User user={model.owner} />,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
-                            <Link key={model.id} to={`/projects/${projectId}/models/${model.id}/versions`}>
+                            <TextLink key={model.id} to={`/projects/${projectId}/models/${model.id}/versions`}>
                                 {t('Version History')}
-                            </Link>,
+                            </TextLink>,
                         ]
                     }) ?? []
                 }

@@ -21,5 +21,4 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 
 public interface StepTrigger {
     void triggerNextStep(Step step);
-    boolean applyTo(JobType jobType,String stepName);
 }

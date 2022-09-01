@@ -25,7 +25,7 @@ import ai.starwhale.mlops.domain.job.step.StepConverter;
 import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.job.step.trigger.StepTriggerContext;
+import ai.starwhale.mlops.domain.job.step.trigger.StepTrigger;
 import ai.starwhale.mlops.domain.job.step.StepHelper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.bo.Task;
@@ -35,7 +35,6 @@ import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.schedule.CommandingTasksAssurance;
 import ai.starwhale.mlops.schedule.SWTaskScheduler;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,8 +57,6 @@ public class JobLoader {
 
     final SWTaskScheduler swTaskScheduler;
 
-    final CommandingTasksAssurance commandingTasksAssurance;
-
     final TaskMapper taskMapper;
 
     final TaskBoConverter taskBoConverter;
@@ -74,22 +71,20 @@ public class JobLoader {
 
     final WatchableTaskFactory watchableTaskFactory;
 
-    final StepTriggerContext stepTriggerContext;
+    final StepTrigger stepTrigger;
 
     final StepHelper stepHelper;
 
     final JobUpdateHelper jobUpdateHelper;
 
     public JobLoader(SWTaskScheduler swTaskScheduler,
-        CommandingTasksAssurance commandingTasksAssurance,
         TaskMapper taskMapper, TaskBoConverter taskBoConverter,
         JobBoConverter jobBoConverter, HotJobHolder jobHolder,
         StepMapper stepMapper, StepConverter stepConverter,
         WatchableTaskFactory watchableTaskFactory,
-        StepTriggerContext stepTriggerContext, StepHelper stepHelper,
+        StepTrigger stepTrigger, StepHelper stepHelper,
         JobUpdateHelper jobUpdateHelper) {
         this.swTaskScheduler = swTaskScheduler;
-        this.commandingTasksAssurance = commandingTasksAssurance;
         this.taskMapper = taskMapper;
         this.taskBoConverter = taskBoConverter;
         this.jobBoConverter = jobBoConverter;
@@ -97,7 +92,7 @@ public class JobLoader {
         this.stepMapper = stepMapper;
         this.stepConverter = stepConverter;
         this.watchableTaskFactory = watchableTaskFactory;
-        this.stepTriggerContext = stepTriggerContext;
+        this.stepTrigger = stepTrigger;
         this.stepHelper = stepHelper;
         this.jobUpdateHelper = jobUpdateHelper;
     }
@@ -141,10 +136,6 @@ public class JobLoader {
                         .filter(t -> t.getStatus() == TaskStatus.READY)
                         .collect(
                             Collectors.toSet()));
-                    assureCommandingTasks(watchableTasks.parallelStream().filter(
-                        t -> t.getStatus() == TaskStatus.ASSIGNING
-                            || t.getStatus() == TaskStatus.CANCELLING).collect(
-                        Collectors.toSet()));
                     step.setTasks(watchableTasks);
                 }else {
                     step.setTasks(tasks);
@@ -203,27 +194,6 @@ public class JobLoader {
                 swTaskScheduler.adopt(taskList, deviceClass));
     }
 
-    /**
-     * assure commanding tasks on start
-     */
-    void assureCommandingTasks(Collection<Task> tasks){
-        if(null == tasks){
-            return;
-        }
-        tasks.parallelStream()
-            .filter(task -> {
-                boolean b = null != task.getAgent();
-                if(!b){
-                    log.warn("task status is ASSIGNING but has no Agent!! {}",task.getId());
-                }
-                return b;
-            })
-            .collect(Collectors.groupingBy(Task::getAgent))
-            .forEach((agent, taskList) -> commandingTasksAssurance
-                .onTaskCommanding(taskBoConverter.toTaskCommand(taskList),agent));
-
-    }
-
     private void triggerPossibleNextStep(Job job) {
         log.warn("a job shall has a current step after fill steps job id: {} trying to trigger one", job.getId());
         Step stepPointer = stepHelper.firsStep(job.getSteps());
@@ -234,7 +204,7 @@ public class JobLoader {
                     break;
                 }
                 if(nextStep.getStatus() == StepStatus.CREATED){
-                    stepTriggerContext.triggerNextStep(stepPointer);
+                    stepTrigger.triggerNextStep(stepPointer);
                     break;
                 }
             }else{

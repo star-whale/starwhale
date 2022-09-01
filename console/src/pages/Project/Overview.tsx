@@ -14,6 +14,7 @@ import { createUseStyles } from 'react-jss'
 import { useFetchProjectMembers } from '@/domain/project/hooks/useFetchProjectMembers'
 import Button from '@/components/Button/Button'
 import { useQuery } from 'react-query'
+import Avatar from '@/components/Avatar'
 
 type IProjectCardProps = {
     project: IProjectSchema
@@ -99,9 +100,10 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                         className={styles.tag}
                         style={{
                             color: project?.privacy === 'PRIVATE' ? '#4848B3' : '#00B368',
+                            backgroundColor: project?.privacy === 'PRIVATE' ? '#EDEDFF' : '#E6FFF4',
                         }}
                     >
-                        {project.privacy}
+                        {project.privacy === 'PRIVATE' ? t('Private') : t('Public')}
                     </p>
                 </div>
             </div>
@@ -129,10 +131,8 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
             </div>
             <div className={styles.row}>
                 <div className={styles.memberWrapper}>
-                    {members.data?.map((member) => (
-                        <StatefulTooltip key={member.id} content={member.user.name} placement='bottom'>
-                            <div className={styles.member}>{member.user.name?.substr(0, 2)}</div>
-                        </StatefulTooltip>
+                    {members.data?.map((member, i) => (
+                        <Avatar key={i} name={member.user.name} />
                     ))}
                 </div>
             </div>

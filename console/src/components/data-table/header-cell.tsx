@@ -171,7 +171,8 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     position: 'relative',
                     width: '100%',
                     display: 'flex',
-                    alignItems: 'center',
+                    alignItems: 'flex-end',
+                    flex: 1,
                 })}
             >
                 {(props.isHovered || props.sortDirection) && props.sortable && (
@@ -256,9 +257,8 @@ const HeaderCell = React.forwardRef<HTMLDivElement, HeaderCellPropsT>((props, re
                     {/* usesd for popover postion ref  */}
                     <div
                         style={{
-                            marginLeft: '10px',
                             alignItems: 'center',
-                            position: 'absolute',
+                            marginLeft: 'auto',
                             right: 0,
                             top: -6,
                             display: 'flex',

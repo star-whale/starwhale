@@ -50,8 +50,7 @@ public class TaskWatcherForScheduleTest {
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.READY).agent(
-                Agent.builder().serialNumber("da").build())
+            .status(TaskStatus.READY)
             .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
                 Clazz.CPU).build()).build()).build())
             .build();
@@ -69,8 +68,7 @@ public class TaskWatcherForScheduleTest {
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.PAUSED).agent(
-                Agent.builder().serialNumber("da").build())
+            .status(TaskStatus.PAUSED)
             .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
                 Clazz.CPU).build()).build()).build())
             .build();
@@ -90,8 +88,7 @@ public class TaskWatcherForScheduleTest {
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.RUNNING).agent(
-                Agent.builder().serialNumber("da").build())
+            .status(TaskStatus.RUNNING)
             .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
                 Clazz.CPU).build()).build()).build())
             .build();

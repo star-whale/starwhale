@@ -22,12 +22,9 @@ import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.bo.TaskCommand;
-import ai.starwhale.mlops.domain.task.bo.TaskCommand.CommandType;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import cn.hutool.json.JSONUtil;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -58,31 +55,14 @@ public class TaskBoConverter {
         Task task = Task.builder()
             .id(entity.getId())
             .step(step)
-            .agent(agentConverter.fromEntity(entity.getAgent()))
             .status(entity.getTaskStatus())
             .uuid(entity.getTaskUuid())
-            .resultRootPath(new ResultPath(entity.getResultPath()))
+            .resultRootPath(new ResultPath(entity.getOutputPath()))
             .taskRequest(JSONUtil.toBean(entity.getTaskRequest(), TaskRequest.class))
             .build();
         task.setStartTime(localDateTimeConvertor.convert(entity.getStartedTime()));
         task.setFinishTime(localDateTimeConvertor.convert(entity.getFinishedTime()));
         return task;
-    }
-
-    public List<TaskCommand> toTaskCommand(List<Task> tasks) {
-        return tasks.parallelStream()
-            .map(this::toTaskCommand)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-    }
-
-    public TaskCommand toTaskCommand(Task task) {
-        CommandType commandType = CommandType.from(task.getStatus());
-        if(commandType == CommandType.UNKNOWN){
-            log.info("task already dispatched id: {} current status: {}",task.getId(),task.getStatus());
-            return null;
-        }
-        return new TaskCommand(commandType, task);
     }
 
 }

@@ -48,8 +48,7 @@ public class TaskWatcherForPersistTest {
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.PREPARING).agent(
-                Agent.builder().serialNumber("da").build())
+            .status(TaskStatus.PREPARING)
             .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
                 Clazz.CPU).build()).build()).build())
             .build();
@@ -66,8 +65,7 @@ public class TaskWatcherForPersistTest {
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.SUCCESS).agent(
-                Agent.builder().serialNumber("da").build())
+            .status(TaskStatus.SUCCESS)
             .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
                 Clazz.CPU).build()).build()).build())
             .build();
@@ -85,8 +83,7 @@ public class TaskWatcherForPersistTest {
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.RUNNING).agent(
-                Agent.builder().serialNumber("da").build())
+            .status(TaskStatus.RUNNING)
             .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
                 Clazz.CPU).build()).build()).build())
             .build();

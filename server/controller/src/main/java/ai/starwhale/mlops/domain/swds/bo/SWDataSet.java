@@ -49,12 +49,6 @@ public class SWDataSet {
     String path;
 
     /**
-     * The storage path of the DS index, it could be a directory or a single file
-     */
-    @Deprecated
-    String indexPath;
-
-    /**
      * the name for the data set
      */
     String name;
