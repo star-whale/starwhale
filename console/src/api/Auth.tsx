@@ -11,11 +11,13 @@ type IAuthContext = {
     token: string | null
     onLogin: (data: ILoginUserSchema) => Promise<string>
     onLogout: () => void
+    triggerTokenRefresh: () => Promise<void>
 }
 export const AuthContext = React.createContext<IAuthContext>({
     token: null,
     onLogin: () => Promise.resolve(''),
     onLogout: () => {},
+    triggerTokenRefresh: () => Promise.resolve(),
 })
 
 export const useAuth = () => {
@@ -70,6 +72,10 @@ export const AuthProvider = ({ children }: any) => {
         token: currentToken,
         onLogin: handleLogin,
         onLogout: handleLogout,
+        triggerTokenRefresh: async () => {
+            setCurrentToken(getToken())
+            await userInfo.refetch()
+        },
     }
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
