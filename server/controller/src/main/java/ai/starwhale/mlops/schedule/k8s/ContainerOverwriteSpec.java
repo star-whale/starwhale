@@ -14,44 +14,33 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.step.bo;
+package ai.starwhale.mlops.schedule.k8s;
 
-import ai.starwhale.mlops.common.TimeConcern;
-import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.task.bo.Task;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Builder
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Step extends TimeConcern {
+@Builder
+public class ContainerOverwriteSpec {
 
     String name;
 
-    Long id;
+    String image;
 
-    Step nextStep;
+    List<String> cmds;
 
-    /**
-     * the job where the task is derived from
-     */
-    Job job;
+    ResourceOverwriteSpec resourceOverwriteSpec;
 
-    StepStatus status;
+    List<V1EnvVar> envs;
 
-    List<Task> tasks;
-
-    @Override
-    public String toString() {
-        return "Step{" +
-            "name='" + name + '\'' +
-            ", id=" + id +
-            '}';
+    public ContainerOverwriteSpec(String name){
+        this.name = name;
     }
+
 }
