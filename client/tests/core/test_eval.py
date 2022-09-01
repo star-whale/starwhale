@@ -1,7 +1,6 @@
 import os
 import unittest
 from pathlib import Path
-from unittest import skip
 from unittest.mock import patch, MagicMock
 
 from requests_mock import Mocker
@@ -29,17 +28,13 @@ class StandaloneEvaluationJobTestCase(TestCase):
         sw_config._config = {}
 
         _config = load_swcli_config()
-        self.job_name = "mu2tgojqga3daobvmzstmytcof5goza"
+        self.job_name = "mjrtonlfmi3gkmzxme4gkzldnz3ws4a"
         self.root = _config["storage"]["root"]
-        self.job_dir = os.path.join(self.root, "self", "job", "mu", self.job_name)
+        self.job_dir = os.path.join(self.root, "self", URIType.EVALUATION, "mj", self.job_name)
 
         self.fs.create_dir(self.job_dir)
         self.fs.create_file(
-            os.path.join(self.job_dir, "_manifest.yaml"), contents=_job_manifest
-        )
-
-        self.fs.create_file(
-            os.path.join(self.job_dir, "cmp", "result", "current"), contents=_cmp_report
+            os.path.join(self.job_dir, DEFAULT_MANIFEST_NAME), contents=_job_manifest
         )
 
     def test_store(self):
@@ -63,10 +58,6 @@ class StandaloneEvaluationJobTestCase(TestCase):
 
         assert store.manifest["version"] == self.job_name
         assert "model" in store.manifest
-        # assert (
-        #     store.eval_report_path
-        #     == (Path(self.job_dir) / "cmp" / "result" / "current").absolute()
-        # )
 
         all_jobs = [job for job in store.iter_all_jobs(uri)]
         assert len(all_jobs) == 1
@@ -81,7 +72,12 @@ class StandaloneEvaluationJobTestCase(TestCase):
         assert jobs[0]["manifest"]["version"] == self.job_name
         assert jobs[0]["manifest"]["model"] == "mnist:meydczbrmi2g"
 
-    def test_standalone_info(self):
+    @patch("starwhale.api._impl.wrapper.Evaluation.get")
+    @patch("starwhale.api._impl.wrapper.Evaluation.get_metrics")
+    def test_standalone_info(self, m_get_metrics: MagicMock, m_get: MagicMock):
+        m_get.return_value = {}
+        m_get_metrics.return_value = {"kind": "multi_classification"}
+
         uri = URI(self.job_name[:5], expected_type=URIType.EVALUATION)
         job = StandaloneEvaluationJob(uri)
         info = job.info()
@@ -89,10 +85,9 @@ class StandaloneEvaluationJobTestCase(TestCase):
         assert info["manifest"]["version"] == self.job_name
         assert info["manifest"]["model"] == "mnist:meydczbrmi2g"
         assert info["report"]["kind"] == "multi_classification"
-        assert "ppl" in info["location"]
 
     def test_stanalone_remove(self):
-        uri = URI(f"local/project/self/job/{self.job_name[:6]}")
+        uri = URI(f"local/project/self/{URIType.EVALUATION}/{self.job_name[:6]}")
         job = StandaloneEvaluationJob(uri)
 
         ok, _ = job.remove()
@@ -119,9 +114,9 @@ class StandaloneEvaluationJobTestCase(TestCase):
             / self.job_name
         ).exists()
 
-    @patch("starwhale.core.job.model.check_call")
+    @patch("starwhale.core.eval.model.check_call")
     def test_stanalone_actions(self, m_call: MagicMock):
-        uri = URI(f"local/project/self/job/{self.job_name}")
+        uri = URI(f"local/project/self/{URIType.EVALUATION}/{self.job_name}")
         job = StandaloneEvaluationJob(uri)
 
         ok, _ = job.cancel()
@@ -144,10 +139,10 @@ class CloudJobTestCase(unittest.TestCase):
         self.instance_uri = "http://1.1.1.1:8888"
         self.project_uri = f"{self.instance_uri}/project/self"
         self.job_name = "15"
-        self.job_uri = f"{self.project_uri}/job/{self.job_name}"
+        self.job_uri = f"{self.project_uri}/{URIType.EVALUATION}/{self.job_name}"
 
     @Mocker()
-    @patch("starwhale.core.job.view.console.print")
+    @patch("starwhale.core.eval.view.console.print")
     def test_cloud_create(self, rm: Mocker, m_console: MagicMock):
         rm.request(
             HTTPMethod.POST,
@@ -174,10 +169,10 @@ class CloudJobTestCase(unittest.TestCase):
             resource="gpu:1",
         )
         assert m_console.call_count == 2
-        assert "project/self/job/11" in m_console.call_args[0][0]
+        assert f"project/self/job/11" in m_console.call_args[0][0]
 
     @Mocker()
-    @patch("starwhale.core.job.view.console.print")
+    @patch("starwhale.core.eval.view.console.print")
     def test_cloud_list(self, rm: Mocker, m_console: MagicMock):
         rm.request(
             HTTPMethod.GET,
@@ -207,7 +202,7 @@ class CloudJobTestCase(unittest.TestCase):
         assert m_console.call_count == 1
 
     @Mocker()
-    @patch("starwhale.core.job.view.console.print")
+    @patch("starwhale.core.eval.view.console.print")
     def test_cloud_info(self, rm: Mocker, m_console: MagicMock):
         rm.request(
             HTTPMethod.GET,
@@ -232,7 +227,7 @@ class CloudJobTestCase(unittest.TestCase):
         JobTermView(self.job_uri).info()
 
     @Mocker()
-    @patch("starwhale.core.job.view.console.print")
+    @patch("starwhale.core.eval.view.console.print")
     def test_cloud_actions(self, rm: Mocker, m_console: MagicMock):
         rm.request(
             HTTPMethod.POST,
