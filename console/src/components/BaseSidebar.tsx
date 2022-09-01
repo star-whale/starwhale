@@ -154,7 +154,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
             }}
         >
             {title && icon && (
-                <p>
+                <div>
                     <TextLink
                         to={titleLink ?? '/projects'}
                         tooltip={{
@@ -180,7 +180,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                             )}
                         </p>
                     </TextLink>
-                </p>
+                </div>
             )}
             <Navigation
                 overrides={{
