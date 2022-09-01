@@ -1,6 +1,5 @@
 import os
 import json
-from unittest import skip
 from unittest.mock import patch, MagicMock
 
 from pyfakefs.fake_filesystem_unittest import TestCase
@@ -14,7 +13,7 @@ from starwhale.consts import (
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
-from starwhale.base.type import URIType, EvalTaskType
+from starwhale.base.type import URIType
 from starwhale.utils.config import SWCliConfigMixed
 from starwhale.core.eval.executor import EvalExecutor
 
@@ -23,7 +22,6 @@ from .. import ROOT_DIR
 _dataset_manifest = open(f"{ROOT_DIR}/data/dataset.yaml").read()
 
 
-@skip
 class StandaloneEvalExecutor(TestCase):
     def setUp(self) -> None:
         self.setUpPyfakefs()
@@ -91,7 +89,7 @@ class StandaloneEvalExecutor(TestCase):
             use_docker=True,
         )
 
-        ee.run(typ=EvalTaskType.ALL)
+        ee.run()
         build_version = ee._version
 
         job_dir = (
@@ -100,40 +98,16 @@ class StandaloneEvalExecutor(TestCase):
             / build_version[:VERSION_PREFIX_CNT]
             / build_version
         )
-        # ppl_dir = job_dir / "ppl"
-        # cmp_dir = job_dir / "cmp"
-        _manifest_path = job_dir / DEFAULT_MANIFEST_NAME
-        _manifest = load_yaml(_manifest_path)
-
-        assert _manifest["version"] == build_version
-        # assert ppl_dir.exists()
-        # assert cmp_dir.exists()
-
-        _input_json_path = job_dir / "config" / "input.json"
-        assert _input_json_path.exists()
-        _input_json = json.load(_input_json_path.open())
-        assert _input_json["kind"] == "swds"
-        assert _input_json["swds"][0]["bucket"] == "/opt/starwhale/dataset"
-        assert _input_json["swds"][0]["ext_attr"]["ds_name"] == "mnist"
-        assert (
-            _input_json["swds"][0]["ext_attr"]["ds_version"]
-            == "me4dczlegzswgnrtmftdgyjznqywwza"
-        )
-        assert (
-            _input_json["swds"][0]["key"]["data"]
-            == "mnist/me/me4dczlegzswgnrtmftdgyjznqywwza.swds/data/data_ubyte_0.swds_bin"
-        )
 
         assert m_call.call_count == 2
         pull_cmd = m_call.call_args_list[0][0][0]
         ppl_cmd = m_call.call_args_list[1][0][0]
-        # cmp_cmd = m_call.call_args_list[3][0][0]
         host_cache_dir = os.path.expanduser("~/.cache/starwhale-pip")
         assert pull_cmd == "docker pull ghcr.io/star-whale/starwhale:latest"
         assert ppl_cmd == " ".join(
             [
-                f"docker run --net=host --rm --name {build_version}-ppl -e DEBUG=1",
-                f"-v {project_dir}/job/{build_version[:VERSION_PREFIX_CNT]}/{build_version}:/opt/starwhale",
+                f"docker run --net=host --rm --name {build_version}--0 -e DEBUG=1",
+                f"-v {job_dir}:/opt/starwhale",
                 f"-v {project_dir}/dataset:/opt/starwhale/dataset",
                 f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src:/opt/starwhale/swmp/src",
                 f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src/model.yaml:/opt/starwhale/swmp/model.yaml",
@@ -143,19 +117,6 @@ class StandaloneEvalExecutor(TestCase):
                 "ghcr.io/star-whale/starwhale:latest all",
             ]
         )
-        # assert cmp_cmd == " ".join(
-        #     [
-        #         f"docker run --net=host --rm --name {build_version}-cmp -e DEBUG=1",
-        #         f"-v {project_dir}/job/{build_version[:VERSION_PREFIX_CNT]}/{build_version}/cmp:/opt/starwhale",
-        #         f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src:/opt/starwhale/swmp/src",
-        #         f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src/model.yaml:/opt/starwhale/swmp/model.yaml",
-        #         f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/dep:/opt/starwhale/swmp/dep",
-        #         f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111/_manifest.yaml:/opt/starwhale/swmp/_manifest.yaml",
-        #         f"-v {project_dir}/job/{build_version[:VERSION_PREFIX_CNT]}/{build_version}/ppl/result:/opt/starwhale/ppl_result",
-        #         f"-v {host_cache_dir}:{CNTR_DEFAULT_PIP_CACHE_DIR}",
-        #         "ghcr.io/star-whale/starwhale:latest cmp",
-        #     ]
-        # )
 
         _manifest_path = job_dir / DEFAULT_MANIFEST_NAME
         _manifest = load_yaml(_manifest_path)
