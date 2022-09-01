@@ -32,6 +32,9 @@ class TaskResult:
         self.status = status
         self.exception = exception
 
+    def __repr__(self) -> str:
+        return f"id:{self.task_id}, status:{self.status}, exception:{self.exception}"
+
 
 class StepResult:
     def __init__(self, step_name: str, task_results: List[TaskResult]):
@@ -45,6 +48,9 @@ class StepResult:
             if all(tr.status == STATUS.SUCCESS for tr in self.task_results)
             else STATUS.FAILED
         )
+
+    def __repr__(self) -> str:
+        return f"step:{self.step_name}, taskResults:{self.task_results}, status:{self.status}"
 
 
 class BaseExecutor(Protocol):

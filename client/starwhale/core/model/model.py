@@ -263,10 +263,10 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         )
         _status = STATUS.START
         try:
-            if not step:
+            if not step_name:
                 _step_results = _scheduler.schedule()
             else:
-                _step_results = [_scheduler.schedule_single_task(step, task_index)]
+                _step_results = [_scheduler.schedule_single_task(step_name, task_index)]
 
             _status = (
                 STATUS.SUCCESS
