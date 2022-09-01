@@ -37,7 +37,11 @@
 </a>
 
 <a href='https://coveralls.io/github/star-whale/starwhale?branch=main'>
-    <img src='https://coveralls.io/repos/github/star-whale/starwhale/badge.svg?branch=main' alt='Coverage Status' />
+    <img alt="Coveralls" src="https://img.shields.io/coveralls/github/star-whale/starwhale?label=Java%20cov">
+</a>
+
+<a href="https://app.codecov.io/gh/star-whale/starwhale">
+    <img alt="Codecov" src="https://img.shields.io/codecov/c/github/star-whale/starwhale?flag=standalone&label=Python%20cov">
 </a>
 
 <a href='https://artifacthub.io/packages/helm/starwhale/starwhale'>
