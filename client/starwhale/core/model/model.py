@@ -203,7 +203,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         dataset_uris: t.List[str],
         model_yaml_name: str = DefaultYAMLName.MODEL,
         job_name: str = "default",
-        step: str = "",
+        step_name: str = "",
         task_index: int = 0,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
@@ -211,7 +211,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _manifest: t.Dict[str, t.Any] = {
             "created_at": now_str(),
             "status": STATUS.START,
-            "step": step,
+            "step": step_name,
             "task_index": task_index,
         }
         # load model config by yaml

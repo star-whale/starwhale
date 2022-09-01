@@ -27,7 +27,7 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.status.StepStatusMachine;
-import ai.starwhale.mlops.domain.job.step.trigger.StepTriggerContext;
+import ai.starwhale.mlops.domain.job.step.trigger.StepTrigger;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForJobStatus;
@@ -48,7 +48,7 @@ public class TestTaskWatcherForJobStatus {
         List<Task> tasks = job.getCurrentStep().getTasks();
         tasks.get(0).updateStatus(TaskStatus.SUCCESS);
         Task task = tasks.get(1);
-        StepTriggerContext stepTriggerContext = mock(StepTriggerContext.class);
+        StepTrigger stepTriggerContext = mock(StepTrigger.class);
 
         StepMapper stepMapper = mock(StepMapper.class);
         JobUpdateHelper jobUpdateHelper = mock(JobUpdateHelper.class);

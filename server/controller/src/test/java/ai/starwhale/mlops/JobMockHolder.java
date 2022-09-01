@@ -17,9 +17,9 @@
 package ai.starwhale.mlops;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
-import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.bo.Job;
+import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
@@ -27,9 +27,6 @@ import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
 import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
 import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.system.agent.AgentStatus;
-import ai.starwhale.mlops.domain.system.agent.bo.Agent;
-import ai.starwhale.mlops.domain.task.TaskType;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.LinkedList;
@@ -54,11 +51,11 @@ public class JobMockHolder {
             .jobRuntime(JobRuntime.builder().name("runtime1").version("version1").deviceAmount(1).storagePath(jobDir).deviceClass(Clazz.CPU).build())
             .swmp(SWModelPackage.builder().id(1L).name("swmp1").version("versionsmp1").path(storagePathCoordinator.generateSwmpPath("project1","swmp1","versionsmp1")).build())
             .swDataSets(List.of(SWDataSet.builder().id(1L).name("swds1").version("versionswds1").path(
-                swdsPath).indexPath(swdsPath+"/index").size(1024L).build()))
+                swdsPath).size(1024L).build()))
             .status(JobStatus.RUNNING)
             .type(JobType.EVALUATION)
             .steps(steps)
-            .resultDir(jobDir)
+            .outputDir(jobDir)
             .build();
         Step currentStep = mockSteps(job, steps);
         job.setCurrentStep(currentStep);
@@ -90,23 +87,19 @@ public class JobMockHolder {
     private void mockTasks(Step step,List<Task> tasks,TaskStatus taskStatus) {
         String taskUUId = UUID.randomUUID().toString();
         Task build = Task.builder()
-            .taskType(TaskType.PPL)
             .step(step)
             .status(taskStatus)
             .uuid(taskUUId)
             .id(atomicLong.incrementAndGet())
-            .agent(mockAgent())
             .resultRootPath(new ResultPath(
                 storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUUId)))
             .build();
 
         Task build2 = Task.builder()
-            .taskType(TaskType.PPL)
             .step(step)
             .status(taskStatus)
             .uuid(taskUUId)
             .id(atomicLong.incrementAndGet())
-            .agent(mockAgent())
             .resultRootPath(new ResultPath(
                 storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUUId)))
             .build();
@@ -117,7 +110,4 @@ public class JobMockHolder {
 
     }
 
-    private Agent mockAgent() {
-        return new Agent(1L,"1","10.199.2.2","10.199.2.2",null,null, AgentStatus.ONLINE);
-    }
 }

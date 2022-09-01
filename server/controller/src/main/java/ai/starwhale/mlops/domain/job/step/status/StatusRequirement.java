@@ -16,9 +16,6 @@
 
 package ai.starwhale.mlops.domain.job.step.status;
 
-import ai.starwhale.mlops.domain.task.TaskType;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +51,7 @@ public class StatusRequirement<T> {
         /**
          * if no task fit the  taskStatus (status in taskStatuses), the requirement is not meet
          */
-        MUST;
+        MUST
     }
 
     public boolean fit(Collection<T> statuses){
