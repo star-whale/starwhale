@@ -1,21 +1,13 @@
-import LabelsIndicator from '@/components/Indicator/LabelsIndicator'
-import React, { useMemo, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { useQuery } from 'react-query'
-import { fetchJobResult } from '@/domain/job/services/job'
-import { ILabels, INDICATORTYPE } from '@/components/Indicator/types.d'
-import _ from 'lodash'
-import { getHeatmapConfig, getRocAucConfig, IRocAuc } from '@/components/Indicator/utils'
-import { LabelSmall } from 'baseui/typography'
+import React, { useEffect } from 'react'
+import { getHeatmapConfig, getRocAucConfig } from '@/components/Indicator/utils'
 import Card from '@/components/Card'
 import useTranslation from '@/hooks/useTranslation'
-import SummaryIndicator from '@/components/Indicator/SummaryIndicator'
 import BusyPlaceholder from '@/components/BusyLoaderWrapper/BusyPlaceholder'
 import { tableNameOfConfusionMatrix, tableNameOfRocAuc } from '@/domain/datastore/utils'
 import { useJob } from '@/domain/job/hooks/useJob'
 import { useQueryDatasetList, useScanDatastore } from '@/domain/datastore/hooks/useFetchDatastore'
 import { useProject } from '@/domain/project/hooks/useProject'
-import { useParseConfusionMatrix } from '@/domain/datastore/hooks/useParseDatastore'
+import { useParseConfusionMatrix, useParseRocAuc } from '@/domain/datastore/hooks/useParseDatastore'
 
 const PlotlyVisualizer = React.lazy(
     () => import(/* webpackChunkName: "PlotlyVisualizer" */ '../../components/Indicator/PlotlyVisualizer')
@@ -34,7 +26,7 @@ function Heatmap({ labels, binarylabel }: any) {
     )
 }
 
-function RocAuc({ labels, data }: { labels: any[]; data: IRocAuc[] }) {
+function RocAuc({ labels, data }: { labels: any[]; data: any }) {
     const [t] = useTranslation()
     const title = t('Roc Auc')
     const rocaucData = getRocAucConfig(title, labels, data)
@@ -49,10 +41,6 @@ function RocAuc({ labels, data }: { labels: any[]; data: IRocAuc[] }) {
 }
 
 function EvaluationResults() {
-    const { jobId, projectId } = useParams<{ jobId: string; projectId: string }>()
-    const jobResult = useQuery(`fetchJobResult:${projectId}:${jobId}`, () => fetchJobResult(projectId, jobId), {
-        refetchOnWindowFocus: false,
-    })
     const { project } = useProject()
     const { job } = useJob()
     const resultTableName = React.useMemo(() => {
@@ -60,141 +48,33 @@ function EvaluationResults() {
         return tableNameOfConfusionMatrix(project?.name as string, job?.uuid)
     }, [project, job])
 
-    const resultTable = useQueryDatasetList(resultTableName, p)
-    // console.log(project?.name, resultTableName, resultTable)
+    const resultTable = useQueryDatasetList(resultTableName, p, true)
     const { labels, binarylabel } = useParseConfusionMatrix(resultTable.data)
-
     const rocAucTable = useScanDatastore({
-        tables: [{ tableName: tableNameOfRocAuc(project?.name as string, job?.uuid ?? '') }],
+        tables: [{ tableName: tableNameOfRocAuc(project?.name as string, job?.uuid ?? '', '0') }],
         start: 0,
         limit: 1000,
+        rawResult: true,
     })
+    const rocAucData = useParseRocAuc(rocAucTable.data)
 
     useEffect(() => {
         if (job?.uuid && project?.name) {
             rocAucTable.refetch()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [project?.name, job?.uuid])
 
-    const [t] = useTranslation()
-
-    const indicators = useMemo(() => {
-        return _.map(jobResult?.data, (v, k) => {
-            let children = null
-            let outTitle = ''
-
-            switch (k) {
-                case INDICATORTYPE.KIND:
-                    break
-                default:
-                case INDICATORTYPE.SUMMARY: {
-                    const data = v
-                    outTitle = t('Summary')
-                    children = <SummaryIndicator data={data} />
-                    break
-                }
-                case INDICATORTYPE.CONFUSION_MATRIX: {
-                    const heatmapData = getHeatmapConfig(k, labels, v?.binarylabel)
-                    outTitle = t('Confusion Matrix')
-                    children = (
-                        <React.Suspense fallback={<BusyPlaceholder />}>
-                            <PlotlyVisualizer data={heatmapData} />
-                        </React.Suspense>
-                    )
-                    break
-                }
-                case INDICATORTYPE.ROC_AUC: {
-                    const rocaucData = getRocAucConfig(k, _.keys(v), v)
-                    outTitle = t('Roc Auc')
-                    children = (
-                        <React.Suspense fallback={<BusyPlaceholder />}>
-                            <PlotlyVisualizer data={rocaucData} />
-                        </React.Suspense>
-                    )
-                    break
-                }
-                case INDICATORTYPE.LABELS:
-                    _.forIn(v as ILabels, (subV, subK) => {
-                        const [tp, fp, tn, fn] = _.flatten(
-                            jobResult?.data?.[INDICATORTYPE.CONFUSION_MATRIX]?.multilabel?.[Number(subK)]
-                        )
-
-                        /* eslint-disable no-param-reassign */
-                        subV = Object.assign(subV, {
-                            tp,
-                            fp,
-                            tn,
-                            fn,
-                        })
-                    })
-                    outTitle = t('Labels')
-                    children = <LabelsIndicator isLoading={jobResult.isLoading} data={v} />
-                    break
-            }
-            return (
-                children && (
-                    <Card
-                        outTitle={outTitle}
-                        key={k}
-                        style={{ padding: '20px', background: '#fff', borderRadius: '12px' }}
-                    >
-                        {children}
-                    </Card>
-                )
-            )
-        })
-    }, [jobResult.data, jobResult.isLoading, t])
-
-    if (jobResult.isFetching) {
+    if (resultTable.isFetching) {
         return <BusyPlaceholder />
     }
 
-    if (jobResult.isError) {
+    if (resultTable.isError) {
         return <BusyPlaceholder type='notfound' />
     }
 
     return (
         <div style={{ width: '100%', height: 'auto' }}>
-            {jobResult.data?.kind && (
-                <div
-                    key='kind'
-                    style={{
-                        boxSizing: 'border-box',
-                        display: 'flex',
-                    }}
-                >
-                    <div
-                        style={{
-                            width: 0,
-                            height: '28px',
-                            border: '4px solid',
-                            borderColor: '#2B65D9',
-                            marginRight: '2px',
-                        }}
-                    />
-                    <LabelSmall
-                        $style={{
-                            textOverflow: 'ellipsis',
-                            overflow: 'hidden',
-                            whiteSpace: 'nowrap',
-                            background: '#2B65D9',
-                            lineHeight: '28px',
-                            color: '#FFF',
-                            paddingLeft: '12px',
-                        }}
-                    >
-                        Type: {jobResult.data?.kind ?? ''}
-                    </LabelSmall>
-                    <div
-                        style={{
-                            width: 0,
-                            height: 0,
-                            border: '14px solid',
-                            borderColor: '#2B65D9 transparent #2B65D9 #2B65D9',
-                        }}
-                    />
-                </div>
-            )}
             <div
                 style={{
                     width: '100%',
@@ -203,10 +83,9 @@ function EvaluationResults() {
                     gridGap: '16px',
                 }}
             >
-                {indicators}
                 <Heatmap labels={labels} binarylabel={binarylabel} />
                 {/* @ts-ignore */}
-                <RocAuc labels={labels} data={(rocAucTable.data?.records ?? []) as IRocAuc[]} />
+                <RocAuc labels={labels} data={rocAucData} />
             </div>
         </div>
     )

@@ -21,7 +21,8 @@ import { StoreProvider } from '@/components/data-table/storeContext'
 import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig'
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
-import { tableNameOfSummary, unhexlify } from '@/domain/datastore/utils'
+import { tableNameOfSummary } from '@/domain/datastore/utils'
+import { unhexlify } from '@/domain/datastore/sdk'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import EvaluationListCompare from './EvaluationListCompare'
@@ -428,7 +429,7 @@ export default function EvaluationListCard() {
                             },
                             'position': 'relative',
                             'right': gridMode === 2 ? '14px' : undefined,
-                            'left': gridMode === 0 ? '4px' : undefined,
+                            'left': gridMode === 0 ? '0px' : undefined,
                         })}
                         role='button'
                         tabIndex={0}
