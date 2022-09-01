@@ -16,16 +16,21 @@
 
 package ai.starwhale.mlops.domain.task.log;
 
-import ai.starwhale.mlops.domain.storage.StorageService;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.StarWhaleException;
+import ai.starwhale.mlops.schedule.k8s.K8SJobTemplate;
 import ai.starwhale.mlops.schedule.k8s.K8sClient;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Container;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -39,10 +44,13 @@ public class TaskLogK8SCollector implements TaskLogCollector{
 
     final K8sClient k8sClient;
 
+    final K8SJobTemplate k8SJobTemplate;
+
     public TaskLogK8SCollector(StorageAccessService storageService,
-        K8sClient k8sClient) {
+        K8sClient k8sClient, K8SJobTemplate k8SJobTemplate) {
         this.storageService = storageService;
         this.k8sClient = k8sClient;
+        this.k8SJobTemplate = k8SJobTemplate;
     }
 
     @Override
@@ -50,8 +58,13 @@ public class TaskLogK8SCollector implements TaskLogCollector{
         String taskLog;
         log.debug("logging for task {} begins...",task.getId());
         try {
-            taskLog = k8sClient.logOfJob(task.getId().toString());
-            log.debug("logs for task {} is {}...",task.getId(), StringUtils.hasText(taskLog)?taskLog.substring(0,Math.min(taskLog.length()-1,100)):"");
+            taskLog = k8sClient.logOfJob(K8sClient.toV1LabelSelector(Map.of(
+                    K8SJobTemplate.jobIdentityLabel, task.getId().toString())),
+                Stream.concat(k8SJobTemplate.getInitContainerTemplates().stream(),
+                    k8SJobTemplate.getContainersTemplates().stream())
+                    .map(V1Container::getName)
+                    .collect(Collectors.toList()));
+            log.debug("logs for task {} is {}...", task.getId(), StringUtils.hasText(taskLog)?taskLog.substring(0,Math.min(taskLog.length()-1,100)):"");
         } catch (ApiException e) {
             log.error("k8s api error ",e);
             throw new SWProcessException(ErrorType.INFRA).tip("k8s api exception"+e.getMessage());

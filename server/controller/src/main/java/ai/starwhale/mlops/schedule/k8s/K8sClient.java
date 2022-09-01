@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-import io.kubernetes.client.PodLogs;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
@@ -28,24 +27,18 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.Config;
-import io.kubernetes.client.util.Yaml;
-import io.kubernetes.client.util.labels.LabelSelector;
 
+import io.kubernetes.client.util.labels.LabelSelector;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Call;
 import okhttp3.Response;
 import org.bouncycastle.util.Strings;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -59,30 +52,17 @@ public class K8sClient {
 
     private final SharedInformerFactory informerFactory;
 
-    private final PodLogs podLogs;
-
-    private final Map<String, String> starwhaleJobLabel = Map.of("owner", "starwhale");
-
-    static final String jobIdentityLabel = "job-name";
-
-    public static final String pipCacheVolumeName = "pip-cache";
-    @Value("${sw.infra.k8s.host-path-for-cache}")
-    private String pipCacheHostPath;
-
     /**
      * Basic constructor for Kubernetes
      */
-    public K8sClient(@Value("${sw.infra.k8s.name-space}") String ns,ResourceEventHandler<V1Job> eventH,ResourceEventHandler<V1Node> eventHandlerNode)
+    public K8sClient(@Value("${sw.infra.k8s.name-space}") String ns)
         throws IOException {
         client =Config.defaultClient();
         Configuration.setDefaultApiClient(client);
         coreV1Api = new CoreV1Api();
         batchV1Api = new BatchV1Api();
-        podLogs = new PodLogs();
         this.ns = ns;
         informerFactory = new SharedInformerFactory(client);
-        watchJob(eventH);
-        watchNode(eventHandlerNode);
     }
 
     /**
@@ -97,61 +77,6 @@ public class K8sClient {
 
     public void deleteJob(String id) throws ApiException {
         batchV1Api.deleteNamespacedJob(id,ns,null,null,1,false,null,null);
-//        batchV1Api.deleteNamespacedJobAsync(id,ns,null,null,1,false,null,null,null);
-    }
-
-    /**
-     * renderJob parses from job yaml template
-     *
-     * @param template
-     * @param coreContainerName
-     * @param cmd
-     * @return
-     */
-    public V1Job renderJob(String template, String name, String coreContainerName, String image, List<String> cmd, Map<String, String> coreEnv, Map<String, String> env,V1ResourceRequirements resources) {
-        V1Job job = Yaml.loadAs(template, V1Job.class);
-        job.getMetadata().name(name);
-        HashMap<String, String> labels = new HashMap<>();
-        labels.putAll(starwhaleJobLabel);
-        labels.put(jobIdentityLabel,name);
-        job.getMetadata().labels(labels);
-        V1JobSpec jobSpec = job.getSpec();
-        Objects.requireNonNull(jobSpec, "can not get job spec");
-        V1PodSpec podSpec = jobSpec.getTemplate().getSpec();
-        Objects.requireNonNull(podSpec, "can not get pod spec");
-
-        V1Container coreContainer = podSpec.getContainers().stream().filter(c -> c.getName().equals(coreContainerName)).findFirst().orElse(null);
-        Objects.requireNonNull(coreContainer, "can not get coreContainer by name " + coreContainerName);
-
-        if (!image.isEmpty()) {
-            coreContainer.image(image);
-        }
-        if (!cmd.isEmpty()) {
-            coreContainer.args(cmd);
-        }
-        if(null != resources){
-            coreContainer.resources(resources);
-        }
-        if (!env.isEmpty()) {
-            List<V1EnvVar> ee = new ArrayList<>();
-            env.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
-            podSpec.getInitContainers().forEach(c -> {
-                c.env(ee);
-            });
-        }
-
-        if (!coreEnv.isEmpty()) {
-            List<V1EnvVar> ee = new ArrayList<>();
-            coreEnv.forEach((k, v) -> ee.add(new V1EnvVar().name(k).value(v)));
-            coreContainer.env(ee);
-        }
-
-        // replace host path
-        List<V1Volume> volumes = job.getSpec().getTemplate().getSpec().getVolumes();
-        volumes.stream().filter(v -> v.getName().equals(pipCacheVolumeName))
-            .findFirst().ifPresent(volume -> volume.getHostPath().path(pipCacheHostPath));
-
-        return job;
     }
 
     /**
@@ -159,24 +84,24 @@ public class K8sClient {
      *
      * @return job list
      */
-    public V1JobList get() throws ApiException {
-        return batchV1Api.listNamespacedJob(ns, null, null, null, null, toV1LabelSelector(starwhaleJobLabel), null, null, null, 30, null);
+    public V1JobList get(String labelSelector) throws ApiException {
+        return batchV1Api.listNamespacedJob(ns, null, null, null, null, labelSelector, null, null, null, 30, null);
     }
 
-    void watchJob(ResourceEventHandler<V1Job> eventH)  {
+    public void watchJob(ResourceEventHandler<V1Job> eventH,String selector)  {
         SharedIndexInformer<V1Job> jobInformer = informerFactory.sharedIndexInformerFor(
             (CallGeneratorParams params) -> batchV1Api.listNamespacedJobCall(ns, null, null, null, null,
-                toV1LabelSelector(starwhaleJobLabel),
+                selector,
                 null, params.resourceVersion, null, params.timeoutSeconds, params.watch,
                 null),
             V1Job.class,
             V1JobList.class);
         jobInformer.addEventHandler(eventH);
+        informerFactory.startAllRegisteredInformers();
     }
 
-    public String logOfJob(String jobName) throws ApiException, IOException {
-        V1PodList podList = coreV1Api.listNamespacedPod(ns, null, null, null, null, toV1LabelSelector(Map.of(
-            jobIdentityLabel,jobName)), null, null, null, 30, null);
+    public String logOfJob(String selector,List<String> containers) throws ApiException, IOException {
+        V1PodList podList = coreV1Api.listNamespacedPod(ns, null, null, null, null, selector, null, null, null, 30, null);
 
         if (podList.getItems().isEmpty()) {
             return "";
@@ -188,9 +113,7 @@ public class K8sClient {
         V1Pod pod = podList.getItems().get(0);
 
         StringBuilder  logBuilder = new StringBuilder();
-        appendLog(pod, logBuilder,"data-provider");
-        appendLog(pod, logBuilder,"untar");
-        appendLog(pod, logBuilder,"worker");
+        containers.forEach(c-> appendLog(pod, logBuilder,c));
         return logBuilder.toString();
     }
 
@@ -238,11 +161,7 @@ public class K8sClient {
         log.debug("log for container {} collected",containerName);
     }
 
-    private String toV1LabelSelector(Map<String, String> labels){
-        return LabelSelector.parse(new V1LabelSelector().matchLabels(labels)).toString();
-    }
-
-    private void watchNode(ResourceEventHandler<V1Node> eventHandlerNode){
+    public void watchNode(ResourceEventHandler<V1Node> eventHandlerNode){
         SharedIndexInformer<V1Node> nodeInformer = informerFactory.sharedIndexInformerFor(
             (CallGeneratorParams params) -> coreV1Api.listNodeCall(null, null, null, null, null,
                 null,
@@ -250,11 +169,12 @@ public class K8sClient {
             V1Node.class,
             V1NodeList.class);
         nodeInformer.addEventHandler(eventHandlerNode);
-    }
-
-    @EventListener
-    public void handleContextRefreshEvent(ApplicationReadyEvent ctxReadyEvt) {
-        log.info("spring context ready now");
         informerFactory.startAllRegisteredInformers();
     }
+
+    public static String toV1LabelSelector(Map<String, String> labels){
+        return LabelSelector.parse(new V1LabelSelector().matchLabels(labels)).toString();
+    }
+
+
 }

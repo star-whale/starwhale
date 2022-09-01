@@ -158,9 +158,7 @@ public class JobLoaderTest {
             TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.ASSIGNING)
-                .agent(
-                    AgentEntity.builder().id(1L).serialNumber("serial")
-                        .connectTime(LocalDateTime.now()).build()).build()
+                .build()
             , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.FAIL)
@@ -236,9 +234,7 @@ public class JobLoaderTest {
             TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.ASSIGNING)
-                .agent(
-                    AgentEntity.builder().id(1L).serialNumber("serial")
-                        .connectTime(LocalDateTime.now()).build()).build()
+                .build()
             , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.FAIL)
@@ -314,9 +310,7 @@ public class JobLoaderTest {
             TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.ASSIGNING)
-                .agent(
-                    AgentEntity.builder().id(1L).serialNumber("serial")
-                        .connectTime(LocalDateTime.now()).build()).build()
+                .build()
             , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.FAIL)

@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.split;
 
-import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
+import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.mapper.JobMapper;
@@ -31,6 +31,7 @@ import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import cn.hutool.json.JSONUtil;
+import io.vavr.Tuple2;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -92,10 +93,10 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
         List<StepMetaData> stepMetaDatas = JobParser.parseStepFromYaml(job.getEvalJobDDL());
         List<StepEntity> stepEntities = new ArrayList<>();
         Map<String, List<String>> allDependencies = new HashMap<>();
-        Map<String, StepEntity> nameMapping = new HashMap<>();
+        Map<String, Tuple2<StepEntity,StepMetaData>> nameMapping = new HashMap<>();
 
         for (StepMetaData stepMetaData : stepMetaDatas) {
-            boolean isReady = CollectionUtils.isEmpty(stepMetaData.getNeeds());
+            boolean firstStep = CollectionUtils.isEmpty(stepMetaData.getNeeds());
 
             StepEntity stepEntity = StepEntity.builder()
                 .uuid(UUID.randomUUID().toString())
@@ -103,19 +104,19 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                 .name(stepMetaData.getStepName())
                 .taskNum(stepMetaData.getTaskNum())
                 .concurrency(stepMetaData.getConcurrency())
-                .status(isReady ? StepStatus.READY : StepStatus.CREATED)
+                .status(firstStep ? StepStatus.READY : StepStatus.CREATED)
                 .build();
             stepMapper.save(stepEntity);
             stepEntities.add(stepEntity);
             allDependencies.put(stepMetaData.getStepName(), stepMetaData.getNeeds());
-            nameMapping.put(stepMetaData.getStepName(), stepEntity);
+            nameMapping.put(stepMetaData.getStepName(), new Tuple2<>(stepEntity,stepMetaData));
         }
 
         for (StepEntity stepEntity : stepEntities) {
             List<String> dependencies = allDependencies.get(stepEntity.getName());
             for (String dependency : dependencies) {
                 // the current implementation is serial, so dependency only one
-                stepEntity.setLastStepId(nameMapping.get(dependency).getId());
+                stepEntity.setLastStepId(nameMapping.get(dependency)._1().getId());
             }
             // TODO: replace this implement with only send ds uri and task index to container
             List<TaskEntity> taskEntities = new LinkedList<>();
@@ -129,6 +130,7 @@ public class JobSpliteratorEvaluation implements JobSpliterator {
                             TaskRequest.builder()
                                 .total(stepEntity.getTaskNum())
                                 .index(i)
+                                .runtimeResources(nameMapping.get(stepEntity.getName())._2.getResources())
                                 .build()
                         )
                     )

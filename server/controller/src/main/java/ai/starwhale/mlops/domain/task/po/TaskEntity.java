@@ -17,7 +17,6 @@
 package ai.starwhale.mlops.domain.task.po;
 
 import ai.starwhale.mlops.common.BaseEntity;
-import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -38,8 +37,6 @@ public class TaskEntity extends BaseEntity {
     private String taskUuid;
 
     private Long stepId;
-
-    private AgentEntity agent;
 
     private TaskStatus taskStatus;
 

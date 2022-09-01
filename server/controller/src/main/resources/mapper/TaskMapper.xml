@@ -12,25 +12,14 @@
         select t.id as task_id,
                t.task_uuid,
                t.step_id,
-               t.agent_id,
                t.task_status,
                t.output_path as task_output_path,
                t.task_request as task_task_request,
                t.started_time as task_started_time,
                t.finished_time as task_finished_time,
                t.created_time as task_created_time,
-               t.modified_time as task_modified_time,
-               inet_ntoa(a.agent_ip) as agent_ip,
-               a.agent_version,
-               a.agent_status,
-               a.serial_number as agent_serial_number,
-               a.connect_time,
-               a.created_time as agent_created_time,
-               a.modified_time as agent_modified_time
+               t.modified_time as task_modified_time
         from task_info as t
-        left join
-            agent_info as a
-        on t.agent_id = a.id
     </sql>
     <select id="listTasks" resultMap="taskResultMap">
         <include refid="select_task" />
@@ -58,17 +47,16 @@
     </update>
 
     <insert id="addTask" parameterType="ai.starwhale.mlops.domain.task.po.TaskEntity" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        insert into task_info(task_uuid, step_id, agent_id, task_status, task_request, output_path)
-        values(#{task.taskUuid}, #{task.stepId}, #{task.agentId}, #{task.taskStatus}, #{task.taskRequest}, #{task.outputPath})
+        insert into task_info(task_uuid, step_id, task_status, task_request, output_path)
+        values(#{task.taskUuid}, #{task.stepId}, #{task.taskStatus}, #{task.taskRequest}, #{task.outputPath})
     </insert>
 
     <insert id="addAll" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
-        INSERT INTO task_info(task_uuid, step_id, agent_id, task_status, task_request, output_path)
+        INSERT INTO task_info(task_uuid, step_id, task_status, task_request, output_path)
         VALUES
         <foreach collection="taskList" item="task" index="index" open="(" separator="),("  close=")">
             #{task.taskUuid},
             #{task.stepId},
-            #{task.agentId},
             #{task.taskStatus},
             #{task.taskRequest},
             #{task.outputPath}
@@ -115,7 +103,6 @@
         <id property="id" column="task_id" />
         <result property="taskUuid" column="task_uuid" />
         <result property="stepId" column="step_id" />
-        <result property="agentId" column="agent_id" />
         <result property="taskStatus" column="task_status" />
         <result property="outputPath" column="task_output_path" />
         <result property="taskRequest" column="task_task_request" />
@@ -123,6 +110,5 @@
         <result property="modifiedTime" column="task_modified_time" />
         <result property="startedTime" column="task_started_time" />
         <result property="finishedTime" column="task_finished_time" />
-        <association property="agent" resultMap="ai.starwhale.mlops.domain.system.mapper.AgentMapper.agentResultMap" />
     </resultMap>
 </mapper>

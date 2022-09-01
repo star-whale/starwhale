@@ -17,7 +17,7 @@
 package ai.starwhale.mlops.domain.task.converter;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
-import ai.starwhale.mlops.api.protocol.report.resp.TaskRequest;
+import ai.starwhale.mlops.domain.task.bo.TaskRequest;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
