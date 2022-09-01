@@ -173,7 +173,7 @@ public class UserService implements UserDetailsService {
     }
 
 
-    public Long createUser(User user, String rawPassword) {
+    public Long createUser(User user, String rawPassword, String salt) {
        UserEntity userByName = userMapper.findUserByName(user.getName());//todo lock this row
         if (null != userByName) {
             throw new SWValidationException(ValidSubject.USER).tip("user already exists");
