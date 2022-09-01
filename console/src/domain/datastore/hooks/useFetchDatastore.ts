@@ -20,19 +20,20 @@ export function useQueryDatastore(query: any) {
     return info
 }
 
-export function useQueryDatasetList(tableName?: string, page?: IListQuerySchema) {
+export function useQueryDatasetList(tableName?: string, page?: IListQuerySchema, rawResult = false) {
     const info = useQueryDatastore({
         tableName,
         start: page?.pageNum ?? 0,
         limit: page?.pageSize ?? 0,
+        rawResult,
     })
 
     React.useEffect(() => {
         if (tableName) {
             info.refetch()
         }
-        // eslint-disalbe-next-line react-hooks/exhaustive-deps
-    }, [tableName])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tableName, page])
 
     return info
 }

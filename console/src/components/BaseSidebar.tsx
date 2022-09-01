@@ -8,7 +8,6 @@ import useSidebarWidth from '@/hooks/useSidebarWidth'
 import { useStyletron } from 'baseui'
 import type { IconBaseProps } from 'react-icons/lib'
 import { SidebarContext } from '@/contexts/SidebarContext'
-import Text from '@/components/Text'
 import { createUseStyles } from 'react-jss'
 import IconFont from '@/components/IconFont'
 import { StatefulTooltip } from 'baseui/tooltip'
@@ -75,7 +74,7 @@ export interface IBaseSideBarProps extends IComposedSidebarProps {
     navItems: INavItem[]
 }
 
-const EXPANDED_PADDING = '26px'
+const EXPANDED_PADDING = '24px'
 const FOLDED_PADDING = '0px'
 
 export default function BaseSidebar({ navItems, style, title, icon, titleLink }: IBaseSideBarProps) {
@@ -143,6 +142,8 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
         }
     }, [ctx])
 
+    const [css] = useStyletron()
+
     return (
         <div
             className={styles.sidebarWrapper}
@@ -153,15 +154,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
             }}
         >
             {title && icon && (
-                <p
-                    className={styles.siderTitle}
-                    style={{
-                        paddingLeft: EXPANDED_PADDING,
-                    }}
-                >
-                    <StatefulTooltip content={title} placement='bottomRight'>
-                        <div>{icon}</div>
-                    </StatefulTooltip>
+                <p>
                     <TextLink
                         to={titleLink ?? '/projects'}
                         tooltip={{
@@ -169,15 +162,23 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                             placement: 'bottomRight',
                         }}
                     >
-                        {ctx.expanded && (
-                            <Text
-                                style={{
-                                    fontWeight: 'bold',
-                                }}
-                            >
-                                {title}
-                            </Text>
-                        )}
+                        <p
+                            className={styles.siderTitle}
+                            style={{
+                                paddingLeft: EXPANDED_PADDING,
+                            }}
+                        >
+                            <div>{icon}</div>
+                            {ctx.expanded && (
+                                <span
+                                    className={css({
+                                        fontWeight: 'bold',
+                                    })}
+                                >
+                                    {title}
+                                </span>
+                            )}
+                        </p>
                     </TextLink>
                 </p>
             )}

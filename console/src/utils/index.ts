@@ -173,6 +173,19 @@ export function getReadableStorageQuantityStr(bytes?: number): string {
     if (bytes === undefined) {
         return ''
     }
+    if (bytes < 1024) {
+        return `${bytes} B`
+    }
+
+    if (bytes < 1024 * 1024) {
+        const k = bytes / 1024
+        const intKi = Math.round(k)
+        if (k === intKi) {
+            return `${intKi} KB`
+        }
+        return `${bytes} KB`
+    }
+
     const mi = bytes / 1024 / 1024
     if (mi > 1024 * 1024 * 1024) {
         const pi = mi / 1024 / 1024 / 1024

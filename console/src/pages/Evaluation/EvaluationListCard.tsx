@@ -22,6 +22,7 @@ import { useFetchViewConfig } from '@/domain/evaluation/hooks/useFetchViewConfig
 import { setEvaluationViewConfig } from '@/domain/evaluation/services/evaluation'
 import { useQueryDatasetList } from '@/domain/datastore/hooks/useFetchDatastore'
 import { tableNameOfSummary } from '@/domain/datastore/utils'
+import { unhexlify } from '@/domain/datastore/sdk'
 import { useProject } from '@/domain/project/hooks/useProject'
 import { TextLink } from '@/components/Link'
 import EvaluationListCompare from './EvaluationListCompare'
@@ -34,14 +35,14 @@ const gridLayout = [
     // LEFT:
     '1fr 10px 0px',
 ]
-
+const page = { pageNum: 1, pageSize: 1000 }
 export default function EvaluationListCard() {
     const [css] = useStyletron()
     const { expandedWidth, expanded } = useDrawer()
     const [t] = useTranslation()
     const history = useHistory()
     const { projectId } = useParams<{ projectId: string }>()
-    const evaluationsInfo = useFetchEvaluations(projectId, { pageNum: 1, pageSize: 1000 })
+    const evaluationsInfo = useFetchEvaluations(projectId, page)
     const evaluationViewConfig = useFetchViewConfig(projectId, 'evaluation')
     const { project } = useProject()
 
@@ -63,7 +64,7 @@ export default function EvaluationListCard() {
         if (!project?.name) return ''
         return tableNameOfSummary(project?.name as string)
     }, [project])
-    const summaryTable = useQueryDatasetList(summaryTableName, { pageNum: 0, pageSize: 1000 })
+    const summaryTable = useQueryDatasetList(summaryTableName, page)
 
     // TODO
     // 1. column key should be equal with eva attr field
@@ -140,6 +141,7 @@ export default function EvaluationListCard() {
         if (!summaryTable?.data) return columnsWithAttrs
 
         Object.entries(summaryTable?.data?.columnTypes ?? {}).forEach(([name, type]) => {
+            if (name === 'id') return
             switch (type) {
                 case 'UNKNOWN':
                 case 'BYTES':
@@ -150,7 +152,7 @@ export default function EvaluationListCard() {
                             key: name,
                             title: name,
                             filterType: 'string',
-                            mapDataToValue: (data: any) => data[name],
+                            mapDataToValue: (data: any): string => data.attributes?.[name] ?? '-',
                         })
                     )
                     break
@@ -184,6 +186,33 @@ export default function EvaluationListCard() {
         return columnsWithAttrs
     }, [summaryTable.data, columns])
 
+    const $summaryAttrs = useMemo(() => {
+        if (!summaryTable?.data) return {}
+
+        const { columnTypes = {}, records = [] } = summaryTable?.data || {}
+
+        const $records = records?.map((attrs) => {
+            const $newAttributes: Record<string, any> = {}
+            Object.keys(attrs).forEach((key) => {
+                switch (columnTypes[key]) {
+                    case 'UNKNOWN':
+                    case 'BYTES':
+                        $newAttributes[key] = ''
+                        break
+                    case 'STRING':
+                        $newAttributes[key] = attrs[key]
+                        break
+                    default:
+                        $newAttributes[key] = unhexlify(attrs[key])
+                }
+            })
+            return $newAttributes
+        })
+
+        const $recordsMap = _.keyBy($records, 'id')
+        return $recordsMap
+    }, [summaryTable.data])
+
     const [compareRows, setCompareRows] = useState<any[]>([])
 
     const batchAction = useMemo(
@@ -202,14 +231,17 @@ export default function EvaluationListCard() {
     const $data = useMemo(
         () =>
             evaluationsInfo.data?.list?.map((raw) => {
-                const $attributes = summaryTable.data?.records?.find((item: any) => item.id === raw.id)
+                const $attributes = $summaryAttrs?.[raw.uuid] ?? {}
+
                 return {
                     ...raw,
                     attributes: $attributes,
                 }
             }) ?? [],
-        [evaluationsInfo.data, summaryTable.data]
+        [evaluationsInfo.data, $summaryAttrs]
     )
+
+    // console.log($summaryAttrs, $data)
 
     const [gridMode, setGridMode] = useState(1)
     const resizeRef = React.useRef<HTMLDivElement>(null)
@@ -397,7 +429,7 @@ export default function EvaluationListCard() {
                             },
                             'position': 'relative',
                             'right': gridMode === 2 ? '14px' : undefined,
-                            'left': gridMode === 0 ? '4px' : undefined,
+                            'left': gridMode === 0 ? '0px' : undefined,
                         })}
                         role='button'
                         tabIndex={0}

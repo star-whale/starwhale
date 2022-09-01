@@ -57,6 +57,9 @@ const iconTypes = [
     'a-managemember',
     'overview',
     'evaluation',
+    'excel',
+    'text',
+    'audio',
 ]
 
 interface IIconFontProps {

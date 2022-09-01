@@ -75,6 +75,7 @@ specifiers:
   '@vitejs/plugin-react': ^2.0.0
   axios: ^0.21.1
   babel-eslint: ^10.1.0
+  base64-js: ^1.5.1
   baseui: 11.0.0
   classnames: ^2.3.1
   color: ^3.1.3
@@ -207,6 +208,7 @@ dependencies:
   '@types/uuid': 8.3.4
   '@uiw/react-md-editor': 3.17.0_sk3eihvpffgp52mstba5zhq3vu
   axios: 0.21.4
+  base64-js: 1.5.1
   baseui: 11.0.0_o6pgcfb6btyoz77l322lsuckdi
   classnames: 2.3.1
   color: 3.2.1
@@ -7248,7 +7250,6 @@ packages:
 
   /base64-js/1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
-    dev: true
 
   /baseui/11.0.0_o6pgcfb6btyoz77l322lsuckdi:
     resolution: {integrity: sha512-FvOBuwI2HASIbPBab7LyY1IAM8Jp8qUIwBDjosKljKT/3DFlgtsZQmWmjL3jObkv10ydGHkYArhpjy3S8ZJA1w==}
@@ -7643,7 +7644,7 @@ packages:
       mississippi: 3.0.0
       mkdirp: 0.5.6
       move-concurrently: 1.0.1
-      promise-inflight: 1.0.1
+      promise-inflight: 1.0.1_bluebird@3.7.2
       rimraf: 2.7.1
       ssri: 6.0.2
       unique-filename: 1.1.1
@@ -18317,6 +18318,17 @@ packages:
     peerDependenciesMeta:
       bluebird:
         optional: true
+    dev: true
+
+  /promise-inflight/1.0.1_bluebird@3.7.2:
+    resolution: {integrity: sha512-6zWPyEOFaQBJYcGMHBKTKJ3u6TBsnMFOIZSa6ce1e/ZrrsOlnHRHbabMjLiBYKp+n44X9eUI6VUPaukCXHuG4g==}
+    peerDependencies:
+      bluebird: '*'
+    peerDependenciesMeta:
+      bluebird:
+        optional: true
+    dependencies:
+      bluebird: 3.7.2
     dev: true
 
   /promise.allsettled/1.0.5:

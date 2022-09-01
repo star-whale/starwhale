@@ -38,7 +38,7 @@ const useCardStyles = createUseStyles({
         'justifyContent': 'space-between',
         'textDecoration': 'none',
         'color': ' rgba(2,16,43,0.60)',
-        ':hover': {
+        '&:hover': {
             boxShadow: '0 2px 8px 0 rgba(0,0,0,0.20)',
         },
     },
@@ -99,6 +99,23 @@ const useCardStyles = createUseStyles({
         borderRadius: '9px',
         padding: '3px 10px',
     },
+    text: {
+        'display': 'initial',
+        'fontSize': '14px',
+        'color': '#02102B',
+        'fontWeight': 'bold',
+        '&:hover': {
+            textDecoration: 'underline',
+            color: ' #5181E0 ',
+        },
+        '&:hover span': {
+            textDecoration: 'underline',
+            color: ' #5181E0 ',
+        },
+        '&:visited': {
+            color: '#1C4CAD ',
+        },
+    },
 })
 
 const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
@@ -110,7 +127,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
         <div className={styles.card}>
             <div className={styles.row}>
                 <div className={styles.name}>
-                    <TextLink to={`/projects/${project.id}/evaluations`} style={{ fontWeight: 'bold' }}>
+                    <TextLink className={styles.text} to={`/projects/${project.id}/evaluations`}>
                         {[project.owner?.name, project.name].join('/')}
                     </TextLink>
                 </div>
