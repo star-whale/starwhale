@@ -51,8 +51,8 @@ export default function DatasetVersionFiles() {
         const src = tableDataLink(projectId, datasetVersion?.name as string, datasetVersion?.versionName as string, {
             uri: row.data_uri,
             authName: row.auth_name,
-            offset: row.data_offset,
-            size: row.data_size,
+            offset: Typer[columnTypes.data_offset]?.encode(row.data_offset),
+            size: Typer[columnTypes.data_size]?.encode(row.data_size),
             Authorization: token as string,
         })
         // eslint-disable-next-line consistent-return
