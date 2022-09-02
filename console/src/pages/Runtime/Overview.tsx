@@ -4,7 +4,6 @@ import useTranslation from '@/hooks/useTranslation'
 import { useRuntime, useRuntimeLoading } from '@/domain/runtime/hooks/useRuntime'
 import Card from '@/components/Card'
 import { IRuntimeFileSchema } from '@/domain/runtime/schemas/runtime'
-import { formatTimestampDateTime } from '@/utils/datetime'
 
 export default function RuntimeOverview() {
     const { runtime } = useRuntime()
@@ -12,79 +11,20 @@ export default function RuntimeOverview() {
 
     const [t] = useTranslation()
 
-    const items = [
-        {
-            label: t('Runtime Name'),
-            value: runtime?.runtimeName ?? '',
-        },
-        {
-            label: t('Version Name'),
-            value: runtime?.versionName ?? '',
-        },
-        {
-            label: t('Version Meta'),
-            value: runtime?.versionMeta ?? '',
-        },
-        {
-            label: t('Version Tag'),
-            value: runtime?.versionTag ?? '',
-        },
-        {
-            label: t('Created'),
-            value: runtime?.createdTime && formatTimestampDateTime(runtime.createdTime),
-        },
-    ]
-
-    const info = (
+    return (
         <Card
+            outTitle={t('Files')}
             style={{
                 fontSize: '14px',
-                background: 'var(--color-brandBgSecondary4)',
                 padding: '12px 20px',
                 marginBottom: '10px',
             }}
-            bodyStyle={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-                gap: '12px',
-            }}
         >
-            {items.map((v) => (
-                <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
-                    <div
-                        style={{
-                            background: 'var(--color-brandBgSecondary)',
-                            lineHeight: '24px',
-                            padding: '0 12px',
-                            borderRadius: '4px',
-                        }}
-                    >
-                        {v?.label}:
-                    </div>
-                    <div> {v?.value}</div>
-                </div>
-            ))}
+            <Table
+                isLoading={runtimeLoading}
+                columns={[t('File'), t('Size')]}
+                data={runtime?.files?.map((file: IRuntimeFileSchema) => [file?.name, file?.size]) ?? []}
+            />
         </Card>
-    )
-
-    return (
-        <>
-            {info}
-
-            <Card
-                outTitle={t('Files')}
-                style={{
-                    fontSize: '14px',
-                    padding: '12px 20px',
-                    marginBottom: '10px',
-                }}
-            >
-                <Table
-                    isLoading={runtimeLoading}
-                    columns={[t('File'), t('Size')]}
-                    data={runtime?.files?.map((file: IRuntimeFileSchema) => [file?.name, file?.size]) ?? []}
-                />
-            </Card>
-        </>
     )
 }
