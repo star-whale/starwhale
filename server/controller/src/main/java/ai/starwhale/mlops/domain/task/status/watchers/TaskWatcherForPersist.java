@@ -59,7 +59,7 @@ public class TaskWatcherForPersist implements TaskStatusChangeWatcher {
             task.setFinishTime(now);
             taskMapper.updateTaskFinishedTime(task.getId(),localDateTimeConvertor.revert(now));
         }
-        if(status == TaskStatus.PREPARING){
+        if(status == TaskStatus.RUNNING){
             task.setStartTime(now);
             taskMapper.updateTaskStartedTime(task.getId(),localDateTimeConvertor.revert(now));
         }
