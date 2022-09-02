@@ -8,7 +8,9 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pyarrow as pa  # type: ignore
 import requests
+from requests_mock import Mocker
 
+from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
 
 from .test_base import BaseTestCase
@@ -1473,7 +1475,13 @@ class TestTableWriter(BaseTestCase):
         )
         assert not self.writer.is_alive()
 
-    def test_run_thread_exception_limit(self) -> None:
+    @Mocker()
+    def test_run_thread_exception_limit(self, request_mock: Mocker) -> None:
+        request_mock.request(
+            HTTPMethod.POST,
+            url="http://1.1.1.1/api/v1/datastore/updateTable",
+            status_code=400,
+        )
         remote_store = data_store.RemoteDataStore("http://1.1.1.1")
         remote_writer = data_store.TableWriter(
             "p/test", "k", remote_store, run_exceptions_limits=0
@@ -1505,7 +1513,13 @@ class TestTableWriter(BaseTestCase):
         assert len(remote_writer._queue_run_exceptions) == 0
         remote_writer.close()
 
-    def test_run_thread_exception(self) -> None:
+    @Mocker()
+    def test_run_thread_exception(self, request_mock: Mocker) -> None:
+        request_mock.request(
+            HTTPMethod.POST,
+            url="http://1.1.1.1/api/v1/datastore/updateTable",
+            status_code=400,
+        )
         remote_store = data_store.RemoteDataStore("http://1.1.1.1")
         remote_writer = data_store.TableWriter("p/test", "k", remote_store)
 

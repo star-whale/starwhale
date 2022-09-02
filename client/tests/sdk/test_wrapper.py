@@ -1,5 +1,8 @@
 import os
 
+from requests_mock import Mocker
+
+from starwhale.consts import HTTPMethod
 from starwhale.api._impl import wrapper, data_store
 from starwhale.consts.env import SWEnv
 
@@ -46,7 +49,14 @@ class TestEvaluation(BaseTestCase):
             ),
         )
 
-    def test_exception_close(self) -> None:
+    @Mocker()
+    def test_exception_close(self, request_mock: Mocker) -> None:
+        request_mock.request(
+            HTTPMethod.POST,
+            url="http://1.1.1.1/api/v1/datastore/updateTable",
+            status_code=400,
+        )
+
         os.environ[SWEnv.instance_token] = "abcd"
         os.environ[SWEnv.instance_uri] = "http://1.1.1.1"
         eval = wrapper.Evaluation("test")

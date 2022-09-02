@@ -1,15 +1,20 @@
 import os
 import typing as t
+import urllib.error
 from pathlib import Path
+from unittest import TestCase
 from unittest.mock import patch
 
 import pytest
+import requests
+from requests_mock import Mocker
 from pyfakefs.fake_filesystem import FakeFilesystem
 from pyfakefs.fake_filesystem_unittest import Patcher
 
 from starwhale.utils import load_dotenv, pretty_merge_list, validate_obj_name
-from starwhale.consts import ENV_LOG_LEVEL
+from starwhale.consts import HTTPMethod, ENV_LOG_LEVEL
 from starwhale.utils.debug import init_logger
+from starwhale.utils.retry import http_retry
 
 
 def test_valid_object_name() -> None:
@@ -70,3 +75,40 @@ def test_pretty_merge_list() -> None:
 
     for in_lst, expected_str in _cases:
         assert pretty_merge_list(in_lst) == expected_str
+
+
+class TestRetry(TestCase):
+    @http_retry
+    def _do_request(self, url: str) -> None:
+        _r = requests.get(url, timeout=1)
+        _r.raise_for_status()
+        raise Exception("dummy")
+
+    @http_retry(attempts=6)
+    def _do_urllib_raise(self):
+        raise urllib.error.HTTPError("http://1.1.1.1", 500, "dummy", None, None)  # type: ignore
+
+    @Mocker()
+    def test_http_retry(self, request_mock: Mocker) -> None:
+        _cases = [
+            (200, 1, Exception),
+            (400, 1, requests.exceptions.HTTPError),
+            (500, 3, requests.exceptions.HTTPError),
+            (503, 3, requests.exceptions.HTTPError),
+        ]
+
+        for status_code, expected_attempts, exception in _cases:
+            url = f"http://1.1.1.1/{status_code}"
+            request_mock.request(HTTPMethod.GET, url, status_code=status_code)
+
+            with self.assertRaises(exception):
+                self._do_request(url)
+
+            assert (
+                self._do_request.retry.statistics["attempt_number"] == expected_attempts
+            ), url
+
+        with self.assertRaises(urllib.error.HTTPError):
+            self._do_urllib_raise()
+
+        assert self._do_urllib_raise.retry.statistics["attempt_number"] == 6
