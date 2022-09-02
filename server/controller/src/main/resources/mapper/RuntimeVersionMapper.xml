@@ -73,26 +73,26 @@
     <select id="getLatestVersion" resultMap="runtimeVersionResultMap" >
         <include refid="select_runtime_version" />
         and runtime_id = #{runtimeId}
-        order by rv.version_order desc
+        order by rv.id desc
         limit 1
     </select>
 
     <insert id="revertTo">
-        replace into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
-        select runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest
+        replace into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, image)
+        select runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, image
         from runtime_version
         where id = #{rtVersionId}
     </insert>
 
     <insert id="addNewVersion" parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity" useGeneratedKeys="true" keyProperty="id">
-        insert into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest)
+        insert into runtime_version (runtime_id, owner_id, version_name, version_tag, version_meta, storage_path, image)
         values(#{version.runtimeId},
                #{version.ownerId},
                #{version.versionName},
                #{version.versionTag},
                #{version.versionMeta},
                #{version.storagePath},
-               #{version.manifest})
+               #{version.image})
     </insert>
 
     <update id="update" parameterType="ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity">
