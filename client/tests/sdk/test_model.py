@@ -53,6 +53,21 @@ class SimpleHandler(PipelineHandler):
                     "recall": "0.9932170542635659",
                 },
             },
+            "confusion_matrix": {"binarylabel": [[0, 1, 0], [1, 0, 1]]},
+            "roc_auc": {
+                "1": {
+                    "tpr": [1.1, 1.2],
+                    "fpr": [1.1, 1.2],
+                    "thresholds": [1.1, 1.2],
+                    "auc": 1.01,
+                },
+                "2": {
+                    "tpr": [1.1, 1.2],
+                    "fpr": [1.1, 1.2],
+                    "thresholds": [1.1, 1.2],
+                    "auc": 1.02,
+                },
+            },
         }
 
 
