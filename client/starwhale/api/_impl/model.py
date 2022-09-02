@@ -17,7 +17,7 @@ import dill
 import loguru
 import jsonlines
 
-from starwhale.utils import now_str
+from starwhale.utils import console, now_str
 from starwhale.consts import CURRENT_FNAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -256,36 +256,42 @@ class PipelineHandler(metaclass=ABCMeta):
             self._timeline_writer.write({"time": now, "status": True, "exception": ""})
             self._sw_logger.debug(f"cmp result:{output}")
 
-            self.evaluation.log_metrics(do_flatten_dict(output["summary"]))
+            if "summary" in output:
+                self.evaluation.log_metrics(do_flatten_dict(output["summary"]))
             self.evaluation.log_metrics({"kind": output["kind"]})
 
-            for i, label in output["labels"].items():
-                self.evaluation.log("labels", id=i, **label)
+            if "labels" in output:
+                for i, label in output["labels"].items():
+                    self.evaluation.log("labels", id=i, **label)
 
-            _binary_label = output["confusion_matrix"]["binarylabel"]
-            for _label, _probability in enumerate(_binary_label):
-                self.evaluation.log(
-                    "confusion_matrix/binarylabel",
-                    id=str(_label),
-                    **{str(k): v for k, v in enumerate(_probability)},
-                )
-
-            for _label, _roc_auc in output["roc_auc"].items():
-                _id = 0
-                for _fpr, _tpr, _threshold in zip(
-                    _roc_auc["fpr"], _roc_auc["tpr"], _roc_auc["thresholds"]
-                ):
+            if (
+                "confusion_matrix" in output
+                and "binarylabel" in output["confusion_matrix"]
+            ):
+                _binary_label = output["confusion_matrix"]["binarylabel"]
+                for _label, _probability in enumerate(_binary_label):
                     self.evaluation.log(
-                        f"roc_auc/{_label}",
-                        id=str(_id),
-                        fpr=_fpr,
-                        tpr=_tpr,
-                        threshold=_threshold,
+                        "confusion_matrix/binarylabel",
+                        id=str(_label),
+                        **{str(k): v for k, v in enumerate(_probability)},
                     )
-                    _id += 1
-                    self.evaluation.log(
-                        "roc_auc/summary", id=_label, auc=_roc_auc["auc"]
-                    )
+            if "roc_auc" in output:
+                for _label, _roc_auc in output["roc_auc"].items():
+                    _id = 0
+                    for _fpr, _tpr, _threshold in zip(
+                        _roc_auc["fpr"], _roc_auc["tpr"], _roc_auc["thresholds"]
+                    ):
+                        self.evaluation.log(
+                            f"roc_auc/{_label}",
+                            id=str(_id),
+                            fpr=_fpr,
+                            tpr=_tpr,
+                            threshold=_threshold,
+                        )
+                        _id += 1
+                        self.evaluation.log(
+                            "roc_auc/summary", id=_label, auc=_roc_auc["auc"]
+                        )
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
@@ -307,6 +313,7 @@ class PipelineHandler(metaclass=ABCMeta):
             logger=self._sw_logger,
         )
         for data, label in _data_loader:
+            console.print("in for")
             if data.idx != label.idx:
                 msg = (
                     f"data index[{data.idx}] is not equal label index [{label.idx}], "

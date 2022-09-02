@@ -1,25 +1,29 @@
 import os
-import json
-import base64
+import shutil
 import typing as t
 import sysconfig
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest
-import jsonlines
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_PROJECT
 from starwhale.base.uri import URI
-from starwhale.utils.fs import ensure_dir, ensure_file
+from starwhale.utils.fs import ensure_dir
 from starwhale.api.model import PipelineHandler
-from starwhale.base.type import URIType
-from starwhale.consts.env import SWEnv
+from starwhale.base.type import (
+    URIType,
+    RunSubDirType,
+    DataFormatType,
+    DataOriginType,
+    ObjectStoreType,
+)
 from starwhale.api.dataset import get_data_loader, UserRawDataLoader
 from starwhale.api._impl.job import Context
-from starwhale.api._impl.wrapper import Evaluation
-from starwhale.core.dataset.type import DatasetSummary
+from starwhale.core.eval.store import EvaluationStorage
+from starwhale.core.dataset.type import MIMEType, DatasetSummary
+from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
 
 from .. import ROOT_DIR
@@ -32,12 +36,27 @@ class SimpleHandler(PipelineHandler):
     def cmp(self, _data_loader: t.Any) -> t.Any:
         for _data in _data_loader:
             print(_data)
-        return {"summary": {"a": 1}, "kind": "test", "labels": {"1": 1}}
+        return {
+            "summary": {"a": 1},
+            "kind": "test",
+            "labels": {
+                "1": {
+                    "support": "980",
+                    "f1-score": "0.9903699949315762",
+                    "precision": "0.9838872104733132",
+                    "recall": "0.996938775510204",
+                },
+                "2": {
+                    "support": "1032",
+                    "f1-score": "0.98747591522158",
+                    "precision": "0.9818007662835249",
+                    "recall": "0.9932170542635659",
+                },
+            },
+        }
 
 
 class TestModelPipelineHandler(TestCase):
-    swds_dir = os.path.join(ROOT_DIR, "data", "dataset", "swds")
-
     def setUp(self) -> None:
         self.setUpPyfakefs()
         self.root = "/home/starwhale/model_test"
@@ -45,13 +64,9 @@ class TestModelPipelineHandler(TestCase):
         self.project = DEFAULT_PROJECT
         self.eval_id = "mm3wky3dgbqt"
 
-        self.status_dir = os.path.join(self.root, "status")
-        self.log_dir = os.path.join(self.root, "log")
-        self.config_dir = os.path.join(self.root, "config")
-
-        ensure_dir(self.config_dir)
+        self.dataset_uri_raw = "mnist/version/1122334455667788"
+        self.swds_dir = os.path.join(ROOT_DIR, "data", "dataset", "swds")
         self.fs.add_real_directory(self.swds_dir)
-        os.environ["SW_S3_BUCKET"] = "starwhale"
 
     def tearDown(self) -> None:
         super().tearDown()
@@ -60,6 +75,7 @@ class TestModelPipelineHandler(TestCase):
     @patch("starwhale.core.dataset.store.boto3")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_s3_loader(self, m_summary: MagicMock, m_resource: MagicMock) -> None:
+        os.environ["SW_S3_BUCKET"] = "starwhale"
         m_summary.return_value = DatasetSummary(
             include_user_raw=True,
         )
@@ -70,124 +86,125 @@ class TestModelPipelineHandler(TestCase):
         assert isinstance(_loader, UserRawDataLoader)
         assert not _loader._stores
 
-    @pytest.mark.skip(reason="wait job scheduler feature, cmp will use datastore")
-    def test_cmp(self) -> None:
-        ppl_result_dir = os.path.join(self.root, "ppl")
-        ensure_dir(ppl_result_dir)
+    @patch("starwhale.api._impl.wrapper.Evaluation.get_results")
+    @patch("starwhale.api._impl.wrapper.Evaluation.log_metrics")
+    @patch("starwhale.api._impl.wrapper.Evaluation.log")
+    def test_cmp(
+        self,
+        m_eval_log: MagicMock,
+        m_eval_log_metrics: MagicMock,
+        m_eval_get: MagicMock,
+    ) -> None:
+        _logdir = EvaluationStorage.local_run_dir(self.project, self.eval_id)
+        _run_dir = _logdir / RunSubDirType.RUNLOG / "cmp" / "0"
+        _status_dir = _run_dir / RunSubDirType.STATUS
 
-        config_json_path = os.path.join(self.config_dir, "input.json")
-        local_ppl_result_config = {
-            "kind": "jsonl",
-            "swds": [
-                {
-                    "bucket": ppl_result_dir,
-                    "key": {
-                        "data": "current",
-                    },
-                }
-            ],
-        }
-        ensure_file(config_json_path, json.dumps(local_ppl_result_config))
-
-        os.environ[SWEnv.status_dir] = self.status_dir
-        os.environ[SWEnv.log_dir] = self.log_dir
-
-        with SimpleHandler() as _handler:
-            ppl_result_path = os.path.join(ppl_result_dir, "current")
-            with jsonlines.open(ppl_result_path, mode="w") as _jl:
-                _jl.write(
-                    {
-                        "index": 0,
-                        "ppl": base64.b64encode(
-                            _handler.ppl_data_serialize([1, 2], 0.1)
-                        ).decode("ascii"),
-                        "label": base64.b64encode(
-                            _handler.label_data_serialize([3, 4])
-                        ).decode("ascii"),
-                    }
-                )
-            _handler._starwhale_internal_run_cmp()
-
-        status_file_path = os.path.join(self.status_dir, "current")
-        assert os.path.exists(status_file_path)
-        assert "success" in open(status_file_path).read()
-        assert os.path.exists(os.path.join(self.status_dir, "timeline"))
-
-        # TODO: use datastore results
-        # with jsonlines.open(result_file_path) as reader:
-        #     lines = [_l for _l in reader]
-        #     assert len(lines) == 1
-        #     assert lines[0]["summary"] == {"a": 1}
-        #     assert lines[0]["kind"] == "test"
-
-    @pytest.mark.skip(reason="wait job scheduler feature, ppl will use datastore")
-    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
-    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
-    def test_ppl(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
-        m_summary.return_value = DatasetSummary(
-            rows=1,
-            increased_rows=1,
-            include_user_raw=False,
-            include_link=False,
-            label_byte_size=1,
-            data_byte_size=10,
-        )
-        os.environ[SWEnv.instance_uri] = "local"
-        os.environ[SWEnv.project] = self.project
-        os.environ[SWEnv.status_dir] = self.status_dir
-        os.environ[SWEnv.log_dir] = self.log_dir
-        os.environ[SWEnv.dataset_uri] = "mnist/version/latest"
-        os.environ[SWEnv.dataset_row_start] = "0"
-        os.environ[SWEnv.dataset_row_end] = "1"
-        os.environ["SW_S3_BUCKET"] = self.swds_dir
-
-        m_scan.return_value = [
-            TabularDatasetRow(
-                id=i,
-                data_uri="data_ubyte_0.swds_bin",
-                label=str(i).encode(),
-                data_offset=0,
-                data_size=8160,
-            )
-            for i in range(0, 1)
+        # mock datastore return results
+        m_eval_get.__iter__.return_value = [
+            {
+                "result": "gASVaQAAAAAAAABdlEsHYV2UXZQoRz4mBBuTAu5hRz4bF5vyEiX+Rz479hi1FqrRRz5MqGToQCdARz3WYwL267cBRz3TzJIFVM1PRz1u4heY2/90Rz/wAAAAAAAARz3Kj1Gg+FBvRz5s1fMUlZZ8ZWGGlC4=",
+                "data_size": "784",
+                "id": "0",
+                "label": "gASVBQAAAAAAAABLB4WULg==",
+            },
+            {
+                "result": "gASVaQAAAAAAAABdlEsCYV2UXZQoRz7HJD9vpfz2Rz7nuBHd45K7Rz/v/95AI4woRz54jeSOtfKhRz4ydvSYTUVCRz4C6uB7EvDbRz66RdBlHOhyRz4yZGRfv61uRz6WGg/Jbfu6Rz3Qy/2xeB34ZWGGlC4=",
+                "data_size": "784",
+                "id": "1",
+                "label": "gASVBQAAAAAAAABLAoWULg==",
+            },
         ]
-        _eval_store = Evaluation(eval_id=self.eval_id)
+
         with SimpleHandler(
             context=Context(
                 workdir=Path(),
-                src_dir=Path(),
                 project=self.project,
                 version=self.eval_id,
-                dataset_uris=["mnist/version/latest"],
+                dataset_uris=[self.dataset_uri_raw],
+                step="cmp",
+                index=0,
+            )
+        ) as _handler:
+            _handler._starwhale_internal_run_cmp()
+            m_eval_log_metrics.assert_called()
+            m_eval_log.assert_called()
+
+        status_file_path = os.path.join(_status_dir, "current")
+        assert os.path.exists(status_file_path)
+        assert "success" in open(status_file_path).read()
+        assert os.path.exists(os.path.join(_status_dir, "timeline"))
+
+    @patch.dict(os.environ, {})
+    @patch("starwhale.api._impl.wrapper.Evaluation.get_results")
+    @patch("starwhale.api._impl.wrapper.Evaluation.log_result")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    def test_ppl(
+        self,
+        m_summary: MagicMock,
+        m_scan: MagicMock,
+        m_eval_log: MagicMock,
+        m_eval_get: MagicMock,
+    ) -> None:
+        _logdir = EvaluationStorage.local_run_dir(self.project, self.eval_id)
+        _run_dir = _logdir / RunSubDirType.RUNLOG / "ppl" / "0"
+        _status_dir = _run_dir / RunSubDirType.STATUS
+
+        # mock dataset
+        m_summary.return_value = DatasetSummary(
+            include_user_raw=False,
+            include_link=False,
+            rows=1,
+            increased_rows=1,
+        )
+
+        fname = "data_ubyte_0.swds_bin"
+        m_scan.return_value = [
+            TabularDatasetRow(
+                id=0,
+                object_store_type=ObjectStoreType.LOCAL,
+                data_uri=fname,
+                data_offset=32,
+                data_size=784,
+                _swds_bin_offset=0,
+                _swds_bin_size=8160,
+                label=b"0",
+                data_origin=DataOriginType.NEW,
+                data_format=DataFormatType.SWDS_BIN,
+                data_mime_type=MIMEType.UNDEFINED,
+                auth_name="",
+            ),
+        ]
+        data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir
+        ensure_dir(data_dir)
+        shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
+
+        # mock
+        with SimpleHandler(
+            context=Context(
+                workdir=Path(),
+                project=self.project,
+                version=self.eval_id,
+                dataset_uris=[self.dataset_uri_raw],
+                step="ppl",
+                index=0,
             )
         ) as _handler:
             _handler._starwhale_internal_run_ppl()
 
-        status_file_path = os.path.join(self.status_dir, "current")
+        # only one data row
+        m_eval_log.assert_called_once()
+        m_eval_get.assert_called_once()
+
+        status_file_path = os.path.join(_status_dir, "current")
         assert os.path.exists(status_file_path)
         assert "success" in open(status_file_path).read()
-        assert os.path.exists(os.path.join(self.status_dir, "timeline"))
+        assert os.path.exists(os.path.join(_status_dir, "timeline"))
 
-        # TODO: use datastore results
-        _ppl_results = list(_eval_store.get_results())
-        assert len(_ppl_results) == 1
-        with SimpleHandler(
-            context=Context(
-                workdir=Path(),
-                src_dir=Path(),
-                project=self.project,
-                version=self.eval_id,
-            )
-        ) as _handler:
-            _result = _handler.deserialize_fields(_ppl_results[0])
-
-        (result, pr) = _result["result"]
-        assert result == [1, 2]
-        assert pr == 0.1
-        assert result["id"] == 0
-
-    @pytest.mark.skip(reason="wait job scheduler feature, cmp will use datastore")
-    def test_deserializer(self) -> None:
+    @pytest.mark.skip(reason="datastore persist have some error")
+    @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
+    @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
+    def test_deserializer(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
         self.fs.add_real_directory(sysconfig.get_paths()["purelib"])
         import numpy as np
         import torch
@@ -207,51 +224,63 @@ class TestModelPipelineHandler(TestCase):
             def cmp(self, _data_loader: t.Any) -> t.Any:
                 data = [i for i in _data_loader]
                 assert len(data) == 1
-                (x, y, z) = data[0]["ppl"]
+                (x, y, z) = data[0]["result"]
                 assert x == builtin_data
                 assert np.array_equal(y, np_data)
                 assert torch.equal(z, tensor_data)
 
                 assert label_data == data[0]["label"]
 
-        config_json_path = os.path.join(self.config_dir, "input.json")
-        local_swds_config = {
-            "kind": "swds",
-            "swds": [
-                {
-                    "bucket": self.swds_dir,
-                    "key": {
-                        "data": "data_ubyte_0.swds_bin",
-                        "label": "label_ubyte_0.swds_bin",
-                    },
-                }
-            ],
-        }
-        ensure_file(config_json_path, json.dumps(local_swds_config))
-        ppl_result = os.path.join(self.root, "ppl")
-        os.environ[SWEnv.status_dir] = self.status_dir
-        os.environ[SWEnv.log_dir] = self.log_dir
-        os.environ[SWEnv.result_dir] = ppl_result
-        os.environ[SWEnv.input_config] = config_json_path
+        # mock dataset
+        m_summary.return_value = DatasetSummary(
+            include_user_raw=False,
+            include_link=False,
+            rows=1,
+            increased_rows=1,
+        )
 
-        with Dummy() as _handler:
+        fname = "data_ubyte_0.swds_bin"
+        m_scan.return_value = [
+            TabularDatasetRow(
+                id=0,
+                object_store_type=ObjectStoreType.LOCAL,
+                data_uri=fname,
+                data_offset=32,
+                data_size=784,
+                _swds_bin_offset=0,
+                _swds_bin_size=8160,
+                label=b"0",
+                data_origin=DataOriginType.NEW,
+                data_format=DataFormatType.SWDS_BIN,
+                data_mime_type=MIMEType.UNDEFINED,
+                auth_name="",
+            ),
+        ]
+        data_dir = DatasetStorage(URI(self.dataset_uri_raw, URIType.DATASET)).data_dir
+        ensure_dir(data_dir)
+        shutil.copyfile(os.path.join(self.swds_dir, fname), str(data_dir / fname))
+
+        # mock
+        with Dummy(
+            context=Context(
+                workdir=Path(),
+                project=self.project,
+                version=self.eval_id,
+                dataset_uris=[self.dataset_uri_raw],
+                step="ppl",
+                index=0,
+            )
+        ) as _handler:
             _handler._starwhale_internal_run_ppl()
 
-        result_file_path = os.path.join(ppl_result, "current")
-        assert os.path.exists(result_file_path)
-
-        local_swds_config = {
-            "kind": "jsonl",
-            "swds": [
-                {
-                    "bucket": ppl_result,
-                    "key": {
-                        "data": "current",
-                    },
-                }
-            ],
-        }
-        ensure_file(config_json_path, json.dumps(local_swds_config))
-        os.environ[SWEnv.result_dir] = os.path.join(self.root, "cmp")
-        with Dummy() as _handler:
+        with Dummy(
+            context=Context(
+                workdir=Path(),
+                project=self.project,
+                version=self.eval_id,
+                dataset_uris=[self.dataset_uri_raw],
+                step="cmp",
+                index=0,
+            )
+        ) as _handler:
             _handler._starwhale_internal_run_cmp()
