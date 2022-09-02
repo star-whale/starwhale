@@ -129,7 +129,7 @@ public class JobLoaderTest {
         Assertions.assertNotNull(loadedJob.getCurrentStep().getNextStep());
 
         verify(jobHolder, times(1)).adopt(mockJob);
-        verify(swTaskScheduler, times(0)).adopt(anyCollection(), any(Clazz.class));
+        verify(swTaskScheduler, times(0)).schedule(anyCollection(), any(Clazz.class));
         verify(watchableTaskFactory, times(2)).wrapTasks(anyCollection());
         loadedJob.getSteps().parallelStream().map(Step::getTasks).flatMap(Collection::stream)
             .forEach(t -> {
@@ -158,9 +158,7 @@ public class JobLoaderTest {
             TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.ASSIGNING)
-                .agent(
-                    AgentEntity.builder().id(1L).serialNumber("serial")
-                        .connectTime(LocalDateTime.now()).build()).build()
+                .build()
             , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.FAIL)
@@ -203,7 +201,7 @@ public class JobLoaderTest {
 
         verify(jobUpdateHelper).updateJob(mockJob);
         verify(jobHolder, times(1)).adopt(mockJob);
-        verify(swTaskScheduler, times(1)).adopt(anyCollection(), any(Clazz.class));
+        verify(swTaskScheduler, times(1)).schedule(anyCollection(), any(Clazz.class));
         Set<Task> tasks = loadedJob.getSteps().parallelStream().map(Step::getTasks)
             .flatMap(Collection::stream).collect(
                 Collectors.toSet());
@@ -236,9 +234,7 @@ public class JobLoaderTest {
             TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.ASSIGNING)
-                .agent(
-                    AgentEntity.builder().id(1L).serialNumber("serial")
-                        .connectTime(LocalDateTime.now()).build()).build()
+                .build()
             , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.FAIL)
@@ -279,7 +275,7 @@ public class JobLoaderTest {
 
         verify(jobUpdateHelper).updateJob(mockJob);
         verify(jobHolder, times(0)).adopt(mockJob);
-        verify(swTaskScheduler, times(0)).adopt(anyCollection(), any(Clazz.class));
+        verify(swTaskScheduler, times(0)).schedule(anyCollection(), any(Clazz.class));
         Set<Task> tasks = loadedJob.getSteps().parallelStream().map(Step::getTasks)
             .flatMap(Collection::stream).collect(
                 Collectors.toSet());
@@ -314,9 +310,7 @@ public class JobLoaderTest {
             TaskEntity.builder().id(1L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.ASSIGNING)
-                .agent(
-                    AgentEntity.builder().id(1L).serialNumber("serial")
-                        .connectTime(LocalDateTime.now()).build()).build()
+                .build()
             , TaskEntity.builder().id(2L).taskUuid(UUID.randomUUID().toString())
                 .taskRequest(TASK_REQUEST)
                 .taskStatus(TaskStatus.FAIL)

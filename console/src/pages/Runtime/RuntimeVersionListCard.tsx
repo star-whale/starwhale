@@ -3,18 +3,28 @@ import Card from '@/components/Card'
 import { usePage } from '@/hooks/usePage'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Button } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import Table from '@/components/Table'
 import { useParams } from 'react-router-dom'
 import { useFetchRuntimeVersions } from '@/domain/runtime/hooks/useFetchRuntimeVersions'
+import Button from '@/components/Button'
+import { IRuntimeDetailSchema } from '@/domain/runtime/schemas/runtime'
+import { revertRuntimeVersion } from '@/domain/runtime/services/runtimeVersion'
+import { toaster } from 'baseui/toast'
 
 export default function RuntimeVersionListCard() {
     const [page] = usePage()
     const { runtimeId, projectId } = useParams<{ runtimeId: string; projectId: string }>()
     const runtimesInfo = useFetchRuntimeVersions(projectId, runtimeId, page)
     const [t] = useTranslation()
-
+    const handleRevert = React.useCallback(
+        async (data: IRuntimeDetailSchema) => {
+            await revertRuntimeVersion(projectId, runtimeId, data.id as string)
+            toaster.positive(t('runtime version reverted'), { autoHideDuration: 2000 })
+            await runtimesInfo.refetch()
+        },
+        [runtimesInfo, projectId, runtimeId]
+    )
     return (
         <Card title={t('runtime versions')}>
             <Table
@@ -39,21 +49,25 @@ export default function RuntimeVersionListCard() {
                     //         return item[1] ?? ''
                     //     },
                     // },
-                    t('Tag'),
+                    // t('Tag'),
                     t('Created'),
                     t('Owner'),
                     t('Action'),
                 ]}
                 data={
-                    runtimesInfo.data?.list.map((runtime) => {
+                    runtimesInfo.data?.list.map((runtime, i) => {
                         return [
                             runtime.meta,
-                            runtime.tag,
+                            // runtime.tag,
                             runtime.createdTime && formatTimestampDateTime(runtime.createdTime),
                             runtime.owner && <User user={runtime.owner} />,
-                            <Button size='mini' key={runtime.id} onClick={() => {}}>
-                                {t('Revert')}
-                            </Button>,
+                            i ? (
+                                <Button size='mini' as='link' key={runtime.id} onClick={() => handleRevert(runtime)}>
+                                    {t('Revert')}
+                                </Button>
+                            ) : (
+                                ''
+                            ),
                         ]
                     }) ?? []
                 }

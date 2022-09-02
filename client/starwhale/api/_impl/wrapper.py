@@ -3,6 +3,8 @@ import re
 import threading
 from typing import Any, Dict, List, Union, Iterator, Optional
 
+from loguru import logger
+
 from starwhale.consts import VERSION_PREFIX_CNT
 from starwhale.consts.env import SWEnv
 
@@ -18,9 +20,19 @@ class Logger:
 
     def close(self) -> None:
         with self._lock:
+            exceptions: List[Exception] = []
             for writer in self._writers.values():
-                if writer is not None:
+                if writer is None:
+                    continue
+
+                try:
                     writer.close()
+                except Exception as e:
+                    logger.exception(f"{writer} exception: {e}")
+                    exceptions.append(e)
+
+            if exceptions:
+                raise Exception(*exceptions)
 
     def _log(self, table_name: str, record: Dict[str, Any]) -> None:
         with self._lock:
@@ -30,6 +42,7 @@ class Logger:
             if writer is None:
                 writer = data_store.TableWriter(table_name)
                 self._writers[table_name] = writer
+
         writer.insert(record)
 
 

@@ -17,18 +17,20 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.domain.node.Device.Clazz;
+import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Getter;
 
 /**
- * map controller device to k8s label selector & resource limit
+ * map SW resource specification to k8s label selector & resource limit
  */
 @Getter
-public class K8SSelectorSpec {
+public class ResourceOverwriteSpec {
 
-    Map<String,String> labelSelector;
     V1ResourceRequirements resourceSelector;
 
     static final String RESOURCE_CPU = "cpu";
@@ -40,10 +42,15 @@ public class K8SSelectorSpec {
      * @param deviceClass
      * @param amount example 1T, 2G, 2, 3.8m
      */
-    public K8SSelectorSpec(Clazz deviceClass, String amount){
+    public ResourceOverwriteSpec(Clazz deviceClass, String amount){
         String resourceName = deviceNameMap.getOrDefault(deviceClass, RESOURCE_CPU);
-        this.resourceSelector = new V1ResourceRequirements().limits(Map.of(resourceName,new Quantity(amount)));
-        this.labelSelector = null; //node selector not used currently
+        this.resourceSelector = new V1ResourceRequirements().requests(Map.of(resourceName,new Quantity(amount)));
+    }
+
+    public ResourceOverwriteSpec(List<RuntimeResource> runtimeResources){
+        Map<String, Quantity> resourceMap = runtimeResources.stream()
+            .collect(Collectors.toMap(RuntimeResource::getType, runtimeResource -> new Quantity(runtimeResource.getNum() * 1000+"m")));
+        this.resourceSelector = new V1ResourceRequirements().requests(resourceMap);
     }
 
 }

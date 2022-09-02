@@ -16,10 +16,17 @@ const useLinkStyles = createUseStyles({
     text: {
         'display': 'initial',
         'fontSize': '14px',
-        'color': 'rgb(2, 16, 43)',
+        'color': '#2B65D9',
         '&:hover': {
             textDecoration: 'underline',
             color: ' #5181E0 ',
+        },
+        '&:hover span': {
+            textDecoration: 'underline',
+            color: ' #5181E0 ',
+        },
+        '&:visited': {
+            color: '#1C4CAD ',
         },
     },
 })
@@ -29,9 +36,9 @@ export default function TextLink({ children, className, style, ...rest }: ILinkP
 
     return (
         <BaseLink className={styles.link} {...rest}>
-            <p className={cn(styles.text, className)} style={style}>
+            <div className={cn(styles.text, className)} style={style}>
                 {children}
-            </p>
+            </div>
         </BaseLink>
     )
 }

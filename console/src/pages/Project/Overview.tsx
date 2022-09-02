@@ -3,7 +3,7 @@ import useTranslation from '@/hooks/useTranslation'
 import { useProject } from '@project/hooks/useProject'
 import Card from '@/components/Card'
 import { ICreateProjectSchema } from '@project/schemas/project'
-import { createProject, fetchProject } from '@project/services/project'
+import { fetchProject, changeProject } from '@project/services/project'
 import { Modal, ModalBody, ModalHeader } from 'baseui/modal'
 import ProjectForm from '@project/components/ProjectForm'
 import IconFont from '@/components/IconFont'
@@ -149,11 +149,14 @@ export default function ProjectOverview() {
     const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] = useState(false)
     const handleCreateProject = useCallback(
         async (data: ICreateProjectSchema) => {
-            await createProject(data)
+            if (!project?.id) {
+                return
+            }
+            await changeProject(project.id, data)
             setIsCreateProjectModalOpen(false)
             await projectInfo.refetch()
         },
-        [projectInfo]
+        [projectInfo, project]
     )
 
     React.useEffect(() => {

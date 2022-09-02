@@ -47,7 +47,6 @@ public class TaskBoConvertorTest {
             Clazz.CPU).name("name_swrt").storagePath("path_storage").version("version_swrt").build()).build()).build();
         TaskEntity pplTask = TaskEntity.builder()
             .id(1L)
-            .agent(AgentEntity.builder().connectTime(LocalDateTime.now()).id(1L).serialNumber("serial1").build())
             .taskStatus(TaskStatus.RUNNING)
             .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"ppl\"}")
             .startedTime(LocalDateTime.now())
@@ -55,7 +54,6 @@ public class TaskBoConvertorTest {
             .build();
         TaskEntity cmpTask = TaskEntity.builder()
             .id(2L)
-            .agent(null)
             .taskStatus(TaskStatus.CREATED)
             .taskRequest("{\"project\":\"starwhale\",\"index\":0,\"datasetUris\":[\"mnist/version/myztqzrtgm3tinrtmftdgyjzob2ggni\"],\"jobId\":\"3d32264ce5054fa69190167e15d6303d\",\"total\":1,\"stepName\":\"cmp\"}")
             .taskUuid(UUID.randomUUID().toString())

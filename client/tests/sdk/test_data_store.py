@@ -1,12 +1,16 @@
 import os
 import json
+import time
 import unittest
 from typing import Dict, List
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pyarrow as pa  # type: ignore
+import requests
+from requests_mock import Mocker
 
+from starwhale.consts import HTTPMethod
 from starwhale.api._impl import data_store
 
 from .test_base import BaseTestCase
@@ -1469,6 +1473,62 @@ class TestTableWriter(BaseTestCase):
             ),
             "scan all",
         )
+        assert not self.writer.is_alive()
+
+    @Mocker()
+    def test_run_thread_exception_limit(self, request_mock: Mocker) -> None:
+        request_mock.request(
+            HTTPMethod.POST,
+            url="http://1.1.1.1/api/v1/datastore/updateTable",
+            status_code=400,
+        )
+        remote_store = data_store.RemoteDataStore("http://1.1.1.1")
+        remote_writer = data_store.TableWriter(
+            "p/test", "k", remote_store, run_exceptions_limits=0
+        )
+
+        assert remote_writer.is_alive()
+        remote_writer.insert({"k": 0, "a": "0"})
+        remote_writer.insert({"k": 1, "a": "1"})
+
+        start = time.time()
+        is_timeout = False
+        while True:
+            if not remote_writer.is_alive():
+                break
+            if time.time() - start > 10:
+                is_timeout = True
+
+        assert not is_timeout
+        assert not remote_writer.is_alive()
+        assert not remote_writer._stopped
+
+        assert len(remote_writer._queue_run_exceptions) > 0
+        for e in remote_writer._queue_run_exceptions:
+            assert isinstance(e, requests.exceptions.HTTPError)
+
+        with self.assertRaises(data_store.TableWriterException):
+            remote_writer.insert({"k": 2, "a": "2"})
+
+        assert len(remote_writer._queue_run_exceptions) == 0
+        remote_writer.close()
+
+    @Mocker()
+    def test_run_thread_exception(self, request_mock: Mocker) -> None:
+        request_mock.request(
+            HTTPMethod.POST,
+            url="http://1.1.1.1/api/v1/datastore/updateTable",
+            status_code=400,
+        )
+        remote_store = data_store.RemoteDataStore("http://1.1.1.1")
+        remote_writer = data_store.TableWriter("p/test", "k", remote_store)
+
+        assert remote_writer.is_alive()
+        remote_writer.insert({"k": 0, "a": "0"})
+        remote_writer.insert({"k": 1, "a": "1"})
+
+        with self.assertRaises(data_store.TableWriterException):
+            remote_writer.close()
 
 
 if __name__ == "__main__":

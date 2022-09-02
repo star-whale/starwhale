@@ -32,11 +32,11 @@ public interface SWTaskScheduler {
      * @param tasks tasks to be scheduled
      * @param deviceClass the device type should be scheduled on
      */
-    void adopt(Collection<Task> tasks, Device.Clazz deviceClass);
+    void schedule(Collection<Task> tasks, Device.Clazz deviceClass);
 
     /**
      * @param taskIds tasks to be stop scheduled
      */
-    void remove(Collection<Long> taskIds);
+    void stopSchedule(Collection<Long> taskIds);
 
 }

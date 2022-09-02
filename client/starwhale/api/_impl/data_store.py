@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import json
+import atexit
 import base64
 import struct
 import urllib
@@ -21,6 +22,7 @@ from typing_extensions import Protocol
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import MissingFieldError
+from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 
 try:
@@ -710,17 +712,14 @@ class LocalDataStore:
 
                 ds_path = SWCliConfigMixed().datastore_dir
                 ensure_dir(ds_path)
-
                 LocalDataStore._instance = LocalDataStore(str(ds_path))
+                atexit.register(LocalDataStore._instance.dump)
             return LocalDataStore._instance
 
     def __init__(self, root_path: str) -> None:
         self.root_path = root_path
         self.name_pattern = re.compile(r"^[A-Za-z0-9-_/: ]+$")
         self.tables: Dict[str, MemoryTable] = {}
-
-    def __del__(self) -> None:
-        self.dump()
 
     def update_table(
         self,
@@ -871,6 +870,7 @@ class RemoteDataStore:
         if self.token is None:
             raise RuntimeError("SW_TOKEN is not found in environment")
 
+    @http_retry
     def update_table(
         self,
         table_name: str,
@@ -901,7 +901,6 @@ class RemoteDataStore:
         if self.token is None:
             raise MissingFieldError("no authorization token")
 
-        assert self.token is not None
         resp = requests.post(
             urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/updateTable"),
             data=json.dumps(data, separators=(",", ":")),
@@ -917,6 +916,20 @@ class RemoteDataStore:
                 f"[update-table]Table:{table_name}, resp code:{resp.status_code}, \n resp text: {resp.text}, \n records: {records}"
             )
         resp.raise_for_status()
+
+    @http_retry
+    def _do_scan_table_request(self, post_data: Dict[str, Any]) -> Dict[str, Any]:
+        resp = requests.post(
+            urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/scanTable"),
+            data=json.dumps(post_data, separators=(",", ":")),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": self.token,  # type: ignore
+            },
+            timeout=60,
+        )
+        resp.raise_for_status()
+        return resp.json()["data"]  # type: ignore
 
     def scan_tables(
         self,
@@ -937,17 +950,7 @@ class RemoteDataStore:
             post_data["keepNone"] = True
         assert self.token is not None
         while True:
-            resp = requests.post(
-                urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/scanTable"),
-                data=json.dumps(post_data, separators=(",", ":")),
-                headers={
-                    "Content-Type": "application/json; charset=utf-8",
-                    "Authorization": self.token,
-                },
-                timeout=60,
-            )
-            resp.raise_for_status()
-            resp_json: Dict[str, Any] = resp.json()["data"]
+            resp_json = self._do_scan_table_request(post_data)
             records = resp_json.get("records", None)
             if records is None or len(records) == 0:
                 break
@@ -1017,16 +1020,31 @@ def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
     return record
 
 
+class TableWriterException(Exception):
+    pass
+
+
 class TableWriter(threading.Thread):
-    def __init__(self, table_name: str, key_column: str = "id") -> None:
-        super().__init__()
+    def __init__(
+        self,
+        table_name: str,
+        key_column: str = "id",
+        data_store: Optional[DataStore] = None,
+        run_exceptions_limits: int = 100,
+    ) -> None:
+        super().__init__(name=f"TableWriter-{table_name}")
         self.table_name = table_name
         self.schema = TableSchema(key_column, [])
-        self.records: List[Dict[str, Any]] = []
-        self.stopped = False
-        self.data_store = get_data_store()
-        self.cond = threading.Condition()
+        self.data_store = data_store or get_data_store()
+
+        self._cond = threading.Condition()
+        self._stopped = False
+        self._records: List[Dict[str, Any]] = []
+        self._queue_run_exceptions: List[Exception] = []
+        self._run_exceptions_limits = max(run_exceptions_limits, 0)
+
         self.setDaemon(True)
+        atexit.register(self.close)
         self.start()
 
     def __enter__(self) -> Any:
@@ -1035,15 +1053,20 @@ class TableWriter(threading.Thread):
     def __exit__(self, type: Any, value: Any, tb: Any) -> None:
         self.close()
 
-    def __del__(self) -> None:
-        self.close()
-
     def close(self) -> None:
-        with self.cond:
-            if not self.stopped:
-                self.stopped = True
-                self.cond.notify()
+        with self._cond:
+            if not self._stopped:
+                atexit.unregister(self.close)
+                self._stopped = True
+                self._cond.notify()
         self.join()
+        self._raise_run_exceptions(0)
+
+    def _raise_run_exceptions(self, limits: int) -> None:
+        if len(self._queue_run_exceptions) > limits:
+            _es = self._queue_run_exceptions
+            self._queue_run_exceptions = []
+            raise TableWriterException(f"{self} run raise {len(_es)} exceptions: {_es}")
 
     def insert(self, record: Dict[str, Any]) -> None:
         record = _flatten(record)
@@ -1063,23 +1086,32 @@ class TableWriter(threading.Thread):
         self._insert({self.schema.key_column: key, "-": True})
 
     def _insert(self, record: Dict[str, Any]) -> None:
+        self._raise_run_exceptions(self._run_exceptions_limits)
+
         key = record.get(self.schema.key_column, None)
         if key is None:
             raise RuntimeError(
                 f"the key {self.schema.key_column} should not be none, record:{record}"
             )
-        with self.cond:
+        with self._cond:
             self.schema = _update_schema(self.schema, record)
-            self.records.append(record)
-            self.cond.notify()
+            self._records.append(record)
+            self._cond.notify()
 
     def run(self) -> None:
         while True:
-            with self.cond:
-                while not self.stopped and len(self.records) == 0:
-                    self.cond.wait()
-                if len(self.records) == 0:
+            with self._cond:
+                while not self._stopped and len(self._records) == 0:
+                    self._cond.wait()
+                if len(self._records) == 0:
                     break
-                records = self.records
-                self.records = []
-            self.data_store.update_table(self.table_name, self.schema, records)
+                records = self._records
+                self._records = []
+
+            try:
+                self.data_store.update_table(self.table_name, self.schema, records)
+            except Exception as e:
+                logger.warning(f"{self} run-update-table raise exception: {e}")
+                self._queue_run_exceptions.append(e)
+                if len(self._queue_run_exceptions) > self._run_exceptions_limits:
+                    break

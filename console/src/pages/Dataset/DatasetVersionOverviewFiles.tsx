@@ -13,6 +13,8 @@ import Button from '@/components/Button'
 import DatasetViewer from '@/components/Viewer/DatasetViewer'
 import ImageViewer from '@/components/Viewer/ImageViewer'
 import { Tabs, Tab } from 'baseui/tabs'
+import { getReadableStorageQuantityStr } from '@/utils'
+import Typer from '@/domain/datastore/sdk'
 
 export default function DatasetVersionFiles() {
     const { projectId, fileId } = useParams<{ projectId: string; datasetId: string; fileId: string }>()
@@ -21,11 +23,12 @@ export default function DatasetVersionFiles() {
     const { token } = useAuth()
     const history = useHistory()
 
-    const tables = useQueryDatasetList(datasetVersion?.indexTable, page)
+    const tables = useQueryDatasetList(datasetVersion?.indexTable, page, true)
 
     const rowCount = React.useMemo(() => {
         return getMetaRow(datasetVersion?.versionMeta as string)
     }, [datasetVersion])
+
     const paginationProps: IPaginationProps = React.useMemo(() => {
         return {
             start: page.pageNum,
@@ -38,14 +41,18 @@ export default function DatasetVersionFiles() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, rowCount])
 
+    const columnTypes = React.useMemo(() => {
+        return tables.data?.columnTypes ?? {}
+    }, [tables.data])
+
     const preview: any = React.useMemo(() => {
         const row = tables.data?.records?.find((v) => v.id === fileId)
         if (!row) return
         const src = tableDataLink(projectId, datasetVersion?.name as string, datasetVersion?.versionName as string, {
             uri: row.data_uri,
             authName: row.auth_name,
-            offset: row.data_offset,
-            size: row.data_size,
+            offset: Typer[columnTypes.data_offset]?.encode(row.data_offset),
+            size: Typer[columnTypes.data_size]?.encode(row.data_size),
             Authorization: token as string,
         })
         // eslint-disable-next-line consistent-return
@@ -53,7 +60,7 @@ export default function DatasetVersionFiles() {
             ...row,
             src,
         }
-    }, [tables, datasetVersion, projectId, token, fileId])
+    }, [tables, datasetVersion, projectId, token, fileId, columnTypes])
 
     const [activeKey, setActiveKey] = React.useState('1')
 
@@ -94,6 +101,7 @@ export default function DatasetVersionFiles() {
                                 paddingLeft: '20px',
                                 paddingRight: '20px',
                                 lineHeight: '44px',
+                                verticalAlign: 'middle',
                             },
                         },
                         // ...overrides,
@@ -105,6 +113,8 @@ export default function DatasetVersionFiles() {
                             TableBodyCell: {
                                 style: {
                                     verticalAlign: 'middle',
+                                    paddingTop: '4px',
+                                    paddingBottom: '4px',
                                 },
                             },
                         }}
@@ -117,26 +127,32 @@ export default function DatasetVersionFiles() {
                                 {
                                     uri: row.data_uri,
                                     authName: row.auth_name,
-                                    offset: row.data_offset,
-                                    size: row.data_size,
+                                    offset: Typer[columnTypes.data_offset]?.encode(row.data_offset),
+                                    size: Typer[columnTypes.data_size]?.encode(row.data_size),
                                     Authorization: token as string,
                                 }
                             )
+
                             return (
-                                <Button as='link' onClick={() => history.push(`files/${row.id}`)}>
-                                    <DatasetViewer
-                                        data={{
-                                            type: 'image',
-                                            label: row.label,
-                                            name: row.auth_name,
-                                            src,
-                                        }}
-                                    />
-                                </Button>
+                                <div style={{ display: 'flex' }}>
+                                    <Button as='link' onClick={() => history.push(`files/${row.id}`)}>
+                                        <DatasetViewer
+                                            data={{
+                                                type: row?.data_mime_type,
+                                                label: row?.label,
+                                                name: row?.auth_name,
+                                                src,
+                                            }}
+                                        />
+                                    </Button>
+                                </div>
                             )
                         }}
                     </TableBuilderColumn>
                     <TableBuilderColumn header='Label'>{(row) => row.label}</TableBuilderColumn>
+                    <TableBuilderColumn header='Size'>
+                        {(row) => getReadableStorageQuantityStr(row.data_size)}
+                    </TableBuilderColumn>
                     <TableBuilderColumn header='Name'>{(row) => row.auth_name}</TableBuilderColumn>
                 </TableBuilder>
             )}

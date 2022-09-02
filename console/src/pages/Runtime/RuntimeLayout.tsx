@@ -6,6 +6,9 @@ import { useParams } from 'react-router-dom'
 import { INavItem } from '@/components/BaseSidebar'
 import { fetchRuntime } from '@/domain/runtime/services/runtime'
 import BaseSubLayout from '@/pages/BaseSubLayout'
+import { formatTimestampDateTime } from '@/utils/datetime'
+import Accordion from '@/components/Accordion'
+import { Panel } from 'baseui/accordion'
 
 export interface IRuntimeLayoutProps {
     children: React.ReactNode
@@ -35,7 +38,7 @@ export default function RuntimeLayout({ children }: IRuntimeLayoutProps) {
     ])
 
     const [t] = useTranslation()
-    const runtimeName = runtime?.versionMeta ?? '-'
+
     const breadcrumbItems: INavItem[] = useMemo(() => {
         const items = [
             {
@@ -43,12 +46,74 @@ export default function RuntimeLayout({ children }: IRuntimeLayoutProps) {
                 path: `/projects/${projectId}/runtimes`,
             },
             {
-                title: runtimeName,
+                title: runtime?.versionMeta ?? '-',
                 path: `/projects/${projectId}/runtimes/${runtimeId}`,
             },
         ]
         return items
-    }, [projectId, runtimeName, runtimeId, t])
+    }, [projectId, runtimeId, t, runtime])
 
-    return <BaseSubLayout breadcrumbItems={breadcrumbItems}>{children}</BaseSubLayout>
+    const header = React.useMemo(() => {
+        const items = [
+            {
+                label: t('Runtime Name'),
+                value: runtime?.name ?? '',
+            },
+            {
+                label: t('Version Name'),
+                value: runtime?.versionName ?? '',
+            },
+            {
+                label: t('Version Meta'),
+                value: runtime?.versionMeta ?? '',
+            },
+            {
+                label: t('Version Tag'),
+                value: runtime?.versionTag ?? '',
+            },
+            {
+                label: t('Created'),
+                value: runtime?.createdTime && formatTimestampDateTime(runtime.createdTime),
+            },
+        ]
+
+        const info = (
+            <div
+                style={{
+                    fontSize: '14px',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+                    gap: '12px',
+                }}
+            >
+                {items.map((v) => (
+                    <div key={v?.label} style={{ display: 'flex', gap: '12px' }}>
+                        <div
+                            style={{
+                                lineHeight: '24px',
+                                borderRadius: '4px',
+                                color: 'rgba(2,16,43,0.60)',
+                            }}
+                        >
+                            {v?.label}:
+                        </div>
+                        <div> {v?.value}</div>
+                    </div>
+                ))}
+            </div>
+        )
+        return (
+            <div className='mb-20'>
+                <Accordion accordion>
+                    <Panel title={`${t('Runtime ID')}: ${runtime?.id ?? ''}`}>{info}</Panel>
+                </Accordion>
+            </div>
+        )
+    }, [runtime, t])
+
+    return (
+        <BaseSubLayout breadcrumbItems={breadcrumbItems} header={header}>
+            {children}
+        </BaseSubLayout>
+    )
 }
