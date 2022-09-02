@@ -42,7 +42,7 @@
         <if test="tag != null and tag != ''">
             and FIND_IN_SET(#{tag}, version_tag)
         </if>
-        order by dsv.id desc
+        order by dsv.version_order desc
     </select>
 
     <select id="findByDSIdAndVersionNameForUpdate" resultMap="dsVersionResultMap" >
@@ -89,14 +89,13 @@
     <select id="getLatestVersion" resultMap="dsVersionResultMap" >
         <include refid="select_swds_version" />
         and dataset_id = #{datasetId}
-        order by dsv.id desc
+        order by dsv.version_order desc
         limit 1
     </select>
 
     <insert id="revertTo">
-        replace into dataset_version (dataset_id, owner_id, version_name, size, index_table, version_tag, version_meta, files_uploaded, storage_path, status)
-        select dataset_id, owner_id, version_name, size, index_table, version_tag, version_meta, files_uploaded, storage_path, status
-        from dataset_version
+        update dataset_version
+        set version_order = (select max(version_order) from dataset_version) + 1
         where id = #{dsVersionId}
     </insert>
 
