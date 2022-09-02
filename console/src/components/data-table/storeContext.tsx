@@ -28,7 +28,7 @@ export function StoreProvider({ key = 'store', initState, children }: IStoreProv
     if (!storeRef.current) {
         storeRef.current = createCustomStore(key, initState)
     }
-    console.log(storeRef.current)
+    // console.log(storeRef.current)
     return <MyContext.Provider value={storeRef.current}>{children}</MyContext.Provider>
 }
 

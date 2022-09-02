@@ -128,23 +128,14 @@ jobs:
         working-directory: ./client
         run: make ut
 
-      - name: Publish coverage to Coveralls
-        uses: AndreMiras/coveralls-python-action@v20201129
+      - name: Publish coverage to codecov
+        uses: codecov/codecov-action@v3
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          parallel: true
-          debug: true
-          base-path: ./client
-          flag-name: client-ut-coverage-python${{ matrix.python-version }}
-
-  coveralls_finish:
-    needs: unittest
-    runs-on: ubuntu-latest
-    steps:
-      - name: Coveralls Finished
-        uses: AndreMiras/coveralls-python-action@develop
-        with:
-          parallel-finished: true
+          name: standalone-python${{matrix.python-version}}
+          fail_ci_if_error: true
+          flags: unittests,standalone
+          verbose: true
+          directory: ./client
 
   e2e:
     runs-on: ubuntu-latest

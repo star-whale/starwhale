@@ -17,7 +17,7 @@ export default function ThirdPartyLoginButton({ isLogin, vendorName, vendor, ico
         (e) => {
             e.preventDefault()
             const base = `${window.location.protocol}//${window.location.host}`
-            const feUrl = encodeURIComponent(`${base}/loginnew`)
+            const feUrl = encodeURIComponent(`${base}/login`)
             const baseBe = `${base}/swcloud/api/v1/redirect/thirdparty`
             // redirect to our server and pass the front-end url to redirect when user auth done.
             window.location.href = `${baseBe}?callback=${feUrl}&vendor=${encodeURIComponent(vendor)}`

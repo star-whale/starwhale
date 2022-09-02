@@ -1,6 +1,4 @@
 // @ts-nocheck
-/* eslint-disable */
-import struct from '@aksel/structjs'
 
 export interface IRocAuc {
     fpr: number[]
@@ -70,18 +68,15 @@ const Layout = {
     },
 }
 
-var unhexlify = function (str) {
-    const f = new Uint8Array(8)
-    let j = 0
-    for (var i = 0, l = str.length; i < l; i += 2) {
-        f[j] = parseInt(str.substr(i, 2), 16)
-        j++
+export function getRocAucConfig(
+    title = '',
+    labels: string[],
+    data: {
+        fpr: IRocAuc['fpr'][]
+        tpr: IRocAuc['tpr'][]
     }
-    let s = struct('>d')
-    return s.unpack(f.buffer)[0]
-}
-
-export function getRocAucConfig(title = '', labels: string[], data: IRocAuc[]) {
+) {
+    const { fpr, tpr } = data
     const layout = {
         ...Layout.init,
         title,
@@ -96,17 +91,6 @@ export function getRocAucConfig(title = '', labels: string[], data: IRocAuc[]) {
             autotick: true,
         },
     }
-
-    const fpr = []
-    const tpr = []
-    data?.sort((a, b) => {
-        return parseInt(a.id) - parseInt(b.id)
-    })
-    data?.forEach((item, i) => {
-        if (i % 6 != 0) return
-        fpr.push(Number(unhexlify(item.fpr).toFixed('4')))
-        tpr.push(Number(unhexlify(item.tpr).toFixed('4')))
-    })
 
     const rocAucData = {
         data: [
@@ -159,7 +143,7 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
     const annotations = []
     for (let i = 0; i < yValues.length; i++) {
         for (let j = 0; j < xValues.length; j++) {
-            const currentValue = zValues[i][j]
+            const currentValue = zValues?.[i]?.[j]
             let textColor = ''
             if (currentValue !== 0) {
                 textColor = 'white'
@@ -171,7 +155,7 @@ export function getHeatmapConfig(title = '', labels: string[], heatmap: number[]
                 yref: 'y1',
                 x: xValues[j],
                 y: yValues[i],
-                text: zValues[i][j].toFixed(4),
+                text: Number(zValues?.[i]?.[j]).toFixed(4),
                 font: {
                     size: 14,
                     color: textColor,

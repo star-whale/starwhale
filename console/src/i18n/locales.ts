@@ -483,6 +483,9 @@ const locales0 = {
     'Runtimes': {
         en: 'Runtimes',
     },
+    'Runtime ID': {
+        en: 'Runtime ID',
+    },
     'Runtime Name': {
         en: 'Runtime Name',
     },

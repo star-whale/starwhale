@@ -24,7 +24,6 @@ import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
@@ -55,8 +54,8 @@ public class TaskWatcherForScheduleTest {
                 Clazz.CPU).build()).build()).build())
             .build();
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.CREATED);
-        verify(taskScheduler).adopt(List.of(task), Clazz.CPU);
-        verify(taskScheduler, times(0)).remove(List.of(task.getId()));
+        verify(taskScheduler).schedule(List.of(task), Clazz.CPU);
+        verify(taskScheduler, times(0)).stopSchedule(List.of(task.getId()));
     }
 
     @Test
@@ -75,8 +74,8 @@ public class TaskWatcherForScheduleTest {
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
         task.updateStatus(TaskStatus.CANCELED);
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.READY);
-        verify(taskScheduler, times(0)).adopt(List.of(task), Clazz.CPU);
-        verify(taskScheduler,times(2)).remove(List.of(task.getId()));
+        verify(taskScheduler, times(0)).schedule(List.of(task), Clazz.CPU);
+        verify(taskScheduler,times(2)).stopSchedule(List.of(task.getId()));
     }
 
     @Test
@@ -95,7 +94,7 @@ public class TaskWatcherForScheduleTest {
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.SUCCESS);
 
         taskWatcherForSchedule.onTaskStatusChange(task, TaskStatus.FAIL);
-        verify(taskScheduler, times(0)).adopt(List.of(task), Clazz.CPU);
-        verify(taskScheduler,times(0)).remove(List.of(task.getId()));
+        verify(taskScheduler, times(0)).schedule(List.of(task), Clazz.CPU);
+        verify(taskScheduler,times(0)).stopSchedule(List.of(task.getId()));
     }
 }

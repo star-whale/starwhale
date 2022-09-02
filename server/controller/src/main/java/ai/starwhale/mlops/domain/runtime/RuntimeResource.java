@@ -14,44 +14,21 @@
  * limitations under the License.
  */
 
-package ai.starwhale.mlops.domain.job.step.bo;
+package ai.starwhale.mlops.domain.runtime;
 
-import ai.starwhale.mlops.common.TimeConcern;
-import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.step.status.StepStatus;
-import ai.starwhale.mlops.domain.task.bo.Task;
-import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Builder
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class Step extends TimeConcern {
+public class RuntimeResource {
 
-    String name;
+    String type;
+    Integer num;
 
-    Long id;
-
-    Step nextStep;
-
-    /**
-     * the job where the task is derived from
-     */
-    Job job;
-
-    StepStatus status;
-
-    List<Task> tasks;
-
-    @Override
-    public String toString() {
-        return "Step{" +
-            "name='" + name + '\'' +
-            ", id=" + id +
-            '}';
-    }
 }

@@ -63,11 +63,11 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
     public void onTaskStatusChange(Task task, TaskStatus oldStatus) {
         if (task.getStatus() == TaskStatus.READY) {
             log.debug("task status changed to ready id: {} oldStatus: {}, scheduled", task.getId(), oldStatus);
-            taskScheduler.adopt(List.of(task), task.getStep().getJob().getJobRuntime().getDeviceClass());
+            taskScheduler.schedule(List.of(task), task.getStep().getJob().getJobRuntime().getDeviceClass());
         } else if (task.getStatus() == TaskStatus.PAUSED || taskStatusMachine.isFinal(task.getStatus())) {
             log.debug("task status changed to {} with id: {} newStatus: {}, stop scheduled", task.getStatus(), task.getId(), task.getStatus());
             if (deletionDelayMilliseconds <= 0) {
-                taskScheduler.remove(List.of(task.getId()));
+                taskScheduler.stopSchedule(List.of(task.getId()));
             } else {
                 addToDeleteQueue(task);
             }
@@ -90,7 +90,7 @@ public class TaskWatcherForSchedule implements TaskStatusChangeWatcher {
             taskIds.add(task.getTaskId());
             task = taskToDeletes.poll();
         }
-        taskScheduler.remove(taskIds);
+        taskScheduler.stopSchedule(taskIds);
     }
 
     static class TaskToDelete implements Delayed {

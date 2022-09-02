@@ -16,10 +16,14 @@
 
 package ai.starwhale.mlops.configuration;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @ConfigurationProperties(prefix = "sw.runtime")
 public class RunTimeProperties {
 
@@ -27,6 +31,8 @@ public class RunTimeProperties {
     Pypi pypi;
 
     @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class Pypi{
         String indexUrl;
         String extraIndexUrl;

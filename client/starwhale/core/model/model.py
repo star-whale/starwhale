@@ -203,7 +203,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         dataset_uris: t.List[str],
         model_yaml_name: str = DefaultYAMLName.MODEL,
         job_name: str = "default",
-        step: str = "",
+        step_name: str = "",
         task_index: int = 0,
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
@@ -211,7 +211,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _manifest: t.Dict[str, t.Any] = {
             "created_at": now_str(),
             "status": STATUS.START,
-            "step": step,
+            "step": step_name,
             "task_index": task_index,
         }
         console.print(f"model dir:{workdir}")
@@ -254,6 +254,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         console.print(":hourglass_not_done: start to evaluation...")
 
+        _status = STATUS.START
         try:
             _scheduler = Scheduler(
                 project=_project_uri.project,
@@ -264,18 +265,24 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                 steps=_steps,
                 kw=kw,
             )
-            if not step:
+            if not step_name:
                 _scheduler.schedule()
             else:
-                _scheduler.schedule_single_task(step, task_index)
+                _scheduler.schedule_single_task(step_name, task_index)
+            _status = (
+                STATUS.SUCCESS
+                if all(
+                    _s.status == STATUS.SUCCESS
+                    for _s in _steps
+                    if step_name == "" or _s.step_name == step_name
+                )
+                else STATUS.FAILED
+            )
         except Exception as e:
-            _manifest["status"] = STATUS.FAILED
+            _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
             raise
         finally:
-            _status = True
-            for _step in _steps:
-                _status = _status and _step.status == STATUS.SUCCESS
             _manifest.update(
                 {
                     **dict(
@@ -284,7 +291,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         model=_model_config.model[0],
                         model_dir=str(workdir),
                         datasets=list(dataset_uris),
-                        status=STATUS.SUCCESS if _status else STATUS.FAILED,
+                        status=_status,
                         finished_at=now_str(),
                     ),
                     **kw,
@@ -295,7 +302,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
             logger.debug(f"job info:{_jobs}")
             console.print(
-                f":100: finish run, {STATUS.SUCCESS if _status else STATUS.FAILED}!"
+                f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!"
             )
 
     def info(self) -> t.Dict[str, t.Any]:

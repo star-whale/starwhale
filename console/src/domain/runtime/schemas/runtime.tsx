@@ -9,12 +9,13 @@ export interface IRuntimeSchema extends IResourceSchema {
 }
 
 export interface IRuntimeDetailSchema {
-    runtimeName?: string
+    name?: string
     versionMeta?: string
     versionName?: string
     versionTag?: string
     createdTime?: number
     files?: Array<IRuntimeFileSchema>
+    id?: string
 }
 
 export interface IRuntimeFileSchema {

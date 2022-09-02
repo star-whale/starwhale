@@ -160,7 +160,7 @@ class EvalExecutor:
             version=self._version,
             workdir=self._model_dir,
             dataset_uris=[u.full_uri for u in self.dataset_uris],
-            step=self.step,
+            step_name=self.step,
             task_index=self.task_index,
             kw=dict(
                 name=self.name,

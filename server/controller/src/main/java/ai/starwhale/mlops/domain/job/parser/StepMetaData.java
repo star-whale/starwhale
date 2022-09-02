@@ -16,6 +16,7 @@
 
 package ai.starwhale.mlops.domain.job.parser;
 
+import ai.starwhale.mlops.domain.runtime.RuntimeResource;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JavaType;
@@ -40,25 +41,18 @@ public class StepMetaData {
     private Integer concurrency = 1;
     private List<String> needs;
     @JsonDeserialize(contentConverter = ResourceConverter.class)
-    private List<Resource> resources;
+    private List<RuntimeResource> resources;
     @JsonProperty("task_num")
     private Integer taskNum = 1;
 }
 
-@Data
-@Builder
-class Resource {
-    // TODO：replaced by ai.starwhale.mlops.domain.node.Device.Clazz
-    private String type;
-    private Integer num;
-}
 
-class ResourceConverter implements Converter<String, Resource> {
+class ResourceConverter implements Converter<String, RuntimeResource> {
 
     @Override
-    public Resource convert(String value) {
+    public RuntimeResource convert(String value) {
         String[] res = value.split("=");
-        return Resource.builder().type(res[0]).num(Integer.valueOf(res[1])).build();
+        return RuntimeResource.builder().type(res[0]).num(Integer.valueOf(res[1])).build();
     }
 
     @Override
@@ -68,6 +62,6 @@ class ResourceConverter implements Converter<String, Resource> {
 
     @Override
     public JavaType getOutputType(TypeFactory typeFactory) {
-        return typeFactory.constructType(Resource.class);
+        return typeFactory.constructType(RuntimeResource.class);
     }
 }

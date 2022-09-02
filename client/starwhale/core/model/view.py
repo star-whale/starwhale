@@ -90,7 +90,7 @@ class ModelTermView(BaseTermView):
                 version=version,
                 workdir=workdir,
                 dataset_uris=dataset_uris,
-                step=step,
+                step_name=step,
                 task_index=task_index,
                 model_yaml_name=yaml_name,
                 **kw,

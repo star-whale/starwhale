@@ -304,13 +304,13 @@ export default function Header() {
                     </div>
                     <div className={styles.userMenu}>
                         <p className={styles.userSignedIn}>{t('Signed in as')}</p>
-                        <p className={styles.userAvatar}>
+                        <div className={styles.userAvatar}>
                             <Avatar name={currentUser.name} isTooltip={false} />
                             <div className={classNames(styles.userAvatarInfo, 'text-ellipsis')}>
                                 <span className={styles.userAvatarName}>{currentUser.name}</span>
                                 <p className={styles.userAvatarEmail}>{currentUser.email ?? ''}</p>
                             </div>
-                        </p>
+                        </div>
                         <div className={styles.divider} />
                         <div className={styles.userMenuItems}>
                             {sysRole === 'OWNER' && (
