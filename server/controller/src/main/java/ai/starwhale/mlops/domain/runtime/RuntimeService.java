@@ -339,10 +339,11 @@ public class RuntimeService {
         }
         /* create new entity */
         if(!entityExists) {
-            RuntimeManifest runtimeManifestObj = null;
+            RuntimeManifest runtimeManifestObj;
+            String runtimeManifest ;
             try(final InputStream inputStream = dsFile.getInputStream()){
                 // only extract the eval job file content
-                String runtimeManifest = new String(
+                runtimeManifest = new String(
                     Objects.requireNonNull(
                         TarFileUtil.getContentFromTarFile(inputStream, "", "_manifest.yaml")));
                 runtimeManifestObj = yamlMapper.readValue(runtimeManifest,
@@ -357,8 +358,8 @@ public class RuntimeService {
                 .storagePath(runtimePath)
                 .runtimeId(entity.getId())
                 .versionName(uploadRequest.version())
-                .versionMeta(uploadRequest.getRuntime())
-                .manifest(null == runtimeManifestObj? null : runtimeManifestObj.getBaseImage())
+                .versionMeta(runtimeManifest)
+                .image(null == runtimeManifestObj? null : runtimeManifestObj.getBaseImage())
                 .build());
         }
     }
