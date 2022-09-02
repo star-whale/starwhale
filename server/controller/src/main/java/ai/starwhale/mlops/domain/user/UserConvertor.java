@@ -44,7 +44,6 @@ public class UserConvertor implements Convertor<UserEntity, UserVO> {
       return UserVO.builder()
           .id(idConvertor.convert(entity.getId()))
           .name(entity.getUserName())
-          .email(entity.getUserEmail())
           .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
           .isEnabled(entity.getUserEnabled() == 1)
           .build();
