@@ -62,7 +62,6 @@ public class WatchableTaskTest {
             }
         };
         ResultPath resultRootPath = new ResultPath("");
-        Agent agent = Agent.builder().build();
         Task oTask = Task.builder()
             .id(10994L)
             .uuid(UUID.randomUUID().toString())
@@ -98,7 +97,6 @@ public class WatchableTaskTest {
             }
         };
         watchableTask.setTaskRequest(newTaskRequest);
-        Agent newAgent = Agent.builder().build();
         ResultPath newResultRootPath = new ResultPath();
         watchableTask.setResultRootPath(newResultRootPath);
         Assertions.assertEquals(TaskStatus.READY,oTask.getStatus());

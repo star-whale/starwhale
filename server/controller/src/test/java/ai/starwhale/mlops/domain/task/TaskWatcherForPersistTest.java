@@ -25,11 +25,11 @@ import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
-import ai.starwhale.mlops.domain.system.agent.bo.Agent;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
+import ai.starwhale.mlops.domain.task.status.WatchableTask;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForPersist;
 import java.util.List;
 import java.util.UUID;
@@ -41,14 +41,14 @@ import org.junit.jupiter.api.Test;
 public class TaskWatcherForPersistTest {
 
     @Test
-    public void testStart(){
+    public void testReady2Running(){
         TaskMapper taskMapper = mock(TaskMapper.class);
         LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
         TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(),taskMapper,localDateTimeConvertor);
         Task task = Task.builder()
             .id(1L)
             .uuid(UUID.randomUUID().toString())
-            .status(TaskStatus.PREPARING)
+            .status(TaskStatus.RUNNING)
             .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
                 Clazz.CPU).build()).build()).build())
             .build();
@@ -58,7 +58,7 @@ public class TaskWatcherForPersistTest {
     }
 
     @Test
-    public void testEnd(){
+    public void testRunning2Success(){
         TaskMapper taskMapper = mock(TaskMapper.class);
         LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
         TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(),taskMapper,localDateTimeConvertor);
@@ -76,7 +76,7 @@ public class TaskWatcherForPersistTest {
     }
 
     @Test
-    public void testNormal(){
+    public void testRunning2Running(){
         TaskMapper taskMapper = mock(TaskMapper.class);
         LocalDateTimeConvertor localDateTimeConvertor = mock(LocalDateTimeConvertor.class);
         TaskWatcherForPersist taskWatcherForPersist = new TaskWatcherForPersist(new TaskStatusMachine(),taskMapper,localDateTimeConvertor);
@@ -87,10 +87,11 @@ public class TaskWatcherForPersistTest {
             .step(Step.builder().job(Job.builder().jobRuntime(JobRuntime.builder().deviceClass(
                 Clazz.CPU).build()).build()).build())
             .build();
-        taskWatcherForPersist.onTaskStatusChange(task,TaskStatus.PREPARING);
+        task = new WatchableTask(task,List.of(taskWatcherForPersist),new TaskStatusMachine());
+        task.updateStatus(TaskStatus.RUNNING);
         verify(taskMapper,times(0)).updateTaskStartedTime(task.getId(),localDateTimeConvertor.revert(System.currentTimeMillis()));
         verify(taskMapper,times(0)).updateTaskFinishedTime(task.getId(),localDateTimeConvertor.revert(System.currentTimeMillis()));
-        verify(taskMapper).updateTaskStatus(List.of(task.getId()),task.getStatus());
+        verify(taskMapper,times(0)).updateTaskStatus(List.of(task.getId()),task.getStatus());
     }
 
 }
