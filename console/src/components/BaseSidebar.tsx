@@ -162,13 +162,13 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                             placement: 'bottomRight',
                         }}
                     >
-                        <p
+                        <div
                             className={styles.siderTitle}
                             style={{
                                 paddingLeft: EXPANDED_PADDING,
                             }}
                         >
-                            <div>{icon}</div>
+                            {icon}
                             {ctx.expanded && (
                                 <span
                                     className={css({
@@ -178,7 +178,7 @@ export default function BaseSidebar({ navItems, style, title, icon, titleLink }:
                                     {title}
                                 </span>
                             )}
-                        </p>
+                        </div>
                     </TextLink>
                 </div>
             )}

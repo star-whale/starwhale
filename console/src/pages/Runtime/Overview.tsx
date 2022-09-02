@@ -16,7 +16,6 @@ export default function RuntimeOverview() {
             outTitle={t('Files')}
             style={{
                 fontSize: '14px',
-                padding: '12px 20px',
                 marginBottom: '10px',
             }}
         >

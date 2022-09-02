@@ -216,8 +216,9 @@ const useStyles = createUseStyles({
     userAvatarInfo: {
         flex: 1,
         display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
     },
     userAvatarName: {
         fontSize: '14px',
@@ -308,7 +309,9 @@ export default function Header() {
                             <Avatar name={currentUser.name} isTooltip={false} />
                             <div className={classNames(styles.userAvatarInfo, 'text-ellipsis')}>
                                 <span className={styles.userAvatarName}>{currentUser.name}</span>
-                                <p className={styles.userAvatarEmail}>{currentUser.email ?? ''}</p>
+                                {currentUser.email && (
+                                    <p className={styles.userAvatarEmail}>{currentUser.email ?? ''}</p>
+                                )}
                             </div>
                         </div>
                         <div className={styles.divider} />

@@ -441,8 +441,8 @@ const locales0 = {
     'Version Name': {
         en: 'Version Name',
     },
-    'data version revert done': {
-        en: 'data version revert done',
+    'model version reverted': {
+        en: 'model version reverted',
     },
     'something wrong with the server': {
         en: 'something wrong with the server',
@@ -621,6 +621,12 @@ const locales0 = {
     },
     'Signed in as': {
         en: 'Signed in as',
+    },
+    'runtime version reverted': {
+        en: 'runtime version reverted',
+    },
+    'dataset version reverted': {
+        en: 'dataset version reverted',
     },
 }
 

@@ -33,7 +33,7 @@ export default function DatasetVersionListCard() {
     const handleAction = useCallback(
         async (datasetVersionId) => {
             await revertDatasetVersion(projectId, datasetId, datasetVersionId)
-            toaster.positive(t('data version revert done'), { autoHideDuration: 2000 })
+            toaster.positive(t('dataset version reverted'), { autoHideDuration: 2000 })
             await datasetVersionsInfo.refetch()
         },
         [datasetVersionsInfo, projectId, datasetId, t]
@@ -46,7 +46,7 @@ export default function DatasetVersionListCard() {
                     isLoading={datasetVersionsInfo.isLoading}
                     columns={[t('sth name'), t('Created'), t('Owner'), t('Action')]}
                     data={
-                        datasetVersionsInfo.data?.list.map((datasetVersion) => {
+                        datasetVersionsInfo.data?.list.map((datasetVersion, i) => {
                             return [
                                 <TextLink
                                     key={datasetId}
@@ -56,14 +56,18 @@ export default function DatasetVersionListCard() {
                                 </TextLink>,
                                 datasetVersion.createdTime && formatTimestampDateTime(datasetVersion.createdTime),
                                 datasetVersion.owner && <User user={datasetVersion.owner} />,
-                                <ButtonLink
-                                    key={datasetVersion.id}
-                                    onClick={() => {
-                                        handleAction(datasetVersion.id)
-                                    }}
-                                >
-                                    {t('Revert')}
-                                </ButtonLink>,
+                                i ? (
+                                    <ButtonLink
+                                        key={datasetVersion.id}
+                                        onClick={() => {
+                                            handleAction(datasetVersion.id)
+                                        }}
+                                    >
+                                        {t('Revert')}
+                                    </ButtonLink>
+                                ) : (
+                                    ''
+                                ),
                             ]
                         }) ?? []
                     }

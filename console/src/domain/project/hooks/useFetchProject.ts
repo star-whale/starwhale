@@ -1,11 +1,16 @@
+import { useEffect } from 'react'
 import { useQuery } from 'react-query'
 import { fetchProject } from '../services/project'
 
 export function useFetchProject(projectId?: string) {
-    const projectInfo = useQuery(`fetchProject:${projectId}`, () => {
-        if (!projectId) return Promise.reject(new Error('fetchProject: no projectId stop fetching'))
+    const projectInfo = useQuery(`fetchProject:${projectId}`, () => fetchProject(projectId ?? ''), { enabled: false })
 
-        return fetchProject(projectId)
-    })
+    useEffect(() => {
+        if (projectId) {
+            projectInfo.refetch()
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [projectId])
+
     return projectInfo
 }
