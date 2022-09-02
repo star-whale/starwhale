@@ -17,7 +17,7 @@ import dill
 import loguru
 import jsonlines
 
-from starwhale.utils import console, now_str
+from starwhale.utils import now_str
 from starwhale.consts import CURRENT_FNAME
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -313,7 +313,6 @@ class PipelineHandler(metaclass=ABCMeta):
             logger=self._sw_logger,
         )
         for data, label in _data_loader:
-            console.print("in for")
             if data.idx != label.idx:
                 msg = (
                     f"data index[{data.idx}] is not equal label index [{label.idx}], "

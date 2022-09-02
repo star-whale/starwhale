@@ -214,7 +214,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             "step": step_name,
             "task_index": task_index,
         }
-        console.print(f"model dir:{workdir}")
         # load model config by yaml
         _model_config = cls.load_model_config(workdir / model_yaml_name)
 
