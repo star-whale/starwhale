@@ -1,12 +1,14 @@
 baseimage: ghcr.io/star-whale/starwhale:latest
-created_at: 2022-05-20 15:38:52 CST
+created_at: 2022-09-01 15:07:27 CST
 datasets:
 - mnist:gu2tgmbsgrqwcmlemuzgmnbtnb4xm5i
 - mnist:mm2gimjvheztqnrsga4dkmlbnyyxs2a
 desc: null
-finished_at: 2022-05-20 15:41:48 CST
+finished_at: 2022-09-01 15:08:15 CST
 model: mnist:meydczbrmi2g
 name: null
 phase: all
 status: success
-version: mu2tgojqga3daobvmzstmytcof5goza
+step: ''
+task_index: 0
+version: mjrtonlfmi3gkmzxme4gkzldnz3ws4a

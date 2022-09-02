@@ -90,8 +90,26 @@ class EvaluationJob(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def _get_report(self) -> t.Dict[str, t.Any]:
+    def _get_version(self) -> str:
         raise NotImplementedError
+
+    def _get_report(self) -> t.Dict[str, t.Any]:
+        # use datastore
+        os.environ[SWEnv.project] = self.uri.project
+        os.environ[SWEnv.eval_version] = self._get_version()
+        logger.debug(
+            f"eval instance:{self.uri.instance}, project:{self.uri.project}, eval_id:{self._get_version()}"
+        )
+        _evaluation = wrapper.Evaluation()
+        _summary = _evaluation.get_metrics()
+        return dict(
+            summary=_summary,
+            labels={str(i): l for i, l in enumerate(list(_evaluation.get("labels")))},
+            confusion_matrix=dict(
+                binarylabel=list(_evaluation.get("confusion_matrix/binarylabel"))
+            ),
+            kind=_summary["kind"],
+        )
 
     @classmethod
     def _get_job_cls(
@@ -166,22 +184,8 @@ class StandaloneEvaluationJob(EvaluationJob):
 
         return True, ee._version
 
-    def _get_report(self) -> t.Dict[str, t.Any]:
-        os.environ[SWEnv.project] = self.sw_config.current_project
-        os.environ[SWEnv.eval_version] = self.store.id
-        logger.debug(
-            f"datastore path:{str(self.sw_config.datastore_dir)}, eval_id:{self.store.id}"
-        )
-        _datastore = wrapper.Evaluation()
-        _labels = list(_datastore.get("labels"))
-        return dict(
-            summary=_datastore.get_metrics(),
-            labels={str(i): l for i, l in enumerate(_labels)},
-            confusion_matrix=dict(
-                binarylabel=list(_datastore.get("confusion_matrix/binarylabel"))
-            ),
-            kind=_datastore.get_metrics()["kind"],
-        )
+    def _get_version(self) -> str:
+        return self.store.id
 
     @staticmethod
     def _do_flatten_summary(summary: t.Dict[str, t.Any]) -> t.Dict[str, t.Any]:
@@ -347,6 +351,10 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
         else:
             return False, r.json()["message"]
 
+    def _get_version(self) -> str:
+        # TODO:use full version id
+        return self.uri.object.name
+
     @ignore_error({})
     def info(
         self, page: int = DEFAULT_PAGE_IDX, size: int = DEFAULT_PAGE_SIZE
@@ -355,7 +363,7 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
             raise NotFoundError("no selected project")
         return {
             "tasks": self._fetch_tasks(page, size),
-            "report": self._fetch_job_report(),
+            "report": self._get_report(),
             "manifest": self._fetch_job_info(),
         }
 
@@ -423,14 +431,6 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
         return _id, _cnt
 
     @ignore_error({})
-    def _fetch_job_report(self) -> t.Dict[str, t.Any]:
-        r = self.do_http_request(
-            f"/project/{self.project_name}/job/{self.name}/result",
-            instance_uri=self.uri,
-        ).json()
-        return r["data"]  # type: ignore
-
-    @ignore_error({})
     def _fetch_job_info(self) -> t.Dict[str, t.Any]:
         r = self.do_http_request(
             f"/project/{self.project_name}/job/{self.name}",
@@ -456,10 +456,6 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
             tasks.append(_t)
 
         return tasks, self.parse_pager(r)
-
-    def _get_report(self) -> t.Dict[str, t.Any]:
-        # TODO: need to implement it
-        return {}
 
     def compare(self, jobs: t.List[EvaluationJob]) -> t.Dict[str, t.Any]:
         # TODO: need to implement it
