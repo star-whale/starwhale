@@ -87,7 +87,7 @@ public class SWModelPackageController implements SWModelPackageApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> revertModelVersion(String projectUrl, String swmpUrl,
         RevertSWMPVersionRequest revertRequest) {
-        Boolean res = swmpService.revertVersionTo(projectUrl, swmpUrl, revertRequest.getVersion());
+        Boolean res = swmpService.revertVersionTo(projectUrl, swmpUrl, revertRequest.getVersionUrl());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert swmp version failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);

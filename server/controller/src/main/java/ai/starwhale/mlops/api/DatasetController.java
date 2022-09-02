@@ -79,7 +79,7 @@ public class DatasetController implements DatasetApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> revertDatasetVersion(String projectUrl,
         String swmpUrl, RevertSWDSRequest revertRequest) {
-        Boolean res = swDatasetService.revertVersionTo(projectUrl, swmpUrl, revertRequest.getVersion());
+        Boolean res = swDatasetService.revertVersionTo(projectUrl, swmpUrl, revertRequest.getVersionUrl());
         if(!res) {
             throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Revert swds version failed."),
                 HttpStatus.INTERNAL_SERVER_ERROR);
