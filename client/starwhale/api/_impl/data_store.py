@@ -17,14 +17,12 @@ import pyarrow as pa  # type: ignore
 import requests
 import pyarrow.parquet as pq  # type: ignore
 from loguru import logger
-from tenacity import retry
-from tenacity.stop import stop_after_attempt
-from tenacity.retry import retry_if_exception_type
 from typing_extensions import Protocol
 
 from starwhale.utils.fs import ensure_dir
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import MissingFieldError
+from starwhale.utils.retry import http_retry
 from starwhale.utils.config import SWCliConfigMixed
 
 try:
@@ -872,11 +870,7 @@ class RemoteDataStore:
         if self.token is None:
             raise RuntimeError("SW_TOKEN is not found in environment")
 
-    @retry(
-        reraise=True,
-        stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(requests.exceptions.HTTPError),
-    )
+    @http_retry
     def update_table(
         self,
         table_name: str,
@@ -923,6 +917,20 @@ class RemoteDataStore:
             )
         resp.raise_for_status()
 
+    @http_retry
+    def _do_scan_table_request(self, post_data: Dict[str, Any]) -> Dict[str, Any]:
+        resp = requests.post(
+            urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/scanTable"),
+            data=json.dumps(post_data, separators=(",", ":")),
+            headers={
+                "Content-Type": "application/json; charset=utf-8",
+                "Authorization": self.token,  # type: ignore
+            },
+            timeout=60,
+        )
+        resp.raise_for_status()
+        return resp.json()["data"]  # type: ignore
+
     def scan_tables(
         self,
         tables: List[TableDesc],
@@ -942,17 +950,7 @@ class RemoteDataStore:
             post_data["keepNone"] = True
         assert self.token is not None
         while True:
-            resp = requests.post(
-                urllib.parse.urljoin(self.instance_uri, "/api/v1/datastore/scanTable"),
-                data=json.dumps(post_data, separators=(",", ":")),
-                headers={
-                    "Content-Type": "application/json; charset=utf-8",
-                    "Authorization": self.token,
-                },
-                timeout=60,
-            )
-            resp.raise_for_status()
-            resp_json: Dict[str, Any] = resp.json()["data"]
+            resp_json = self._do_scan_table_request(post_data)
             records = resp_json.get("records", None)
             if records is None or len(records) == 0:
                 break

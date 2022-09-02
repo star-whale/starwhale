@@ -22,6 +22,7 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir
 from starwhale.utils.http import ignore_error, wrap_sw_error_resp
 from starwhale.utils.error import NoSupportError
+from starwhale.utils.retry import http_retry
 
 _TMP_FILE_BUFSIZE = 8192
 _DEFAULT_TIMEOUT_SECS = 90
@@ -94,7 +95,7 @@ class CloudRequestMixed:
             _headers["Content-Type"] = _encoder.content_type
             _monitor = MultipartEncoderMonitor(_encoder, callback=_progress_bar)
 
-            return self.do_http_request(
+            return self.do_http_request(  # type: ignore
                 url_path,
                 instance_uri=instance_uri,
                 method=HTTPMethod.POST,
@@ -121,6 +122,7 @@ class CloudRequestMixed:
 
         return status, message
 
+    @http_retry
     def do_http_request(
         self,
         path: str,
