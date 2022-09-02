@@ -29,6 +29,7 @@ import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
 import ai.starwhale.mlops.objectstore.impl.FileSystemObjectStore;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -95,6 +96,11 @@ public class MemoryTableImplTest {
         SwBufferManager bufferManager = new SwByteBufferManager();
         FileSystemObjectStore objectStore = new FileSystemObjectStore(bufferManager, this.rootDir.getAbsolutePath());
         this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10);
+    }
+
+    @AfterEach
+    public void afterEach() {
+        walManager.terminate();
     }
 
     @Nested
