@@ -39,7 +39,7 @@
         <if test="tag != null and tag != ''">
             and FIND_IN_SET(#{tag}, version_tag)
         </if>
-        order by mv.id desc
+        order by mv.version_order desc
     </select>
 
     <select id="findVersionById" resultMap="swmpVersionResultMap" >
@@ -66,14 +66,13 @@
     <select id="getLatestVersion" resultMap="swmpVersionResultMap" >
         <include refid="select_swmp_version" />
         and swmp_id = #{swmpId}
-        order by mv.id desc
+        order by mv.version_order desc
         limit 1
     </select>
 
     <insert id="revertTo">
-        replace into swmp_version (swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest, eval_jobs)
-        select swmp_id, owner_id, version_name, version_tag, version_meta, storage_path, manifest, eval_jobs
-        from swmp_version
+        update swmp_version
+        set version_order = (select max(version_order) from swmp_version) + 1
         where id = #{swmpVersionId}
     </insert>
 

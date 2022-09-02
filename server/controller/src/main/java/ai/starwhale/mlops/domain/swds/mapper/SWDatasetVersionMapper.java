@@ -18,8 +18,10 @@ package ai.starwhale.mlops.domain.swds.mapper;
 
 import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface SWDatasetVersionMapper {
 
     List<SWDatasetVersionEntity> listVersions(@Param("datasetId")Long datasetId,

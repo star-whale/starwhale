@@ -18,8 +18,10 @@ package ai.starwhale.mlops.domain.swds.mapper;
 
 import ai.starwhale.mlops.domain.swds.po.SWDatasetEntity;
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface SWDatasetMapper {
 
     List<SWDatasetEntity> listDatasets(@Param("projectId") Long projectId, @Param("namePrefix")String namePrefix);
