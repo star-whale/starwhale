@@ -3,7 +3,7 @@ name: Server Unit test Report
 on:
   push:
     branches:
-      - java_ut_rpt
+      - main
 
 jobs:
 
