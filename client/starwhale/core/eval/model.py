@@ -9,7 +9,7 @@ from collections import defaultdict
 
 from loguru import logger
 
-from starwhale.utils import load_yaml, console
+from starwhale.utils import console, load_yaml
 from starwhale.consts import HTTPMethod, DEFAULT_PAGE_IDX, DEFAULT_PAGE_SIZE
 from starwhale.base.uri import URI
 from starwhale.utils.fs import move_dir
@@ -444,6 +444,7 @@ class CloudEvaluationJob(EvaluationJob, CloudRequestMixed):
         page: int = DEFAULT_PAGE_IDX,
         size: int = DEFAULT_PAGE_SIZE,
     ) -> t.Tuple[t.List[t.Any], t.Dict[str, t.Any]]:
+        console.print(f"uri is :/project/{self.project_name}/job/{self.name}/task")
         r = self.do_http_request(
             f"/project/{self.project_name}/job/{self.name}/task",
             params={"pageNum": page, "pageSize": size},

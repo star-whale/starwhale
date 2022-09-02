@@ -6,9 +6,10 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 from starwhale.utils import config as sw_config
 from starwhale.utils import load_yaml
 from starwhale.consts import (
+    DefaultYAMLName,
     VERSION_PREFIX_CNT,
     DEFAULT_MANIFEST_NAME,
-    CNTR_DEFAULT_PIP_CACHE_DIR, DefaultYAMLName,
+    CNTR_DEFAULT_PIP_CACHE_DIR,
 )
 from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
@@ -123,11 +124,11 @@ class StandaloneEvalExecutor(TestCase):
                 f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src:/opt/starwhale/swmp/src",
                 f"-v {project_dir}/workdir/model/mnist/gn/gnstmntggi4t111111111111/src/model.yaml:/opt/starwhale/swmp/model.yaml",
                 f"-v {project_dir}/workdir/runtime/mnist/ga/ga4doztfg4yw11111111111111:/opt/starwhale/swmp",
-                f"-e SW_PROJECT=self",
+                "-e SW_PROJECT=self",
                 f"-e SW_EVALUATION_VERSION={build_version}",
-                f"-e SW_INSTANCE_URI=local",
-                f"-e SW_TOKEN=",
-                f"-e SW_DATASET_URI=local/project/self/dataset/mnist/version/me4dczleg",
+                "-e SW_INSTANCE_URI=local",
+                "-e SW_TOKEN=",
+                "-e SW_DATASET_URI=local/project/self/dataset/mnist/version/me4dczleg",
                 f"-v {host_cache_dir}:{CNTR_DEFAULT_PIP_CACHE_DIR}",
                 "ghcr.io/star-whale/starwhale:latest run",
             ]

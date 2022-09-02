@@ -30,7 +30,9 @@ class StandaloneEvaluationJobTestCase(TestCase):
         _config = load_swcli_config()
         self.job_name = "mjrtonlfmi3gkmzxme4gkzldnz3ws4a"
         self.root = _config["storage"]["root"]
-        self.job_dir = os.path.join(self.root, "self", URIType.EVALUATION, "mj", self.job_name)
+        self.job_dir = os.path.join(
+            self.root, "self", URIType.EVALUATION, "mj", self.job_name
+        )
 
         self.fs.create_dir(self.job_dir)
         self.fs.create_file(
@@ -169,7 +171,7 @@ class CloudJobTestCase(unittest.TestCase):
             resource="gpu:1",
         )
         assert m_console.call_count == 2
-        assert f"project/self/job/11" in m_console.call_args[0][0]
+        assert "project/self/job/11" in m_console.call_args[0][0]
 
     @Mocker()
     @patch("starwhale.core.eval.view.console.print")
@@ -202,12 +204,25 @@ class CloudJobTestCase(unittest.TestCase):
         assert m_console.call_count == 1
 
     @Mocker()
+    @patch("starwhale.api._impl.wrapper.Evaluation.get")
+    @patch("starwhale.api._impl.wrapper.Evaluation.get_metrics")
     @patch("starwhale.core.eval.view.console.print")
-    def test_cloud_info(self, rm: Mocker, m_console: MagicMock):
+    def test_cloud_info(
+        self,
+        rm: Mocker,
+        m_console: MagicMock,
+        m_get_metrics: MagicMock,
+        m_get: MagicMock,
+    ):
+        m_get.return_value = {}
+        m_get_metrics.return_value = {
+            "kind": "multi_classification",
+            "accuracy": 0.9893989398939894,
+        }
         rm.request(
             HTTPMethod.GET,
-            f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}/result",
-            text=open(f"{_job_data_dir}/report.json").read(),
+            f"{self.instance_uri}/api/v1/project/self/job/{self.job_name}",
+            text=open(f"{_job_data_dir}/job_manifest.yaml").read(),
         )
         rm.request(
             HTTPMethod.GET,
@@ -222,7 +237,7 @@ class CloudJobTestCase(unittest.TestCase):
         assert "created_at" in info["tasks"][0][0]
 
         assert info["report"]["kind"] == "multi_classification"
-        assert info["report"]["summary"]["accuracy"] == 0.9894
+        assert info["report"]["summary"]["accuracy"] == 0.9893989398939894
 
         JobTermView(self.job_uri).info()
 

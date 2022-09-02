@@ -3,9 +3,9 @@ from pathlib import Path
 
 from pyfakefs.fake_filesystem_unittest import TestCase
 
-from starwhale.api._impl.job import Parser
 from starwhale.consts import DEFAULT_EVALUATION_PIPELINE, DEFAULT_EVALUATION_JOBS_FNAME
 from starwhale.utils.fs import ensure_dir
+from starwhale.api._impl.job import Parser
 
 
 class JobTestCase(TestCase):
