@@ -86,7 +86,7 @@ export default function IconFont({ size = 14, type = 'user', kind = 'inherit', s
     }
 
     return (
-        <div
+        <i
             className='icon-container row-center'
             style={{
                 width: size,
@@ -104,6 +104,6 @@ export default function IconFont({ size = 14, type = 'user', kind = 'inherit', s
             ) : (
                 <span className={`iconfont icon-${type}`} style={{ fontSize: size }} />
             )}
-        </div>
+        </i>
     )
 }

@@ -64,8 +64,8 @@ export async function revertModelVersion(
     modelId: string,
     modelVersionId: string
 ): Promise<IModelVersionSchema> {
-    const resp = await axios.patch<IModelVersionSchema>(
-        `/api/v1/project/${projectId}/model/${modelId}/version/${modelVersionId}/revert`
-    )
+    const resp = await axios.post<IModelVersionSchema>(`/api/v1/project/${projectId}/model/${modelId}/revert`, {
+        versionUrl: modelVersionId,
+    })
     return resp.data
 }

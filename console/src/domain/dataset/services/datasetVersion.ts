@@ -84,7 +84,7 @@ export async function revertDatasetVersion(
     datasetVersionId: string
 ): Promise<IDatasetVersionSchema> {
     const resp = await axios.post<IDatasetVersionSchema>(`/api/v1/project/${projectId}/dataset/${datasetId}/revert`, {
-        versionId: datasetVersionId,
+        versionUrl: datasetVersionId,
     })
     return resp.data
 }

@@ -10,24 +10,18 @@ type IImageViewerProps = {
 }
 export default function ImageGrayscaleViewer({ isZoom = false, data }: IImageViewerProps) {
     const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
-    const Wrapper = isZoom ? ZoomWrapper : React.Fragment
-    const scale = React.useMemo(() => {
-        return isZoom ? 500 / 28 : 2
-    }, [isZoom])
 
     useEffect(() => {
         if (canvasRef.current) {
+            const scale = isZoom ? 500 / 28 : 2
             const canvas = canvasRef.current
             drawGrayscale(canvas, data.src, 28, 28, scale)
         }
-    }, [canvasRef, scale, data])
+    }, [canvasRef, isZoom, data])
 
-    return (
-        <div className='flowContainer'>
-            <Wrapper
-                // @ts-ignore
-                isTools={isZoom ? false : undefined}
-            >
+    if (!isZoom) {
+        return (
+            <div className='flowContainer'>
                 <canvas
                     ref={canvasRef}
                     style={{
@@ -35,7 +29,21 @@ export default function ImageGrayscaleViewer({ isZoom = false, data }: IImageVie
                         objectFit: 'contain',
                     }}
                 />
-            </Wrapper>
+            </div>
+        )
+    }
+
+    return (
+        <div className='flowContainer'>
+            <ZoomWrapper>
+                <canvas
+                    ref={canvasRef}
+                    style={{
+                        zIndex: 1,
+                        objectFit: 'contain',
+                    }}
+                />
+            </ZoomWrapper>
         </div>
     )
 }

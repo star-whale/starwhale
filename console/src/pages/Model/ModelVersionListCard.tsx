@@ -1,18 +1,18 @@
 import React, { useCallback, useState } from 'react'
 import Card from '@/components/Card'
-import { createModelVersion } from '@model/services/modelVersion'
+import { createModelVersion, revertModelVersion } from '@model/services/modelVersion'
 import { usePage } from '@/hooks/usePage'
 import { ICreateModelVersionSchema } from '@model/schemas/modelVersion'
 import ModelVersionForm from '@model/components/ModelVersionForm'
 import { formatTimestampDateTime } from '@/utils/datetime'
 import useTranslation from '@/hooks/useTranslation'
-import { Button, SIZE as ButtonSize } from 'baseui/button'
 import User from '@/domain/user/components/User'
 import { Modal, ModalHeader, ModalBody } from 'baseui/modal'
 import Table from '@/components/Table'
 import { useParams } from 'react-router-dom'
 import { useFetchModelVersions } from '@model/hooks/useFetchModelVersions'
-import IconFont from '@/components/IconFont'
+import { toaster } from 'baseui/toast'
+import Button from '@/components/Button'
 
 export default function ModelVersionListCard() {
     const [page] = usePage()
@@ -30,31 +30,32 @@ export default function ModelVersionListCard() {
     )
     const [t] = useTranslation()
 
+    const handleAction = useCallback(
+        async (modelVersionId) => {
+            await revertModelVersion(projectId, modelId, modelVersionId)
+            toaster.positive(t('model version reverted'), { autoHideDuration: 2000 })
+            await modelsInfo.refetch()
+        },
+        [modelsInfo, projectId, modelId, t]
+    )
     return (
-        <Card
-            title={t('model versions')}
-            extra={
-                <Button
-                    startEnhancer={<IconFont type='add' kind='white' />}
-                    size={ButtonSize.compact}
-                    onClick={() => setIsCreateModelVersionOpen(true)}
-                >
-                    {t('create')}
-                </Button>
-            }
-        >
+        <Card title={t('model versions')}>
             <Table
                 isLoading={modelsInfo.isLoading}
                 columns={[t('Meta'), t('Created'), t('Owner'), t('Action')]}
                 data={
-                    modelsInfo.data?.list.map((model) => {
+                    modelsInfo.data?.list.map((model, i) => {
                         return [
                             model.meta,
                             model.createdTime && formatTimestampDateTime(model.createdTime),
                             model.owner && <User user={model.owner} />,
-                            <Button size='mini' key={model.id} onClick={() => {}}>
-                                {t('Revert')}
-                            </Button>,
+                            i ? (
+                                <Button as='link' size='mini' key={model.id} onClick={() => handleAction(model.id)}>
+                                    {t('Revert')}
+                                </Button>
+                            ) : (
+                                ''
+                            ),
                         ]
                     }) ?? []
                 }

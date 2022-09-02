@@ -54,12 +54,9 @@ export async function revertRuntimeVersion(
     runtimeId: string,
     runtimeVersionId: string
 ): Promise<IRuntimeVersionSchema> {
-    const resp = await axios.post<IRuntimeVersionSchema>(
-        `/api/v1/project/${projectId}/runtime/${runtimeId}/version/${runtimeVersionId}/revert`,
-        {
-            versonId: runtimeVersionId,
-        }
-    )
+    const resp = await axios.post<IRuntimeVersionSchema>(`/api/v1/project/${projectId}/runtime/${runtimeId}/revert`, {
+        versionUrl: runtimeVersionId,
+    })
     return resp.data
 }
 
