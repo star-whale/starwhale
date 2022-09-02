@@ -30,12 +30,6 @@ import ai.starwhale.mlops.domain.runtime.RuntimeService;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeQuery;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersion;
 import ai.starwhale.mlops.domain.runtime.bo.RuntimeVersionQuery;
-import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
-import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
-import ai.starwhale.mlops.domain.swds.mapper.SWDatasetVersionMapper;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
-import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageVersionMapper;
-import ai.starwhale.mlops.domain.swmp.po.SWModelPackageVersionEntity;
 import ai.starwhale.mlops.exception.SWProcessException;
 import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
 import ai.starwhale.mlops.exception.SWValidationException;
@@ -47,7 +41,6 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -203,56 +196,4 @@ public class RuntimeController implements RuntimeApi {
         }
     }
 
-    @Resource
-    private RuntimeVersionMapper runtimeVersionMapper;
-
-    @Resource
-    private SWModelPackageVersionMapper swModelPackageVersionMapper;
-
-    @Resource
-    private SWDatasetVersionMapper swDatasetVersionMapper;
-
-    @GetMapping("/test")
-    public ResponseEntity<ResponseMessage<String>> test() {
-        RuntimeVersionEntity runtime = RuntimeVersionEntity.builder()
-            .runtimeId(1L)
-            .ownerId(1L)
-            .versionName("fortest1")
-            .versionTag("tagtest1")
-            .storagePath("")
-            .versionMeta("meta1")
-            .manifest("fest")
-            .build();
-        runtimeVersionMapper.addNewVersion(runtime);
-        runtimeVersionMapper.revertTo(runtime.getRuntimeId(), runtime.getId());
-
-        SWModelPackageVersionEntity model = SWModelPackageVersionEntity.builder()
-            .swmpId(1L)
-            .ownerId(1L)
-            .versionName("fortest1")
-            .versionTag("tagtest1")
-            .storagePath("")
-            .versionMeta("meta2")
-            .manifest("fest")
-            .evalJobs("")
-            .build();
-        swModelPackageVersionMapper.addNewVersion(model);
-        swModelPackageVersionMapper.revertTo(model.getSwmpId(), model.getId());
-
-        SWDatasetVersionEntity dataset = SWDatasetVersionEntity.builder()
-            .datasetId(1L)
-            .ownerId(1L)
-            .versionName("fortest1")
-            .versionTag("tagtest1")
-            .storagePath("")
-            .versionMeta("meta3")
-            .status(1)
-            .size(0L)
-            .indexTable("")
-            .build();
-        swDatasetVersionMapper.addNewVersion(dataset);
-        swDatasetVersionMapper.revertTo(dataset.getDatasetId(), dataset.getId());
-
-        return ResponseEntity.ok(Code.success.asResponse(""));
-    }
 }
