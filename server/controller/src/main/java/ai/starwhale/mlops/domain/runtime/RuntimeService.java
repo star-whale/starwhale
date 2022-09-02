@@ -352,14 +352,16 @@ public class RuntimeService {
                 throw new StarWhaleApiException(new SWProcessException(ErrorType.SYSTEM),
                     HttpStatus.INTERNAL_SERVER_ERROR);
             }
-            runtimeVersionMapper.addNewVersion(RuntimeVersionEntity.builder()
+            RuntimeVersionEntity version = RuntimeVersionEntity.builder()
                 .ownerId(userService.currentUserDetail().getId())
                 .storagePath(runtimePath)
                 .runtimeId(entity.getId())
                 .versionName(uploadRequest.version())
                 .versionMeta(uploadRequest.getRuntime())
                 .manifest(null == runtimeManifestObj? null : runtimeManifestObj.getBaseImage())
-                .build());
+                .build();
+            runtimeVersionMapper.addNewVersion(version);
+            runtimeVersionMapper.revertTo(version.getRuntimeId(), version.getId());
         }
     }
 
