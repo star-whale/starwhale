@@ -60,7 +60,7 @@ export default function DatasetVersionFiles() {
             ...row,
             src,
         }
-    }, [tables, datasetVersion, projectId, token, fileId])
+    }, [tables, datasetVersion, projectId, token, fileId, columnTypes])
 
     const [activeKey, setActiveKey] = React.useState('1')
 

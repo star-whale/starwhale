@@ -13,3 +13,10 @@ export async function fetchRuntime(projectId: string, runtimeId: string): Promis
     const resp = await axios.get<IRuntimeDetailSchema>(`/api/v1/project/${projectId}/runtime/${runtimeId}`)
     return resp.data
 }
+
+export async function revertRuntime(projectId: string, runtimeId: string, runtimeVersionId: string): Promise<any> {
+    const resp = await axios.post<IRuntimeDetailSchema>(`/api/v1/project/${projectId}/runtime/${runtimeId}/revert`, {
+        versionId: runtimeVersionId,
+    })
+    return resp.data
+}
