@@ -55,7 +55,7 @@ export function apiInit() {
                     )}`
                 }
             }
-            return error
+            return Promise.reject(error)
         }
     )
 }

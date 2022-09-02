@@ -57,7 +57,7 @@ export default function ApiHeader() {
                     )
                     lastErrMsgRef.current[errMsg] = Date.now()
                 }
-                return error
+                return Promise.reject(error)
             }
         )
         // eslint-disable-next-line react-hooks/exhaustive-deps
