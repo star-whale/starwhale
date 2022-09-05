@@ -234,6 +234,8 @@
                             <exclude>**/ai/starwhale/mlops/configuration/**</exclude>
                             <exclude>**/ai/starwhale/mlops/exception/**</exclude>
                             <exclude>**/ai/starwhale/mlops/domain/dag/DAGQuerier*Content*</exclude>
+                            <exclude>**/ai/starwhale/mlops/datastore/Wal.**</exclude>
+                            <exclude>**/ai/starwhale/mlops/datastore/Wal</exclude>
                         </excludes>
                     </configuration>
                     <version>0.8.6</version>

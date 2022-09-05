@@ -36,8 +36,8 @@
     <img src="https://github.com/star-whale/starwhale/actions/workflows/console.yml/badge.svg">
 </a>
 
-<a href='https://coveralls.io/github/star-whale/starwhale?branch=main'>
-    <img alt="Coveralls" src="https://img.shields.io/coveralls/github/star-whale/starwhale?label=Java%20cov">
+<a href='https://app.codecov.io/gh/star-whale/starwhale'>
+    <img alt="Codecov" src="https://img.shields.io/codecov/c/github/star-whale/starwhale?flag=controller&label=Java%20Cov">
 </a>
 
 <a href="https://app.codecov.io/gh/star-whale/starwhale">

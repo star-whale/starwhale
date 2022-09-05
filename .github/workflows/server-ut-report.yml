@@ -57,3 +57,12 @@ jobs:
         env:
           COVERALL_TOKEN: ${{ secrets.COVERALL_TOKEN }}
         run: make ci-package-with-unit-test-report
+
+      - name: Publish coverage to codecov
+        uses: codecov/codecov-action@v3
+        with:
+          name: controller-ut
+          fail_ci_if_error: true
+          flags: controller
+          verbose: true
+          directory: ./server
