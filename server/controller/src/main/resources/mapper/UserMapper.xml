@@ -37,14 +37,6 @@
         where u.user_name = #{userName}
     </select>
 
-    <select id="existRegister" resultType="String">
-        show tables like 'register_info'
-    </select>
-
-    <select id="getUserEmail" resultType="String">
-        select email from register_info where user_id = #{id}
-    </select>
-
     <select id="listUsers" resultMap="userResultMap">
         select u.id as user_id,
                u.user_name,

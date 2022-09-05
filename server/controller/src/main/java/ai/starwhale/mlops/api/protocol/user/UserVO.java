@@ -31,14 +31,12 @@ public class UserVO {
 
     private String name;
 
-    private String email;
-
     private Long createdTime;
 
     private Boolean isEnabled;
 
 
     public static UserVO empty() {
-        return new UserVO("", "", "", -1L, false);
+        return new UserVO("", "", -1L, false);
     }
 }
