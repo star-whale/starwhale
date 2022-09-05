@@ -218,7 +218,7 @@ const ProjectCard = ({ project, onEdit }: IProjectCardProps) => {
                     </div>
                     <div className={styles.statisticsItem}>
                         <IconLink
-                            to={`/projects/${project.id}/members`}
+                            to={`/projects/${project.id}/overview`}
                             style={{ backgroundColor: 'transparent', color: 'rgba(2,16,43,0.60)' }}
                             tooltip={{
                                 content: `${t('Members')}:${project?.statistics.memberCounts}`,
