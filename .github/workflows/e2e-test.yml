@@ -63,7 +63,7 @@ jobs:
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
 
       - name: Setup tmate session
-          uses: mxschmitt/action-tmate@v3
+        uses: mxschmitt/action-tmate@v3
       - name: run e2e
         working-directory: ./scripts/e2e_test
         env:
