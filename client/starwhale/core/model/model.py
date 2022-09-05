@@ -33,7 +33,7 @@ from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.api._impl.job import Parser
-from starwhale.core.job.model import STATUS
+from starwhale.core.job.model import STATUS, Generator
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.base.bundle_copy import BundleCopy
@@ -244,7 +244,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         # parse job steps from yaml
         logger.debug(f"parse job from yaml:{_yaml_path}")
-        _jobs = Parser.parse_job_from_yaml(_yaml_path)
+        _jobs = Generator.generate_job_from_yaml(_yaml_path)
 
         if job_name not in _jobs:
             raise RuntimeError(f"job:{job_name} not found")

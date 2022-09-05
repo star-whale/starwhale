@@ -9,9 +9,11 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_EVALUATION_PIPELINE, DEFAULT_EVALUATION_JOBS_FNAME
 from starwhale.utils.fs import ensure_dir
-from starwhale.api._impl.job import Step, Parser
+from starwhale.api._impl.job import Parser
 from starwhale.core.job.model import (
+    Step,
     STATUS,
+    Generator,
     StepResult,
     TaskResult,
     MultiThreadProcessor,
@@ -49,10 +51,84 @@ class JobTestCase(TestCase):
           step_name: cmp
           task_num: 1
         """
-        jobs = Parser.parse_job_from_yaml(_f)
+        jobs = Generator.generate_job_from_yaml(_f)
 
         self.assertEqual("default" in jobs, True)
         self.assertEqual(len(jobs["default"]), 2)
+
+    def test_job_check(self):
+        self.assertEqual(
+            Parser.check(
+                {
+                    "default": [
+                        {"step_name": "ppl", "needs": [""]},
+                        {"step_name": "cmp", "needs": ["ppl2"]},
+                    ]
+                }
+            ),
+            False,
+        )
+
+        self.assertEqual(
+            Parser.check(
+                {
+                    "default": [
+                        {"step_name": "ppl", "needs": [""]},
+                        {"step_name": "cmp", "needs": ["ppl"]},
+                    ]
+                }
+            ),
+            True,
+        )
+
+    def test_dag_generator(self):
+        # with cycle error
+        with self.assertRaises(RuntimeError):
+            Generator.generate_dag_from_steps(
+                [
+                    Step(
+                        job_name="default",
+                        step_name="ppl-1",
+                        resources=[],
+                        needs=["cmp"],
+                    ),
+                    Step(
+                        job_name="default",
+                        step_name="ppl-2",
+                        resources=[],
+                        needs=["ppl-1"],
+                    ),
+                    Step(
+                        job_name="default",
+                        step_name="cmp",
+                        resources=[],
+                        needs=["ppl-2"],
+                    ),
+                ]
+            )
+        # generate successfully
+        Generator.generate_dag_from_steps(
+            [
+                Step(
+                    job_name="default",
+                    step_name="ppl-1",
+                    resources=[],
+                    needs=[],
+                ),
+                Step(
+                    job_name="default",
+                    step_name="ppl-2",
+                    resources=[],
+                    needs=["ppl-1"],
+                ),
+                Step(
+                    job_name="default",
+                    step_name="cmp",
+                    resources=[],
+                    needs=["ppl-2"],
+                ),
+            ]
+        )
 
     def test_multithread_processor(self):
         class SimpleExecutor:

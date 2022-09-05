@@ -3,17 +3,21 @@ import typing as t
 import concurrent.futures
 from typing import List, Optional
 from pathlib import Path
+from collections import defaultdict
 
 from loguru import logger
 from typing_extensions import Protocol
 
+from starwhale.utils import load_yaml
+from starwhale.core.job import dag
 from starwhale.utils.load import (
     load_cls,
     load_module,
     get_func_from_module,
     get_func_from_object,
 )
-from starwhale.api._impl.job import Step, Context
+from starwhale.core.job.dag import DAG
+from starwhale.api._impl.job import Context
 
 
 class STATUS:
@@ -22,6 +26,64 @@ class STATUS:
     RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
+
+
+class Step:
+    def __init__(
+        self,
+        job_name: str,
+        step_name: str,
+        resources: t.List[str],
+        needs: t.List[str],
+        concurrency: int = 1,
+        task_num: int = 1,
+        status: str = "",
+    ):
+        self.job_name = job_name
+        self.step_name = step_name
+        self.resources = resources
+        self.concurrency = concurrency
+        self.task_num = task_num
+        self.needs = needs
+        self.status = status
+
+    def __repr__(self) -> str:
+        return (
+            "%s(job_name=%r, step_name=%r, resources=%r, needs=%r, concurrency=%r, task_num=%r, status=%r)"
+            % (
+                self.__class__.__name__,
+                self.job_name,
+                self.step_name,
+                self.resources,
+                self.needs,
+                self.concurrency,
+                self.task_num,
+                self.status,
+            )
+        )
+
+
+class Generator:
+    @staticmethod
+    def generate_job_from_yaml(file_path: str) -> t.Dict[str, t.List[Step]]:
+        _jobs = load_yaml(file_path)
+        rt = defaultdict(list)
+        for k, v in _jobs.items():
+            rt[k] = [Step(**_v) for _v in v]
+        return rt
+
+    @staticmethod
+    def generate_dag_from_steps(steps: t.List[Step]) -> DAG:
+        _vertices: t.List[str] = []
+        _edges: t.Dict[str, str] = {}
+        for step in steps:
+            _vertices.append(step.step_name)
+            if not step.needs:
+                continue
+            for _pre in step.needs:
+                _edges[_pre] = step.step_name
+
+        return dag.generate_dag(_vertices, _edges)
 
 
 class TaskResult:

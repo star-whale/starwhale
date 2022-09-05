@@ -5,27 +5,17 @@ from pathlib import Path
 from loguru import logger
 
 from starwhale.core.job.dag import DAG
-from starwhale.api._impl.job import Step, Context
+from starwhale.api._impl.job import Context
 from starwhale.core.job.model import (
+    Step,
     STATUS,
+    Generator,
     StepResult,
     TaskResult,
     StepExecutor,
     TaskExecutor,
     MultiThreadProcessor,
 )
-
-
-def generate_dag(steps: t.List[Step]) -> DAG:
-    _dag = DAG()
-    for step in steps:
-        _dag.add_vertex(step.step_name)
-        if not step.needs:
-            continue
-        for _v_pre in step.needs:
-            _dag.add_vertex(_v_pre)
-            _dag.add_edge(_v_pre, step.step_name)
-    return _dag
 
 
 class Scheduler:
@@ -40,7 +30,7 @@ class Scheduler:
         kw: t.Dict[str, t.Any] = {},
     ) -> None:
         self._steps: t.Dict[str, Step] = {s.step_name: s for s in steps}
-        self.dag = generate_dag(steps)
+        self.dag: DAG = Generator.generate_dag_from_steps(steps)
         self.project = project
         self.dataset_uris = dataset_uris
         self.module = module
