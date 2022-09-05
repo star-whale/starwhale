@@ -168,13 +168,13 @@ start_starwhale() {
 check_controller_service() {
     while true
     do
-      started=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.containerStatuses[0].started'`
+      started=`kubectl get pod -l starwhale.ai/role=controller -n $SWNS -o json| jq -r '.items[0].status.containerStatuses[0].started'`
             if [[ "$started" == "true" ]]; then
                     echo "controller started"
                     break
             else
               echo "controller is starting"
-              kubectl get pods --namespace starwhale
+              kubectl get pods --namespace $SWNS
   #            kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status'
   #            ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.phase'`
   #            if [[ "$ready" == "Running" ]]; then
@@ -184,7 +184,7 @@ check_controller_service() {
             fi
             sleep 15
     done
-    nohup kubectl port-forward --namespace starwhale svc/starwhale-controller 8082:8082 &
+    nohup kubectl port-forward --namespace $SWNS svc/starwhale-controller 8082:8082 &
 }
 
 standalone_test() {

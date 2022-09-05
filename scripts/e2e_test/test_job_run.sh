@@ -42,7 +42,7 @@ do
   if curl -X 'GET' \
     "http://$1/api/v1/project/1/job/$job_id" \
     -H 'accept: application/json' \
-    -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus ; then echo "8082 well"; else  kubectl logs --tail=10 -l starwhale.ai/role=controller -n starwhale; continue; fi
+    -H "$auth_header" | jq -r '.data.jobStatus' > jobStatus ; then echo "8082 well"; else  kubectl logs --tail=10 -l starwhale.ai/role=controller -n $SWNS; continue; fi
   job_status=`cat jobStatus`
   if [ "$job_status" == "null" ] ; then
     echo "Error! job_status id is null"  1>&2
