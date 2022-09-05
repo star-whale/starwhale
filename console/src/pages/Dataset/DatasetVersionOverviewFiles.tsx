@@ -34,9 +34,7 @@ export default function DatasetVersionFiles() {
             start: page.pageNum,
             count: page.pageSize,
             total: rowCount,
-            afterPageChange: () => {
-                tables.refetch()
-            },
+            afterPageChange: () => {},
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page, rowCount])

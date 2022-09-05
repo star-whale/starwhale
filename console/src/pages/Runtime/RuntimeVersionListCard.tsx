@@ -23,7 +23,7 @@ export default function RuntimeVersionListCard() {
             toaster.positive(t('runtime version reverted'), { autoHideDuration: 2000 })
             await runtimesInfo.refetch()
         },
-        [runtimesInfo, projectId, runtimeId]
+        [runtimesInfo, projectId, runtimeId, t]
     )
     return (
         <Card title={t('runtime versions')}>

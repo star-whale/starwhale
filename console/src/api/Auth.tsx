@@ -30,7 +30,7 @@ const location = window.location
 export const AuthProvider = ({ children }: any) => {
     const [currentToken, setCurrentToken] = React.useState(getToken())
 
-    const userInfo = useQuery('currentUser', fetchCurrentUser, { refetchOnWindowFocus: false })
+    const userInfo = useQuery('currentUser', fetchCurrentUser, { refetchOnWindowFocus: false, retry: 0 })
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const { setCurrentUser } = useCurrentUser()
@@ -45,8 +45,14 @@ export const AuthProvider = ({ children }: any) => {
     }, [userInfo, setCurrentUser])
 
     const handleLogin = async (data: ILoginUserSchema) => {
-        await loginUser(data)
-        await userInfo.refetch()
+        try {
+            await loginUser(data)
+            await userInfo.refetch()
+        } catch (error) {
+            return ''
+        } finally {
+            if (getToken() !== currentToken) setCurrentToken(getToken())
+        }
 
         const search = qs.parse(location.search, { ignoreQueryPrefix: true })
         let { redirect } = search
@@ -56,17 +62,13 @@ export const AuthProvider = ({ children }: any) => {
             redirect = '/'
         }
 
-        setCurrentToken(getToken())
         return redirect
     }
 
     const handleLogout = () => {
         setToken(undefined)
-        // setCurrentToken(null)
         simulationJump('/logout')
     }
-
-    // console.log('raw:', !!getToken(), 'new:', !!currentToken, currentUser)
 
     const value = {
         token: currentToken,

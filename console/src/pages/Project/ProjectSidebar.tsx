@@ -48,12 +48,6 @@ export default function ProjectSidebar({ style }: IComposedSidebarProps) {
                 activePathPattern: /\/(runtimes|new_runtime)\/?/,
                 icon: <IconFont type='runtime' size={16} />,
             },
-            // {
-            //     title: t('Job'),
-            //     path: `/projects/${projectId}/jobs`,
-            //     activePathPattern: /\/(jobs|new_job)\/?/,
-            //     icon: <IconFont type='job' kind='white' size={20} />,
-            // },
         ]
     }, [project, projectId, t])
     return (
