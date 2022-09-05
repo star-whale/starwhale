@@ -31,6 +31,9 @@ export default function Input({ size = 'compact', ...props }: IInputProps) {
     if (props.type === 'password') {
         overrides.MaskToggleShowIcon = () => <IconFont type='eye' kind='gray' />
         overrides.MaskToggleHideIcon = () => <IconFont type='eye_off' kind='gray' />
+        overrides.MaskToggleButton = {
+            props: { tabindex: -1 },
+        }
     }
 
     // eslint-disable-next-line  react/jsx-props-no-spreading
