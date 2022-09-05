@@ -20,29 +20,26 @@ import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
 import ai.starwhale.mlops.datastore.MemoryTable;
 import ai.starwhale.mlops.datastore.OrderByDesc;
-import ai.starwhale.mlops.datastore.RecordList;
 import ai.starwhale.mlops.datastore.TableQueryFilter;
-import ai.starwhale.mlops.datastore.TableScanIterator;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.Wal;
 import ai.starwhale.mlops.datastore.WalManager;
 import ai.starwhale.mlops.exception.SWValidationException;
 import com.google.protobuf.ByteString;
-import lombok.Getter;
+import lombok.NonNull;
 
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.ConcurrentModificationException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public class MemoryTableImpl implements MemoryTable {
@@ -57,9 +54,19 @@ public class MemoryTableImpl implements MemoryTable {
     // used only for initialization from WAL
     private final Map<Integer, ColumnSchema> indexMap = new HashMap<>();
 
+    private final Lock lock = new ReentrantLock();
+
     public MemoryTableImpl(String tableName, WalManager walManager) {
         this.tableName = tableName;
         this.walManager = walManager;
+    }
+
+    public void lock() {
+        this.lock.lock();
+    }
+
+    public void unlock() {
+        this.lock.unlock();
     }
 
     public TableSchema getSchema() {
@@ -145,7 +152,7 @@ public class MemoryTableImpl implements MemoryTable {
 
 
     @Override
-    synchronized public void update(TableSchemaDesc schema, List<Map<String, String>> records) {
+    public void update(TableSchemaDesc schema, List<Map<String, String>> records) {
         var logEntryBuilder = Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName(this.tableName);
@@ -269,8 +276,8 @@ public class MemoryTableImpl implements MemoryTable {
     }
 
     @Override
-    synchronized public RecordList query(
-            Map<String, String> columns,
+    public List<RecordResult> query(
+            @NonNull Map<String, String> columns,
             List<OrderByDesc> orderBy,
             TableQueryFilter filter,
             int start,
@@ -278,13 +285,9 @@ public class MemoryTableImpl implements MemoryTable {
             boolean keepNone,
             boolean rawResult) {
         if (this.schema == null) {
-            return new RecordList(null, List.of(), null);
+            return Collections.emptyList();
         }
-        if (columns == null) {
-            columns = this.schema.getColumnSchemas().stream()
-                    .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::getName));
-        }
-        var columnTypeMapping = this.schema.getColumnTypeMapping(columns);
+        this.schema.getColumnTypeMapping(columns); // check if all column names are valid
         if (orderBy != null) {
             for (var col : orderBy) {
                 if (col == null) {
@@ -319,7 +322,8 @@ public class MemoryTableImpl implements MemoryTable {
         if (orderBy != null) {
             results.sort((a, b) -> {
                 for (var col : orderBy) {
-                    var result = MemoryTableImpl.sortCompare(a.get(col.getColumnName()), b.get(col.getColumnName()));
+                    var result = MemoryTableImpl.sortCompare(a.get(col.getColumnName()),
+                            b.get(col.getColumnName()));
                     if (result != 0) {
                         if (col.isDescending()) {
                             return -result;
@@ -331,127 +335,71 @@ public class MemoryTableImpl implements MemoryTable {
             });
         }
 
-        var finalColumns = columns;
-        return new RecordList(columnTypeMapping,
-                results.subList(start, end).stream().map(record -> {
-                    var r = new HashMap<String, String>();
-                    for (var entry : finalColumns.entrySet()) {
-                        var value = record.get(entry.getKey());
-                        if (keepNone || value != null) {
-                            r.put(entry.getValue(), columnTypeMapping.get(entry.getValue()).encode(value, rawResult));
-                        }
-                    }
-                    return r;
-                }).collect(Collectors.toList()),
-                null);
+        return results.subList(start, end).stream().map(record -> {
+            var r = new HashMap<String, Object>();
+            for (var entry : columns.entrySet()) {
+                var value = record.get(entry.getKey());
+                if (keepNone || value != null) {
+                    r.put(entry.getValue(), value);
+                }
+            }
+            return new RecordResult(record.get(this.schema.getKeyColumn()), r);
+        }).collect(Collectors.toList());
     }
 
-    private class InternalIterator implements TableScanIterator {
-        @Getter
-        private Map<String, ColumnType> columnTypeMapping;
-        private Map<String, String> columns;
-        private Object endKey;
-        private boolean keepNone;
-        private boolean rawResult;
-        private Iterator<Map.Entry<Object, Map<String, Object>>> iterator;
-        @Getter
-        private Object key;
-        @Getter
-        private ColumnType keyColumnType;
-        @Getter
-        private Map<String, String> record;
-
-        public InternalIterator(
-                Map<String, String> columns,
-                String start,
-                boolean startInclusive,
-                String end,
-                boolean endInclusive,
-                boolean keepNone,
-                boolean rawResult) {
-            if (MemoryTableImpl.this.schema == null) {
-                return;
-            }
-            this.columns = Objects.requireNonNullElseGet(columns,
-                    () -> MemoryTableImpl.this.schema.getColumnSchemas().stream()
-                            .collect(Collectors.toMap(ColumnSchema::getName, ColumnSchema::getName)));
-            this.keepNone = keepNone;
-            this.rawResult = rawResult;
-            this.columnTypeMapping = MemoryTableImpl.this.schema.getColumnTypeMapping(this.columns);
-            Object startKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(start);
-            Object endKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(end);
-            if (startKey == null) {
-                if (!MemoryTableImpl.this.recordMap.isEmpty()) {
-                    startKey = MemoryTableImpl.this.recordMap.firstKey();
-                }
-            } else if (startInclusive) {
-                startKey = MemoryTableImpl.this.recordMap.ceilingKey(startKey);
-            } else {
-                startKey = MemoryTableImpl.this.recordMap.higherKey(startKey);
-            }
-            if (endKey == null) {
-                if (!MemoryTableImpl.this.recordMap.isEmpty()) {
-                    this.endKey = MemoryTableImpl.this.recordMap.lastKey();
-                }
-            } else if (endInclusive) {
-                this.endKey = MemoryTableImpl.this.recordMap.floorKey(endKey);
-            } else {
-                this.endKey = MemoryTableImpl.this.recordMap.lowerKey(endKey);
-            }
-            //noinspection rawtypes,unchecked
-            if (startKey != null && this.endKey != null && ((Comparable) startKey).compareTo(this.endKey) <= 0) {
-                this.iterator = MemoryTableImpl.this.recordMap.subMap(startKey, true, this.endKey, true)
-                        .entrySet()
-                        .iterator();
-            }
-            this.keyColumnType = MemoryTableImpl.this.schema.getKeyColumnType();
-        }
-
-        public void next() {
-            if (this.iterator == null) {
-                return;
-            }
-            synchronized (MemoryTableImpl.this) {
-                Map<String, Object> r;
-                for (; ; ) {
-                    try {
-                        r = this.iterator.next().getValue();
-                        break;
-                    } catch (ConcurrentModificationException e) {
-                        this.iterator = MemoryTableImpl.this.recordMap.subMap(this.key, false, this.endKey, true)
-                                .entrySet()
-                                .iterator();
-                    } catch (NoSuchElementException e) {
-                        this.iterator = null;
-                        this.record = null;
-                        return;
-                    }
-                }
-                this.record = new HashMap<>();
-                this.key = r.get(MemoryTableImpl.this.schema.getKeyColumn());
-                for (var entry : this.columns.entrySet()) {
-                    var value = r.get(entry.getKey());
-                    if (value != null) {
-                        this.record.put(entry.getValue(),
-                                this.columnTypeMapping.get(entry.getValue()).encode(value, rawResult));
-                    } else if (this.keepNone) {
-                        this.record.put(entry.getValue(), null);
-                    }
-                }
-            }
-        }
-    }
 
     @Override
-    synchronized public TableScanIterator scan(
-            Map<String, String> columns,
+    public List<RecordResult> scan(
+            @NonNull Map<String, String> columns,
             String start,
             boolean startInclusive,
             String end,
             boolean endInclusive,
-            boolean keepNone,
-            boolean rawResult) {
-        return new InternalIterator(columns, start, startInclusive, end, endInclusive, keepNone, rawResult);
+            int limit,
+            boolean keepNone) {
+        if (this.schema == null) {
+            return Collections.emptyList();
+        }
+        if (this.recordMap.isEmpty() || limit == 0) {
+            return Collections.emptyList();
+        }
+
+        var startKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(start);
+        var endKey = MemoryTableImpl.this.schema.getKeyColumnType().decode(end);
+        if (startKey == null) {
+            startKey = MemoryTableImpl.this.recordMap.firstKey();
+            startInclusive = true;
+        }
+        if (endKey == null) {
+            endKey = MemoryTableImpl.this.recordMap.lastKey();
+            endInclusive = true;
+        }
+        //noinspection rawtypes,unchecked
+        if (((Comparable) startKey).compareTo(endKey) > 0) {
+            return Collections.emptyList();
+        }
+        var keyColumn = this.schema.getKeyColumn();
+        var records = new ArrayList<RecordResult>();
+        for (var record : MemoryTableImpl.this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive).values()) {
+            var values = new HashMap<String, Object>();
+            for (var entry : columns.entrySet()) {
+                var columnName = entry.getKey();
+                var alias = entry.getValue();
+                var value = record.get(columnName);
+                if (keepNone || value != null) {
+                    values.put(alias, value);
+                }
+            }
+            records.add(new RecordResult(record.get(keyColumn), values));
+            if (records.size() == limit) {
+                break;
+            }
+        }
+        if (records.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return records;
+        }
     }
 
     private static int sortCompare(Object a, Object b) {

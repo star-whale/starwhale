@@ -15,21 +15,30 @@
  */
 package ai.starwhale.mlops.datastore;
 
+import ai.starwhale.mlops.exception.SWValidationException;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
 import ai.starwhale.mlops.objectstore.impl.FileSystemObjectStore;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DataStoreTest {
     @TempDir
@@ -47,8 +56,13 @@ public class DataStoreTest {
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
         this.objectStore = new FileSystemObjectStore(bufferManager, this.rootDir.getAbsolutePath());
-        this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
         this.dataStore = new DataStore(this.walManager);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        this.dataStore.terminate();
     }
 
     @Test
@@ -67,17 +81,17 @@ public class DataStoreTest {
                                 new ColumnSchemaDesc("x", "INT32"))),
                 List.of(Map.of("k", "3", "x", "2")));
         this.dataStore.update("t1",
-            null,
-            List.of(Map.of("k", "0", "a", "5"), Map.of("k", "4", "-", "1")));
+                null,
+                List.of(Map.of("k", "0", "a", "5"), Map.of("k", "4", "-", "1")));
         assertThat("t1",
-            this.dataStore.scan(DataStoreScanRequest.builder()
-                    .tables(List.of(DataStoreScanRequest.TableInfo.builder()
-                        .tableName("t1")
-                        .columns(Map.of("k", "k", "a", "a"))
-                        .build()))
-                    .build())
-                .getRecords(),
-            is(List.of(Map.of("k", "0", "a", "5"),Map.of("k", "1", "a", "2"))));
+                this.dataStore.scan(DataStoreScanRequest.builder()
+                                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                        .tableName("t1")
+                                        .columns(Map.of("k", "k", "a", "a"))
+                                        .build()))
+                                .build())
+                        .getRecords(),
+                is(List.of(Map.of("k", "0", "a", "5"), Map.of("k", "1", "a", "2"))));
         this.dataStore.update("t1",
                 null,
                 List.of(Map.of("k", "0", "-", "anyString"), Map.of("k", "4", "-", "1")));
@@ -150,6 +164,24 @@ public class DataStoreTest {
                 recordList.getRecords(),
                 is(List.of(Map.of("a", "3"),
                         Map.of("a", "4"))));
+
+        recordList = this.dataStore.query(DataStoreQueryRequest.builder()
+                .tableName("t1")
+                .filter(TableQueryFilter.builder()
+                        .operator(TableQueryFilter.Operator.GREATER)
+                        .operands(List.of(new TableQueryFilter.Column("a"), 1))
+                        .build())
+                .orderBy(List.of(new OrderByDesc("a")))
+                .start(1)
+                .limit(2)
+                .build());
+        assertThat("all columns",
+                recordList.getColumnTypeMap(),
+                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32)));
+        assertThat("all columns",
+                recordList.getRecords(),
+                is(List.of(Map.of("k", "2", "a", "3"),
+                        Map.of("k", "1", "a", "4"))));
     }
 
     @Test
@@ -206,6 +238,42 @@ public class DataStoreTest {
                 recordList.getRecords(),
                 is(List.of(Map.of("a", "4"), Map.of())));
         assertThat("test", recordList.getLastKey(), is("2"));
+
+        recordList = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .keepNone(true)
+                        .build()))
+                .start("1")
+                .startInclusive(true)
+                .end("3")
+                .endInclusive(true)
+                .limit(2)
+                .build());
+        assertThat("all columns",
+                recordList.getColumnTypeMap(),
+                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32)));
+        assertThat("all columns",
+                recordList.getRecords(),
+                is(List.of(Map.of("k", "1", "a", "4"), Map.of("k", "2"))));
+        assertThat("all columns", recordList.getLastKey(), is("2"));
+
+        recordList = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .keepNone(true)
+                        .build()))
+                .limit(0)
+                .build());
+        assertThat("schema only",
+                recordList.getColumnTypeMap(),
+                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32)));
+        assertThat("schema only", recordList.getRecords(), empty());
+
+        assertThrows(SWValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build()))
+                .limit(1001)
+                .build()));
     }
 
     @Test
@@ -229,6 +297,11 @@ public class DataStoreTest {
         this.dataStore.update("t3",
                 new TableSchemaDesc("k",
                         List.of(new ColumnSchemaDesc("k", "STRING"),
+                                new ColumnSchemaDesc("a", "INT32"))),
+                List.of(Map.of("k", "2")));
+        this.dataStore.update("t4",
+                new TableSchemaDesc("k",
+                        List.of(new ColumnSchemaDesc("k", "INT32"),
                                 new ColumnSchemaDesc("a", "INT32"))),
                 List.of(Map.of("k", "2")));
         var recordList = this.dataStore.scan(DataStoreScanRequest.builder()
@@ -280,11 +353,216 @@ public class DataStoreTest {
                                 .tableName("t3")
                                 .keepNone(true)
                                 .build()))
+                .build());
+        assertThat("test",
+                recordList.getColumnTypeMap(),
+                is(Map.of("k",
+                        ColumnType.STRING,
+                        "a",
+                        ColumnType.INT32,
+                        "b",
+                        ColumnType.INT32)));
+        assertThat("test",
+                recordList.getRecords(),
+                is(List.of(Map.of("k", "0", "a", "5", "b", "15"),
+                        Map.of("k", "1", "a", "4"),
+                        Map.of("k", "2", "b", "13"),
+                        Map.of("k", "3", "a", "2"),
+                        Map.of("k", "4", "a", "1", "b", "11"))));
+        assertThat("test", recordList.getLastKey(), is("4"));
+
+        recordList = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t1")
+                                .keepNone(true)
+                                .build(),
+                        DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t2")
+                                .keepNone(true)
+                                .build(),
+                        DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t3")
+                                .keepNone(true)
+                                .build()))
                 .start("7")
                 .build());
-        assertThat("empty", recordList.getColumnTypeMap(), nullValue());
-        assertThat("empty", recordList.getRecords(), nullValue());
+        assertThat("empty",
+                recordList.getColumnTypeMap(),
+                is(Map.of("a", ColumnType.INT32, "b", ColumnType.INT32, "k", ColumnType.STRING)));
+        assertThat("empty", recordList.getRecords(), empty());
         assertThat("empty", recordList.getLastKey(), nullValue());
+
+        recordList = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t1")
+                                .keepNone(true)
+                                .build(),
+                        DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t2")
+                                .columns(Map.of("b", "a"))
+                                .keepNone(true)
+                                .build(),
+                        DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t3")
+                                .keepNone(true)
+                                .build()))
+                .keepNone(true)
+                .build());
+        assertThat("alias",
+                recordList.getColumnTypeMap(),
+                is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32)));
+        assertThat("alias",
+                recordList.getRecords(),
+                is(List.of(Map.of("k", "0", "a", "15"),
+                        Map.of("k", "1", "a", "4"),
+                        new HashMap<>() {{
+                            put("k", "2");
+                            put("a", null);
+                        }},
+                        Map.of("k", "3", "a", "2"),
+                        Map.of("k", "4", "a", "11"))));
+        assertThat("alias", recordList.getLastKey(), is("4"));
+
+        assertThrows(SWValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build(),
+                        DataStoreScanRequest.TableInfo.builder().tableName("t4").build()))
+                .build()));
+        assertThrows(SWValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build(),
+                        DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t2")
+                                .columns(Map.of("k", "a"))
+                                .build()))
+                .build()));
     }
 
+    @Test
+    public void testMultiThreads() throws Throwable {
+        this.dataStore.terminate();
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 65536, 65536 * 1024, "test/", 1000);
+        this.dataStore = new DataStore(this.walManager);
+        abstract class TestThread extends Thread {
+            protected final Random random = new Random();
+            protected final SimpleDateFormat dateFormat = new SimpleDateFormat("hh:mm:ss.SSS");
+            private Throwable throwable;
+
+            public void run() {
+                try {
+                    this.execute();
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                    this.throwable = t;
+                }
+            }
+
+            abstract void execute();
+
+            public void checkException() throws Throwable {
+                if (this.throwable != null) {
+                    throw this.throwable;
+                }
+            }
+        }
+        var threads = new ArrayList<TestThread>();
+        for (int i = 0; i < 20; ++i) {
+            // update
+            var index = i;
+            var tableName = "t" + i % 4;
+            dataStore.update(tableName,
+                    new TableSchemaDesc("k",
+                            List.of(new ColumnSchemaDesc("k", "STRING"),
+                                    new ColumnSchemaDesc("a", "INT32"))),
+                    null);
+            threads.add(new TestThread() {
+                public void execute() {
+                    var columnName = Integer.toString(index);
+                    for (int j = 0; j < 100000; ++j) {
+                        dataStore.update(tableName,
+                                new TableSchemaDesc("k",
+                                        List.of(new ColumnSchemaDesc("k", "STRING"),
+                                                new ColumnSchemaDesc("a", "INT32"),
+                                                new ColumnSchemaDesc(columnName, "INT32"))),
+                                List.of(Map.of("k",
+                                        String.format("%06d", j),
+                                        "a",
+                                        Integer.toHexString(index * 10000 + j),
+                                        columnName,
+                                        Integer.toHexString(index))));
+                        Thread.yield();
+                    }
+                    System.out.printf("%s update %d done\n", this.dateFormat.format(new Date()), index);
+                }
+            });
+        }
+        for (int i = 0; i < 200; ++i) {
+            // scan
+            var index = i;
+            var tableName1 = "t" + i % 4;
+            var tableName2 = "t" + (i % 4 + 1) % 4;
+            threads.add(new TestThread() {
+                public void execute() {
+                    for (int j = 0; j < 50; ++j) {
+                        var records = dataStore.scan(DataStoreScanRequest.builder()
+                                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                                .tableName(tableName1)
+                                                .build(),
+                                        DataStoreScanRequest.TableInfo.builder()
+                                                .tableName(tableName2)
+                                                .build()))
+                                .limit(100)
+                                .rawResult(true)
+                                .keepNone(true)
+                                .build()).getRecords();
+                        if (records != null) {
+                            for (var record : records) {
+                                var k = Integer.parseInt(record.get("k"));
+                                var a = Integer.parseInt(record.get("a"));
+                                assertThat(a % 10000, is(k));
+                                assertThat(record.toString(), record.get(Integer.toString(a / 10000)), notNullValue());
+                            }
+                        }
+                        try {
+                            Thread.sleep(this.random.nextInt(5));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    System.out.printf("%s scan %d done\n", dateFormat.format(new Date()), index);
+                }
+            });
+        }
+        for (int i = 0; i < 200; ++i) {
+            // query
+            var index = i;
+            var tableName = "t" + i % 4;
+            threads.add(new TestThread() {
+                public void execute() {
+                    for (int j = 0; j < 100; ++j) {
+                        var records = dataStore.query(DataStoreQueryRequest.builder()
+                                .tableName(tableName)
+                                .limit(10)
+                                .rawResult(true)
+                                .build()).getRecords();
+                        try {
+                            Thread.sleep(this.random.nextInt(5));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    System.out.printf("%s query %d done\n", dateFormat.format(new Date()), index);
+                }
+            });
+        }
+        for (var thread : threads) {
+            thread.start();
+        }
+        for (var thread : threads) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            thread.checkException();
+        }
+    }
 }

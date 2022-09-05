@@ -128,7 +128,7 @@ public class TableSchema {
         for (var entry : columnAliases.entrySet()) {
             var columnSchema = this.columnSchemaMap.get(entry.getKey());
             if (columnSchema == null) {
-                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE).tip(
+                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
                         "column name " + entry.getKey() + " not found");
             }
             ret.put(entry.getValue(), columnSchema.getType());
