@@ -27,7 +27,6 @@ class Scheduler:
         workdir: Path,
         dataset_uris: t.List[str],
         steps: t.List[Step],
-        kw: t.Dict[str, t.Any] = {},
     ) -> None:
         self._steps: t.Dict[str, Step] = {s.step_name: s for s in steps}
         self.dag: DAG = Generator.generate_dag_from_steps(steps)
@@ -36,7 +35,6 @@ class Scheduler:
         self.module = module
         self.workdir = workdir
         self.version = version
-        self.kw = kw
 
     def schedule(self) -> t.List[StepResult]:
         _results: t.List[StepResult] = []
@@ -62,7 +60,6 @@ class Scheduler:
                         module=self.module,
                         workdir=self.workdir,
                         version=self.version,
-                        kw=self.kw,
                     )
                     for v in vertices_to_run
                 ),
@@ -104,7 +101,6 @@ class Scheduler:
                 index=task_index,
                 dataset_uris=self.dataset_uris,
                 workdir=self.workdir,
-                **self.kw,
             ),
             status=STATUS.INIT,
             module=self.module,

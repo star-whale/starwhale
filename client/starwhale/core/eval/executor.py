@@ -162,7 +162,8 @@ class EvalExecutor:
             dataset_uris=[u.full_uri for u in self.dataset_uris],
             step_name=self.step,
             task_index=self.task_index,
-            kw=dict(
+            # other runtime info
+            base_info=dict(
                 name=self.name,
                 desc=self.desc,
                 model=self.model_uri,

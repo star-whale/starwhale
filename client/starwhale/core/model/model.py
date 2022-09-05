@@ -205,7 +205,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         job_name: str = "default",
         step_name: str = "",
         task_index: int = 0,
-        kw: t.Dict[str, t.Any] = {},
+        base_info: t.Dict[str, t.Any] = {},
     ) -> None:
         # init manifest
         _manifest: t.Dict[str, t.Any] = {
@@ -259,7 +259,6 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
             workdir=workdir,
             dataset_uris=dataset_uris,
             steps=_steps,
-            kw=kw,
         )
         _status = STATUS.START
         try:
@@ -292,7 +291,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         status=_status,
                         finished_at=now_str(),
                     ),
-                    **kw,
+                    **base_info,
                 }
             )
             _f = _run_dir / DEFAULT_MANIFEST_NAME

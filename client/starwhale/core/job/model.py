@@ -191,7 +191,6 @@ class StepExecutor:
         module: str,
         workdir: Path,
         dataset_uris: t.List[str],
-        kw: t.Dict[str, t.Any] = {},
     ) -> None:
         self.step = step
         self.project = project
@@ -199,7 +198,6 @@ class StepExecutor:
         self.module = module
         self.workdir = workdir
         self.version = version
-        self.kw = kw
 
     def execute(self) -> StepResult:
         logger.debug(f"start execute step:{self.step}")
@@ -222,7 +220,6 @@ class StepExecutor:
                     index=index,
                     dataset_uris=self.dataset_uris,
                     workdir=self.workdir,
-                    kw=self.kw,
                 ),
                 status=STATUS.INIT,
                 module=self.module,

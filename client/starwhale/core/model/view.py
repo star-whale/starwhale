@@ -59,7 +59,6 @@ class ModelTermView(BaseTermView):
         step: str = "",
         task_index: int = 0,
         runtime_uri: str = "",
-        kw: t.Dict[str, t.Any] = {},
     ) -> None:
         if in_production() or (os.path.exists(target) and os.path.isdir(target)):
             workdir = Path(target)
@@ -77,12 +76,11 @@ class ModelTermView(BaseTermView):
                     version,
                     workdir,
                     dataset_uris,
-                    DefaultYAMLName.MODEL,
+                    yaml_name,
                     "default",
                     step,
                     task_index,
                 ),
-                kwargs={"yaml_name": yaml_name, "kw": kw},
             ).run()
         else:
             StandaloneModel.eval_user_handler(
@@ -93,7 +91,6 @@ class ModelTermView(BaseTermView):
                 step_name=step,
                 task_index=task_index,
                 model_yaml_name=yaml_name,
-                **kw,
             )
 
     @classmethod

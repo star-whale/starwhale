@@ -1,4 +1,3 @@
-import copy
 import typing as t
 from pathlib import Path
 
@@ -53,7 +52,6 @@ class Context:
         dataset_uris: t.List[str] = [],
         version: str = "",
         project: str = "",
-        kw: t.Dict[str, t.Any] = {},
     ):
         self.project = project
         self.version = version
@@ -62,15 +60,6 @@ class Context:
         self.index = index
         self.dataset_uris = dataset_uris
         self.workdir = workdir
-        self.kw = copy.deepcopy(kw)
-
-    def get_param(self, name: str) -> t.Any:
-        return self.kw.get(name)
-
-    def put_param(self, name: str, value: t.Any) -> None:
-        if not self.kw:
-            self.kw = {}
-        self.kw.setdefault(name, value)
 
     def __repr__(self) -> str:
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
