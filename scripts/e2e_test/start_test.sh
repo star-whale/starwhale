@@ -67,8 +67,9 @@ build_swcli() {
 }
 
 build_console() {
-  pushd ../../docker
-  make build-console
+  pushd ../../console
+  mkdir build
+  echo 'hi' > index.html
   popd
 }
 
