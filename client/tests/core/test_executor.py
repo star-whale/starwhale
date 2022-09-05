@@ -157,8 +157,8 @@ class StandaloneEvalExecutor(TestCase):
         _manifest_path = job_dir / DEFAULT_MANIFEST_NAME
         _manifest = load_yaml(_manifest_path)
         assert _manifest_path.exists()
-        # TODO: use refactor code
-        assert _manifest["status"] == "failed"
+
+        assert _manifest["status"] == "success"
         assert _manifest["project"] == "self"
         assert _manifest["version"] == build_version
         assert _manifest["model"] == "mnist/version/gnstmntggi4t"

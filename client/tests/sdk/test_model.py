@@ -5,7 +5,6 @@ import sysconfig
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import pytest
 from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_PROJECT
@@ -209,14 +208,12 @@ class TestModelPipelineHandler(TestCase):
 
         # only one data row
         m_eval_log.assert_called_once()
-        m_eval_get.assert_called_once()
 
         status_file_path = os.path.join(_status_dir, "current")
         assert os.path.exists(status_file_path)
         assert "success" in open(status_file_path).read()
         assert os.path.exists(os.path.join(_status_dir, "timeline"))
 
-    @pytest.mark.skip(reason="datastore persist have some error")
     @patch("starwhale.api._impl.dataset.loader.TabularDataset.scan")
     @patch("starwhale.core.dataset.model.StandaloneDataset.summary")
     def test_deserializer(self, m_summary: MagicMock, m_scan: MagicMock) -> None:
