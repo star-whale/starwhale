@@ -38,8 +38,8 @@ declare_env() {
   export REPO_NAME_DOCKER="${REPO_NAME_DOCKER:=docker-hosted}"
   export REPO_NAME_PYPI="${REPO_NAME_PYPI:=pypi-hosted}"
   export PYTHON_VERSION="${PYTHON_VERSION:=3.9}"
-  export SWNAME="${SWNAME:=starwhale_e2e}"
-  export SWNS="${SWNS:=starwhale_e2e}"
+  export SWNAME="${SWNAME:=starwhale-e2e}"
+  export SWNS="${SWNS:=starwhale-e2e}"
 }
 
 start_minikube() {
