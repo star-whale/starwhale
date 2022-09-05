@@ -10,7 +10,7 @@ import pathlib
 import binascii
 import threading
 from http import HTTPStatus
-from typing import Any, Set, cast, Dict, List, Tuple, Union, Iterator, Optional
+from typing import Any, Set, cast, Dict, List, Type, Tuple, Union, Iterator, Optional
 
 import numpy as np
 import pyarrow as pa  # type: ignore
@@ -54,7 +54,7 @@ def _check_move(src: str, dest: str) -> bool:
             return False
 
 
-class Type:
+class SwType:
     def __init__(
         self, name: str, pa_type: pa.DataType, nbits: int, default_value: Any
     ) -> None:
@@ -126,10 +126,56 @@ class Type:
     __repr__ = __str__
 
 
+UNKNOWN = SwType("unknown", None, 1, None)
+INT8 = SwType("int", pa.int8(), 8, 0)
+INT16 = SwType("int", pa.int16(), 16, 0)
+INT32 = SwType("int", pa.int32(), 32, 0)
+INT64 = SwType("int", pa.int64(), 64, 0)
+FLOAT16 = SwType("float", pa.float16(), 16, 0.0)
+FLOAT32 = SwType("float", pa.float32(), 32, 0.0)
+FLOAT64 = SwType("float", pa.float64(), 64, 0.0)
+BOOL = SwType("bool", pa.bool_(), 1, 0)
+STRING = SwType("string", pa.string(), 32, "")
+BYTES = SwType("bytes", pa.binary(), 32, b"")
+
+_TYPE_DICT: Dict[Any, SwType] = {
+    type(None): UNKNOWN,
+    np.byte: INT8,
+    np.int8: INT8,
+    np.int16: INT16,
+    np.int32: INT32,
+    np.int64: INT64,
+    int: INT64,
+    np.float16: FLOAT16,
+    np.float32: FLOAT32,
+    np.float_: FLOAT64,
+    float: FLOAT64,
+    np.bool_: BOOL,
+    bool: BOOL,
+    str: STRING,
+    bytes: BYTES,
+}
+
+_TYPE_NAME_DICT = {str(v): v for v in _TYPE_DICT.values()}
+
+_ID_CUSTOM_TYPE_DICT: Dict[str, Type[Any]] = {}
+
+_CUSTOM_TYPE_ID_DICT: Dict[Type[Any], str] = {}
+
+
+def _get_type(obj: Any) -> Optional[SwType]:
+    return _TYPE_DICT.get(type(obj), None)
+
+
+def register_custom_type(id: str, type: Type[Any]) -> None:
+    _ID_CUSTOM_TYPE_DICT[id] = type
+    _CUSTOM_TYPE_ID_DICT[type] = id
+
+
 class Link:
     def __init__(
         self,
-        uri: str,
+        uri: Optional[str] = None,
         display_text: Optional[str] = None,
         mime_type: Optional[str] = None,
     ) -> None:
@@ -155,45 +201,11 @@ class Link:
         )
 
 
-UNKNOWN = Type("unknown", None, 1, None)
-INT8 = Type("int", pa.int8(), 8, 0)
-INT16 = Type("int", pa.int16(), 16, 0)
-INT32 = Type("int", pa.int32(), 32, 0)
-INT64 = Type("int", pa.int64(), 64, 0)
-FLOAT16 = Type("float", pa.float16(), 16, 0.0)
-FLOAT32 = Type("float", pa.float32(), 32, 0.0)
-FLOAT64 = Type("float", pa.float64(), 64, 0.0)
-BOOL = Type("bool", pa.bool_(), 1, 0)
-STRING = Type("string", pa.string(), 32, "")
-BYTES = Type("bytes", pa.binary(), 32, b"")
-
-_TYPE_DICT: Dict[Any, Type] = {
-    type(None): UNKNOWN,
-    np.byte: INT8,
-    np.int8: INT8,
-    np.int16: INT16,
-    np.int32: INT32,
-    np.int64: INT64,
-    int: INT64,
-    np.float16: FLOAT16,
-    np.float32: FLOAT32,
-    np.float_: FLOAT64,
-    float: FLOAT64,
-    np.bool_: BOOL,
-    bool: BOOL,
-    str: STRING,
-    bytes: BYTES,
-}
-
-_TYPE_NAME_DICT = {str(v): v for k, v in _TYPE_DICT.items()}
-
-
-def _get_type(obj: Any) -> Optional[Type]:
-    return _TYPE_DICT.get(type(obj), None)
+register_custom_type("link", Link)
 
 
 class ColumnSchema:
-    def __init__(self, name: str, type: Type) -> None:
+    def __init__(self, name: str, type: SwType) -> None:
         self.name = name
         self.type = type
 
@@ -554,6 +566,29 @@ def _update_schema(schema: TableSchema, record: Dict[str, Any]) -> TableSchema:
     return new_schema
 
 
+def _set_value(key: str, parent: Dict[str, Any], value: Any) -> None:
+    colon_index = key.find(":")
+    if colon_index < 0:
+        parent[key] = value
+    else:
+        slash_index = key.find("/", colon_index)
+        if slash_index < 0:
+            slash_index = len(key)
+        col = key[:colon_index]
+        type_id = key[colon_index + 1 : slash_index]
+        obj = parent.get(col, None)
+        if obj is None:
+            type = _ID_CUSTOM_TYPE_DICT.get(type_id, dict)
+            obj = type()
+            parent[col] = obj
+        if slash_index < len(key):
+            if not isinstance(obj, dict):
+                obj_dict = obj.__dict__
+            else:
+                obj_dict = obj
+            _set_value(key[slash_index + 1 :], obj_dict, value)
+
+
 class MemoryTable:
     def __init__(self, table_name: str, schema: TableSchema) -> None:
         self.table_name = table_name
@@ -854,7 +889,11 @@ class LocalDataStore:
                 )
         for record in _merge_scan(iters, keep_none):
             record.pop("*", None)
-            yield record
+            r: Dict[str, Any] = {}
+            for k, v in record.items():
+                if k != "*":
+                    _set_value(k, r, v)
+            yield r
 
     def dump(self) -> None:
         logger.debug(f"start dump, tables size:{len(self.tables.values())}")
@@ -961,14 +1000,15 @@ class RemoteDataStore:
                 for col, type in resp_json["columnTypes"].items()
             }
             for record in records:
-                r = {}
+                r: Dict[str, Any] = {}
                 for k, v in record.items():
                     col_type = column_types.get(k, None)
                     if col_type is None:
                         raise RuntimeError(
                             f"unknown type for column {k}, record={record}"
                         )
-                    r[k] = col_type.decode(v)
+                    value = col_type.decode(v)
+                    _set_value(k, r, value)
                 yield r
             if len(records) == 1000:
                 post_data["start"] = resp_json["lastKey"]
@@ -1008,16 +1048,18 @@ def _flatten(record: Dict[str, Any]) -> Dict[str, Any]:
     def _new(key_prefix: str, src: Dict[str, Any], dest: Dict[str, Any]) -> None:
         for k, v in src.items():
             k = key_prefix + str(k)
-            if type(v) is dict:
+            if isinstance(v, dict):
                 _new(k + "/", v, dest)
-            dest[k] = v
+            else:
+                type_id = _CUSTOM_TYPE_ID_DICT.get(type(v), None)
+                if type_id is not None:
+                    _new(f"{k}:{type_id}/", v.__dict__, dest)
+                else:
+                    dest[k] = v
 
-    for v in record.values():
-        if type(v) is dict:
-            ret: Dict[str, Any] = {}
-            _new("", record, ret)
-            return ret
-    return record
+    ret: Dict[str, Any] = {}
+    _new("", record, ret)
+    return ret
 
 
 class TableWriterException(Exception):
@@ -1077,6 +1119,7 @@ class TableWriter(threading.Thread):
                     and ch != "-"
                     and ch != "_"
                     and ch != "/"
+                    and ch != ":"
                     and not ch.isspace()
                 ):
                     raise RuntimeError(f"invalid field {k}")

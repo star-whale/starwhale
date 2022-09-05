@@ -33,7 +33,9 @@ public class DataStoreQueryRequest {
     private List<OrderByDesc> orderBy;
     private boolean descending;
     private TableQueryFilter filter;
+    @Builder.Default
     private int start = -1;
+    @Builder.Default
     private int limit = -1;
     private boolean keepNone;
     private boolean rawResult;

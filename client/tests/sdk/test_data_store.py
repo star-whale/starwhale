@@ -1461,14 +1461,32 @@ class TestTableWriter(BaseTestCase):
         self.writer.delete(1)
         self.writer.insert({"k": 3, "b": "3"})
         self.writer.insert({"k": 0, "a": None})
+        self.writer.insert({"k": 4, "a": {"b": 0, "c": 1}})
+        self.writer.insert(
+            {
+                "k": 5,
+                "x": data_store.Link("http://test.com/1.jpg"),
+                "y": data_store.Link("http://test.com/1.jpg", "1", "image/jpeg"),
+            }
+        )
         with self.assertRaises(RuntimeError, msg="conflicting type"):
             self.writer.insert({"k": 4, "a": 0})
         self.writer.close()
         self.assertEqual(
-            [{"k": 0}, {"k": 2, "a": "22"}, {"k": 3, "b": "3"}],
+            [
+                {"k": 0, "a": None},
+                {"k": 2, "a": "22"},
+                {"k": 3, "b": "3"},
+                {"k": 4, "a/b": 0, "a/c": 1},
+                {
+                    "k": 5,
+                    "x": data_store.Link("http://test.com/1.jpg"),
+                    "y": data_store.Link("http://test.com/1.jpg", "1", "image/jpeg"),
+                },
+            ],
             list(
                 data_store.LocalDataStore.get_instance().scan_tables(
-                    [data_store.TableDesc("p/test", None, False)]
+                    [data_store.TableDesc("p/test", None, True)], keep_none=True
                 )
             ),
             "scan all",

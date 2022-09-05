@@ -23,6 +23,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -244,8 +245,33 @@ public class DataStore {
             return schema.getColumnSchemas().stream()
                     .map(ColumnSchema::getName)
                     .collect(Collectors.toMap(Function.identity(), Function.identity()));
+        } else {
+            var ret = new HashMap<String, String>();
+            var invalidColumns = new HashSet(columns.keySet());
+            for (var columnSchema : schema.getColumnSchemas()) {
+                var columnName = columnSchema.getName();
+                var alias = columns.get(columnName);
+                if (alias != null) {
+                    ret.put(columnName, alias);
+                    invalidColumns.remove(columnName);
+                } else {
+                    var colonIndex = columnName.indexOf(":");
+                    if (colonIndex > 0) {
+                        var prefix = columnName.substring(0, colonIndex);
+                        alias = columns.get(prefix);
+                        if (alias != null) {
+                            ret.put(columnName, alias + columnName.substring(colonIndex));
+                            invalidColumns.remove(prefix);
+                        }
+                    }
+                }
+            }
+            if (!invalidColumns.isEmpty()) {
+                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                        "invalid columns: " + invalidColumns);
+            }
+            return ret;
         }
-        return columns;
     }
 
     private Map<String, String> encodeRecord(Map<String, ColumnType> columnTypeMap,
