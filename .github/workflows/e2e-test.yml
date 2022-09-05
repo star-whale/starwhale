@@ -1,8 +1,9 @@
 name: End to End test for starwhale
 
 on:
-  schedule:
-    - cron: "34 10,13 * * *"
+  push:
+    branches:
+      E2E
 
 env:
   PYPI_RELEASE_VERSION: 100.0.0
@@ -29,9 +30,9 @@ jobs:
       matrix:
         python-version:
           - "3.7"
-          - "3.8"
-          - "3.9"
-          - "3.10"
+#          - "3.8"
+#          - "3.9"
+#          - "3.10"
 
     steps:
       - uses: actions/checkout@v3
