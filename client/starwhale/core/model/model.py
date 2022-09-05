@@ -33,7 +33,7 @@ from starwhale.utils.http import ignore_error
 from starwhale.base.bundle import BaseBundle, LocalStorageBundleMixin
 from starwhale.utils.error import NoSupportError, FileFormatError
 from starwhale.api._impl.job import Parser
-from starwhale.core.job.model import STATUS
+from starwhale.core.job.model import STATUS, Generator
 from starwhale.utils.progress import run_with_progress_bar
 from starwhale.core.eval.store import EvaluationStorage
 from starwhale.base.bundle_copy import BundleCopy
@@ -175,7 +175,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.tag.remove(tags, quiet)
 
     def _gen_steps(self, typ: str, ppl: str) -> None:
-        if typ is EvalHandlerType.DEFAULT:
+        if typ == EvalHandlerType.DEFAULT:
             # use default
             ppl = DEFAULT_EVALUATION_PIPELINE
         _f = self.store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
@@ -205,7 +205,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         job_name: str = "default",
         step_name: str = "",
         task_index: int = 0,
-        kw: t.Dict[str, t.Any] = {},
+        base_info: t.Dict[str, t.Any] = {},
     ) -> None:
         # init manifest
         _manifest: t.Dict[str, t.Any] = {
@@ -244,7 +244,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
 
         # parse job steps from yaml
         logger.debug(f"parse job from yaml:{_yaml_path}")
-        _jobs = Parser.parse_job_from_yaml(_yaml_path)
+        _jobs = Generator.generate_job_from_yaml(_yaml_path)
 
         if job_name not in _jobs:
             raise RuntimeError(f"job:{job_name} not found")
@@ -252,32 +252,30 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         _steps = _jobs[job_name]
 
         console.print(":hourglass_not_done: start to evaluation...")
-
+        _scheduler = Scheduler(
+            project=_project_uri.project,
+            version=version,
+            module=_module,
+            workdir=workdir,
+            dataset_uris=dataset_uris,
+            steps=_steps,
+        )
         _status = STATUS.START
         try:
-            _scheduler = Scheduler(
-                project=_project_uri.project,
-                version=version,
-                module=_module,
-                workdir=workdir,
-                dataset_uris=dataset_uris,
-                steps=_steps,
-                kw=kw,
-            )
             if not step_name:
-                _scheduler.schedule()
+                _step_results = _scheduler.schedule()
             else:
-                _scheduler.schedule_single_task(step_name, task_index)
+                _step_results = [_scheduler.schedule_single_task(step_name, task_index)]
+
             _status = (
                 STATUS.SUCCESS
-                if all(
-                    _s.status == STATUS.SUCCESS
-                    for _s in _steps
-                    if step_name == "" or _s.step_name == step_name
-                )
+                if all([_rt.status == STATUS.SUCCESS for _rt in _step_results])
                 else STATUS.FAILED
             )
+
+            logger.debug(f"job execute info:{_step_results}")
         except Exception as e:
+            logger.error(f"job:{job_name} execute error:{e}")
             _status = STATUS.FAILED
             _manifest["error_message"] = str(e)
             raise
@@ -293,13 +291,12 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
                         status=_status,
                         finished_at=now_str(),
                     ),
-                    **kw,
+                    **base_info,
                 }
             )
             _f = _run_dir / DEFAULT_MANIFEST_NAME
             ensure_file(_f, yaml.safe_dump(_manifest, default_flow_style=False))
 
-            logger.debug(f"job info:{_jobs}")
             console.print(
                 f":{100 if _status == STATUS.SUCCESS else 'broken_heart'}: finish run, {_status}!"
             )

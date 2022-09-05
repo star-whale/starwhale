@@ -256,42 +256,46 @@ class PipelineHandler(metaclass=ABCMeta):
             self._timeline_writer.write({"time": now, "status": True, "exception": ""})
             self._sw_logger.debug(f"cmp result:{output}")
 
-            if "summary" in output:
-                self.evaluation.log_metrics(do_flatten_dict(output["summary"]))
-            self.evaluation.log_metrics({"kind": output["kind"]})
+            if not output:
+                self._sw_logger.warning("cmp results is None!")
+                return
+            if isinstance(output, dict):
+                if "summary" in output:
+                    self.evaluation.log_metrics(do_flatten_dict(output["summary"]))
+                self.evaluation.log_metrics({"kind": output["kind"]})
 
-            if "labels" in output:
-                for i, label in output["labels"].items():
-                    self.evaluation.log("labels", id=i, **label)
+                if "labels" in output:
+                    for i, label in output["labels"].items():
+                        self.evaluation.log("labels", id=i, **label)
 
-            if (
-                "confusion_matrix" in output
-                and "binarylabel" in output["confusion_matrix"]
-            ):
-                _binary_label = output["confusion_matrix"]["binarylabel"]
-                for _label, _probability in enumerate(_binary_label):
-                    self.evaluation.log(
-                        "confusion_matrix/binarylabel",
-                        id=str(_label),
-                        **{str(k): v for k, v in enumerate(_probability)},
-                    )
-            if "roc_auc" in output:
-                for _label, _roc_auc in output["roc_auc"].items():
-                    _id = 0
-                    for _fpr, _tpr, _threshold in zip(
-                        _roc_auc["fpr"], _roc_auc["tpr"], _roc_auc["thresholds"]
-                    ):
+                if (
+                    "confusion_matrix" in output
+                    and "binarylabel" in output["confusion_matrix"]
+                ):
+                    _binary_label = output["confusion_matrix"]["binarylabel"]
+                    for _label, _probability in enumerate(_binary_label):
                         self.evaluation.log(
-                            f"roc_auc/{_label}",
-                            id=str(_id),
-                            fpr=_fpr,
-                            tpr=_tpr,
-                            threshold=_threshold,
+                            "confusion_matrix/binarylabel",
+                            id=str(_label),
+                            **{str(k): v for k, v in enumerate(_probability)},
                         )
-                        _id += 1
-                        self.evaluation.log(
-                            "roc_auc/summary", id=_label, auc=_roc_auc["auc"]
-                        )
+                if "roc_auc" in output:
+                    for _label, _roc_auc in output["roc_auc"].items():
+                        _id = 0
+                        for _fpr, _tpr, _threshold in zip(
+                            _roc_auc["fpr"], _roc_auc["tpr"], _roc_auc["thresholds"]
+                        ):
+                            self.evaluation.log(
+                                f"roc_auc/{_label}",
+                                id=str(_id),
+                                fpr=_fpr,
+                                tpr=_tpr,
+                                threshold=_threshold,
+                            )
+                            _id += 1
+                            self.evaluation.log(
+                                "roc_auc/summary", id=_label, auc=_roc_auc["auc"]
+                            )
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
@@ -304,6 +308,9 @@ class PipelineHandler(metaclass=ABCMeta):
         _dataset = Dataset.get_dataset(_dataset_uri)
         dataset_row_start, dataset_row_end = calculate_index(
             _dataset.summary().rows, self.context.total, self.context.index
+        )
+        self._sw_logger.debug(
+            f"step:{self.context.step}, ds start from:{dataset_row_start} to:{dataset_row_end}"
         )
 
         _data_loader = get_data_loader(
@@ -346,9 +353,6 @@ class PipelineHandler(metaclass=ABCMeta):
                 exception = None
 
             self._do_record(data, label, exception, *pred)
-        self._sw_logger.debug(
-            f"ppl result:{len([item for item in self.evaluation.get_results()])}"
-        )
 
     def _do_record(
         self,

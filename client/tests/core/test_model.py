@@ -1,4 +1,5 @@
 import os
+import typing as t
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -18,6 +19,8 @@ from starwhale.base.uri import URI
 from starwhale.utils.fs import ensure_dir, ensure_file
 from starwhale.base.type import URIType, BundleType
 from starwhale.utils.config import SWCliConfigMixed
+from starwhale.api._impl.job import Context
+from starwhale.api._impl.model import ResultLoader, PipelineHandler
 from starwhale.core.model.view import ModelTermView
 from starwhale.core.model.model import StandaloneModel
 from starwhale.core.instance.view import InstanceTermView
@@ -177,3 +180,36 @@ class StandaloneModelTestCase(TestCase):
         # list supports using instance/project uri which is not current_instance/current_project
         models, _ = ModelTermView.list("remote/whatever")
         assert len(models) == 2  # project foo and bar
+
+    def test_get_cls_from_model_yaml(self):
+        from starwhale.core.model import default_handler
+
+        with self.assertRaises(Exception):
+            default_handler._get_cls(Path(_model_data_dir))
+
+    @patch("starwhale.core.model.default_handler.StandaloneModel")
+    @patch("starwhale.core.model.default_handler.import_cls")
+    def test_default_handler(self, m_import: MagicMock, m_model: MagicMock):
+        from starwhale.core.model import default_handler
+
+        class SimpleHandler(PipelineHandler):
+            def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
+                pass
+
+            def cmp(self, _data_loader: ResultLoader) -> t.Any:
+                pass
+
+            def some(self):
+                assert self.context.version == "rwerwe9"
+                return "success"
+
+        m_model.load_model_config().return_value = {"run": {"ppl": "test"}}
+        m_import.return_value = SimpleHandler
+
+        default_handler._invoke(
+            Context(
+                workdir=Path(_model_data_dir),
+                version="rwerwe9",
+            ),
+            "some",
+        )

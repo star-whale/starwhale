@@ -1,13 +1,11 @@
-import copy
 import typing as t
 from pathlib import Path
-from collections import defaultdict
 
 import yaml
 from loguru import logger
 
-from starwhale.utils import load_yaml
 from starwhale.consts import DEFAULT_EVALUATION_JOB_NAME, DEFAULT_EVALUATION_RESOURCE
+from starwhale.core.job import dag
 from starwhale.utils.fs import ensure_file
 from starwhale.utils.load import load_module
 
@@ -26,9 +24,11 @@ def step(
 
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
+            cls, delim, func_name = func.__qualname__.rpartition(".")
             _step = dict(
                 job_name=job_name,
-                step_name=func.__qualname__,
+                step_name=func_name,
+                cls_name=cls,
                 resources=_resources,
                 concurrency=concurrency,
                 task_num=task_num,
@@ -52,7 +52,6 @@ class Context:
         dataset_uris: t.List[str] = [],
         version: str = "",
         project: str = "",
-        kw: t.Dict[str, t.Any] = {},
     ):
         self.project = project
         self.version = version
@@ -61,53 +60,9 @@ class Context:
         self.index = index
         self.dataset_uris = dataset_uris
         self.workdir = workdir
-        self.kw = copy.deepcopy(kw)
-
-    def get_param(self, name: str) -> t.Any:
-        return self.kw.get(name)
-
-    def put_param(self, name: str, value: t.Any) -> None:
-        if not self.kw:
-            self.kw = {}
-        self.kw.setdefault(name, value)
 
     def __repr__(self) -> str:
         return "step:{}, total:{}, index:{}".format(self.step, self.total, self.index)
-
-
-class Step:
-    def __init__(
-        self,
-        job_name: str,
-        step_name: str,
-        resources: t.List[str],
-        needs: t.List[str],
-        concurrency: int = 1,
-        task_num: int = 1,
-        status: str = "",
-    ):
-        self.job_name = job_name
-        self.step_name = step_name
-        self.resources = resources
-        self.concurrency = concurrency
-        self.task_num = task_num
-        self.needs = needs
-        self.status = status
-
-    def __repr__(self) -> str:
-        return (
-            "%s(job_name=%r, step_name=%r, resources=%r, needs=%r, concurrency=%r, task_num=%r, status=%r)"
-            % (
-                self.__class__.__name__,
-                self.job_name,
-                self.step_name,
-                self.resources,
-                self.needs,
-                self.concurrency,
-                self.task_num,
-                self.status,
-            )
-        )
 
 
 class ParseConfig:
@@ -184,31 +139,26 @@ class Parser:
             logger.debug("generator DAG success!")
         else:
             logger.error("generator DAG error! reason: check is failed.")
+            raise RuntimeError("generator DAG error!")
 
     @staticmethod
     def check(jobs: t.Dict[str, t.List[t.Dict]]) -> bool:
         checks = []
-        logger.debug(f"jobs:{jobs}")
-        for job in jobs.items():
-            all_steps = []
-            needs = []
-            for _step in job[1]:
-                all_steps.append(_step["step_name"])
-                for d in _step["needs"]:
-                    if d:
-                        needs.append(d)
-            logger.debug(f"all steps:{all_steps}, length:{len(all_steps)}")
-            _check = all(item in all_steps for item in needs)
-            if not _check:
-                logger.error(f"job:{job[0]} check error!")
-            checks.append(_check)
+        logger.debug(f"check jobs:{jobs}")
+
+        for name, steps in jobs.items():
+            _vertices: t.List[str] = []
+            _edges: t.Dict[str, str] = {}
+            for _step in steps:
+                _vertices.append(_step["step_name"])
+                for _pre in _step["needs"]:
+                    if _pre:
+                        _edges[_pre] = _step["step_name"]
+            try:
+                dag.generate_dag(_vertices, _edges)
+                checks.append(True)
+            except RuntimeError as e:
+                logger.error(f"check job:{name} failed, error:{e}")
+                checks.append(False)
 
         return all(checks)
-
-    @staticmethod
-    def parse_job_from_yaml(file_path: str) -> t.Dict[str, t.List[Step]]:
-        _jobs = load_yaml(file_path)
-        rt = defaultdict(list)
-        for k, v in _jobs.items():
-            rt[k] = [Step(**_v) for _v in v]
-        return rt
