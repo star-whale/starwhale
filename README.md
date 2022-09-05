@@ -37,7 +37,7 @@
 </a>
 
 <a href='https://app.codecov.io/gh/star-whale/starwhale'>
-    <img alt="Codecov" src="https://img.shields.io/coveralls/github/star-whale/starwhale?flag=controller&label=Java%20cov">
+    <img alt="Codecov" src="https://img.shields.io/codecov/c/github/star-whale/starwhale?flag=controller&label=Java%20Cov">
 </a>
 
 <a href="https://app.codecov.io/gh/star-whale/starwhale">
