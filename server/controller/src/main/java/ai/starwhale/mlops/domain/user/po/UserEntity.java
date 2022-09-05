@@ -35,8 +35,6 @@ public class UserEntity extends BaseEntity implements Serializable {
 
     private String userName;
 
-    private String userEmail;
-
     private String userPwd;
 
     private String userPwdSalt;
