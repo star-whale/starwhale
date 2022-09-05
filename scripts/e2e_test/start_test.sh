@@ -38,6 +38,8 @@ declare_env() {
   export REPO_NAME_DOCKER="${REPO_NAME_DOCKER:=docker-hosted}"
   export REPO_NAME_PYPI="${REPO_NAME_PYPI:=pypi-hosted}"
   export PYTHON_VERSION="${PYTHON_VERSION:=3.9}"
+  export SWNAM="${SWNAM:=starwhale_e2e}"
+  export SWNS="${SWNS:=starwhale_e2e}"
 }
 
 start_minikube() {
@@ -159,7 +161,7 @@ push_images_to_nexus() {
 
 start_starwhale() {
   pushd ../../docker/charts
-  helm upgrade --install starwhale ./ --namespace starwhale --create-namespace --set "resources.controller.requests.memory=2G,resources.controller.requests.cpu=800m,mysql.resources.primary.requests.cpu=200m,minio.resources.requests.cpu=200m,controller.taskSplitSize=1,minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION,mirror.pypi.indexUrl= http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple,mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL,mirror.pypi.trustedHost=$NEXUS_HOSTNAME"
+  helm upgrade --install $SWNAME ./ --namespace $SWNS --create-namespace --set "resources.controller.requests.memory=2G,resources.controller.requests.cpu=800m,mysql.resources.primary.requests.cpu=200m,mysql.primary.persistence.storageClass=$SWNAME-mysql,minio.resources.requests.cpu=200m, minio.persistence.storageClass=$SWNAME-minio,controller.taskSplitSize=1,minikube.enabled=true,image.registry=$NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER,image.tag=$PYPI_RELEASE_VERSION,mirror.pypi.indexUrl= http://$NEXUS_HOSTNAME:$PORT_NEXUS/repository/$REPO_NAME_PYPI/simple,mirror.pypi.extraIndexUrl=$SW_PYPI_EXTRA_INDEX_URL,mirror.pypi.trustedHost=$NEXUS_HOSTNAME"
   popd
 }
 
