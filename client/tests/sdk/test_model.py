@@ -21,7 +21,7 @@ from starwhale.base.type import (
 from starwhale.api.dataset import get_data_loader, UserRawDataLoader
 from starwhale.api._impl.job import Context
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.core.dataset.type import MIMEType, DatasetSummary
+from starwhale.core.dataset.type import MIMEType, ArtifactType, DatasetSummary
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDatasetRow
 
@@ -34,7 +34,8 @@ class SimpleHandler(PipelineHandler):
 
     def cmp(self, _data_loader: t.Any) -> t.Any:
         for _data in _data_loader:
-            print(_data)
+            assert "result" in _data
+            assert "annotations" in _data
         return {
             "summary": {"a": 1},
             "kind": "test",
@@ -119,13 +120,13 @@ class TestModelPipelineHandler(TestCase):
                 "result": "gASVaQAAAAAAAABdlEsHYV2UXZQoRz4mBBuTAu5hRz4bF5vyEiX+Rz479hi1FqrRRz5MqGToQCdARz3WYwL267cBRz3TzJIFVM1PRz1u4heY2/90Rz/wAAAAAAAARz3Kj1Gg+FBvRz5s1fMUlZZ8ZWGGlC4=",
                 "data_size": "784",
                 "id": "0",
-                "label": "gASVBQAAAAAAAABLB4WULg==",
+                "annotations": "gASVBQAAAAAAAABLB4WULg==",
             },
             {
                 "result": "gASVaQAAAAAAAABdlEsCYV2UXZQoRz7HJD9vpfz2Rz7nuBHd45K7Rz/v/95AI4woRz54jeSOtfKhRz4ydvSYTUVCRz4C6uB7EvDbRz66RdBlHOhyRz4yZGRfv61uRz6WGg/Jbfu6Rz3Qy/2xeB34ZWGGlC4=",
                 "data_size": "784",
                 "id": "1",
-                "label": "gASVBQAAAAAAAABLAoWULg==",
+                "annotations": "gASVBQAAAAAAAABLAoWULg==",
             },
         ]
 
@@ -140,8 +141,6 @@ class TestModelPipelineHandler(TestCase):
             )
         ) as _handler:
             _handler._starwhale_internal_run_cmp()
-            m_eval_log_metrics.assert_called()
-            m_eval_log.assert_called()
 
         status_file_path = os.path.join(_status_dir, "current")
         assert os.path.exists(status_file_path)
@@ -182,10 +181,13 @@ class TestModelPipelineHandler(TestCase):
                 data_size=784,
                 _swds_bin_offset=0,
                 _swds_bin_size=8160,
-                label=b"0",
+                annotations={"label": 0},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.SWDS_BIN,
-                data_mime_type=MIMEType.UNDEFINED,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="",
             ),
         ]
@@ -230,9 +232,6 @@ class TestModelPipelineHandler(TestCase):
             def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
                 return builtin_data, np_data, tensor_data
 
-            def handle_label(self, label: bytes, **kw: t.Any) -> t.Any:
-                return label_data
-
             def cmp(self, _data_loader: t.Any) -> t.Any:
                 data = [i for i in _data_loader]
                 assert len(data) == 1
@@ -241,7 +240,7 @@ class TestModelPipelineHandler(TestCase):
                 assert np.array_equal(y, np_data)
                 assert torch.equal(z, tensor_data)
 
-                assert label_data == data[0]["label"]
+                assert label_data == data[0]["annotations"]["label"]
 
         # mock dataset
         m_summary.return_value = DatasetSummary(
@@ -261,10 +260,13 @@ class TestModelPipelineHandler(TestCase):
                 data_size=784,
                 _swds_bin_offset=0,
                 _swds_bin_size=8160,
-                label=b"0",
+                annotations={"label": label_data},
                 data_origin=DataOriginType.NEW,
                 data_format=DataFormatType.SWDS_BIN,
-                data_mime_type=MIMEType.UNDEFINED,
+                data_type={
+                    "type": ArtifactType.Image.value,
+                    "mime_type": MIMEType.GRAYSCALE.value,
+                },
                 auth_name="",
             ),
         ]

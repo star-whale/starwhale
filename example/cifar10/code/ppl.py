@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import numpy as np
@@ -6,6 +5,7 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
+from starwhale.api.job import Context
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
 
@@ -19,18 +19,15 @@ ONE_IMAGE_SIZE = CHANNEL_IMAGE * HEIGHT_IMAGE * WIDTH_IMAGE
 
 
 class CIFAR10Inference(PipelineHandler):
-    def __init__(self, device="cpu") -> None:
-        super().__init__(merge_label=True, ignore_error=True)
-        self.device = torch.device(device)
+    def __init__(self, context: Context) -> None:
+        super().__init__(context=context)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
     def ppl(self, data, **kw):
         data = self._pre(data)
         output = self.model(data)
         return self._post(output)
-
-    def handle_label(self, label, **kw):
-        return [int(l) for l in label]
 
     @multi_classification(
         confusion_matrix_normalize="all",
@@ -39,14 +36,14 @@ class CIFAR10Inference(PipelineHandler):
         show_roc_auc=True,
         all_labels=[i for i in range(0, 10)],
     )
-    def cmp(self, _data_loader):
-        _result, _label, _pr = [], [], []
-        for _data in _data_loader:
-            _label.extend([int(l) for l in _data[self._label_field]])
-            (pred, pr) = _data[self._ppl_data_field]
-            _result.extend([int(l) for l in pred])
-            _pr.extend([l for l in pr])
-        return _label, _result, _pr
+    def cmp(self, ppl_result):
+        result, label, pr = [], [], []
+        for _data in ppl_result:
+            label.append(_data["annotations"]["label"])
+            (pred, pr) = _data["result"]
+            result.extend(pred)
+            pr.extend(pr)
+        return label, result, pr
 
     def _pre(self, input: bytes):
         batch_size = 1

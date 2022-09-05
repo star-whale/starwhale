@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torchaudio
 
+from starwhale.api.job import Context
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
 
@@ -53,12 +54,12 @@ labels = [
 
 
 class M5Inference(PipelineHandler):
-    def __init__(self, device="cpu") -> None:
-        super().__init__(merge_label=True, ignore_error=True)
-        self.device = torch.device(device)
+    def __init__(self, context: Context) -> None:
+        super().__init__(context=context)
+        self.device = torch.device("cpu")
         self.model = self._load_model(self.device)
         self.transform = torchaudio.transforms.Resample(orig_freq=16000, new_freq=8000)
-        self.transform = self.transform.to(device)
+        self.transform = self.transform.to("cpu")
 
     def ppl(self, data, **kw):
         audios = self._pre(data)
@@ -71,9 +72,6 @@ class M5Inference(PipelineHandler):
                 result.append("ERROR")
         return result
 
-    def handle_label(self, label, **kw):
-        return pickle.loads(label)
-
     @multi_classification(
         confusion_matrix_normalize="all",
         show_hamming_loss=True,
@@ -81,14 +79,13 @@ class M5Inference(PipelineHandler):
         show_roc_auc=False,
         all_labels=labels,
     )
-    def cmp(self, _data_loader):
-        _result, _label, _pr = [], [], []
-        for _data in _data_loader:
-            _label.extend(_data[self._label_field])
-            (result) = _data[self._ppl_data_field]
-            _result.extend(result)
-            # _pr.extend(_data["pr"])
-        return _result, _label
+    def cmp(self, ppl_result):
+        result, label = [], []
+        for _data in ppl_result:
+            label.append(_data["annotations"]["label"])
+            (result) = _data["result"]
+            result.extend(result)
+        return result, label
 
     def _pre(self, input: bytes):
         audios = pickle.loads(input)

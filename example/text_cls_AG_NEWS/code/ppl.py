@@ -3,27 +3,24 @@ import os
 import torch
 from torchtext.data.utils import get_tokenizer
 
+from starwhale.api.job import Context
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
 
 try:
-    from . import predict
-except ImportError:
-    import predict
-
-try:
-    from . import model
+    from . import model, predict
 except ImportError:
     import model
+    import predict
 
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 class TextClassificationHandler(PipelineHandler):
-    def __init__(self, device="cpu") -> None:
-        super().__init__(merge_label=True, ignore_error=True)
-        self.device = torch.device(device)
+    def __init__(self, context: Context) -> None:
+        super().__init__(context=context)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     @torch.no_grad()
     def ppl(self, data, **kw):
@@ -33,10 +30,6 @@ class TextClassificationHandler(PipelineHandler):
             map(lambda text: predict.predict(text, _model, vocab, tokenizer, 2), texts)
         )
 
-    def handle_label(self, label, **kw):
-        labels = label.decode().split("#@#@#@#")
-        return [int(label) for label in labels]
-
     @multi_classification(
         confusion_matrix_normalize="all",
         show_hamming_loss=True,
@@ -44,14 +37,13 @@ class TextClassificationHandler(PipelineHandler):
         show_roc_auc=False,
         all_labels=[i for i in range(1, 5)],
     )
-    def cmp(self, _data_loader):
-        _result, _label = [], []
-        for _data in _data_loader:
-            print(_data)
-            _label.extend([int(l) for l in _data[self._label_field]])
-            (result) = _data[self._ppl_data_field]
-            _result.extend([int(r) for r in result])
-        return _label, _result
+    def cmp(self, ppl_result):
+        result, label = [], []
+        for _data in ppl_result:
+            label.append(_data["annotations"]["label"])
+            (result) = _data["result"]
+            result.extend([int(r) for r in result])
+        return label, result
 
     def _load_model(self, device):
         model_path = _ROOT_DIR + "/models/model.i"

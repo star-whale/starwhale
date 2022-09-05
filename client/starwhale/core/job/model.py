@@ -156,12 +156,10 @@ class TaskExecutor:
             self.status = STATUS.RUNNING
             # instance method
             if not self.cls_name:
-                logger.debug("hi, use func")
                 func = get_func_from_module(_module, self.func)
                 # The standard implementation does not return results
                 func(context=self.context)
             else:
-                logger.debug("hi, use class")
                 _cls = load_cls(_module, self.cls_name)
                 # need an instance
                 with _cls() as obj:

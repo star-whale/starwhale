@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 import json
 import typing as t
@@ -33,60 +31,88 @@ from starwhale.utils.error import (
 from starwhale.api._impl.wrapper import Dataset as DatastoreWrapperDataset
 from starwhale.core.dataset.store import DatasetStorage
 
-from .type import MIMEType
-
 
 class TabularDatasetRow(ASDictMixin):
+
+    ANNOTATION_PREFIX = "_annotation_"
+
     def __init__(
         self,
         id: int,
         data_uri: str,
-        label: t.Any,
         data_format: DataFormatType = DataFormatType.SWDS_BIN,
         object_store_type: ObjectStoreType = ObjectStoreType.LOCAL,
         data_offset: int = 0,
         data_size: int = 0,
         data_origin: DataOriginType = DataOriginType.NEW,
-        data_mime_type: MIMEType = MIMEType.UNDEFINED,
+        data_type: t.Optional[t.Dict[str, t.Any]] = None,
         auth_name: str = "",
+        annotations: t.Optional[t.Dict[str, t.Any]] = None,
         **kw: t.Union[str, int, float],
     ) -> None:
         self.id = id
         self.data_uri = data_uri.strip()
-        self.data_format = DataFormatType(data_format)
+        self.data_format = data_format
         self.data_offset = data_offset
         self.data_size = data_size
-        self.data_origin = DataOriginType(data_origin)
-        self.object_store_type = ObjectStoreType(object_store_type)
-        self.data_mime_type = MIMEType(data_mime_type)
+        self.data_origin = data_origin
+        self.object_store_type = object_store_type
         self.auth_name = auth_name
-        self.label = self._parse_label(label)
+        self.data_type = data_type or {}
+        self.annotations = annotations or {}
         self.extra_kw = kw
-
         # TODO: add non-starwhale object store related fields, such as address, authority
         # TODO: add data uri crc for versioning
-        # TODO: support user custom annotations
+
+    @classmethod
+    def from_datastore(
+        cls,
+        id: int,
+        data_uri: str,
+        data_format: str = DataFormatType.SWDS_BIN.value,
+        object_store_type: str = ObjectStoreType.LOCAL.value,
+        data_offset: int = 0,
+        data_size: int = 0,
+        data_origin: str = DataOriginType.NEW.value,
+        data_type: str = "",
+        auth_name: str = "",
+        **kw: t.Any,
+    ) -> "TabularDatasetRow":
+        annotations = {}
+        extra_kw = {}
+        for k, v in kw.items():
+            if not k.startswith(cls.ANNOTATION_PREFIX):
+                extra_kw[k] = v
+                continue
+            _, name = k.split(cls.ANNOTATION_PREFIX, 1)
+            annotations[name] = json.loads(v)
+
+        return cls(
+            id=id,
+            data_uri=data_uri,
+            data_format=DataFormatType(data_format),
+            object_store_type=ObjectStoreType(object_store_type),
+            data_offset=data_offset,
+            data_size=data_size,
+            data_origin=DataOriginType(data_origin),
+            auth_name=auth_name,
+            # TODO: use protobuf format to store and reflect annotation
+            data_type=json.loads(data_type),
+            annotations=annotations,
+            **extra_kw,
+        )
 
     def __eq__(self, o: object) -> bool:
         return self.__dict__ == o.__dict__
-
-    def _parse_label(self, label: t.Any) -> str:
-        # TODO: add more label type-parse
-        # TODO: support user-defined label type
-        if isinstance(label, bytes):
-            return label.decode()
-        elif isinstance(label, (int, float, complex)):
-            return str(label)
-        elif isinstance(label, str):
-            return label
-        else:
-            raise NoSupportError(f"label type:{type(label)} {label}")
 
     def _do_validate(self) -> None:
         if self.id < 0:
             raise FieldTypeOrValueError(
                 f"id need to be greater than or equal to zero, but current id is {self.id}"
             )
+
+        if not isinstance(self.annotations, dict) or not self.annotations:
+            raise FieldTypeOrValueError("no annotations field")
 
         if not self.data_uri:
             raise FieldTypeOrValueError("no raw_data_uri field")
@@ -106,13 +132,26 @@ class TabularDatasetRow(ASDictMixin):
     def __repr__(self) -> str:
         return (
             f"row-{self.id}, data-{self.data_uri}(offset:{self.data_offset}, size:{self.data_size},"
-            f"format:{self.data_format}, mime type:{self.data_mime_type}), "
+            f"format:{self.data_format}, meta type:{self.data_type}), "
             f"origin-[{self.data_origin}], object store-{self.object_store_type}"
         )
 
     def asdict(self, ignore_keys: t.Optional[t.List[str]] = None) -> t.Dict:
-        d = super().asdict(ignore_keys=ignore_keys or ["extra_kw"])
+        d = super().asdict(
+            ignore_keys=ignore_keys or ["annotations", "extra_kw", "data_type"]
+        )
         d.update(_do_asdict_convert(self.extra_kw))
+        # TODO: use protobuf format to store and reflect annotation
+        for k, v in self.annotations.items():
+            v = _do_asdict_convert(v)
+            if getattr(v, "jsonify", None):
+                v = v.jsonify()
+            else:
+                v = json.dumps(v, separators=(",", ":"))
+            d[f"{self.ANNOTATION_PREFIX}{k}"] = v
+        d["data_type"] = json.dumps(
+            _do_asdict_convert(self.data_type), separators=(",", ":")
+        )
         return d
 
 
@@ -174,7 +213,7 @@ class TabularDataset:
                 if k not in _d:
                     continue
                 _d[k] = v(_d[k])
-            yield TabularDatasetRow(**_d)
+            yield TabularDatasetRow.from_datastore(**_d)
 
     def close(self) -> None:
         self._ds_wrapper.close()

@@ -93,7 +93,7 @@ length_must_equal() {
 
 build_rc_and_check() {
   length_must_equal 0 "$1"
-  swcli "$1" build .
+  swcli -vvv "$1" build .
   length_must_equal 1 "$1"
 }
 
@@ -103,7 +103,7 @@ build_rc_and_check dataset
 
 echo "do ppl and cmp"
 length_must_equal 0 eval "job list"
-swcli eval run --model mnist/version/latest --dataset mnist/version/latest
+swcli -vvv eval run --model mnist/version/latest --dataset mnist/version/latest
 length_must_equal 1 eval "job list"
 
 #echo "check result"

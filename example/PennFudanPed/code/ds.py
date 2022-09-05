@@ -1,4 +1,5 @@
 import os
+
 import numpy as np
 import torch
 from PIL import Image
@@ -69,8 +70,6 @@ class PennFudanDataset:
             img, target = self.transforms(img, target)
 
         return img, target
-
-
 
     def __len__(self):
         return len(self.imgs)

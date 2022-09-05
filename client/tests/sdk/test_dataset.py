@@ -1,15 +1,12 @@
 import os
 import json
 import struct
+import typing as t
 from pathlib import Path
 
-from starwhale.utils.fs import ensure_dir, blake2b_file
-from starwhale.api.dataset import (
-    Link,
-    MIMEType,
-    MNISTBuildExecutor,
-    UserRawBuildExecutor,
-)
+from starwhale.utils.fs import blake2b_file
+from starwhale.api.dataset import Link, MIMEType, GrayscaleImage, UserRawBuildExecutor
+from starwhale.core.dataset.type import ArtifactType
 from starwhale.core.dataset.store import DatasetStorage
 from starwhale.core.dataset.tabular import TabularDataset
 from starwhale.api._impl.dataset.builder import (
@@ -17,35 +14,63 @@ from starwhale.api._impl.dataset.builder import (
     _header_size,
     _header_magic,
     _header_struct,
+    SWDSBinBuildExecutor,
 )
 
 from .. import ROOT_DIR
 from .test_base import BaseTestCase
 
-_mnist_dir = f"{ROOT_DIR}/data/dataset/mnist"
-_mnist_data = open(f"{_mnist_dir}/data", "rb").read()
-_mnist_label = open(f"{_mnist_dir}/label", "rb").read()
+_mnist_dir = Path(f"{ROOT_DIR}/data/dataset/mnist")
+_mnist_data_path = _mnist_dir / "data"
+_mnist_label_path = _mnist_dir / "label"
+
+
+class MNISTBuildExecutor(SWDSBinBuildExecutor):
+    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+        with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
+            "rb"
+        ) as label_file:
+            _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
+            _, label_number = struct.unpack(">II", label_file.read(8))
+            print(
+                f">data({data_file.name}) split data:{data_number}, label:{label_number} group"
+            )
+            image_size = height * width
+
+            for i in range(0, min(data_number, label_number)):
+                _data = data_file.read(image_size)
+                _label = struct.unpack(">B", label_file.read(1))[0]
+                yield GrayscaleImage(
+                    _data,
+                    display_name=f"{i}",
+                    shape=(height, width, 1),
+                ), {"label": _label}
 
 
 class _UserRawMNIST(UserRawBuildExecutor):
-    def iter_data_slice(self, path: str):
-        size = 28 * 28
-        file_size = Path(path).stat().st_size
-        offset = 16
-        while offset < file_size:
-            yield Link(offset=offset, size=size, mime_type=MIMEType.GRAYSCALE)
-            offset += size
+    def iter_item(self) -> t.Generator[t.Tuple[t.Any, t.Any], None, None]:
+        with _mnist_data_path.open("rb") as data_file, _mnist_label_path.open(
+            "rb"
+        ) as label_file:
+            _, data_number, height, width = struct.unpack(">IIII", data_file.read(16))
+            _, label_number = struct.unpack(">II", label_file.read(8))
 
-    def iter_label_slice(self, path: str):
-        fpath = Path(path)
+            image_size = height * width
+            offset = 16
 
-        with fpath.open("rb") as f:
-            f.seek(8)
-            while True:
-                content = f.read(1)
-                if not content:
-                    break
-                yield struct.unpack(">B", content)[0]
+            for i in range(0, min(data_number, label_number)):
+                _data = Link(
+                    uri=str(_mnist_data_path.absolute()),
+                    offset=offset,
+                    size=image_size,
+                    data_type=GrayscaleImage(
+                        display_name=f"{i}", shape=(height, width, 1)
+                    ),
+                    with_local_fs_data=True,
+                )
+                _label = struct.unpack(">B", label_file.read(1))[0]
+                yield _data, {"label": _label}
+                offset += image_size
 
 
 class TestDatasetBuildExecutor(BaseTestCase):
@@ -57,26 +82,14 @@ class TestDatasetBuildExecutor(BaseTestCase):
         )
         self.raw_data = os.path.join(self.local_storage, ".user", "data")
         self.workdir = os.path.join(self.local_storage, ".user", "workdir")
-
-        self.data_fpath = os.path.join(self.raw_data, "mnist-data-0")
-        ensure_dir(self.raw_data)
-        with open(self.data_fpath, "wb") as f:
-            f.write(_mnist_data)
-
-        self.data_file_sign = blake2b_file(self.data_fpath)
-
-        with open(os.path.join(self.raw_data, "mnist-label-0"), "wb") as f:
-            f.write(_mnist_label)
+        self.data_file_sign = blake2b_file(_mnist_data_path)
 
     def test_user_raw_workflow(self) -> None:
         with _UserRawMNIST(
             dataset_name="mnist",
             dataset_version="332211",
             project_name="self",
-            data_dir=Path(self.raw_data),
             workdir=Path(self.workdir),
-            data_filter="mnist-data-*",
-            label_filter="mnist-data-*",
             alignment_bytes_size=64,
             volume_bytes_size=100,
         ) as e:
@@ -111,13 +124,9 @@ class TestDatasetBuildExecutor(BaseTestCase):
             dataset_name="mnist",
             dataset_version="112233",
             project_name="self",
-            data_dir=Path(self.raw_data),
             workdir=Path(self.workdir),
-            data_filter="mnist-data-*",
-            label_filter="mnist-data-*",
             alignment_bytes_size=64,
             volume_bytes_size=100,
-            data_mime_type=MIMEType.GRAYSCALE,
         ) as e:
             assert e.data_tmpdir.exists()
             summary = e.make_swds()
@@ -167,4 +176,6 @@ class TestDatasetBuildExecutor(BaseTestCase):
         assert meta.data_offset == 32
         assert meta.extra_kw["_swds_bin_offset"] == 0
         assert meta.data_uri in data_files_sign
-        assert meta.data_mime_type == MIMEType.GRAYSCALE
+        assert meta.data_type["type"] == ArtifactType.Image.value
+        assert meta.data_type["mime_type"] == MIMEType.GRAYSCALE.value
+        assert meta.data_type["shape"] == [28, 28, 1]

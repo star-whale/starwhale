@@ -1,14 +1,14 @@
-import os
 from pathlib import Path
 
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image as PILImage
 from torchvision import transforms
 
 from starwhale.api.job import Context
 from starwhale.api.model import PipelineHandler
 from starwhale.api.metric import multi_classification
+from starwhale.api.dataset import Image
 
 try:
     from .model import Net
@@ -16,23 +16,18 @@ except ImportError:
     from model import Net
 
 ROOTDIR = Path(__file__).parent.parent
-IMAGE_WIDTH = 28
-ONE_IMAGE_SIZE = IMAGE_WIDTH * IMAGE_WIDTH
 
 
 class MNISTInference(PipelineHandler):
-    def __init__(self, context: Context, device="cpu") -> None:
-        super().__init__(context=context, merge_label=True, ignore_error=True)
-        self.device = torch.device(device)
+    def __init__(self, context: Context) -> None:
+        super().__init__(context=context)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model(self.device)
 
-    def ppl(self, data, **kw):
-        data = self._pre(data)
-        output = self.model(data)
+    def ppl(self, img: Image, **kw):
+        data_tensor = self._pre(img)
+        output = self.model(data_tensor)
         return self._post(output)
-
-    def handle_label(self, label, **kw):
-        return int(label)
 
     @multi_classification(
         confusion_matrix_normalize="all",
@@ -41,21 +36,19 @@ class MNISTInference(PipelineHandler):
         show_roc_auc=True,
         all_labels=[i for i in range(0, 10)],
     )
-    def cmp(self, _data_loader):
-        _result, _label, _pr = [], [], []
-        for _data in _data_loader:
-            _label.append(_data[self._label_field])
-            # unpack data according to the return value of function ppl
-            (pred, pr) = _data[self._ppl_data_field]
-            _result.extend(pred)
-            _pr.extend(pr)
-        return _label, _result, _pr
+    def cmp(self, ppl_result):
+        result, label, pr = [], [], []
+        for _data in ppl_result:
+            label.append(_data["annotations"]["label"])
+            result.extend(_data["result"][0])
+            pr.extend(_data["result"][1])
+        return label, result, pr
 
-    def _pre(self, input: bytes):
-        _tensor = torch.tensor(bytearray(input), dtype=torch.uint8).reshape(
-            IMAGE_WIDTH, IMAGE_WIDTH
+    def _pre(self, input: Image):
+        _tensor = torch.tensor(bytearray(input.to_bytes()), dtype=torch.uint8).reshape(
+            input.shape[0], input.shape[1]  # type: ignore
         )
-        _image_array = Image.fromarray(_tensor.numpy())
+        _image_array = PILImage.fromarray(_tensor.numpy())
         _image = transforms.Compose(
             [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
         )(_image_array)
@@ -79,13 +72,9 @@ if __name__ == "__main__":
 
     context = Context(
         workdir=Path("."),
-        dataset_uris=["mnist/version/latest"],
+        dataset_uris=["mnist/version/small"],
         project="self",
         version="latest",
-        kw={
-            "status_dir": "/tmp/mnist/status",
-            "log_dir": "/tmp/mnist/log",
-        },
     )
     mnist = MNISTInference(context)
     mnist._starwhale_internal_run_ppl()

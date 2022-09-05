@@ -896,9 +896,7 @@ class LocalDataStore:
             yield r
 
     def dump(self) -> None:
-        logger.debug(f"start dump, tables size:{len(self.tables.values())}")
         for table in list(self.tables.values()):
-            logger.debug(f"dump {table.table_name} to {self.root_path}")
             table.dump(self.root_path)
 
 

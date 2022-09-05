@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import os
 import sys
-import json
 import math
 import base64
 import typing as t
@@ -26,10 +25,9 @@ from starwhale.utils.log import StreamWrapper
 from starwhale.consts.env import SWEnv
 from starwhale.utils.error import FieldTypeOrValueError
 from starwhale.api._impl.job import Context
-from starwhale.utils.flatten import do_flatten_dict
 from starwhale.core.job.model import STATUS
 from starwhale.core.eval.store import EvaluationStorage
-from starwhale.api._impl.dataset import DataField, get_data_loader
+from starwhale.api._impl.dataset import get_data_loader
 from starwhale.api._impl.wrapper import Evaluation
 from starwhale.core.dataset.model import Dataset
 
@@ -55,36 +53,36 @@ def calculate_index(
     return _start_index, _end_index
 
 
-class ResultLoader:
+class PPLResultIterator:
     def __init__(
         self,
-        data: t.List[t.Any],
+        data: t.Iterator[t.Dict[str, t.Any]],
         deserializer: t.Optional[t.Callable] = None,
     ) -> None:
         self.data = data
         self.deserializer = deserializer
 
-    def __iter__(self) -> t.Any:
-        for _data in self.data:
+    def __iter__(self) -> t.Iterator[t.Dict[str, t.Any]]:
+        # TODO: use class to refactor data
+        for d in self.data:
             if self.deserializer:
-                yield self.deserializer(_data)
-                continue
-            yield _data
+                yield self.deserializer(d)
+            else:
+                yield d
 
 
 class PipelineHandler(metaclass=ABCMeta):
     def __init__(
         self,
         context: Context,
-        merge_label: bool = True,
+        ignore_annotations: bool = False,
         ignore_error: bool = False,
     ) -> None:
         self.context = context
         self._init_dir()
 
         # TODO: add args for compare result and label directly
-        self.merge_label = merge_label
-
+        self.ignore_annotations = ignore_annotations
         self.ignore_error = ignore_error
 
         self.logger, self._sw_logger = self._init_logger()
@@ -95,10 +93,7 @@ class PipelineHandler(metaclass=ABCMeta):
         # TODO: split status/result files
         self._timeline_writer = _jl_writer(self.status_dir / "timeline")
 
-        self._ppl_data_field = "result"
-        self._label_field = "label"
         self.evaluation = self._init_datastore()
-
         self._monkey_patch()
 
     def _init_dir(self) -> None:
@@ -133,8 +128,8 @@ class PipelineHandler(metaclass=ABCMeta):
         )
         _logger.bind(
             type=_LogType.USER,
-            task_id=self.context.index,  # os.environ.get("SW_TASK_ID", ""),
-            job_id=self.context.version,  # os.environ.get("SW_JOB_ID", ""),
+            task_id=self.context.index,
+            job_id=self.context.version,
         )
         _sw_logger = _logger.bind(type=_LogType.SW)
         return _logger, _sw_logger
@@ -155,7 +150,7 @@ class PipelineHandler(metaclass=ABCMeta):
     def __str__(self) -> str:
         return f"PipelineHandler status@{self.status_dir}, " f"log@{self.log_dir}"
 
-    def __enter__(self) -> PipelineHandler:
+    def __enter__(self) -> "PipelineHandler":
         return self
 
     def __exit__(
@@ -178,45 +173,33 @@ class PipelineHandler(metaclass=ABCMeta):
         # self._sw_logger.remove()
 
     @abstractmethod
-    def ppl(self, data: bytes, **kw: t.Any) -> t.Any:
+    def ppl(self, data: t.Any, **kw: t.Any) -> t.Any:
         # TODO: how to handle each element is not equal.
         raise NotImplementedError
 
     @abstractmethod
-    def cmp(self, _data_loader: ResultLoader) -> t.Any:
+    def cmp(self, ppl_result: PPLResultIterator) -> t.Any:
         raise NotImplementedError
 
     def _builtin_serialize(self, *data: t.Any) -> bytes:
         return dill.dumps(data)  # type: ignore
 
-    def ppl_data_serialize(self, *data: t.Any) -> bytes:
+    def ppl_result_serialize(self, *data: t.Any) -> bytes:
         return self._builtin_serialize(*data)
 
-    def ppl_data_deserialize(self, data: bytes) -> t.Any:
+    def ppl_result_deserialize(self, data: bytes) -> t.Any:
         return dill.loads(base64.b64decode(data))
 
-    def label_data_serialize(self, data: t.Any) -> bytes:
+    def annotations_serialize(self, data: t.Any) -> bytes:
         return self._builtin_serialize(data)
 
-    def label_data_deserialize(self, data: bytes) -> bytes:
+    def annotations_deserialize(self, data: bytes) -> bytes:
         return dill.loads(base64.b64decode(data))[0]  # type: ignore
 
-    # todo： waiting remove it
-    def deserialize(self, data: t.Union[str, bytes]) -> t.Any:
-        ret = json.loads(data)
-        ret[self._ppl_data_field] = self.ppl_data_deserialize(ret[self._ppl_data_field])
-        ret[self._label_field] = self.label_data_deserialize(ret[self._label_field])
-        return ret
-
-    def deserialize_fields(self, data: t.Dict[str, t.Any]) -> t.Any:
-        data[self._ppl_data_field] = self.ppl_data_deserialize(
-            data[self._ppl_data_field]
-        )
-        data[self._label_field] = self.label_data_deserialize(data[self._label_field])
+    def deserialize(self, data: t.Dict[str, t.Any]) -> t.Any:
+        data["result"] = self.ppl_result_deserialize(data["result"])
+        data["annotations"] = self.annotations_deserialize(data["annotations"])
         return data
-
-    def handle_label(self, label: t.Any, **kw: t.Any) -> t.Any:
-        return label
 
     def _record_status(func):  # type: ignore
         @wraps(func)  # type: ignore
@@ -238,64 +221,22 @@ class PipelineHandler(metaclass=ABCMeta):
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_cmp(self) -> None:
-        self._sw_logger.debug("enter cmp func...")
         self._update_status(STATUS.START)
         now = now_str()
         try:
-            _ppl_results = list(self.evaluation.get_results())
-            self._sw_logger.debug("cmp input data size:{}", len(_ppl_results))
-            _data_loader = ResultLoader(
-                data=_ppl_results, deserializer=self.deserialize_fields
+            _iter = PPLResultIterator(
+                data=self.evaluation.get_results(), deserializer=self.deserialize
             )
-            output = self.cmp(_data_loader)
+            output = self.cmp(_iter)
         except Exception as e:
             self._sw_logger.exception(f"cmp exception: {e}")
-            self._timeline_writer.write({"time": now, "status": False, "exception": e})
+            self._timeline_writer.write(
+                {"time": now, "status": False, "exception": str(e)}
+            )
             raise
         else:
             self._timeline_writer.write({"time": now, "status": True, "exception": ""})
             self._sw_logger.debug(f"cmp result:{output}")
-
-            if not output:
-                self._sw_logger.warning("cmp results is None!")
-                return
-            if isinstance(output, dict):
-                if "summary" in output:
-                    self.evaluation.log_metrics(do_flatten_dict(output["summary"]))
-                self.evaluation.log_metrics({"kind": output["kind"]})
-
-                if "labels" in output:
-                    for i, label in output["labels"].items():
-                        self.evaluation.log("labels", id=i, **label)
-
-                if (
-                    "confusion_matrix" in output
-                    and "binarylabel" in output["confusion_matrix"]
-                ):
-                    _binary_label = output["confusion_matrix"]["binarylabel"]
-                    for _label, _probability in enumerate(_binary_label):
-                        self.evaluation.log(
-                            "confusion_matrix/binarylabel",
-                            id=str(_label),
-                            **{str(k): v for k, v in enumerate(_probability)},
-                        )
-                if "roc_auc" in output:
-                    for _label, _roc_auc in output["roc_auc"].items():
-                        _id = 0
-                        for _fpr, _tpr, _threshold in zip(
-                            _roc_auc["fpr"], _roc_auc["tpr"], _roc_auc["thresholds"]
-                        ):
-                            self.evaluation.log(
-                                f"roc_auc/{_label}",
-                                id=str(_id),
-                                fpr=_fpr,
-                                tpr=_tpr,
-                                threshold=_threshold,
-                            )
-                            _id += 1
-                            self.evaluation.log(
-                                "roc_auc/summary", id=_label, auc=_roc_auc["auc"]
-                            )
 
     @_record_status  # type: ignore
     def _starwhale_internal_run_ppl(self) -> None:
@@ -316,86 +257,47 @@ class PipelineHandler(metaclass=ABCMeta):
         _data_loader = get_data_loader(
             dataset_uri=_dataset_uri,
             start=dataset_row_start,
-            end=dataset_row_end,
+            end=dataset_row_end + 1,
             logger=self._sw_logger,
         )
-        for data, label in _data_loader:
-            if data.idx != label.idx:
-                msg = (
-                    f"data index[{data.idx}] is not equal label index [{label.idx}], "
-                    f"{'ignore error' if self.ignore_error else ''}"
-                )
-                self._sw_logger.error(msg)
-                if not self.ignore_error:
-                    raise Exception(msg)
-
+        for _idx, _data, _annotations in _data_loader:
             pred: t.Any = b""
             exception = None
             try:
                 # TODO: inspect profiling
-                pred = self.ppl(
-                    data.data.encode() if isinstance(data.data, str) else data.data,
-                    data_index=data.idx,
-                    data_size=data.data_size,
-                    label_content=label.data,
-                    label_size=label.data_size,
-                    label_index=label.idx,
-                    ds_name=data.ext_attr.get("ds_name", ""),
-                    ds_version=data.ext_attr.get("ds_version", ""),
-                )
+                pred = self.ppl(_data, annotations=_annotations, index=_idx)
             except Exception as e:
                 exception = e
-                self._sw_logger.exception(f"[{data.idx}] data handle -> failed")
+                self._sw_logger.exception(f"[{_idx}] data handle -> failed")
                 if not self.ignore_error:
                     self._update_status(STATUS.FAILED)
                     raise
             else:
                 exception = None
 
-            self._do_record(data, label, exception, *pred)
+            self._do_record(_idx, _annotations, exception, *pred)
 
     def _do_record(
         self,
-        data: DataField,
-        label: DataField,
-        exception: t.Union[None, Exception],
+        idx: int,
+        annotations: t.Dict,
+        exception: t.Optional[Exception],
         *args: t.Any,
     ) -> None:
         _timeline = {
             "time": now_str(),
             "status": exception is None,
             "exception": str(exception),
-            "index": data.idx,
-            self._ppl_data_field: base64.b64encode(
-                self.ppl_data_serialize(*args)
-            ).decode("ascii"),
+            "index": idx,
         }
         self._timeline_writer.write(_timeline)
 
-        _label = ""
-        if self.merge_label:
-            try:
-                label = self.handle_label(
-                    label.data,
-                    index=label.idx,
-                    size=label.data_size,
-                )
-                _label = base64.b64encode(self.label_data_serialize(label)).decode(
-                    "ascii"
-                )
-            except Exception as e:
-                self._sw_logger.exception(f"{label.data!r} label handle exception:{e}")
-                if not self.ignore_error:
-                    self._update_status(STATUS.FAILED)
-                    raise
-                else:
-                    _label = ""
-        # self._sw_logger.debug(f"record ppl result:{data.idx}")
+        annotations = {} if self.ignore_annotations else annotations
+        _b64: t.Callable[[bytes], str] = lambda x: base64.b64encode(x).decode("ascii")
         self.evaluation.log_result(
-            data_id=str(data.idx),
-            result=base64.b64encode(self.ppl_data_serialize(*args)).decode("ascii"),
-            data_size=data.data_size,
-            label=_label,
+            data_id=idx,
+            result=_b64(self.ppl_result_serialize(*args)),
+            annotations=_b64(self.annotations_serialize(annotations)),
         )
         self._update_status(STATUS.RUNNING)
 
