@@ -38,8 +38,10 @@ class Step:
         concurrency: int = 1,
         task_num: int = 1,
         status: str = "",
+        cls_name: str = "",
     ):
         self.job_name = job_name
+        self.cls_name = cls_name
         self.step_name = step_name
         self.resources = resources
         self.concurrency = concurrency
@@ -49,10 +51,11 @@ class Step:
 
     def __repr__(self) -> str:
         return (
-            "%s(job_name=%r, step_name=%r, resources=%r, needs=%r, concurrency=%r, task_num=%r, status=%r)"
+            "%s(job_name=%r, cls_name=%r, step_name=%r, resources=%r, needs=%r, concurrency=%r, task_num=%r, status=%r)"
             % (
                 self.__class__.__name__,
                 self.job_name,
+                self.cls_name,
                 self.step_name,
                 self.resources,
                 self.needs,
@@ -128,10 +131,14 @@ class TaskExecutor:
         status: str,
         module: str,
         workdir: Path,
+        func: str = "",
+        cls_name: str = "",
     ):
         self.index = index
         self.context = context
         self.status = status
+        self.cls_name = cls_name
+        self.func = func
         self.module = module
         self.work_dir = workdir
         self.exception: Optional[Exception] = None
@@ -147,17 +154,15 @@ class TaskExecutor:
 
         try:
             # instance method
-            if "." in self.context.step:
+            if not self.cls_name:
+                logger.debug("hi, use func")
+                func = get_func_from_module(_module, self.func)
+            else:
                 logger.debug("hi, use class")
-                _cls_name, _func_name = self.context.step.split(".")
-                _cls = load_cls(_module, _cls_name)
+                _cls = load_cls(_module, self.cls_name)
                 # need an instance
                 cls = _cls()
-                func = get_func_from_object(cls, _func_name)
-            else:
-                logger.debug("hi, use func")
-                _func_name = self.context.step
-                func = get_func_from_module(_module, _func_name)
+                func = get_func_from_object(cls, self.func)
 
             self.status = STATUS.RUNNING
             # The standard implementation does not return results
@@ -221,6 +226,8 @@ class StepExecutor:
                 ),
                 status=STATUS.INIT,
                 module=self.module,
+                func=self.step.step_name,
+                cls_name=self.step.cls_name,
                 workdir=self.workdir,
             )
             for index in range(self.step.task_num)

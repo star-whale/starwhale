@@ -9,23 +9,29 @@ from pyfakefs.fake_filesystem_unittest import TestCase
 
 from starwhale.consts import DEFAULT_EVALUATION_PIPELINE, DEFAULT_EVALUATION_JOBS_FNAME
 from starwhale.utils.fs import ensure_dir
-from starwhale.api._impl.job import Parser
+from starwhale.api._impl.job import Parser, Context
 from starwhale.core.job.model import (
     Step,
     STATUS,
     Generator,
     StepResult,
     TaskResult,
+    TaskExecutor,
     MultiThreadProcessor,
 )
 from starwhale.core.job.scheduler import Scheduler
+
+from .. import ROOT_DIR
+
+_job_data_dir = f"{ROOT_DIR}/data/job"
 
 
 class JobTestCase(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
 
-    def test_generate_job_yaml(self):
+    def test_generate_default_job_yaml(self):
+        Parser.clear_config()
         # create a temporary directory
         root = "home/starwhale/job"
         ensure_dir(root)
@@ -52,9 +58,46 @@ class JobTestCase(TestCase):
           task_num: 1
         """
         jobs = Generator.generate_job_from_yaml(_f)
-
+        _steps = jobs["default"]
         self.assertEqual("default" in jobs, True)
-        self.assertEqual(len(jobs["default"]), 2)
+        self.assertEqual(len(_steps), 2)
+        self.assertEqual(_steps[0].step_name, "ppl")
+        self.assertEqual(_steps[1].step_name, "cmp")
+
+    def test_generate_custom_job_yaml(self):
+        Parser.clear_config()
+        # create a temporary directory
+        root = "home/starwhale/job"
+        ensure_dir(root)
+        _f = os.path.join(root, DEFAULT_EVALUATION_JOBS_FNAME)
+
+        Parser.generate_job_yaml("job_steps_with_cls", Path(_job_data_dir), Path(_f))
+
+        """
+        default:
+        - concurrency: 1
+          job_name: default
+          needs: []
+          resources:
+          - cpu=1
+          step_name: custom_ppl
+          task_num: 1
+        - concurrency: 1
+          job_name: default
+          needs:
+          - custom_ppl
+          resources:
+          - cpu=1
+          step_name: custom_cmp
+          task_num: 1
+        """
+        jobs = Generator.generate_job_from_yaml(_f)
+        _steps = jobs["default"]
+        self.assertEqual("default" in jobs, True)
+        self.assertEqual(len(_steps), 2)
+        self.assertEqual(_steps[0].step_name, "custom_ppl")
+        self.assertEqual(_steps[0].cls_name, "CustomPipeline")
+        self.assertEqual(_steps[1].step_name, "custom_cmp")
 
     def test_job_check(self):
         self.assertEqual(
@@ -107,7 +150,7 @@ class JobTestCase(TestCase):
                 ]
             )
         # generate successfully
-        Generator.generate_dag_from_steps(
+        _dag = Generator.generate_dag_from_steps(
             [
                 Step(
                     job_name="default",
@@ -129,6 +172,58 @@ class JobTestCase(TestCase):
                 ),
             ]
         )
+        assert len(_dag.all_starts()) == 1
+        assert len(_dag.all_terminals()) == 1
+        assert _dag.in_degree("ppl-1") == 0
+        assert _dag.in_degree("ppl-2") == 1
+        assert _dag.in_degree("cmp") == 1
+
+    @patch("starwhale.core.job.model.load_cls")
+    @patch("starwhale.core.job.model.get_func_from_module")
+    @patch("starwhale.core.job.model.get_func_from_object")
+    def test_task_executor_with_class(
+        self,
+        m_get_from_object: MagicMock,
+        m_get_from_module: MagicMock,
+        m_load_cls: MagicMock,
+    ):
+        _task_executor = TaskExecutor(
+            index=0,
+            context=Context(workdir=Path()),
+            status=STATUS.START,
+            func="custom_ppl",
+            cls_name="CustomPipeline",
+            module="job_steps_with_cls",
+            workdir=Path(_job_data_dir),
+        )
+        _result = _task_executor.execute()
+        assert _result.status == STATUS.SUCCESS
+        m_get_from_object.assert_called_once()
+        m_load_cls.assert_called_once()
+        m_get_from_module.assert_not_called()
+
+    @patch("starwhale.core.job.model.load_cls")
+    @patch("starwhale.core.job.model.get_func_from_module")
+    @patch("starwhale.core.job.model.get_func_from_object")
+    def test_task_executor_without_class(
+        self,
+        m_get_from_object: MagicMock,
+        m_get_from_module: MagicMock,
+        m_load_cls: MagicMock,
+    ):
+        _task_executor = TaskExecutor(
+            index=0,
+            context=Context(workdir=Path()),
+            status=STATUS.START,
+            func="custom_ppl",
+            module="job_steps_without_cls",
+            workdir=Path(_job_data_dir),
+        )
+        _result = _task_executor.execute()
+        assert _result.status == STATUS.SUCCESS
+        m_get_from_object.assert_not_called()
+        m_load_cls.assert_not_called()
+        m_get_from_module.assert_called_once()
 
     def test_multithread_processor(self):
         class SimpleExecutor:

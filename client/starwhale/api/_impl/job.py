@@ -25,9 +25,11 @@ def step(
 
     def decorator(func: t.Any) -> t.Any:
         if Parser.is_parse_stage():
+            cls, delim, func_name = func.__qualname__.rpartition(".")
             _step = dict(
                 job_name=job_name,
-                step_name=func.__qualname__,
+                step_name=func_name,
+                cls_name=cls,
                 resources=_resources,
                 concurrency=concurrency,
                 task_num=task_num,

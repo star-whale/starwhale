@@ -108,6 +108,8 @@ class Scheduler:
             ),
             status=STATUS.INIT,
             module=self.module,
+            func=_step.step_name,
+            cls_name=_step.cls_name,
             workdir=self.workdir,
         )
         start_time = time.time()

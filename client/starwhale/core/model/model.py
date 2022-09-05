@@ -175,7 +175,7 @@ class StandaloneModel(Model, LocalStorageBundleMixin):
         self.tag.remove(tags, quiet)
 
     def _gen_steps(self, typ: str, ppl: str) -> None:
-        if typ is EvalHandlerType.DEFAULT:
+        if typ == EvalHandlerType.DEFAULT:
             # use default
             ppl = DEFAULT_EVALUATION_PIPELINE
         _f = self.store.snapshot_workdir / "src" / DEFAULT_EVALUATION_JOBS_FNAME
