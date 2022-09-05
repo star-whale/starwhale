@@ -26,16 +26,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class RuntimeRevertRequest {
 
-    @JsonProperty("versionId")
-    private String versionId;
-
+    @NotNull
     @JsonProperty("versionUrl")
     private String versionUrl;
-
-    public String getVersion() {
-        if(StrUtil.isEmpty(versionUrl)) {
-            return versionId;
-        }
-        return  versionUrl;
-    }
 }
