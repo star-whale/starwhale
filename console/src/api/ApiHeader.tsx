@@ -40,6 +40,8 @@ export default function ApiHeader() {
             (error) => {
                 // eslint-disable-next-line no-restricted-globals
                 // eslint-disable-next-line prefer-destructuring
+                const winLocation = window.location
+
                 if (error.response?.status === 401) {
                     setToken(undefined)
                 }
@@ -47,22 +49,22 @@ export default function ApiHeader() {
                 if (error.response?.status === 401 && error.config.method === 'get') {
                     const withUnAuthRoute =
                         ['/login', '/signup', '/create-account', 'logout'].filter((path) =>
-                            location.pathname.includes(path)
+                            winLocation.pathname.includes(path)
                         ).length > 0
-                    const search = qs.parse(location.search, { ignoreQueryPrefix: true })
+                    const search = qs.parse(winLocation.search, { ignoreQueryPrefix: true })
                     let { redirect } = search
                     if (redirect && typeof redirect === 'string') {
                         redirect = decodeURI(redirect)
                     } else if (!withUnAuthRoute) {
-                        redirect = `${location.pathname}${location.search}`
+                        redirect = `${winLocation.pathname}${winLocation.search}`
                     } else {
                         redirect = '/projects'
                     }
 
                     if (!withUnAuthRoute) {
-                        location.href = `${location.protocol}//${location.host}/login?redirect=${encodeURIComponent(
-                            redirect
-                        )}`
+                        winLocation.href = `${winLocation.protocol}//${
+                            winLocation.host
+                        }/login?redirect=${encodeURIComponent(redirect)}`
                     }
                 }
 
