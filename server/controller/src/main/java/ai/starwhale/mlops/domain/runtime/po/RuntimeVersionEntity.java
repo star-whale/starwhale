@@ -48,7 +48,7 @@ public class RuntimeVersionEntity extends BaseEntity implements BundleVersionEnt
 
     private String storagePath;
 
-    private String manifest;
+    private String image;
 
     @Override
     public String getName() {
