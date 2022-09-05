@@ -49,7 +49,15 @@ export default function PasswordForm({ currentUser, admin, onSubmit }: IPassword
             </FormItem>
             <FormItem label={admin ? t('Your Password') : t('Current Password')} name='originPwd' required>
                 <div className={css({ display: 'flex', marginTop: '10px' })}>
-                    <Input type='password' size='compact' />
+                    <Input
+                        type='password'
+                        size='compact'
+                        overrides={{
+                            MaskToggleButton: {
+                                props: { tabindex: -1 },
+                            },
+                        }}
+                    />
                     {admin && (
                         <Button
                             size='compact'
@@ -90,7 +98,16 @@ export default function PasswordForm({ currentUser, admin, onSubmit }: IPassword
                         required={passwdValid}
                         validators={[minLength(passwordMinLength, t('Password Too Short'))]}
                     >
-                        <Input type='password' size='compact' disabled={!passwdValid} />
+                        <Input
+                            type='password'
+                            size='compact'
+                            disabled={!passwdValid}
+                            overrides={{
+                                MaskToggleButton: {
+                                    props: { tabindex: -1 },
+                                },
+                            }}
+                        />
                     </FormItem>
                     <FormItem
                         label={t('Confirm New Password')}
@@ -98,7 +115,16 @@ export default function PasswordForm({ currentUser, admin, onSubmit }: IPassword
                         validators={[shouldBeEqual(() => form.getFieldValue('userPwd'), t('Password Not Equal'))]}
                         required={passwdValid}
                     >
-                        <Input type='password' size='compact' disabled={!passwdValid} />
+                        <Input
+                            type='password'
+                            size='compact'
+                            disabled={!passwdValid}
+                            overrides={{
+                                MaskToggleButton: {
+                                    props: { tabindex: -1 },
+                                },
+                            }}
+                        />
                     </FormItem>
                 </>
             )}
