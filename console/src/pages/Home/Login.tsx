@@ -2,11 +2,9 @@ import Card from '@/components/Card'
 import { createForm } from '@/components/Form'
 import useTranslation from '@/hooks/useTranslation'
 import { ILoginUserSchema } from '@user/schemas/user'
-// import { loginUser } from '@user/services/user'
 import { Input } from 'baseui/input'
-// import qs from 'qs'
 import React, { useCallback, useState } from 'react'
-import { useHistory, useLocation } from 'react-router-dom'
+import { useHistory } from 'react-router-dom'
 import Button from '@/components/Button'
 import IconFont from '@/components/IconFont'
 import { useAuth } from '@/api/Auth'
@@ -16,7 +14,6 @@ const { Form, FormItem } = createForm<ILoginUserSchema>()
 
 export default function Login() {
     const [t] = useTranslation()
-    const location = useLocation()
     const history = useHistory()
     const [isLoading, setIsLoading] = useState(false)
     const { onLogin } = useAuth()
@@ -31,8 +28,7 @@ export default function Login() {
                 setIsLoading(false)
             }
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [history, location.search, onLogin]
+        [history, onLogin]
     )
 
     return (

@@ -4,13 +4,14 @@ import { useQuery } from 'react-query'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 import axios from 'axios'
 import { toaster } from 'baseui/toast'
-import { getErrMsg } from '@/api'
+import { getErrMsg, setToken } from '@/api'
 import { useLocation } from 'react-router-dom'
 import useTranslation from '@/hooks/useTranslation'
 import { useCurrentUserRoles } from '@/hooks/useCurrentUserRoles'
 import { useFirstRender } from '@/hooks/useFirstRender'
 import { useProject } from '@project/hooks/useProject'
 import { useFetchProject } from '@/domain/project/hooks/useFetchProject'
+import qs from 'qs'
 
 export default function ApiHeader() {
     const location = useLocation()
@@ -27,12 +28,49 @@ export default function ApiHeader() {
     const projectInfo = useFetchProject(projectId)
     const { setProject } = useProject()
 
-    // console.log(projectId, location, location?.pathname.match(/^\/projects\/(\d*)\/?/))
-
     useFirstRender(() => {
+        // @ts-ignore
+        if (axios.interceptors.response.handlers.length > 0) return
+
         axios.interceptors.response.use(
-            (response) => response,
+            (response) => {
+                if (response.headers?.authorization) setToken(response.headers.authorization)
+                return response.data?.data ? response.data : response
+            },
             (error) => {
+                // eslint-disable-next-line no-restricted-globals
+                // eslint-disable-next-line prefer-destructuring
+                const winLocation = window.location
+
+                if (error.response?.status === 401) {
+                    setToken(undefined)
+                }
+
+                if (error.response?.status === 401 && error.config.method === 'get') {
+                    const withUnAuthRoute =
+                        ['/login', '/signup', '/create-account'].filter((path) => winLocation.pathname.includes(path))
+                            .length > 0
+                    const search = qs.parse(winLocation.search, { ignoreQueryPrefix: true })
+                    let { redirect } = search
+                    if (redirect && typeof redirect === 'string') {
+                        redirect = decodeURI(redirect)
+                    } else if (!withUnAuthRoute) {
+                        redirect = `${winLocation.pathname}${winLocation.search}`
+                    } else {
+                        redirect = '/projects'
+                    }
+
+                    if (!withUnAuthRoute) {
+                        winLocation.href = `${winLocation.protocol}//${
+                            winLocation.host
+                        }/login?redirect=${encodeURIComponent(redirect)}`
+                    }
+                }
+
+                // use user/current as default token auth, it will be triggered multi times, so slient here
+                const withSilentRoute = error.response.config.url.includes('/user/current')
+                if (withSilentRoute) return Promise.reject(error)
+
                 const errMsg = getErrMsg(error)
                 if (Date.now() - (lastErrMsgRef.current[errMsg] || 0) > errMsgExpireTimeSeconds * 1000) {
                     toaster.negative(
@@ -57,7 +95,7 @@ export default function ApiHeader() {
                     )
                     lastErrMsgRef.current[errMsg] = Date.now()
                 }
-                return error
+                return Promise.reject(error)
             }
         )
         // eslint-disable-next-line react-hooks/exhaustive-deps

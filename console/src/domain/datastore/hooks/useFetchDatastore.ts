@@ -21,10 +21,19 @@ export function useQueryDatastore(query: any) {
 }
 
 export function useQueryDatasetList(tableName?: string, page?: IListQuerySchema, rawResult = false) {
+    const { start, limit } = React.useMemo(() => {
+        const { pageNum = 1, pageSize = 10 } = page || {}
+
+        return {
+            start: (pageNum - 1) * pageSize ?? 0,
+            limit: pageSize ?? 0,
+        }
+    }, [page])
+
     const info = useQueryDatastore({
         tableName,
-        start: page?.pageNum ?? 0,
-        limit: page?.pageSize ?? 0,
+        start,
+        limit,
         rawResult,
     })
 
@@ -33,7 +42,7 @@ export function useQueryDatasetList(tableName?: string, page?: IListQuerySchema,
             info.refetch()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tableName, page])
+    }, [tableName, start, limit])
 
     return info
 }
