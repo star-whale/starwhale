@@ -244,6 +244,7 @@ public class SwdsUploader {
             //create
             swDatasetVersionEntity = from(projectEntity.getProjectName(),swDatasetEntity,manifest);
             swdsVersionMapper.addNewVersion(swDatasetVersionEntity);
+            swdsVersionMapper.revertTo(swDatasetVersionEntity.getDatasetId(), swDatasetVersionEntity.getId());
             uploadManifest(swDatasetVersionEntity,fileName,yamlContent.getBytes(StandardCharsets.UTF_8));
         }else{
             //swds version create dup

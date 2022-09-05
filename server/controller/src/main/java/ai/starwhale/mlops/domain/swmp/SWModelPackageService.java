@@ -372,6 +372,7 @@ public class SWModelPackageService {
                 .evalJobs(jobContent)
                 .build();
             swmpVersionMapper.addNewVersion(swModelPackageVersionEntity);
+            swmpVersionMapper.revertTo(swModelPackageVersionEntity.getSwmpId(), swModelPackageVersionEntity.getId());
         }
 
     }
