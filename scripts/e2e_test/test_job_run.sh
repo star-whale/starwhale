@@ -54,6 +54,8 @@ do
   elif [[ "$job_status" = "FAIL" ]] ; then
         echo "job FAIL"
         break
+  elif [[ -z "$job_status" ]] ; then
+     nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-controller 8082:8082 &
   else
     echo "job status for " "$job_id" "is" "$job_status"
 #    kubectl logs --tail=10 -l job-name=1 -n starwhale -c data-provider
