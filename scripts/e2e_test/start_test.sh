@@ -148,7 +148,7 @@ upload_pypi_to_nexus() {
 
 buid_runtime_image() {
   pushd ../../docker
-  docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$NEXUS_HOSTNAME --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
+  docker build -t starwhale -f Dockerfile.starwhale --build-arg ENABLE_E2E_TEST_PYPI_REPO=1 --build-arg PORT_NEXUS=$PORT_NEXUS --build-arg LOCAL_PYPI_HOSTNAME=$IP_MINIKUBE_BRIDGE --build-arg SW_VERSION=$PYPI_RELEASE_VERSION .
   docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/star-whale/starwhale:$PYPI_RELEASE_VERSION
   docker tag starwhale $NEXUS_HOSTNAME:$PORT_NEXUS_DOCKER/starwhale:$PYPI_RELEASE_VERSION
   popd
