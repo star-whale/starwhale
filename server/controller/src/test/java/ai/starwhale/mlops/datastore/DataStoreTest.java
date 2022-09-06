@@ -182,6 +182,50 @@ public class DataStoreTest {
                 recordList.getRecords(),
                 is(List.of(Map.of("k", "2", "a", "3"),
                         Map.of("k", "1", "a", "4"))));
+
+        this.dataStore.update("t1",
+                new TableSchemaDesc(null,
+                        List.of(new ColumnSchemaDesc("x:link/url", "STRING"),
+                                new ColumnSchemaDesc("x:link/mime_type", "STRING"))),
+                List.of(Map.of("k", "5", "x:link/url", "http://test.com/1.jpg", "x:link/mime_type", "image/jpeg"),
+                        Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png")));
+        recordList = this.dataStore.query(DataStoreQueryRequest.builder().tableName("t1").build());
+        assertThat("object type",
+                recordList.getColumnTypeMap(),
+                is(Map.of("k",
+                        ColumnType.STRING,
+                        "a",
+                        ColumnType.INT32,
+                        "x:link/url",
+                        ColumnType.STRING,
+                        "x:link/mime_type",
+                        ColumnType.STRING)));
+        assertThat("object type",
+                recordList.getRecords(),
+                is(List.of(Map.of("k", "0", "a", "5"),
+                        Map.of("k", "1", "a", "4"),
+                        Map.of("k", "2", "a", "3"),
+                        Map.of("k", "3", "a", "2"),
+                        Map.of("k", "4", "a", "1"),
+                        Map.of("k", "5", "x:link/url", "http://test.com/1.jpg", "x:link/mime_type", "image/jpeg"),
+                        Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png"))));
+
+        recordList = this.dataStore.query(DataStoreQueryRequest.builder()
+                .tableName("t1")
+                .columns(Map.of("x", "y", "x:link/url", "url"))
+                .build());
+        assertThat("object type alias",
+                recordList.getColumnTypeMap(),
+                is(Map.of("url", ColumnType.STRING, "y:link/mime_type", ColumnType.STRING)));
+        assertThat("object type alias",
+                recordList.getRecords(),
+                is(List.of(Map.of(),
+                        Map.of(),
+                        Map.of(),
+                        Map.of(),
+                        Map.of(),
+                        Map.of("url", "http://test.com/1.jpg", "y:link/mime_type", "image/jpeg"),
+                        Map.of("url", "http://test.com/2.png", "y:link/mime_type", "image/png"))));
     }
 
     @Test
@@ -269,6 +313,57 @@ public class DataStoreTest {
                 recordList.getColumnTypeMap(),
                 is(Map.of("k", ColumnType.STRING, "a", ColumnType.INT32)));
         assertThat("schema only", recordList.getRecords(), empty());
+
+        this.dataStore.update("t1",
+                new TableSchemaDesc(null,
+                        List.of(new ColumnSchemaDesc("x:link/url", "STRING"),
+                                new ColumnSchemaDesc("x:link/mime_type", "STRING"))),
+                List.of(Map.of("k", "5", "x:link/url", "http://test.com/1.jpg", "x:link/mime_type", "image/jpeg"),
+                        Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png")));
+        recordList = this.dataStore.scan(DataStoreScanRequest.builder()
+                .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                        .tableName("t1")
+                        .build()))
+                .build());
+        assertThat("object type",
+                recordList.getColumnTypeMap(),
+                is(Map.of("k",
+                        ColumnType.STRING,
+                        "a",
+                        ColumnType.INT32,
+                        "x:link/url",
+                        ColumnType.STRING,
+                        "x:link/mime_type",
+                        ColumnType.STRING)));
+        assertThat("object type",
+                recordList.getRecords(),
+                is(List.of(Map.of("k", "0", "a", "5"),
+                        Map.of("k", "1", "a", "4"),
+                        Map.of("k", "2"),
+                        Map.of("k", "3", "a", "2"),
+                        Map.of("k", "4", "a", "1"),
+                        Map.of("k", "5", "x:link/url", "http://test.com/1.jpg", "x:link/mime_type", "image/jpeg"),
+                        Map.of("k", "6", "x:link/url", "http://test.com/2.png", "x:link/mime_type", "image/png"))));
+
+        recordList = this.dataStore
+                .scan(DataStoreScanRequest.builder()
+                        .tables(List.of(DataStoreScanRequest.TableInfo.builder()
+                                .tableName("t1")
+                                .columns(Map.of("x", "y", "x:link/url", "url"))
+                                .build()))
+                        .build());
+        assertThat("object type alias",
+                recordList.getColumnTypeMap(),
+                is(Map.of("url", ColumnType.STRING, "y:link/mime_type", ColumnType.STRING)));
+        assertThat("object type alias",
+                recordList.getRecords(),
+                is(List.of(Map.of(),
+                        Map.of(),
+                        Map.of(),
+                        Map.of(),
+                        Map.of(),
+                        Map.of("url", "http://test.com/1.jpg", "y:link/mime_type", "image/jpeg"),
+                        Map.of("url", "http://test.com/2.png", "y:link/mime_type", "image/png"))));
 
         assertThrows(SWValidationException.class, () -> this.dataStore.scan(DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build()))
