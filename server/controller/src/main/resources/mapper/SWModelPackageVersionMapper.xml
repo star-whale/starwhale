@@ -72,7 +72,7 @@
 
     <insert id="revertTo">
         update swmp_version
-        set version_order = (select max(version_order) from swmp_version) + 1
+        set version_order = (select max from ((select max(version_order) as max from swmp_version)) as v) + 1
         where id = #{swmpVersionId}
     </insert>
 

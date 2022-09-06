@@ -95,7 +95,7 @@
 
     <insert id="revertTo">
         update dataset_version
-        set version_order = (select max(version_order) from dataset_version) + 1
+        set version_order = (select max from ((select max(version_order) as max from dataset_version)) as v) + 1
         where id = #{dsVersionId}
     </insert>
 
