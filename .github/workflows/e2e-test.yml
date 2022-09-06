@@ -1,6 +1,13 @@
 name: End to End test for starwhale
 
 on:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
   push:
     branches:
       E2E
@@ -62,8 +69,9 @@ jobs:
           cache: "maven"
           server-id: starwhale # Value of the distributionManagement/repository/id field of the pom.xml
 
-#      - name: Setup tmate session
-#        uses: mxschmitt/action-tmate@v3
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
       - name: run e2e
         working-directory: ./scripts/e2e_test
         env:
