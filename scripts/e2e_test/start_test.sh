@@ -71,7 +71,7 @@ build_swcli() {
 build_console() {
   pushd ../../console
   mkdir build
-  echo 'hi' > index.html
+  echo 'hi' > build/index.html
   popd
 }
 
@@ -197,7 +197,7 @@ check_controller_service() {
             fi
             sleep 15
     done
-    nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-controller 8082:8082 &
+    nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-starwhale-controller 8082:8082 &
 }
 
 standalone_test() {
