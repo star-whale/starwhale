@@ -26,6 +26,11 @@
         <pagehelper.starter.version>1.4.1</pagehelper.starter.version>
         <guava.version>31.1-jre</guava.version>
         <json-flattener.version>0.13.0</json-flattener.version>
+        <junit.version>5.8.2</junit.version>
+        <hamcrest.version>2.2</hamcrest.version>
+        <maven-surefile-plugin.version>3.0.0-M7</maven-surefile-plugin.version>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <protoc-jar-maven-plugin.version>3.11.4</protoc-jar-maven-plugin.version>
         <starwhale.version>0.1.0-SNAPSHOT</starwhale.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -125,7 +130,16 @@
                 <artifactId>client-java</artifactId>
                 <version>16.0.0</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-engine</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest</artifactId>
+                <version>${hamcrest.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -276,6 +290,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
                     <configuration>
                         <parameters>true</parameters>
                     </configuration>
@@ -422,6 +437,16 @@
                             </configuration>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven-surefile-plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.os72</groupId>
+                    <artifactId>protoc-jar-maven-plugin</artifactId>
+                    <version>${protoc-jar-maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

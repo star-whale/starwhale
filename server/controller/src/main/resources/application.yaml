@@ -34,6 +34,7 @@ sw:
       job-template-path: ${SW_K8S_JOB_TEMPLATE_PATH:}
   storage:
     path-prefix: ${SW_STORAGE_PREFIX:StarWhale}
+    fs-root-dir: ${SW_STORAGE_FS_ROOT_DIR:/usr/local/starwhale}
     s3-config:
       bucket: ${SW_STORAGE_BUCKET:starwhale}
       accessKey: ${SW_STORAGE_ACCESSKEY:starwhale}

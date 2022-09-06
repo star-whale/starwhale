@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ai.starwhale.mlops.objectstore.impl;
+package ai.starwhale.mlops.storage.fs;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,19 +70,19 @@ public class FileIteratorTest {
 
     @Test
     public void testScan() {
-        assertThat(getAll(new FileIterator(this.rootDir.getAbsolutePath(), "a")),
+        assertThat(getAll(new FileIterator(this.rootDir, "a")),
                 is(List.of("a.txt", "a/b", "a/b1", "a/b2", "a1/b/c", "a1/b/c1", "a1/b2", "a10", "a11")));
-        assertThat(getAll(new FileIterator(this.rootDir.getAbsolutePath(), "a/")),
+        assertThat(getAll(new FileIterator(this.rootDir, "a/")),
                 is(List.of("a/b", "a/b1", "a/b2")));
-        assertThat(getAll(new FileIterator(this.rootDir.getAbsolutePath(), "a/b")),
+        assertThat(getAll(new FileIterator(this.rootDir, "a/b")),
                 is(List.of("a/b", "a/b1", "a/b2")));
-        assertThat(getAll(new FileIterator(this.rootDir.getAbsolutePath(), "a1/b/")),
+        assertThat(getAll(new FileIterator(this.rootDir, "a1/b/")),
                 is(List.of("a1/b/c", "a1/b/c1")));
-        assertThat(getAll(new FileIterator(this.rootDir.getAbsolutePath(), "a1/b/c1")),
+        assertThat(getAll(new FileIterator(this.rootDir, "a1/b/c1")),
                 is(List.of("a1/b/c1")));
-        assertThat(getAll(new FileIterator(this.rootDir.getAbsolutePath(), "a1/b/c1/")),
+        assertThat(getAll(new FileIterator(this.rootDir, "a1/b/c1/")),
                 is(List.of()));
-        assertThat(getAll(new FileIterator(this.rootDir.getAbsolutePath(), "b")),
+        assertThat(getAll(new FileIterator(this.rootDir, "b")),
                 is(List.of()));
     }
 }
