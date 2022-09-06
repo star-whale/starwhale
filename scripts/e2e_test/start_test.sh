@@ -188,6 +188,7 @@ check_controller_service() {
             else
               echo "controller is starting"
               kubectl get pods --namespace $SWNS
+              kubectl get svc --namespace $SWNS
   #            kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status'
   #            ready=`kubectl get pod -l starwhale.ai/role=controller -n starwhale -o json| jq -r '.items[0].status.phase'`
   #            if [[ "$ready" == "Running" ]]; then
