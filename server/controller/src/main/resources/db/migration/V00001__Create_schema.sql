@@ -4,8 +4,6 @@
  * StarWhale.ai ("Confidential Information"). You shall not disclose such Confidential Information and shall use it only
  * in accordance with the terms of the license agreement you entered into with StarWhale.ai.
  */
-CREATE DATABASE IF NOT EXISTS starwhale;
-use starwhale;
 -- ----------------------------
 -- Table structure for agent_info
 -- ----------------------------
