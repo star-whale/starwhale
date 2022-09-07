@@ -35,6 +35,8 @@ export function useQueryDatasetList(tableName?: string, page?: IListQuerySchema,
         start,
         limit,
         rawResult,
+        // https://github.com/star-whale/starwhale/pull/1128
+        ignoreNonExistingTable: true,
     })
 
     React.useEffect(() => {

@@ -55,6 +55,8 @@ function EvaluationResults() {
         start: 0,
         limit: 1000,
         rawResult: true,
+        // https://github.com/star-whale/starwhale/pull/1128
+        ignoreNonExistingTable: true,
     })
     const rocAucData = useParseRocAuc(rocAucTable.data)
 
