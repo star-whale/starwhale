@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.objectstore.impl;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class FileIteratorTest {
+
     @TempDir
     private File rootDir;
 
@@ -45,10 +46,10 @@ public class FileIteratorTest {
         new File(a1, "b1").mkdir();
         new File(a1, "b2").createNewFile();
 
-        var a1_b = new File(a1, "b");
-        a1_b.mkdir();
-        new File(a1_b, "c").createNewFile();
-        new File(a1_b, "c1").createNewFile();
+        var a1B = new File(a1, "b");
+        a1B.mkdir();
+        new File(a1B, "c").createNewFile();
+        new File(a1B, "c1").createNewFile();
 
         var a2 = new File(this.rootDir, "a2");
         a2.mkdir();

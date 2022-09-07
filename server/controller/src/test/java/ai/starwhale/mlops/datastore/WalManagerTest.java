@@ -1,29 +1,20 @@
+/*
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ai.starwhale.mlops.datastore;
-
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.memory.SwBufferManager;
-import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
-import ai.starwhale.mlops.objectstore.ObjectStore;
-import ai.starwhale.mlops.objectstore.impl.FileSystemObjectStore;
-import com.google.common.collect.ImmutableList;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.CodedOutputStream;
-import org.apache.commons.lang3.tuple.Triple;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mockito;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -37,7 +28,33 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.datastore.WalManager;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.memory.SwBufferManager;
+import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
+import ai.starwhale.mlops.objectstore.ObjectStore;
+import ai.starwhale.mlops.objectstore.impl.FileSystemObjectStore;
+import com.google.common.collect.ImmutableList;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Triple;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
+
 public class WalManagerTest {
+
     @TempDir
     private File rootDir;
 
@@ -225,7 +242,7 @@ public class WalManagerTest {
 
     @Test
     public void testAppendHugeSchema() {
-        assertThrows(SWValidationException.class, () -> this.walManager.append(Wal.WalEntry.newBuilder()
+        assertThrows(SwValidationException.class, () -> this.walManager.append(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t")
                 .setTableSchema(this.createTableSchema("k",
@@ -237,7 +254,7 @@ public class WalManagerTest {
 
     @Test
     public void testAppendHugeSingleRecord() {
-        assertThrows(SWValidationException.class, () -> this.walManager.append(Wal.WalEntry.newBuilder()
+        assertThrows(SwValidationException.class, () -> this.walManager.append(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t")
                 .addAllRecords(this.createRecords(List.of(IntStream.range(1, 5000)

@@ -16,14 +16,14 @@
 
 package ai.starwhale.mlops.domain.project;
 
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.OrderParams;
 import ai.starwhale.mlops.domain.project.mapper.ProjectMapper;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import java.util.List;
 import java.util.Map;
@@ -35,32 +35,33 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class ProjectManager implements ProjectAccessor{
+public class ProjectManager implements ProjectAccessor {
 
     private final ProjectMapper projectMapper;
-    private final IDConvertor idConvertor;
+
+    private final IdConvertor idConvertor;
 
     private static final Map<String, String> SORT_MAP = Map.of(
-        "id", "project_id",
-        "name", "project_name",
-        "time", "project_created_time",
-        "createdTime", "project_created_time");
+            "id", "project_id",
+            "name", "project_name",
+            "time", "project_created_time",
+            "createdTime", "project_created_time");
 
-    public ProjectManager(ProjectMapper projectMapper, IDConvertor idConvertor) {
+    public ProjectManager(ProjectMapper projectMapper, IdConvertor idConvertor) {
         this.projectMapper = projectMapper;
         this.idConvertor = idConvertor;
     }
 
     public List<ProjectEntity> listProjects(String projectName, Long userId, OrderParams orderParams) {
-        return projectMapper.listProjects(projectName, orderParams.getOrderSQL(SORT_MAP), 0, userId);
+        return projectMapper.listProjects(projectName, orderParams.getOrderSql(SORT_MAP), 0, userId);
     }
 
 
     public ProjectEntity findDefaultProject(Long userId) {
         ProjectEntity defaultProject = projectMapper.findDefaultProject(userId);
-        if(defaultProject == null) {
+        if (defaultProject == null) {
             List<ProjectEntity> entities = projectMapper.listProjectsByOwner(userId, null, 0);
-            if(entities.isEmpty()) {
+            if (entities.isEmpty()) {
                 log.error("Can not find default project by user, id = {}", userId);
                 return null;
             }
@@ -69,18 +70,18 @@ public class ProjectManager implements ProjectAccessor{
         return defaultProject;
     }
 
-    public ProjectEntity findByNameOrDefault(String projectName, Long userId){
-        if(!StrUtil.isEmpty(projectName)) {
+    public ProjectEntity findByNameOrDefault(String projectName, Long userId) {
+        if (!StrUtil.isEmpty(projectName)) {
             ProjectEntity entity = projectMapper.findProjectByName(projectName);
-            if(entity != null) {
+            if (entity != null) {
                 return entity;
             }
         }
         return findDefaultProject(userId);
     }
 
-    public ProjectEntity findById(Long projectId){
-        return  projectMapper.findProject(projectId);
+    public ProjectEntity findById(Long projectId) {
+        return projectMapper.findProject(projectId);
     }
 
     public Boolean existProject(String projectName) {
@@ -90,40 +91,40 @@ public class ProjectManager implements ProjectAccessor{
 
     public Map<Long, ProjectObjectCountEntity> getObjectCountsOfProjects(List<Long> projectIds) {
         List<ProjectObjectCountEntity> counts = projectMapper.listObjectCounts(
-            projectIds);
+                projectIds);
         return counts.stream()
-            .collect(Collectors.toMap(ProjectObjectCountEntity::getProjectId, entity -> entity));
+                .collect(Collectors.toMap(ProjectObjectCountEntity::getProjectId, entity -> entity));
     }
 
     @Override
     public ProjectEntity getProject(@NotNull String projectUrl) {
         ProjectEntity projectEntity;
-        if(idConvertor.isID(projectUrl)) {
+        if (idConvertor.isId(projectUrl)) {
             projectEntity = projectMapper.findProject(Long.valueOf(projectUrl));
-        }else {
+        } else {
             projectEntity = projectMapper.findProjectByName(projectUrl);
         }
-        if(projectEntity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
-                .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
+        if (projectEntity == null) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
+                    .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
         }
         return projectEntity;
     }
 
     public Long getProjectId(@NotNull String projectUrl) {
         ProjectEntity projectEntity;
-        if(idConvertor.isID(projectUrl)) {
+        if (idConvertor.isId(projectUrl)) {
             Long id = idConvertor.revert(projectUrl);
-            if(id == 0){
+            if (id == 0) {
                 return id;
             }
             projectEntity = projectMapper.findProject(id);
         } else {
             projectEntity = projectMapper.findProjectByName(projectUrl);
         }
-        if(projectEntity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.PROJECT)
-                .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
+        if (projectEntity == null) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.PROJECT)
+                    .tip(String.format("Unable to find project %s", projectUrl)), HttpStatus.BAD_REQUEST);
         }
         return projectEntity.getId();
     }

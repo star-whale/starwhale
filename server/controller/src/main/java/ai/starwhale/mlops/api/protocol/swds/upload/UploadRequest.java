@@ -42,11 +42,11 @@ public class UploadRequest {
         return null == project ? "" : project;
     }
 
-    public String name(){
+    public String name() {
         return swds.split(SEPARATOR)[0];
     }
 
-    public String version(){
+    public String version() {
         return swds.split(SEPARATOR)[1];
     }
 

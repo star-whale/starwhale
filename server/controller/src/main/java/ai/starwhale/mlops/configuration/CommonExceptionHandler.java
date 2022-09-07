@@ -16,15 +16,17 @@
 
 package ai.starwhale.mlops.configuration;
 
-import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.Code;
-import ai.starwhale.mlops.exception.SWAuthException;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.StarWhaleException;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.api.protocol.ResponseMessage;
+import ai.starwhale.mlops.exception.StarwhaleException;
+import ai.starwhale.mlops.exception.SwAuthException;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintViolationException;
+import javax.validation.ValidationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -35,9 +37,6 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.ValidationException;
-
 @ControllerAdvice
 public class CommonExceptionHandler {
 
@@ -45,27 +44,30 @@ public class CommonExceptionHandler {
 
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ResponseMessage<String>> handleMethodArgumentNotValidException(HttpServletRequest request, ConstraintViolationException ex) {
+    public ResponseEntity<ResponseMessage<String>> handleMethodArgumentNotValidException(HttpServletRequest request,
+            ConstraintViolationException ex) {
         logger.error("ConstraintViolationException {}\n", request.getRequestURI(), ex);
         return ResponseEntity
-            .badRequest()
-            .body(new ResponseMessage<>(Code.validationException.name(), ex.getMessage()));
+                .badRequest()
+                .body(new ResponseMessage<>(Code.validationException.name(), ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ResponseMessage<String>> handleMethodArgumentNotValidException(HttpServletRequest request, MethodArgumentNotValidException ex) {
+    public ResponseEntity<ResponseMessage<String>> handleMethodArgumentNotValidException(HttpServletRequest request,
+            MethodArgumentNotValidException ex) {
         logger.error("MethodArgumentNotValidException {}\n", request.getRequestURI(), ex);
         return ResponseEntity
-            .badRequest()
-            .body(new ResponseMessage<>(Code.validationException.name(),
-                ex.getAllErrors()
-                    .stream()
-                    .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                    .collect(Collectors.joining())));
+                .badRequest()
+                .body(new ResponseMessage<>(Code.validationException.name(),
+                        ex.getAllErrors()
+                                .stream()
+                                .map(DefaultMessageSourceResolvable::getDefaultMessage)
+                                .collect(Collectors.joining())));
     }
 
     @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<ResponseMessage<String>> handleValidationException(HttpServletRequest request, ValidationException ex) {
+    public ResponseEntity<ResponseMessage<String>> handleValidationException(HttpServletRequest request,
+            ValidationException ex) {
         logger.error("ValidationException {}\n", request.getRequestURI(), ex);
 
         return ResponseEntity
@@ -75,7 +77,8 @@ public class CommonExceptionHandler {
 
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ResponseMessage<String>> handleAccessDeniedException(HttpServletRequest request, AccessDeniedException ex) {
+    public ResponseEntity<ResponseMessage<String>> handleAccessDeniedException(HttpServletRequest request,
+            AccessDeniedException ex) {
         logger.error("handleAccessDeniedException {}\n", request.getRequestURI(), ex);
 
         return ResponseEntity
@@ -92,32 +95,34 @@ public class CommonExceptionHandler {
                 .body(new ResponseMessage<>(Code.internalServerError.name(), ex.getMessage()));
     }
 
-    @ExceptionHandler(StarWhaleApiException.class)
-    public ResponseEntity<ResponseMessage<String>> handleStarWhaleApiException(HttpServletRequest request, StarWhaleApiException ex) {
+    @ExceptionHandler(StarwhaleApiException.class)
+    public ResponseEntity<ResponseMessage<String>> handleStarwhaleApiException(HttpServletRequest request,
+            StarwhaleApiException ex) {
         logger.error("handleInternalServerError {}\n", request.getRequestURI(), ex);
 
         return ResponseEntity
-            .status(ex.getHttpStatus())
-            .body(new ResponseMessage<>(ex.getCode(), ex.getTip()));
+                .status(ex.getHttpStatus())
+                .body(new ResponseMessage<>(ex.getCode(), ex.getTip()));
     }
 
-    @ExceptionHandler(StarWhaleException.class)
-    public ResponseEntity<ResponseMessage<String>> handleStarWhaleException(HttpServletRequest request, StarWhaleException ex) {
+    @ExceptionHandler(StarwhaleException.class)
+    public ResponseEntity<ResponseMessage<String>> handleStarwhaleException(HttpServletRequest request,
+            StarwhaleException ex) {
         logger.error("handleInternalServerError {}\n", request.getRequestURI(), ex);
         HttpStatus httpStatus;
-        if (ex instanceof SWValidationException) {
+        if (ex instanceof SwValidationException) {
             httpStatus = HttpStatus.BAD_REQUEST;
-        } else if (ex instanceof SWAuthException) {
+        } else if (ex instanceof SwAuthException) {
             httpStatus = HttpStatus.UNAUTHORIZED;
-        } else if (ex instanceof SWProcessException) {
+        } else if (ex instanceof SwProcessException) {
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         } else {
             httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         }
 
         return ResponseEntity
-            .status(httpStatus)
-            .body(new ResponseMessage<>(ex.getCode(), ex.getTip()));
+                .status(httpStatus)
+                .body(new ResponseMessage<>(ex.getCode(), ex.getTip()));
     }
 
 }

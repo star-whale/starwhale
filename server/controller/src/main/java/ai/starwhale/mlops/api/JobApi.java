@@ -19,8 +19,8 @@ package ai.starwhale.mlops.api;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
-import ai.starwhale.mlops.api.protocol.job.JobVO;
-import ai.starwhale.mlops.api.protocol.task.TaskVO;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import com.github.pagehelper.PageInfo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,219 +48,222 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface JobApi {
 
 
-
-
     @Operation(summary = "Get the list of jobs")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200",
-            description = "ok",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
+            @ApiResponse(responseCode = "200",
+                    description = "ok",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageInfo.class)))})
     @GetMapping(value = "/project/{projectUrl}/job")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<PageInfo<JobVO>>> listJobs(
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Project url",
-            schema = @Schema())
-        @PathVariable("projectUrl")
-            String projectUrl,
-        @Valid @RequestParam(value = "swmpId", required = false) String swmpId,
-        @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
-        @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
+    ResponseEntity<ResponseMessage<PageInfo<JobVo>>> listJobs(
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+                    String projectUrl,
+            @Valid @RequestParam(value = "swmpId", required = false) String swmpId,
+            @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+            @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
 
     @Operation(summary = "Job information")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "OK",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = JobVO.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "OK",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = JobVo.class)))
+            })
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<JobVO>> findJob( @Parameter(
-        in = ParameterIn.PATH,
-        description = "Project url",
-        schema = @Schema())
-    @PathVariable("projectUrl")
-        String projectUrl,
-        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("jobUrl")
-            String jobUrl);
+    ResponseEntity<ResponseMessage<JobVo>> findJob(
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+                    String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("jobUrl")
+                    String jobUrl);
 
 
     @Operation(summary = "Get the list of tasks")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200",
-            description = "ok",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = PageInfo.class)))})
+            @ApiResponse(responseCode = "200",
+                    description = "ok",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PageInfo.class)))})
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/task")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<PageInfo<TaskVO>>> listTasks(
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Project Url",
-            schema = @Schema())
-        @PathVariable("projectUrl")
-            String projectUrl,
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Job Url",
-            schema = @Schema())
-        @PathVariable("jobUrl")
-            String jobUrl,
-        @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
-        @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
+    ResponseEntity<ResponseMessage<PageInfo<TaskVo>>> listTasks(
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project Url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+                    String projectUrl,
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Job Url",
+                    schema = @Schema())
+            @PathVariable("jobUrl")
+                    String jobUrl,
+            @Valid @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+            @Valid @RequestParam(value = "pageSize", required = false, defaultValue = "10") Integer pageSize);
 
     @Operation(summary = "Create a new job")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+            @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project/{projectUrl}/job")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> createJob(
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Project Url",
-            schema = @Schema())
-        @PathVariable("projectUrl")
-            String projectUrl,
-        @Valid @RequestBody JobRequest jobRequest);
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project Url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+                    String projectUrl,
+            @Valid @RequestBody JobRequest jobRequest);
 
     @Operation(summary = "Job Action")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "ok")})
+            @ApiResponse(responseCode = "200", description = "ok")})
     @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/{action}")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> action(
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Project Url",
-            schema = @Schema())
-        @PathVariable("projectUrl")
-            String projectUrl,
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Job Url",
-            schema = @Schema())
-        @PathVariable("jobUrl")
-            String jobUrl,
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Job action",
-            schema = @Schema())
-        @PathVariable("action")
-            String action);
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project Url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+                    String projectUrl,
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Job Url",
+                    schema = @Schema())
+            @PathVariable("jobUrl")
+                    String jobUrl,
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Job action",
+                    schema = @Schema())
+            @PathVariable("action")
+                    String action);
 
     @Operation(summary = "Job Evaluation Result")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "OK",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = Object.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "OK",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class)))
+            })
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/result")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<Object>> getJobResult(@Parameter(
-        in = ParameterIn.PATH,
-        description = "Project url",
-        schema = @Schema())
-    @PathVariable("projectUrl")
-        String projectUrl,
-        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("jobUrl")
-            String jobUrl);
+    ResponseEntity<ResponseMessage<Object>> getJobResult(
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+                    String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("jobUrl")
+                    String jobUrl);
 
     @Operation(summary = "Set Job Comment")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "OK",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = String.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "OK",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = String.class)))
+            })
     @PutMapping(value = "/project/{projectUrl}/job/{jobUrl}")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER')")
     ResponseEntity<ResponseMessage<String>> modifyJobComment(
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Project url",
-            schema = @Schema())
-        @PathVariable("projectUrl")
-        String projectUrl,
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "Job id or uuid",
-            required = true,
-            schema = @Schema())
-        @PathVariable("jobUrl")
-        String jobUrl,
-        @Valid @RequestBody JobModifyRequest jobRequest);
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+                    String projectUrl,
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Job id or uuid",
+                    required = true,
+                    schema = @Schema())
+            @PathVariable("jobUrl")
+                    String jobUrl,
+            @Valid @RequestBody JobModifyRequest jobRequest);
 
     @Operation(summary = "DAG of Job")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "OK",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = Graph.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "OK",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = Graph.class)))
+            })
     @GetMapping(value = "/project/{projectUrl}/job/{jobUrl}/dag")
     @PreAuthorize("hasAnyRole('OWNER', 'MAINTAINER', 'GUEST')")
-    ResponseEntity<ResponseMessage<Graph>> getJobDAG(@Parameter(
-        in = ParameterIn.PATH,
-        description = "Project Url",
-        schema = @Schema())
-    @PathVariable("projectUrl")
-        String projectUrl,
-        @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
-        @PathVariable("jobUrl")
-            String jobUrl);
+    ResponseEntity<ResponseMessage<Graph>> getJobDag(
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "Project Url",
+                    schema = @Schema())
+            @PathVariable("projectUrl")
+                    String projectUrl,
+            @Parameter(in = ParameterIn.PATH, required = true, schema = @Schema())
+            @PathVariable("jobUrl")
+                    String jobUrl);
 
     @Operation(summary = "Remove job")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "OK",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = String.class)))
-        })
-    @DeleteMapping (value = "/project/{projectUrl}/job/{jobUrl}")
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "OK",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = String.class)))
+            })
+    @DeleteMapping(value = "/project/{projectUrl}/job/{jobUrl}")
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> removeJob(
-        @Valid @PathVariable("projectUrl") String projectUrl,
-        @Valid @PathVariable("jobUrl") String jobUrl);
+            @Valid @PathVariable("projectUrl") String projectUrl,
+            @Valid @PathVariable("jobUrl") String jobUrl);
 
     @Operation(summary = "Recover job")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "OK",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = String.class)))
-        })
-    @PostMapping  (value = "/project/{projectUrl}/job/{jobUrl}/recover")
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "OK",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = String.class)))
+            })
+    @PostMapping(value = "/project/{projectUrl}/job/{jobUrl}/recover")
     @PreAuthorize("hasAnyRole('OWNER')")
     ResponseEntity<ResponseMessage<String>> recoverJob(
-        @Valid @PathVariable("projectUrl") String projectUrl,
-        @Valid @PathVariable("jobUrl") String jobUrl);
+            @Valid @PathVariable("projectUrl") String projectUrl,
+            @Valid @PathVariable("jobUrl") String jobUrl);
 }

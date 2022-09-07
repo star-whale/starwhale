@@ -21,16 +21,15 @@ import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.status.JobStatus;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
-import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
+import ai.starwhale.mlops.domain.swmp.SwModelPackage;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import java.util.List;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
-import java.util.Objects;
 
 /**
  *
@@ -47,19 +46,19 @@ public class Job extends TimeConcern {
 
     Project project;
 
-    String evalJobDDL;
+    String evalJobDdl;
 
     Step currentStep;
 
     /**
      * the SWDSs to run on
      */
-    List<SWDataSet> swDataSets;
+    List<SwDataSet> swDataSets;
 
     /**
      * SWMP to be run
      */
-    SWModelPackage swmp;
+    SwModelPackage swmp;
 
     /**
      * runtime info of the job
@@ -101,9 +100,6 @@ public class Job extends TimeConcern {
 
     @Override
     public String toString() {
-        return "Job{" +
-            "id=" + id +
-            ", uuid='" + uuid + '\'' +
-            '}';
+        return "Job{" + "id=" + id + ", uuid='" + uuid + '\'' + '}';
     }
 }

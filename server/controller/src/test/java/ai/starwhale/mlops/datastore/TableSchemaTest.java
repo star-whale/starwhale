@@ -13,14 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore;
-
-import ai.starwhale.mlops.exception.SWValidationException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -30,6 +24,12 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import ai.starwhale.mlops.exception.SwValidationException;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TableSchemaTest {
 
@@ -53,27 +53,27 @@ public class TableSchemaTest {
 
     @Test
     public void testConstructorException() {
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> new TableSchema(new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("k", "STRING")))),
                 "null key");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> new TableSchema(new TableSchemaDesc("k", null)),
                 "null columns");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> new TableSchema(new TableSchemaDesc("k", List.of())),
                 "empty columns");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> new TableSchema(new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("a", "STRING")))),
                 "no key");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> new TableSchema(new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "UNKNOWN")))),
                 "invalid key type");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> new TableSchema(
                         new TableSchemaDesc("k",
                                 List.of(new ColumnSchemaDesc("k", "STRING"),
@@ -114,15 +114,15 @@ public class TableSchemaTest {
     public void testMerge() {
         assertThrows(NullPointerException.class, () -> this.schema.merge(null), "null");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> this.schema.merge(new TableSchemaDesc("a", List.of(new ColumnSchemaDesc("a", "STRING")))),
                 "conflicting key");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> this.schema.merge(new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "INT32")))),
                 "conflicting type 1");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> this.schema.merge(new TableSchemaDesc("k",
                         List.of(new ColumnSchemaDesc("k", "STRING"),
                                 new ColumnSchemaDesc("a", "STRING")))),
@@ -214,7 +214,7 @@ public class TableSchemaTest {
                 () -> this.schema.getColumnTypeMapping(null),
                 "null");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> this.schema.getColumnTypeMapping(Map.of("x", "x")),
                 "extra column");
     }

@@ -16,7 +16,18 @@
 
 package ai.starwhale.mlops.domain.task.status;
 
-import static ai.starwhale.mlops.domain.task.status.TaskStatus.*;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.ASSIGNING;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELED;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.CANCELLING;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.CREATED;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.FAIL;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.PAUSED;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.PREPARING;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.READY;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.RUNNING;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.SUCCESS;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.TO_CANCEL;
+import static ai.starwhale.mlops.domain.task.status.TaskStatus.UNKNOWN;
 
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
@@ -26,19 +37,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class TaskStatusMachine {
 
-    final static Map<TaskStatus, Set<TaskStatus>> transferMap = Map.ofEntries(
-        new SimpleEntry<>(CREATED, Set.of(ASSIGNING,READY,PREPARING,RUNNING,SUCCESS,FAIL,CANCELED))
-        , new SimpleEntry<>(READY, Set.of(ASSIGNING,PAUSED,PREPARING,RUNNING,SUCCESS,FAIL,CANCELED))
-        , new SimpleEntry<>(PAUSED, Set.of(PREPARING,ASSIGNING,RUNNING,READY,CANCELED,SUCCESS))
-        , new SimpleEntry<>(ASSIGNING, Set.of(CREATED,PREPARING,RUNNING,SUCCESS,FAIL,TO_CANCEL))
-        , new SimpleEntry<>(PREPARING, Set.of(RUNNING,SUCCESS,FAIL,TO_CANCEL))
-        , new SimpleEntry<>(RUNNING, Set.of(SUCCESS,FAIL,TO_CANCEL))
-        , new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING,CANCELED,SUCCESS,FAIL))
-        , new SimpleEntry<>(CANCELLING, Set.of(CANCELED,FAIL))
-        , new SimpleEntry<>(CANCELED, Set.of())
-        , new SimpleEntry<>(SUCCESS, Set.of())
-        , new SimpleEntry<>(FAIL, Set.of())
-        , new SimpleEntry<>(UNKNOWN, Set.of(TaskStatus.values())));
+    static final Map<TaskStatus, Set<TaskStatus>> transferMap = Map.ofEntries(
+            new SimpleEntry<>(CREATED, Set.of(ASSIGNING, READY, PREPARING, RUNNING, SUCCESS, FAIL, CANCELED)),
+            new SimpleEntry<>(READY, Set.of(ASSIGNING, PAUSED, PREPARING, RUNNING, SUCCESS, FAIL, CANCELED)),
+            new SimpleEntry<>(PAUSED, Set.of(PREPARING, ASSIGNING, RUNNING, READY, CANCELED, SUCCESS)),
+            new SimpleEntry<>(ASSIGNING, Set.of(CREATED, PREPARING, RUNNING, SUCCESS, FAIL, TO_CANCEL)),
+            new SimpleEntry<>(PREPARING, Set.of(RUNNING, SUCCESS, FAIL, TO_CANCEL)),
+            new SimpleEntry<>(RUNNING, Set.of(SUCCESS, FAIL, TO_CANCEL)),
+            new SimpleEntry<>(TO_CANCEL, Set.of(CANCELLING, CANCELED, SUCCESS, FAIL)),
+            new SimpleEntry<>(CANCELLING, Set.of(CANCELED, FAIL)),
+            new SimpleEntry<>(CANCELED, Set.of()),
+            new SimpleEntry<>(SUCCESS, Set.of()),
+            new SimpleEntry<>(FAIL, Set.of()),
+            new SimpleEntry<>(UNKNOWN, Set.of(TaskStatus.values())));
 
 
     public boolean couldTransfer(TaskStatus statusNow, TaskStatus statusNew) {

@@ -37,8 +37,8 @@ public class JobTokenConfig implements CommandLineRunner {
     String token;
 
     public JobTokenConfig(JwtTokenUtil jwtTokenUtil,
-        @Value("${sw.jwt.job-user-id}") Long jobUserId,
-        UserService userService) {
+            @Value("${sw.jwt.job-user-id}") Long jobUserId,
+            UserService userService) {
         this.jwtTokenUtil = jwtTokenUtil;
         this.jobUserId = jobUserId;
         this.userService = userService;
@@ -47,6 +47,6 @@ public class JobTokenConfig implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         User user = userService.loadUserById(jobUserId);
-        this.token = String.format("Bearer %s",jwtTokenUtil.generateAccessToken(user,null));
+        this.token = String.format("Bearer %s", jwtTokenUtil.generateAccessToken(user, null));
     }
 }

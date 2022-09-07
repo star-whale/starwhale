@@ -25,13 +25,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class S3Config {
+
     String bucket;
     String accessKey;
     String secretKey;
     String region;
     String endpoint;
 
-    public boolean overWriteEndPoint(){
+    public boolean overWriteEndPoint() {
         return null != endpoint && !endpoint.isBlank();
     }
 

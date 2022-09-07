@@ -16,9 +16,9 @@
 
 package ai.starwhale.mlops.domain.runtime;
 
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.Convertor;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
@@ -27,27 +27,27 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class RuntimeConvertor implements Convertor<RuntimeEntity, RuntimeVO> {
+public class RuntimeConvertor implements Convertor<RuntimeEntity, RuntimeVo> {
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
     @Resource
     private UserConvertor userConvertor;
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Override
-    public RuntimeVO convert(RuntimeEntity entity) throws ConvertException {
-        return RuntimeVO.builder()
-            .id(idConvertor.convert(entity.getId()))
-            .name(entity.getRuntimeName())
-            .owner(userConvertor.convert(entity.getOwner()))
-            .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-            .build();
+    public RuntimeVo convert(RuntimeEntity entity) throws ConvertException {
+        return RuntimeVo.builder()
+                .id(idConvertor.convert(entity.getId()))
+                .name(entity.getRuntimeName())
+                .owner(userConvertor.convert(entity.getOwner()))
+                .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .build();
     }
 
     @Override
-    public RuntimeEntity revert(RuntimeVO runtimeVO) throws ConvertException {
+    public RuntimeEntity revert(RuntimeVo runtimeVo) throws ConvertException {
         throw new UnsupportedOperationException();
     }
 }

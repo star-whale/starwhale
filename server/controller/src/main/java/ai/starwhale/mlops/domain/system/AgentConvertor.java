@@ -16,9 +16,9 @@
 
 package ai.starwhale.mlops.domain.system;
 
-import ai.starwhale.mlops.api.protocol.agent.AgentVO;
+import ai.starwhale.mlops.api.protocol.agent.AgentVo;
 import ai.starwhale.mlops.common.Convertor;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.exception.ConvertException;
@@ -27,37 +27,37 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class AgentConvertor implements Convertor<AgentEntity, AgentVO> {
+public class AgentConvertor implements Convertor<AgentEntity, AgentVo> {
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Override
-    public AgentVO convert(AgentEntity agentEntity) throws ConvertException {
-        if(agentEntity == null) {
-            return AgentVO.empty();
+    public AgentVo convert(AgentEntity agentEntity) throws ConvertException {
+        if (agentEntity == null) {
+            return AgentVo.empty();
         }
-        return AgentVO.builder()
-            .id(idConvertor.convert(agentEntity.getId()))
-            .ip(agentEntity.getAgentIp())
-            .connectedTime(localDateTimeConvertor.convert(agentEntity.getConnectTime()))
-            .status(agentEntity.getStatus())
-            .version(agentEntity.getAgentVersion())
-            .serialNumber(agentEntity.getSerialNumber())
-            .build();
+        return AgentVo.builder()
+                .id(idConvertor.convert(agentEntity.getId()))
+                .ip(agentEntity.getAgentIp())
+                .connectedTime(localDateTimeConvertor.convert(agentEntity.getConnectTime()))
+                .status(agentEntity.getStatus())
+                .version(agentEntity.getAgentVersion())
+                .serialNumber(agentEntity.getSerialNumber())
+                .build();
     }
 
     @Override
     @Deprecated
-    public AgentEntity revert(AgentVO agentVO) throws ConvertException {
-        Objects.requireNonNull(agentVO, "agentVO");
+    public AgentEntity revert(AgentVo agentVo) throws ConvertException {
+        Objects.requireNonNull(agentVo, "agentVo");
         return AgentEntity.builder()
-            .id(idConvertor.revert(agentVO.getId()))
-            .agentIp(agentVO.getIp())
-            .serialNumber(agentVO.getSerialNumber())
-            .build();
+                .id(idConvertor.revert(agentVo.getId()))
+                .agentIp(agentVo.getIp())
+                .serialNumber(agentVo.getSerialNumber())
+                .build();
     }
 }

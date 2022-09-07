@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.objectstore;
 
 import ai.starwhale.mlops.memory.SwBuffer;
-
 import java.io.IOException;
 import java.util.Iterator;
 
 public interface ObjectStore {
+
     Iterator<String> list(String prefix) throws IOException;
 
     void put(String name, SwBuffer buffer) throws IOException;

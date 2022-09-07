@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore;
 
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.SwBuffer;
 import ai.starwhale.mlops.memory.SwBufferInputStream;
 import ai.starwhale.mlops.memory.SwBufferManager;
@@ -26,21 +27,21 @@ import com.google.protobuf.CodedOutputStream;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-import org.xerial.snappy.Snappy;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeMap;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.xerial.snappy.Snappy;
 
 @Slf4j
 @Component
 public class WalManager extends Thread {
+
     private final ObjectStore objectStore;
 
     private final SwBufferManager bufferManager;
@@ -78,12 +79,12 @@ public class WalManager extends Thread {
     private final List<String> existedLogFiles = new ArrayList<>();
 
     public WalManager(ObjectStore objectStore,
-                      SwBufferManager bufferManager,
-                      @Value("${sw.datastore.walFileSize}") int walFileSize,
-                      @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
-                      @Value("${sw.datastore.walPrefix}") String walPrefix,
-                      @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
-                      @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts) throws IOException {
+            SwBufferManager bufferManager,
+            @Value("${sw.datastore.walFileSize}") int walFileSize,
+            @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
+            @Value("${sw.datastore.walPrefix}") String walPrefix,
+            @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
+            @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts) throws IOException {
         this.objectStore = objectStore;
         this.bufferManager = bufferManager;
         this.walFileSize = walFileSize;
@@ -108,7 +109,7 @@ public class WalManager extends Thread {
                     .apply();
         } catch (Throwable e) {
             log.error("fail to read WAL", e);
-            throw new SWProcessException(SWProcessException.ErrorType.DATASTORE);
+            throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
         }
         while (it.hasNext()) {
             var fn = it.next();
@@ -155,7 +156,7 @@ public class WalManager extends Thread {
                 } catch (IOException e) {
                     log.error("failed to parse proto", e);
                     this.inputStream = null;
-                    throw new SWProcessException(SWProcessException.ErrorType.DATASTORE);
+                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
                 }
             }
 
@@ -167,17 +168,18 @@ public class WalManager extends Thread {
                     data = Retry.decorateCheckedSupplier(
                                     Retry.of("get", RetryConfig.custom()
                                             .maxAttempts(WalManager.this.ossMaxAttempts)
-                                            .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
+                                            .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(
+                                                    100, 2.0, 0.5, 10000))
                                             .build()),
                                     () -> objectStore.get(fn))
                             .apply();
                 } catch (Throwable e) {
                     log.error("fail to read from object store", e);
-                    throw new SWProcessException(SWProcessException.ErrorType.DATASTORE);
+                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
                 }
                 if (data.capacity() < WalManager.this.header.length) {
                     log.error("corrupted file, size={}", data.capacity());
-                    throw new SWProcessException(SWProcessException.ErrorType.DATASTORE);
+                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
                 }
                 int uncompressedSize;
                 var h = new byte[4];
@@ -201,7 +203,7 @@ public class WalManager extends Thread {
                         }
                     } catch (IOException e) {
                         log.error("fail to uncompress", e);
-                        throw new SWProcessException(SWProcessException.ErrorType.DATASTORE);
+                        throw new SwProcessException(SwProcessException.ErrorType.DATASTORE);
                     }
                 }
                 WalManager.this.bufferManager.release(data);
@@ -218,7 +220,7 @@ public class WalManager extends Thread {
         } else {
             synchronized (this.entries) {
                 if (this.terminated) {
-                    throw new SWProcessException(SWProcessException.ErrorType.DATASTORE, "terminated");
+                    throw new SwProcessException(SwProcessException.ErrorType.DATASTORE, "terminated");
                 }
                 this.entries.add(entry);
             }
@@ -372,7 +374,7 @@ public class WalManager extends Thread {
         }
         int currentEntrySize = builder.build().getSerializedSize();
         if (currentEntrySize > this.walMaxFileSizeNoHeader) {
-            throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+            throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                     "schema is too large or walMaxFileSize is too small. size=" + currentEntrySize
                             + " walMaxFileSizeNoHeader=" + this.walMaxFileSizeNoHeader);
         }
@@ -388,7 +390,7 @@ public class WalManager extends Thread {
                 currentEntrySize = headerSize + recordSize;
                 if (currentEntrySize + CodedOutputStream.computeUInt32SizeNoTag(currentEntrySize)
                         > this.walMaxFileSizeNoHeader) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                    throw new SwValidationException(SwValidationException.ValidSubject.DATASTORE,
                             "huge single record. size=" + currentEntrySize);
                 }
             }
@@ -399,7 +401,7 @@ public class WalManager extends Thread {
         }
         for (var e : ret) {
             if (e.getSerializedSize() > this.walMaxFileSizeNoHeader) {
-                throw new SWProcessException(SWProcessException.ErrorType.DATASTORE,
+                throw new SwProcessException(SwProcessException.ErrorType.DATASTORE,
                         "invalid entry size " + e.getSerializedSize());
             }
         }

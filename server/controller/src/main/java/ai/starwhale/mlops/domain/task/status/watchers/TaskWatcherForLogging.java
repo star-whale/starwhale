@@ -17,11 +17,11 @@
 package ai.starwhale.mlops.domain.task.status.watchers;
 
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.log.TaskLogCollector;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
-import ai.starwhale.mlops.exception.StarWhaleException;
+import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogCollector;
+import ai.starwhale.mlops.exception.StarwhaleException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -36,24 +36,24 @@ public class TaskWatcherForLogging implements TaskStatusChangeWatcher {
     final TaskStatusMachine taskStatusMachine;
 
     public TaskWatcherForLogging(
-        TaskLogCollector taskLogCollector,
-        TaskStatusMachine taskStatusMachine) {
+            TaskLogCollector taskLogCollector,
+            TaskStatusMachine taskStatusMachine) {
         this.taskLogCollector = taskLogCollector;
         this.taskStatusMachine = taskStatusMachine;
     }
 
     @Override
     public void onTaskStatusChange(Task task,
-        TaskStatus oldStatus) {
-        if(!taskStatusMachine.isFinal(task.getStatus()) || task.getStatus() == TaskStatus.CANCELED){
-            log.debug("{} task {} will not collect log",task.getStatus(),task.getId());
+            TaskStatus oldStatus) {
+        if (!taskStatusMachine.isFinal(task.getStatus()) || task.getStatus() == TaskStatus.CANCELED) {
+            log.debug("{} task {} will not collect log", task.getStatus(), task.getId());
             return;
         }
-        log.debug("collection log for task {}",task.getId());
-        try{
+        log.debug("collection log for task {}", task.getId());
+        try {
             taskLogCollector.collect(task);
-        }catch (StarWhaleException e){
-            log.error("collecting log for task {} error",task.getId(),e);
+        } catch (StarwhaleException e) {
+            log.error("collecting log for task {} error", task.getId(), e);
         }
 
 

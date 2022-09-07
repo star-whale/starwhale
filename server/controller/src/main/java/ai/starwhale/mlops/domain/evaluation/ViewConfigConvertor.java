@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.evaluation;
 
-import ai.starwhale.mlops.api.protocol.evaluation.ConfigVO;
+import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
 import ai.starwhale.mlops.common.Convertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.evaluation.po.ViewConfigEntity;
@@ -25,25 +25,25 @@ import javax.annotation.Resource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ViewConfigConvertor implements Convertor<ViewConfigEntity, ConfigVO> {
+public class ViewConfigConvertor implements Convertor<ViewConfigEntity, ConfigVo> {
 
     @Resource
     private LocalDateTimeConvertor localDateTimeConvertor;
 
     @Override
-    public ConfigVO convert(ViewConfigEntity entity) throws ConvertException {
-        if(entity == null) {
-            return ConfigVO.empty();
+    public ConfigVo convert(ViewConfigEntity entity) throws ConvertException {
+        if (entity == null) {
+            return ConfigVo.empty();
         }
-        return ConfigVO.builder()
-            .name(entity.getConfigName())
-            .content(entity.getContent())
-            .createTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-            .build();
+        return ConfigVo.builder()
+                .name(entity.getConfigName())
+                .content(entity.getContent())
+                .createTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
+                .build();
     }
 
     @Override
-    public ViewConfigEntity revert(ConfigVO configVO) throws ConvertException {
+    public ViewConfigEntity revert(ConfigVo configVo) throws ConvertException {
         throw new UnsupportedOperationException();
     }
 }

@@ -18,7 +18,7 @@ package ai.starwhale.mlops.exception;
 
 import static ai.starwhale.mlops.api.protocol.Code.internalServerError;
 
-public class ApiOperationException extends StarWhaleException{
+public class ApiOperationException extends StarwhaleException {
 
     public ApiOperationException() {
         super();

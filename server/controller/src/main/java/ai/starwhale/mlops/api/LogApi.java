@@ -37,46 +37,47 @@ public interface LogApi {
 
     @Operation(summary = "list the log files of a task")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ok",
-                content =
-                @Content(
-                    mediaType = "application/json",
-                    schema = @Schema(implementation = List.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = List.class)))
+            })
     @GetMapping(value = "/log/offline/{taskId}")
     ResponseEntity<ResponseMessage<List<String>>> offlineLogs(
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "id of a task",
-            schema = @Schema())
-        @PathVariable("taskId")
-            Long taskId);
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "id of a task",
+                    schema = @Schema())
+            @PathVariable("taskId")
+                    Long taskId);
 
     @Operation(summary = "Get the list of device types")
     @ApiResponses(
-        value = {
-            @ApiResponse(
-                responseCode = "200",
-                description = "ok",
-                content =
-                @Content(
-                    mediaType = "plain/text",
-                    schema = @Schema(implementation = String.class)))
-        })
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ok",
+                            content =
+                            @Content(
+                                    mediaType = "plain/text",
+                                    schema = @Schema(implementation = String.class)))
+            })
     @GetMapping(value = "/log/offline/{taskId}/{fileName}")
-    ResponseEntity<String> logContent(@Parameter(
-        in = ParameterIn.PATH,
-        description = "id of a task",
-        schema = @Schema())
-    @PathVariable("taskId")
-        Long taskId,
-        @Parameter(
-            in = ParameterIn.PATH,
-            description = "the name of the file",
-            schema = @Schema())
-        @PathVariable("fileName")
-            String fileName);
+    ResponseEntity<String> logContent(
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "id of a task",
+                    schema = @Schema())
+            @PathVariable("taskId")
+                    Long taskId,
+            @Parameter(
+                    in = ParameterIn.PATH,
+                    description = "the name of the file",
+                    schema = @Schema())
+            @PathVariable("fileName")
+                    String fileName);
 }

@@ -23,14 +23,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
-import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
 import ai.starwhale.mlops.domain.system.agent.AgentConverter;
 import ai.starwhale.mlops.domain.system.agent.AgentStatus;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
+import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
 import ai.starwhale.mlops.domain.system.po.AgentEntity;
-import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,34 +48,36 @@ public class AgentCacheTest {
     public void testAgentCache() throws Exception {
         AgentMapper agentMapper = mock(AgentMapper.class);
         when(agentMapper.listAgents()).thenReturn(List.of(
-            AgentEntity.builder()
-                .connectTime(LocalDateTime.now())
-                .id(1L)
-                .serialNumber("serialNumber1")
-                .agentIp("10.199.0.1")
-                .agentVersion("0.1")
-                .status(AgentStatus.ONLINE)
-                .build()
-            ,AgentEntity.builder()
-                .connectTime(LocalDateTime.now())
-                .id(2L)
-                .serialNumber("serialNumber2")
-                .agentIp("10.199.0.2")
-                .agentVersion("0.1")
-                .status(AgentStatus.ONLINE)
-                .build()
+                AgentEntity.builder()
+                        .connectTime(LocalDateTime.now())
+                        .id(1L)
+                        .serialNumber("serialNumber1")
+                        .agentIp("10.199.0.1")
+                        .agentVersion("0.1")
+                        .status(AgentStatus.ONLINE)
+                        .build(),
+                AgentEntity.builder()
+                        .connectTime(LocalDateTime.now())
+                        .id(2L)
+                        .serialNumber("serialNumber2")
+                        .agentIp("10.199.0.2")
+                        .agentVersion("0.1")
+                        .status(AgentStatus.ONLINE)
+                        .build()
         ));
         AgentConverter agentConverter = new AgentConverter(new ObjectMapper(),
-            new LocalDateTimeConvertor());
+                new LocalDateTimeConvertor());
         AgentCache agentCache = new AgentCache(agentMapper, agentConverter);
 
         agentCache.run();
 
-        agentCache.nodeReport(Node.builder().status(AgentStatus.ONLINE).devices(List.of()).serialNumber("serialNumber1").build());
-        agentCache.nodeReport(Node.builder().status(AgentStatus.OFFLINE).devices(List.of()).serialNumber("serialNumber2").build());
+        agentCache.nodeReport(
+                Node.builder().status(AgentStatus.ONLINE).devices(List.of()).serialNumber("serialNumber1").build());
+        agentCache.nodeReport(
+                Node.builder().status(AgentStatus.OFFLINE).devices(List.of()).serialNumber("serialNumber2").build());
         agentCache.flushDb();
         List<Agent> agents = agentCache.agents();
-        Assertions.assertEquals(2,agents.size());
+        Assertions.assertEquals(2, agents.size());
         Agent agent1 = findAgent(agentCache, "serialNumber1");
         Agent agent2 = findAgent(agentCache, "serialNumber2");
         Assertions.assertNotNull(agent1);
@@ -84,22 +86,24 @@ public class AgentCacheTest {
         Assertions.assertEquals(AgentStatus.OFFLINE, agent2.getStatus());
         verify(agentMapper).updateAgents(anyList());
 
-        agentCache.nodeReport(Node.builder().status(AgentStatus.OFFLINE).devices(List.of()).serialNumber("serialNumber1").build());
+        agentCache.nodeReport(
+                Node.builder().status(AgentStatus.OFFLINE).devices(List.of()).serialNumber("serialNumber1").build());
         agents = agentCache.agents();
-        Assertions.assertEquals(2,agents.size());
+        Assertions.assertEquals(2, agents.size());
         Set<AgentStatus> agentStatuses = agents.stream().map(Agent::getStatus)
-            .collect(Collectors.toSet());
-        Assertions.assertEquals(1,agentStatuses.size());
+                .collect(Collectors.toSet());
+        Assertions.assertEquals(1, agentStatuses.size());
         Assertions.assertTrue(agentStatuses.contains(AgentStatus.OFFLINE));
 
-        agentCache.nodeReport(Node.builder().status(AgentStatus.ONLINE).devices(List.of()).serialNumber("serialNumber3").build());
+        agentCache.nodeReport(
+                Node.builder().status(AgentStatus.ONLINE).devices(List.of()).serialNumber("serialNumber3").build());
 
         agents = agentCache.agents();
-        Assertions.assertEquals(3,agents.size());
+        Assertions.assertEquals(3, agents.size());
         Agent agent3 = findAgent(agentCache, "serialNumber3");
         verify(agentMapper).addAgent(any(AgentEntity.class));
-        Assertions.assertEquals("serialNumber3",agent3.getSerialNumber());
-        Assertions.assertEquals(AgentStatus.ONLINE,agent3.getStatus());
+        Assertions.assertEquals("serialNumber3", agent3.getSerialNumber());
+        Assertions.assertEquals(AgentStatus.ONLINE, agent3.getStatus());
 
 
     }
@@ -109,46 +113,47 @@ public class AgentCacheTest {
 
         AgentMapper agentMapper = mock(AgentMapper.class);
         when(agentMapper.listAgents()).thenReturn(List.of(
-            AgentEntity.builder()
-                .connectTime(LocalDateTime.now())
-                .id(1L)
-                .serialNumber("serialNumber1")
-                .agentIp("10.199.0.1")
-                .agentVersion("0.1")
-                .status(AgentStatus.ONLINE)
-                .build()
-            ,AgentEntity.builder()
-                .connectTime(LocalDateTime.now())
-                .id(2L)
-                .serialNumber("serialNumber2")
-                .agentIp("10.199.0.2")
-                .agentVersion("0.1")
-                .status(AgentStatus.ONLINE)
-                .build()
+                AgentEntity.builder()
+                        .connectTime(LocalDateTime.now())
+                        .id(1L)
+                        .serialNumber("serialNumber1")
+                        .agentIp("10.199.0.1")
+                        .agentVersion("0.1")
+                        .status(AgentStatus.ONLINE)
+                        .build(),
+                AgentEntity.builder()
+                        .connectTime(LocalDateTime.now())
+                        .id(2L)
+                        .serialNumber("serialNumber2")
+                        .agentIp("10.199.0.2")
+                        .agentVersion("0.1")
+                        .status(AgentStatus.ONLINE)
+                        .build()
         ));
         AgentConverter agentConverter = new AgentConverter(new ObjectMapper(),
-            new LocalDateTimeConvertor());
+                new LocalDateTimeConvertor());
         AgentCache agentCache = new AgentCache(agentMapper, agentConverter);
 
         agentCache.run();
 
-        agentCache.nodeReport(Node.builder().status(AgentStatus.OFFLINE).devices(List.of()).serialNumber("serialNumber1").build());
+        agentCache.nodeReport(
+                Node.builder().status(AgentStatus.OFFLINE).devices(List.of()).serialNumber("serialNumber1").build());
         agentCache.flushDb();
         agentCache.removeOfflineAgent("serialNumber1");
         List<Agent> agents = agentCache.agents();
-        Assertions.assertEquals(1,agents.size());
+        Assertions.assertEquals(1, agents.size());
         Agent agent2 = agents.get(0);
-        Assertions.assertEquals("serialNumber2",agent2.getSerialNumber());
+        Assertions.assertEquals("serialNumber2", agent2.getSerialNumber());
         verify(agentMapper).deleteById(1L);
 
-        Assertions.assertThrowsExactly(SWValidationException.class,()->agentCache.removeOfflineAgent("serialNumber2"));
-
+        Assertions.assertThrowsExactly(SwValidationException.class,
+                () -> agentCache.removeOfflineAgent("serialNumber2"));
 
 
     }
 
-    private Agent findAgent(AgentCache agentCache,String serialNumber) {
+    private Agent findAgent(AgentCache agentCache, String serialNumber) {
         return agentCache.agents().stream().filter(agent -> agent.getSerialNumber().equals(serialNumber)).findAny()
-            .get();
+                .get();
     }
 }

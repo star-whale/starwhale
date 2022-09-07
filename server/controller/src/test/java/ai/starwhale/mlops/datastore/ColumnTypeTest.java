@@ -16,15 +16,15 @@
 
 package ai.starwhale.mlops.datastore;
 
-import org.junit.jupiter.api.Test;
-
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.Test;
+
 public class ColumnTypeTest {
+
     @Test
     public void testEncodeRawResult() {
         assertThat(ColumnType.BOOL.encode(true, true), is("true"));

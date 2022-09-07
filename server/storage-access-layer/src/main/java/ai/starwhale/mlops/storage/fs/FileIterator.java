@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.storage.fs;
 
 import java.io.File;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class FileIterator implements Iterator<String> {
+
     private final List<List<File>> stack = new ArrayList<>();
     private final File rootDir;
     private String next;

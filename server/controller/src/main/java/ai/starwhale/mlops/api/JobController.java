@@ -20,20 +20,20 @@ import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
 import ai.starwhale.mlops.api.protocol.job.JobModifyRequest;
 import ai.starwhale.mlops.api.protocol.job.JobRequest;
-import ai.starwhale.mlops.api.protocol.job.JobVO;
-import ai.starwhale.mlops.api.protocol.task.TaskVO;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.api.protocol.task.TaskVo;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.InvokerManager;
 import ai.starwhale.mlops.common.PageParams;
-import ai.starwhale.mlops.domain.dag.DAGQuerier;
+import ai.starwhale.mlops.domain.dag.DagQuerier;
 import ai.starwhale.mlops.domain.dag.bo.Graph;
 import ai.starwhale.mlops.domain.job.JobService;
 import ai.starwhale.mlops.domain.task.TaskService;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +45,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("${sw.controller.apiPrefix}")
-public class JobController implements JobApi{
+public class JobController implements JobApi {
 
     @Resource
     private JobService jobService;
@@ -54,71 +54,71 @@ public class JobController implements JobApi{
     private TaskService taskService;
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
     @Resource
-    private DAGQuerier dagQuerier;
+    private DagQuerier dagQuerier;
 
 
-    private final InvokerManager<String, String> JOB_ACTIONS = InvokerManager.<String, String>create()
-        .addInvoker("cancel", (String jobUrl) -> jobService.cancelJob(jobUrl))
-        .addInvoker("pause", (String jobUrl) -> jobService.pauseJob(jobUrl))
-        .addInvoker("resume", (String jobUrl) -> jobService.resumeJob(jobUrl))
-        .unmodifiable();
+    private final InvokerManager<String, String> jobActions = InvokerManager.<String, String>create()
+            .addInvoker("cancel", (String jobUrl) -> jobService.cancelJob(jobUrl))
+            .addInvoker("pause", (String jobUrl) -> jobService.pauseJob(jobUrl))
+            .addInvoker("resume", (String jobUrl) -> jobService.resumeJob(jobUrl))
+            .unmodifiable();
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<JobVO>>> listJobs(String projectUrl, String swmpId,
-        Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<PageInfo<JobVo>>> listJobs(String projectUrl, String swmpId,
+            Integer pageNum, Integer pageSize) {
 
-        PageInfo<JobVO> jobVOS = jobService.listJobs(projectUrl, idConvertor.revert(swmpId),
-            PageParams.builder()
-                .pageNum(pageNum)
-                .pageSize(pageSize)
-                .build());
-        return ResponseEntity.ok(Code.success.asResponse(jobVOS));
+        PageInfo<JobVo> jobVos = jobService.listJobs(projectUrl, idConvertor.revert(swmpId),
+                PageParams.builder()
+                        .pageNum(pageNum)
+                        .pageSize(pageSize)
+                        .build());
+        return ResponseEntity.ok(Code.success.asResponse(jobVos));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<JobVO>> findJob(String projectUrl, String jobUrl) {
-        JobVO job = jobService.findJob(projectUrl, jobUrl);
+    public ResponseEntity<ResponseMessage<JobVo>> findJob(String projectUrl, String jobUrl) {
+        JobVo job = jobService.findJob(projectUrl, jobUrl);
         return ResponseEntity.ok(Code.success.asResponse(job));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<TaskVO>>> listTasks(String projectUrl,
-        String jobUrl, Integer pageNum, Integer pageSize) {
+    public ResponseEntity<ResponseMessage<PageInfo<TaskVo>>> listTasks(String projectUrl,
+            String jobUrl, Integer pageNum, Integer pageSize) {
 
-        PageInfo<TaskVO> pageInfo = taskService.listTasks(jobUrl,
-            PageParams.builder()
-            .pageNum(pageNum)
-            .pageSize(pageSize)
-            .build());
+        PageInfo<TaskVo> pageInfo = taskService.listTasks(jobUrl,
+                PageParams.builder()
+                        .pageNum(pageNum)
+                        .pageSize(pageSize)
+                        .build());
         return ResponseEntity.ok(Code.success.asResponse(pageInfo));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> createJob(String projectUrl,
-        JobRequest jobRequest) {
+            JobRequest jobRequest) {
         Long jobId = jobService.createJob(projectUrl,
-            jobRequest.getModelVersionUrl(),
-            jobRequest.getDatasetVersionUrls(),
-            jobRequest.getRuntimeVersionUrl(),
-            jobRequest.getDevice(),
-            jobRequest.getDeviceAmount(),
-            jobRequest.getComment(),
-            jobRequest.getResourcePool());
+                jobRequest.getModelVersionUrl(),
+                jobRequest.getDatasetVersionUrls(),
+                jobRequest.getRuntimeVersionUrl(),
+                jobRequest.getDevice(),
+                jobRequest.getDeviceAmount(),
+                jobRequest.getComment(),
+                jobRequest.getResourcePool());
 
         return ResponseEntity.ok(Code.success.asResponse(idConvertor.convert(jobId)));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> action(String projectUrl, String jobUrl,
-        String action) {
+            String action) {
         try {
-            JOB_ACTIONS.invoke(action, jobUrl);
+            jobActions.invoke(action, jobUrl);
         } catch (UnsupportedOperationException e) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.JOB)
-                .tip(e.getMessage()), HttpStatus.BAD_REQUEST);
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.JOB)
+                    .tip(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
 
         return ResponseEntity.ok(Code.success.asResponse("Success: " + action));
@@ -132,27 +132,27 @@ public class JobController implements JobApi{
 
     @Override
     public ResponseEntity<ResponseMessage<String>> modifyJobComment(String projectUrl, String jobUrl,
-        JobModifyRequest jobModifyRequest) {
+            JobModifyRequest jobModifyRequest) {
         Boolean res = jobService.updateJobComment(projectUrl, jobUrl, jobModifyRequest.getComment());
 
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Update job comment failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Update job comment failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<Graph>> getJobDAG(String projectUrl, String jobUrl) {
-        return ResponseEntity.ok(Code.success.asResponse(dagQuerier.dagOfJob(jobUrl,true)));
+    public ResponseEntity<ResponseMessage<Graph>> getJobDag(String projectUrl, String jobUrl) {
+        return ResponseEntity.ok(Code.success.asResponse(dagQuerier.dagOfJob(jobUrl, true)));
     }
 
     @Override
     public ResponseEntity<ResponseMessage<String>> removeJob(String projectUrl, String jobUrl) {
         Boolean res = jobService.removeJob(projectUrl, jobUrl);
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Remove job failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Remove job failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
@@ -160,9 +160,9 @@ public class JobController implements JobApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> recoverJob(String projectUrl, String jobUrl) {
         Boolean res = jobService.recoverJob(projectUrl, jobUrl);
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Recover job failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Recover job failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }

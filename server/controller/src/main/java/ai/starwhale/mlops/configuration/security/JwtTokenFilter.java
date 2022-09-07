@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.configuration.security;
 
 import static ai.starwhale.mlops.common.util.HttpUtil.error;
@@ -24,7 +25,7 @@ import ai.starwhale.mlops.common.util.JwtTokenUtil;
 import ai.starwhale.mlops.domain.user.UserService;
 import ai.starwhale.mlops.domain.user.bo.Role;
 import ai.starwhale.mlops.domain.user.bo.User;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import cn.hutool.core.util.StrUtil;
 import io.jsonwebtoken.Claims;
 import java.io.IOException;
@@ -58,27 +59,27 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest httpServletRequest,
-                                    @NonNull HttpServletResponse httpServletResponse,
-                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
+            @NonNull HttpServletResponse httpServletResponse,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
         String header = httpServletRequest.getHeader(AUTH_HEADER);
 
         if (!checkHeader(header)) {
             header = httpServletRequest.getParameter(AUTH_HEADER);
-            if(!checkHeader(header)) {
+            if (!checkHeader(header)) {
                 error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
-                    "Not logged in.");
+                        "Not logged in.");
                 return;
             }
         }
 
         String token = header.split(" ")[1].trim();
-        if(!jwtTokenUtil.validate(token)) {
-            error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied, "JWT token is expired or invalid.");
+        if (!jwtTokenUtil.validate(token)) {
+            error(httpServletResponse, HttpStatus.UNAUTHORIZED.value(), Code.accessDenied,
+                    "JWT token is expired or invalid.");
             return;
         }
 
-
-        Claims claims = jwtTokenUtil.parseJWT(token);
+        Claims claims = jwtTokenUtil.parseJwt(token);
 
         User user = userService.loadUserByUsername(jwtTokenUtil.getUsername(claims));
         try {
@@ -90,23 +91,23 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         // Get the roles of System
         List<Role> sysRoles = userService.getProjectRolesOfUser(user, "0");
         Set<Role> roles = sysRoles.stream().filter(
-            role -> role.getAuthority().equals("OWNER")).collect(Collectors.toSet());
+                role -> role.getAuthority().equals("OWNER")).collect(Collectors.toSet());
         // Get project roles
         String projectUrl = httpServletRequest.getParameter("project");
-        if(StrUtil.isEmpty(projectUrl)) {
+        if (StrUtil.isEmpty(projectUrl)) {
             projectUrl = httpServletRequest.getParameter("projectUrl");
         }
-        if(StrUtil.isEmpty(projectUrl)) {
+        if (StrUtil.isEmpty(projectUrl)) {
             projectUrl = HttpUtil.getResourceUrlFromPath(httpServletRequest.getRequestURI(), Resources.PROJECT);
         }
-        if(StrUtil.isEmpty(projectUrl)) {
+        if (StrUtil.isEmpty(projectUrl)) {
             projectUrl = "0";
         }
         try {
             List<Role> rolesOfUser = userService.getProjectRolesOfUser(user,
-                projectUrl);
+                    projectUrl);
             roles.addAll(rolesOfUser);
-        } catch (StarWhaleApiException e) {
+        } catch (StarwhaleApiException e) {
             logger.error(e.getMessage());
         }
         user.setRoles(roles);

@@ -23,20 +23,22 @@ import org.apache.ibatis.annotations.Param;
 public interface RuntimeVersionMapper {
 
     List<RuntimeVersionEntity> listVersions(@Param("runtimeId") Long runtimeId,
-        @Param("namePrefix")String namePrefix, @Param("tag")String tag);
+            @Param("namePrefix") String namePrefix, @Param("tag") String tag);
 
-    RuntimeVersionEntity findVersionById(@Param("id")Long id);
-    List<RuntimeVersionEntity> findVersionsByIds(@Param("rtVersionIds")List<Long> rtVersionIds);
+    RuntimeVersionEntity findVersionById(@Param("id") Long id);
 
-    RuntimeVersionEntity getLatestVersion(@Param("runtimeId")Long runtimeId);
+    List<RuntimeVersionEntity> findVersionsByIds(@Param("rtVersionIds") List<Long> rtVersionIds);
 
-    int revertTo(@Param("rtId")Long rtId, @Param("rtVersionId")Long rtVersionId);
+    RuntimeVersionEntity getLatestVersion(@Param("runtimeId") Long runtimeId);
+
+    int revertTo(@Param("rtId") Long rtId, @Param("rtVersionId") Long rtVersionId);
 
     int addNewVersion(@Param("version") RuntimeVersionEntity version);
 
-    int update(@Param("version")RuntimeVersionEntity version);
+    int update(@Param("version") RuntimeVersionEntity version);
 
     int updateTag(@Param("versionId") Long versionId, @Param("tag") String tag);
 
-    RuntimeVersionEntity findByNameAndRuntimeId(@Param("rtVersion")String rtVersion, @Param("runtimeId")Long runtimeId);
+    RuntimeVersionEntity findByNameAndRuntimeId(@Param("rtVersion") String rtVersion,
+            @Param("runtimeId") Long runtimeId);
 }

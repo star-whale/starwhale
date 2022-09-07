@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.memory;
 
-import lombok.Getter;
-
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.OutputStream;
+import javax.validation.constraints.NotNull;
+import lombok.Getter;
 
 public class SwBufferOutputStream extends OutputStream {
+
     private final SwBuffer buffer;
     @Getter
     private int offset;

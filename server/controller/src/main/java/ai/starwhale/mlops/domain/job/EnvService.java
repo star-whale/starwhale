@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.job;
 
-import ai.starwhale.mlops.api.protocol.runtime.DeviceVO;
+import ai.starwhale.mlops.api.protocol.runtime.DeviceVo;
 import ai.starwhale.mlops.domain.node.Device;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,13 +25,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class EnvService {
 
-    public List<DeviceVO> listDevices() {
-        List<DeviceVO> list = new ArrayList<>();
-        for(Device.Clazz cl : Device.Clazz.values()) {
-            list.add(DeviceVO.builder()
-                .id(String.valueOf(cl.getValue()))
-                .name(cl.name())
-                .build());
+    public List<DeviceVo> listDevices() {
+        List<DeviceVo> list = new ArrayList<>();
+        for (Device.Clazz cl : Device.Clazz.values()) {
+            list.add(DeviceVo.builder()
+                    .id(String.valueOf(cl.getValue()))
+                    .name(cl.name())
+                    .build());
         }
         return list;
     }

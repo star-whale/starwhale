@@ -16,9 +16,9 @@
 
 package ai.starwhale.mlops.domain.job.step.trigger;
 
-import ai.starwhale.mlops.domain.job.JobType;
 import ai.starwhale.mlops.domain.job.step.bo.Step;
 
 public interface StepTrigger {
+
     void triggerNextStep(Step step);
 }

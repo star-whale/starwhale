@@ -35,21 +35,20 @@ public class ResourceOverwriteSpec {
 
     static final String RESOURCE_CPU = "cpu";
 
-    static final Map<Clazz,String> deviceNameMap = Map.of(Clazz.CPU,RESOURCE_CPU,Clazz.GPU,"nvidia.com/gpu");
+    static final Map<Clazz, String> deviceNameMap = Map.of(Clazz.CPU, RESOURCE_CPU, Clazz.GPU, "nvidia.com/gpu");
 
     /**
-     *
-     * @param deviceClass
      * @param amount example 1T, 2G, 2, 3.8m
      */
-    public ResourceOverwriteSpec(Clazz deviceClass, String amount){
+    public ResourceOverwriteSpec(Clazz deviceClass, String amount) {
         String resourceName = deviceNameMap.getOrDefault(deviceClass, RESOURCE_CPU);
-        this.resourceSelector = new V1ResourceRequirements().requests(Map.of(resourceName,new Quantity(amount)));
+        this.resourceSelector = new V1ResourceRequirements().requests(Map.of(resourceName, new Quantity(amount)));
     }
 
-    public ResourceOverwriteSpec(List<RuntimeResource> runtimeResources){
+    public ResourceOverwriteSpec(List<RuntimeResource> runtimeResources) {
         Map<String, Quantity> resourceMap = runtimeResources.stream()
-            .collect(Collectors.toMap(RuntimeResource::getType, runtimeResource -> new Quantity(runtimeResource.getNum() * 1000+"m")));
+                .collect(Collectors.toMap(RuntimeResource::getType,
+                        runtimeResource -> new Quantity(runtimeResource.getNum() * 1000 + "m")));
         this.resourceSelector = new V1ResourceRequirements().requests(resourceMap);
     }
 

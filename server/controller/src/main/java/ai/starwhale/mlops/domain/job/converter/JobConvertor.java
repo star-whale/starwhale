@@ -16,24 +16,24 @@
 
 package ai.starwhale.mlops.domain.job.converter;
 
-import ai.starwhale.mlops.api.protocol.job.JobVO;
-import ai.starwhale.mlops.api.protocol.runtime.RuntimeVO;
+import ai.starwhale.mlops.api.protocol.job.JobVo;
+import ai.starwhale.mlops.api.protocol.runtime.RuntimeVo;
 import ai.starwhale.mlops.common.Convertor;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.common.LocalDateTimeConvertor;
+import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
 import ai.starwhale.mlops.domain.job.po.JobEntity;
-import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.runtime.RuntimeService;
-import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -42,10 +42,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 @Component
-public class JobConvertor implements Convertor<JobEntity, JobVO> {
+public class JobConvertor implements Convertor<JobEntity, JobVo> {
 
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
     @Resource
     private UserConvertor userConvertor;
@@ -57,7 +57,7 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
     private RuntimeService runtimeService;
 
     @Resource
-    private JobSWDSVersionMapper jobSWDSVersionMapper;
+    private JobSwdsVersionMapper jobSwdsVersionMapper;
 
     @Resource
     private ResourcePoolMapper resourcePoolMapper;
@@ -66,48 +66,48 @@ public class JobConvertor implements Convertor<JobEntity, JobVO> {
     private ResourcePoolConverter resourcePoolConverter;
 
     @Override
-    public JobVO convert(JobEntity jobEntity) throws ConvertException {
-        List<RuntimeVO> runtimeByVersionIds = runtimeService.findRuntimeByVersionIds(
-            List.of(jobEntity.getRuntimeVersionId()));
-        if(CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size()>1){
-            throw new SWProcessException(ErrorType.SYSTEM).tip("data not consistent between job and runtime ");
+    public JobVo convert(JobEntity jobEntity) throws ConvertException {
+        List<RuntimeVo> runtimeByVersionIds = runtimeService.findRuntimeByVersionIds(
+                List.of(jobEntity.getRuntimeVersionId()));
+        if (CollectionUtils.isEmpty(runtimeByVersionIds) || runtimeByVersionIds.size() > 1) {
+            throw new SwProcessException(ErrorType.SYSTEM).tip("data not consistent between job and runtime ");
         }
-        List<SWDatasetVersionEntity> dsvEntities = jobSWDSVersionMapper.listSWDSVersionsByJobId(
-            jobEntity.getId());
+        List<SwDatasetVersionEntity> dsvEntities = jobSwdsVersionMapper.listSwdsVersionsByJobId(
+                jobEntity.getId());
 
         List<String> idList = dsvEntities.stream()
-            .map(SWDatasetVersionEntity::getVersionName)
-            .collect(Collectors.toList());
+                .map(SwDatasetVersionEntity::getVersionName)
+                .collect(Collectors.toList());
 
         ResourcePoolEntity resourcePoolEntity = resourcePoolMapper.findById(jobEntity.getResourcePoolId());
         var resourcePool = resourcePoolConverter.toResourcePool(resourcePoolEntity);
 
-        return JobVO.builder()
-            .id(idConvertor.convert(jobEntity.getId()))
-            .uuid(jobEntity.getJobUuid())
-            .owner(userConvertor.convert(jobEntity.getOwner()))
-            .modelName(jobEntity.getModelName())
-            .modelVersion(jobEntity.getSwmpVersion().getVersionName())
-            .createdTime(localDateTimeConvertor.convert(jobEntity.getCreatedTime()))
-            .runtime(runtimeByVersionIds.get(0))
-            .datasets(idList)
-            .device(getDeviceName(jobEntity.getDeviceType()))
-            .deviceAmount(jobEntity.getDeviceAmount())
-            .jobStatus(jobEntity.getJobStatus())
-            .stopTime(localDateTimeConvertor.convert(jobEntity.getFinishedTime()))
-            .comment(jobEntity.getComment())
-            .resourcePool(resourcePool.getLabel())
-            .build();
+        return JobVo.builder()
+                .id(idConvertor.convert(jobEntity.getId()))
+                .uuid(jobEntity.getJobUuid())
+                .owner(userConvertor.convert(jobEntity.getOwner()))
+                .modelName(jobEntity.getModelName())
+                .modelVersion(jobEntity.getSwmpVersion().getVersionName())
+                .createdTime(localDateTimeConvertor.convert(jobEntity.getCreatedTime()))
+                .runtime(runtimeByVersionIds.get(0))
+                .datasets(idList)
+                .device(getDeviceName(jobEntity.getDeviceType()))
+                .deviceAmount(jobEntity.getDeviceAmount())
+                .jobStatus(jobEntity.getJobStatus())
+                .stopTime(localDateTimeConvertor.convert(jobEntity.getFinishedTime()))
+                .comment(jobEntity.getComment())
+                .resourcePool(resourcePool.getLabel())
+                .build();
     }
 
     @Override
-    public JobEntity revert(JobVO jobVO) throws ConvertException {
-        Objects.requireNonNull(jobVO, "jobVO");
+    public JobEntity revert(JobVo jobVo) throws ConvertException {
+        Objects.requireNonNull(jobVo, "jobVo");
         return null;
     }
 
     private String getDeviceName(int deviceType) {
-        if(deviceType > 0 && deviceType <= Clazz.values().length) {
+        if (deviceType > 0 && deviceType <= Clazz.values().length) {
             return Device.Clazz.values()[deviceType - 1].name();
         }
         return "UNDEFINED";

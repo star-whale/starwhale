@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("${sw.controller.apiPrefix}")
-public class LogController implements LogApi{
+public class LogController implements LogApi {
 
     final TaskService taskService;
 
@@ -41,6 +41,6 @@ public class LogController implements LogApi{
 
     @Override
     public ResponseEntity<String> logContent(Long taskId, String fileName) {
-        return ResponseEntity.ok(taskService.logContent(taskId,fileName));
+        return ResponseEntity.ok(taskService.logContent(taskId, fileName));
     }
 }

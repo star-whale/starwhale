@@ -16,21 +16,21 @@
 
 package ai.starwhale.mlops.schedule.k8s;
 
-import ai.starwhale.mlops.api.protocol.report.resp.SWRunTime;
+import ai.starwhale.mlops.api.protocol.report.resp.SwRunTime;
 import ai.starwhale.mlops.configuration.RunTimeProperties;
 import ai.starwhale.mlops.configuration.security.JobTokenConfig;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.runtime.RuntimeResource;
-import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
+import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusChangeWatcher;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForJobStatus;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForSchedule;
-import ai.starwhale.mlops.schedule.SWTaskScheduler;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import ai.starwhale.mlops.storage.configuration.StorageProperties;
 import ai.starwhale.mlops.storage.fs.FileStorageEnv;
 import cn.hutool.json.JSONUtil;
@@ -57,7 +57,7 @@ import org.springframework.util.CollectionUtils;
 
 @Service
 @Slf4j
-public class K8sTaskScheduler implements SWTaskScheduler {
+public class K8sTaskScheduler implements SwTaskScheduler {
 
     final K8sClient k8sClient;
 
@@ -69,25 +69,25 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     final JobTokenConfig jobTokenConfig;
 
-    final K8SJobTemplate k8SJobTemplate;
+    final K8sJobTemplate k8sJobTemplate;
     final ResourceEventHandler<V1Job> eventHandlerJob;
     final ResourceEventHandler<V1Node> eventHandlerNode;
     final String instanceUri;
 
     public K8sTaskScheduler(K8sClient k8sClient,
-        StorageProperties storageProperties,
-        JobTokenConfig jobTokenConfig,
-        RunTimeProperties runTimeProperties,
-        K8sResourcePoolConverter resourcePoolConverter,
-        K8SJobTemplate k8SJobTemplate,
-        ResourceEventHandler<V1Job> eventHandlerJob,
-        ResourceEventHandler<V1Node> eventHandlerNode,@Value("${sw.instance-uri}") String instanceUri) {
+            StorageProperties storageProperties,
+            JobTokenConfig jobTokenConfig,
+            RunTimeProperties runTimeProperties,
+            K8sResourcePoolConverter resourcePoolConverter,
+            K8sJobTemplate k8sJobTemplate,
+            ResourceEventHandler<V1Job> eventHandlerJob,
+            ResourceEventHandler<V1Node> eventHandlerNode, @Value("${sw.instance-uri}") String instanceUri) {
         this.k8sClient = k8sClient;
         this.storageProperties = storageProperties;
         this.jobTokenConfig = jobTokenConfig;
         this.runTimeProperties = runTimeProperties;
         this.resourcePoolConverter = resourcePoolConverter;
-        this.k8SJobTemplate = k8SJobTemplate;
+        this.k8sJobTemplate = k8sJobTemplate;
         this.eventHandlerJob = eventHandlerJob;
         this.eventHandlerNode = eventHandlerNode;
         this.instanceUri = instanceUri;
@@ -95,7 +95,7 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     @Override
     public void schedule(Collection<Task> tasks,
-                      Clazz deviceClass) {
+            Clazz deviceClass) {
         tasks.parallelStream().forEach(this::deployTaskToK8s);
     }
 
@@ -113,24 +113,20 @@ public class K8sTaskScheduler implements SWTaskScheduler {
     /**
      * {instance}/project/{projectName}/dataset/{datasetName}/version/{version}
      */
-    static final String FORMATTER_URI_DATASET="%s/project/%s/dataset/%s/version/%s";
-    /**
-     *
-     * @param task
-     */
+    static final String FORMATTER_URI_DATASET = "%s/project/%s/dataset/%s/version/%s";
+
     private void deployTaskToK8s(Task task) {
         log.debug("deploying task to k8s {} ", task.getId());
         try {
             var nodeSelector = this.resourcePoolConverter.toK8sLabel(task.getStep().getJob().getResourcePool());
-            V1Job k8sJob =  k8SJobTemplate.renderJob(task.getId().toString(),buildContainerSpecMap(task),nodeSelector);
+            V1Job k8sJob = k8sJobTemplate.renderJob(task.getId().toString(), buildContainerSpecMap(task), nodeSelector);
             log.debug("deploying k8sJob to k8s :{}", JSONUtil.toJsonStr(k8sJob));
             k8sClient.deploy(k8sJob);
-        } catch (ApiException k8sE){
-            log.error(" schedule task failed {}",k8sE.getResponseBody(),k8sE);
+        } catch (ApiException k8sE) {
+            log.error(" schedule task failed {}", k8sE.getResponseBody(), k8sE);
             taskFailed(task);
-        }
-        catch (Exception e) {
-            log.error(" schedule task failed ",e);
+        } catch (Exception e) {
+            log.error(" schedule task failed ", e);
             taskFailed(task);
         }
     }
@@ -142,15 +138,15 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         Map<String, String> coreContainerEnvs = buildCoreContainerEnvs(task);
         // TODO: use task's resource needs
         Map<String, ContainerOverwriteSpec> ret = new HashMap<>();
-        k8SJobTemplate.getInitContainerTemplates().forEach(templateContainer->{
-            ContainerOverwriteSpec containerOverwriteSpec =new ContainerOverwriteSpec(templateContainer.getName());
+        k8sJobTemplate.getInitContainerTemplates().forEach(templateContainer -> {
+            ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
             containerOverwriteSpec.setEnvs(mapToEnv(initContainerEnvs));
             ret.put(templateContainer.getName(), containerOverwriteSpec);
         });
 
         JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
-        k8SJobTemplate.getContainersTemplates().forEach(templateContainer->{
-            ContainerOverwriteSpec containerOverwriteSpec =new ContainerOverwriteSpec(templateContainer.getName());
+        k8sJobTemplate.getContainersTemplates().forEach(templateContainer -> {
+            ContainerOverwriteSpec containerOverwriteSpec = new ContainerOverwriteSpec(templateContainer.getName());
             containerOverwriteSpec.setEnvs(mapToEnv(coreContainerEnvs));
             containerOverwriteSpec.setCmds(List.of("run"));
             containerOverwriteSpec.setResourceOverwriteSpec(getResourceSpec(task));
@@ -162,13 +158,13 @@ public class K8sTaskScheduler implements SWTaskScheduler {
 
     private ResourceOverwriteSpec getResourceSpec(Task task) {
         JobRuntime jobRuntime = task.getStep().getJob().getJobRuntime();
-        if(null != jobRuntime.getDeviceClass() && null != jobRuntime.getDeviceAmount()){
+        if (null != jobRuntime.getDeviceClass() && null != jobRuntime.getDeviceAmount()) {
             return new ResourceOverwriteSpec(
-                jobRuntime.getDeviceClass(),
-                jobRuntime.getDeviceAmount().toString() + "m");
+                    jobRuntime.getDeviceClass(),
+                    jobRuntime.getDeviceAmount().toString() + "m");
         }
         List<RuntimeResource> runtimeResources = task.getTaskRequest().getRuntimeResources();
-        if(!CollectionUtils.isEmpty(runtimeResources)){
+        if (!CollectionUtils.isEmpty(runtimeResources)) {
             return new ResourceOverwriteSpec(runtimeResources);
         }
         return null;
@@ -182,15 +178,15 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         coreContainerEnvs.put("SW_TASK_STEP", task.getStep().getName());
         // TODO: support multi dataset uris
         // oss env
-        List<SWDataSet> swDataSets = swJob.getSwDataSets();
-        SWDataSet swDataSet = swDataSets.get(0);
-        coreContainerEnvs.put("SW_DATASET_URI", String.format(FORMATTER_URI_DATASET,instanceUri,
-            swJob.getProject().getName(),swDataSet.getName(),swDataSet.getVersion()));
+        List<SwDataSet> swDataSets = swJob.getSwDataSets();
+        SwDataSet swDataSet = swDataSets.get(0);
+        coreContainerEnvs.put("SW_DATASET_URI", String.format(FORMATTER_URI_DATASET, instanceUri,
+                swJob.getProject().getName(), swDataSet.getName(), swDataSet.getVersion()));
         coreContainerEnvs.put("SW_TASK_INDEX", String.valueOf(task.getTaskRequest().getIndex()));
         coreContainerEnvs.put("SW_EVALUATION_VERSION", swJob.getUuid());
 
         swDataSets.forEach(ds -> ds.getFileStorageEnvs().values()
-            .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
+                .forEach(fileStorageEnv -> coreContainerEnvs.putAll(fileStorageEnv.getEnvs())));
 
         coreContainerEnvs.put(FileStorageEnv.ENV_KEY_PREFIX, swDataSet.getPath());
 
@@ -209,41 +205,39 @@ public class K8sTaskScheduler implements SWTaskScheduler {
         List<String> downloads = new ArrayList<>();
         String prefix = "s3://" + storageProperties.getS3Config().getBucket() + "/";
         downloads.add(prefix + swJob.getSwmp().getPath() + ";/opt/starwhale/swmp/");
-        downloads.add(prefix + SWRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
-            jobRuntime.getStoragePath()).build().getPath() + ";/opt/starwhale/swrt/");
+        downloads.add(prefix + SwRunTime.builder().name(jobRuntime.getName()).version(jobRuntime.getVersion()).path(
+                jobRuntime.getStoragePath()).build().getPath() + ";/opt/starwhale/swrt/");
         initContainerEnvs.put("DOWNLOADS", Strings.join(downloads, ' '));
         initContainerEnvs.put("ENDPOINT_URL", storageProperties.getS3Config().getEndpoint());
         initContainerEnvs.put("AWS_ACCESS_KEY_ID", storageProperties.getS3Config().getAccessKey());
         initContainerEnvs.put("AWS_SECRET_ACCESS_KEY", storageProperties.getS3Config().getSecretKey());
         initContainerEnvs.put("AWS_S3_REGION", storageProperties.getS3Config().getRegion());
-        initContainerEnvs.put("SW_PYPI_INDEX_URL",runTimeProperties.getPypi().getIndexUrl());
-        initContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL",runTimeProperties.getPypi().getExtraIndexUrl());
-        initContainerEnvs.put("SW_PYPI_TRUSTED_HOST",runTimeProperties.getPypi().getTrustedHost());
+        initContainerEnvs.put("SW_PYPI_INDEX_URL", runTimeProperties.getPypi().getIndexUrl());
+        initContainerEnvs.put("SW_PYPI_EXTRA_INDEX_URL", runTimeProperties.getPypi().getExtraIndexUrl());
+        initContainerEnvs.put("SW_PYPI_TRUSTED_HOST", runTimeProperties.getPypi().getTrustedHost());
         return initContainerEnvs;
     }
 
     @NotNull
     private List<V1EnvVar> mapToEnv(Map<String, String> initContainerEnvs) {
         return initContainerEnvs.entrySet().stream()
-            .map(entry -> new V1EnvVar().name(entry.getKey()).value(entry.getValue()))
-            .collect(Collectors.toList());
+                .map(entry -> new V1EnvVar().name(entry.getKey()).value(entry.getValue()))
+                .collect(Collectors.toList());
     }
 
     private void taskFailed(Task task) {
-        TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(Set.of(TaskWatcherForJobStatus.class
-            , TaskWatcherForSchedule.class
-            , TaskWatcherForLogging.class));
-        //todo save log
+        TaskStatusChangeWatcher.SKIPPED_WATCHERS.set(
+                Set.of(TaskWatcherForJobStatus.class, TaskWatcherForSchedule.class, TaskWatcherForLogging.class));
+        // todo save log
         task.updateStatus(TaskStatus.FAIL);
         TaskStatusChangeWatcher.SKIPPED_WATCHERS.remove();
     }
 
 
-
     @EventListener
     public void handleContextReadyEvent(ApplicationReadyEvent ctxReadyEvt) {
         log.info("spring context ready now");
-        k8sClient.watchJob(eventHandlerJob,K8sClient.toV1LabelSelector(K8SJobTemplate.starwhaleJobLabel));
+        k8sClient.watchJob(eventHandlerJob, K8sClient.toV1LabelSelector(K8sJobTemplate.starwhaleJobLabel));
         k8sClient.watchNode(eventHandlerNode);
     }
 }

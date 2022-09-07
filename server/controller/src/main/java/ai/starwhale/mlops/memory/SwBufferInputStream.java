@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.memory;
 
+import java.io.InputStream;
 import lombok.Getter;
 
-import java.io.InputStream;
-
 public class SwBufferInputStream extends InputStream {
+
     private final SwBuffer buffer;
     @Getter
     private int offset;
@@ -41,7 +42,7 @@ public class SwBufferInputStream extends InputStream {
     }
 
     @Override
-    public int read(byte b[], int off, int len) {
+    public int read(byte[] b, int off, int len) {
         var capacity = this.buffer.capacity();
         if (this.offset >= capacity) {
             return -1;

@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.swds.upload;
 
-import ai.starwhale.mlops.domain.swds.po.SWDatasetVersionEntity;
-import ai.starwhale.mlops.domain.swds.upload.bo.SWDSVersionWithMeta;
+import ai.starwhale.mlops.domain.swds.po.SwDatasetVersionEntity;
+import ai.starwhale.mlops.domain.swds.upload.bo.SwdsVersionWithMeta;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,18 +26,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class HotSwdsHolder {
 
-    Map<String, SWDSVersionWithMeta> swdsHolder;
+    Map<String, SwdsVersionWithMeta> swdsHolder;
 
-    final SWDSVersionWithMetaConverter swdsVersionWithMetaConverter;
+    final SwdsVersionWithMetaConverter swdsVersionWithMetaConverter;
 
-    public HotSwdsHolder(SWDSVersionWithMetaConverter swdsVersionWithMetaConverter) {
+    public HotSwdsHolder(SwdsVersionWithMetaConverter swdsVersionWithMetaConverter) {
         this.swdsVersionWithMetaConverter = swdsVersionWithMetaConverter;
         this.swdsHolder = new ConcurrentHashMap<>();
     }
 
-    public void manifest(SWDatasetVersionEntity swDatasetVersionEntity) {
+    public void manifest(SwDatasetVersionEntity swDatasetVersionEntity) {
         swdsHolder.put(swDatasetVersionEntity.getVersionName(),
-            swdsVersionWithMetaConverter.from(swDatasetVersionEntity));
+                swdsVersionWithMetaConverter.from(swDatasetVersionEntity));
     }
 
     public void cancel(String swdsId) {
@@ -48,7 +48,7 @@ public class HotSwdsHolder {
         swdsHolder.remove(swdsId);
     }
 
-    public Optional<SWDSVersionWithMeta> of(String id) {
+    public Optional<SwdsVersionWithMeta> of(String id) {
         return Optional.ofNullable(swdsHolder.get(id));
     }
 

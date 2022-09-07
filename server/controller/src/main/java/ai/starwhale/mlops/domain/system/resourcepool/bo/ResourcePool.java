@@ -16,12 +16,11 @@
 
 package ai.starwhale.mlops.domain.system.resourcepool.bo;
 
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Objects;
 
 /**
  * bo represent agent
@@ -32,7 +31,7 @@ import java.util.Objects;
 @NoArgsConstructor
 public class ResourcePool {
 
-    public static final String DEFAULT="default";
+    public static final String DEFAULT = "default";
     String label;
 
     @Override
@@ -51,6 +50,7 @@ public class ResourcePool {
     public int hashCode() {
         return Objects.hash(label);
     }
+
     public static ResourcePool empty() {
         return new ResourcePool(DEFAULT);
     }

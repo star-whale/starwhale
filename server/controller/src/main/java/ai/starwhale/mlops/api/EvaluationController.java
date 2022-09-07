@@ -18,17 +18,17 @@ package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.Code;
 import ai.starwhale.mlops.api.protocol.ResponseMessage;
-import ai.starwhale.mlops.api.protocol.evaluation.AttributeVO;
+import ai.starwhale.mlops.api.protocol.evaluation.AttributeVo;
 import ai.starwhale.mlops.api.protocol.evaluation.ConfigRequest;
-import ai.starwhale.mlops.api.protocol.evaluation.ConfigVO;
-import ai.starwhale.mlops.api.protocol.evaluation.SummaryVO;
+import ai.starwhale.mlops.api.protocol.evaluation.ConfigVo;
+import ai.starwhale.mlops.api.protocol.evaluation.SummaryVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.domain.evaluation.EvaluationService;
 import ai.starwhale.mlops.domain.evaluation.bo.ConfigQuery;
 import ai.starwhale.mlops.domain.evaluation.bo.SummaryFilter;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
 import javax.annotation.Resource;
@@ -41,20 +41,20 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("${sw.controller.apiPrefix}")
-public class EvaluationController implements EvaluationApi{
+public class EvaluationController implements EvaluationApi {
 
     @Resource
     private EvaluationService evaluationService;
 
     @Override
-    public ResponseEntity<ResponseMessage<List<AttributeVO>>>   listAttributes(String projectUrl) {
-        List<AttributeVO> vos = evaluationService.listAttributeVO();
+    public ResponseEntity<ResponseMessage<List<AttributeVo>>> listAttributes(String projectUrl) {
+        List<AttributeVo> vos = evaluationService.listAttributeVo();
         return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<ConfigVO>> getViewConfig(String projectUrl, String name) {
-        ConfigVO viewConfig = evaluationService.getViewConfig(ConfigQuery.builder()
+    public ResponseEntity<ResponseMessage<ConfigVo>> getViewConfig(String projectUrl, String name) {
+        ConfigVo viewConfig = evaluationService.getViewConfig(ConfigQuery.builder()
                 .projectUrl(projectUrl)
                 .name(name)
                 .build());
@@ -64,23 +64,23 @@ public class EvaluationController implements EvaluationApi{
     @Override
     public ResponseEntity<ResponseMessage<String>> createViewConfig(String projectUrl, ConfigRequest configRequest) {
         Boolean res = evaluationService.createViewConfig(projectUrl, configRequest);
-        if(!res) {
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.DB).tip("Create view config failed."),
-                HttpStatus.INTERNAL_SERVER_ERROR);
+        if (!res) {
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.DB).tip("Create view config failed."),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
         }
         return ResponseEntity.ok(Code.success.asResponse("success"));
     }
 
     @Override
-    public ResponseEntity<ResponseMessage<PageInfo<SummaryVO>>> listEvaluationSummary(String projectUrl,
-        String filter, Integer pageNum, Integer pageSize) {
-        PageInfo<SummaryVO> vos = evaluationService.listEvaluationSummary(
-            projectUrl,
-            SummaryFilter.parse(filter),
-            PageParams.builder()
-                .pageNum(pageNum)
-                .pageSize(pageSize)
-                .build());
+    public ResponseEntity<ResponseMessage<PageInfo<SummaryVo>>> listEvaluationSummary(String projectUrl,
+            String filter, Integer pageNum, Integer pageSize) {
+        PageInfo<SummaryVo> vos = evaluationService.listEvaluationSummary(
+                projectUrl,
+                SummaryFilter.parse(filter),
+                PageParams.builder()
+                        .pageNum(pageNum)
+                        .pageSize(pageSize)
+                        .build());
         return ResponseEntity.ok(Code.success.asResponse(vos));
     }
 

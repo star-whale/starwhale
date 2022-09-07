@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.api.protocol.datastore;
 
 import lombok.Data;
 
 @Data
 public class ColumnDesc {
+
     private String columnName;
     private String alias;
 }

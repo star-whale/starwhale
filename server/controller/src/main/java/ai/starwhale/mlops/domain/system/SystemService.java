@@ -16,8 +16,8 @@
 
 package ai.starwhale.mlops.domain.system;
 
-import ai.starwhale.mlops.api.protocol.agent.AgentVO;
-import ai.starwhale.mlops.api.protocol.system.ResourcePoolVO;
+import ai.starwhale.mlops.api.protocol.agent.AgentVo;
+import ai.starwhale.mlops.api.protocol.system.ResourcePoolVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.system.agent.AgentCache;
@@ -54,20 +54,20 @@ public class SystemService {
     @Value("${sw.version}")
     private String controllerVersion;
 
-    public PageInfo<AgentVO> listAgents(String ipPrefix, PageParams pageParams) {
+    public PageInfo<AgentVo> listAgents(String ipPrefix, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         List<AgentEntity> agents = agentCache.agents().stream().map(agentConverter::toEntity).collect(
-            Collectors.toList());
+                Collectors.toList());
         return PageUtil.toPageInfo(agents, agentConvertor::convert);
     }
 
-    public String controllerVersion(){
+    public String controllerVersion() {
         return controllerVersion;
     }
 
-    public List<ResourcePoolVO>listResourcePools()  {
+    public List<ResourcePoolVo> listResourcePools() {
         var entities = resourcePoolMapper.listResourcePools();
-        return entities.stream().map(resourcePoolConverter::toResourcePoolVO).collect(Collectors.toList());
+        return entities.stream().map(resourcePoolConverter::toResourcePoolVo).collect(Collectors.toList());
     }
 
 }

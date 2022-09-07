@@ -17,10 +17,10 @@
 package ai.starwhale.mlops.domain.storage;
 
 
-import ai.starwhale.mlops.api.protocol.StorageFileVO;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.api.protocol.StorageFileVo;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
 import cn.hutool.core.io.FileUtil;
@@ -43,8 +43,8 @@ public class StorageService {
     @Resource
     private StorageAccessService storageAccessService;
 
-    public List<StorageFileVO> listStorageFile(String storagePath) throws IOException {
-        if(!StringUtils.hasText(storagePath)) {
+    public List<StorageFileVo> listStorageFile(String storagePath) throws IOException {
+        if (!StringUtils.hasText(storagePath)) {
             log.error("Cannot list storage files. Storage path is empty");
             return List.of();
         }
@@ -62,20 +62,20 @@ public class StorageService {
                 if (StrUtil.startWith(filePath, storagePath)) {
                     filePath = filePath.substring(storagePath.length() + 1);
                 }
-                return StorageFileVO.builder()
-                    .name(filePath)
-                    .size(FileUtil.readableFileSize(length))
-                    .build();
+                return StorageFileVo.builder()
+                        .name(filePath)
+                        .size(FileUtil.readableFileSize(length))
+                        .build();
             }).collect(Collectors.toList());
         } catch (IOException e) {
             log.error("list swmp storage", e);
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE)
-                .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE)
+                    .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     public long getStorageSize(String storagePath) {
-        if(!StringUtils.hasText(storagePath)) {
+        if (!StringUtils.hasText(storagePath)) {
             log.error("Cannot list storage files. Storage path is empty");
             return 0L;
         }
@@ -94,8 +94,8 @@ public class StorageService {
             return length.get();
         } catch (IOException e) {
             log.error("list swmp storage", e);
-            throw new StarWhaleApiException(new SWProcessException(ErrorType.STORAGE)
-                .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new StarwhaleApiException(new SwProcessException(ErrorType.STORAGE)
+                    .tip(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

@@ -17,25 +17,25 @@
 package ai.starwhale.mlops.domain.job.cache;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.converter.JobBoConverter;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.status.JobUpdateHelper;
-import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.StepConverter;
-import ai.starwhale.mlops.domain.job.step.po.StepEntity;
+import ai.starwhale.mlops.domain.job.step.StepHelper;
+import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.mapper.StepMapper;
+import ai.starwhale.mlops.domain.job.step.po.StepEntity;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.job.step.trigger.StepTrigger;
-import ai.starwhale.mlops.domain.job.step.StepHelper;
-import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.converter.TaskBoConverter;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
+import ai.starwhale.mlops.domain.task.po.TaskEntity;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.WatchableTaskFactory;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
-import ai.starwhale.mlops.schedule.SWTaskScheduler;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
+import ai.starwhale.mlops.schedule.SwTaskScheduler;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -53,7 +53,7 @@ import org.springframework.util.CollectionUtils;
 @Service
 public class JobLoader {
 
-    final SWTaskScheduler swTaskScheduler;
+    final SwTaskScheduler swTaskScheduler;
 
     final TaskMapper taskMapper;
 
@@ -75,13 +75,13 @@ public class JobLoader {
 
     final JobUpdateHelper jobUpdateHelper;
 
-    public JobLoader(SWTaskScheduler swTaskScheduler,
-        TaskMapper taskMapper, TaskBoConverter taskBoConverter,
-        JobBoConverter jobBoConverter, HotJobHolder jobHolder,
-        StepMapper stepMapper, StepConverter stepConverter,
-        WatchableTaskFactory watchableTaskFactory,
-        StepTrigger stepTrigger, StepHelper stepHelper,
-        JobUpdateHelper jobUpdateHelper) {
+    public JobLoader(SwTaskScheduler swTaskScheduler,
+            TaskMapper taskMapper, TaskBoConverter taskBoConverter,
+            JobBoConverter jobBoConverter, HotJobHolder jobHolder,
+            StepMapper stepMapper, StepConverter stepConverter,
+            WatchableTaskFactory watchableTaskFactory,
+            StepTrigger stepTrigger, StepHelper stepHelper,
+            JobUpdateHelper jobUpdateHelper) {
         this.swTaskScheduler = swTaskScheduler;
         this.taskMapper = taskMapper;
         this.taskBoConverter = taskBoConverter;
@@ -95,82 +95,83 @@ public class JobLoader {
         this.jobUpdateHelper = jobUpdateHelper;
     }
 
-    public List<Job> loadEntities(List<JobEntity> jobEntityList,Boolean resumePausedOrFailTasks,Boolean doCache){
-        if(CollectionUtils.isEmpty(jobEntityList)){
+    public List<Job> loadEntities(List<JobEntity> jobEntityList, Boolean resumePausedOrFailTasks, Boolean doCache) {
+        if (CollectionUtils.isEmpty(jobEntityList)) {
             return new ArrayList<>(0);
         }
-        if(resumePausedOrFailTasks && !doCache){
-            throw new SWProcessException(ErrorType.SYSTEM).tip("unsupported params combination: resumePausedOrFailTasks:true & doCache:false");
+        if (resumePausedOrFailTasks && !doCache) {
+            throw new SwProcessException(ErrorType.SYSTEM).tip(
+                    "unsupported params combination: resumePausedOrFailTasks:true & doCache:false");
         }
         return jobEntityList.parallelStream()
-            .map(jobBoConverter::fromEntity)
-            .peek(job -> {
-                fillStepsAndTasks(job,resumePausedOrFailTasks,doCache);
-                if(doCache){
-                    jobHolder.adopt(job);
-                }
-            })
-            .collect(Collectors.toList());
+                .map(jobBoConverter::fromEntity)
+                .peek(job -> {
+                    fillStepsAndTasks(job, resumePausedOrFailTasks, doCache);
+                    if (doCache) {
+                        jobHolder.adopt(job);
+                    }
+                })
+                .collect(Collectors.toList());
 
     }
 
-    private void fillStepsAndTasks(Job job,Boolean resumePausedOrFailTasks,Boolean doCache) {
+    private void fillStepsAndTasks(Job job, Boolean resumePausedOrFailTasks, Boolean doCache) {
         List<StepEntity> stepEntities = stepMapper.findByJobId(job.getId());
         List<Step> steps = stepEntities.parallelStream().map(stepConverter::fromEntity)
-            .peek(step -> {
-                log.debug("start");
-                step.setJob(job);
-                List<TaskEntity> taskEntities = taskMapper.findByStepId(step.getId());
-                List<Task> tasks = taskBoConverter.fromTaskEntity(taskEntities, step);//PAUSED, FAIL
-                if(resumePausedOrFailTasks){
-                    resumeFrozenTasks(tasks);
-                }
-                log.debug("start cache");
-                if(doCache){
-                    List<Task> watchableTasks = watchableTaskFactory.wrapTasks(tasks);
-                    scheduleReadyTasks(watchableTasks.parallelStream()
-                        .filter(t -> t.getStatus() == TaskStatus.READY)
-                        .collect(
-                            Collectors.toSet()));
-                    step.setTasks(watchableTasks);
-                }else {
-                    step.setTasks(tasks);
-                }
-
-                log.debug("start set status");
-                step.setStatus(stepHelper.desiredStepStatus(tasks.parallelStream().map(Task::getStatus).collect(
-                    Collectors.toSet())));
-                if(step.getStatus() == StepStatus.RUNNING){
-                    if(job.getCurrentStep() != null){
-                        log.error("FATAL!!!!! A job has two running steps job id: {}",job.getId());
+                .peek(step -> {
+                    log.debug("start");
+                    step.setJob(job);
+                    List<TaskEntity> taskEntities = taskMapper.findByStepId(step.getId());
+                    List<Task> tasks = taskBoConverter.fromTaskEntity(taskEntities, step); // PAUSED, FAIL
+                    if (resumePausedOrFailTasks) {
+                        resumeFrozenTasks(tasks);
                     }
-                    job.setCurrentStep(step);
-                }
-            }).collect(Collectors.toList());
-        linkSteps(steps,stepEntities);
+                    log.debug("start cache");
+                    if (doCache) {
+                        List<Task> watchableTasks = watchableTaskFactory.wrapTasks(tasks);
+                        scheduleReadyTasks(watchableTasks.parallelStream()
+                                .filter(t -> t.getStatus() == TaskStatus.READY)
+                                .collect(
+                                        Collectors.toSet()));
+                        step.setTasks(watchableTasks);
+                    } else {
+                        step.setTasks(tasks);
+                    }
+
+                    log.debug("start set status");
+                    step.setStatus(stepHelper.desiredStepStatus(tasks.parallelStream().map(Task::getStatus).collect(
+                            Collectors.toSet())));
+                    if (step.getStatus() == StepStatus.RUNNING) {
+                        if (job.getCurrentStep() != null) {
+                            log.error("FATAL!!!!! A job has two running steps job id: {}", job.getId());
+                        }
+                        job.setCurrentStep(step);
+                    }
+                }).collect(Collectors.toList());
+        linkSteps(steps, stepEntities);
         job.setSteps(steps);
-        if(null == job.getCurrentStep() && doCache){
+        if (null == job.getCurrentStep() && doCache) {
             triggerPossibleNextStep(job);
         }
         jobUpdateHelper.updateJob(job);
     }
 
     private void resumeFrozenTasks(List<Task> tasks) {
-        tasks.parallelStream().filter(t->t.getStatus() == TaskStatus.PAUSED
-            || t.getStatus() ==TaskStatus.FAIL
-            || t.getStatus() ==TaskStatus.CANCELED)
-            .forEach(t->t.updateStatus(TaskStatus.READY));
+        tasks.parallelStream().filter(t -> t.getStatus() == TaskStatus.PAUSED
+                        || t.getStatus() == TaskStatus.FAIL
+                        || t.getStatus() == TaskStatus.CANCELED)
+                .forEach(t -> t.updateStatus(TaskStatus.READY));
     }
 
     private void linkSteps(List<Step> steps, List<StepEntity> stepEntities) {
         Map<Long, Step> stepMap = steps.parallelStream()
-            .collect(Collectors.toMap(Step::getId, Function.identity()));
+                .collect(Collectors.toMap(Step::getId, Function.identity()));
         Map<Long, Long> linkMap = stepEntities.parallelStream()
-            .filter(stepEntity -> null != stepEntity.getLastStepId())
-            .collect(Collectors.toMap(StepEntity::getLastStepId, StepEntity::getId));
+                .filter(stepEntity -> null != stepEntity.getLastStepId())
+                .collect(Collectors.toMap(StepEntity::getLastStepId, StepEntity::getId));
         steps.forEach(step -> {
             Long nextStepId = linkMap.get(step.getId());
-            if(null == nextStepId){
+            if (null == nextStepId) {
                 return;
             }
             step.setNextStep(stepMap.get(nextStepId));
@@ -180,35 +181,36 @@ public class JobLoader {
     /**
      * load READY tasks on start
      */
-    void scheduleReadyTasks(Collection<Task> tasks){
+    void scheduleReadyTasks(Collection<Task> tasks) {
         if (null == tasks) {
             return;
         }
         tasks.parallelStream()
-            .collect(Collectors.groupingBy(task -> task.getStep().getJob().getJobRuntime().getDeviceClass()))
-            .forEach((deviceClass, taskList) ->
-                swTaskScheduler.schedule(taskList, deviceClass));
+                .collect(Collectors.groupingBy(task -> task.getStep().getJob().getJobRuntime().getDeviceClass()))
+                .forEach((deviceClass, taskList) ->
+                        swTaskScheduler.schedule(taskList, deviceClass));
     }
 
     private void triggerPossibleNextStep(Job job) {
         log.warn("a job shall has a current step after fill steps job id: {} trying to trigger one", job.getId());
         Step stepPointer = stepHelper.firsStep(job.getSteps());
-        do{
-            if(stepPointer.getStatus() == StepStatus.SUCCESS){
+        do {
+            if (stepPointer.getStatus() == StepStatus.SUCCESS) {
                 Step nextStep = stepPointer.getNextStep();
-                if(null == nextStep){
+                if (null == nextStep) {
                     break;
                 }
-                if(nextStep.getStatus() == StepStatus.CREATED){
+                if (nextStep.getStatus() == StepStatus.CREATED) {
                     stepTrigger.triggerNextStep(stepPointer);
                     break;
                 }
-            }else{
-                log.warn("step is not success and is not job current status {} id:{}",stepPointer.getStatus(),stepPointer.getId());
+            } else {
+                log.warn("step is not success and is not job current status {} id:{}", stepPointer.getStatus(),
+                        stepPointer.getId());
             }
             stepPointer = stepPointer.getNextStep();
 
-        }while (null != stepPointer);
+        } while (null != stepPointer);
     }
 
 }

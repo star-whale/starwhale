@@ -25,8 +25,8 @@ import ai.starwhale.mlops.domain.job.step.bo.Step;
 import ai.starwhale.mlops.domain.job.step.status.StepStatus;
 import ai.starwhale.mlops.domain.node.Device.Clazz;
 import ai.starwhale.mlops.domain.storage.StoragePathCoordinator;
-import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
-import ai.starwhale.mlops.domain.swmp.SWModelPackage;
+import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
+import ai.starwhale.mlops.domain.swmp.SwModelPackage;
 import ai.starwhale.mlops.domain.task.bo.Task;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import java.util.LinkedList;
@@ -39,24 +39,27 @@ public class JobMockHolder {
     AtomicLong atomicLong = new AtomicLong(0);
     StoragePathCoordinator storagePathCoordinator = ObjectMockHolder.storagePathCoordinator();
 
-    public Job mockJob(){
+    public Job mockJob() {
 
-        String jobuuid= UUID.randomUUID().toString();
+        String jobuuid = UUID.randomUUID().toString();
         String jobDir = storagePathCoordinator.generateResultMetricsPath(jobuuid);
-        String swdsPath = storagePathCoordinator.generateSwdsPath("projectname1","swds1", "versionswds1");
+        String swdsPath = storagePathCoordinator.generateSwdsPath("projectname1", "swds1", "versionswds1");
         List<Step> steps = new LinkedList<>();
         Job job = Job.builder()
-            .id(atomicLong.incrementAndGet())
-            .uuid(UUID.randomUUID().toString())
-            .jobRuntime(JobRuntime.builder().name("runtime1").version("version1").deviceAmount(1).storagePath(jobDir).deviceClass(Clazz.CPU).build())
-            .swmp(SWModelPackage.builder().id(1L).name("swmp1").version("versionsmp1").path(storagePathCoordinator.generateSwmpPath("project1","swmp1","versionsmp1")).build())
-            .swDataSets(List.of(SWDataSet.builder().id(1L).name("swds1").version("versionswds1").path(
-                swdsPath).size(1024L).build()))
-            .status(JobStatus.RUNNING)
-            .type(JobType.EVALUATION)
-            .steps(steps)
-            .outputDir(jobDir)
-            .build();
+                .id(atomicLong.incrementAndGet())
+                .uuid(UUID.randomUUID().toString())
+                .jobRuntime(
+                        JobRuntime.builder().name("runtime1").version("version1").deviceAmount(1).storagePath(jobDir)
+                                .deviceClass(Clazz.CPU).build())
+                .swmp(SwModelPackage.builder().id(1L).name("swmp1").version("versionsmp1")
+                        .path(storagePathCoordinator.generateSwmpPath("project1", "swmp1", "versionsmp1")).build())
+                .swDataSets(List.of(SwDataSet.builder().id(1L).name("swds1").version("versionswds1").path(
+                        swdsPath).size(1024L).build()))
+                .status(JobStatus.RUNNING)
+                .type(JobType.EVALUATION)
+                .steps(steps)
+                .outputDir(jobDir)
+                .build();
         Step currentStep = mockSteps(job, steps);
         job.setCurrentStep(currentStep);
 
@@ -66,14 +69,14 @@ public class JobMockHolder {
     private Step mockSteps(Job job, List<Step> steps) {
         List<Task> tasks = new LinkedList<>();
         Step step1 = Step.builder().tasks(tasks).job(job).id(atomicLong.incrementAndGet()).name("PPL")
-            .status(StepStatus.RUNNING).build();
+                .status(StepStatus.RUNNING).build();
 
-        mockTasks(step1,tasks,TaskStatus.RUNNING);
+        mockTasks(step1, tasks, TaskStatus.RUNNING);
 
         tasks = new LinkedList<>();
         Step step2 = Step.builder().tasks(tasks).job(job).id(atomicLong.incrementAndGet()).name("CMP")
-            .status(StepStatus.CREATED).build();
-        mockTasks(step2,tasks,TaskStatus.CREATED);
+                .status(StepStatus.CREATED).build();
+        mockTasks(step2, tasks, TaskStatus.CREATED);
 
         step1.setNextStep(step2);
 
@@ -84,25 +87,25 @@ public class JobMockHolder {
     }
 
 
-    private void mockTasks(Step step,List<Task> tasks,TaskStatus taskStatus) {
-        String taskUUId = UUID.randomUUID().toString();
+    private void mockTasks(Step step, List<Task> tasks, TaskStatus taskStatus) {
+        String taskUuid = UUID.randomUUID().toString();
         Task build = Task.builder()
-            .step(step)
-            .status(taskStatus)
-            .uuid(taskUUId)
-            .id(atomicLong.incrementAndGet())
-            .resultRootPath(new ResultPath(
-                storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUUId)))
-            .build();
+                .step(step)
+                .status(taskStatus)
+                .uuid(taskUuid)
+                .id(atomicLong.incrementAndGet())
+                .resultRootPath(new ResultPath(
+                        storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUuid)))
+                .build();
 
         Task build2 = Task.builder()
-            .step(step)
-            .status(taskStatus)
-            .uuid(taskUUId)
-            .id(atomicLong.incrementAndGet())
-            .resultRootPath(new ResultPath(
-                storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUUId)))
-            .build();
+                .step(step)
+                .status(taskStatus)
+                .uuid(taskUuid)
+                .id(atomicLong.incrementAndGet())
+                .resultRootPath(new ResultPath(
+                        storagePathCoordinator.generateTaskResultPath(step.getJob().getUuid(), taskUuid)))
+                .build();
 
         tasks.add(build);
         tasks.add(build2);

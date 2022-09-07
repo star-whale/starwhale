@@ -17,13 +17,13 @@
 package ai.starwhale.mlops.domain.system.agent;
 
 import ai.starwhale.mlops.common.util.BatchOperateHelper;
-import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent;
-import ai.starwhale.mlops.domain.system.po.AgentEntity;
 import ai.starwhale.mlops.domain.system.agent.bo.Agent.AgentUnModifiable;
+import ai.starwhale.mlops.domain.system.agent.bo.Node;
 import ai.starwhale.mlops.domain.system.mapper.AgentMapper;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
+import ai.starwhale.mlops.domain.system.po.AgentEntity;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,32 +52,32 @@ public class AgentCache implements CommandLineRunner {
         agents = new ConcurrentHashMap<>();
     }
 
-    public List<Agent> agents(){
+    public List<Agent> agents() {
         return agents.values().parallelStream().map(agent -> new AgentUnModifiable(agent)).collect(
-            Collectors.toList());
+                Collectors.toList());
     }
 
-    public void removeOfflineAgent(String agentSerialNumber){
+    public void removeOfflineAgent(String agentSerialNumber) {
         Agent tobeDeleteAgent = agents.get(agentSerialNumber);
-        if(null == tobeDeleteAgent){
+        if (null == tobeDeleteAgent) {
             return;
         }
-        if(tobeDeleteAgent.getStatus() != AgentStatus.OFFLINE){
-            throw new SWValidationException(ValidSubject.NODE).tip("you can't remove online agent manually!");
+        if (tobeDeleteAgent.getStatus() != AgentStatus.OFFLINE) {
+            throw new SwValidationException(ValidSubject.NODE).tip("you can't remove online agent manually!");
         }
         agentMapper.deleteById(tobeDeleteAgent.getId());
         agents.remove(agentSerialNumber);
     }
 
-    public Agent nodeReport(Node node){
-        log.debug("node reported {}",node.getSerialNumber());
+    public Agent nodeReport(Node node) {
+        log.debug("node reported {}", node.getSerialNumber());
         Agent agentReported = agentConverter.fromNode(node);
         Agent residentAgent = agents.get(node.getSerialNumber());
-        if(null == residentAgent){
-            agents.put(node.getSerialNumber(),agentReported);
+        if (null == residentAgent) {
+            agents.put(node.getSerialNumber(), agentReported);
             agentReported = save(agentReported);
             return new AgentUnModifiable(agentReported);
-        }else {
+        } else {
             residentAgent.setAgentVersion(agentReported.getAgentVersion());
             residentAgent.setStatus(agentReported.getStatus());
             residentAgent.setNodeInfo(agentReported.getNodeInfo());
@@ -86,16 +86,18 @@ public class AgentCache implements CommandLineRunner {
         }
     }
 
-    @Scheduled(initialDelay = 10000,fixedDelay = 30000)
-    public void flushDb(){
+    @Scheduled(initialDelay = 10000, fixedDelay = 30000)
+    public void flushDb() {
         List<AgentEntity> agentEntities = agents.values().stream()
-            .map(agent -> agentConverter.toEntity(agent))
-            .collect(Collectors.toList());
-        if(null == agentEntities || agentEntities.isEmpty()){
+                .map(agent -> agentConverter.toEntity(agent))
+                .collect(Collectors.toList());
+        if (null == agentEntities || agentEntities.isEmpty()) {
             return;
         }
-        BatchOperateHelper.doBatch(agentEntities,entities->agentMapper.updateAgents(entities.parallelStream().collect(
-            Collectors.toList())),100);;
+        BatchOperateHelper.doBatch(agentEntities,
+                entities -> agentMapper.updateAgents(entities.parallelStream().collect(
+                        Collectors.toList())), 100);
+        ;
     }
 
     private Agent save(Agent agentReported) {

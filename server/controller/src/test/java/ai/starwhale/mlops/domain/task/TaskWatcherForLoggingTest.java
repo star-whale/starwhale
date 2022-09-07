@@ -20,67 +20,71 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import ai.starwhale.mlops.JobMockHolder;
 import ai.starwhale.mlops.domain.job.bo.Job;
 import ai.starwhale.mlops.domain.task.bo.Task;
-import ai.starwhale.mlops.domain.task.log.TaskLogCollector;
 import ai.starwhale.mlops.domain.task.status.TaskStatus;
 import ai.starwhale.mlops.domain.task.status.TaskStatusMachine;
 import ai.starwhale.mlops.domain.task.status.watchers.TaskWatcherForLogging;
-import ai.starwhale.mlops.JobMockHolder;
+import ai.starwhale.mlops.domain.task.status.watchers.log.TaskLogCollector;
 import org.junit.jupiter.api.Test;
 
 public class TaskWatcherForLoggingTest {
 
     @Test
-    public void testFAIL(){
+    public void testFail() {
         TaskLogCollector taskLogCollector = mock(
-            TaskLogCollector.class);
-        TaskWatcherForLogging taskWatcherForLogging = new TaskWatcherForLogging(taskLogCollector,new TaskStatusMachine());
+                TaskLogCollector.class);
+        TaskWatcherForLogging taskWatcherForLogging = new TaskWatcherForLogging(taskLogCollector,
+                new TaskStatusMachine());
         Job mockJob = new JobMockHolder().mockJob();
         Task task = mockJob.getSteps().get(0).getTasks().get(0);
         task.updateStatus(TaskStatus.FAIL);
-        taskWatcherForLogging.onTaskStatusChange(task,TaskStatus.RUNNING);
+        taskWatcherForLogging.onTaskStatusChange(task, TaskStatus.RUNNING);
         verify(taskLogCollector).collect(task);
     }
 
     @Test
-    public void testCANCELED(){
+    public void testCanceled() {
         TaskLogCollector taskLogCollector = mock(
-            TaskLogCollector.class);
-        TaskWatcherForLogging taskWatcherForLogging = new TaskWatcherForLogging(taskLogCollector,new TaskStatusMachine());
+                TaskLogCollector.class);
+        TaskWatcherForLogging taskWatcherForLogging = new TaskWatcherForLogging(taskLogCollector,
+                new TaskStatusMachine());
         Job mockJob = new JobMockHolder().mockJob();
         Task task = mockJob.getSteps().get(0).getTasks().get(0);
 
         task.updateStatus(TaskStatus.CANCELED);
-        taskWatcherForLogging.onTaskStatusChange(task,TaskStatus.RUNNING);
-        verify(taskLogCollector,times(0)).collect(task);
+        taskWatcherForLogging.onTaskStatusChange(task, TaskStatus.RUNNING);
+        verify(taskLogCollector, times(0)).collect(task);
 
     }
 
     @Test
-    public void testSUCCESS(){
+    public void testSuccess() {
         TaskLogCollector taskLogCollector = mock(
-            TaskLogCollector.class);
-        TaskWatcherForLogging taskWatcherForLogging = new TaskWatcherForLogging(taskLogCollector,new TaskStatusMachine());
+                TaskLogCollector.class);
+        TaskWatcherForLogging taskWatcherForLogging = new TaskWatcherForLogging(taskLogCollector,
+                new TaskStatusMachine());
         Job mockJob = new JobMockHolder().mockJob();
         Task task = mockJob.getSteps().get(0).getTasks().get(0);
 
         task.updateStatus(TaskStatus.SUCCESS);
-        taskWatcherForLogging.onTaskStatusChange(task,TaskStatus.RUNNING);
+        taskWatcherForLogging.onTaskStatusChange(task, TaskStatus.RUNNING);
         verify(taskLogCollector).collect(task);
 
     }
 
     @Test
-    public void testRUNNING(){
+    public void testRunning() {
         TaskLogCollector taskLogCollector = mock(
-            TaskLogCollector.class);
-        TaskWatcherForLogging taskWatcherForLogging = new TaskWatcherForLogging(taskLogCollector,new TaskStatusMachine());
+                TaskLogCollector.class);
+        TaskWatcherForLogging taskWatcherForLogging = new TaskWatcherForLogging(taskLogCollector,
+                new TaskStatusMachine());
         Job mockJob = new JobMockHolder().mockJob();
         Task task = mockJob.getSteps().get(0).getTasks().get(0);
 
         task.updateStatus(TaskStatus.RUNNING);
-        taskWatcherForLogging.onTaskStatusChange(task,TaskStatus.READY);
-        verify(taskLogCollector,times(0)).collect(task);
+        taskWatcherForLogging.onTaskStatusChange(task, TaskStatus.READY);
+        verify(taskLogCollector, times(0)).collect(task);
     }
 }

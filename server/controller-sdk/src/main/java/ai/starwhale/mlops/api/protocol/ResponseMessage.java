@@ -16,7 +16,6 @@
 
 package ai.starwhale.mlops.api.protocol;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;

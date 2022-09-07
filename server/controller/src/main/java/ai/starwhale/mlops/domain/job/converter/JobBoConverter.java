@@ -17,29 +17,28 @@
 package ai.starwhale.mlops.domain.job.converter;
 
 import ai.starwhale.mlops.domain.job.bo.Job;
-import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.job.bo.JobRuntime;
-import ai.starwhale.mlops.domain.job.mapper.JobSWDSVersionMapper;
+import ai.starwhale.mlops.domain.job.mapper.JobSwdsVersionMapper;
+import ai.starwhale.mlops.domain.job.po.JobEntity;
 import ai.starwhale.mlops.domain.node.Device;
 import ai.starwhale.mlops.domain.project.bo.Project;
-import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
-import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
-import ai.starwhale.mlops.domain.swds.bo.SWDataSet;
-import ai.starwhale.mlops.domain.swds.converter.SWDSBOConverter;
-import ai.starwhale.mlops.domain.swmp.SWModelPackage;
-import ai.starwhale.mlops.domain.swmp.po.SWModelPackageEntity;
-import ai.starwhale.mlops.domain.swmp.mapper.SWModelPackageMapper;
-import org.springframework.beans.factory.annotation.Value;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeEntity;
+import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
+import ai.starwhale.mlops.domain.swds.bo.SwDataSet;
+import ai.starwhale.mlops.domain.swds.converter.SwdsBoConverter;
+import ai.starwhale.mlops.domain.swmp.SwModelPackage;
+import ai.starwhale.mlops.domain.swmp.mapper.SwModelPackageMapper;
+import ai.starwhale.mlops.domain.swmp.po.SwModelPackageEntity;
 import ai.starwhale.mlops.domain.system.mapper.ResourcePoolMapper;
 import ai.starwhale.mlops.domain.system.po.ResourcePoolEntity;
 import ai.starwhale.mlops.domain.system.resourcepool.ResourcePoolConverter;
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
-import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * convert JobEntity to Job
@@ -47,9 +46,9 @@ import java.util.stream.Collectors;
 @Component
 public class JobBoConverter {
 
-    final JobSWDSVersionMapper jobSWDSVersionMapper;
+    final JobSwdsVersionMapper jobSwdsVersionMapper;
 
-    final SWModelPackageMapper swModelPackageMapper;
+    final SwModelPackageMapper swModelPackageMapper;
 
     final RuntimeMapper runtimeMapper;
 
@@ -59,71 +58,71 @@ public class JobBoConverter {
 
     final ResourcePoolConverter resourcePoolConverter;
 
-    final SWDSBOConverter swdsboConverter;
+    final SwdsBoConverter swdsBoConverter;
 
-    final String defaultRuntimeImage ;
+    final String defaultRuntimeImage;
 
     public JobBoConverter(
-        JobSWDSVersionMapper jobSWDSVersionMapper,
-        SWModelPackageMapper swModelPackageMapper,
-        RuntimeMapper runtimeMapper,
-        RuntimeVersionMapper runtimeVersionMapper,
-        SWDSBOConverter swdsboConverter,
-        @Value("${sw.runtime.image-default}") String defaultImage,
-        ResourcePoolMapper resourcePoolMapper,
-        ResourcePoolConverter resourcePoolConverter
+            JobSwdsVersionMapper jobSwdsVersionMapper,
+            SwModelPackageMapper swModelPackageMapper,
+            RuntimeMapper runtimeMapper,
+            RuntimeVersionMapper runtimeVersionMapper,
+            SwdsBoConverter swdsBoConverter,
+            @Value("${sw.runtime.image-default}") String defaultImage,
+            ResourcePoolMapper resourcePoolMapper,
+            ResourcePoolConverter resourcePoolConverter
     ) {
-        this.jobSWDSVersionMapper = jobSWDSVersionMapper;
+        this.jobSwdsVersionMapper = jobSwdsVersionMapper;
         this.swModelPackageMapper = swModelPackageMapper;
         this.runtimeMapper = runtimeMapper;
         this.runtimeVersionMapper = runtimeVersionMapper;
-        this.swdsboConverter = swdsboConverter;
+        this.swdsBoConverter = swdsBoConverter;
         this.defaultRuntimeImage = defaultImage;
         this.resourcePoolMapper = resourcePoolMapper;
         this.resourcePoolConverter = resourcePoolConverter;
     }
 
-    public Job fromEntity(JobEntity jobEntity){
-        List<SWDataSet> swDataSets = jobSWDSVersionMapper.listSWDSVersionsByJobId(jobEntity.getId())
-            .stream().map(swdsboConverter::fromEntity)
-            .collect(Collectors.toList());
-        SWModelPackageEntity modelPackageEntity = swModelPackageMapper.findSWModelPackageById(
-            jobEntity.getSwmpVersion().getSwmpId());
+    public Job fromEntity(JobEntity jobEntity) {
+        List<SwDataSet> swDataSets = jobSwdsVersionMapper.listSwdsVersionsByJobId(jobEntity.getId())
+                .stream().map(swdsBoConverter::fromEntity)
+                .collect(Collectors.toList());
+        SwModelPackageEntity modelPackageEntity = swModelPackageMapper.findSwModelPackageById(
+                jobEntity.getSwmpVersion().getSwmpId());
         RuntimeVersionEntity runtimeVersionEntity = runtimeVersionMapper.findVersionById(
-            jobEntity.getRuntimeVersionId());
+                jobEntity.getRuntimeVersionId());
         RuntimeEntity runtimeEntity = runtimeMapper.findRuntimeById(
-            runtimeVersionEntity.getRuntimeId());
+                runtimeVersionEntity.getRuntimeId());
         ResourcePoolEntity resourcePoolEntity = resourcePoolMapper.findById(jobEntity.getResourcePoolId());
         ResourcePool resourcePool = resourcePoolConverter.toResourcePool(resourcePoolEntity);
         return Job.builder()
-            .id(jobEntity.getId())
-            .project(Project.builder()
-                .id(jobEntity.getProjectId())
-                .name(jobEntity.getProject().getProjectName())
-                .build())
-            .jobRuntime(JobRuntime.builder()
-                .name(runtimeEntity.getRuntimeName())
-                .version(runtimeVersionEntity.getVersionName())
-                .storagePath(runtimeVersionEntity.getStoragePath())
-                .deviceAmount(jobEntity.getDeviceAmount())
-                .deviceClass(Device.Clazz.from(jobEntity.getDeviceType()))
-                .image(null == runtimeVersionEntity.getImage() ? defaultRuntimeImage
-                    : runtimeVersionEntity.getImage())
-                .build())
-            .status(jobEntity.getJobStatus())
-            .type(jobEntity.getType())
-            .swmp(SWModelPackage
-                .builder()
-                .id(jobEntity.getSwmpVersionId())
-                .name(modelPackageEntity.getSwmpName())
-                .version(jobEntity.getSwmpVersion().getVersionName())
-                .path(jobEntity.getSwmpVersion().getStoragePath()).build())
-            .evalJobDDL(jobEntity.getSwmpVersion().getEvalJobs())
-            .swDataSets(swDataSets)
-            .outputDir(jobEntity.getResultOutputPath())
-            .uuid(jobEntity.getJobUuid())
-            .resourcePool(resourcePool)
-            .build();
+                .id(jobEntity.getId())
+                .project(Project.builder()
+                        .id(jobEntity.getProjectId())
+                        .name(jobEntity.getProject().getProjectName())
+                        .build())
+                .jobRuntime(JobRuntime.builder()
+                        .name(runtimeEntity.getRuntimeName())
+                        .version(runtimeVersionEntity.getVersionName())
+                        .storagePath(runtimeVersionEntity.getStoragePath())
+                        .deviceAmount(jobEntity.getDeviceAmount())
+                        .deviceClass(Device.Clazz.from(jobEntity.getDeviceType()))
+                        .image(null == runtimeVersionEntity.getImage() ? defaultRuntimeImage
+                                : runtimeVersionEntity.getImage())
+                        .build())
+                .status(jobEntity.getJobStatus())
+                .type(jobEntity.getType())
+                .swmp(SwModelPackage
+                        .builder()
+                        .id(jobEntity.getSwmpVersionId())
+                        .name(modelPackageEntity.getSwmpName())
+                        .version(jobEntity.getSwmpVersion().getVersionName())
+                        .path(jobEntity.getSwmpVersion().getStoragePath()).build())
+                .evalJobDdl(jobEntity.getSwmpVersion().getEvalJobs())
+                .swDataSets(swDataSets)
+                .outputDir(jobEntity.getResultOutputPath())
+                .uuid(jobEntity.getJobUuid())
+                .resourcePool(resourcePool)
+                .build();
     }
 
 }

@@ -17,15 +17,15 @@
 package ai.starwhale.mlops.domain.task;
 
 import ai.starwhale.mlops.api.protocol.report.resp.ResultPath;
-import ai.starwhale.mlops.api.protocol.task.TaskVO;
+import ai.starwhale.mlops.api.protocol.task.TaskVo;
 import ai.starwhale.mlops.common.PageParams;
 import ai.starwhale.mlops.common.util.PageUtil;
 import ai.starwhale.mlops.domain.job.JobManager;
 import ai.starwhale.mlops.domain.task.converter.TaskConvertor;
 import ai.starwhale.mlops.domain.task.mapper.TaskMapper;
 import ai.starwhale.mlops.domain.task.po.TaskEntity;
-import ai.starwhale.mlops.exception.SWProcessException;
-import ai.starwhale.mlops.exception.SWProcessException.ErrorType;
+import ai.starwhale.mlops.exception.SwProcessException;
+import ai.starwhale.mlops.exception.SwProcessException.ErrorType;
 import ai.starwhale.mlops.storage.StorageAccessService;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -53,7 +53,7 @@ public class TaskService {
     @Resource
     private JobManager jobManager;
 
-    public PageInfo<TaskVO> listTasks(String jobUrl, PageParams pageParams) {
+    public PageInfo<TaskVo> listTasks(String jobUrl, PageParams pageParams) {
         PageHelper.startPage(pageParams.getPageNum(), pageParams.getPageSize());
         Long jobId = jobManager.getJobId(jobUrl);
         List<TaskEntity> tasks = taskMapper.listTasks(jobId);
@@ -62,29 +62,29 @@ public class TaskService {
 
     }
 
-    public List<String> offLineLogFiles(Long taskId){
+    public List<String> offLineLogFiles(Long taskId) {
         ResultPath resultPath = resultPathOfTask(taskId);
         try {
             String logDir = resultPath.logDir();
             return storageAccessService.list(logDir)
-                .map(path-> trimPath(path,logDir))
-                .collect(Collectors.toList());
+                    .map(path -> trimPath(path, logDir))
+                    .collect(Collectors.toList());
         } catch (IOException e) {
-            log.error("read logs path from storage failed {}",taskId,e);
-            throw new SWProcessException(ErrorType.DB).tip("read log path from db failed");
+            log.error("read logs path from storage failed {}", taskId, e);
+            throw new SwProcessException(ErrorType.DB).tip("read log path from db failed");
         }
 
     }
 
-    public String logContent(Long taskId,String logFileName) {
+    public String logContent(Long taskId, String logFileName) {
         ResultPath resultPath = resultPathOfTask(taskId);
         String logDir = resultPath.logDir();
-        try(InputStream inputStream = storageAccessService.get(
-            logDir + PATH_SPLITERATOR + logFileName)) {
+        try (InputStream inputStream = storageAccessService.get(
+                logDir + PATH_SPLITERATOR + logFileName)) {
             return new String(inputStream.readAllBytes());
         } catch (IOException e) {
-            log.error("read logs path from storage failed {}",taskId,e);
-            throw new SWProcessException(ErrorType.DB).tip("read log path from db failed");
+            log.error("read logs path from storage failed {}", taskId, e);
+            throw new SwProcessException(ErrorType.DB).tip("read log path from db failed");
         }
 
     }
@@ -94,12 +94,13 @@ public class TaskService {
         return new ResultPath(taskById.getOutputPath());
     }
 
-    static final String PATH_SPLITERATOR ="/";
-    String trimPath(String fullPath,String dir){
-        return fullPath.replace(dir,"").replace(PATH_SPLITERATOR,"");
+    static final String PATH_SPLITERATOR = "/";
+
+    String trimPath(String fullPath, String dir) {
+        return fullPath.replace(dir, "").replace(PATH_SPLITERATOR, "");
     }
 
-    public TaskVO findTask(Long taskId) {
+    public TaskVo findTask(Long taskId) {
         TaskEntity entity = taskMapper.findTaskById(taskId);
 
         return taskConvertor.convert(entity);

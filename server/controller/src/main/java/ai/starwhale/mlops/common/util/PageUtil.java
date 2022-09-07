@@ -26,7 +26,7 @@ public class PageUtil {
 
     public static <T, E> PageInfo<T> toPageInfo(List<E> list, Function<E, T> function) {
         if (list instanceof Page) {
-            return ((Page<E>)list).toPageInfo(function);
+            return ((Page<E>) list).toPageInfo(function);
         } else {
             return PageInfo.of(list.stream().map(function::apply).collect(Collectors.toList()));
         }

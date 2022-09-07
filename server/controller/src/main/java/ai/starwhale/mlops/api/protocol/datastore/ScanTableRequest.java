@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.api.protocol.datastore;
 
-import lombok.Data;
-
 import java.util.List;
+import lombok.Data;
 
 @Data
 public class ScanTableRequest {
+
     private List<TableDesc> tables;
     private String start;
     private boolean startInclusive = true;

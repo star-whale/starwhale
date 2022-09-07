@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 @Builder
 public class TableQueryFilter {
+
     public enum Operator {
         AND,
         OR,
@@ -38,6 +39,7 @@ public class TableQueryFilter {
     @Data
     @AllArgsConstructor
     public static class Column {
+
         private String name;
     }
 

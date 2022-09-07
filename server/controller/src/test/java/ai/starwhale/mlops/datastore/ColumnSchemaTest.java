@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore;
 
-import ai.starwhale.mlops.exception.SWValidationException;
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import ai.starwhale.mlops.exception.SwValidationException;
+import org.junit.jupiter.api.Test;
 
 public class ColumnSchemaTest {
 
@@ -33,15 +34,15 @@ public class ColumnSchemaTest {
     public void testConstructorException() {
         assertThrows(NullPointerException.class, () -> new ColumnSchema(null, 0), "null schema");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> new ColumnSchema(new ColumnSchemaDesc(null, "STRING"), 0),
                 "null column name");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> new ColumnSchema(new ColumnSchemaDesc("k", null), 0),
                 "null type");
 
-        assertThrows(SWValidationException.class,
+        assertThrows(SwValidationException.class,
                 () -> new ColumnSchema(new ColumnSchemaDesc("k", "invalid"), 0),
                 "invalid type");
     }

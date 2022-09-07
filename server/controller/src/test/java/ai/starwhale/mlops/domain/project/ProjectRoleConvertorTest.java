@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Starwhale, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ai.starwhale.mlops.domain.project;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -12,11 +28,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
-import ai.starwhale.mlops.api.protocol.project.ProjectVO;
-import ai.starwhale.mlops.api.protocol.user.ProjectRoleVO;
-import ai.starwhale.mlops.api.protocol.user.RoleVO;
-import ai.starwhale.mlops.api.protocol.user.UserVO;
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.api.protocol.project.ProjectVo;
+import ai.starwhale.mlops.api.protocol.user.ProjectRoleVo;
+import ai.starwhale.mlops.api.protocol.user.RoleVo;
+import ai.starwhale.mlops.api.protocol.user.UserVo;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectRoleEntity;
 import ai.starwhale.mlops.domain.user.RoleConvertor;
@@ -32,25 +48,28 @@ public class ProjectRoleConvertorTest {
 
     @BeforeEach
     public void setUp() {
-        IDConvertor idConvertor = new IDConvertor();
         ProjectConvertor projectConvertor = mock(ProjectConvertor.class);
-        given(projectConvertor.convert(any())).willReturn(ProjectVO.empty());
+        given(projectConvertor.convert(any())).willReturn(ProjectVo.empty());
         UserConvertor userConvertor = mock(UserConvertor.class);
-        given(userConvertor.convert(any())).willReturn(UserVO.empty());
+        given(userConvertor.convert(any())).willReturn(UserVo.empty());
         RoleConvertor roleConvertor = mock(RoleConvertor.class);
-        given(roleConvertor.convert(any())).willReturn(RoleVO.empty());
-        projectRoleConvertor = new ProjectRoleConvertor(idConvertor, projectConvertor, roleConvertor, userConvertor);
+        given(roleConvertor.convert(any())).willReturn(RoleVo.empty());
+        projectRoleConvertor = new ProjectRoleConvertor(
+                new IdConvertor(),
+                projectConvertor,
+                roleConvertor,
+                userConvertor);
     }
 
     @Test
     public void testConvert() {
         var res = projectRoleConvertor.convert(null);
         assertThat(res, allOf(
-            notNullValue(),
-            hasProperty("id", emptyString()),
-            hasProperty("user", isA(UserVO.class)),
-            hasProperty("project", isA(ProjectVO.class)),
-            hasProperty("role", isA(RoleVO.class))
+                notNullValue(),
+                hasProperty("id", emptyString()),
+                hasProperty("user", isA(UserVo.class)),
+                hasProperty("project", isA(ProjectVo.class)),
+                hasProperty("role", isA(RoleVo.class))
         ));
 
         res = projectRoleConvertor.convert(ProjectRoleEntity.builder()
@@ -60,17 +79,17 @@ public class ProjectRoleConvertorTest {
                 .role(RoleEntity.builder().build())
                 .build());
         assertThat(res, allOf(
-            notNullValue(),
-            hasProperty("id", is("1")),
-            hasProperty("user", isA(UserVO.class)),
-            hasProperty("project", isA(ProjectVO.class)),
-            hasProperty("role", isA(RoleVO.class))
+                notNullValue(),
+                hasProperty("id", is("1")),
+                hasProperty("user", isA(UserVo.class)),
+                hasProperty("project", isA(ProjectVo.class)),
+                hasProperty("role", isA(RoleVo.class))
         ));
     }
 
     @Test
     public void testRevert() {
         assertThrows(UnsupportedOperationException.class,
-            () -> projectRoleConvertor.revert(ProjectRoleVO.builder().build()));
+                () -> projectRoleConvertor.revert(ProjectRoleVo.builder().build()));
     }
 }

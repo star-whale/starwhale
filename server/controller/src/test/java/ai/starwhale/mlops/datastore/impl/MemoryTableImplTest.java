@@ -13,7 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ai.starwhale.mlops.datastore.impl;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ai.starwhale.mlops.datastore.ColumnSchemaDesc;
 import ai.starwhale.mlops.datastore.ColumnType;
@@ -23,18 +31,10 @@ import ai.starwhale.mlops.datastore.TableQueryFilter;
 import ai.starwhale.mlops.datastore.TableSchema;
 import ai.starwhale.mlops.datastore.TableSchemaDesc;
 import ai.starwhale.mlops.datastore.WalManager;
-import ai.starwhale.mlops.exception.SWValidationException;
+import ai.starwhale.mlops.exception.SwValidationException;
 import ai.starwhale.mlops.memory.SwBufferManager;
 import ai.starwhale.mlops.memory.impl.SwByteBufferManager;
 import ai.starwhale.mlops.objectstore.impl.FileSystemObjectStore;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.PrefixFileFilter;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -49,19 +49,19 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.PrefixFileFilter;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class MemoryTableImplTest {
 
     private static List<MemoryTable.RecordResult> scanAll(MemoryTable memoryTable,
-                                                          List<String> columns,
-                                                          boolean keepNone) {
+            List<String> columns,
+            boolean keepNone) {
         return memoryTable.scan(columns.stream().collect(Collectors.toMap(Function.identity(), Function.identity())),
                 null,
                 true,
@@ -97,6 +97,7 @@ public class MemoryTableImplTest {
 
     @Nested
     public class UpdateTest {
+
         private MemoryTableImpl memoryTable;
 
         @BeforeEach
@@ -153,18 +154,24 @@ public class MemoryTableImplTest {
 
             this.memoryTable.update(
                     null,
-                    List.of(new HashMap<>() {{
-                                put("k", "1");
-                                put("a", null);
-                            }},
-                            new HashMap<>() {{
-                                put("k", "2");
-                                put("a", null);
-                            }},
-                            new HashMap<>() {{
-                                put("k", "3");
-                                put("b", null);
-                            }}));
+                    List.of(new HashMap<>() {
+                                {
+                                    put("k", "1");
+                                    put("a", null);
+                                }
+                            },
+                            new HashMap<>() {
+                                {
+                                    put("k", "2");
+                                    put("a", null);
+                                }
+                            },
+                            new HashMap<>() {
+                                {
+                                    put("k", "3");
+                                    put("b", null);
+                                }
+                            }));
             assertThat("null value", scanAll(this.memoryTable, List.of("k", "a", "b"), false),
                     contains(new MemoryTable.RecordResult("0", Map.of("k", "0", "a", 10)),
                             new MemoryTable.RecordResult("1", Map.of("k", "1", "b", 0)),
@@ -177,11 +184,13 @@ public class MemoryTableImplTest {
                             Map.of("k", "2", "a", "0"),
                             Map.of("k", "3", "a", "0"),
                             Map.of("k", "4", "c", "0"),
-                            new HashMap<>() {{
-                                put("k", "1");
-                                put("b", null);
-                                put("c", "1");
-                            }},
+                            new HashMap<>() {
+                                {
+                                    put("k", "1");
+                                    put("b", null);
+                                    put("c", "1");
+                                }
+                            },
                             Map.of("k", "0", "-", "1"),
                             Map.of("k", "2", "-", "1")));
             assertThat("mixed", scanAll(this.memoryTable, List.of("k", "a", "b", "c"), false),
@@ -200,10 +209,12 @@ public class MemoryTableImplTest {
 
             this.memoryTable.update(
                     new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "UNKNOWN"))),
-                    List.of(new HashMap<>() {{
-                        put("k", "0");
-                        put("x", null);
-                    }}));
+                    List.of(new HashMap<>() {
+                        {
+                            put("k", "0");
+                            put("x", null);
+                        }
+                    }));
             assertThat("unknown",
                     this.memoryTable.getSchema().getColumnSchemaByName("x").getType(),
                     is(ColumnType.UNKNOWN));
@@ -228,10 +239,12 @@ public class MemoryTableImplTest {
 
             this.memoryTable.update(
                     new TableSchemaDesc(null, List.of(new ColumnSchemaDesc("x", "UNKNOWN"))),
-                    List.of(new HashMap<>() {{
-                        put("k", "1");
-                        put("x", null);
-                    }}));
+                    List.of(new HashMap<>() {
+                        {
+                            put("k", "1");
+                            put("x", null);
+                        }
+                    }));
             assertThat("unknown again",
                     this.memoryTable.getSchema().getColumnSchemaByName("x").getType(),
                     is(ColumnType.INT32));
@@ -257,32 +270,36 @@ public class MemoryTableImplTest {
                             new ColumnSchemaDesc("g", "FLOAT64"),
                             new ColumnSchemaDesc("h", "BYTES"),
                             new ColumnSchemaDesc("i", "UNKNOWN"))),
-                    List.of(new HashMap<>() {{
-                        put("key", "x");
-                        put("a", "1");
-                        put("b", "10");
-                        put("c", "1000");
-                        put("d", "100000");
-                        put("e", "10000000");
-                        put("f", Integer.toHexString(Float.floatToIntBits(1.1f)));
-                        put("g", Long.toHexString(Double.doubleToLongBits(1.1)));
-                        put("h", Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)));
-                        put("i", null);
-                    }}));
+                    List.of(new HashMap<>() {
+                        {
+                            put("key", "x");
+                            put("a", "1");
+                            put("b", "10");
+                            put("c", "1000");
+                            put("d", "100000");
+                            put("e", "10000000");
+                            put("f", Integer.toHexString(Float.floatToIntBits(1.1f)));
+                            put("g", Long.toHexString(Double.doubleToLongBits(1.1)));
+                            put("h", Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)));
+                            put("i", null);
+                        }
+                    }));
             assertThat("all types",
                     scanAll(this.memoryTable, List.of("key", "a", "b", "c", "d", "e", "f", "g", "h", "i"), false),
                     contains(new MemoryTable.RecordResult("x",
-                            new HashMap<>() {{
-                                put("key", "x");
-                                put("a", true);
-                                put("b", (byte) 16);
-                                put("c", Short.parseShort("1000", 16));
-                                put("d", Integer.parseInt("100000", 16));
-                                put("e", Long.parseLong("10000000", 16));
-                                put("f", 1.1f);
-                                put("g", 1.1);
-                                put("h", ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8)));
-                            }})));
+                            new HashMap<>() {
+                                {
+                                    put("key", "x");
+                                    put("a", true);
+                                    put("b", (byte) 16);
+                                    put("c", Short.parseShort("1000", 16));
+                                    put("d", Integer.parseInt("100000", 16));
+                                    put("e", Long.parseLong("10000000", 16));
+                                    put("f", 1.1f);
+                                    put("g", 1.1);
+                                    put("h", ByteBuffer.wrap("test".getBytes(StandardCharsets.UTF_8)));
+                                }
+                            })));
         }
 
         @Test
@@ -357,25 +374,25 @@ public class MemoryTableImplTest {
 
         @Test
         public void testUpdateExceptions() {
-            assertThrows(SWValidationException.class,
+            assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(null, null),
                     "null schema");
 
-            assertThrows(SWValidationException.class,
+            assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(
                             new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("a", "INT32"))),
                             List.of(Map.of("k", "0"), Map.of("k", "1"))),
                     "no key column schema");
             assertThat("no key column schema", scanAll(this.memoryTable, List.of("k", "a"), false), empty());
 
-            assertThrows(SWValidationException.class,
+            assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(
                             new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))),
                             List.of(Map.of("k", "0"), Map.of("k", "1", "a", "1"))),
                     "extra column data");
             assertThat("extra column data", scanAll(this.memoryTable, List.of("k", "a"), false), empty());
 
-            assertThrows(SWValidationException.class,
+            assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(
                             new TableSchemaDesc("k", List.of(
                                     new ColumnSchemaDesc("k", "STRING"),
@@ -388,14 +405,14 @@ public class MemoryTableImplTest {
         @Test
         public void testUpdateWalError() {
             var schema = new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING")));
-            assertThrows(SWValidationException.class,
+            assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(
                             schema,
                             List.of(Map.of("k", "a".repeat(5000)))),
                     "huge entry");
             assertThat("null", this.memoryTable.getSchema(), nullValue());
             this.memoryTable.update(schema, null);
-            assertThrows(SWValidationException.class,
+            assertThrows(SwValidationException.class,
                     () -> this.memoryTable.update(
                             null,
                             List.of(Map.of("k", "a".repeat(5000)))),
@@ -422,19 +439,21 @@ public class MemoryTableImplTest {
             List<Map<String, String>> records = new ArrayList<>();
             for (int i = 0; i < 100; ++i) {
                 final int index = i;
-                records.add(new HashMap<>() {{
-                    put("key", String.format("%03d", index));
-                    put("a", "" + index % 2);
-                    put("b", Integer.toHexString(index + 10));
-                    put("c", Integer.toHexString(index + 1000));
-                    put("d", Integer.toHexString(index + 100000));
-                    put("e", Integer.toHexString(index + 10000000));
-                    put("f", Integer.toHexString(Float.floatToIntBits(index + 0.1f)));
-                    put("g", Long.toHexString(Double.doubleToLongBits(index + 0.1)));
-                    put("h", Base64.getEncoder().encodeToString(
-                            ("test" + index).getBytes(StandardCharsets.UTF_8)));
-                    put("i", null);
-                }});
+                records.add(new HashMap<>() {
+                    {
+                        put("key", String.format("%03d", index));
+                        put("a", "" + index % 2);
+                        put("b", Integer.toHexString(index + 10));
+                        put("c", Integer.toHexString(index + 1000));
+                        put("d", Integer.toHexString(index + 100000));
+                        put("e", Integer.toHexString(index + 10000000));
+                        put("f", Integer.toHexString(Float.floatToIntBits(index + 0.1f)));
+                        put("g", Long.toHexString(Double.doubleToLongBits(index + 0.1)));
+                        put("h", Base64.getEncoder().encodeToString(
+                                ("test" + index).getBytes(StandardCharsets.UTF_8)));
+                        put("i", null);
+                    }
+                });
             }
             this.memoryTable.update(null, records);
             MemoryTableImplTest.this.walManager.terminate();
@@ -451,24 +470,28 @@ public class MemoryTableImplTest {
                     is(IntStream.range(0, 100)
                             .mapToObj(index -> new MemoryTable.RecordResult(
                                     String.format("%03d", index),
-                                    new HashMap<>() {{
-                                        put("key", String.format("%03d", index));
-                                        put("a", index % 2 == 1);
-                                        put("b", (byte) (index + 10));
-                                        put("c", (short) (index + 1000));
-                                        put("d", index + 100000);
-                                        put("e", index + 10000000L);
-                                        put("f", index + 0.1f);
-                                        put("g", index + 0.1);
-                                        put("h", ByteBuffer.wrap(("test" + index).getBytes(StandardCharsets.UTF_8)));
-                                        put("i", null);
-                                    }}))
+                                    new HashMap<>() {
+                                        {
+                                            put("key", String.format("%03d", index));
+                                            put("a", index % 2 == 1);
+                                            put("b", (byte) (index + 10));
+                                            put("c", (short) (index + 1000));
+                                            put("d", index + 100000);
+                                            put("e", index + 10000000L);
+                                            put("f", index + 0.1f);
+                                            put("g", index + 0.1);
+                                            put("h",
+                                                    ByteBuffer.wrap(("test" + index).getBytes(StandardCharsets.UTF_8)));
+                                            put("i", null);
+                                        }
+                                    }))
                             .collect(Collectors.toList())));
         }
     }
 
     @Nested
     public class QueryScanTest {
+
         private MemoryTableImpl memoryTable;
 
         @BeforeEach
@@ -512,7 +535,8 @@ public class MemoryTableImplTest {
                                     values.put("h", data[7][i]);
                                 }
                                 if (data[8][i] != null) {
-                                    values.put("i", ByteBuffer.wrap(((String) data[8][i]).getBytes(StandardCharsets.UTF_8)));
+                                    values.put("i", ByteBuffer.wrap(
+                                            ((String) data[8][i]).getBytes(StandardCharsets.UTF_8)));
                                 }
                                 return new MemoryTable.RecordResult(Integer.toHexString(i), values);
                             })
@@ -572,7 +596,7 @@ public class MemoryTableImplTest {
 
         @Test
         public void testQueryColumnAliasesInvalid() {
-            assertThrows(SWValidationException.class,
+            assertThrows(SwValidationException.class,
                     () -> this.memoryTable.query(Map.of("x", "x"), null, null, -1, -1, false, false),
                     "invalid column");
         }
@@ -841,7 +865,7 @@ public class MemoryTableImplTest {
 
         @Test
         public void testQueryOrderByInvalid() {
-            assertThrows(SWValidationException.class,
+            assertThrows(SwValidationException.class,
                     () -> this.memoryTable.query(Map.of("a", "a"),
                             List.of(new OrderByDesc("x")),
                             null,
@@ -860,10 +884,12 @@ public class MemoryTableImplTest {
                     null,
                     TableQueryFilter.builder()
                             .operator(TableQueryFilter.Operator.EQUAL)
-                            .operands(new ArrayList<>() {{
-                                add(new TableQueryFilter.Column("a"));
-                                add(null);
-                            }})
+                            .operands(new ArrayList<>() {
+                                {
+                                    add(new TableQueryFilter.Column("a"));
+                                    add(null);
+                                }
+                            })
                             .build(),
                     -1,
                     -1,
@@ -1993,9 +2019,11 @@ public class MemoryTableImplTest {
                     true,
                     false);
             assertThat(results,
-                    is(List.of(new MemoryTable.RecordResult(0, new HashMap<>() {{
-                        put("a", null);
-                    }}))));
+                    is(List.of(new MemoryTable.RecordResult(0, new HashMap<>() {
+                        {
+                            put("a", null);
+                        }
+                    }))));
         }
 
         @Test
@@ -2090,9 +2118,11 @@ public class MemoryTableImplTest {
                             new MemoryTable.RecordResult(4, Map.of("d", 6)),
                             new MemoryTable.RecordResult(5, Map.of("d", 7)),
                             new MemoryTable.RecordResult(6, Map.of("d", 8)),
-                            new MemoryTable.RecordResult(7, new HashMap<>() {{
-                                put("d", null);
-                            }}),
+                            new MemoryTable.RecordResult(7, new HashMap<>() {
+                                {
+                                    put("d", null);
+                                }
+                            }),
                             new MemoryTable.RecordResult(8, Map.of("d", 0)),
                             new MemoryTable.RecordResult(9, Map.of("d", 1)))));
         }

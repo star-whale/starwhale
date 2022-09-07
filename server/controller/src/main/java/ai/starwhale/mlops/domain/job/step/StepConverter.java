@@ -32,13 +32,13 @@ public class StepConverter {
         this.localDateTimeConvertor = localDateTimeConvertor;
     }
 
-    public Step fromEntity(StepEntity entity){
+    public Step fromEntity(StepEntity entity) {
         log.debug("from step entity");
         Step step = Step.builder()
-            .id(entity.getId())
-            .status(entity.getStatus())
-            .name(entity.getName())
-            .build();
+                .id(entity.getId())
+                .status(entity.getStatus())
+                .name(entity.getName())
+                .build();
         step.setStartTime(localDateTimeConvertor.convert(entity.getStartedTime()));
         step.setFinishTime(localDateTimeConvertor.convert(entity.getFinishedTime()));
         return step;

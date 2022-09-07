@@ -26,31 +26,32 @@ public interface JobMapper {
 
     List<JobEntity> listJobs(@Param("projectId") Long projectId, @Param("swmpId") Long swmpId);
 
-    List<JobEntity> listJobsByStatus(@Param("projectId") Long projectId, @Param("swmpId") Long swmpId, @Param("jobStatus") JobStatus jobStatus);
+    List<JobEntity> listJobsByStatus(@Param("projectId") Long projectId, @Param("swmpId") Long swmpId,
+            @Param("jobStatus") JobStatus jobStatus);
 
     JobEntity findJobById(@Param("jobId") Long jobId);
 
-    JobEntity findJobByUUID(@Param("uuid") String uuid);
+    JobEntity findJobByUuid(@Param("uuid") String uuid);
 
-    int addJob(@Param("job")JobEntity jobEntity);
+    int addJob(@Param("job") JobEntity jobEntity);
 
     List<JobEntity> findJobByStatusIn(@Param("jobStatuses") List<JobStatus> jobStatuses);
 
-    void updateJobStatus(@Param("jobIds") List<Long> jobIds,@Param("jobStatus") JobStatus jobStatus);
+    void updateJobStatus(@Param("jobIds") List<Long> jobIds, @Param("jobStatus") JobStatus jobStatus);
 
-    void updateJobFinishedTime(@Param("jobIds") List<Long> jobIds,@Param("finishedTime")LocalDateTime finishedTime);
+    void updateJobFinishedTime(@Param("jobIds") List<Long> jobIds, @Param("finishedTime") LocalDateTime finishedTime);
 
-    void updateJobResultPath(@Param("jobId")Long jobId, @Param("resultDir")String resultDir);
+    void updateJobResultPath(@Param("jobId") Long jobId, @Param("resultDir") String resultDir);
 
-    int updateJobComment(@Param("id")Long id, @Param("comment")String comment);
+    int updateJobComment(@Param("id") Long id, @Param("comment") String comment);
 
-    int updateJobCommentByUUID(@Param("uuid")String uuid, @Param("comment")String comment);
+    int updateJobCommentByUuid(@Param("uuid") String uuid, @Param("comment") String comment);
 
-    int removeJob(@Param("id")Long id);
+    int removeJob(@Param("id") Long id);
 
-    int removeJobByUUID(@Param("uuid")String uuid);
+    int removeJobByUuid(@Param("uuid") String uuid);
 
-    int recoverJob(@Param("id")Long id);
+    int recoverJob(@Param("id") Long id);
 
-    int recoverJobByUUID(@Param("uuid")String uuid);
+    int recoverJobByUuid(@Param("uuid") String uuid);
 }

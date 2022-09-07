@@ -23,9 +23,11 @@ public enum Code {
     accessDenied("AccessDenied"),
     unknownError("unknownError");
     private final String type;
+
     Code(String type) {
         this.type = type;
     }
+
     public String getType() {
         return type;
     }

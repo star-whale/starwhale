@@ -33,16 +33,17 @@ public class ClientRuntimeRequest {
 
     String manifest;
 
-    public String name(){
+    public String name() {
         return runtime.split(SEPARATOR)[0];
     }
 
-    public String version(){
+    public String version() {
         return runtime.split(SEPARATOR)[1];
     }
 
     static final String FORCE = "1";
-    public boolean force(){
+
+    public boolean force() {
         return FORCE.equals(force);
     }
 

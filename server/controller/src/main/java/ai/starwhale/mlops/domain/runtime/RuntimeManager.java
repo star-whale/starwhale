@@ -16,7 +16,7 @@
 
 package ai.starwhale.mlops.domain.runtime;
 
-import ai.starwhale.mlops.common.IDConvertor;
+import ai.starwhale.mlops.common.IdConvertor;
 import ai.starwhale.mlops.domain.bundle.BundleAccessor;
 import ai.starwhale.mlops.domain.bundle.BundleVersionAccessor;
 import ai.starwhale.mlops.domain.bundle.base.BundleEntity;
@@ -30,9 +30,9 @@ import ai.starwhale.mlops.domain.bundle.tag.TagAccessor;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeMapper;
 import ai.starwhale.mlops.domain.runtime.mapper.RuntimeVersionMapper;
 import ai.starwhale.mlops.domain.runtime.po.RuntimeVersionEntity;
-import ai.starwhale.mlops.exception.SWValidationException;
-import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
-import ai.starwhale.mlops.exception.api.StarWhaleApiException;
+import ai.starwhale.mlops.exception.SwValidationException;
+import ai.starwhale.mlops.exception.SwValidationException.ValidSubject;
+import ai.starwhale.mlops.exception.api.StarwhaleApiException;
 import java.util.List;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -42,23 +42,23 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, TagAccessor,
-    RevertAccessor, RecoverAccessor, RemoveAccessor {
+        RevertAccessor, RecoverAccessor, RemoveAccessor {
 
     @Resource
     private RuntimeMapper runtimeMapper;
     @Resource
     private RuntimeVersionMapper runtimeVersionMapper;
     @Resource
-    private IDConvertor idConvertor;
+    private IdConvertor idConvertor;
 
     public Long getRuntimeVersionId(String versionUrl, Long runtimeId) {
-        if(idConvertor.isID(versionUrl)) {
+        if (idConvertor.isId(versionUrl)) {
             return idConvertor.revert(versionUrl);
         }
         RuntimeVersionEntity entity = runtimeVersionMapper.findByNameAndRuntimeId(versionUrl, runtimeId);
-        if(entity == null) {
-            throw new StarWhaleApiException(new SWValidationException(ValidSubject.RUNTIME)
-                .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);
+        if (entity == null) {
+            throw new StarwhaleApiException(new SwValidationException(ValidSubject.RUNTIME)
+                    .tip(String.format("Unable to find Runtime %s", versionUrl)), HttpStatus.BAD_REQUEST);
         }
         return entity.getId();
     }
@@ -87,15 +87,15 @@ public class RuntimeManager implements BundleAccessor, BundleVersionAccessor, Ta
     public HasTag findObjectWithTagById(Long id) {
         RuntimeVersionEntity entity = runtimeVersionMapper.findVersionById(id);
         return HasTagWrapper.builder()
-            .id(entity.getId())
-            .tag(entity.getVersionTag())
-            .build();
+                .id(entity.getId())
+                .tag(entity.getVersionTag())
+                .build();
     }
 
     @Override
     public Boolean updateTag(HasTag entity) {
         int r = runtimeVersionMapper.updateTag(entity.getId(), entity.getTag());
-        if(r > 0) {
+        if (r > 0) {
             log.info("Runtime Version Tag has been modified. ID={}", entity.getId());
         }
         return r > 0;

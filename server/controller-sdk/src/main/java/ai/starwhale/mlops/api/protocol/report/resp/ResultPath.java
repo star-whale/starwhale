@@ -37,21 +37,21 @@ public class ResultPath {
      */
     String logDir;
 
-    static final String DIR_RESULT="/result";
+    static final String DIR_RESULT = "/result";
 
-    static final String DIR_LOG="/logs";
+    static final String DIR_LOG = "/logs";
 
-    public ResultPath(String rootPath){
+    public ResultPath(String rootPath) {
         this.root = rootPath;
         this.resultDir = DIR_RESULT;
         this.logDir = DIR_LOG;
     }
 
     public String resultDir() {
-        return this.root +  resultDir;
+        return this.root + resultDir;
     }
 
-    public String logDir(){
-        return this.root +  logDir;
+    public String logDir() {
+        return this.root + logDir;
     }
 }

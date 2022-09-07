@@ -22,12 +22,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @ConfigurationProperties(prefix = "sw.jwt")
 public class JwtProperties {
+
     /* jwt security */
     private String secret;
 
     /* jwt issuer */
-    private String issuer = "starWhale";
+    private String issuer = "starwhale";
 
     /* jwt expire time,by minutes */
-    private Long expireMinutes = 24 * 60l;
+    private Long expireMinutes = 24 * 60L;
 }

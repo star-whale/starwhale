@@ -29,6 +29,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class NodeInfo {
-    Float memoryGB;
+
+    Float memoryGb;
     List<Device> devices;
 }

@@ -49,7 +49,7 @@ public class Project {
     }
 
     public enum Privacy {
-        PUBLIC( 1),
+        PUBLIC(1),
         PRIVATE(0);
 
         private final int value;
@@ -57,6 +57,7 @@ public class Project {
         Privacy(int value) {
             this.value = value;
         }
+
         public int getValue() {
             return value;
         }
@@ -69,12 +70,13 @@ public class Project {
                 return PRIVATE;
             }
         }
+
         public static Privacy fromValue(Integer value) {
-            if(value == null) {
+            if (value == null) {
                 return PRIVATE;
             }
             for (Privacy privacy : Privacy.values()) {
-                if(privacy.getValue() == value) {
+                if (privacy.getValue() == value) {
                     return privacy;
                 }
             }
