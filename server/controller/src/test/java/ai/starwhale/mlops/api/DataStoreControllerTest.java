@@ -16,6 +16,7 @@
 package ai.starwhale.mlops.api;
 
 import ai.starwhale.mlops.api.protocol.datastore.ColumnDesc;
+import ai.starwhale.mlops.api.protocol.datastore.ListTablesRequest;
 import ai.starwhale.mlops.api.protocol.datastore.QueryTableRequest;
 import ai.starwhale.mlops.api.protocol.datastore.RecordDesc;
 import ai.starwhale.mlops.api.protocol.datastore.RecordValueDesc;
@@ -46,6 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.BDDMockito.given;
@@ -59,6 +61,27 @@ public class DataStoreControllerTest {
         var walManager = Mockito.mock(WalManager.class);
         given(walManager.readAll()).willReturn(Collections.emptyIterator());
         this.controller.setDataStore(new DataStore(walManager));
+    }
+
+    @Test
+    public void testList() {
+        var resp = this.controller.listTables(new ListTablesRequest());
+        assertThat("empty", resp.getStatusCode().is2xxSuccessful(), is(true));
+        assertThat("empty", Objects.requireNonNull(resp.getBody()).getData().getTables(), empty());
+
+        this.controller.updateTable(new UpdateTableRequest() {{
+            setTableName("t1");
+            setTableSchemaDesc(new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "INT32"))));
+        }});
+        this.controller.updateTable(new UpdateTableRequest() {{
+            setTableName("test");
+            setTableSchemaDesc(new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "INT32"))));
+        }});
+        resp = this.controller.listTables(new ListTablesRequest() {{
+            setPrefix("te");
+        }});
+        assertThat("partial", resp.getStatusCode().is2xxSuccessful(), is(true));
+        assertThat("partial", Objects.requireNonNull(resp.getBody()).getData().getTables(), is(List.of("test")));
     }
 
     @Test

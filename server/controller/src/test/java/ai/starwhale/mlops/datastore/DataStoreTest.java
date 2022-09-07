@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Random;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -63,6 +64,17 @@ public class DataStoreTest {
     @AfterEach
     public void tearDown() {
         this.dataStore.terminate();
+    }
+
+    @Test
+    public void testList() throws IOException {
+        assertThat("empty", this.dataStore.list(""), empty());
+        this.dataStore.update("t1", new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))), null);
+        this.dataStore.update("t2", new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))), null);
+        this.dataStore.update("test", new TableSchemaDesc("k", List.of(new ColumnSchemaDesc("k", "STRING"))), null);
+        assertThat("all", this.dataStore.list("t"), containsInAnyOrder("t1", "t2", "test"));
+        assertThat("partial", this.dataStore.list("te"), containsInAnyOrder("test"));
+        assertThat("none", this.dataStore.list("t3"), empty());
     }
 
     @Test
@@ -542,7 +554,7 @@ public class DataStoreTest {
         final String tableNonExist = "tableNonExist";
         var builder = DataStoreScanRequest.builder()
                 .tables(List.of(DataStoreScanRequest.TableInfo.builder().tableName("t1").build(),
-                    DataStoreScanRequest.TableInfo.builder().tableName(tableNonExist).build()))
+                        DataStoreScanRequest.TableInfo.builder().tableName(tableNonExist).build()))
                 .limit(1);
         assertThrows(SWValidationException.class, () -> this.dataStore.scan(builder.build()));
 

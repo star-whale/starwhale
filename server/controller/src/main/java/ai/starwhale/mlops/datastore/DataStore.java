@@ -52,6 +52,10 @@ public class DataStore {
         this.walManager.terminate();
     }
 
+    public List<String> list(String prefix) {
+        return tables.keySet().stream().filter(name -> name.startsWith(prefix)).collect(Collectors.toList());
+    }
+
     public void update(String tableName,
                        TableSchemaDesc schema,
                        List<Map<String, String>> records) {
@@ -112,7 +116,7 @@ public class DataStore {
                         .stream()
                         .map(DataStoreScanRequest.TableInfo::getTableName)
                         .sorted() // prevent deadlock
-                        .map(i->getTable(i, req.isIgnoreNonExistingTable()))
+                        .map(i -> getTable(i, req.isIgnoreNonExistingTable()))
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
 
