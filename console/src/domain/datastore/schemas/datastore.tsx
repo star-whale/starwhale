@@ -38,6 +38,8 @@ export interface ScanTableRequest {
     /** @format int32 */
     limit?: number
     keepNone?: boolean
+
+    ignoreNonExistingTable?: boolean
 }
 
 export interface TableDesc {
@@ -78,6 +80,8 @@ export interface QueryTableRequest {
 
     /** @format int32 */
     limit?: number
+
+    ignoreNonExistingTable?: boolean
 }
 
 export interface TableQueryFilterDesc {
