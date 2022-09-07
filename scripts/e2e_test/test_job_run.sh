@@ -55,7 +55,7 @@ do
         echo "job FAIL"
         break
   elif [[ -z "$job_status" ]] ; then
-    kill -9 `ps -ef|grep port-forward | grep -v grep | awk '{print $2}'`
+    if kill -9 `ps -ef|grep port-forward | grep -v grep | awk '{print $2}'` ; then echo "kill success"; fi
     nohup kubectl port-forward --namespace $SWNS svc/$SWNAME-controller 8082:8082 &
     sleep 20
   else
