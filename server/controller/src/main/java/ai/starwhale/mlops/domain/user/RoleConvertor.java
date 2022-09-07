@@ -19,6 +19,9 @@ public class RoleConvertor implements Convertor<RoleEntity, RoleVO> {
 
     @Override
     public RoleVO convert(RoleEntity roleEntity) throws ConvertException {
+        if(roleEntity == null) {
+            return RoleVO.empty();
+        }
         return RoleVO.builder()
             .id(idConvertor.convert(roleEntity.getId()))
             .name(roleEntity.getRoleName())

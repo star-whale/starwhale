@@ -28,6 +28,9 @@ public class ProjectRoleConvertor implements Convertor<ProjectRoleEntity, Projec
 
     @Override
     public ProjectRoleVO convert(ProjectRoleEntity entity) throws ConvertException {
+        if(entity == null) {
+            return ProjectRoleVO.empty();
+        }
         return ProjectRoleVO.builder()
             .id(idConvertor.convert(entity.getId()))
             .project(projectConvertor.convert(entity.getProject()))

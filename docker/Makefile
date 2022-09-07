@@ -128,7 +128,7 @@ release-nodejs:
 build-console:
 	docker volume create --name ${YARN_VOLUME} && \
 	docker run --rm -v ${YARN_VOLUME}:/app ${DH_NODEJS_IMAGE} /bin/sh -c "cp -r /root/.npmrc /app/ && chown $(shell id -u):$(shell id -g) -R /app" && \
-	docker run --rm -it \
+	docker run --rm \
 		-u $(shell id -u):$(shell id -g) \
 		-v ${YARN_VOLUME}:/var/yarn-cache \
 		-v ${ROOT_DIR}console:/app \

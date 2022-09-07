@@ -26,7 +26,6 @@ import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.user.UserConvertor;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -34,14 +33,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class ProjectConvertor implements Convertor<ProjectEntity, ProjectVO> {
 
-    @Resource
-    private IDConvertor idConvertor;
+    private final IDConvertor idConvertor;
 
-    @Resource
-    private UserConvertor userConvertor;
+    private final UserConvertor userConvertor;
 
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
+    private final LocalDateTimeConvertor localDateTimeConvertor;
+
+    public ProjectConvertor(IDConvertor idConvertor, UserConvertor userConvertor,
+        LocalDateTimeConvertor localDateTimeConvertor) {
+        this.idConvertor = idConvertor;
+        this.userConvertor = userConvertor;
+        this.localDateTimeConvertor = localDateTimeConvertor;
+    }
+
 
     @Override
     public ProjectVO convert(ProjectEntity entity) throws ConvertException {
