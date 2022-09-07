@@ -73,6 +73,8 @@ public class WalManager extends Thread {
 
     private int logFileIndex;
 
+    private final int ossMaxAttempts;
+
     private final List<String> existedLogFiles = new ArrayList<>();
 
     public WalManager(ObjectStore objectStore,
@@ -80,7 +82,8 @@ public class WalManager extends Thread {
                       @Value("${sw.datastore.walFileSize}") int walFileSize,
                       @Value("${sw.datastore.walMaxFileSize}") int walMaxFileSize,
                       @Value("${sw.datastore.walPrefix}") String walPrefix,
-                      @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis) throws IOException {
+                      @Value("${sw.datastore.walWaitIntervalMillis}") int walWaitIntervalMillis,
+                      @Value("${sw.datastore.ossMaxAttempts}") int ossMaxAttempts) throws IOException {
         this.objectStore = objectStore;
         this.bufferManager = bufferManager;
         this.walFileSize = walFileSize;
@@ -88,6 +91,7 @@ public class WalManager extends Thread {
         this.walMaxFileSizeNoHeader = this.walMaxFileSize - this.header.length;
         this.logFilePrefix = walPrefix + "wal.log.";
         this.walWaitIntervalMillis = walWaitIntervalMillis;
+        this.ossMaxAttempts = ossMaxAttempts;
         this.outputBuffer = this.bufferManager.allocate(this.walMaxFileSizeNoHeader);
         this.compressedBuffer = this.bufferManager.allocate(this.walMaxFileSize);
         this.outputStream = new SwBufferOutputStream(this.outputBuffer);
@@ -96,7 +100,7 @@ public class WalManager extends Thread {
         try {
             it = Retry.decorateCheckedSupplier(
                             Retry.of("put", RetryConfig.custom()
-                                    .maxAttempts(10000)
+                                    .maxAttempts(ossMaxAttempts)
                                     .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
                                     .retryOnException(e -> !terminated)
                                     .build()),
@@ -162,7 +166,7 @@ public class WalManager extends Thread {
                 try {
                     data = Retry.decorateCheckedSupplier(
                                     Retry.of("get", RetryConfig.custom()
-                                            .maxAttempts(10000)
+                                            .maxAttempts(WalManager.this.ossMaxAttempts)
                                             .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
                                             .build()),
                                     () -> objectStore.get(fn))
@@ -342,7 +346,7 @@ public class WalManager extends Thread {
             int compressedBufferSize = compressedSize + this.header.length;
             Retry.decorateCheckedRunnable(
                             Retry.of("put", RetryConfig.custom()
-                                    .maxAttempts(10000)
+                                    .maxAttempts(this.ossMaxAttempts)
                                     .intervalFunction(IntervalFunction.ofExponentialRandomBackoff(100, 2.0, 0.5, 10000))
                                     .build()),
                             () -> this.objectStore.put(this.logFilePrefix + this.logFileIndex,

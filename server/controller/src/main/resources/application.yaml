@@ -49,6 +49,7 @@ sw:
     walMaxFileSize: ${SW_DATASTORE_WAL_MAX_FILE_SIZE:67108864}
     walPrefix: ${SW_DATASTORE_WAL_LOG_PREFIX:wal/}
     walWaitIntervalMillis: ${SW_DATASTORE_WAL_WAIT_INTERVAL_MILLIS:500}
+    ossMaxAttempts: ${SW_DATASTORE_WAL_INIT_MAX_ATTEMPTS:3}
 ---
 #Development
 spring:
