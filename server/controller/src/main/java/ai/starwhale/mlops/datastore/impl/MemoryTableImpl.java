@@ -380,7 +380,8 @@ public class MemoryTableImpl implements MemoryTable {
         }
         var keyColumn = this.schema.getKeyColumn();
         var records = new ArrayList<RecordResult>();
-        for (var record : MemoryTableImpl.this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive).values()) {
+        for (var record : MemoryTableImpl.this.recordMap.subMap(startKey, startInclusive, endKey, endInclusive)
+                .values()) {
             var values = new HashMap<String, Object>();
             for (var entry : columns.entrySet()) {
                 var columnName = entry.getKey();
@@ -590,23 +591,19 @@ public class MemoryTableImpl implements MemoryTable {
         for (var entry : record.entrySet()) {
             var name = entry.getKey();
             var value = entry.getValue();
-            if (value == null) {
-                ret.put(name, null);
-            } else {
-                var columnSchema = schema.getColumnSchemaByName(name);
-                if (columnSchema == null) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
-                            "no schema found for column " + name);
-                }
-                try {
-                    ret.put(name, columnSchema.getType().decode(value));
-                } catch (Exception e) {
-                    throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
-                            MessageFormat.format("fail to decode value {0} for column {1}: {2}",
-                                    value,
-                                    name,
-                                    e.getMessage()));
-                }
+            var columnSchema = schema.getColumnSchemaByName(name);
+            if (columnSchema == null) {
+                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                        "no schema found for column " + name);
+            }
+            try {
+                ret.put(columnSchema.getName(), columnSchema.getType().decode(value));
+            } catch (Exception e) {
+                throw new SWValidationException(SWValidationException.ValidSubject.DATASTORE,
+                        MessageFormat.format("fail to decode value {0} for column {1}: {2}",
+                                value,
+                                name,
+                                e.getMessage()));
             }
         }
         return ret;
