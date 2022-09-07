@@ -8,9 +8,8 @@ on:
         description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
         required: false
         default: false
-  push:
-    branches:
-      E2E
+  schedule:
+    - cron: "34 10,13 * * *"
 
 env:
   PYPI_RELEASE_VERSION: 100.0.0
@@ -37,9 +36,9 @@ jobs:
       matrix:
         python-version:
           - "3.7"
-#          - "3.8"
-#          - "3.9"
-#          - "3.10"
+          - "3.8"
+          - "3.9"
+          - "3.10"
 
     steps:
       - uses: actions/checkout@v3
