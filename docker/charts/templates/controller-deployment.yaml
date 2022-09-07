@@ -126,6 +126,8 @@ spec:
               value: "{{ .Values.mysql.auth.password }}"
             - name: SW_METADATA_STORAGE_USER
               value: "{{ .Values.mysql.auth.username }}"
+            - name: SW_METADATA_STORAGE_DB
+              value: "{{ .Values.mysql.auth.database }}"
             {{- else }}
             - name: SW_METADATA_STORAGE_IP
               value: "{{ .Values.externalMySQL.host }}"
@@ -135,4 +137,6 @@ spec:
               value: "{{ .Values.externalMySQL.password }}"
             - name: SW_METADATA_STORAGE_USER
               value: "{{ .Values.externalMySQL.username }}"
+            - name: SW_METADATA_STORAGE_DB
+              value: "{{ .Values.externalMySQL.database }}"
             {{- end }}
