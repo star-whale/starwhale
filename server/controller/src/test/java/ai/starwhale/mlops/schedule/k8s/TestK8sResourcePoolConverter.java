@@ -17,41 +17,46 @@
 package ai.starwhale.mlops.schedule.k8s;
 
 import ai.starwhale.mlops.domain.system.resourcepool.bo.ResourcePool;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TestK8sResourcePoolConverter {
 
     @Test
-    public void testNormalCase(){
+    public void testNormalCase() {
         K8sResourcePoolConverter resourcePoolConverter = new K8sResourcePoolConverter();
         Map<String, String> k8sLabel = resourcePoolConverter.toK8sLabel(
             new ResourcePool("3"));
-        Assertions.assertEquals(1,k8sLabel.size());
-        Assertions.assertEquals("true",k8sLabel.get("pool.starwhale.ai/3"));
+        Assertions.assertEquals(1, k8sLabel.size());
+        Assertions.assertEquals("true", k8sLabel.get("pool.starwhale.ai/3"));
 
     }
 
     @Test
-    public void testEmptyLabelCase(){
+    public void testEmptyLabelCase() {
         K8sResourcePoolConverter resourcePoolConverter = new K8sResourcePoolConverter();
         Map<String, String> k8sLabel = resourcePoolConverter.toK8sLabel(
             new ResourcePool());
-        Assertions.assertEquals(0,k8sLabel.size());
+        Assertions.assertEquals(0, k8sLabel.size());
 
     }
 
     @Test
-    public void testToResourcePools(){
+    public void testToResourcePools() {
         K8sResourcePoolConverter resourcePoolConverter = new K8sResourcePoolConverter();
         List<ResourcePool> resourcePools = resourcePoolConverter.toResourcePools(
             Map.of("pool.starwhale.ai/a", "false"
                 , "pool.starwhale.ai/b", "true"
                 , "pool.starwhale.ai/?", "true"));
-        Assertions.assertEquals(2,resourcePools.size());
-        Assertions.assertIterableEquals(List.of(new ResourcePool("b"),new ResourcePool("?")),resourcePools);
+        Assertions.assertEquals(2, resourcePools.size());
+        Assertions.assertIterableEquals(List.of(new ResourcePool("?"), new ResourcePool("b")),
+            resourcePools.stream().sorted(
+                Comparator.comparing(ResourcePool::getLabel)).collect(
+                Collectors.toList()));
 
     }
 
