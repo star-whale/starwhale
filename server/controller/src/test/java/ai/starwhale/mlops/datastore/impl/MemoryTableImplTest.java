@@ -80,7 +80,7 @@ public class MemoryTableImplTest {
     public void setUp() throws IOException {
         SwBufferManager bufferManager = new SwByteBufferManager();
         FileSystemObjectStore objectStore = new FileSystemObjectStore(bufferManager, this.rootDir.getAbsolutePath());
-        this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
     }
 
     @AfterEach
@@ -441,7 +441,7 @@ public class MemoryTableImplTest {
             SwBufferManager bufferManager = new SwByteBufferManager();
             FileSystemObjectStore objectStore = new FileSystemObjectStore(bufferManager,
                     MemoryTableImplTest.this.rootDir.getAbsolutePath());
-            MemoryTableImplTest.this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10);
+            MemoryTableImplTest.this.walManager = new WalManager(objectStore, bufferManager, 256, 4096, "test/", 10, 3);
             this.memoryTable = new MemoryTableImpl("test", MemoryTableImplTest.this.walManager);
             var it = MemoryTableImplTest.this.walManager.readAll();
             while (it.hasNext()) {

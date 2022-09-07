@@ -51,7 +51,7 @@ public class WalManagerTest {
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
         this.objectStore = new FileSystemObjectStore(this.bufferManager, this.rootDir.getAbsolutePath());
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
     }
 
 
@@ -167,7 +167,7 @@ public class WalManagerTest {
         this.walManager.append(entries.get(3));
         this.walManager.terminate();
         assertThat(ImmutableList.copyOf(this.objectStore.list("")), is(List.of("test/wal.log.0", "test/wal.log.1")));
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         assertThat(ImmutableList.copyOf(this.walManager.readAll()), is(entries));
     }
 
@@ -190,7 +190,7 @@ public class WalManagerTest {
             this.walManager.append(entry);
         }
         this.walManager.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         assertThat(ImmutableList.copyOf(this.walManager.readAll()), is(entries));
     }
 
@@ -206,7 +206,7 @@ public class WalManagerTest {
                 .build();
         this.walManager.append(entry);
         this.walManager.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         var entries = ImmutableList.copyOf(this.walManager.readAll());
         assertThat(entries.size(), greaterThan(1));
         assertThat(entries.get(0).getTableSchema(), is(entry.getTableSchema()));
@@ -267,11 +267,12 @@ public class WalManagerTest {
                 256,
                 entry1.getSerializedSize() + CodedOutputStream.computeUInt32SizeNoTag(entry1.getSerializedSize()) + 4,
                 "test/",
-                10);
+                10,
+                3);
         builder.addAllRecords(entry2.getRecordsList());
         this.walManager.append(builder.build());
         this.walManager.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         assertThat(ImmutableList.copyOf(this.walManager.readAll()), is(List.of(entry1, entry2)));
     }
 
@@ -283,7 +284,7 @@ public class WalManagerTest {
                 .doThrow(new IOException())
                 .doNothing()
                 .when(objectStore).put(anyString(), any());
-        var walManager = new WalManager(objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        var walManager = new WalManager(objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         walManager.append(Wal.WalEntry.newBuilder()
                 .setEntryType(Wal.WalEntry.Type.UPDATE)
                 .setTableName("t")
@@ -302,7 +303,7 @@ public class WalManagerTest {
         given(objectStore.get(anyString())).willThrow(new IOException())
                 .willThrow(new IOException())
                 .willReturn(this.bufferManager.allocate(10));
-        var walManager = new WalManager(objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        var walManager = new WalManager(objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         //noinspection ResultOfMethodCallIgnored
         ImmutableList.copyOf(walManager.readAll());
         walManager.terminate();

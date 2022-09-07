@@ -18,17 +18,20 @@ package ai.starwhale.mlops.storage.s3;
 
 import ai.starwhale.mlops.storage.StorageAccessService;
 import ai.starwhale.mlops.storage.StorageObjectInfo;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Map;
 import java.util.stream.Stream;
+
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -50,7 +53,11 @@ public class StorageAccessServiceS3 implements StorageAccessService {
         AwsBasicCredentials awsCreds = AwsBasicCredentials.create(
             s3Config.getAccessKey(),
             s3Config.getSecretKey());
+        final S3Configuration config = S3Configuration.builder()
+            .chunkedEncodingEnabled(false)
+            .build();
         S3ClientBuilder s3ClientBuilder = S3Client.builder()
+            .serviceConfiguration(config)
             .credentialsProvider(StaticCredentialsProvider.create(awsCreds))
             .region(Region.of(s3Config.getRegion()));
         if (s3Config.overWriteEndPoint()) {
@@ -126,9 +133,13 @@ public class StorageAccessServiceS3 implements StorageAccessService {
 
     @Override
     public Stream<String> list(String path) {
-        final ListObjectsResponse listObjectsResponse = s3client.listObjects(
-            ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path).build());
-        return listObjectsResponse.contents().stream().map(S3Object::key);
+        try {
+            final ListObjectsResponse listObjectsResponse = s3client.listObjects(
+                ListObjectsRequest.builder().bucket(s3Config.getBucket()).prefix(path).build());
+            return listObjectsResponse.contents().stream().map(S3Object::key);
+        } catch (NoSuchKeyException e) {
+            return Stream.empty();
+        }
     }
 
     @Override

@@ -57,7 +57,7 @@ public class DataStoreTest {
     public void setUp() throws IOException {
         this.bufferManager = new SwByteBufferManager();
         this.objectStore = new FileSystemObjectStore(bufferManager, this.rootDir.getAbsolutePath());
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         this.dataStore = new DataStore(this.walManager);
     }
 
@@ -127,7 +127,7 @@ public class DataStoreTest {
                 is(List.of(Map.of("k", "3", "x", "2"))));
 
         this.dataStore.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 256, 4096, "test/", 10, 3);
         this.dataStore = new DataStore(this.walManager);
         assertThat("t1",
                 this.dataStore.scan(DataStoreScanRequest.builder()
@@ -570,7 +570,7 @@ public class DataStoreTest {
     @Test
     public void testMultiThreads() throws Throwable {
         this.dataStore.terminate();
-        this.walManager = new WalManager(this.objectStore, this.bufferManager, 65536, 65536 * 1024, "test/", 1000);
+        this.walManager = new WalManager(this.objectStore, this.bufferManager, 65536, 65536 * 1024, "test/", 1000, 3);
         this.dataStore = new DataStore(this.walManager);
         abstract class TestThread extends Thread {
             protected final Random random = new Random();
