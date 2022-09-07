@@ -20,4 +20,8 @@ public class ProjectRoleVO {
     private ProjectVO project;
 
     private RoleVO role;
+
+    public static ProjectRoleVO empty() {
+        return new ProjectRoleVO("", UserVO.empty(), ProjectVO.empty(), RoleVO.empty());
+    }
 }

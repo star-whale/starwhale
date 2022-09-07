@@ -23,7 +23,6 @@ import ai.starwhale.mlops.common.LocalDateTimeConvertor;
 import ai.starwhale.mlops.domain.user.po.UserEntity;
 import ai.starwhale.mlops.exception.ConvertException;
 import java.util.Objects;
-import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -31,10 +30,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserConvertor implements Convertor<UserEntity, UserVO> {
 
-    @Resource private IDConvertor idConvertor;
+    private final IDConvertor idConvertor;
 
-    @Resource
-    private LocalDateTimeConvertor localDateTimeConvertor;
+    private final LocalDateTimeConvertor localDateTimeConvertor;
+
+    public UserConvertor(IDConvertor idConvertor, LocalDateTimeConvertor localDateTimeConvertor) {
+        this.idConvertor = idConvertor;
+        this.localDateTimeConvertor = localDateTimeConvertor;
+    }
+
 
     @Override
     public UserVO convert(UserEntity entity) throws ConvertException {
@@ -45,7 +49,7 @@ public class UserConvertor implements Convertor<UserEntity, UserVO> {
           .id(idConvertor.convert(entity.getId()))
           .name(entity.getUserName())
           .createdTime(localDateTimeConvertor.convert(entity.getCreatedTime()))
-          .isEnabled(entity.getUserEnabled() == 1)
+          .isEnabled(entity.getUserEnabled() != null && entity.getUserEnabled()== 1)
           .build();
     }
 

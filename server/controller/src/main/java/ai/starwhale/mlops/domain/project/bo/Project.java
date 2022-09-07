@@ -69,7 +69,10 @@ public class Project {
                 return PRIVATE;
             }
         }
-        public static Privacy fromValue(int value) {
+        public static Privacy fromValue(Integer value) {
+            if(value == null) {
+                return PRIVATE;
+            }
             for (Privacy privacy : Privacy.values()) {
                 if(privacy.getValue() == value) {
                     return privacy;

@@ -20,8 +20,10 @@ import ai.starwhale.mlops.domain.project.po.ProjectEntity;
 import ai.starwhale.mlops.domain.project.po.ProjectObjectCountEntity;
 import java.util.List;
 import javax.validation.constraints.NotNull;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+@Mapper
 public interface ProjectMapper {
 
     int createProject(@Param("project")ProjectEntity project);

@@ -34,4 +34,8 @@ public class RoleVO {
     private String code;
 
     private String description;
+
+    public static RoleVO empty() {
+        return new RoleVO("", "", "", "");
+    }
 }

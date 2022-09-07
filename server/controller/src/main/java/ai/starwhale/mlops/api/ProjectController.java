@@ -37,7 +37,6 @@ import ai.starwhale.mlops.exception.SWValidationException.ValidSubject;
 import ai.starwhale.mlops.exception.api.StarWhaleApiException;
 import com.github.pagehelper.PageInfo;
 import java.util.List;
-import javax.annotation.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,14 +46,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("${sw.controller.apiPrefix}")
 public class ProjectController implements ProjectApi{
 
-    @Resource
-    private ProjectService projectService;
+    private final ProjectService projectService;
 
-    @Resource
-    private UserService userService;
+    private final UserService userService;
 
-    @Resource
-    private IDConvertor idConvertor;
+    private final IDConvertor idConvertor;
+
+    public ProjectController(ProjectService projectService, UserService userService,
+        IDConvertor idConvertor) {
+        this.projectService = projectService;
+        this.userService = userService;
+        this.idConvertor = idConvertor;
+    }
+
 
     @Override
     public ResponseEntity<ResponseMessage<PageInfo<ProjectVO>>> listProject(String projectName,
