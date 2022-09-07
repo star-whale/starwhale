@@ -65,7 +65,6 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           name: controller-ut
-          fail_ci_if_error: true
           flags: controller
           verbose: true
           directory: ./server
